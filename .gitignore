@@ -1,0 +1,8 @@
+# hidden files
+.*
+
+# binaries
+bin/
+
+# vendor
+vendor/

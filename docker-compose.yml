@@ -1,0 +1,43 @@
+loraserver:
+  build: .
+  command: make serve
+  ports:
+    - "1700/udp:1700/udp"
+  volumes:
+    - ./:/go/src/github.com/brocaar/loraserver
+  links:
+    - postgres
+    - postgres_test
+    - redis
+    - redis_test
+  environment:
+    - POSTGRES_DSN=postgres://loraserver:loraserver@postgres/loraserver?sslmode=disable
+    - DB_AUTOMIGRATE=true
+    - TEST_POSTGRES_DSN=postgres://loraserver:loraserver@postgres_test/loraserver?sslmode=disable
+    - REDIS_URL=redis://redis:6379
+    - TEST_REDIS_URL=redis://redis_test:6379
+    - REDIS_PASSWORD=
+
+postgres:
+  image: postgres:9.5
+  environment:
+    - POSTGRES_PASSWORD=loraserver
+    - POSTGRES_USER=loraserver
+    - POSTGRES_DB=loraserver
+  ports:
+    - "5432:5432"
+
+postgres_test:
+  image: postgres:9.5
+  environment:
+    - POSTGRES_PASSWORD=loraserver
+    - POSTGRES_USER=loraserver
+    - POSTGRES_DB=loraserver
+
+redis:
+  image: redis:3.0.7
+  ports:
+    - "6379:6379"
+
+redis_test:
+  image: redis:3.0.7
