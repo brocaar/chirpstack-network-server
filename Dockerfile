@@ -9,6 +9,7 @@ ENV PATH=$PATH:$PROJECT_PATH/bin
 # install tools
 RUN go get github.com/golang/lint/golint
 RUN go get github.com/kisielk/errcheck
+RUN go get github.com/smartystreets/goconvey
 
 # setup work directory
 RUN mkdir -p $PROJECT_PATH
