@@ -5,9 +5,9 @@ import "github.com/brocaar/lorawan"
 // GatewayBackend is the interface of a gateway backend.
 // A gateway backend is responsible for the communication with the gateway.
 type GatewayBackend interface {
-	Send(TXPacket) error    // send the given packet to the gateway
-	Receive() chan RXPacket // receive packets from the gateway
-	Close() error           // close the gateway backend.
+	Send(TXPacket) error         // send the given packet to the gateway
+	RXPacketChan() chan RXPacket // channel containing the received packets
+	Close() error                // close the gateway backend.
 }
 
 // ApplicationBackend is the interface of an application backend.
