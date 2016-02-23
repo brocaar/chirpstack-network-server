@@ -3,7 +3,6 @@ package loraserver
 import (
 	"bytes"
 	"encoding/gob"
-	"encoding/hex"
 	"time"
 
 	"github.com/brocaar/lorawan"
@@ -12,7 +11,7 @@ import (
 
 // NodeSession related constants
 const (
-	NodeSessionTTL         = time.Hour * 24 * 5
+	NodeSessionTTL = time.Hour * 24 * 5
 )
 
 // NodeSession contains the informatio of a node-session (an activated node).
@@ -60,5 +59,4 @@ func GetNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (NodeSession, error)
 
 	err = gob.NewDecoder(bytes.NewReader(val)).Decode(&ns)
 	return ns, err
-}
 }
