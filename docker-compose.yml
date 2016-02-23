@@ -1,9 +1,6 @@
 loraserver:
   build: .
   command: make serve
-  ports:
-    - "1700/udp:1700/udp"
-    - "8080:8080"
   volumes:
     - ./:/go/src/github.com/brocaar/loraserver
   links:
@@ -16,10 +13,10 @@ loraserver:
     - POSTGRES_DSN=postgres://loraserver:loraserver@postgres/loraserver?sslmode=disable
     - DB_AUTOMIGRATE=true
     - REDIS_URL=redis://redis:6379
-    - GATEWAY_MQTT_SERVER=tcp://mosquitto:1883
+    - GW_MQTT_SERVER=tcp://mosquitto:1883
     - TEST_POSTGRES_DSN=postgres://loraserver:loraserver@postgres_test/loraserver?sslmode=disable
     - TEST_REDIS_URL=redis://redis_test:6379
-    - TEST_GATEWAY_MQTT_SERVER=tcp://mosquitto:1883
+    - TEST_GW_MQTT_SERVER=tcp://mosquitto:1883
 
 postgres:
   image: postgres:9.5
@@ -47,3 +44,5 @@ redis_test:
 
 mosquitto:
   image: ansi/mosquitto
+  ports:
+    - "1883:1883"

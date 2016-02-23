@@ -21,15 +21,15 @@ func getConfig() *config {
 		Server: "tcp://127.0.0.1:1883",
 	}
 
-	if v := os.Getenv("TEST_GATEWAY_MQTT_SERVER"); v != "" {
+	if v := os.Getenv("TEST_GW_MQTT_SERVER"); v != "" {
 		c.Server = v
 	}
 
-	if v := os.Getenv("TEST_GATEWAY_MQTT_USERNAME"); v != "" {
+	if v := os.Getenv("TEST_GW_MQTT_USERNAME"); v != "" {
 		c.Username = v
 	}
 
-	if v := os.Getenv("TEST_GATEWAY_MQTT_PASSWORD"); v != "" {
+	if v := os.Getenv("TEST_GW_MQTT_PASSWORD"); v != "" {
 		c.Password = v
 	}
 
