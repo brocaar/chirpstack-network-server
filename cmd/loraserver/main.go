@@ -45,6 +45,14 @@ func run(c *cli.Context) {
 		}
 	}
 
+	// provision ABP node sessions
+	if c.Bool("create-abp-node-sessions") {
+		log.Info("creating node-sessions from ABP")
+		if err := loraserver.NewNodeSessionsFromABP(db, rp); err != nil {
+			log.Fatalf("could not create ABP node-sessions: %s", err)
+		}
+	}
+
 	ctx := loraserver.Context{
 		DB:        db,
 		RedisPool: rp,
@@ -107,6 +115,11 @@ func main() {
 			Name:   "gw-mqtt-password",
 			Usage:  "Gateway-backend MQTT password",
 			EnvVar: "GW_MQTT_PASSWORD",
+		},
+		cli.BoolFlag{
+			Name:   "create-abp-node-sessions",
+			Usage:  "create ABP node sessions on startup of server",
+			EnvVar: "CREATE_ABP_NODE_SESSIONS",
 		},
 	}
 	app.Run(os.Args)
