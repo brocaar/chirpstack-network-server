@@ -37,6 +37,39 @@ func TestNodeSession(t *testing.T) {
 					So(ns2, ShouldResemble, ns)
 				})
 			})
+
+			Convey("When calling ValidateAndGetFullFCntUp", func() {
+				testTable := []struct {
+					ServerFCnt uint32
+					NodeFCnt   uint32
+					FullFCnt   uint32
+					Valid      bool
+				}{
+					{1, 1, 1, true},                                                       // ideal case, no dropped frames
+					{2, 1, 0, false},                                                      // old packet received
+					{0, lorawan.MaxFCntGap, 0, false},                                     // gap should be less than MaxFCntGap
+					{0, lorawan.MaxFCntGap - 1, lorawan.MaxFCntGap - 1, true},             // gap is exactly within the allowed MaxFCntGap
+					{65536, lorawan.MaxFCntGap - 1, lorawan.MaxFCntGap - 1 + 65536, true}, // roll-over happened, gap ix exactly within allowed MaxFCntGap
+					{65535, lorawan.MaxFCntGap, 0, false},                                 // roll-over happened, but too many lost frames
+					{65535, 0, 65536, true},                                               // roll-over happened
+					{65536, 0, 65536, true},                                               // ideal case, no dropped frames
+					{4294967295, 0, 0, true},                                              // 32 bit roll-over happened, counter started at 0 again
+				}
+
+				for _, test := range testTable {
+					Convey(fmt.Sprintf("Then when FCntUP=%d, ValidateAndGetFullFCntUp(%d) should return (%d, %t)", test.ServerFCnt, test.NodeFCnt, test.FullFCnt, test.Valid), func() {
+						ns.FCntUp = test.ServerFCnt
+						fullFCntUp, ok := ns.ValidateAndGetFullFCntUp(test.NodeFCnt)
+						So(ok, ShouldEqual, test.Valid)
+						So(fullFCntUp, ShouldEqual, test.FullFCnt)
+					})
+				}
+			})
+
+		})
+	})
+}
+
 func TestNewNodeSessionsFromABP(t *testing.T) {
 	conf := getConfig()
 

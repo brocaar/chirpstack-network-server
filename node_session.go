@@ -27,6 +27,22 @@ type NodeSession struct {
 	AppEUI lorawan.EUI64     `db:"app_eui"`
 	AppKey lorawan.AES128Key `db:"app_key"`
 }
+
+// ValidateAndGetFullFCntUp validates if the given fCntUp is valid
+// and returns the full 32 bit frame-counter.
+// Note that the LoRaWAN packet only contains the 16 LSB, so in order
+// to validate the MIC, the full 32 bit frame-counter needs to be set.
+// After a succesful validation of the FCntUP and the MIC, don't forget
+// to increment the Node FCntUp by 1.
+func (n NodeSession) ValidateAndGetFullFCntUp(fCntUp uint32) (uint32, bool) {
+	// we need to compare the difference of the 16 LSB
+	gap := uint32(uint16(fCntUp) - uint16(n.FCntUp%65536))
+	if gap < lorawan.MaxFCntGap {
+		return n.FCntUp + gap, true
+	}
+	return 0, false
+}
+
 // CreateNodeSession does the same as SaveNodeSession except that it does not
 // overwrite an exisitng record.
 func CreateNodeSession(p *redis.Pool, s NodeSession) (bool, error) {
