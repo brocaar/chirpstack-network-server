@@ -1,8 +1,10 @@
 package loraserver
 
 import (
+	"fmt"
 	"testing"
 
+	"github.com/brocaar/lorawan"
 	"github.com/garyburd/redigo/redis"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -10,12 +12,9 @@ import (
 func TestNodeSession(t *testing.T) {
 	conf := getConfig()
 
-	Convey("Given a Redis connection pool", t, func() {
+	Convey("Given a clean Redis database", t, func() {
 		p := NewRedisPool(conf.RedisURL)
-		c := p.Get()
-		_, err := c.Do("FLUSHALL")
-		So(err, ShouldBeNil)
-		c.Close()
+		mustFlushRedis(p)
 
 		Convey("Given a NodeSession", func() {
 			ns := NodeSession{

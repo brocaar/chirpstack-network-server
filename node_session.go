@@ -7,6 +7,7 @@ import (
 
 	"github.com/brocaar/lorawan"
 	"github.com/garyburd/redigo/redis"
+	"github.com/jmoiron/sqlx"
 )
 
 // NodeSession related constants
@@ -16,15 +17,37 @@ const (
 
 // NodeSession contains the informatio of a node-session (an activated node).
 type NodeSession struct {
-	DevAddr  lorawan.DevAddr
-	DevEUI   lorawan.EUI64
-	AppSKey  lorawan.AES128Key
-	NwkSKey  lorawan.AES128Key
-	FCntUp   uint32
-	FCntDown uint32
+	DevAddr  lorawan.DevAddr   `db:"dev_addr"`
+	DevEUI   lorawan.EUI64     `db:"dev_eui"`
+	AppSKey  lorawan.AES128Key `db:"app_s_key"`
+	NwkSKey  lorawan.AES128Key `db:"nwk_s_key"`
+	FCntUp   uint32            `db:"fcnt_up"`   // the next expected value
+	FCntDown uint32            `db:"fcnt_down"` // the next expected value
 
-	AppEUI lorawan.EUI64
-	AppKey lorawan.AES128Key
+	AppEUI lorawan.EUI64     `db:"app_eui"`
+	AppKey lorawan.AES128Key `db:"app_key"`
+}
+// CreateNodeSession does the same as SaveNodeSession except that it does not
+// overwrite an exisitng record.
+func CreateNodeSession(p *redis.Pool, s NodeSession) (bool, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(s); err != nil {
+		return false, err
+	}
+
+	c := p.Get()
+	defer c.Close()
+
+	key := "node_session_" + s.DevAddr.String()
+	_, err := redis.String(c.Do("SET", key, buf.Bytes(), "NX", "PX", int64(NodeSessionTTL)/int64(time.Millisecond)))
+	if err != nil {
+		if err == redis.ErrNil {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 // SaveNodeSession saves the node session. Note that the session will automatically
@@ -59,4 +82,40 @@ func GetNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (NodeSession, error)
 
 	err = gob.NewDecoder(bytes.NewReader(val)).Decode(&ns)
 	return ns, err
+}
+
+// NewNodeSessionsFromABP creates new node sessions for the stored
+// NodeABP records. Note that this will not overwrite existing
+// node sessions.
+func NewNodeSessionsFromABP(db *sqlx.DB, p *redis.Pool) error {
+	rows, err := db.Queryx(`
+		select
+			node_abp.dev_addr,
+			node_abp.dev_eui,
+			node_abp.app_s_key,
+			node_abp.nwk_s_key,
+			node_abp.fcnt_up,
+			node_abp.fcnt_down,
+			node.app_eui,
+			node.app_key
+		from
+			node_abp
+		inner join node on
+			node_abp.dev_eui = node.dev_eui
+	`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	var ns NodeSession
+	for rows.Next() {
+		if err := rows.StructScan(&ns); err != nil {
+			return err
+		}
+		if _, err := CreateNodeSession(p, ns); err != nil {
+			return err
+		}
+	}
+	return nil
 }
