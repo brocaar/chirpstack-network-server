@@ -25,7 +25,7 @@ func NewBackend(server, username, password string) (loraserver.ApplicationBacken
 	opts.AddBroker(server)
 	opts.SetUsername(username)
 	opts.SetPassword(password)
-	opts.SetClientID("loraserver")
+	opts.SetClientID("loraserver-app-backend")
 
 	log.WithField("server", server).Info("application/mqttpubsub: connecting to mqtt server")
 	b.conn = mqtt.NewClient(opts)
