@@ -17,3 +17,6 @@ WORKDIR $PROJECT_PATH
 
 # copy source code
 COPY . $PROJECT_PATH
+
+# install dependencies
+RUN go get -t ./...
