@@ -8,7 +8,8 @@ import (
 	"github.com/DavidHuie/gomigrate"
 	log "github.com/Sirupsen/logrus"
 	"github.com/brocaar/loraserver"
-	"github.com/brocaar/loraserver/gateway/mqttpubsub"
+	application "github.com/brocaar/loraserver/application/mqttpubsub"
+	gateway "github.com/brocaar/loraserver/gateway/mqttpubsub"
 	"github.com/codegangsta/cli"
 	_ "github.com/lib/pq"
 )
@@ -28,9 +29,15 @@ func run(c *cli.Context) {
 	rp := loraserver.NewRedisPool(c.String("redis-url"))
 
 	// setup gateway backend
-	gw, err := mqttpubsub.NewBackend(c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"))
+	gw, err := gateway.NewBackend(c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"))
 	if err != nil {
 		log.Fatalf("could not setup gateway backend: %s", err)
+	}
+
+	// setup application backend
+	app, err := application.NewBackend(c.String("app-mqtt-server"), c.String("app-mqtt-username"), c.String("app-mqtt-password"))
+	if err != nil {
+		log.Fatalf("could not setup application backend: %s", err)
 	}
 
 	// auto-migrate the database
@@ -54,9 +61,10 @@ func run(c *cli.Context) {
 	}
 
 	ctx := loraserver.Context{
-		DB:        db,
-		RedisPool: rp,
-		Gateway:   gw,
+		DB:          db,
+		RedisPool:   rp,
+		Gateway:     gw,
+		Application: app,
 	}
 
 	go func() {
@@ -116,7 +124,22 @@ func main() {
 			Usage:  "Gateway-backend MQTT password",
 			EnvVar: "GW_MQTT_PASSWORD",
 		},
-		cli.BoolFlag{
+		cli.StringFlag{
+			Name:   "app-mqtt-server",
+			Usage:  "Application-backend MQTT server",
+			Value:  "tcp://localhost:1883",
+			EnvVar: "APP_MQTT_SERVER",
+		},
+		cli.StringFlag{
+			Name:   "app-mqtt-username",
+			Usage:  "Application-backend MQTT username",
+			EnvVar: "APP_MQTT_USERNAME",
+		},
+		cli.StringFlag{
+			Name:   "app-mqtt-password",
+			Usage:  "Application-backend MQTT password",
+			EnvVar: "APP_MQTT_PASSWORD",
+		}, cli.BoolFlag{
 			Name:   "create-abp-node-sessions",
 			Usage:  "create ABP node sessions on startup of server",
 			EnvVar: "CREATE_ABP_NODE_SESSIONS",
