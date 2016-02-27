@@ -16,7 +16,7 @@ test:
 		golint $$pkg ; \
 	done
 	@go vet $(PKGS)
-	@go test -cover $(PKGS)
+	@go test -cover -v $(PKGS)
 
 # shortcuts for development
 

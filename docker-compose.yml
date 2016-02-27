@@ -26,8 +26,6 @@ postgres:
     - POSTGRES_PASSWORD=loraserver
     - POSTGRES_USER=loraserver
     - POSTGRES_DB=loraserver
-  ports:
-    - "5432:5432"
 
 postgres_test:
   image: postgres:9.5
@@ -38,13 +36,9 @@ postgres_test:
 
 redis:
   image: redis:3.0.7
-  ports:
-    - "6379:6379"
 
 redis_test:
   image: redis:3.0.7
 
 mosquitto:
   image: ansi/mosquitto
-  ports:
-    - "1883:1883"
