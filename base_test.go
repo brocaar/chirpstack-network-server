@@ -7,6 +7,7 @@ import (
 
 	"github.com/DavidHuie/gomigrate"
 	log "github.com/Sirupsen/logrus"
+	"github.com/brocaar/lorawan"
 	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
 )
@@ -56,4 +57,34 @@ func mustResetDB(db *sqlx.DB) {
 	if err := m.Migrate(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+type testGatewayBackend struct {
+	rxPacketChan chan RXPacket
+}
+
+func (b *testGatewayBackend) Send(txPacket TXPacket) error {
+	return nil
+}
+
+func (b *testGatewayBackend) RXPacketChan() chan RXPacket {
+	return b.rxPacketChan
+}
+
+func (b *testGatewayBackend) Close() error {
+	return nil
+}
+
+type testApplicationBackend struct {
+	rxPacketsChan chan RXPackets
+	err           error
+}
+
+func (b *testApplicationBackend) Send(devEUI, appEUI lorawan.EUI64, rxPackets RXPackets) error {
+	b.rxPacketsChan <- rxPackets
+	return b.err
+}
+
+func (b *testApplicationBackend) Close() error {
+	return nil
 }
