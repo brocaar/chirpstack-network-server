@@ -100,6 +100,7 @@ func main() {
 		cli.StringFlag{
 			Name:   "postgres-dsn",
 			Usage:  "postgresql dsn (e.g.: postgres://pqtest:password@localhost/pqtest?sslmode=verify-full)",
+			Value:  "postgres://localhost/loraserver?sslmode=disable",
 			EnvVar: "POSTGRES_DSN",
 		},
 		cli.StringFlag{
