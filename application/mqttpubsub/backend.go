@@ -1,8 +1,7 @@
 package mqttpubsub
 
 import (
-	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -71,15 +70,14 @@ func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, rxPackets loraserver.RXPack
 		Data:         dataPL.Bytes,
 	}
 
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(pl); err != nil {
+	bytes, err := json.Marshal(pl)
+	if err != nil {
 		return err
 	}
 
 	topic := fmt.Sprintf("node/%s/rx", devEUI)
 	log.WithField("topic", topic).Info("application/mqttpubsub: publishing message")
-	if token := b.conn.Publish(topic, 0, false, buf.Bytes()); token.Wait() && token.Error() != nil {
+	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
 	return nil

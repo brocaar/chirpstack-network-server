@@ -7,11 +7,10 @@ import (
 // ApplicationRXPayload contains the data sent to the application
 // after a RXPacket was received by the server.
 type ApplicationRXPayload struct {
-	MType        lorawan.MType
-	DevEUI       lorawan.EUI64
-	ACK          bool
-	FPort        uint8
-	GatewayCount uint8
-
-	Data []byte
+	MType        lorawan.MType `json:"mType"`
+	DevEUI       lorawan.EUI64 `json:"devAddr"`
+	ACK          bool          `json:"ack"`
+	FPort        uint8         `json:"fPort"`
+	GatewayCount uint8         `json:"gatewayCount"`
+	Data         []byte        `json:"data"`
 }

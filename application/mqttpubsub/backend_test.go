@@ -1,8 +1,7 @@
 package mqttpubsub
 
 import (
-	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"testing"
 
 	"git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
@@ -32,8 +31,7 @@ func TestBackend(t *testing.T) {
 				appRXPayloadChan := make(chan ApplicationRXPayload)
 				token := c.Subscribe("node/+/rx", 0, func(c *mqtt.Client, msg mqtt.Message) {
 					var appRXPayload ApplicationRXPayload
-					dec := gob.NewDecoder(bytes.NewReader(msg.Payload()))
-					if err := dec.Decode(&appRXPayload); err != nil {
+					if err := json.Unmarshal(msg.Payload(), &appRXPayload); err != nil {
 						t.Fatal(err)
 					}
 					appRXPayloadChan <- appRXPayload
