@@ -123,3 +123,29 @@ func TestNewNodeSessionsFromABP(t *testing.T) {
 		})
 	})
 }
+
+func TestGetRandomDevAddr(t *testing.T) {
+	conf := getConfig()
+
+	Convey("Given a Redis database and NetID 010203", t, func() {
+		p := NewRedisPool(conf.RedisURL)
+		netID := lorawan.NetID{1, 2, 3}
+
+		Convey("When calling GetRandomDevAddr many times, it should always return an unique DevAddr", func() {
+			log := make(map[lorawan.DevAddr]struct{})
+			for i := 0; i < 1000; i++ {
+				devAddr, err := GetRandomDevAddr(p, netID)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if devAddr.NwkID() != netID.NwkID() {
+					t.Fatalf("%s must equal %s", devAddr.NwkID(), netID.NwkID())
+				}
+				if len(log) != i {
+					t.Fatalf("%d must equal %d", len(log), i)
+				}
+				log[devAddr] = struct{}{}
+			}
+		})
+	})
+}
