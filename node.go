@@ -5,12 +5,32 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+// UsedDevNonceCount is the number of used dev-nonces to track.
+const UsedDevNonceCount = 10
+
 // Node contains the information of a node.
 type Node struct {
 	DevEUI        lorawan.EUI64
 	AppEUI        lorawan.EUI64
 	AppKey        lorawan.AES128Key
 	UsedDevNonces [][2]byte
+}
+
+// ValidateDevNonce returns if the given dev-nonce is valid.
+// When valid, it will be added to UsedDevNonces. This does
+// not update the Node in the database!
+func (n *Node) ValidateDevNonce(nonce [2]byte) bool {
+	for _, used := range n.UsedDevNonces {
+		if nonce == used {
+			return false
+		}
+	}
+	n.UsedDevNonces = append(n.UsedDevNonces, nonce)
+	if len(n.UsedDevNonces) > UsedDevNonceCount {
+		n.UsedDevNonces = n.UsedDevNonces[len(n.UsedDevNonces)-UsedDevNonceCount:]
+	}
+
+	return true
 }
 
 // CreateNode creates the given Node.
