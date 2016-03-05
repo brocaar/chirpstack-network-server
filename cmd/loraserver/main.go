@@ -10,6 +10,7 @@ import (
 	"github.com/brocaar/loraserver"
 	application "github.com/brocaar/loraserver/application/mqttpubsub"
 	gateway "github.com/brocaar/loraserver/gateway/mqttpubsub"
+	"github.com/brocaar/lorawan"
 	"github.com/codegangsta/cli"
 	_ "github.com/lib/pq"
 )
@@ -17,6 +18,13 @@ import (
 var version string // set by the compiler
 
 func run(c *cli.Context) {
+	// parse the NetID
+	var netID lorawan.NetID
+	log.WithField("netid", c.String("net-id")).Info("configuring netid")
+	if err := netID.UnmarshalText([]byte(c.String("net-id"))); err != nil {
+		log.Fatalf("could not parse NetID: %s", err)
+	}
+
 	// connect to the database
 	log.Info("connecting to database")
 	db, err := loraserver.OpenDatabase(c.String("postgres-dsn"))
@@ -65,6 +73,7 @@ func run(c *cli.Context) {
 		RedisPool:   rp,
 		Gateway:     gw,
 		Application: app,
+		NetID:       netID,
 	}
 
 	go func() {
@@ -96,10 +105,18 @@ func main() {
 			Value:  "./migrations",
 			Usage:  "path to the directory containing the database migrations",
 			EnvVar: "DB_MIGRATIONS_PATH",
+		}, cli.BoolFlag{
+			Name:   "create-abp-node-sessions",
+			Usage:  "create ABP node sessions on startup of server",
+			EnvVar: "CREATE_ABP_NODE_SESSIONS",
+		}, cli.StringFlag{
+			Name:   "net-id",
+			Usage:  "network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203)",
+			EnvVar: "NET_ID",
 		},
 		cli.StringFlag{
 			Name:   "postgres-dsn",
-			Usage:  "postgresql dsn (e.g.: postgres://pqtest:password@localhost/pqtest?sslmode=verify-full)",
+			Usage:  "postgresql dsn (e.g.: postgres://user:password@hostname/database?sslmode=disable)",
 			Value:  "postgres://localhost/loraserver?sslmode=disable",
 			EnvVar: "POSTGRES_DSN",
 		},
@@ -140,10 +157,6 @@ func main() {
 			Name:   "app-mqtt-password",
 			Usage:  "Application-backend MQTT password",
 			EnvVar: "APP_MQTT_PASSWORD",
-		}, cli.BoolFlag{
-			Name:   "create-abp-node-sessions",
-			Usage:  "create ABP node sessions on startup of server",
-			EnvVar: "CREATE_ABP_NODE_SESSIONS",
 		},
 	}
 	app.Run(os.Args)
