@@ -8,7 +8,7 @@ import (
 // after a RXPacket was received by the server.
 type ApplicationRXPayload struct {
 	MType        lorawan.MType `json:"mType"`
-	DevEUI       lorawan.EUI64 `json:"devAddr"`
+	DevEUI       lorawan.EUI64 `json:"devEUI"`
 	ACK          bool          `json:"ack"`
 	FPort        uint8         `json:"fPort"`
 	GatewayCount uint8         `json:"gatewayCount"`
