@@ -1,9 +1,6 @@
 FROM golang:1.6.0
 
-# project
 ENV PROJECT_PATH=/go/src/github.com/brocaar/loraserver
-
-# set PATH
 ENV PATH=$PATH:$PROJECT_PATH/bin
 
 # install tools
@@ -17,3 +14,8 @@ WORKDIR $PROJECT_PATH
 
 # copy source code
 COPY . $PROJECT_PATH
+
+# build
+RUN make build
+
+CMD ["loraserver"]
