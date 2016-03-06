@@ -104,6 +104,7 @@ func main() {
 	app.Name = "loraserver"
 	app.Usage = "network-server for LoRaWAN networks"
 	app.Version = version
+	app.Copyright = "See http://github.com/brocaar/loraserver for copyright information"
 	app.Action = run
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
