@@ -4,6 +4,3 @@
 # binaries
 bin/
 builds/
-
-# vendor
-vendor/
