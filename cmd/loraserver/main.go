@@ -3,6 +3,7 @@ package main
 import (
 	"io/ioutil"
 	golog "log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -88,6 +89,18 @@ func run(c *cli.Context) {
 		}
 	}()
 
+	// setup json-rpc api handler
+	apiHandler, err := loraserver.NewJSONRPCHandler(loraserver.NewAPI(ctx))
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.WithField("path", "/rpc").Info("registering json-rpc handler")
+	http.Handle("/rpc", apiHandler)
+	go func() {
+		log.WithField("bind", c.String("http-bind")).Info("starting http server")
+		log.Fatal(http.ListenAndServe(c.String("http-bind"), nil))
+	}()
+
 	sigChan := make(chan os.Signal)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	log.WithField("signal", <-sigChan).Info("signal received")
@@ -131,6 +144,12 @@ func main() {
 			Usage:  "redis url",
 			Value:  "redis://localhost:6379",
 			EnvVar: "REDIS_URL",
+		},
+		cli.StringFlag{
+			Name:   "http-bind",
+			Usage:  "ip:port to bind the http api server to",
+			Value:  "0.0.0.0:8000",
+			EnvVar: "HTTP_BIND",
 		},
 		cli.StringFlag{
 			Name:   "gw-mqtt-server",

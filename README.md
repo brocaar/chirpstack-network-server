@@ -32,17 +32,33 @@ $ go get github.com/brocaar/loraserver/...
 
 * See https://github.com/brocaar/loratestapp for an example application implementation.
 
-## Todo
+## API
 
-- [ ] better documentation :-)
-- [x] unconfirmed data up
-- [ ] unconfirmed and confirmed data down
-- [ ] confirmed data up
-- [x] OTAA
-- [ ] MAC commands
-- [ ] API for ABP
-- [ ] GUI for application, node and ABP management?
+The *loraserver* provides a JSON-RPC API over HTTP. All calls are performend by
+sending a post request to the ``/rpc`` endpoint.
+
+### Application
+
+#### Create
+```json
+{"method": "API.CreateApplication", "params":[{"app_eui": "0102030405060708", "name": "test application"}]}
+```
+
+#### Get
+```json
+{"method": "API.GetApplication", "params":["0102030405060708"]}
+```
+
+#### Update
+```json
+{"method": "API.UpdateApplication", "params":[{"app_eui": "0102030405060708", "name": "test application 2"}]}
+```
+
+#### Delete
+```json
+{"method": "API.DeleteApplication", "params":["0102030405060708"]}
+```
 
 ## License
 
-This package is licensed under the MIT license which can be found in ``LICENSE``.
+This package is licensed under the MIT license. See ``LICENSE``.
