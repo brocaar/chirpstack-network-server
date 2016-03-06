@@ -18,17 +18,15 @@ Note: This project is under development. Please test and give feedback but know 
 - [ ] confirmed data up
 - [ ] data down (confirmed and unconfirmed)
 - [ ] handling of mac commands
+- [ ] cross regio (EU 863-870MHz ISM Band is supported right now)
+- [ ] cross-platform binary build (only linux amd64 is available right now)
 
 
 ## Getting started
 
 * First install the *Lora Semtech Bridge* (https://github.com/brocaar/lora-semtech-bridge)
 
-* Install ``loraserver``:
-
-```bash
-$ go get github.com/brocaar/loraserver/...
-```
+* Download and install ``loraserver``: https://github.com/brocaar/loraserver/releases.
 
 * Install a MQTT server (used for communication with the gateways and applications).
   Mosquitto is a good option: http://mosquitto.org/.
@@ -38,8 +36,7 @@ $ go get github.com/brocaar/loraserver/...
 * Install Redis (used to store node sessions).
 
 * Start the ``loraserver`` service. The ``--help`` argument will show you all the available
-  config options. When installing with ``go get``, you will find the migration files under
-  ``$GOPATH/src/github.com/brocaar/loraserver/migrations``.
+  config options. 
 
 * See https://github.com/brocaar/loratestapp for an example application implementation.
 
