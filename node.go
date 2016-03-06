@@ -47,10 +47,10 @@ func (l DevNonceList) Value() (driver.Value, error) {
 
 // Node contains the information of a node.
 type Node struct {
-	DevEUI        lorawan.EUI64     `db:"dev_eui" json:"dev_eui"`
-	AppEUI        lorawan.EUI64     `db:"app_eui" json:"app_eui"`
-	AppKey        lorawan.AES128Key `db:"app_key" json:"app_key"`
-	UsedDevNonces DevNonceList      `db:"used_dev_nonces" json:"used_dev_nonces"`
+	DevEUI        lorawan.EUI64     `db:"dev_eui" json:"devEUI"`
+	AppEUI        lorawan.EUI64     `db:"app_eui" json:"appEUI"`
+	AppKey        lorawan.AES128Key `db:"app_key" json:"appKey"`
+	UsedDevNonces DevNonceList      `db:"used_dev_nonces" json:"usedDevNonces"`
 }
 
 // ValidateDevNonce returns if the given dev-nonce is valid.
@@ -135,12 +135,12 @@ func GetNode(db *sqlx.DB, devEUI lorawan.EUI64) (Node, error) {
 // node needs to be activated. The real counting happens in NodeSession
 // (for performance reasons).
 type NodeABP struct {
-	DevEUI   lorawan.EUI64
-	DevAddr  lorawan.DevAddr
-	AppSKey  lorawan.AES128Key
-	NwkSKey  lorawan.AES128Key
-	FCntUp   uint32 // the next expected value
-	FCntDown uint32 // the next expected value
+	DevEUI   lorawan.EUI64     `db:"dev_eui" json:"dev_eui"`
+	DevAddr  lorawan.DevAddr   `db:"dev_addr" json:"dev_addr"`
+	AppSKey  lorawan.AES128Key `db:"app_s_key" json:"app_s_key"`
+	NwkSKey  lorawan.AES128Key `db:"nwk_s_key" json:"nwk_s_key"`
+	FCntUp   uint32            `db:"fcnt_up" json:"fcnt_up"`     // the next expected value
+	FCntDown uint32            `db:"fcnt_down" json:"fcnt_down"` // the next expected value
 }
 
 // CreateNodeABP creates the given NodeABP.

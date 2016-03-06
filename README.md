@@ -41,7 +41,7 @@ sending a post request to the ``/rpc`` endpoint.
 
 #### Create
 ```json
-{"method": "API.CreateApplication", "params":[{"app_eui": "0102030405060708", "name": "test application"}]}
+{"method": "API.CreateApplication", "params":[{"appEUI": "0102030405060708", "name": "test application"}]}
 ```
 
 #### Get
@@ -51,7 +51,7 @@ sending a post request to the ``/rpc`` endpoint.
 
 #### Update
 ```json
-{"method": "API.UpdateApplication", "params":[{"app_eui": "0102030405060708", "name": "test application 2"}]}
+{"method": "API.UpdateApplication", "params":[{"appEUI": "0102030405060708", "name": "test application 2"}]}
 ```
 
 #### Delete
@@ -63,7 +63,7 @@ sending a post request to the ``/rpc`` endpoint.
 
 #### Create
 ```json
-{"method": "API.CreateNode", "params":[{"dev_eui": "0807060504030201", "app_eui": "0102030405060708", "app_key": "01020304050607080910111213141516"}]}
+{"method": "API.CreateNode", "params":[{"devEUI": "0807060504030201", "appEUI": "0102030405060708", "appKey": "01020304050607080910111213141516"}]}
 ```
 
 #### Get
@@ -73,7 +73,7 @@ sending a post request to the ``/rpc`` endpoint.
 
 #### Update
 ```json
-{"method": "API.UpdateNode", "params":[{"dev_eui": "0807060504030201", "app_eui": "0102030405060708", "app_key": "01010101010101010101010101010101"}]}
+{"method": "API.UpdateNode", "params":[{"devEUI": "0807060504030201", "appEUI": "0102030405060708", "appKey": "01010101010101010101010101010101"}]}
 ```
 
 #### Delete

@@ -11,7 +11,7 @@ import (
 
 // Application contains the information of an application.
 type Application struct {
-	AppEUI lorawan.EUI64 `db:"app_eui" json:"app_eui"`
+	AppEUI lorawan.EUI64 `db:"app_eui" json:"appEUI"`
 	Name   string        `db:"name" json:"name"`
 }
 
