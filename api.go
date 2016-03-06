@@ -1,6 +1,8 @@
 package loraserver
 
 import (
+	"encoding/hex"
+	"fmt"
 	"io"
 	"net/http"
 	"net/rpc"
@@ -115,5 +117,41 @@ func (a *API) DeleteNode(devEUI lorawan.EUI64, deletedDevEUI *lorawan.EUI64) err
 		return err
 	}
 	*deletedDevEUI = devEUI
+	return nil
+}
+
+// GetNodeSession returns the NodeSession for the given DevAddr.
+func (a *API) GetNodeSession(devAddr lorawan.DevAddr, ns *NodeSession) error {
+	var err error
+	*ns, err = GetNodeSession(a.ctx.RedisPool, devAddr)
+	return err
+}
+
+// CreateNodeSession creates the given NodeSession (activation by personalization).
+// The DevAddr must contain the same NwkID as the configured NetID.
+// Sessions will expire automatically after the configured TTL.
+func (a *API) CreateNodeSession(ns NodeSession, devAddr *lorawan.DevAddr) error {
+	// validate the NwkID
+	if ns.DevAddr.NwkID() != a.ctx.NetID.NwkID() {
+		return fmt.Errorf("DevAddr must contain NwkID %s", hex.EncodeToString([]byte{a.ctx.NetID.NwkID()}))
+	}
+	// validate that the node exists
+	if _, err := GetNode(a.ctx.DB, ns.DevEUI); err != nil {
+		return err
+	}
+
+	if err := CreateNodeSession(a.ctx.RedisPool, ns); err != nil {
+		return err
+	}
+	*devAddr = ns.DevAddr
+	return nil
+}
+
+// DeleteNodeSession deletes the NodeSession matching the given DevAddr.
+func (a *API) DeleteNodeSession(devAddr lorawan.DevAddr, deletedDevAddr *lorawan.DevAddr) error {
+	if err := DeleteNodeSession(a.ctx.RedisPool, devAddr); err != nil {
+		return err
+	}
+	*deletedDevAddr = devAddr
 	return nil
 }

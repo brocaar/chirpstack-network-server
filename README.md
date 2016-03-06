@@ -7,6 +7,19 @@
 communication with the LoRa gateway(s) and applications. Communication
 with the applications and gateways is done over MQTT.
 
+
+## Todo
+
+Note: This project is under development. Please test and give feedback but know that things might break! 
+
+- [x] unconfirmed data up
+- [x] activation by personalization
+- [x] over-the-air activation
+- [ ] confirmed data up
+- [ ] data down (confirmed and unconfirmed)
+- [ ] handling of mac commands
+
+
 ## Getting started
 
 * First install the *Lora Semtech Bridge* (https://github.com/brocaar/lora-semtech-bridge)
@@ -17,12 +30,12 @@ with the applications and gateways is done over MQTT.
 $ go get github.com/brocaar/loraserver/...
 ```
 
-* Make sure you have a MQTT server running. Mosquitto is a good option: http://mosquitto.org/.
+* Install a MQTT server (used for communication with the gateways and applications).
+  Mosquitto is a good option: http://mosquitto.org/.
 
-* Make sure you have a PostgreSQL database running. The PostgreSQL database is used to
-  store the application and node data.
+* Install PostgreSQL (used to store application and node data).
 
-* Make sure you have a Redis server running. Redis is used to store the node sessions.
+* Install Redis (used to store node sessions).
 
 * Start the ``loraserver`` service. The ``--help`` argument will show you all the available
   config options. When installing with ``go get``, you will find the migration files under
@@ -77,6 +90,23 @@ sending a post request to the ``/rpc`` endpoint.
 #### Delete
 ```json
 {"method": "API.DeleteNode", "params":["0807060504030201"]}
+```
+
+### Node sessions (active nodes)
+
+#### Get
+```json
+{"method": "API.GetNodeSession", "params":["01020304"]}
+```
+
+#### Create (activation by personalization)
+```json
+{"method": "API.CreateNodeSession", "params":[{"devAddr": "01020304", "devEUI": "0807060504030201", "appEUI": "0102030405060708", "appSKey": "01010101010101010101010101010101", "nwkSKey": "02020202020202020202020202020202", "fCntUp": 0, "fCntDown": 0}]}
+```
+
+#### Delete
+```json
+{"method": "API.DeleteNodeSession", "params":["01020304"]}
 ```
 
 ## License

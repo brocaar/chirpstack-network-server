@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/brocaar/lorawan"
 	"github.com/garyburd/redigo/redis"
 )
@@ -21,12 +22,12 @@ const (
 // NodeSession contains the informatio of a node-session (an activated node).
 type NodeSession struct {
 	DevAddr  lorawan.DevAddr   `db:"dev_addr" json:"devAddr"`
+	AppEUI   lorawan.EUI64     `db:"app_eui" json:"appEUI"`
 	DevEUI   lorawan.EUI64     `db:"dev_eui" json:"devEUI"`
 	AppSKey  lorawan.AES128Key `db:"app_s_key" json:"appSKey"`
 	NwkSKey  lorawan.AES128Key `db:"nwk_s_key" json:"nwkSKey"`
-	FCntUp   uint32            `db:"fcnt_up" json:"fCntUp`      // the next expected value
+	FCntUp   uint32            `db:"fcnt_up" json:"fCntUp"`     // the next expected value
 	FCntDown uint32            `db:"fcnt_down" json:"fCntDown"` // the next expected value
-	AppEUI   lorawan.EUI64     `db:"app_eui" json:"appEUI"`
 }
 
 // ValidateAndGetFullFCntUp validates if the given fCntUp is valid
@@ -46,11 +47,11 @@ func (n NodeSession) ValidateAndGetFullFCntUp(fCntUp uint32) (uint32, bool) {
 
 // CreateNodeSession does the same as SaveNodeSession except that it does not
 // overwrite an exisitng record.
-func CreateNodeSession(p *redis.Pool, s NodeSession) (bool, error) {
+func CreateNodeSession(p *redis.Pool, s NodeSession) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(s); err != nil {
-		return false, err
+		return err
 	}
 
 	c := p.Get()
@@ -58,13 +59,10 @@ func CreateNodeSession(p *redis.Pool, s NodeSession) (bool, error) {
 
 	key := "node_session_" + s.DevAddr.String()
 	_, err := redis.String(c.Do("SET", key, buf.Bytes(), "NX", "PX", int64(NodeSessionTTL)/int64(time.Millisecond)))
-	if err != nil {
-		if err == redis.ErrNil {
-			return false, nil
-		}
-		return false, err
+	if err == nil {
+		log.WithField("dev_addr", s.DevAddr).Info("node-session created")
 	}
-	return true, nil
+	return err
 }
 
 // SaveNodeSession saves the node session. Note that the session will automatically
@@ -81,6 +79,9 @@ func SaveNodeSession(p *redis.Pool, s NodeSession) error {
 
 	key := "node_session_" + s.DevAddr.String()
 	_, err := c.Do("PSETEX", key, int64(NodeSessionTTL)/int64(time.Millisecond), buf.Bytes())
+	if err == nil {
+		log.WithField("dev_addr", s.DevAddr).Info("node-session saved")
+	}
 	return err
 }
 
@@ -99,6 +100,23 @@ func GetNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (NodeSession, error)
 
 	err = gob.NewDecoder(bytes.NewReader(val)).Decode(&ns)
 	return ns, err
+}
+
+// DeleteNodeSession deletes the NodeSession matching the given DevAddr.
+func DeleteNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) error {
+	c := p.Get()
+	defer c.Close()
+
+	key := "node_session_" + devAddr.String()
+	val, err := redis.Int(c.Do("DEL", key))
+	if err != nil {
+		return err
+	}
+	if val == 0 {
+		return errors.New("object does not exist")
+	}
+	log.WithField("dev_addr", devAddr).Info("node-session deleted")
+	return nil
 }
 
 // GetRandomDevAddr returns a random free DevAddr. Note that the 7 MSB will be

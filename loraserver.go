@@ -1,6 +1,7 @@
 package loraserver
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -12,7 +13,10 @@ import (
 
 // Start starts the loraserver.
 func Start(ctx Context) error {
-	log.WithField("netid", ctx.NetID).Info("starting loraserver")
+	log.WithFields(log.Fields{
+		"net_id": ctx.NetID,
+		"nwk_id": hex.EncodeToString([]byte{ctx.NetID.NwkID()}),
+	}).Info("starting loraserver")
 	handleRXPackets(ctx)
 	return nil
 }
