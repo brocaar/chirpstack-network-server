@@ -139,7 +139,7 @@ func TestGetRandomDevAddr(t *testing.T) {
 					t.Fatal(err)
 				}
 				if devAddr.NwkID() != netID.NwkID() {
-					t.Fatalf("%s must equal %s", devAddr.NwkID(), netID.NwkID())
+					t.Fatalf("%b must equal %b", devAddr.NwkID(), netID.NwkID())
 				}
 				if len(log) != i {
 					t.Fatalf("%d must equal %d", len(log), i)
