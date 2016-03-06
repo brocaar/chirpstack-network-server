@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/brocaar/lorawan"
@@ -29,7 +30,7 @@ func handleRXPackets(ctx Context) {
 func handleRXPacket(ctx Context, rxPacket RXPacket) error {
 	switch rxPacket.PHYPayload.MHDR.MType {
 	case lorawan.JoinRequest:
-		return errors.New("TODO: implement JoinRequest packet handling")
+		return validateAndCollectJoinRequestPacket(ctx, rxPacket)
 	case lorawan.UnconfirmedDataUp, lorawan.ConfirmedDataUp:
 		return validateAndCollectDataUpRXPacket(ctx, rxPacket)
 	default:
@@ -83,11 +84,11 @@ func validateAndCollectDataUpRXPacket(ctx Context, rxPacket RXPacket) error {
 	rxPacket.PHYPayload.MACPayload = macPL
 
 	return CollectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPackets RXPackets) error {
-		return handleCollectedRXPackets(ctx, rxPackets)
+		return handleCollectedDataUpPackets(ctx, rxPackets)
 	})
 }
 
-func handleCollectedRXPackets(ctx Context, rxPackets RXPackets) error {
+func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 	if len(rxPackets) == 0 {
 		return errors.New("packet collector returned 0 packets")
 	}
@@ -126,6 +127,159 @@ func handleCollectedRXPackets(ctx Context, rxPackets RXPackets) error {
 	ns.FCntUp++
 	if err := SaveNodeSession(ctx.RedisPool, ns); err != nil {
 		return fmt.Errorf("could not update node-session: %s", err)
+	}
+
+	return nil
+}
+
+func validateAndCollectJoinRequestPacket(ctx Context, rxPacket RXPacket) error {
+	// MACPayload must be of type *lorawan.JoinRequestPayload
+	jrPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.JoinRequestPayload)
+	if !ok {
+		return fmt.Errorf("expected *lorawan.JoinRequestPayload, got: %T", rxPacket.PHYPayload.MACPayload)
+	}
+
+	// get node information for this DevEUI
+	node, err := GetNode(ctx.DB, jrPL.DevEUI)
+	if err != nil {
+		return fmt.Errorf("could not get node: %s", err)
+	}
+
+	// validate the MIC
+	ok, err = rxPacket.PHYPayload.ValidateMIC(node.AppKey)
+	if err != nil {
+		return fmt.Errorf("could not validate MIC: %s", err)
+	}
+	if !ok {
+		return errors.New("invalid mic")
+	}
+
+	return CollectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPackets RXPackets) error {
+		return handleCollectedJoinRequestPackets(ctx, rxPackets)
+	})
+
+}
+
+func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
+	if len(rxPackets) == 0 {
+		return errors.New("packet collector returned 0 packets")
+	}
+	rxPacket := rxPackets[0]
+
+	var macs []string
+	for _, p := range rxPackets {
+		macs = append(macs, p.RXInfo.MAC.String())
+	}
+
+	log.WithFields(log.Fields{
+		"gw_count": len(rxPackets),
+		"gw_macs":  strings.Join(macs, ", "),
+		"mtype":    rxPackets[0].PHYPayload.MHDR.MType,
+	}).Info("packet(s) collected")
+
+	// MACPayload must be of type *lorawan.JoinRequestPayload
+	jrPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.JoinRequestPayload)
+	if !ok {
+		return fmt.Errorf("expected *lorawan.JoinRequestPayload, got: %T", rxPacket.PHYPayload.MACPayload)
+	}
+
+	// get node information for this DevEUI
+	node, err := GetNode(ctx.DB, jrPL.DevEUI)
+	if err != nil {
+		return fmt.Errorf("could not get node: %s", err)
+	}
+
+	// validate the given nonce
+	if !node.ValidateDevNonce(jrPL.DevNonce) {
+		return errors.New("the given dev-nonce has already been used before")
+	}
+
+	// get random (free) DevAddr
+	devAddr, err := GetRandomDevAddr(ctx.RedisPool, ctx.NetID)
+	if err != nil {
+		return fmt.Errorf("could not get random DevAddr: %s", err)
+	}
+
+	// get app nonce
+	appNonce, err := GetAppNonce()
+	if err != nil {
+		return fmt.Errorf("could not get AppNonce: %s", err)
+	}
+
+	// get keys
+	nwkSKey, err := GetNwkSKey(node.AppKey, ctx.NetID, appNonce, jrPL.DevNonce)
+	if err != nil {
+		return fmt.Errorf("could not get NwkSKey: %s", err)
+	}
+	appSKey, err := GetAppSKey(node.AppKey, ctx.NetID, appNonce, jrPL.DevNonce)
+	if err != nil {
+		return fmt.Errorf("could not get AppSKey: %s", err)
+	}
+
+	ns := NodeSession{
+		DevAddr:  devAddr,
+		DevEUI:   jrPL.DevEUI,
+		AppSKey:  appSKey,
+		NwkSKey:  nwkSKey,
+		FCntUp:   0,
+		FCntDown: 0,
+
+		AppEUI: node.AppEUI,
+		AppKey: node.AppKey,
+	}
+	if err = SaveNodeSession(ctx.RedisPool, ns); err != nil {
+		return fmt.Errorf("could not save node-session: %s", err)
+	}
+
+	// update the node (with updated used dev-nonces)
+	if err = UpdateNode(ctx.DB, node); err != nil {
+		return fmt.Errorf("could not update the node: %s", err)
+	}
+
+	// construct the lorawan packet
+	phy := lorawan.NewPHYPayload(false)
+	phy.MHDR = lorawan.MHDR{
+		MType: lorawan.JoinAccept,
+		Major: lorawan.LoRaWANR1,
+	}
+	phy.MACPayload = &lorawan.JoinAcceptPayload{
+		AppNonce: appNonce,
+		NetID:    ctx.NetID,
+		DevAddr:  devAddr,
+	}
+	if err = phy.SetMIC(node.AppKey); err != nil {
+		return fmt.Errorf("could not set MIC: %s", err)
+	}
+	if err = phy.EncryptJoinAcceptPayload(node.AppKey); err != nil {
+		return fmt.Errorf("could not encrypt join-accept: %s", err)
+	}
+
+	txPacket := TXPacket{
+		TXInfo: TXInfo{
+			MAC:       rxPacket.RXInfo.MAC,
+			Timestamp: rxPacket.RXInfo.Timestamp + uint32(lorawan.JoinAcceptDelay1/time.Microsecond),
+			Frequency: rxPacket.RXInfo.Frequency,
+			Power:     14,
+			DataRate:  rxPacket.RXInfo.DataRate,
+			CodeRate:  rxPacket.RXInfo.CodeRate,
+		},
+		PHYPayload: phy,
+	}
+
+	// window 1
+	if err = ctx.Gateway.Send(txPacket); err != nil {
+		return fmt.Errorf("sending TXPacket to the gateway failed: %s", err)
+	}
+
+	// window 2
+	// TODO: define regio specific constants
+	txPacket.TXInfo.Timestamp = rxPacket.RXInfo.Timestamp + uint32(lorawan.JoinAcceptDelay2/time.Microsecond)
+	txPacket.TXInfo.Frequency = 869.525
+	txPacket.TXInfo.DataRate = DataRate{
+		LoRa: "SF12BW125",
+	}
+	if err = ctx.Gateway.Send(txPacket); err != nil {
+		return fmt.Errorf("sending TXPacket to the gateway failed: %s", err)
 	}
 
 	return nil

@@ -9,7 +9,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestHandleRXPackets(t *testing.T) {
+func TestHandleDataUpPackets(t *testing.T) {
 	conf := getConfig()
 
 	Convey("Given a dummy gateway and application backend and a clean Redis database", t, func() {
@@ -129,6 +129,114 @@ func TestHandleRXPackets(t *testing.T) {
 					Convey("Then handleRXPacket returns a MIC related error", func() {
 						err := handleRXPacket(ctx, rxPacket)
 						So(err, ShouldResemble, errors.New("invalid MIC"))
+					})
+				})
+			})
+		})
+	})
+}
+
+func TestHandleJoinRequestPackets(t *testing.T) {
+	conf := getConfig()
+
+	Convey("Given a dummy gateway and application backend and a clean Postgres and Redis database", t, func() {
+		a := &testApplicationBackend{
+			rxPacketsChan: make(chan RXPackets, 1),
+		}
+		g := &testGatewayBackend{
+			rxPacketChan: make(chan RXPacket),
+			txPacketChan: make(chan TXPacket, 2),
+		}
+		p := NewRedisPool(conf.RedisURL)
+		mustFlushRedis(p)
+		db, err := OpenDatabase(conf.PostgresDSN)
+		So(err, ShouldBeNil)
+		mustResetDB(db)
+
+		ctx := Context{
+			RedisPool:   p,
+			Gateway:     g,
+			Application: a,
+			DB:          db,
+		}
+
+		Convey("Given a node and application in the database", func() {
+			app := Application{
+				AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Name:   "test app",
+			}
+			So(CreateApplication(ctx.DB, app), ShouldBeNil)
+
+			node := Node{
+				DevEUI: [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+				AppEUI: app.AppEUI,
+				AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			}
+			So(CreateNode(ctx.DB, node), ShouldBeNil)
+
+			Convey("Given a JoinRequest packet", func() {
+				phy := lorawan.NewPHYPayload(true)
+				phy.MHDR = lorawan.MHDR{
+					MType: lorawan.JoinRequest,
+					Major: lorawan.LoRaWANR1,
+				}
+				phy.MACPayload = &lorawan.JoinRequestPayload{
+					AppEUI:   app.AppEUI,
+					DevEUI:   node.DevEUI,
+					DevNonce: [2]byte{1, 2},
+				}
+				So(phy.SetMIC(node.AppKey), ShouldBeNil)
+
+				rxPacket := RXPacket{
+					RXInfo: RXInfo{
+						MAC:        [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+						Time:       time.Now().UTC(),
+						Timestamp:  708016819,
+						Frequency:  868.5,
+						Channel:    2,
+						RFChain:    1,
+						CRCStatus:  1,
+						Modulation: "LORA",
+						DataRate:   DataRate{LoRa: "SF7BW125"},
+						CodeRate:   "4/5",
+						RSSI:       -51,
+						LoRaSNR:    7,
+						Size:       16,
+					},
+					PHYPayload: phy,
+				}
+
+				Convey("When calling handleRXPacket", func() {
+					So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
+
+					Convey("Then a JoinAccept was sent to the node", func() {
+						txPacket := <-g.txPacketChan
+						phy := txPacket.PHYPayload
+						So(phy.DecryptJoinAcceptPayload(node.AppKey), ShouldBeNil)
+						So(phy.MHDR.MType, ShouldEqual, lorawan.JoinAccept)
+
+						Convey("Then the first delay is 5 sec", func() {
+							So(txPacket.TXInfo.Timestamp, ShouldEqual, rxPacket.RXInfo.Timestamp+uint32(5*time.Second/time.Microsecond))
+						})
+
+						Convey("Then the second delay is 6 sec", func() {
+							txPacket = <-g.txPacketChan
+							So(txPacket.TXInfo.Timestamp, ShouldEqual, rxPacket.RXInfo.Timestamp+uint32(6*time.Second/time.Microsecond))
+						})
+
+						Convey("Then a node-session was created", func() {
+							jaPL, ok := phy.MACPayload.(*lorawan.JoinAcceptPayload)
+							So(ok, ShouldBeTrue)
+
+							_, err := GetNodeSession(ctx.RedisPool, jaPL.DevAddr)
+							So(err, ShouldBeNil)
+						})
+
+						Convey("Then the dev-nonce was added to the used dev-nonces", func() {
+							node, err := GetNode(ctx.DB, node.DevEUI)
+							So(err, ShouldBeNil)
+							So([2]byte{1, 2}, ShouldBeIn, node.UsedDevNonces)
+						})
 					})
 				})
 			})
