@@ -20,15 +20,13 @@ const (
 
 // NodeSession contains the informatio of a node-session (an activated node).
 type NodeSession struct {
-	DevAddr  lorawan.DevAddr   `db:"dev_addr"`
-	DevEUI   lorawan.EUI64     `db:"dev_eui"`
-	AppSKey  lorawan.AES128Key `db:"app_s_key"`
-	NwkSKey  lorawan.AES128Key `db:"nwk_s_key"`
-	FCntUp   uint32            `db:"fcnt_up"`   // the next expected value
-	FCntDown uint32            `db:"fcnt_down"` // the next expected value
-
-	AppEUI lorawan.EUI64     `db:"app_eui"`
-	AppKey lorawan.AES128Key `db:"app_key"`
+	DevAddr  lorawan.DevAddr   `db:"dev_addr" json:"devAddr"`
+	DevEUI   lorawan.EUI64     `db:"dev_eui" json:"devEUI"`
+	AppSKey  lorawan.AES128Key `db:"app_s_key" json:"appSKey"`
+	NwkSKey  lorawan.AES128Key `db:"nwk_s_key" json:"nwkSKey"`
+	FCntUp   uint32            `db:"fcnt_up" json:"fCntUp`      // the next expected value
+	FCntDown uint32            `db:"fcnt_down" json:"fCntDown"` // the next expected value
+	AppEUI   lorawan.EUI64     `db:"app_eui" json:"appEUI"`
 }
 
 // ValidateAndGetFullFCntUp validates if the given fCntUp is valid

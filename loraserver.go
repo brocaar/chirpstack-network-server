@@ -225,7 +225,6 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		FCntDown: 0,
 
 		AppEUI: node.AppEUI,
-		AppKey: node.AppKey,
 	}
 	if err = SaveNodeSession(ctx.RedisPool, ns); err != nil {
 		return fmt.Errorf("could not save node-session: %s", err)
