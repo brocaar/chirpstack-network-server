@@ -54,5 +54,47 @@ func TestAPI(t *testing.T) {
 				})
 			})
 		})
+
+		Convey("Node methods", func() {
+			app := Application{
+				AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Name:   "test app",
+			}
+			// we need to create the app since the node has a fk constraint
+			So(CreateApplication(ctx.DB, app), ShouldBeNil)
+
+			node := Node{
+				DevEUI:        [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+				AppEUI:        [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				AppKey:        [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+				UsedDevNonces: [][2]byte{},
+			}
+
+			Convey("When calling CreateNode", func() {
+				var devEUI lorawan.EUI64
+				So(api.CreateNode(node, &devEUI), ShouldBeNil)
+				So(devEUI, ShouldEqual, node.DevEUI)
+
+				Convey("Then the node has been created", func() {
+					var node2 Node
+					So(api.GetNode(node.DevEUI, &node2), ShouldBeNil)
+					So(node2, ShouldResemble, node)
+
+					Convey("Then the node can ben updated", func() {
+						node.UsedDevNonces = [][2]byte{
+							{1, 2},
+						}
+						So(api.UpdateNode(node, &devEUI), ShouldBeNil)
+						So(api.GetNode(node.DevEUI, &node2), ShouldBeNil)
+						So(node2, ShouldResemble, node)
+					})
+
+					Convey("Then the node can be deleted", func() {
+						So(api.DeleteNode(node.DevEUI, &devEUI), ShouldBeNil)
+						So(api.GetNode(node.DevEUI, &node2), ShouldNotBeNil)
+					})
+				})
+			})
+		})
 	})
 }

@@ -66,7 +66,7 @@ func DeleteApplication(db *sqlx.DB, appEUI lorawan.EUI64) error {
 		return err
 	}
 	if ra == 0 {
-		return errors.New("given AppEUI did not match any rows")
+		return errors.New("AppEUI did not match any rows")
 	}
 
 	log.WithField("app_eui", appEUI).Info("application deleted")
