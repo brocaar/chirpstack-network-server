@@ -1,6 +1,10 @@
 package loraserver
 
 import (
+	"database/sql/driver"
+	"errors"
+	"fmt"
+
 	"github.com/brocaar/lorawan"
 	"github.com/jmoiron/sqlx"
 )
@@ -8,12 +12,44 @@ import (
 // UsedDevNonceCount is the number of used dev-nonces to track.
 const UsedDevNonceCount = 10
 
+// DevNonceList represents a list of dev nonces
+type DevNonceList [][2]byte
+
+// Scan implements the sql.Scanner interface.
+func (l *DevNonceList) Scan(src interface{}) error {
+	if src == nil {
+		*l = make([][2]byte, 0)
+		return nil
+	}
+
+	b, ok := src.([]byte)
+	if !ok {
+		return fmt.Errorf("src must be of type []byte, got: %T", src)
+	}
+	if len(b)%2 != 0 {
+		return errors.New("the length of src must be a multiple of 2")
+	}
+	for i := 0; i < len(b); i += 2 {
+		*l = append(*l, [2]byte{b[i], b[i+1]})
+	}
+	return nil
+}
+
+// Value implements the driver.Valuer interface.
+func (l DevNonceList) Value() (driver.Value, error) {
+	b := make([]byte, 0, len(l)/2)
+	for _, n := range l {
+		b = append(b, n[:]...)
+	}
+	return b, nil
+}
+
 // Node contains the information of a node.
 type Node struct {
-	DevEUI        lorawan.EUI64
-	AppEUI        lorawan.EUI64
-	AppKey        lorawan.AES128Key
-	UsedDevNonces [][2]byte
+	DevEUI        lorawan.EUI64     `db:"dev_eui"`
+	AppEUI        lorawan.EUI64     `db:"app_eui"`
+	AppKey        lorawan.AES128Key `db:"app_key"`
+	UsedDevNonces DevNonceList      `db:"used_dev_nonces"`
 }
 
 // ValidateDevNonce returns if the given dev-nonce is valid.
@@ -41,6 +77,23 @@ func CreateNode(db *sqlx.DB, n Node) error {
 		n.AppKey[:],
 	)
 	return err
+}
+
+// UpdateNode updates the given Node.
+func UpdateNode(db *sqlx.DB, n Node) error {
+	_, err := db.Exec("update node set app_eui = $1, app_key = $2, used_dev_nonces = $3 where dev_eui = $4",
+		n.AppEUI[:],
+		n.AppKey[:],
+		n.UsedDevNonces,
+		n.DevEUI[:],
+	)
+	return err
+}
+
+// GetNode returns the Node for the given DevEUI.
+func GetNode(db *sqlx.DB, devEUI lorawan.EUI64) (Node, error) {
+	var node Node
+	return node, db.Get(&node, "select * from node where dev_eui = $1", devEUI[:])
 }
 
 // NodeABP contains the Activation By Personalization of a node (if any).

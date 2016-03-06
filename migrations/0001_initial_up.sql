@@ -7,7 +7,7 @@ create table node (
 	dev_eui bytea primary key,
 	app_eui bytea references application not null,
 	app_key bytea not null,
-	used_dev_nonces bytea[]
+	used_dev_nonces bytea
 );
 
 create table node_abp (
