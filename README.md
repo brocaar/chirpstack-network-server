@@ -34,10 +34,11 @@ $ go get github.com/brocaar/loraserver/...
 
 ## Todo
 
+- [ ] better documentation :-)
 - [x] unconfirmed data up
-- [ ] (un)confirmed data down
+- [ ] unconfirmed and confirmed data down
 - [ ] confirmed data up
-- [ ] OTAA
+- [x] OTAA
 - [ ] MAC commands
 - [ ] API for ABP
 - [ ] GUI for application, node and ABP management?
