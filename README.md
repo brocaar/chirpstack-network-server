@@ -18,7 +18,7 @@ Note: This project is under development. Please test and give feedback but know 
 - [ ] confirmed data up
 - [ ] data down (confirmed and unconfirmed)
 - [ ] handling of mac commands
-- [ ] cross regio (EU 863-870MHz ISM Band is supported right now)
+- [ ] cross band (only the EU 863-870MHz ISM Band is supported right now)
 - [ ] cross-platform binary build (only linux amd64 is available right now)
 
 
@@ -26,7 +26,7 @@ Note: This project is under development. Please test and give feedback but know 
 
 * First install the *Lora Semtech Bridge* (https://github.com/brocaar/lora-semtech-bridge)
 
-* Download and install ``loraserver``: https://github.com/brocaar/loraserver/releases.
+* Download and unpack ``loraserver``: https://github.com/brocaar/loraserver/releases.
 
 * Install a MQTT server (used for communication with the gateways and applications).
   Mosquitto is a good option: http://mosquitto.org/.
