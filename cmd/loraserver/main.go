@@ -66,14 +66,6 @@ func run(c *cli.Context) {
 		}
 	}
 
-	// provision ABP node sessions
-	if c.Bool("create-abp-node-sessions") {
-		log.Info("creating node-sessions from ABP")
-		if err := loraserver.NewNodeSessionsFromABP(db, rp); err != nil {
-			log.Fatalf("could not create ABP node-sessions: %s", err)
-		}
-	}
-
 	ctx := loraserver.Context{
 		DB:          db,
 		RedisPool:   rp,
@@ -124,10 +116,6 @@ func main() {
 			Value:  "./migrations",
 			Usage:  "path to the directory containing the database migrations",
 			EnvVar: "DB_MIGRATIONS_PATH",
-		}, cli.BoolFlag{
-			Name:   "create-abp-node-sessions",
-			Usage:  "create ABP node sessions on startup of server",
-			EnvVar: "CREATE_ABP_NODE_SESSIONS",
 		}, cli.StringFlag{
 			Name:   "net-id",
 			Usage:  "network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203)",

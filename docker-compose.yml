@@ -15,7 +15,6 @@ loraserver:
     - REDIS_URL=redis://redis:6379
     - GW_MQTT_SERVER=tcp://mosquitto:1883
     - APP_MQTT_SERVER=tcp://mosquitto:1883
-    - CREATE_ABP_NODE_SESSIONS=true
     - TEST_POSTGRES_DSN=postgres://loraserver:loraserver@postgres_test/loraserver?sslmode=disable
     - TEST_REDIS_URL=redis://redis_test:6379
     - TEST_MQTT_SERVER=tcp://mosquitto:1883

@@ -129,29 +129,3 @@ func GetNode(db *sqlx.DB, devEUI lorawan.EUI64) (Node, error) {
 	var node Node
 	return node, db.Get(&node, "select * from node where dev_eui = $1", devEUI[:])
 }
-
-// NodeABP contains the Activation By Personalization of a node (if any).
-// Note that the FCntUp and FCntDown are the initial values as how the
-// node needs to be activated. The real counting happens in NodeSession
-// (for performance reasons).
-type NodeABP struct {
-	DevEUI   lorawan.EUI64     `db:"dev_eui" json:"dev_eui"`
-	DevAddr  lorawan.DevAddr   `db:"dev_addr" json:"dev_addr"`
-	AppSKey  lorawan.AES128Key `db:"app_s_key" json:"app_s_key"`
-	NwkSKey  lorawan.AES128Key `db:"nwk_s_key" json:"nwk_s_key"`
-	FCntUp   uint32            `db:"fcnt_up" json:"fcnt_up"`     // the next expected value
-	FCntDown uint32            `db:"fcnt_down" json:"fcnt_down"` // the next expected value
-}
-
-// CreateNodeABP creates the given NodeABP.
-func CreateNodeABP(db *sqlx.DB, n NodeABP) error {
-	_, err := db.Exec("insert into node_abp (dev_eui, dev_addr, app_s_key, nwk_s_key, fcnt_up, fcnt_down) values ($1, $2, $3, $4, $5, $6)",
-		n.DevEUI[:],
-		n.DevAddr[:],
-		n.AppSKey[:],
-		n.NwkSKey[:],
-		n.FCntUp,
-		n.FCntDown,
-	)
-	return err
-}

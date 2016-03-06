@@ -11,7 +11,6 @@ import (
 
 	"github.com/brocaar/lorawan"
 	"github.com/garyburd/redigo/redis"
-	"github.com/jmoiron/sqlx"
 )
 
 // NodeSession related constants
@@ -102,42 +101,6 @@ func GetNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (NodeSession, error)
 
 	err = gob.NewDecoder(bytes.NewReader(val)).Decode(&ns)
 	return ns, err
-}
-
-// NewNodeSessionsFromABP creates new node sessions for the stored
-// NodeABP records. Note that this will not overwrite existing
-// node sessions.
-func NewNodeSessionsFromABP(db *sqlx.DB, p *redis.Pool) error {
-	rows, err := db.Queryx(`
-		select
-			node_abp.dev_addr,
-			node_abp.dev_eui,
-			node_abp.app_s_key,
-			node_abp.nwk_s_key,
-			node_abp.fcnt_up,
-			node_abp.fcnt_down,
-			node.app_eui,
-			node.app_key
-		from
-			node_abp
-		inner join node on
-			node_abp.dev_eui = node.dev_eui
-	`)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	var ns NodeSession
-	for rows.Next() {
-		if err := rows.StructScan(&ns); err != nil {
-			return err
-		}
-		if _, err := CreateNodeSession(p, ns); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // GetRandomDevAddr returns a random free DevAddr. Note that the 7 MSB will be
