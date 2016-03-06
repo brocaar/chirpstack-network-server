@@ -1,0 +1,116 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"path": "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git",
+			"revision": "617c801af238c3af2d9e72c5d4a0f02edad03ce5",
+			"revisionTime": "2016-02-08T11:21:59Z"
+		},
+		{
+			"path": "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git/packets",
+			"revision": "617c801af238c3af2d9e72c5d4a0f02edad03ce5",
+			"revisionTime": "2016-02-08T11:21:59Z"
+		},
+		{
+			"path": "github.com/DavidHuie/gomigrate",
+			"revision": "eb6ae245bc66c1f5b0cef2e4135774794d4833d7",
+			"revisionTime": "2015-09-17T15:11:30-07:00"
+		},
+		{
+			"path": "github.com/Sirupsen/logrus",
+			"revision": "219c8cb75c258c552e999735be6df753ffc7afdc",
+			"revisionTime": "2016-02-24T16:10:30-05:00"
+		},
+		{
+			"path": "github.com/brocaar/lorawan",
+			"revision": "c438d5f8f0ba320ae31207ba4bb0eeb6b2926bc2",
+			"revisionTime": "2016-03-06T10:25:03+01:00"
+		},
+		{
+			"path": "github.com/codegangsta/cli",
+			"revision": "a2943485b110df8842045ae0600047f88a3a56a1",
+			"revisionTime": "2016-02-27T08:56:50-08:00"
+		},
+		{
+			"path": "github.com/garyburd/redigo/internal",
+			"revision": "4ed1111375cbeb698249ffe48dd463e9b0a63a7a",
+			"revisionTime": "2016-03-02T15:46:02-08:00"
+		},
+		{
+			"path": "github.com/garyburd/redigo/redis",
+			"revision": "4ed1111375cbeb698249ffe48dd463e9b0a63a7a",
+			"revisionTime": "2016-03-02T15:46:02-08:00"
+		},
+		{
+			"path": "github.com/jacobsa/crypto/cmac",
+			"revision": "bf13d379f5e7e0bbfc85ad339211f5c0dde70f95",
+			"revisionTime": "2016-02-18T11:02:31+11:00"
+		},
+		{
+			"path": "github.com/jacobsa/crypto/common",
+			"revision": "bf13d379f5e7e0bbfc85ad339211f5c0dde70f95",
+			"revisionTime": "2016-02-18T11:02:31+11:00"
+		},
+		{
+			"path": "github.com/jmoiron/sqlx",
+			"revision": "398dd5876282499cdfd4cb8ea0f31a672abe9495",
+			"revisionTime": "2016-02-06T17:15:33-05:00"
+		},
+		{
+			"path": "github.com/jmoiron/sqlx/reflectx",
+			"revision": "398dd5876282499cdfd4cb8ea0f31a672abe9495",
+			"revisionTime": "2016-02-06T17:15:33-05:00"
+		},
+		{
+			"path": "github.com/jtolds/gls",
+			"revision": "8ddce2a84170772b95dd5d576c48d517b22cac63",
+			"revisionTime": "2016-01-05T15:08:40-07:00"
+		},
+		{
+			"path": "github.com/lib/pq",
+			"revision": "165a3529e799da61ab10faed1fabff3662d6193f",
+			"revisionTime": "2016-03-02T00:17:19-08:00"
+		},
+		{
+			"path": "github.com/lib/pq/oid",
+			"revision": "165a3529e799da61ab10faed1fabff3662d6193f",
+			"revisionTime": "2016-03-02T00:17:19-08:00"
+		},
+		{
+			"path": "github.com/smartystreets/assertions",
+			"revision": "e9a2f6771d97c709b2f7609fdf89ebde8b64c926",
+			"revisionTime": "2016-02-25T10:05:45-07:00"
+		},
+		{
+			"path": "github.com/smartystreets/assertions/internal/go-render/render",
+			"revision": "e9a2f6771d97c709b2f7609fdf89ebde8b64c926",
+			"revisionTime": "2016-02-25T10:05:45-07:00"
+		},
+		{
+			"path": "github.com/smartystreets/assertions/internal/oglematchers",
+			"revision": "e9a2f6771d97c709b2f7609fdf89ebde8b64c926",
+			"revisionTime": "2016-02-25T10:05:45-07:00"
+		},
+		{
+			"path": "github.com/smartystreets/goconvey/convey",
+			"revision": "99f2b1e01343c8bc2d9d12f1194d2d68ce18b063",
+			"revisionTime": "2016-02-27T08:26:14-07:00"
+		},
+		{
+			"path": "github.com/smartystreets/goconvey/convey/gotest",
+			"revision": "99f2b1e01343c8bc2d9d12f1194d2d68ce18b063",
+			"revisionTime": "2016-02-27T08:26:14-07:00"
+		},
+		{
+			"path": "github.com/smartystreets/goconvey/convey/reporting",
+			"revision": "99f2b1e01343c8bc2d9d12f1194d2d68ce18b063",
+			"revisionTime": "2016-02-27T08:26:14-07:00"
+		},
+		{
+			"path": "golang.org/x/net/websocket",
+			"revision": "08f168e593b5aab61849054b77981de812666697",
+			"revisionTime": "2016-02-26T23:10:08-08:00"
+		}
+	]
+}
