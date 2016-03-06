@@ -28,7 +28,7 @@ func NewBackend(server, username, password string) (loraserver.GatewayBackend, e
 	opts.SetPassword(password)
 	opts.SetClientID("loraserver-gw-backend")
 
-	log.WithField("server", server).Info("gateway/mqttpubsub: connecting to MQTT server")
+	log.WithField("server", server).Info("gateway/mqttpubsub: connecting to mqtt server")
 	b.conn = mqtt.NewClient(opts)
 	if token := b.conn.Connect(); token.Wait() && token.Error() != nil {
 		return nil, token.Error()

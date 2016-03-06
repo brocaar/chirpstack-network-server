@@ -12,7 +12,7 @@ import (
 
 // Start starts the loraserver.
 func Start(ctx Context) error {
-	log.Info("starting loraserver")
+	log.WithField("netid", ctx.NetID).Info("starting loraserver")
 	handleRXPackets(ctx)
 	return nil
 }

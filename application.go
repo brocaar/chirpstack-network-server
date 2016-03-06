@@ -3,12 +3,14 @@ package loraserver
 import (
 	"github.com/brocaar/lorawan"
 	"github.com/jmoiron/sqlx"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // Application contains the information of an application.
 type Application struct {
-	AppEUI lorawan.EUI64
-	Name   string
+	AppEUI lorawan.EUI64 `json:"app_eui"`
+	Name   string        `json:"name"`
 }
 
 // CreateApplication creates the given Application
@@ -17,5 +19,10 @@ func CreateApplication(db *sqlx.DB, a Application) error {
 		a.AppEUI[:],
 		a.Name,
 	)
+	if err == nil {
+		log.WithField("app_eui", a.AppEUI).Info("application created")
+	}
+	return err
+}
 	return err
 }

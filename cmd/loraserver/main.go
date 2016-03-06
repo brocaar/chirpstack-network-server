@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io/ioutil"
+	golog "log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,16 +19,19 @@ import (
 
 var version string // set by the compiler
 
+func init() {
+	golog.SetOutput(ioutil.Discard)
+}
+
 func run(c *cli.Context) {
 	// parse the NetID
 	var netID lorawan.NetID
-	log.WithField("netid", c.String("net-id")).Info("configuring netid")
 	if err := netID.UnmarshalText([]byte(c.String("net-id"))); err != nil {
 		log.Fatalf("could not parse NetID: %s", err)
 	}
 
 	// connect to the database
-	log.Info("connecting to database")
+	log.Info("connecting to postgresql")
 	db, err := loraserver.OpenDatabase(c.String("postgres-dsn"))
 	if err != nil {
 		log.Fatalf("could not connect to the database: %s", err)
@@ -76,6 +81,7 @@ func run(c *cli.Context) {
 		NetID:       netID,
 	}
 
+	// start the loraserver
 	go func() {
 		if err := loraserver.Start(ctx); err != nil {
 			log.Fatal(err)
