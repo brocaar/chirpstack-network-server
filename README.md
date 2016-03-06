@@ -20,11 +20,9 @@ $ go get github.com/brocaar/loraserver/...
 * Make sure you have a MQTT server running. Mosquitto is a good option: http://mosquitto.org/.
 
 * Make sure you have a PostgreSQL database running. The PostgreSQL database is used to
-  store the application, node and *activation by personalization* (ABP) data.
+  store the application and node data.
 
 * Make sure you have a Redis server running. Redis is used to store the node sessions.
-  When inserting items in the ``node_abp`` table (PostgreSQL), then ``loraserver`` will
-  automatically create node sessions when starting with ``--create-abp-node-sessions``.
 
 * Start the ``loraserver`` service. The ``--help`` argument will show you all the available
   config options. When installing with ``go get``, you will find the migration files under
