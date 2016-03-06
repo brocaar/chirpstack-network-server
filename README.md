@@ -40,6 +40,16 @@ Note: This project is under development. Please test and give feedback but know 
 
 * See https://github.com/brocaar/loratestapp for an example application implementation.
 
+## Getting started (with ``docker-compose``)
+
+An alternative way to get started (either for development or for testing this project)
+is to start this project by using ``docker-compose`` (https://docs.docker.com/compose/).
+
+After cloning this repository, you should be able to start the whole project
+(including the *Lora Semtech Bridge*) with:
+
+``docker-compose -f docker-compose.yml -f docker-compose.devel.yml up``
+
 ## API
 
 The *loraserver* provides a JSON-RPC API over HTTP. All calls are performend by

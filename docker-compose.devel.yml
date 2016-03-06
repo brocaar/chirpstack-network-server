@@ -1,0 +1,23 @@
+loraserver:
+  links:
+    - semtechbridge
+    - postgres
+    - postgres_test
+    - redis
+    - redis_test
+    - mosquitto
+  ports:
+    - "8000:8000"
+
+semtechbridge:
+  image: brocaar/lora-semtech-bridge
+  links:
+    - mosquitto
+  environment:
+    - MQTT_SERVER=tcp://mosquitto:1883
+  ports:
+    - "1700:1700/udp"
+
+postgres:
+  ports:
+    - "5432:5432"

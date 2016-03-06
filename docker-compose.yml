@@ -12,6 +12,7 @@ loraserver:
   environment:
     - POSTGRES_DSN=postgres://loraserver:loraserver@postgres/loraserver?sslmode=disable
     - DB_AUTOMIGRATE=true
+    - NET_ID=010203
     - REDIS_URL=redis://redis:6379
     - GW_MQTT_SERVER=tcp://mosquitto:1883
     - APP_MQTT_SERVER=tcp://mosquitto:1883
