@@ -61,9 +61,11 @@ func mustResetDB(db *sqlx.DB) {
 
 type testGatewayBackend struct {
 	rxPacketChan chan RXPacket
+	txPacketChan chan TXPacket
 }
 
 func (b *testGatewayBackend) Send(txPacket TXPacket) error {
+	b.txPacketChan <- txPacket
 	return nil
 }
 
