@@ -40,6 +40,12 @@ func (h *JSONRPCHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetApplicationsRequest represents the GetApplications request.
+type GetApplicationsRequest struct {
+	Limit  int `json:"limit"`
+	Offset int `json:"offset"`
+}
+
 // API defines the RPC API.
 type API struct {
 	ctx Context
@@ -56,6 +62,13 @@ func NewAPI(ctx Context) *API {
 func (a *API) GetApplication(appEUI lorawan.EUI64, app *Application) error {
 	var err error
 	*app, err = GetApplication(a.ctx.DB, appEUI)
+	return err
+}
+
+// GetApplications returns a list of applications (given a limit and offset).
+func (a *API) GetApplications(req GetApplicationsRequest, apps *[]Application) error {
+	var err error
+	*apps, err = GetApplications(a.ctx.DB, req.Limit, req.Offset)
 	return err
 }
 

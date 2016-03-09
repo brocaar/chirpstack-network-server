@@ -50,6 +50,15 @@ func TestAPI(t *testing.T) {
 					})
 				})
 
+				Convey("Then the list of applications has size 1", func() {
+					var apps []Application
+					So(api.GetApplications(GetApplicationsRequest{
+						Limit:  10,
+						Offset: 0,
+					}, &apps), ShouldBeNil)
+					So(apps, ShouldHaveLength, 1)
+				})
+
 				Convey("Then the application can be deleted", func() {
 					var appEUI lorawan.EUI64
 					var app2 Application

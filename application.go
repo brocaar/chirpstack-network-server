@@ -33,6 +33,12 @@ func GetApplication(db *sqlx.DB, appEUI lorawan.EUI64) (Application, error) {
 	return app, db.Get(&app, "select * from application where app_eui = $1", appEUI[:])
 }
 
+// GetApplications returns a slice of applications.
+func GetApplications(db *sqlx.DB, limit, offset int) ([]Application, error) {
+	var apps []Application
+	return apps, db.Select(&apps, "select * from application order by app_eui limit $1 offset $2", limit, offset)
+}
+
 // UpdateApplication updates the given Application.
 func UpdateApplication(db *sqlx.DB, a Application) error {
 	res, err := db.Exec("update application set name = $1 where app_eui = $2",
