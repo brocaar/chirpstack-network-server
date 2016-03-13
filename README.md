@@ -5,8 +5,10 @@
 
 *loraserver* is a LoRaWAN network-service. It is responsible for the
 communication with the LoRa gateway(s) and applications. Communication
-with the applications and gateways is done over MQTT.
+with the applications and gateways is done over MQTT. Configuration of
+applications and nodes can be done with the provided web-interface.
 
+![web-interface](doc/webinterface.jpg)
 
 ## Todo
 
@@ -15,6 +17,9 @@ Note: This project is under development. Please test and give feedback but know 
 - [x] unconfirmed data up
 - [x] activation by personalization
 - [x] over-the-air activation
+- [x] web-interface
+- [ ] auto-generated RPC documentation
+- [ ] freeze initial database schema
 - [ ] confirmed data up
 - [ ] data down (confirmed and unconfirmed)
 - [ ] handling of mac commands
@@ -38,6 +43,10 @@ Note: This project is under development. Please test and give feedback but know 
 * Start the ``loraserver`` service. The ``--help`` argument will show you all the available
   config options. 
 
+* Use the web-interface to create an application and node. You should now be able to
+  use OTAA to activate your node. Alternatively, use the web-interface to activate your
+  node (Session / ABP button).
+
 * See https://github.com/brocaar/loratestapp for an example application implementation.
 
 ## Getting started (with ``docker-compose``)
@@ -53,68 +62,8 @@ After cloning this repository, you should be able to start the whole project
 ## API
 
 The *loraserver* provides a JSON-RPC API over HTTP. All calls are performend by
-sending a post request to the ``/rpc`` endpoint.
-
-### Application
-
-#### Create
-```json
-{"method": "API.CreateApplication", "params":[{"appEUI": "0102030405060708", "name": "test application"}]}
-```
-
-#### Get
-```json
-{"method": "API.GetApplication", "params":["0102030405060708"]}
-```
-
-#### Update
-```json
-{"method": "API.UpdateApplication", "params":[{"appEUI": "0102030405060708", "name": "test application 2"}]}
-```
-
-#### Delete
-```json
-{"method": "API.DeleteApplication", "params":["0102030405060708"]}
-```
-
-### Node
-
-#### Create
-```json
-{"method": "API.CreateNode", "params":[{"devEUI": "0807060504030201", "appEUI": "0102030405060708", "appKey": "01020304050607080910111213141516"}]}
-```
-
-#### Get
-```json
-{"method": "API.GetNode", "params":["0807060504030201"]}
-```
-
-#### Update
-```json
-{"method": "API.UpdateNode", "params":[{"devEUI": "0807060504030201", "appEUI": "0102030405060708", "appKey": "01010101010101010101010101010101"}]}
-```
-
-#### Delete
-```json
-{"method": "API.DeleteNode", "params":["0807060504030201"]}
-```
-
-### Node sessions (active nodes)
-
-#### Get
-```json
-{"method": "API.GetNodeSession", "params":["01020304"]}
-```
-
-#### Create (activation by personalization)
-```json
-{"method": "API.CreateNodeSession", "params":[{"devAddr": "01020304", "devEUI": "0807060504030201", "appEUI": "0102030405060708", "appSKey": "01010101010101010101010101010101", "nwkSKey": "02020202020202020202020202020202", "fCntUp": 0, "fCntDown": 0}]}
-```
-
-#### Delete
-```json
-{"method": "API.DeleteNodeSession", "params":["01020304"]}
-```
+sending a post request to the ``/rpc`` endpoint. The provided web-interface is a
+sample implementation on top of this api.
 
 ## License
 

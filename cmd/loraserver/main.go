@@ -88,6 +88,12 @@ func run(c *cli.Context) {
 	}
 	log.WithField("path", "/rpc").Info("registering json-rpc handler")
 	http.Handle("/rpc", apiHandler)
+
+	// setup static file server (for the gui)
+	log.WithField("path", "/").Info("registering gui handler")
+	http.Handle("/", http.FileServer(http.Dir("static")))
+
+	// start the http server
 	go func() {
 		log.WithField("bind", c.String("http-bind")).Info("starting http server")
 		log.Fatal(http.ListenAndServe(c.String("http-bind"), nil))
