@@ -153,6 +153,13 @@ func (a *API) GetNodeSession(devAddr lorawan.DevAddr, ns *NodeSession) error {
 	return err
 }
 
+// GetNodeSessionByDevEUI returns the NodeSession for the given DevEUI.
+func (a *API) GetNodeSessionByDevEUI(devEUI lorawan.EUI64, ns *NodeSession) error {
+	var err error
+	*ns, err = GetNodeSessionByDevEUI(a.ctx.RedisPool, devEUI)
+	return err
+}
+
 // CreateNodeSession creates the given NodeSession (activation by personalization).
 // The DevAddr must contain the same NwkID as the configured NetID.
 // Sessions will expire automatically after the configured TTL.
@@ -161,8 +168,14 @@ func (a *API) CreateNodeSession(ns NodeSession, devAddr *lorawan.DevAddr) error 
 	if ns.DevAddr.NwkID() != a.ctx.NetID.NwkID() {
 		return fmt.Errorf("DevAddr must contain NwkID %s", hex.EncodeToString([]byte{a.ctx.NetID.NwkID()}))
 	}
+
 	// validate that the node exists
 	if _, err := GetNode(a.ctx.DB, ns.DevEUI); err != nil {
+		return err
+	}
+
+	// validate that the app exists
+	if _, err := GetApplication(a.ctx.DB, ns.AppEUI); err != nil {
 		return err
 	}
 
@@ -173,6 +186,15 @@ func (a *API) CreateNodeSession(ns NodeSession, devAddr *lorawan.DevAddr) error 
 	return nil
 }
 
+// UpdateNodeSession updates the given NodeSession.
+func (a *API) UpdateNodeSession(ns NodeSession, devEUI *lorawan.EUI64) error {
+	if err := SaveNodeSession(a.ctx.RedisPool, ns); err != nil {
+		return err
+	}
+	*devEUI = ns.DevEUI
+	return nil
+}
+
 // DeleteNodeSession deletes the NodeSession matching the given DevAddr.
 func (a *API) DeleteNodeSession(devAddr lorawan.DevAddr, deletedDevAddr *lorawan.DevAddr) error {
 	if err := DeleteNodeSession(a.ctx.RedisPool, devAddr); err != nil {
@@ -180,4 +202,11 @@ func (a *API) DeleteNodeSession(devAddr lorawan.DevAddr, deletedDevAddr *lorawan
 	}
 	*deletedDevAddr = devAddr
 	return nil
+}
+
+// GetRandomDevAddr returns a random DevAddr.
+func (a *API) GetRandomDevAddr(dummy *string, devAddr *lorawan.DevAddr) error {
+	var err error
+	*devAddr, err = GetRandomDevAddr(a.ctx.RedisPool, a.ctx.NetID)
+	return err
 }

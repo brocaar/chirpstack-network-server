@@ -159,6 +159,12 @@ func TestAPI(t *testing.T) {
 						So(api.GetNodeSession(ns.DevAddr, &ns2), ShouldNotBeNil)
 					})
 				})
+
+				Convey("Then the session can be retrieved by DevEUI", func() {
+					var ns2 NodeSession
+					So(api.GetNodeSessionByDevEUI(ns.DevEUI, &ns2), ShouldBeNil)
+					So(ns2, ShouldResemble, ns)
+				})
 			})
 
 			Convey("When calling CreateNodeSession with a DevAddr which has a wrong NwkID", func() {
