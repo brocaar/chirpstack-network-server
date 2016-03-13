@@ -19,6 +19,10 @@ const (
 	NodeSessionTTL = time.Hour * 24 * 5
 )
 
+var (
+	nodeSessionKeyTempl = "node_session_%s"
+)
+
 // NodeSession contains the informatio of a node-session (an activated node).
 type NodeSession struct {
 	DevAddr  lorawan.DevAddr   `db:"dev_addr" json:"devAddr"`
@@ -57,12 +61,18 @@ func CreateNodeSession(p *redis.Pool, s NodeSession) error {
 	c := p.Get()
 	defer c.Close()
 
-	key := "node_session_" + s.DevAddr.String()
-	_, err := redis.String(c.Do("SET", key, buf.Bytes(), "NX", "PX", int64(NodeSessionTTL)/int64(time.Millisecond)))
-	if err == nil {
-		log.WithField("dev_addr", s.DevAddr).Info("node-session created")
+	exp := int64(NodeSessionTTL) / int64(time.Millisecond)
+
+	if _, err := redis.String(c.Do("SET", fmt.Sprintf(nodeSessionKeyTempl, s.DevAddr), buf.Bytes(), "NX", "PX", exp)); err != nil {
+		return err
 	}
-	return err
+	// DevEUI -> DevAddr pointer
+	if _, err := redis.String(c.Do("PSETEX", fmt.Sprintf(nodeSessionKeyTempl, s.DevEUI), exp, s.DevAddr.String())); err != nil {
+		return err
+	}
+
+	log.WithField("dev_addr", s.DevAddr).Info("node-session created")
+	return nil
 }
 
 // SaveNodeSession saves the node session. Note that the session will automatically
@@ -77,12 +87,18 @@ func SaveNodeSession(p *redis.Pool, s NodeSession) error {
 	c := p.Get()
 	defer c.Close()
 
-	key := "node_session_" + s.DevAddr.String()
-	_, err := c.Do("PSETEX", key, int64(NodeSessionTTL)/int64(time.Millisecond), buf.Bytes())
-	if err == nil {
-		log.WithField("dev_addr", s.DevAddr).Info("node-session saved")
+	exp := int64(NodeSessionTTL) / int64(time.Millisecond)
+
+	if _, err := redis.String(c.Do("PSETEX", fmt.Sprintf(nodeSessionKeyTempl, s.DevAddr), exp, buf.Bytes())); err != nil {
+		return err
 	}
-	return err
+	// DevEUI -> DevAddr pointer
+	if _, err := redis.String(c.Do("PSETEX", fmt.Sprintf(nodeSessionKeyTempl, s.DevEUI), exp, s.DevAddr.String())); err != nil {
+		return err
+	}
+
+	log.WithField("dev_addr", s.DevAddr).Info("node-session saved")
+	return nil
 }
 
 // GetNodeSession returns the NodeSession for the given DevAddr.
@@ -92,14 +108,32 @@ func GetNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (NodeSession, error)
 	c := p.Get()
 	defer c.Close()
 
-	key := "node_session_" + devAddr.String()
-	val, err := redis.Bytes(c.Do("GET", key))
+	val, err := redis.Bytes(c.Do("GET", fmt.Sprintf(nodeSessionKeyTempl, devAddr)))
 	if err != nil {
 		return ns, err
 	}
 
-	err = gob.NewDecoder(bytes.NewReader(val)).Decode(&ns)
-	return ns, err
+	return ns, gob.NewDecoder(bytes.NewReader(val)).Decode(&ns)
+}
+
+// GetNodeSessionByDevEUI returns the NodeSession for the given DevEUI.
+func GetNodeSessionByDevEUI(p *redis.Pool, devEUI lorawan.EUI64) (NodeSession, error) {
+	var ns NodeSession
+
+	c := p.Get()
+	defer c.Close()
+
+	devAddr, err := redis.String(c.Do("GET", fmt.Sprintf(nodeSessionKeyTempl, devEUI)))
+	if err != nil {
+		return ns, err
+	}
+
+	b, err := redis.Bytes(c.Do("GET", fmt.Sprintf(nodeSessionKeyTempl, devAddr)))
+	if err != nil {
+		return ns, err
+	}
+
+	return ns, gob.NewDecoder(bytes.NewReader(b)).Decode(&ns)
 }
 
 // DeleteNodeSession deletes the NodeSession matching the given DevAddr.
@@ -107,8 +141,7 @@ func DeleteNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) error {
 	c := p.Get()
 	defer c.Close()
 
-	key := "node_session_" + devAddr.String()
-	val, err := redis.Int(c.Do("DEL", key))
+	val, err := redis.Int(c.Do("DEL", fmt.Sprintf(nodeSessionKeyTempl, devAddr)))
 	if err != nil {
 		return err
 	}

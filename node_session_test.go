@@ -19,6 +19,7 @@ func TestNodeSession(t *testing.T) {
 		Convey("Given a NodeSession", func() {
 			ns := NodeSession{
 				DevAddr: [4]byte{1, 2, 3, 4},
+				DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			}
 
 			Convey("When getting a non-existing NodeSession", func() {
@@ -33,6 +34,12 @@ func TestNodeSession(t *testing.T) {
 
 				Convey("Then when getting the NodeSession, the same data is returned", func() {
 					ns2, err := GetNodeSession(p, ns.DevAddr)
+					So(err, ShouldBeNil)
+					So(ns2, ShouldResemble, ns)
+				})
+
+				Convey("Then the session can be retrieved by it's DevEUI", func() {
+					ns2, err := GetNodeSessionByDevEUI(p, ns.DevEUI)
 					So(err, ShouldBeNil)
 					So(ns2, ShouldResemble, ns)
 				})
