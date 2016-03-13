@@ -46,14 +46,15 @@ Note: This project is under development. Please test and give feedback but know 
   all the available config options. With ``--db-automigrate`` the database schema will be
   created / updated automatically.
 
-* Use the web-interface (by default it binds on ``0.0.0.0:8000``) to create an application and
+* Use the web-interface (when running locally, it is available at
+  [http://localhost:8000/](http://localhost:8000/)) to create an application and
   node. You should now be able to use OTAA to activate your node. Alternatively, use the
   web-interface to activate your node (Session / ABP button).
 
 * See [loratestapp](https://github.com/brocaar/loratestapp) for an example application
   implementation.
 
-## Getting started (with ``docker-compose``)
+## Getting started (using ``docker-compose``)
 
 An alternative way to get started (either for development or for testing this project)
 is to start this project by using [docker-compose](https://docs.docker.com/compose/).
@@ -78,19 +79,22 @@ are using the protocol defined by Semtech (over UDP), the *LoRa Semtech Bridge* 
 
 #### ``gateway/[MAC]/rx``
 
-Received packets by the gateway ([``RXPacket``](https://godoc.org/github.com/brocaar/loraserver#RXPacket))
+Received packets by the gateway ([``RXPacket``](https://godoc.org/github.com/brocaar/loraserver#RXPacket)).
+Data is [Gob](https://golang.org/pkg/encoding/gob/) encoded (this might change as it is a Go specific format).
 
 #### ``gateway/[MAC]/tx``
 
 To-be transmitted packets by the gateway ([``TXPacket``](https://godoc.org/github.com/brocaar/loraserver#TXPacket))
+Data is [Gob](https://golang.org/pkg/encoding/gob/) encoded (this might change as it is a Go specific format).
 
 #### ``application/[AppEUI]/node/[DevEUI]/rx``
 
-Received node payloads ([``ApplicationRXPayload``](https://godoc.org/github.com/brocaar/loraserver/application/mqttpubsub#ApplicationRXPayload))
+Received node payloads ([``ApplicationRXPayload``](https://godoc.org/github.com/brocaar/loraserver/application/mqttpubsub#ApplicationRXPayload)).
+Data is JSON encoded.
 
 #### ``application/[AppEUI]/node/[DevEUI]/tx``
 
-To-be transmitted payloads to the node (to-be implemented)
+To-be transmitted payloads to the node (to-be implemented). Data is JSON encoded.
 
 ## License
 
