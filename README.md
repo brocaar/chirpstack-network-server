@@ -41,11 +41,12 @@ Note: This project is under development. Please test and give feedback but know 
 * Install Redis (used to store node sessions).
 
 * Start the ``loraserver`` service. The ``--help`` argument will show you all the available
-  config options. 
+  config options. With ``--db-automigrate`` the database schema will be created / updated
+  automatically.
 
-* Use the web-interface to create an application and node. You should now be able to
-  use OTAA to activate your node. Alternatively, use the web-interface to activate your
-  node (Session / ABP button).
+* Use the web-interface (by default http://localhost:8000/) to create an application and
+  node. You should now be able to use OTAA to activate your node. Alternatively, use the
+  web-interface to activate your node (Session / ABP button).
 
 * See https://github.com/brocaar/loratestapp for an example application implementation.
 

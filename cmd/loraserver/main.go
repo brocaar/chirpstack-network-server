@@ -1,28 +1,28 @@
+//go:generate go-bindata -prefix ../../migrations/ -pkg migrations -o ../../migrations/migrations.go ../../migrations/
+//go:generate go-bindata -prefix ../../static/ -pkg static -o ../../static/static.go ../../static/...
+
 package main
 
 import (
-	"io/ioutil"
-	golog "log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/DavidHuie/gomigrate"
 	log "github.com/Sirupsen/logrus"
 	"github.com/brocaar/loraserver"
 	application "github.com/brocaar/loraserver/application/mqttpubsub"
 	gateway "github.com/brocaar/loraserver/gateway/mqttpubsub"
+	"github.com/brocaar/loraserver/migrations"
+	"github.com/brocaar/loraserver/static"
 	"github.com/brocaar/lorawan"
 	"github.com/codegangsta/cli"
+	"github.com/elazarl/go-bindata-assetfs"
 	_ "github.com/lib/pq"
+	"github.com/rubenv/sql-migrate"
 )
 
 var version string // set by the compiler
-
-func init() {
-	golog.SetOutput(ioutil.Discard)
-}
 
 func run(c *cli.Context) {
 	// parse the NetID
@@ -57,13 +57,16 @@ func run(c *cli.Context) {
 	// auto-migrate the database
 	if c.Bool("db-automigrate") {
 		log.Info("applying database migrations")
-		migrator, err := gomigrate.NewMigrator(db.DB, gomigrate.Postgres{}, c.String("db-migrations-path"))
+		m := &migrate.AssetMigrationSource{
+			Asset:    migrations.Asset,
+			AssetDir: migrations.AssetDir,
+			Dir:      "",
+		}
+		n, err := migrate.Exec(db.DB, "postgres", m, migrate.Up)
 		if err != nil {
-			log.Fatalf("could not create the migrator: %s", err)
+			log.Fatalf("migrations failed: %s", err)
 		}
-		if err = migrator.Migrate(); err != nil {
-			log.Fatalf("could run the migrations: %s", err)
-		}
+		log.WithField("count", n).Info("migrations applied")
 	}
 
 	ctx := loraserver.Context{
@@ -91,7 +94,12 @@ func run(c *cli.Context) {
 
 	// setup static file server (for the gui)
 	log.WithField("path", "/").Info("registering gui handler")
-	http.Handle("/", http.FileServer(http.Dir("static")))
+	http.Handle("/", http.FileServer(&assetfs.AssetFS{
+		Asset:     static.Asset,
+		AssetDir:  static.AssetDir,
+		AssetInfo: static.AssetInfo,
+		Prefix:    "",
+	}))
 
 	// start the http server
 	go func() {
@@ -119,11 +127,6 @@ func main() {
 			EnvVar: "DB_AUTOMIGRATE",
 		},
 		cli.StringFlag{
-			Name:   "db-migrations-path",
-			Value:  "./migrations",
-			Usage:  "path to the directory containing the database migrations",
-			EnvVar: "DB_MIGRATIONS_PATH",
-		}, cli.StringFlag{
 			Name:   "net-id",
 			Usage:  "network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203)",
 			EnvVar: "NET_ID",

@@ -17,13 +17,12 @@ test:
 		golint $$pkg ; \
 	done
 	@go vet $(PKGS)
-	@go test -cover -v $(PKGS)
+	@go test -p 1 -cover -v $(PKGS)
 
 package: clean build
 	@echo "Creating package"
 	@mkdir -p builds/$(VERSION)
 	@cp -R bin/ builds/$(VERSION)/bin
-	@cp -R migrations/ builds/$(VERSION)/migrations
 	@cd builds/$(VERSION)/ && tar -pczf ../loraserver_$(VERSION)_linux_amd64.tar.gz .
 	@rm -rf builds/$(VERSION)
 

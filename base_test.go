@@ -5,11 +5,12 @@ import (
 	golog "log"
 	"os"
 
-	"github.com/DavidHuie/gomigrate"
 	log "github.com/Sirupsen/logrus"
+	"github.com/brocaar/loraserver/migrations"
 	"github.com/brocaar/lorawan"
 	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
+	"github.com/rubenv/sql-migrate"
 )
 
 func init() {
@@ -47,14 +48,15 @@ func mustFlushRedis(p *redis.Pool) {
 }
 
 func mustResetDB(db *sqlx.DB) {
-	m, err := gomigrate.NewMigrator(db.DB, gomigrate.Postgres{}, "./migrations")
-	if err != nil {
+	m := &migrate.AssetMigrationSource{
+		Asset:    migrations.Asset,
+		AssetDir: migrations.AssetDir,
+		Dir:      "",
+	}
+	if _, err := migrate.Exec(db.DB, "postgres", m, migrate.Down); err != nil {
 		log.Fatal(err)
 	}
-	if err := m.RollbackAll(); err != nil {
-		log.Fatal(err)
-	}
-	if err := m.Migrate(); err != nil {
+	if _, err := migrate.Exec(db.DB, "postgres", m, migrate.Up); err != nil {
 		log.Fatal(err)
 	}
 }

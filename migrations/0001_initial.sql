@@ -1,3 +1,4 @@
+-- +migrate Up
 create table application (
 	app_eui bytea primary key,
 	name character varying (100) not null
@@ -11,3 +12,11 @@ create table node (
 );
 
 create index node_app_eui on node (app_eui);
+
+
+-- +migrate Down
+drop index node_app_eui;
+
+drop table node;
+
+drop table application;
