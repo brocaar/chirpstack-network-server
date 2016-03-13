@@ -75,7 +75,7 @@ func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, rxPackets loraserver.RXPack
 		return err
 	}
 
-	topic := fmt.Sprintf("node/%s/rx", devEUI)
+	topic := fmt.Sprintf("application/%s/node/%s/rx", appEUI, devEUI)
 	log.WithField("topic", topic).Info("application/mqttpubsub: publishing message")
 	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
 		return token.Error()

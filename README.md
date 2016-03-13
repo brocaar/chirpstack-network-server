@@ -66,6 +66,29 @@ The *loraserver* provides a JSON-RPC API over HTTP. All calls are performend by
 sending a post request to the ``/rpc`` endpoint. The provided web-interface is a
 sample implementation on top of this api.
 
+## MQTT
+
+MQTT is used for communication with the gateways and applications. Since all / most gateways
+are using the protocol defined by Semtech (over UDP), the *LoRa Semtech Bridge* is needed.
+
+### Topics
+
+#### ``gateway/[MAC]/rx``
+
+Received packets by the gateway ([``RXPacket``](https://godoc.org/github.com/brocaar/loraserver#RXPacket))
+
+#### ``gateway/[MAC]/tx``
+
+To-be transmitted packets by the gateway ([``TXPacket``](https://godoc.org/github.com/brocaar/loraserver#TXPacket))
+
+#### ``application/[AppEUI]/node/[DevEUI]/rx``
+
+Received node payloads ([``ApplicationRXPayload``](https://godoc.org/github.com/brocaar/loraserver/application/mqttpubsub#ApplicationRXPayload))
+
+#### ``application/[AppEUI]/node/[DevEUI]/tx``
+
+To-be transmitted payloads to the node (to-be implemented)
+
 ## License
 
 This package is licensed under the MIT license. See ``LICENSE``.

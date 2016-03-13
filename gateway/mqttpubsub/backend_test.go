@@ -20,7 +20,7 @@ func TestBackend(t *testing.T) {
 		token := c.Connect()
 		token.Wait()
 		So(token.Error(), ShouldBeNil)
-		defer c.Disconnect(0)
+		defer c.Disconnect(250)
 
 		Convey("Given a new Backend", func() {
 			backend, err := NewBackend(conf.Server, conf.Username, conf.Password)

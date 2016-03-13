@@ -20,7 +20,7 @@ func TestBackend(t *testing.T) {
 		token := c.Connect()
 		token.Wait()
 		So(token.Error(), ShouldBeNil)
-		defer c.Disconnect(0)
+		defer c.Disconnect(250)
 
 		Convey("Given a new Backend", func() {
 			backend, err := NewBackend(conf.Server, conf.Username, conf.Password)
@@ -29,7 +29,7 @@ func TestBackend(t *testing.T) {
 
 			Convey("Given the MQTT client is subscribed to node/+/rx", func() {
 				appRXPayloadChan := make(chan ApplicationRXPayload)
-				token := c.Subscribe("node/+/rx", 0, func(c *mqtt.Client, msg mqtt.Message) {
+				token := c.Subscribe("application/+/node/+/rx", 0, func(c *mqtt.Client, msg mqtt.Message) {
 					var appRXPayload ApplicationRXPayload
 					if err := json.Unmarshal(msg.Payload(), &appRXPayload); err != nil {
 						t.Fatal(err)
