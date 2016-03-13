@@ -13,11 +13,6 @@
 			"revisionTime": "2016-02-08T11:21:59Z"
 		},
 		{
-			"path": "github.com/DavidHuie/gomigrate",
-			"revision": "eb6ae245bc66c1f5b0cef2e4135774794d4833d7",
-			"revisionTime": "2015-09-17T15:11:30-07:00"
-		},
-		{
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "219c8cb75c258c552e999735be6df753ffc7afdc",
 			"revisionTime": "2016-02-24T16:10:30-05:00"
@@ -31,6 +26,11 @@
 			"path": "github.com/codegangsta/cli",
 			"revision": "a2943485b110df8842045ae0600047f88a3a56a1",
 			"revisionTime": "2016-02-27T08:56:50-08:00"
+		},
+		{
+			"path": "github.com/elazarl/go-bindata-assetfs",
+			"revision": "57eb5e1fc594ad4b0b1dbea7b286d299e0cb43c2",
+			"revisionTime": "2015-12-24T06:54:52+02:00"
 		},
 		{
 			"path": "github.com/garyburd/redigo/internal",
@@ -78,6 +78,16 @@
 			"revisionTime": "2016-03-02T00:17:19-08:00"
 		},
 		{
+			"path": "github.com/rubenv/sql-migrate",
+			"revision": "969836b11ea791ff8335d8142eb96904db12d593",
+			"revisionTime": "2016-02-24T15:46:53+01:00"
+		},
+		{
+			"path": "github.com/rubenv/sql-migrate/sqlparse",
+			"revision": "969836b11ea791ff8335d8142eb96904db12d593",
+			"revisionTime": "2016-02-24T15:46:53+01:00"
+		},
+		{
 			"path": "github.com/smartystreets/assertions",
 			"revision": "e9a2f6771d97c709b2f7609fdf89ebde8b64c926",
 			"revisionTime": "2016-02-25T10:05:45-07:00"
@@ -111,6 +121,11 @@
 			"path": "golang.org/x/net/websocket",
 			"revision": "08f168e593b5aab61849054b77981de812666697",
 			"revisionTime": "2016-02-26T23:10:08-08:00"
+		},
+		{
+			"path": "gopkg.in/gorp.v1",
+			"revision": "c87af80f3cc5036b55b83d77171e156791085e2e",
+			"revisionTime": "2015-02-04T09:55:30+01:00"
 		}
 	]
 }
