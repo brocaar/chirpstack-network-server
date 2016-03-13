@@ -129,3 +129,9 @@ func GetNode(db *sqlx.DB, devEUI lorawan.EUI64) (Node, error) {
 	var node Node
 	return node, db.Get(&node, "select * from node where dev_eui = $1", devEUI[:])
 }
+
+// GetNodes returns a slice of nodes, sorted by DevEUI.
+func GetNodes(db *sqlx.DB, limit, offset int) ([]Node, error) {
+	var nodes []Node
+	return nodes, db.Select(&nodes, "select * from node order by dev_eui limit $1 offset $2", limit, offset)
+}

@@ -46,6 +46,12 @@ type GetApplicationsRequest struct {
 	Offset int `json:"offset"`
 }
 
+// GetNodesRequest represents the GetNodes request.
+type GetNodesRequest struct {
+	Limit  int `json:"limit"`
+	Offset int `json:"offset"`
+}
+
 // API defines the RPC API.
 type API struct {
 	ctx Context
@@ -103,6 +109,13 @@ func (a *API) DeleteApplication(appEUI lorawan.EUI64, deletedAppEUI *lorawan.EUI
 func (a *API) GetNode(devEUI lorawan.EUI64, node *Node) error {
 	var err error
 	*node, err = GetNode(a.ctx.DB, devEUI)
+	return err
+}
+
+// GetNodes returns a list of nodes (given a limit and offset).
+func (a *API) GetNodes(req GetNodesRequest, nodes *[]Node) error {
+	var err error
+	*nodes, err = GetNodes(a.ctx.DB, req.Limit, req.Offset)
 	return err
 }
 

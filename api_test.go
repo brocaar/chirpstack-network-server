@@ -107,6 +107,14 @@ func TestAPI(t *testing.T) {
 						So(api.GetNode(node.DevEUI, &node2), ShouldNotBeNil)
 					})
 				})
+
+				Convey("Then the list of nodes has size 1", func() {
+					var nodes []Node
+					So(api.GetNodes(GetNodesRequest{
+						Limit:  10,
+						Offset: 0,
+					}, &nodes), ShouldBeNil)
+				})
 			})
 		})
 
