@@ -4,43 +4,13 @@ package lorawan
 
 import "fmt"
 
-const (
-	_MType_name_0 = "JoinRequest"
-	_MType_name_1 = "JoinAccept"
-	_MType_name_2 = "UnconfirmedDataUp"
-	_MType_name_3 = "UnconfirmedDataDown"
-	_MType_name_4 = "ConfirmedDataUp"
-	_MType_name_5 = "ConfirmedDataDown"
-	_MType_name_6 = "Proprietary"
-)
+const _MType_name = "JoinRequestJoinAcceptUnconfirmedDataUpUnconfirmedDataDownConfirmedDataUpConfirmedDataDownRFUProprietary"
 
-var (
-	_MType_index_0 = [...]uint8{0, 11}
-	_MType_index_1 = [...]uint8{0, 10}
-	_MType_index_2 = [...]uint8{0, 17}
-	_MType_index_3 = [...]uint8{0, 19}
-	_MType_index_4 = [...]uint8{0, 15}
-	_MType_index_5 = [...]uint8{0, 17}
-	_MType_index_6 = [...]uint8{0, 11}
-)
+var _MType_index = [...]uint8{0, 11, 21, 38, 57, 72, 89, 92, 103}
 
 func (i MType) String() string {
-	switch {
-	case i == 0:
-		return _MType_name_0
-	case i == 32:
-		return _MType_name_1
-	case i == 64:
-		return _MType_name_2
-	case i == 96:
-		return _MType_name_3
-	case i == 128:
-		return _MType_name_4
-	case i == 160:
-		return _MType_name_5
-	case i == 224:
-		return _MType_name_6
-	default:
+	if i >= MType(len(_MType_index)-1) {
 		return fmt.Sprintf("MType(%d)", i)
 	}
+	return _MType_name[_MType_index[i]:_MType_index[i+1]]
 }
