@@ -5,7 +5,7 @@ create table application (
 
 create table node (
 	dev_eui bytea primary key,
-	app_eui bytea references application not null,
+	app_eui bytea references application on delete cascade not null,
 	app_key bytea not null,
 	used_dev_nonces bytea
 );

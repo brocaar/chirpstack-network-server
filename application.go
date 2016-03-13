@@ -60,6 +60,7 @@ func UpdateApplication(db *sqlx.DB, a Application) error {
 }
 
 // DeleteApplication deletes the Application matching the given AppEUI.
+// Note that this will delete all related nodes too!
 func DeleteApplication(db *sqlx.DB, appEUI lorawan.EUI64) error {
 	res, err := db.Exec("delete from application where app_eui = $1",
 		appEUI[:],
