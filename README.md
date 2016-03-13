@@ -1,9 +1,9 @@
-# LoRaWAN network-server
+# LoRa Server
 
 [![Build Status](https://travis-ci.org/brocaar/loraserver.svg?branch=master)](https://travis-ci.org/brocaar/loraserver)
 [![GoDoc](https://godoc.org/github.com/brocaar/loraserver?status.svg)](https://godoc.org/github.com/brocaar/loraserver)
 
-*loraserver* is a LoRaWAN network-service. It is responsible for the
+*LoRa Server* is a LoRaWAN network-server. It is responsible for the
 communication with the LoRa gateway(s) and applications. Communication
 with the applications and gateways is done over MQTT. Configuration of
 applications and nodes can be done with the provided web-interface.
@@ -29,40 +29,43 @@ Note: This project is under development. Please test and give feedback but know 
 
 ## Getting started
 
-* First install the *Lora Semtech Bridge* (https://github.com/brocaar/lora-semtech-bridge)
+* First install the [*Lora Semtech Bridge*](https://github.com/brocaar/lora-semtech-bridge)
 
-* Download and unpack ``loraserver``: https://github.com/brocaar/loraserver/releases.
+* Download and unpack *LoRa Server*. Pre-compiled binaries can be found on the
+  [releases](https://github.com/brocaar/loraserver/releases) page.
 
 * Install a MQTT server (used for communication with the gateways and applications).
-  Mosquitto is a good option: http://mosquitto.org/.
+  [Mosquitto](http://mosquitto.org/) is a good option.
 
-* Install PostgreSQL (used to store application and node data).
+* Install [PostgreSQL](http://www.postgresql.org/) and create a database
+  (used to store application and node data).
 
-* Install Redis (used to store node sessions).
+* Install [Redis](http://redis.io/) (used to store node sessions).
 
-* Start the ``loraserver`` service. The ``--help`` argument will show you all the available
-  config options. With ``--db-automigrate`` the database schema will be created / updated
-  automatically.
+* Start the *LoRa Server* by executing ``./loraserver``. The ``--help`` argument will show you
+  all the available config options. With ``--db-automigrate`` the database schema will be
+  created / updated automatically.
 
-* Use the web-interface (by default http://localhost:8000/) to create an application and
+* Use the web-interface (by default it binds on ``0.0.0.0:8000``) to create an application and
   node. You should now be able to use OTAA to activate your node. Alternatively, use the
   web-interface to activate your node (Session / ABP button).
 
-* See https://github.com/brocaar/loratestapp for an example application implementation.
+* See [loratestapp](https://github.com/brocaar/loratestapp) for an example application
+  implementation.
 
 ## Getting started (with ``docker-compose``)
 
 An alternative way to get started (either for development or for testing this project)
-is to start this project by using ``docker-compose`` (https://docs.docker.com/compose/).
+is to start this project by using [docker-compose](https://docs.docker.com/compose/).
 
 After cloning this repository, you should be able to start the whole project
 (including the *Lora Semtech Bridge*) with:
 
-``docker-compose -f docker-compose.yml -f docker-compose.devel.yml up``
+``$ docker-compose -f docker-compose.yml -f docker-compose.devel.yml up``
 
 ## API
 
-The *loraserver* provides a JSON-RPC API over HTTP. All calls are performend by
+*LoRa Server* provides a JSON-RPC API over HTTP. All calls are performend by
 sending a post request to the ``/rpc`` endpoint. The provided web-interface is a
 sample implementation on top of this api.
 
