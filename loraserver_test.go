@@ -14,7 +14,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 	Convey("Given a dummy gateway and application backend and a clean Redis database", t, func() {
 		app := &testApplicationBackend{
-			rxPacketsChan: make(chan RXPackets, 1),
+			rxPacketChan: make(chan ApplicationRXPacket, 1),
 		}
 		gw := &testGatewayBackend{
 			rxPacketChan: make(chan RXPacket),
@@ -84,11 +84,15 @@ func TestHandleDataUpPackets(t *testing.T) {
 					So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
 
 					Convey("Then the packet is correctly received by the application backend", func() {
-						packets := <-app.rxPacketsChan
-						phy := packets[0].PHYPayload
-						mac := phy.MACPayload.(*lorawan.MACPayload)
-						data := mac.FRMPayload[0].(*lorawan.DataPayload)
-						So(data.Bytes, ShouldResemble, []byte("hello!"))
+						packet := <-app.rxPacketChan
+						So(packet, ShouldResemble, ApplicationRXPacket{
+							MType:        lorawan.UnconfirmedDataUp,
+							DevEUI:       ns.DevEUI,
+							ACK:          false,
+							FPort:        1,
+							GatewayCount: 1,
+							Data:         []byte("hello!"),
+						})
 					})
 
 					Convey("Then the FCntUp is packet FCnt + 1", func() {
@@ -140,7 +144,7 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 
 	Convey("Given a dummy gateway and application backend and a clean Postgres and Redis database", t, func() {
 		a := &testApplicationBackend{
-			rxPacketsChan: make(chan RXPackets, 1),
+			rxPacketChan: make(chan ApplicationRXPacket, 1),
 		}
 		g := &testGatewayBackend{
 			rxPacketChan: make(chan RXPacket),

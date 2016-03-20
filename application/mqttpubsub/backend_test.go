@@ -26,58 +26,32 @@ func TestBackend(t *testing.T) {
 			defer backend.Close()
 
 			Convey("Given the MQTT client is subscribed to node/+/rx", func() {
-				appRXPayloadChan := make(chan ApplicationRXPayload)
+				rxPacketChan := make(chan loraserver.ApplicationRXPacket)
 				token := c.Subscribe("application/+/node/+/rx", 0, func(c *mqtt.Client, msg mqtt.Message) {
-					var appRXPayload ApplicationRXPayload
-					if err := json.Unmarshal(msg.Payload(), &appRXPayload); err != nil {
+					var rxPacket loraserver.ApplicationRXPacket
+					if err := json.Unmarshal(msg.Payload(), &rxPacket); err != nil {
 						t.Fatal(err)
 					}
-					appRXPayloadChan <- appRXPayload
+					rxPacketChan <- rxPacket
 				})
 				token.Wait()
 				So(token.Error(), ShouldBeNil)
 
-				Convey("When sending a RXPacket (from the backend)", func() {
+				Convey("When sending a ApplicationRXPacket (from the backend)", func() {
 					devEUI := lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1}
 					appEUI := lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2}
 
-					phy := lorawan.NewPHYPayload(true)
-					phy.MHDR = lorawan.MHDR{
-						MType: lorawan.ConfirmedDataUp,
-						Major: lorawan.LoRaWANR1,
+					rxPacket := loraserver.ApplicationRXPacket{
+						MType:  lorawan.ConfirmedDataUp,
+						DevEUI: devEUI,
 					}
-
-					macPL := lorawan.NewMACPayload(true)
-					macPL.FPort = 10
-					macPL.FRMPayload = []lorawan.Payload{
-						&lorawan.DataPayload{
-							Bytes: []byte("Hello!"),
-						},
-					}
-					phy.MACPayload = macPL
-
-					rxPackets := loraserver.RXPackets{
-						{
-							RXInfo: loraserver.RXInfo{
-								MAC: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							},
-							PHYPayload: phy,
-						},
-					}
-
-					So(backend.Send(devEUI, appEUI, rxPackets), ShouldBeNil)
+					So(backend.Send(devEUI, appEUI, rxPacket), ShouldBeNil)
 
 					Convey("Then the same packet is consumed by the MQTT client", func() {
-						packet := <-appRXPayloadChan
-						So(packet, ShouldResemble, ApplicationRXPayload{
-							MType:        lorawan.ConfirmedDataUp,
-							DevEUI:       devEUI,
-							GatewayCount: 1,
-							ACK:          false,
-							FPort:        10,
-							Data:         []byte("Hello!"),
-						})
+						packet := <-rxPacketChan
+						So(packet, ShouldResemble, rxPacket)
 					})
+
 				})
 			})
 		})

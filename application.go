@@ -15,6 +15,17 @@ type Application struct {
 	Name   string        `db:"name" json:"name"`
 }
 
+// ApplicationRXPacket contains the data sent to the application
+// after a RXPacket was received by the server.
+type ApplicationRXPacket struct {
+	MType        lorawan.MType `json:"mType"`
+	DevEUI       lorawan.EUI64 `json:"devEUI"`
+	ACK          bool          `json:"ack"`
+	FPort        int           `json:"fPort"`
+	GatewayCount int           `json:"gatewayCount"`
+	Data         []byte        `json:"data"`
+}
+
 // createApplication creates the given Application
 func createApplication(db *sqlx.DB, a Application) error {
 	_, err := db.Exec("insert into application (app_eui, name) values ($1, $2)",

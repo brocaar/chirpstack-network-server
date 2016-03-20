@@ -2,7 +2,6 @@ package mqttpubsub
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	log "github.com/Sirupsen/logrus"
@@ -41,35 +40,8 @@ func (b *Backend) Close() error {
 }
 
 // Send sends the given (collected) RXPackets the application.
-func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, rxPackets loraserver.RXPackets) error {
-	if len(rxPackets) == 0 {
-		return errors.New("application/mqttpubsub: at least one RXPacket must be given")
-	}
-
-	macPL, ok := rxPackets[0].PHYPayload.MACPayload.(*lorawan.MACPayload)
-	if !ok {
-		return errors.New("application/mqttpubsub: MACPayload must be of type *lorawan.MACPayload")
-	}
-
-	if len(macPL.FRMPayload) != 1 {
-		return errors.New("application/mqttpubsub: FRMPayload must be of length 1")
-	}
-
-	dataPL, ok := macPL.FRMPayload[0].(*lorawan.DataPayload)
-	if !ok {
-		return errors.New("application/mqttpubsub: FRMPayload must be of type *lorawan.DataPayload")
-	}
-
-	pl := ApplicationRXPayload{
-		MType:        rxPackets[0].PHYPayload.MHDR.MType,
-		DevEUI:       devEUI,
-		GatewayCount: uint8(len(rxPackets)),
-		ACK:          macPL.FHDR.FCtrl.ACK,
-		FPort:        macPL.FPort,
-		Data:         dataPL.Bytes,
-	}
-
-	bytes, err := json.Marshal(pl)
+func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, p loraserver.ApplicationRXPacket) error {
+	bytes, err := json.Marshal(p)
 	if err != nil {
 		return err
 	}

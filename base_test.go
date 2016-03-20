@@ -80,12 +80,12 @@ func (b *testGatewayBackend) Close() error {
 }
 
 type testApplicationBackend struct {
-	rxPacketsChan chan RXPackets
-	err           error
+	rxPacketChan chan ApplicationRXPacket
+	err          error
 }
 
-func (b *testApplicationBackend) Send(devEUI, appEUI lorawan.EUI64, rxPackets RXPackets) error {
-	b.rxPacketsChan <- rxPackets
+func (b *testApplicationBackend) Send(devEUI, appEUI lorawan.EUI64, rxPacket ApplicationRXPacket) error {
+	b.rxPacketChan <- rxPacket
 	return b.err
 }
 

@@ -122,8 +122,25 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 	if macPL.FPort == 0 {
 		log.Warn("todo: implement FPort == 0 packets")
 	} else {
-		if err := ctx.Application.Send(ns.DevEUI, ns.AppEUI, rxPackets); err != nil {
-			return fmt.Errorf("could not send RXPackets to application: %s", err)
+		if len(macPL.FRMPayload) != 1 {
+			return errors.New("FRMPayload must have length 1")
+		}
+
+		dataPL, ok := macPL.FRMPayload[0].(*lorawan.DataPayload)
+		if !ok {
+			return errors.New("FRMPayload must be of type *lorawan.DataPayload")
+		}
+
+		err = ctx.Application.Send(ns.DevEUI, ns.AppEUI, ApplicationRXPacket{
+			MType:        rxPacket.PHYPayload.MHDR.MType,
+			DevEUI:       ns.DevEUI,
+			GatewayCount: len(rxPackets),
+			ACK:          macPL.FHDR.FCtrl.ACK,
+			FPort:        int(macPL.FPort),
+			Data:         dataPL.Bytes,
+		})
+		if err != nil {
+			return fmt.Errorf("could not send ApplicationRXPacket to application: %s", err)
 		}
 	}
 
