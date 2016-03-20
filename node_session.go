@@ -5,6 +5,7 @@ import (
 	"crypto/aes"
 	"crypto/rand"
 	"encoding/gob"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -225,4 +226,81 @@ func getSKey(typ byte, appkey lorawan.AES128Key, netID lorawan.NetID, appNonce [
 	}
 	block.Encrypt(key[:], b)
 	return key, nil
+}
+
+// NodeSessionAPI exports the NodeSession related functions.
+type NodeSessionAPI struct {
+	ctx Context
+}
+
+// NewNodeSessionAPI crestes a new NodeSessionAPI.
+func NewNodeSessionAPI(ctx Context) *NodeSessionAPI {
+	return &NodeSessionAPI{
+		ctx: ctx,
+	}
+}
+
+// Get returns the NodeSession for the given DevAddr.
+func (a *NodeSessionAPI) Get(devAddr lorawan.DevAddr, ns *NodeSession) error {
+	var err error
+	*ns, err = GetNodeSession(a.ctx.RedisPool, devAddr)
+	return err
+}
+
+// GetByDevEUI returns the NodeSession for the given DevEUI.
+func (a *NodeSessionAPI) GetByDevEUI(devEUI lorawan.EUI64, ns *NodeSession) error {
+	var err error
+	*ns, err = GetNodeSessionByDevEUI(a.ctx.RedisPool, devEUI)
+	return err
+}
+
+// Create creates the given NodeSession (activation by personalization).
+// The DevAddr must contain the same NwkID as the configured NetID.
+// Sessions will expire automatically after the configured TTL.
+func (a *NodeSessionAPI) Create(ns NodeSession, devAddr *lorawan.DevAddr) error {
+	// validate the NwkID
+	if ns.DevAddr.NwkID() != a.ctx.NetID.NwkID() {
+		return fmt.Errorf("DevAddr must contain NwkID %s", hex.EncodeToString([]byte{a.ctx.NetID.NwkID()}))
+	}
+
+	// validate that the node exists
+	if _, err := GetNode(a.ctx.DB, ns.DevEUI); err != nil {
+		return err
+	}
+
+	// validate that the app exists
+	if _, err := GetApplication(a.ctx.DB, ns.AppEUI); err != nil {
+		return err
+	}
+
+	if err := CreateNodeSession(a.ctx.RedisPool, ns); err != nil {
+		return err
+	}
+	*devAddr = ns.DevAddr
+	return nil
+}
+
+// Update updates the given NodeSession.
+func (a *NodeSessionAPI) Update(ns NodeSession, devEUI *lorawan.EUI64) error {
+	if err := SaveNodeSession(a.ctx.RedisPool, ns); err != nil {
+		return err
+	}
+	*devEUI = ns.DevEUI
+	return nil
+}
+
+// Deletedeletes the NodeSession matching the given DevAddr.
+func (a *NodeSessionAPI) Delete(devAddr lorawan.DevAddr, deletedDevAddr *lorawan.DevAddr) error {
+	if err := DeleteNodeSession(a.ctx.RedisPool, devAddr); err != nil {
+		return err
+	}
+	*deletedDevAddr = devAddr
+	return nil
+}
+
+// GetRandomDevAddr returns a random DevAddr.
+func (a *NodeSessionAPI) GetRandomDevAddr(dummy *string, devAddr *lorawan.DevAddr) error {
+	var err error
+	*devAddr, err = GetRandomDevAddr(a.ctx.RedisPool, a.ctx.NetID)
+	return err
 }

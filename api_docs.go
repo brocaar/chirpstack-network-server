@@ -36,7 +36,11 @@ func getRPCServicesDoc(rcvrs ...interface{}) (map[string]rpcServiceDoc, error) {
 }
 
 func getRPCServiceName(rcvr interface{}) string {
-	return reflect.Indirect(reflect.ValueOf(rcvr)).Type().Name()
+	full := reflect.Indirect(reflect.ValueOf(rcvr)).Type().Name()
+	if full != "API" {
+		full = strings.TrimSuffix(full, "API")
+	}
+	return full
 }
 
 // major part of the code is borrowed from: https://golang.org/src/net/rpc/server.go

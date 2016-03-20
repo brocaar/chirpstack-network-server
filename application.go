@@ -79,3 +79,56 @@ func DeleteApplication(db *sqlx.DB, appEUI lorawan.EUI64) error {
 	log.WithField("app_eui", appEUI).Info("application deleted")
 	return nil
 }
+
+// ApplicationAPI exports the Application related functions.
+type ApplicationAPI struct {
+	ctx Context
+}
+
+// NewApplicationAPI creates a new ApplicationAPI.
+func NewApplicationAPI(ctx Context) *ApplicationAPI {
+	return &ApplicationAPI{
+		ctx: ctx,
+	}
+}
+
+// Get returns the Application for the given AppEUI.
+func (a *ApplicationAPI) Get(appEUI lorawan.EUI64, app *Application) error {
+	var err error
+	*app, err = GetApplication(a.ctx.DB, appEUI)
+	return err
+}
+
+// GetList returns a list of applications (given a limit and offset).
+func (a *ApplicationAPI) GetList(req GetListRequest, apps *[]Application) error {
+	var err error
+	*apps, err = GetApplications(a.ctx.DB, req.Limit, req.Offset)
+	return err
+}
+
+// Create creates the given application.
+func (a *ApplicationAPI) Create(app Application, appEUI *lorawan.EUI64) error {
+	if err := CreateApplication(a.ctx.DB, app); err != nil {
+		return err
+	}
+	*appEUI = app.AppEUI
+	return nil
+}
+
+// Update updates the given Application.
+func (a *ApplicationAPI) Update(app Application, appEUI *lorawan.EUI64) error {
+	if err := UpdateApplication(a.ctx.DB, app); err != nil {
+		return err
+	}
+	*appEUI = app.AppEUI
+	return nil
+}
+
+// Delete deletes the application for the given AppEUI.
+func (a *ApplicationAPI) Delete(appEUI lorawan.EUI64, deletedAppEUI *lorawan.EUI64) error {
+	if err := DeleteApplication(a.ctx.DB, appEUI); err != nil {
+		return err
+	}
+	*deletedAppEUI = appEUI
+	return nil
+}

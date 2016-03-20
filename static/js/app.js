@@ -57,7 +57,7 @@ loraserverControllers.controller('APICtrl', ['$scope', '$http',
 loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$routeParams', '$route',
     function ($scope, $http, $routeParams, $route) {
         $scope.page = 'applications';
-        $http.rpc('API.GetApplications', {'limit': 9999, 'offset': 0}).success(function(data) {
+        $http.rpc('Application.GetList', {'limit': 9999, 'offset': 0}).success(function(data) {
                 $scope.apps = data.result;
         });
 
@@ -67,7 +67,7 @@ loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$ro
                     $route.reload();
                 });
             } else {
-                $http.rpc('API.CreateApplication', app).success(function(data) {
+                $http.rpc('Application.Create', app).success(function(data) {
                     if (data.error == null) {
                         $('#createModal').modal('hide');
                     }
@@ -77,7 +77,7 @@ loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$ro
         };
 
         $scope.update = function(app) {
-            $http.rpc('API.UpdateApplication', app).success(function(data) {
+            $http.rpc('Application.Update', app).success(function(data) {
                 if (data.error == null) {
                     $('#editModal').modal('hide');
                 }
@@ -87,7 +87,7 @@ loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$ro
 
         $scope.delete = function(app) {
             if (confirm('Are you sure you want to delete ' + app.appEUI + '?')) {
-                $http.rpc('API.DeleteApplication', app.appEUI).success(function(data) {
+                $http.rpc('Application.Delete', app.appEUI).success(function(data) {
                     if (data.error != null) {
                         alert(data.error);
                     }
@@ -97,7 +97,7 @@ loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$ro
         };
 
         if($routeParams.application) {
-            $http.rpc('API.GetApplication', $routeParams.application).success(function(data) {
+            $http.rpc('Application.Get', $routeParams.application).success(function(data) {
                 $scope.app = data.result;
                 $('#editModal').modal().on('hidden.bs.modal', function() { history.go(-1); });
             });
@@ -107,7 +107,7 @@ loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$ro
 // manage nodes
 loraserverControllers.controller('NodeListCtrl', ['$scope', '$http', '$routeParams', '$route',
     function ($scope, $http, $routeParams, $route) {
-        $http.rpc('API.GetNodes', {'limit': 9999, 'offset': 0}).success(function(data) {
+        $http.rpc('Node.GetList', {'limit': 9999, 'offset': 0}).success(function(data) {
             $scope.nodes = data.result;
         });
 
@@ -117,7 +117,7 @@ loraserverControllers.controller('NodeListCtrl', ['$scope', '$http', '$routePara
                     $route.reload();
                 });
             } else {
-                $http.rpc('API.CreateNode', node).success(function(data) {
+                $http.rpc('Node.Create', node).success(function(data) {
                     if (data.error == null) {
                         $('#createModal').modal('hide');
                     }
@@ -127,7 +127,7 @@ loraserverControllers.controller('NodeListCtrl', ['$scope', '$http', '$routePara
         };
 
         $scope.update = function(node) {
-            $http.rpc('API.UpdateNode', node).success(function(data) {
+            $http.rpc('Node.Update', node).success(function(data) {
                 if (data.error == null) {
                     $('#editModal').modal('hide');
                 }
@@ -137,7 +137,7 @@ loraserverControllers.controller('NodeListCtrl', ['$scope', '$http', '$routePara
 
         $scope.delete = function(node) {
             if (confirm('Are you sure you want to delete ' + node.devEUI + '?')) {
-                $http.rpc('API.DeleteNode', node.devEUI).success(function(data) {
+                $http.rpc('Node.Delete', node.devEUI).success(function(data) {
                    if (data.error != null) {
                         alert(data.error);
                     }
@@ -147,7 +147,7 @@ loraserverControllers.controller('NodeListCtrl', ['$scope', '$http', '$routePara
         };
 
         $scope.session = function(node) {
-            $http.rpc('API.GetNodeSessionByDevEUI', node.devEUI).success(function(data) {
+            $http.rpc('NodeSession.GetByDevEUI', node.devEUI).success(function(data) {
                 $scope.ns = data.result;
                 if ($scope.ns == null) {
                     $scope.ns = {
@@ -164,7 +164,7 @@ loraserverControllers.controller('NodeListCtrl', ['$scope', '$http', '$routePara
         };
 
         $scope.updateSession = function(ns) {
-            $http.rpc('API.UpdateNodeSession', ns).success(function(data) {
+            $http.rpc('NodeSession.Update', ns).success(function(data) {
                if (data.error == null) {
                     $('#sessionModal').modal('hide');
                 }
@@ -173,14 +173,14 @@ loraserverControllers.controller('NodeListCtrl', ['$scope', '$http', '$routePara
         };
 
         $scope.getRandomDevAddr = function(ns) {
-            $http.rpc('API.GetRandomDevAddr', null).success(function(data) {
+            $http.rpc('NodeSession.GetRandomDevAddr', null).success(function(data) {
                 ns.devAddr = data.result;
                 $scope.error = data.error;
             });
         };
 
         if($routeParams.node) {
-            $http.rpc('API.GetNode', $routeParams.node).success(function(data) {
+            $http.rpc('Node.Get', $routeParams.node).success(function(data) {
                 $scope.node = data.result;
                 console.log(data);
                 $('#editModal').modal().on('hidden.bs.modal', function() { history.go(-1); });

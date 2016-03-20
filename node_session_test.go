@@ -102,3 +102,81 @@ func TestGetRandomDevAddr(t *testing.T) {
 		})
 	})
 }
+
+func TestNodeSessionAPI(t *testing.T) {
+	conf := getConfig()
+
+	Convey("Given a clean database and an API instance", t, func() {
+		db, err := OpenDatabase(conf.PostgresDSN)
+		So(err, ShouldBeNil)
+		mustResetDB(db)
+		p := NewRedisPool(conf.RedisURL)
+		mustFlushRedis(p)
+
+		ctx := Context{
+			DB:        db,
+			RedisPool: p,
+			NetID:     [3]byte{1, 2, 3},
+		}
+
+		api := NewNodeSessionAPI(ctx)
+
+		Convey("Given an application and node are created (fk constraints)", func() {
+			app := Application{
+				AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Name:   "test app",
+			}
+			So(CreateApplication(ctx.DB, app), ShouldBeNil)
+
+			node := Node{
+				DevEUI:        [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+				AppEUI:        [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				AppKey:        [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+				UsedDevNonces: [][2]byte{},
+			}
+			So(CreateNode(ctx.DB, node), ShouldBeNil)
+
+			ns := NodeSession{
+				DevAddr:  [4]byte{6, 2, 3, 4},
+				DevEUI:   node.DevEUI,
+				AppEUI:   node.AppEUI,
+				AppSKey:  node.AppKey,
+				NwkSKey:  node.AppKey,
+				FCntUp:   10,
+				FCntDown: 11,
+			}
+
+			Convey("When calling Create", func() {
+				var devAddr lorawan.DevAddr
+				So(api.Create(ns, &devAddr), ShouldBeNil)
+				So(devAddr, ShouldResemble, ns.DevAddr)
+
+				Convey("Then the session has been created", func() {
+					var ns2 NodeSession
+					So(api.Get(ns.DevAddr, &ns2), ShouldBeNil)
+					So(ns2, ShouldResemble, ns)
+
+					Convey("Then the session can be deleted", func() {
+						So(api.Delete(ns.DevAddr, &devAddr), ShouldBeNil)
+						So(api.Get(ns.DevAddr, &ns2), ShouldNotBeNil)
+					})
+				})
+
+				Convey("Then the session can be retrieved by DevEUI", func() {
+					var ns2 NodeSession
+					So(api.GetByDevEUI(ns.DevEUI, &ns2), ShouldBeNil)
+					So(ns2, ShouldResemble, ns)
+				})
+			})
+
+			Convey("When calling Create with a DevAddr which has a wrong NwkID", func() {
+				var devAddr lorawan.DevAddr
+				ns.DevAddr = [4]byte{1, 2, 3, 4}
+				err := api.Create(ns, &devAddr)
+				Convey("Then an error is returned", func() {
+					So(err, ShouldNotBeNil)
+				})
+			})
+		})
+	})
+}

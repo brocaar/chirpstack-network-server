@@ -85,7 +85,11 @@ func run(c *cli.Context) {
 	}()
 
 	// setup json-rpc api handler
-	apiHandler, err := loraserver.NewJSONRPCHandler(loraserver.NewAPI(ctx))
+	apiHandler, err := loraserver.NewJSONRPCHandler(
+		loraserver.NewApplicationAPI(ctx),
+		loraserver.NewNodeAPI(ctx),
+		loraserver.NewNodeSessionAPI(ctx),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
