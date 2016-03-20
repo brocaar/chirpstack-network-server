@@ -299,7 +299,7 @@ func (a *NodeSessionAPI) Delete(devAddr lorawan.DevAddr, deletedDevAddr *lorawan
 }
 
 // GetRandomDevAddr returns a random DevAddr.
-func (a *NodeSessionAPI) GetRandomDevAddr(dummy *string, devAddr *lorawan.DevAddr) error {
+func (a *NodeSessionAPI) GetRandomDevAddr(dummy interface{}, devAddr *lorawan.DevAddr) error {
 	var err error
 	*devAddr, err = GetRandomDevAddr(a.ctx.RedisPool, a.ctx.NetID)
 	return err
