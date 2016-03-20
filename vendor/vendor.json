@@ -3,16 +3,6 @@
 	"ignore": "test",
 	"package": [
 		{
-			"path": "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git",
-			"revision": "617c801af238c3af2d9e72c5d4a0f02edad03ce5",
-			"revisionTime": "2016-02-08T11:21:59Z"
-		},
-		{
-			"path": "git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git/packets",
-			"revision": "617c801af238c3af2d9e72c5d4a0f02edad03ce5",
-			"revisionTime": "2016-02-08T11:21:59Z"
-		},
-		{
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "219c8cb75c258c552e999735be6df753ffc7afdc",
 			"revisionTime": "2016-02-24T16:10:30-05:00"

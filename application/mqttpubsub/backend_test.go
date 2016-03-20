@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
-
 	"github.com/brocaar/loraserver"
 	"github.com/brocaar/lorawan"
+	"github.com/eclipse/paho.mqtt.golang"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

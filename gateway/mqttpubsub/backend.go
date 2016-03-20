@@ -5,9 +5,9 @@ import (
 	"encoding/gob"
 	"fmt"
 
-	"git.eclipse.org/gitroot/paho/org.eclipse.paho.mqtt.golang.git"
 	log "github.com/Sirupsen/logrus"
 	"github.com/brocaar/loraserver"
+	"github.com/eclipse/paho.mqtt.golang"
 )
 
 // Backend implements a MQTT pub-sub backend.
