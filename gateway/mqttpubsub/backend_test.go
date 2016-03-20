@@ -23,7 +23,6 @@ func TestBackend(t *testing.T) {
 		Convey("Given a new Backend", func() {
 			backend, err := NewBackend(conf.Server, conf.Username, conf.Password)
 			So(err, ShouldBeNil)
-			defer backend.Close()
 
 			Convey("Given the MQTT client is subscribed to gateway/+/tx", func() {
 				txPacketChan := make(chan loraserver.TXPacket)
