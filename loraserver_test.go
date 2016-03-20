@@ -39,7 +39,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 				AppEUI: lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
 			}
-			So(SaveNodeSession(p, ns), ShouldBeNil)
+			So(saveNodeSession(p, ns), ShouldBeNil)
 
 			Convey("Given UnconfirmedDataUp packet", func() {
 				macPL := lorawan.NewMACPayload(true)
@@ -92,7 +92,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 					})
 
 					Convey("Then the FCntUp has been incremented", func() {
-						nsUpdated, err := GetNodeSession(p, ns.DevAddr)
+						nsUpdated, err := getNodeSession(p, ns.DevAddr)
 						So(err, ShouldBeNil)
 						So(nsUpdated.FCntUp, ShouldEqual, ns.FCntUp+1)
 					})
@@ -105,7 +105,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 						So(handleRXPacket(ctx, rxPacket), ShouldNotBeNil)
 
 						Convey("Then the FCntUp has not been incremented", func() {
-							nsUpdated, err := GetNodeSession(p, ns.DevAddr)
+							nsUpdated, err := getNodeSession(p, ns.DevAddr)
 							So(err, ShouldBeNil)
 							So(nsUpdated, ShouldResemble, ns)
 						})
@@ -114,7 +114,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 				Convey("When the frame-counter is invalid", func() {
 					ns.FCntUp = 11
-					So(SaveNodeSession(p, ns), ShouldBeNil)
+					So(saveNodeSession(p, ns), ShouldBeNil)
 
 					Convey("Then handleRXPacket returns a frame-counter related error", func() {
 						err := handleRXPacket(ctx, rxPacket)
@@ -164,14 +164,14 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 				AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				Name:   "test app",
 			}
-			So(CreateApplication(ctx.DB, app), ShouldBeNil)
+			So(createApplication(ctx.DB, app), ShouldBeNil)
 
 			node := Node{
 				DevEUI: [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 				AppEUI: app.AppEUI,
 				AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 			}
-			So(CreateNode(ctx.DB, node), ShouldBeNil)
+			So(createNode(ctx.DB, node), ShouldBeNil)
 
 			Convey("Given a JoinRequest packet", func() {
 				phy := lorawan.NewPHYPayload(true)
@@ -227,12 +227,12 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 							jaPL, ok := phy.MACPayload.(*lorawan.JoinAcceptPayload)
 							So(ok, ShouldBeTrue)
 
-							_, err := GetNodeSession(ctx.RedisPool, jaPL.DevAddr)
+							_, err := getNodeSession(ctx.RedisPool, jaPL.DevAddr)
 							So(err, ShouldBeNil)
 						})
 
 						Convey("Then the dev-nonce was added to the used dev-nonces", func() {
-							node, err := GetNode(ctx.DB, node.DevEUI)
+							node, err := getNode(ctx.DB, node.DevEUI)
 							So(err, ShouldBeNil)
 							So([2]byte{1, 2}, ShouldBeIn, node.UsedDevNonces)
 						})

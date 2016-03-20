@@ -79,7 +79,7 @@ func TestNodeAPI(t *testing.T) {
 				Name:   "test app",
 			}
 			// we need to create the app since the node has a fk constraint
-			So(CreateApplication(ctx.DB, app), ShouldBeNil)
+			So(createApplication(ctx.DB, app), ShouldBeNil)
 
 			node := Node{
 				DevEUI:        [8]byte{8, 7, 6, 5, 4, 3, 2, 1},

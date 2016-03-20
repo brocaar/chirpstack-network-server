@@ -23,23 +23,23 @@ func TestNodeSession(t *testing.T) {
 			}
 
 			Convey("When getting a non-existing NodeSession", func() {
-				_, err := GetNodeSession(p, ns.DevAddr)
+				_, err := getNodeSession(p, ns.DevAddr)
 				Convey("Then an error is returned", func() {
 					So(err, ShouldEqual, redis.ErrNil)
 				})
 			})
 
 			Convey("When saving the NodeSession", func() {
-				So(SaveNodeSession(p, ns), ShouldBeNil)
+				So(saveNodeSession(p, ns), ShouldBeNil)
 
 				Convey("Then when getting the NodeSession, the same data is returned", func() {
-					ns2, err := GetNodeSession(p, ns.DevAddr)
+					ns2, err := getNodeSession(p, ns.DevAddr)
 					So(err, ShouldBeNil)
 					So(ns2, ShouldResemble, ns)
 				})
 
 				Convey("Then the session can be retrieved by it's DevEUI", func() {
-					ns2, err := GetNodeSessionByDevEUI(p, ns.DevEUI)
+					ns2, err := getNodeSessionByDevEUI(p, ns.DevEUI)
 					So(err, ShouldBeNil)
 					So(ns2, ShouldResemble, ns)
 				})
@@ -77,17 +77,17 @@ func TestNodeSession(t *testing.T) {
 	})
 }
 
-func TestGetRandomDevAddr(t *testing.T) {
+func TestgetRandomDevAddr(t *testing.T) {
 	conf := getConfig()
 
 	Convey("Given a Redis database and NetID 010203", t, func() {
 		p := NewRedisPool(conf.RedisURL)
 		netID := lorawan.NetID{1, 2, 3}
 
-		Convey("When calling GetRandomDevAddr many times, it should always return an unique DevAddr", func() {
+		Convey("When calling getRandomDevAddr many times, it should always return an unique DevAddr", func() {
 			log := make(map[lorawan.DevAddr]struct{})
 			for i := 0; i < 1000; i++ {
-				devAddr, err := GetRandomDevAddr(p, netID)
+				devAddr, err := getRandomDevAddr(p, netID)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -126,7 +126,7 @@ func TestNodeSessionAPI(t *testing.T) {
 				AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				Name:   "test app",
 			}
-			So(CreateApplication(ctx.DB, app), ShouldBeNil)
+			So(createApplication(ctx.DB, app), ShouldBeNil)
 
 			node := Node{
 				DevEUI:        [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
@@ -134,7 +134,7 @@ func TestNodeSessionAPI(t *testing.T) {
 				AppKey:        [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 				UsedDevNonces: [][2]byte{},
 			}
-			So(CreateNode(ctx.DB, node), ShouldBeNil)
+			So(createNode(ctx.DB, node), ShouldBeNil)
 
 			ns := NodeSession{
 				DevAddr:  [4]byte{6, 2, 3, 4},

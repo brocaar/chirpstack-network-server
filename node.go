@@ -70,8 +70,8 @@ func (n *Node) ValidateDevNonce(nonce [2]byte) bool {
 	return true
 }
 
-// CreateNode creates the given Node.
-func CreateNode(db *sqlx.DB, n Node) error {
+// createNode creates the given Node.
+func createNode(db *sqlx.DB, n Node) error {
 	_, err := db.Exec("insert into node (dev_eui, app_eui, app_key) values ($1, $2, $3)",
 		n.DevEUI[:],
 		n.AppEUI[:],
@@ -83,8 +83,8 @@ func CreateNode(db *sqlx.DB, n Node) error {
 	return err
 }
 
-// UpdateNode updates the given Node.
-func UpdateNode(db *sqlx.DB, n Node) error {
+// updateNode updates the given Node.
+func updateNode(db *sqlx.DB, n Node) error {
 	res, err := db.Exec("update node set app_eui = $1, app_key = $2, used_dev_nonces = $3 where dev_eui = $4",
 		n.AppEUI[:],
 		n.AppKey[:],
@@ -105,8 +105,8 @@ func UpdateNode(db *sqlx.DB, n Node) error {
 	return nil
 }
 
-// DeleteNode deletes the Node matching the given DevEUI.
-func DeleteNode(db *sqlx.DB, devEUI lorawan.EUI64) error {
+// deleteNode deletes the Node matching the given DevEUI.
+func deleteNode(db *sqlx.DB, devEUI lorawan.EUI64) error {
 	res, err := db.Exec("delete from node where dev_eui = $1",
 		devEUI[:],
 	)
@@ -124,14 +124,14 @@ func DeleteNode(db *sqlx.DB, devEUI lorawan.EUI64) error {
 	return nil
 }
 
-// GetNode returns the Node for the given DevEUI.
-func GetNode(db *sqlx.DB, devEUI lorawan.EUI64) (Node, error) {
+// getNode returns the Node for the given DevEUI.
+func getNode(db *sqlx.DB, devEUI lorawan.EUI64) (Node, error) {
 	var node Node
 	return node, db.Get(&node, "select * from node where dev_eui = $1", devEUI[:])
 }
 
-// GetNodes returns a slice of nodes, sorted by DevEUI.
-func GetNodes(db *sqlx.DB, limit, offset int) ([]Node, error) {
+// getNodes returns a slice of nodes, sorted by DevEUI.
+func getNodes(db *sqlx.DB, limit, offset int) ([]Node, error) {
 	var nodes []Node
 	return nodes, db.Select(&nodes, "select * from node order by dev_eui limit $1 offset $2", limit, offset)
 }
@@ -151,20 +151,20 @@ func NewNodeAPI(ctx Context) *NodeAPI {
 // Get returns the Node for the given DevEUI.
 func (a *NodeAPI) Get(devEUI lorawan.EUI64, node *Node) error {
 	var err error
-	*node, err = GetNode(a.ctx.DB, devEUI)
+	*node, err = getNode(a.ctx.DB, devEUI)
 	return err
 }
 
 // GetList returns a list of nodes (given a limit and offset).
 func (a *NodeAPI) GetList(req GetListRequest, nodes *[]Node) error {
 	var err error
-	*nodes, err = GetNodes(a.ctx.DB, req.Limit, req.Offset)
+	*nodes, err = getNodes(a.ctx.DB, req.Limit, req.Offset)
 	return err
 }
 
 // Create creates the given Node.
 func (a *NodeAPI) Create(node Node, devEUI *lorawan.EUI64) error {
-	if err := CreateNode(a.ctx.DB, node); err != nil {
+	if err := createNode(a.ctx.DB, node); err != nil {
 		return err
 	}
 	*devEUI = node.DevEUI
@@ -173,7 +173,7 @@ func (a *NodeAPI) Create(node Node, devEUI *lorawan.EUI64) error {
 
 // Update updatest the given Node.
 func (a *NodeAPI) Update(node Node, devEUI *lorawan.EUI64) error {
-	if err := UpdateNode(a.ctx.DB, node); err != nil {
+	if err := updateNode(a.ctx.DB, node); err != nil {
 		return err
 	}
 	*devEUI = node.DevEUI
@@ -182,7 +182,7 @@ func (a *NodeAPI) Update(node Node, devEUI *lorawan.EUI64) error {
 
 // Delete deletes the node matching the given DevEUI.
 func (a *NodeAPI) Delete(devEUI lorawan.EUI64, deletedDevEUI *lorawan.EUI64) error {
-	if err := DeleteNode(a.ctx.DB, devEUI); err != nil {
+	if err := deleteNode(a.ctx.DB, devEUI); err != nil {
 		return err
 	}
 	*deletedDevEUI = devEUI

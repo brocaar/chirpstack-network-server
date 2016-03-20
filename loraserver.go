@@ -50,7 +50,7 @@ func validateAndCollectDataUpRXPacket(ctx Context, rxPacket RXPacket) error {
 	}
 
 	// get the session data
-	ns, err := GetNodeSession(ctx.RedisPool, macPL.FHDR.DevAddr)
+	ns, err := getNodeSession(ctx.RedisPool, macPL.FHDR.DevAddr)
 	if err != nil {
 		return fmt.Errorf("could not get node-session: %s", err)
 	}
@@ -87,7 +87,7 @@ func validateAndCollectDataUpRXPacket(ctx Context, rxPacket RXPacket) error {
 	}
 	rxPacket.PHYPayload.MACPayload = macPL
 
-	return CollectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPackets RXPackets) error {
+	return collectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPackets RXPackets) error {
 		return handleCollectedDataUpPackets(ctx, rxPackets)
 	})
 }
@@ -114,7 +114,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
 	}
 
-	ns, err := GetNodeSession(ctx.RedisPool, macPL.FHDR.DevAddr)
+	ns, err := getNodeSession(ctx.RedisPool, macPL.FHDR.DevAddr)
 	if err != nil {
 		return fmt.Errorf("could not get node-session: %s", err)
 	}
@@ -129,7 +129,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 
 	// increment counter
 	ns.FCntUp++
-	if err := SaveNodeSession(ctx.RedisPool, ns); err != nil {
+	if err := saveNodeSession(ctx.RedisPool, ns); err != nil {
 		return fmt.Errorf("could not update node-session: %s", err)
 	}
 
@@ -144,7 +144,7 @@ func validateAndCollectJoinRequestPacket(ctx Context, rxPacket RXPacket) error {
 	}
 
 	// get node information for this DevEUI
-	node, err := GetNode(ctx.DB, jrPL.DevEUI)
+	node, err := getNode(ctx.DB, jrPL.DevEUI)
 	if err != nil {
 		return fmt.Errorf("could not get node: %s", err)
 	}
@@ -158,7 +158,7 @@ func validateAndCollectJoinRequestPacket(ctx Context, rxPacket RXPacket) error {
 		return errors.New("invalid mic")
 	}
 
-	return CollectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPackets RXPackets) error {
+	return collectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPackets RXPackets) error {
 		return handleCollectedJoinRequestPackets(ctx, rxPackets)
 	})
 
@@ -188,7 +188,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	}
 
 	// get node information for this DevEUI
-	node, err := GetNode(ctx.DB, jrPL.DevEUI)
+	node, err := getNode(ctx.DB, jrPL.DevEUI)
 	if err != nil {
 		return fmt.Errorf("could not get node: %s", err)
 	}
@@ -199,23 +199,23 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	}
 
 	// get random (free) DevAddr
-	devAddr, err := GetRandomDevAddr(ctx.RedisPool, ctx.NetID)
+	devAddr, err := getRandomDevAddr(ctx.RedisPool, ctx.NetID)
 	if err != nil {
 		return fmt.Errorf("could not get random DevAddr: %s", err)
 	}
 
 	// get app nonce
-	appNonce, err := GetAppNonce()
+	appNonce, err := getAppNonce()
 	if err != nil {
 		return fmt.Errorf("could not get AppNonce: %s", err)
 	}
 
 	// get keys
-	nwkSKey, err := GetNwkSKey(node.AppKey, ctx.NetID, appNonce, jrPL.DevNonce)
+	nwkSKey, err := getNwkSKey(node.AppKey, ctx.NetID, appNonce, jrPL.DevNonce)
 	if err != nil {
 		return fmt.Errorf("could not get NwkSKey: %s", err)
 	}
-	appSKey, err := GetAppSKey(node.AppKey, ctx.NetID, appNonce, jrPL.DevNonce)
+	appSKey, err := getAppSKey(node.AppKey, ctx.NetID, appNonce, jrPL.DevNonce)
 	if err != nil {
 		return fmt.Errorf("could not get AppSKey: %s", err)
 	}
@@ -230,12 +230,12 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 
 		AppEUI: node.AppEUI,
 	}
-	if err = SaveNodeSession(ctx.RedisPool, ns); err != nil {
+	if err = saveNodeSession(ctx.RedisPool, ns); err != nil {
 		return fmt.Errorf("could not save node-session: %s", err)
 	}
 
 	// update the node (with updated used dev-nonces)
-	if err = UpdateNode(ctx.DB, node); err != nil {
+	if err = updateNode(ctx.DB, node); err != nil {
 		return fmt.Errorf("could not update the node: %s", err)
 	}
 

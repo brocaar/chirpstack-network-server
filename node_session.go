@@ -50,9 +50,9 @@ func (n NodeSession) ValidateAndGetFullFCntUp(fCntUp uint32) (uint32, bool) {
 	return 0, false
 }
 
-// CreateNodeSession does the same as SaveNodeSession except that it does not
+// createNodeSession does the same as saveNodeSession except that it does not
 // overwrite an exisitng record.
-func CreateNodeSession(p *redis.Pool, s NodeSession) error {
+func createNodeSession(p *redis.Pool, s NodeSession) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(s); err != nil {
@@ -76,9 +76,9 @@ func CreateNodeSession(p *redis.Pool, s NodeSession) error {
 	return nil
 }
 
-// SaveNodeSession saves the node session. Note that the session will automatically
+// saveNodeSession saves the node session. Note that the session will automatically
 // expire after NodeSessionTTL.
-func SaveNodeSession(p *redis.Pool, s NodeSession) error {
+func saveNodeSession(p *redis.Pool, s NodeSession) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(s); err != nil {
@@ -102,8 +102,8 @@ func SaveNodeSession(p *redis.Pool, s NodeSession) error {
 	return nil
 }
 
-// GetNodeSession returns the NodeSession for the given DevAddr.
-func GetNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (NodeSession, error) {
+// getNodeSession returns the NodeSession for the given DevAddr.
+func getNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (NodeSession, error) {
 	var ns NodeSession
 
 	c := p.Get()
@@ -117,8 +117,8 @@ func GetNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (NodeSession, error)
 	return ns, gob.NewDecoder(bytes.NewReader(val)).Decode(&ns)
 }
 
-// GetNodeSessionByDevEUI returns the NodeSession for the given DevEUI.
-func GetNodeSessionByDevEUI(p *redis.Pool, devEUI lorawan.EUI64) (NodeSession, error) {
+// getNodeSessionByDevEUI returns the NodeSession for the given DevEUI.
+func getNodeSessionByDevEUI(p *redis.Pool, devEUI lorawan.EUI64) (NodeSession, error) {
 	var ns NodeSession
 
 	c := p.Get()
@@ -137,8 +137,8 @@ func GetNodeSessionByDevEUI(p *redis.Pool, devEUI lorawan.EUI64) (NodeSession, e
 	return ns, gob.NewDecoder(bytes.NewReader(b)).Decode(&ns)
 }
 
-// DeleteNodeSession deletes the NodeSession matching the given DevAddr.
-func DeleteNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) error {
+// deleteNodeSession deletes the NodeSession matching the given DevAddr.
+func deleteNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) error {
 	c := p.Get()
 	defer c.Close()
 
@@ -153,10 +153,10 @@ func DeleteNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) error {
 	return nil
 }
 
-// GetRandomDevAddr returns a random free DevAddr. Note that the 7 MSB will be
+// getRandomDevAddr returns a random free DevAddr. Note that the 7 MSB will be
 // set to the NwkID (based on the configured NetID).
 // TODO: handle collission with retry?
-func GetRandomDevAddr(p *redis.Pool, netID lorawan.NetID) (lorawan.DevAddr, error) {
+func getRandomDevAddr(p *redis.Pool, netID lorawan.NetID) (lorawan.DevAddr, error) {
 	var d lorawan.DevAddr
 	b := make([]byte, len(d))
 	if _, err := rand.Read(b); err != nil {
@@ -180,8 +180,8 @@ func GetRandomDevAddr(p *redis.Pool, netID lorawan.NetID) (lorawan.DevAddr, erro
 	return d, nil
 }
 
-// GetAppNonce returns a random application nonce (used for OTAA).
-func GetAppNonce() ([3]byte, error) {
+// getAppNonce returns a random application nonce (used for OTAA).
+func getAppNonce() ([3]byte, error) {
 	var b [3]byte
 	if _, err := rand.Read(b[:]); err != nil {
 		return b, err
@@ -189,13 +189,13 @@ func GetAppNonce() ([3]byte, error) {
 	return b, nil
 }
 
-// GetNwkSKey returns the network session key.
-func GetNwkSKey(appkey lorawan.AES128Key, netID lorawan.NetID, appNonce [3]byte, devNonce [2]byte) (lorawan.AES128Key, error) {
+// getNwkSKey returns the network session key.
+func getNwkSKey(appkey lorawan.AES128Key, netID lorawan.NetID, appNonce [3]byte, devNonce [2]byte) (lorawan.AES128Key, error) {
 	return getSKey(0x01, appkey, netID, appNonce, devNonce)
 }
 
-// GetAppSKey returns the application session key.
-func GetAppSKey(appkey lorawan.AES128Key, netID lorawan.NetID, appNonce [3]byte, devNonce [2]byte) (lorawan.AES128Key, error) {
+// getAppSKey returns the application session key.
+func getAppSKey(appkey lorawan.AES128Key, netID lorawan.NetID, appNonce [3]byte, devNonce [2]byte) (lorawan.AES128Key, error) {
 	return getSKey(0x02, appkey, netID, appNonce, devNonce)
 }
 
@@ -243,14 +243,14 @@ func NewNodeSessionAPI(ctx Context) *NodeSessionAPI {
 // Get returns the NodeSession for the given DevAddr.
 func (a *NodeSessionAPI) Get(devAddr lorawan.DevAddr, ns *NodeSession) error {
 	var err error
-	*ns, err = GetNodeSession(a.ctx.RedisPool, devAddr)
+	*ns, err = getNodeSession(a.ctx.RedisPool, devAddr)
 	return err
 }
 
 // GetByDevEUI returns the NodeSession for the given DevEUI.
 func (a *NodeSessionAPI) GetByDevEUI(devEUI lorawan.EUI64, ns *NodeSession) error {
 	var err error
-	*ns, err = GetNodeSessionByDevEUI(a.ctx.RedisPool, devEUI)
+	*ns, err = getNodeSessionByDevEUI(a.ctx.RedisPool, devEUI)
 	return err
 }
 
@@ -264,16 +264,16 @@ func (a *NodeSessionAPI) Create(ns NodeSession, devAddr *lorawan.DevAddr) error 
 	}
 
 	// validate that the node exists
-	if _, err := GetNode(a.ctx.DB, ns.DevEUI); err != nil {
+	if _, err := getNode(a.ctx.DB, ns.DevEUI); err != nil {
 		return err
 	}
 
 	// validate that the app exists
-	if _, err := GetApplication(a.ctx.DB, ns.AppEUI); err != nil {
+	if _, err := getApplication(a.ctx.DB, ns.AppEUI); err != nil {
 		return err
 	}
 
-	if err := CreateNodeSession(a.ctx.RedisPool, ns); err != nil {
+	if err := createNodeSession(a.ctx.RedisPool, ns); err != nil {
 		return err
 	}
 	*devAddr = ns.DevAddr
@@ -282,7 +282,7 @@ func (a *NodeSessionAPI) Create(ns NodeSession, devAddr *lorawan.DevAddr) error 
 
 // Update updates the given NodeSession.
 func (a *NodeSessionAPI) Update(ns NodeSession, devEUI *lorawan.EUI64) error {
-	if err := SaveNodeSession(a.ctx.RedisPool, ns); err != nil {
+	if err := saveNodeSession(a.ctx.RedisPool, ns); err != nil {
 		return err
 	}
 	*devEUI = ns.DevEUI
@@ -291,7 +291,7 @@ func (a *NodeSessionAPI) Update(ns NodeSession, devEUI *lorawan.EUI64) error {
 
 // Deletedeletes the NodeSession matching the given DevAddr.
 func (a *NodeSessionAPI) Delete(devAddr lorawan.DevAddr, deletedDevAddr *lorawan.DevAddr) error {
-	if err := DeleteNodeSession(a.ctx.RedisPool, devAddr); err != nil {
+	if err := deleteNodeSession(a.ctx.RedisPool, devAddr); err != nil {
 		return err
 	}
 	*deletedDevAddr = devAddr
@@ -301,6 +301,6 @@ func (a *NodeSessionAPI) Delete(devAddr lorawan.DevAddr, deletedDevAddr *lorawan
 // GetRandomDevAddr returns a random DevAddr.
 func (a *NodeSessionAPI) GetRandomDevAddr(dummy interface{}, devAddr *lorawan.DevAddr) error {
 	var err error
-	*devAddr, err = GetRandomDevAddr(a.ctx.RedisPool, a.ctx.NetID)
+	*devAddr, err = getRandomDevAddr(a.ctx.RedisPool, a.ctx.NetID)
 	return err
 }

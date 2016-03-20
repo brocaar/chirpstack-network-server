@@ -116,7 +116,7 @@ func TestCollectAndCallOnce(t *testing.T) {
 							PHYPayload: phy,
 						}
 						go func() {
-							err := CollectAndCallOnce(p, packet, cb)
+							err := collectAndCallOnce(p, packet, cb)
 							if err != nil {
 								t.Error(err)
 							}

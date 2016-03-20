@@ -15,8 +15,8 @@ type Application struct {
 	Name   string        `db:"name" json:"name"`
 }
 
-// CreateApplication creates the given Application
-func CreateApplication(db *sqlx.DB, a Application) error {
+// createApplication creates the given Application
+func createApplication(db *sqlx.DB, a Application) error {
 	_, err := db.Exec("insert into application (app_eui, name) values ($1, $2)",
 		a.AppEUI[:],
 		a.Name,
@@ -27,20 +27,20 @@ func CreateApplication(db *sqlx.DB, a Application) error {
 	return err
 }
 
-// GetApplication returns the Application for the given AppEUI.
-func GetApplication(db *sqlx.DB, appEUI lorawan.EUI64) (Application, error) {
+// getApplication returns the Application for the given AppEUI.
+func getApplication(db *sqlx.DB, appEUI lorawan.EUI64) (Application, error) {
 	var app Application
 	return app, db.Get(&app, "select * from application where app_eui = $1", appEUI[:])
 }
 
-// GetApplications returns a slice of applications.
-func GetApplications(db *sqlx.DB, limit, offset int) ([]Application, error) {
+// getApplications returns a slice of applications.
+func getApplications(db *sqlx.DB, limit, offset int) ([]Application, error) {
 	var apps []Application
 	return apps, db.Select(&apps, "select * from application order by app_eui limit $1 offset $2", limit, offset)
 }
 
-// UpdateApplication updates the given Application.
-func UpdateApplication(db *sqlx.DB, a Application) error {
+// updateApplication updates the given Application.
+func updateApplication(db *sqlx.DB, a Application) error {
 	res, err := db.Exec("update application set name = $1 where app_eui = $2",
 		a.Name,
 		a.AppEUI[:],
@@ -59,9 +59,9 @@ func UpdateApplication(db *sqlx.DB, a Application) error {
 	return nil
 }
 
-// DeleteApplication deletes the Application matching the given AppEUI.
+// deleteApplication deletes the Application matching the given AppEUI.
 // Note that this will delete all related nodes too!
-func DeleteApplication(db *sqlx.DB, appEUI lorawan.EUI64) error {
+func deleteApplication(db *sqlx.DB, appEUI lorawan.EUI64) error {
 	res, err := db.Exec("delete from application where app_eui = $1",
 		appEUI[:],
 	)
@@ -95,20 +95,20 @@ func NewApplicationAPI(ctx Context) *ApplicationAPI {
 // Get returns the Application for the given AppEUI.
 func (a *ApplicationAPI) Get(appEUI lorawan.EUI64, app *Application) error {
 	var err error
-	*app, err = GetApplication(a.ctx.DB, appEUI)
+	*app, err = getApplication(a.ctx.DB, appEUI)
 	return err
 }
 
 // GetList returns a list of applications (given a limit and offset).
 func (a *ApplicationAPI) GetList(req GetListRequest, apps *[]Application) error {
 	var err error
-	*apps, err = GetApplications(a.ctx.DB, req.Limit, req.Offset)
+	*apps, err = getApplications(a.ctx.DB, req.Limit, req.Offset)
 	return err
 }
 
 // Create creates the given application.
 func (a *ApplicationAPI) Create(app Application, appEUI *lorawan.EUI64) error {
-	if err := CreateApplication(a.ctx.DB, app); err != nil {
+	if err := createApplication(a.ctx.DB, app); err != nil {
 		return err
 	}
 	*appEUI = app.AppEUI
@@ -117,7 +117,7 @@ func (a *ApplicationAPI) Create(app Application, appEUI *lorawan.EUI64) error {
 
 // Update updates the given Application.
 func (a *ApplicationAPI) Update(app Application, appEUI *lorawan.EUI64) error {
-	if err := UpdateApplication(a.ctx.DB, app); err != nil {
+	if err := updateApplication(a.ctx.DB, app); err != nil {
 		return err
 	}
 	*appEUI = app.AppEUI
@@ -126,7 +126,7 @@ func (a *ApplicationAPI) Update(app Application, appEUI *lorawan.EUI64) error {
 
 // Delete deletes the application for the given AppEUI.
 func (a *ApplicationAPI) Delete(appEUI lorawan.EUI64, deletedAppEUI *lorawan.EUI64) error {
-	if err := DeleteApplication(a.ctx.DB, appEUI); err != nil {
+	if err := deleteApplication(a.ctx.DB, appEUI); err != nil {
 		return err
 	}
 	*deletedAppEUI = appEUI
