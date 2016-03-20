@@ -33,12 +33,25 @@ loraserver.config(['$routeProvider',
                 templateUrl: 'partials/nodes.html',
                 controller: 'NodeListCtrl'
             }).
+            when('/api', {
+                templateUrl: 'partials/api.html',
+                controller: 'APICtrl'
+            }).
             otherwise({
                 redirectTo: '/applications'
             });
         }]);
 
 var loraserverControllers = angular.module('loraserverControllers', []);
+
+// display rpc docs
+loraserverControllers.controller('APICtrl', ['$scope', '$http',
+    function ($scope, $http) {
+        $scope.page = 'api';
+        $http.get('/rpc').success(function(data) {
+            $scope.apis = data;
+        });
+    }]);
 
 // manage applications
 loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$routeParams', '$route',

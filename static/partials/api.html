@@ -1,0 +1,27 @@
+<ng-include src="'partials/navbar.html'"></ng-include>
+
+<div class="container">
+  <h2>JSON-RPC API</h2>
+  <div ng-repeat="(apiName, api) in apis">
+    <div ng-repeat="(methodName, method) in api.methods">
+      <h3>{{ apiName }}.{{ methodName }}</h3>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Request: <span class="pull-right">{{ method.argumentTypeName }} <span ng-if="method.argumentPkgPath != ''">(<a href="https://godoc.org/{{ method.argumentPkgPath }}#{{ method.argumentTypeName }}">{{ method.argumentPkgPath }}</a>)</span></span></h3>
+        </div>
+        <div class="panel-body">
+          <pre>{{ method.argumentJSON }}</pre>
+        </div>
+      </div>
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">Response: <span class="pull-right">{{ method.replyTypeName }} <span ng-if="method.replyPkgPath != ''">(<a href="https://godoc.org/{{ method.replyPkgPath }}#{{ method.replyTypeName }}">{{ method.replyPkgPath }}</a>)</span></span></h3>
+        </div>
+        <div class="panel-body">
+          <pre>{{ method.replyJSON }}</pre>
+        </div>
+      </div>
+    <hr>
+    </div>
+  </div>
+</div>

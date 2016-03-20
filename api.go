@@ -2,6 +2,7 @@ package loraserver
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 // JSONRPCHandler implements a http.Handler compatible JSON-RPC handler.
 type JSONRPCHandler struct {
 	server *rpc.Server
+	docs   map[string]rpcServiceDoc
 }
 
 // NewJSONRPCHandler creates a new JSONRPCHandler.
@@ -25,11 +27,23 @@ func NewJSONRPCHandler(srvcs ...interface{}) (http.Handler, error) {
 			return nil, err
 		}
 	}
-	return &JSONRPCHandler{s}, nil
+	docs, err := getRPCServicesDoc(srvcs...)
+	if err != nil {
+		return nil, err
+	}
+	return &JSONRPCHandler{s, docs}, nil
 }
 
 // ServeHTTP implements the http.Handler interface.
 func (h *JSONRPCHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		enc := json.NewEncoder(w)
+		if err := enc.Encode(h.docs); err != nil {
+			log.Errorf("could not marshal rpc docs to json: %s", err)
+		}
+		return
+	}
+
 	conn := struct {
 		io.Writer
 		io.ReadCloser
