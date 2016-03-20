@@ -67,8 +67,8 @@ After cloning this repository, you should be able to start the whole project
 ## API
 
 *LoRa Server* provides a JSON-RPC API over HTTP. All calls are performend by
-sending a post request to the ``/rpc`` endpoint. The provided web-interface is a
-sample implementation on top of this api.
+sending a post request to the ``/rpc`` endpoint. API documentation is available within
+the web-interface.
 
 ## MQTT
 

@@ -1,8 +1,10 @@
 # Changelog
 
-## 0.2.2 (untagged)
+## 0.3.0 (untagged)
 
 * MQTT topics updated (`node/[DevEUI]/rx` is now `application/[AppEUI]/node/[DevEUI]/rx`)
+* Restructured RPC API (per domain)
+* Auto generated API docs (in web-interface)
 
 ## 0.2.1
 
