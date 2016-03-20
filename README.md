@@ -18,7 +18,7 @@ Note: This project is under development. Please test and give feedback but know 
 - [x] activation by personalization
 - [x] over-the-air activation
 - [x] web-interface
-- [ ] auto-generated RPC documentation
+- [x] auto-generated RPC documentation
 - [ ] freeze initial database schema
 - [ ] confirmed data up
 - [ ] data down (confirmed and unconfirmed)
