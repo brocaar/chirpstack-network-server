@@ -41,6 +41,7 @@ func (b *Backend) Close() error {
 
 // Send sends the given (collected) RXPackets the application.
 func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, p loraserver.ApplicationRXPacket) error {
+func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, p loraserver.ApplicationRXPayload) error {
 	bytes, err := json.Marshal(p)
 	if err != nil {
 		return err

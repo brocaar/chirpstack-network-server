@@ -15,15 +15,24 @@ type Application struct {
 	Name   string        `db:"name" json:"name"`
 }
 
-// ApplicationRXPacket contains the data sent to the application
+// ApplicationRXPayload contains the data sent to the application
 // after a RXPacket was received by the server.
-type ApplicationRXPacket struct {
+type ApplicationRXPayload struct {
 	MType        lorawan.MType `json:"mType"`
 	DevEUI       lorawan.EUI64 `json:"devEUI"`
 	ACK          bool          `json:"ack"`
 	FPort        int           `json:"fPort"`
 	GatewayCount int           `json:"gatewayCount"`
 	Data         []byte        `json:"data"`
+}
+
+// ApplicationTXPayload contains the data sent to the node
+// by the application.
+type ApplicationTXPayload struct {
+	MType lorawan.MType `json:"mType"`
+	ACK   bool          `json:"ack"`
+	FPort uint8         `json:"fPort"`
+	Data  []byte        `json:"data"`
 }
 
 // createApplication creates the given Application
