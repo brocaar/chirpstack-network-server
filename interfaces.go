@@ -15,5 +15,6 @@ type GatewayBackend interface {
 // and receiving data that should be sent to the node.
 type ApplicationBackend interface {
 	Send(devEUI, appEUI lorawan.EUI64, payload ApplicationRXPayload) error // send the given payload to the application
+	ApplicationTXPayloadChan() chan ApplicationTXPayload                   // channel containing the received payloads from the application
 	Close() error                                                          // close the application backend
 }

@@ -29,10 +29,11 @@ type ApplicationRXPayload struct {
 // ApplicationTXPayload contains the data sent to the node
 // by the application.
 type ApplicationTXPayload struct {
-	MType lorawan.MType `json:"mType"`
-	ACK   bool          `json:"ack"`
-	FPort uint8         `json:"fPort"`
-	Data  []byte        `json:"data"`
+	MType  lorawan.MType `json:"mType"`
+	DevEUI lorawan.EUI64 `json:"devEUI"`
+	ACK    bool          `json:"ack"`
+	FPort  uint8         `json:"fPort"`
+	Data   []byte        `json:"data"`
 }
 
 // createApplication creates the given Application

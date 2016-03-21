@@ -3,6 +3,7 @@ package mqttpubsub
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/brocaar/loraserver"
 	"github.com/brocaar/lorawan"
@@ -23,7 +24,6 @@ func TestBackend(t *testing.T) {
 		Convey("Given a new Backend", func() {
 			backend, err := NewBackend(conf.Server, conf.Username, conf.Password)
 			So(err, ShouldBeNil)
-			defer backend.Close()
 
 			Convey("Given the MQTT client is subscribed to node/+/rx", func() {
 				rxPacketChan := make(chan loraserver.ApplicationRXPayload)
@@ -52,6 +52,43 @@ func TestBackend(t *testing.T) {
 						So(packet, ShouldResemble, rxPacket)
 					})
 
+				})
+			})
+
+			Convey("Given a ApplicationTXPayload is published by the MQTT client", func() {
+				pl := loraserver.ApplicationTXPayload{
+					MType:  lorawan.UnconfirmedDataDown,
+					DevEUI: [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+					ACK:    true,
+					FPort:  1,
+					Data:   []byte("hello!"),
+				}
+				b, err := json.Marshal(pl)
+				So(err, ShouldBeNil)
+				token := c.Publish("application/0102030405060708/node/0807060504030201/tx", 0, false, b)
+				token.Wait()
+				So(token.Error(), ShouldBeNil)
+
+				Convey("Then the same packet is received by the backend", func() {
+					p := <-backend.ApplicationTXPayloadChan()
+					So(p, ShouldResemble, pl)
+
+					Convey("When the topic DevEUI does not match the payload DevEUI", func() {
+						token := c.Publish("application/0102030405060708/node/0707060504030201/tx", 0, false, b)
+						token.Wait()
+						So(token.Error(), ShouldBeNil)
+
+						Convey("Then the packet is discarded", func() {
+							var received bool
+							select {
+							case <-backend.ApplicationTXPayloadChan():
+								received = true
+							case <-time.After(time.Millisecond * 100):
+								// nothing to do
+							}
+							So(received, ShouldBeFalse)
+						})
+					})
 				})
 			})
 		})

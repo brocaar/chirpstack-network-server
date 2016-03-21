@@ -80,8 +80,9 @@ func (b *testGatewayBackend) Close() error {
 }
 
 type testApplicationBackend struct {
-	rxPacketChan chan ApplicationRXPayload
-	err          error
+	applicationTXPayloadChan chan ApplicationTXPayload
+	rxPacketChan             chan ApplicationRXPayload
+	err                      error
 }
 
 func (b *testApplicationBackend) Send(devEUI, appEUI lorawan.EUI64, rxPacket ApplicationRXPayload) error {
@@ -91,4 +92,8 @@ func (b *testApplicationBackend) Send(devEUI, appEUI lorawan.EUI64, rxPacket App
 
 func (b *testApplicationBackend) Close() error {
 	return nil
+}
+
+func (b *testApplicationBackend) ApplicationTXPayloadChan() chan ApplicationTXPayload {
+	return b.applicationTXPayloadChan
 }
