@@ -113,6 +113,26 @@ type GatewayStatsPacket struct {
 	RXPacketsReceivedOK int
 }
 
+// RXPayload contains the received (decrypted) payload from the node
+// which will be sent to the application.
+type RXPayload struct {
+	MType        lorawan.MType `json:"mType"`
+	DevEUI       lorawan.EUI64 `json:"devEUI"`
+	ACK          bool          `json:"ack"`
+	FPort        int           `json:"fPort"`
+	GatewayCount int           `json:"gatewayCount"`
+	Data         []byte        `json:"data"`
+}
+
+// TXPayload contains the payload to be sent to the node.
+type TXPayload struct {
+	MType  lorawan.MType `json:"mType"`
+	DevEUI lorawan.EUI64 `json:"devEUI"`
+	ACK    bool          `json:"ack"`
+	FPort  uint8         `json:"fPort"`
+	Data   []byte        `json:"data"`
+}
+
 // collectAndCallOnce collects the package, sleeps the configured duraction and
 // calls the callback only once with a slice of packets, sorted by signal
 // strength (strongest at index 0). This method exists since multiple gateways

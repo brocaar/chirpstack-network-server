@@ -26,9 +26,9 @@ func TestBackend(t *testing.T) {
 			So(err, ShouldBeNil)
 
 			Convey("Given the MQTT client is subscribed to node/+/rx", func() {
-				rxPacketChan := make(chan loraserver.ApplicationRXPayload)
+				rxPacketChan := make(chan loraserver.RXPayload)
 				token := c.Subscribe("application/+/node/+/rx", 0, func(c *mqtt.Client, msg mqtt.Message) {
-					var rxPacket loraserver.ApplicationRXPayload
+					var rxPacket loraserver.RXPayload
 					if err := json.Unmarshal(msg.Payload(), &rxPacket); err != nil {
 						t.Fatal(err)
 					}
@@ -41,7 +41,7 @@ func TestBackend(t *testing.T) {
 					devEUI := lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1}
 					appEUI := lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2}
 
-					rxPacket := loraserver.ApplicationRXPayload{
+					rxPacket := loraserver.RXPayload{
 						MType:  lorawan.ConfirmedDataUp,
 						DevEUI: devEUI,
 					}
@@ -56,7 +56,7 @@ func TestBackend(t *testing.T) {
 			})
 
 			Convey("Given a ApplicationTXPayload is published by the MQTT client", func() {
-				pl := loraserver.ApplicationTXPayload{
+				pl := loraserver.TXPayload{
 					MType:  lorawan.UnconfirmedDataDown,
 					DevEUI: [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 					ACK:    true,
@@ -70,7 +70,7 @@ func TestBackend(t *testing.T) {
 				So(token.Error(), ShouldBeNil)
 
 				Convey("Then the same packet is received by the backend", func() {
-					p := <-backend.ApplicationTXPayloadChan()
+					p := <-backend.TXPayloadChan()
 					So(p, ShouldResemble, pl)
 
 					Convey("When the topic DevEUI does not match the payload DevEUI", func() {
@@ -81,7 +81,7 @@ func TestBackend(t *testing.T) {
 						Convey("Then the packet is discarded", func() {
 							var received bool
 							select {
-							case <-backend.ApplicationTXPayloadChan():
+							case <-backend.TXPayloadChan():
 								received = true
 							case <-time.After(time.Millisecond * 100):
 								// nothing to do

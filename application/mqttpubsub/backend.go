@@ -12,18 +12,18 @@ import (
 	"github.com/eclipse/paho.mqtt.golang"
 )
 
-var applicationTXTopicRegex = regexp.MustCompile(`application/(\w+)/node/(\w+)/tx`)
+var txTopicRegex = regexp.MustCompile(`application/(\w+)/node/(\w+)/tx`)
 
 // Backend implements a MQTT pub-sub application backend.
 type Backend struct {
 	conn          *mqtt.Client
-	txPayloadChan chan loraserver.ApplicationTXPayload
+	txPayloadChan chan loraserver.TXPayload
 }
 
 // NewBackend creates a new Backend.
 func NewBackend(server, username, password string) (loraserver.ApplicationBackend, error) {
 	b := Backend{
-		txPayloadChan: make(chan loraserver.ApplicationTXPayload),
+		txPayloadChan: make(chan loraserver.TXPayload),
 	}
 
 	opts := mqtt.NewClientOptions()
@@ -38,7 +38,7 @@ func NewBackend(server, username, password string) (loraserver.ApplicationBacken
 	}
 
 	log.WithField("topic", "application/+/node/+/tx").Info("application/mqttpubsub: subscribing to tx topic")
-	if token := b.conn.Subscribe("application/+/node/+/tx", 0, b.txPacketHandler); token.Wait() && token.Error() != nil {
+	if token := b.conn.Subscribe("application/+/node/+/tx", 0, b.txPayloadHandler); token.Wait() && token.Error() != nil {
 		return nil, token.Error()
 	}
 
@@ -51,14 +51,14 @@ func (b *Backend) Close() error {
 	return nil
 }
 
-// ApplicationTXPayloadChan returns the ApplicationTXPayload channel.
-func (b *Backend) ApplicationTXPayloadChan() chan loraserver.ApplicationTXPayload {
+// TXPayloadChan returns the TXPayload channel.
+func (b *Backend) TXPayloadChan() chan loraserver.TXPayload {
 	return b.txPayloadChan
 }
 
 // Send sends the given (collected) RXPackets the application.
-func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, p loraserver.ApplicationRXPayload) error {
-	bytes, err := json.Marshal(p)
+func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, payload loraserver.RXPayload) error {
+	bytes, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
@@ -71,17 +71,17 @@ func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, p loraserver.ApplicationRXP
 	return nil
 }
 
-func (b *Backend) txPacketHandler(c *mqtt.Client, msg mqtt.Message) {
+func (b *Backend) txPayloadHandler(c *mqtt.Client, msg mqtt.Message) {
 	// get the DevEUI from the topic. with mqtt it is possible to perform
 	// authorization on a per topic level. we need to be sure that the
 	// topic DevEUI matches the payload DevEUI.
-	match := applicationTXTopicRegex.FindStringSubmatch(msg.Topic())
+	match := txTopicRegex.FindStringSubmatch(msg.Topic())
 	if len(match) != 3 {
 		log.WithField("topic", msg.Topic()).Error("application/mqttpubsub: regex did not match")
 		return
 	}
 
-	var txPayload loraserver.ApplicationTXPayload
+	var txPayload loraserver.TXPayload
 	dec := json.NewDecoder(bytes.NewReader(msg.Payload()))
 	if err := dec.Decode(&txPayload); err != nil {
 		log.Errorf("application/mqttpubsub: could not decode ApplicationTXPayload: %s", err)

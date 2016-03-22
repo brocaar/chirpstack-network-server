@@ -290,7 +290,7 @@ func (a *NodeSessionAPI) Update(ns NodeSession, devEUI *lorawan.EUI64) error {
 	return nil
 }
 
-// Deletedeletes the NodeSession matching the given DevAddr.
+// Delete the NodeSession matching the given DevAddr.
 func (a *NodeSessionAPI) Delete(devAddr lorawan.DevAddr, deletedDevAddr *lorawan.DevAddr) error {
 	if err := deleteNodeSession(a.ctx.RedisPool, devAddr); err != nil {
 		return err

@@ -131,7 +131,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 			return errors.New("FRMPayload must be of type *lorawan.DataPayload")
 		}
 
-		err = ctx.Application.Send(ns.DevEUI, ns.AppEUI, ApplicationRXPayload{
+		err = ctx.Application.Send(ns.DevEUI, ns.AppEUI, RXPayload{
 			MType:        rxPacket.PHYPayload.MHDR.MType,
 			DevEUI:       ns.DevEUI,
 			GatewayCount: len(rxPackets),
@@ -140,7 +140,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 			Data:         dataPL.Bytes,
 		})
 		if err != nil {
-			return fmt.Errorf("could not send ApplicationRXPacket to application: %s", err)
+			return fmt.Errorf("could not send RXPacket to application: %s", err)
 		}
 	}
 
