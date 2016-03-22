@@ -1,17 +1,28 @@
 package loraserver
 
 import (
+	"bytes"
 	"database/sql/driver"
+	"encoding/gob"
 	"errors"
 	"fmt"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/brocaar/lorawan"
+	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
 )
 
+// NodeTXPayloadQueueTTL defines the TTL of the node TXPayload queue
+var NodeTXPayloadQueueTTL = time.Hour * 24 * 5
+
 // UsedDevNonceCount is the number of used dev-nonces to track.
 const UsedDevNonceCount = 10
+
+const (
+	nodeTXPayloadQueueTempl = "node_tx_queue_%s"
+)
 
 // DevNonceList represents a list of dev nonces
 type DevNonceList [][2]byte
@@ -134,6 +145,65 @@ func getNode(db *sqlx.DB, devEUI lorawan.EUI64) (Node, error) {
 func getNodes(db *sqlx.DB, limit, offset int) ([]Node, error) {
 	var nodes []Node
 	return nodes, db.Select(&nodes, "select * from node order by dev_eui limit $1 offset $2", limit, offset)
+}
+
+// addTXPayloadToQueue adds the given TXPayload to the queue.
+func addTXPayloadToQueue(p *redis.Pool, payload TXPayload) error {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(payload); err != nil {
+		return err
+	}
+
+	c := p.Get()
+	defer c.Close()
+
+	exp := int64(NodeTXPayloadQueueTTL) / int64(time.Millisecond)
+	key := fmt.Sprintf(nodeTXPayloadQueueTempl, payload.DevEUI)
+
+	c.Send("MULTI")
+	c.Send("RPUSH", key, buf.Bytes())
+	c.Send("PEXPIRE", key, exp)
+	_, err := c.Do("EXEC")
+	return err
+}
+
+// getTXPayloadQueueSize returns the size of the TXPayload queue.
+func getTXPayloadQueueSize(p *redis.Pool, devEUI lorawan.EUI64) (int, error) {
+	key := fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)
+	c := p.Get()
+	defer c.Close()
+
+	return redis.Int(c.Do("LLEN", key))
+}
+
+// getFirstTXPayloadQueueItem returns (and dequeues) the first item from
+// the TXPayload queue and the remaining item-count in the queue. When the
+// queue is empty, an errDoesNotExist error is returned.
+func getFirstTXPayloadQueueItem(p *redis.Pool, devEUI lorawan.EUI64) (TXPayload, int, error) {
+	var payload TXPayload
+	key := fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)
+	c := p.Get()
+	defer c.Close()
+
+	c.Send("LPOP", key)
+	c.Send("LLEN", key)
+	c.Flush()
+
+	b, err := redis.Bytes(c.Receive())
+	if err != nil {
+		if err == redis.ErrNil {
+			return payload, 0, errDoesNotExist
+		}
+		return payload, 0, err
+	}
+
+	i, err := redis.Int(c.Receive())
+	if err != nil {
+		return payload, 0, err
+	}
+
+	return payload, i, gob.NewDecoder(bytes.NewReader(b)).Decode(&payload)
 }
 
 // NodeAPI exports the Node related functions.

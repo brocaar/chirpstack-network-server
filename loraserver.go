@@ -11,6 +11,10 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+var (
+	errDoesNotExist = errors.New("object does not exist")
+)
+
 // Start starts the loraserver.
 func Start(ctx Context) error {
 	log.WithFields(log.Fields{

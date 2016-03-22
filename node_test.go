@@ -2,6 +2,7 @@ package loraserver
 
 import (
 	"testing"
+	"time"
 
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
@@ -53,6 +54,76 @@ func TestValidateDevNonce(t *testing.T) {
 
 				Convey("Then the new nonce was added to the back of the list", func() {
 					So(n.UsedDevNonces[9], ShouldEqual, [2]byte{0, 0})
+				})
+			})
+		})
+	})
+}
+
+func TestTXPayloadQueue(t *testing.T) {
+	conf := getConfig()
+
+	Convey("Given a clean Redis database", t, func() {
+		p := NewRedisPool(conf.RedisURL)
+		mustFlushRedis(p)
+
+		Convey("Given two TXPayload structs (a and b) for the same DevEUI", func() {
+			devEUI := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}
+			a := TXPayload{
+				DevEUI: devEUI,
+				Data:   []byte("hello!"),
+			}
+			b := TXPayload{
+				DevEUI: devEUI,
+				Data:   []byte("world"),
+			}
+
+			Convey("When getting the (non-existing) queue size", func() {
+				i, err := getTXPayloadQueueSize(p, devEUI)
+				So(err, ShouldBeNil)
+
+				Convey("Then 0 is returned", func() {
+					So(i, ShouldEqual, 0)
+				})
+			})
+
+			Convey("When getting an item from the non-existing queue", func() {
+				_, _, err := getFirstTXPayloadQueueItem(p, devEUI)
+				Convey("Then an errDoesNotExist error is returned", func() {
+					So(err, ShouldEqual, errDoesNotExist)
+				})
+			})
+
+			Convey("Given the NodePayloadQueueTTL is 100 ms", func() {
+				NodeTXPayloadQueueTTL = 100 * time.Millisecond
+
+				Convey("Given struct a and b are pushed to the queue", func() {
+					So(addTXPayloadToQueue(p, a), ShouldBeNil)
+					So(addTXPayloadToQueue(p, b), ShouldBeNil)
+
+					Convey("Then the queue size is 2", func() {
+						i, err := getTXPayloadQueueSize(p, devEUI)
+						So(err, ShouldBeNil)
+						So(i, ShouldEqual, 2)
+					})
+
+					Convey("Then after 100 ms the queue has expired", func() {
+						time.Sleep(100 * time.Millisecond)
+						i, err := getTXPayloadQueueSize(p, devEUI)
+						So(err, ShouldBeNil)
+						So(i, ShouldEqual, 0)
+					})
+
+					Convey("When getting the first item from the queue", func() {
+						p, i, err := getFirstTXPayloadQueueItem(p, devEUI)
+						So(err, ShouldBeNil)
+						Convey("Then it equals to struct a", func() {
+							So(p, ShouldResemble, a)
+						})
+						Convey("Then there is 1 remaining item in the queue", func() {
+							So(i, ShouldEqual, 1)
+						})
+					})
 				})
 			})
 		})

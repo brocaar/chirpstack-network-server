@@ -17,10 +17,10 @@ import (
 
 // NodeSession related constants
 const (
-	NodeSessionTTL = time.Hour * 24 * 5
+	NodeSessionTTL = time.Hour * 24 * 5 // TTL of a node session (will be renewed on each activity)
 )
 
-var (
+const (
 	nodeSessionKeyTempl = "node_session_%s"
 )
 
