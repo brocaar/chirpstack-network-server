@@ -90,7 +90,7 @@ Data is [Gob](https://golang.org/pkg/encoding/gob/) encoded (this might change a
 #### ``application/[AppEUI]/node/[DevEUI]/rx``
 
 Received node payloads ([``ApplicationRXPayload``](https://godoc.org/github.com/brocaar/loraserver/application/mqttpubsub#ApplicationRXPayload)).
-Data is JSON encoded.
+The payload is JSON encoded and holds a ``data`` key containing the decrypted data received from the node in ``base64`` encoding.
 
 #### ``application/[AppEUI]/node/[DevEUI]/tx``
 
