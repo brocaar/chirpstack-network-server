@@ -34,7 +34,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 				DevEUI:   lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 				AppSKey:  lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				NwkSKey:  lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-				FCntUp:   10,
+				FCntUp:   8,
 				FCntDown: 0,
 
 				AppEUI: lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
@@ -91,10 +91,10 @@ func TestHandleDataUpPackets(t *testing.T) {
 						So(data.Bytes, ShouldResemble, []byte("hello!"))
 					})
 
-					Convey("Then the FCntUp has been incremented", func() {
+					Convey("Then the FCntUp is packet FCnt + 1", func() {
 						nsUpdated, err := getNodeSession(p, ns.DevAddr)
 						So(err, ShouldBeNil)
-						So(nsUpdated.FCntUp, ShouldEqual, ns.FCntUp+1)
+						So(nsUpdated.FCntUp, ShouldEqual, 11)
 					})
 				})
 
