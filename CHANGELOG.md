@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1
+
+* Bugfix related to ``FCnt`` increment (thanks @ivajloip)
+
 ## 0.3.0
 
 * MQTT topics updated (`node/[DevEUI]/rx` is now `application/[AppEUI]/node/[DevEUI]/rx`)
