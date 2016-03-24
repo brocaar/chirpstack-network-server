@@ -40,7 +40,7 @@ type NodeSession struct {
 // Note that the LoRaWAN packet only contains the 16 LSB, so in order
 // to validate the MIC, the full 32 bit frame-counter needs to be set.
 // After a succesful validation of the FCntUP and the MIC, don't forget
-// to increment the Node FCntUp by 1.
+// to synchronize the Node FCntUp with the packet FCnt.
 func (n NodeSession) ValidateAndGetFullFCntUp(fCntUp uint32) (uint32, bool) {
 	// we need to compare the difference of the 16 LSB
 	gap := uint32(uint16(fCntUp) - uint16(n.FCntUp%65536))

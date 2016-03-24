@@ -127,8 +127,8 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 		}
 	}
 
-	// increment counter
-	ns.FCntUp++
+	// sync counter with that of the device
+	ns.FCntUp = macPL.FHDR.FCnt
 	if err := saveNodeSession(ctx.RedisPool, ns); err != nil {
 		return fmt.Errorf("could not update node-session: %s", err)
 	}
