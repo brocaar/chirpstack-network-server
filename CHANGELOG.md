@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.0 (untagged)
+
+* Implement confirmed data up
+* Fix FCnt input bug in web-interface (number was casted to a string, which was rejected by the API)
+
 ## 0.3.1
 
 * Bugfix related to ``FCnt`` increment (thanks @ivajloip)

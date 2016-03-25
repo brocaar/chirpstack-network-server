@@ -104,7 +104,7 @@ func migrationsGo() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "migrations.go", size: 0, mode: os.FileMode(420), modTime: time.Unix(1458470419, 0)}
+	info := bindataFileInfo{name: "migrations.go", size: 0, mode: os.FileMode(420), modTime: time.Unix(1458903031, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
