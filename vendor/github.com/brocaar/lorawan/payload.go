@@ -2,6 +2,7 @@ package lorawan
 
 import (
 	"encoding"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -135,14 +136,55 @@ func (p *JoinRequestPayload) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
+// CFList represents a list of channel frequencies. Each frequency is in Hz
+// and must be multiple of 100, (since the frequency will be divided by 100
+// on encoding), the max allowed value is 2^24-1 * 100.
+type CFList [5]uint32
+
+// MarshalBinary marshals the object in binary form.
+func (l CFList) MarshalBinary() ([]byte, error) {
+	out := make([]byte, 0, 16)
+	for _, f := range l {
+		if f%100 != 0 {
+			return nil, errors.New("lorawan: frequency must be a multiple of 100")
+		}
+		f = f / 100
+		if f > 16777215 { // 2^24 - 1
+			return nil, errors.New("lorawan: max value of frequency is 2^24-1")
+		}
+		b := make([]byte, 4, 4)
+		binary.LittleEndian.PutUint32(b, f)
+		out = append(out, b[:3]...)
+	}
+	// last byte is 0 / RFU
+	return append(out, 0), nil
+}
+
+// UnmarshalBinary decodes the object from binary form.
+func (l *CFList) UnmarshalBinary(data []byte) error {
+	if len(data) != 16 {
+		return errors.New("lorawan: 16 bytes of data are expected")
+	}
+	for i := 0; i < 5; i++ {
+		l[i] = binary.LittleEndian.Uint32([]byte{
+			data[i*3],
+			data[i*3+1],
+			data[i*3+2],
+			0,
+		}) * 100
+	}
+
+	return nil
+}
+
 // JoinAcceptPayload represents the join-accept message payload.
-// todo: implement CFlist
 type JoinAcceptPayload struct {
 	AppNonce   [3]byte
 	NetID      [3]byte
 	DevAddr    DevAddr
 	DLSettings DLsettings
 	RXDelay    uint8
+	CFList     *CFList
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -170,13 +212,22 @@ func (p JoinAcceptPayload) MarshalBinary() ([]byte, error) {
 	out = append(out, b...)
 	out = append(out, byte(p.RXDelay))
 
+	if p.CFList != nil {
+		b, err = p.CFList.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, b...)
+	}
+
 	return out, nil
 }
 
 // UnmarshalBinary decodes the object from binary form.
 func (p *JoinAcceptPayload) UnmarshalBinary(data []byte) error {
-	if len(data) != 12 {
-		return errors.New("lorawan: 12 bytes of data are expected")
+	l := len(data)
+	if l != 12 && l != 28 {
+		return errors.New("lorawan: 12 or 28 bytes of data are expected (28 bytes if CFList is present)")
 	}
 
 	// little endian
@@ -194,5 +245,13 @@ func (p *JoinAcceptPayload) UnmarshalBinary(data []byte) error {
 		return err
 	}
 	p.RXDelay = uint8(data[11])
+
+	if l == 28 {
+		p.CFList = &CFList{}
+		if err := p.CFList.UnmarshalBinary(data[12:]); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

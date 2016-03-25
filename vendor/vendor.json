@@ -9,8 +9,8 @@
 		},
 		{
 			"path": "github.com/brocaar/lorawan",
-			"revision": "4fb7ead1de97b4175d1df0c840e605fea4fca420",
-			"revisionTime": "2016-03-13T18:48:52+01:00"
+			"revision": "6a90a1f556b1081e42474519b5b051187b3c28b6",
+			"revisionTime": "2016-03-20T21:30:44+01:00"
 		},
 		{
 			"path": "github.com/codegangsta/cli",
