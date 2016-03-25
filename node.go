@@ -165,7 +165,14 @@ func addTXPayloadToQueue(p *redis.Pool, payload TXPayload) error {
 	c.Send("RPUSH", key, buf.Bytes())
 	c.Send("PEXPIRE", key, exp)
 	_, err := c.Do("EXEC")
-	return err
+
+	if err != nil {
+		return err
+	}
+
+	log.WithField("dev_eui", payload.DevEUI).Info("payload added to queue")
+
+	return nil
 }
 
 // getTXPayloadQueueSize returns the size of the TXPayload queue.

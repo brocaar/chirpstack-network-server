@@ -89,6 +89,8 @@ func (b *Backend) txPayloadHandler(c *mqtt.Client, msg mqtt.Message) {
 	b.wg.Add(1)
 	defer b.wg.Done()
 
+	log.WithField("topic", msg.Topic()).Info("application/mqttpubsub: payload received")
+
 	// get the DevEUI from the topic. with mqtt it is possible to perform
 	// authorization on a per topic level. we need to be sure that the
 	// topic DevEUI matches the payload DevEUI.
