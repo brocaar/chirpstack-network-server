@@ -31,17 +31,16 @@ type NodeSession struct {
 	DevEUI   lorawan.EUI64     `db:"dev_eui" json:"devEUI"`
 	AppSKey  lorawan.AES128Key `db:"app_s_key" json:"appSKey"`
 	NwkSKey  lorawan.AES128Key `db:"nwk_s_key" json:"nwkSKey"`
-	FCntUp   uint32            `db:"fcnt_up" json:"fCntUp"`     // the next expected value
-	FCntDown uint32            `db:"fcnt_down" json:"fCntDown"` // the next expected value
+	FCntUp   uint32            `db:"fcnt_up" json:"fCntUp"`
+	FCntDown uint32            `db:"fcnt_down" json:"fCntDown"`
 }
 
 // ValidateAndGetFullFCntUp validates if the given fCntUp is valid
 // and returns the full 32 bit frame-counter.
 // Note that the LoRaWAN packet only contains the 16 LSB, so in order
 // to validate the MIC, the full 32 bit frame-counter needs to be set.
-// After a succesful validation of the FCntUP and the MIC, don't forget
-// to set the Node FCntUp to packet FCnt + 1 (it is possible and valid
-// that some packet were not received).
+// After a succesful validation of the FCntUp and the MIC, don't forget
+// to synchronize the Node FCntUp with the packet FCnt.
 func (n NodeSession) ValidateAndGetFullFCntUp(fCntUp uint32) (uint32, bool) {
 	// we need to compare the difference of the 16 LSB
 	gap := uint32(uint16(fCntUp) - uint16(n.FCntUp%65536))

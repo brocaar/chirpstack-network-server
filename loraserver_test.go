@@ -96,10 +96,10 @@ func TestHandleDataUpPackets(t *testing.T) {
 						})
 					})
 
-					Convey("Then the FCntUp is packet FCnt + 1", func() {
+					Convey("Then the FCntUp must be synced", func() {
 						nsUpdated, err := getNodeSession(p, ns.DevAddr)
 						So(err, ShouldBeNil)
-						So(nsUpdated.FCntUp, ShouldEqual, 11)
+						So(nsUpdated.FCntUp, ShouldEqual, 10)
 					})
 
 					Convey("Then no downlink data was sent to the gateway", func() {
