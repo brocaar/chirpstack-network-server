@@ -18,6 +18,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 		}
 		gw := &testGatewayBackend{
 			rxPacketChan: make(chan RXPacket),
+			txPacketChan: make(chan TXPacket, 2),
 		}
 		p := NewRedisPool(conf.RedisURL)
 		mustFlushRedis(p)
@@ -35,9 +36,8 @@ func TestHandleDataUpPackets(t *testing.T) {
 				AppSKey:  lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				NwkSKey:  lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 				FCntUp:   8,
-				FCntDown: 0,
-
-				AppEUI: lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
+				FCntDown: 5,
+				AppEUI:   lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
 			}
 			So(saveNodeSession(p, ns), ShouldBeNil)
 
@@ -100,6 +100,17 @@ func TestHandleDataUpPackets(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(nsUpdated.FCntUp, ShouldEqual, 11)
 					})
+
+					Convey("Then no downlink data was sent to the gateway", func() {
+						var received bool
+						select {
+						case <-gw.txPacketChan:
+							received = true
+						case <-time.After(time.Second):
+							// nothing to do
+						}
+						So(received, ShouldEqual, false)
+					})
 				})
 
 				Convey("Given that the application backend returns an error", func() {
@@ -132,6 +143,80 @@ func TestHandleDataUpPackets(t *testing.T) {
 					Convey("Then handleRXPacket returns a MIC related error", func() {
 						err := handleRXPacket(ctx, rxPacket)
 						So(err, ShouldResemble, errors.New("invalid MIC"))
+					})
+				})
+			})
+
+			Convey("Given a ConfirmedDataUp packet", func() {
+				macPL := lorawan.NewMACPayload(true)
+				macPL.FHDR = lorawan.FHDR{
+					DevAddr: ns.DevAddr,
+					FCnt:    10,
+				}
+				macPL.FPort = 1
+				macPL.FRMPayload = []lorawan.Payload{
+					&lorawan.DataPayload{Bytes: []byte("hello!")},
+				}
+				So(macPL.EncryptFRMPayload(ns.AppSKey), ShouldBeNil)
+
+				phy := lorawan.NewPHYPayload(true)
+				phy.MHDR = lorawan.MHDR{
+					MType: lorawan.ConfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				}
+				phy.MACPayload = macPL
+				So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
+
+				rxPacket := RXPacket{
+					RXInfo: RXInfo{
+						MAC:        [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+						Time:       time.Now().UTC(),
+						Timestamp:  708016819,
+						Frequency:  868.5,
+						Channel:    2,
+						RFChain:    1,
+						CRCStatus:  1,
+						Modulation: "LORA",
+						DataRate:   DataRate{LoRa: "SF7BW125"},
+						CodeRate:   "4/5",
+						RSSI:       -51,
+						LoRaSNR:    7,
+						Size:       16,
+					},
+					PHYPayload: phy,
+				}
+
+				Convey("When calling handleRXPacket", func() {
+					So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
+
+					Convey("Then the packet is correctly received by the application backend", func() {
+						packet := <-app.rxPayloadChan
+						So(packet, ShouldResemble, RXPayload{
+							MType:        lorawan.ConfirmedDataUp,
+							DevEUI:       ns.DevEUI,
+							ACK:          false,
+							FPort:        1,
+							GatewayCount: 1,
+							Data:         []byte("hello!"),
+						})
+					})
+
+					Convey("Then two ACK packets are sent to the gateway (two receive windows)", func() {
+						txPacket1 := <-gw.txPacketChan
+						txPacket2 := <-gw.txPacketChan
+
+						So(txPacket1.PHYPayload.MIC, ShouldEqual, txPacket2.PHYPayload.MIC)
+
+						macPL, ok := txPacket1.PHYPayload.MACPayload.(*lorawan.MACPayload)
+						So(ok, ShouldBeTrue)
+						So(macPL.FHDR.FCtrl.ACK, ShouldBeTrue)
+						So(macPL.FHDR.FCnt, ShouldEqual, 5)
+
+						Convey("Then the FCntDown counter has incremented", func() {
+							ns, err := getNodeSession(ctx.RedisPool, ns.DevAddr)
+							So(err, ShouldBeNil)
+							So(ns.FCntDown, ShouldEqual, 6)
+						})
 					})
 				})
 			})

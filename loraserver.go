@@ -156,6 +156,68 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("could not update node-session: %s", err)
 	}
 
+	// handle downlink (ACK)
+	return handleDataDownReply(ctx, rxPacket, ns)
+}
+
+func handleDataDownReply(ctx Context, rxPacket RXPacket, ns NodeSession) error {
+	if rxPacket.PHYPayload.MHDR.MType != lorawan.ConfirmedDataUp {
+		return nil
+	}
+
+	phy := lorawan.NewPHYPayload(false)
+	phy.MHDR = lorawan.MHDR{
+		MType: lorawan.UnconfirmedDataDown,
+		Major: lorawan.LoRaWANR1,
+	}
+
+	macPL := lorawan.NewMACPayload(true)
+	macPL.FHDR = lorawan.FHDR{
+		DevAddr: ns.DevAddr,
+		FCtrl: lorawan.FCtrl{
+			ACK: true,
+		},
+		FCnt: ns.FCntDown,
+	}
+	phy.MACPayload = macPL
+	if err := phy.SetMIC(ns.NwkSKey); err != nil {
+		return fmt.Errorf("could not set MIC: %s", err)
+	}
+
+	txPacket := TXPacket{
+		TXInfo: TXInfo{
+			MAC:       rxPacket.RXInfo.MAC,
+			Timestamp: rxPacket.RXInfo.Timestamp + uint32(lorawan.ReceiveDelay1/time.Microsecond),
+			Frequency: rxPacket.RXInfo.Frequency,
+			Power:     14,
+			DataRate:  rxPacket.RXInfo.DataRate,
+			CodeRate:  rxPacket.RXInfo.CodeRate,
+		},
+		PHYPayload: phy,
+	}
+
+	// window 1
+	if err := ctx.Gateway.Send(txPacket); err != nil {
+		return fmt.Errorf("sending TXPacket to the gateway failed: %s", err)
+	}
+
+	// window 2
+	// TODO: define regio specific constants
+	txPacket.TXInfo.Timestamp = rxPacket.RXInfo.Timestamp + uint32(lorawan.ReceiveDelay2/time.Microsecond)
+	txPacket.TXInfo.Frequency = 869.525
+	txPacket.TXInfo.DataRate = DataRate{
+		LoRa: "SF12BW125",
+	}
+	if err := ctx.Gateway.Send(txPacket); err != nil {
+		return fmt.Errorf("sending TXPacket to the gateway failed: %s", err)
+	}
+
+	// increment counter
+	ns.FCntDown++
+	if err := saveNodeSession(ctx.RedisPool, ns); err != nil {
+		return fmt.Errorf("could not update node-session: %s", err)
+	}
+
 	return nil
 }
 

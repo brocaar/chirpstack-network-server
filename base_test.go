@@ -1,8 +1,6 @@
 package loraserver
 
 import (
-	"io/ioutil"
-	golog "log"
 	"os"
 
 	log "github.com/Sirupsen/logrus"
@@ -15,7 +13,6 @@ import (
 
 func init() {
 	log.SetLevel(log.ErrorLevel)
-	golog.SetOutput(ioutil.Discard)
 }
 
 type config struct {
