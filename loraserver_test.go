@@ -47,7 +47,8 @@ func TestHandleDataUpPackets(t *testing.T) {
 					DevAddr: ns.DevAddr,
 					FCnt:    10,
 				}
-				macPL.FPort = 1
+				fPort := uint8(1)
+				macPL.FPort = &fPort
 				macPL.FRMPayload = []lorawan.Payload{
 					&lorawan.DataPayload{Bytes: []byte("hello!")},
 				}
@@ -153,7 +154,8 @@ func TestHandleDataUpPackets(t *testing.T) {
 					DevAddr: ns.DevAddr,
 					FCnt:    10,
 				}
-				macPL.FPort = 1
+				fPort := uint8(1)
+				macPL.FPort = &fPort
 				macPL.FRMPayload = []lorawan.Payload{
 					&lorawan.DataPayload{Bytes: []byte("hello!")},
 				}

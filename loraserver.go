@@ -79,14 +79,16 @@ func validateAndCollectDataUpRXPacket(ctx Context, rxPacket RXPacket) error {
 		return errors.New("invalid MIC")
 	}
 
-	if macPL.FPort == 0 {
-		// decrypt FRMPayload with NwkSKey when FPort == 0
-		if err := macPL.DecryptFRMPayload(ns.NwkSKey); err != nil {
-			return err
-		}
-	} else {
-		if err := macPL.DecryptFRMPayload(ns.AppSKey); err != nil {
-			return err
+	if macPL.FPort != nil {
+		if *macPL.FPort == 0 {
+			// decrypt FRMPayload with NwkSKey when FPort == 0
+			if err := macPL.DecryptFRMPayload(ns.NwkSKey); err != nil {
+				return err
+			}
+		} else {
+			if err := macPL.DecryptFRMPayload(ns.AppSKey); err != nil {
+				return err
+			}
 		}
 	}
 	rxPacket.PHYPayload.MACPayload = macPL
@@ -123,28 +125,33 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("could not get node-session: %s", err)
 	}
 
-	if macPL.FPort == 0 {
-		log.Warn("todo: implement FPort == 0 packets")
-	} else {
-		if len(macPL.FRMPayload) != 1 {
-			return errors.New("FRMPayload must have length 1")
-		}
+	if macPL.FPort != nil {
+		if *macPL.FPort == 0 {
+			log.Warn("todo: implement FPort == 0 packets")
+		} else {
+			var data []byte
 
-		dataPL, ok := macPL.FRMPayload[0].(*lorawan.DataPayload)
-		if !ok {
-			return errors.New("FRMPayload must be of type *lorawan.DataPayload")
-		}
+			// it is possible that the FRMPayload is empty, in this case only
+			// the FPort will be send
+			if len(macPL.FRMPayload) == 1 {
+				dataPL, ok := macPL.FRMPayload[0].(*lorawan.DataPayload)
+				if !ok {
+					return errors.New("FRMPayload must be of type *lorawan.DataPayload")
+				}
+				data = dataPL.Bytes
+			}
 
-		err = ctx.Application.Send(ns.DevEUI, ns.AppEUI, RXPayload{
-			MType:        rxPacket.PHYPayload.MHDR.MType,
-			DevEUI:       ns.DevEUI,
-			GatewayCount: len(rxPackets),
-			ACK:          macPL.FHDR.FCtrl.ACK,
-			FPort:        int(macPL.FPort),
-			Data:         dataPL.Bytes,
-		})
-		if err != nil {
-			return fmt.Errorf("could not send RXPacket to application: %s", err)
+			err = ctx.Application.Send(ns.DevEUI, ns.AppEUI, RXPayload{
+				MType:        rxPacket.PHYPayload.MHDR.MType,
+				DevEUI:       ns.DevEUI,
+				GatewayCount: len(rxPackets),
+				ACK:          macPL.FHDR.FCtrl.ACK,
+				FPort:        int(*macPL.FPort),
+				Data:         data,
+			})
+			if err != nil {
+				return fmt.Errorf("could not send RXPacket to application: %s", err)
+			}
 		}
 	}
 
