@@ -116,21 +116,18 @@ type GatewayStatsPacket struct {
 // RXPayload contains the received (decrypted) payload from the node
 // which will be sent to the application.
 type RXPayload struct {
-	MType        lorawan.MType `json:"mType"`
 	DevEUI       lorawan.EUI64 `json:"devEUI"`
-	ACK          bool          `json:"ack"`
-	FPort        int           `json:"fPort"`
+	FPort        uint8         `json:"fPort"`
 	GatewayCount int           `json:"gatewayCount"`
 	Data         []byte        `json:"data"`
 }
 
 // TXPayload contains the payload to be sent to the node.
 type TXPayload struct {
-	MType  lorawan.MType `json:"mType"`
-	DevEUI lorawan.EUI64 `json:"devEUI"`
-	ACK    bool          `json:"ack"`
-	FPort  uint8         `json:"fPort"`
-	Data   []byte        `json:"data"`
+	Confirmed bool          `json:"confirmed"` // indicates if the packet needs to be confirmed with an ACK
+	DevEUI    lorawan.EUI64 `json:"devEUI"`    // the DevEUI of the node to send the payload to
+	FPort     uint8         `json:"fPort"`     // the FPort
+	Data      []byte        `json:"data"`      // the data to send (unencrypted, in JSON this must be the base64 representation of the data)
 }
 
 // collectAndCallOnce collects the package, sleeps the configured duraction and

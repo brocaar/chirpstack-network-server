@@ -87,9 +87,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 					Convey("Then the packet is correctly received by the application backend", func() {
 						packet := <-app.rxPayloadChan
 						So(packet, ShouldResemble, RXPayload{
-							MType:        lorawan.UnconfirmedDataUp,
 							DevEUI:       ns.DevEUI,
-							ACK:          false,
 							FPort:        1,
 							GatewayCount: 1,
 							Data:         []byte("hello!"),
@@ -194,9 +192,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 					Convey("Then the packet is correctly received by the application backend", func() {
 						packet := <-app.rxPayloadChan
 						So(packet, ShouldResemble, RXPayload{
-							MType:        lorawan.ConfirmedDataUp,
 							DevEUI:       ns.DevEUI,
-							ACK:          false,
 							FPort:        1,
 							GatewayCount: 1,
 							Data:         []byte("hello!"),

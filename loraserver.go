@@ -180,11 +180,9 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 			}
 
 			err = ctx.Application.Send(ns.DevEUI, ns.AppEUI, RXPayload{
-				MType:        rxPacket.PHYPayload.MHDR.MType,
 				DevEUI:       ns.DevEUI,
 				GatewayCount: len(rxPackets),
-				ACK:          macPL.FHDR.FCtrl.ACK,
-				FPort:        int(*macPL.FPort),
+				FPort:        *macPL.FPort,
 				Data:         data,
 			})
 			if err != nil {

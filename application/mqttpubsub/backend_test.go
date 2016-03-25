@@ -43,7 +43,6 @@ func TestBackend(t *testing.T) {
 					appEUI := lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2}
 
 					rxPacket := loraserver.RXPayload{
-						MType:  lorawan.ConfirmedDataUp,
 						DevEUI: devEUI,
 					}
 					So(backend.Send(devEUI, appEUI, rxPacket), ShouldBeNil)
@@ -58,11 +57,10 @@ func TestBackend(t *testing.T) {
 
 			Convey("Given a ApplicationTXPayload is published by the MQTT client", func() {
 				pl := loraserver.TXPayload{
-					MType:  lorawan.UnconfirmedDataDown,
-					DevEUI: [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
-					ACK:    true,
-					FPort:  1,
-					Data:   []byte("hello!"),
+					Confirmed: false,
+					DevEUI:    [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+					FPort:     1,
+					Data:      []byte("hello!"),
 				}
 				b, err := json.Marshal(pl)
 				So(err, ShouldBeNil)
