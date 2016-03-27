@@ -21,7 +21,8 @@ var NodeTXPayloadQueueTTL = time.Hour * 24 * 5
 const UsedDevNonceCount = 10
 
 const (
-	nodeTXPayloadQueueTempl = "node_tx_queue_%s"
+	nodeTXPayloadQueueTempl     = "node_tx_queue_%s"
+	nodeTXPayloadInProcessTempl = "node_tx_in_process_%s"
 )
 
 // DevNonceList represents a list of dev nonces
@@ -162,7 +163,7 @@ func addTXPayloadToQueue(p *redis.Pool, payload TXPayload) error {
 	key := fmt.Sprintf(nodeTXPayloadQueueTempl, payload.DevEUI)
 
 	c.Send("MULTI")
-	c.Send("RPUSH", key, buf.Bytes())
+	c.Send("LPUSH", key, buf.Bytes())
 	c.Send("PEXPIRE", key, exp)
 	_, err := c.Do("EXEC")
 
@@ -175,42 +176,73 @@ func addTXPayloadToQueue(p *redis.Pool, payload TXPayload) error {
 	return nil
 }
 
-// getTXPayloadQueueSize returns the size of the TXPayload queue.
-func getTXPayloadQueueSize(p *redis.Pool, devEUI lorawan.EUI64) (int, error) {
-	key := fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)
+// getTXPayloadAndRemainingFromQueue returns the first TXPayload to send
+// to the node and a bool indicating if there are more payloads pending to be
+// send. This is either an in-process item (e.g. an item that needs
+// to be re-transmitted or an item from the queue (which will be marked as
+// in-process when consuming). After a successful transmission, don't forget
+// to call clearInProcessTXPayload.
+// errDoesNotExist is returned when there are no items to send.
+func getTXPayloadAndRemainingFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (TXPayload, bool, error) {
+	var txPayload TXPayload
+	queueKey := fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)
+	pendingKey := fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)
+
 	c := p.Get()
 	defer c.Close()
 
-	return redis.Int(c.Do("LLEN", key))
-}
-
-// getFirstTXPayloadQueueItem returns (and dequeues) the first item from
-// the TXPayload queue and the remaining item-count in the queue. When the
-// queue is empty, an errDoesNotExist error is returned.
-func getFirstTXPayloadQueueItem(p *redis.Pool, devEUI lorawan.EUI64) (TXPayload, int, error) {
-	var payload TXPayload
-	key := fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)
-	c := p.Get()
-	defer c.Close()
-
-	c.Send("LPOP", key)
-	c.Send("LLEN", key)
+	c.Send("LINDEX", pendingKey, -1)
+	c.Send("LLEN", queueKey)
 	c.Flush()
 
 	b, err := redis.Bytes(c.Receive())
+	if err != nil && err != redis.ErrNil { // something went wrong
+		return txPayload, false, err
+	}
+	if err == nil { // there is an in-process item
+		// read the queue size
+		i, err := redis.Int(c.Receive())
+		if err != nil {
+			return txPayload, false, err
+		}
+		return txPayload, i > 0, gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload)
+	}
+
+	// redis.ErrNil error was returned, return item from the queue
+	i, err := redis.Int(c.Receive())
+	if i == 0 {
+		return txPayload, false, errDoesNotExist
+	}
+
+	c.Send("RPOPLPUSH", queueKey, pendingKey)
+	c.Send("LLEN", queueKey)
+	c.Flush()
+
+	// read payload from queue
+	b, err = redis.Bytes(c.Receive())
 	if err != nil {
 		if err == redis.ErrNil {
-			return payload, 0, errDoesNotExist
+			err = errDoesNotExist
 		}
-		return payload, 0, err
+		return txPayload, false, err
 	}
-
-	i, err := redis.Int(c.Receive())
+	// read remaining items
+	i, err = redis.Int(c.Receive())
 	if err != nil {
-		return payload, 0, err
+		return txPayload, false, err
 	}
 
-	return payload, i, gob.NewDecoder(bytes.NewReader(b)).Decode(&payload)
+	return txPayload, i > 0, gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload)
+}
+
+// clearInProcessTXPayload clears the in-process TXPayload (to be called
+// after a successful transmission).
+func clearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) error {
+	key := fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)
+	c := p.Get()
+	defer c.Close()
+	_, err := redis.Int(c.Do("DEL", key))
+	return err
 }
 
 // NodeAPI exports the Node related functions.
