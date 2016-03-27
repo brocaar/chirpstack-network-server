@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -15,24 +16,61 @@ var (
 	errDoesNotExist = errors.New("object does not exist")
 )
 
-// Start starts the loraserver.
-func Start(ctx Context) error {
+// Server represents a LoRaWAN network-server.
+type Server struct {
+	ctx Context
+	wg  sync.WaitGroup
+}
+
+// NewServer creates a new server.
+func NewServer(ctx Context) *Server {
+	return &Server{
+		ctx: ctx,
+	}
+}
+
+// Start starts the server.
+func (s *Server) Start() error {
 	log.WithFields(log.Fields{
-		"net_id": ctx.NetID,
-		"nwk_id": hex.EncodeToString([]byte{ctx.NetID.NwkID()}),
+		"net_id": s.ctx.NetID,
+		"nwk_id": hex.EncodeToString([]byte{s.ctx.NetID.NwkID()}),
 	}).Info("starting loraserver")
-	handleRXPackets(ctx)
+
+	go func() {
+		s.wg.Add(1)
+		handleRXPackets(s.ctx)
+		s.wg.Done()
+	}()
+	return nil
+}
+
+// Stop closes the gateway and application backends and waits for the
+// server to complete the pending packets.
+func (s *Server) Stop() error {
+	if err := s.ctx.Gateway.Close(); err != nil {
+		return err
+	}
+	if err := s.ctx.Application.Close(); err != nil {
+		return err
+	}
+
+	log.Info("waiting for pending packets to complete")
+	s.wg.Wait()
 	return nil
 }
 
 func handleRXPackets(ctx Context) {
+	var wg sync.WaitGroup
 	for rxPacket := range ctx.Gateway.RXPacketChan() {
 		go func(rxPacket RXPacket) {
+			wg.Add(1)
 			if err := handleRXPacket(ctx, rxPacket); err != nil {
 				log.Errorf("error while processing RXPacket: %s", err)
 			}
+			wg.Done()
 		}(rxPacket)
 	}
+	wg.Wait()
 }
 
 func handleRXPacket(ctx Context, rxPacket RXPacket) error {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sync"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/brocaar/loraserver"
@@ -12,12 +13,15 @@ import (
 	"github.com/eclipse/paho.mqtt.golang"
 )
 
+const txTopic = "application/+/node/+/tx"
+
 var txTopicRegex = regexp.MustCompile(`application/(\w+)/node/(\w+)/tx`)
 
 // Backend implements a MQTT pub-sub application backend.
 type Backend struct {
 	conn          *mqtt.Client
 	txPayloadChan chan loraserver.TXPayload
+	wg            sync.WaitGroup
 }
 
 // NewBackend creates a new Backend.
@@ -37,8 +41,8 @@ func NewBackend(server, username, password string) (loraserver.ApplicationBacken
 		return nil, token.Error()
 	}
 
-	log.WithField("topic", "application/+/node/+/tx").Info("application/mqttpubsub: subscribing to tx topic")
-	if token := b.conn.Subscribe("application/+/node/+/tx", 0, b.txPayloadHandler); token.Wait() && token.Error() != nil {
+	log.WithField("topic", txTopic).Info("application/mqttpubsub: subscribing to tx topic")
+	if token := b.conn.Subscribe(txTopic, 0, b.txPayloadHandler); token.Wait() && token.Error() != nil {
 		return nil, token.Error()
 	}
 
@@ -46,8 +50,18 @@ func NewBackend(server, username, password string) (loraserver.ApplicationBacken
 }
 
 // Close closes the backend.
+// Note that this closes the backend one-way (application to the backend).
+// This makes it possible to perform a graceful shutdown (e.g. when there are
+// still packets to send back to the application).
 func (b *Backend) Close() error {
-	b.conn.Disconnect(250)
+	log.Info("application/mqttpubsub: closing backend")
+	log.WithField("topic", txTopic).Info("application/mqttpubsub: unsubscribing from tx topic")
+	if token := b.conn.Unsubscribe(txTopic); token.Wait() && token.Error() != nil {
+		return token.Error()
+	}
+	log.Info("application/mqttpubsub: handling last consumed messages")
+	b.wg.Wait()
+	close(b.txPayloadChan)
 	return nil
 }
 
@@ -72,6 +86,9 @@ func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, payload loraserver.RXPayloa
 }
 
 func (b *Backend) txPayloadHandler(c *mqtt.Client, msg mqtt.Message) {
+	b.wg.Add(1)
+	defer b.wg.Done()
+
 	// get the DevEUI from the topic. with mqtt it is possible to perform
 	// authorization on a per topic level. we need to be sure that the
 	// topic DevEUI matches the payload DevEUI.

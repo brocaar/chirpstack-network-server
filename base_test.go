@@ -73,6 +73,9 @@ func (b *testGatewayBackend) RXPacketChan() chan RXPacket {
 }
 
 func (b *testGatewayBackend) Close() error {
+	if b.rxPacketChan != nil {
+		close(b.rxPacketChan)
+	}
 	return nil
 }
 
@@ -88,6 +91,9 @@ func (b *testApplicationBackend) Send(devEUI, appEUI lorawan.EUI64, payload RXPa
 }
 
 func (b *testApplicationBackend) Close() error {
+	if b.txPayloadChan != nil {
+		close(b.txPayloadChan)
+	}
 	return nil
 }
 

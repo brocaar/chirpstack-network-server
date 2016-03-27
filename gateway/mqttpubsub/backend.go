@@ -4,16 +4,20 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"sync"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/brocaar/loraserver"
 	"github.com/eclipse/paho.mqtt.golang"
 )
 
+const rxTopic = "gateway/+/rx"
+
 // Backend implements a MQTT pub-sub backend.
 type Backend struct {
 	conn         *mqtt.Client
 	rxPacketChan chan loraserver.RXPacket
+	wg           sync.WaitGroup
 }
 
 // NewBackend creates a new Backend.
@@ -33,8 +37,8 @@ func NewBackend(server, username, password string) (loraserver.GatewayBackend, e
 		return nil, token.Error()
 	}
 
-	log.WithField("topic", "gateway/+/rx").Info("gateway/mqttpubsub: subscribing to rx topic")
-	if token := b.conn.Subscribe("gateway/+/rx", 0, b.rxPacketHandler); token.Wait() && token.Error() != nil {
+	log.WithField("topic", rxTopic).Info("gateway/mqttpubsub: subscribing to rx topic")
+	if token := b.conn.Subscribe(rxTopic, 0, b.rxPacketHandler); token.Wait() && token.Error() != nil {
 		return nil, token.Error()
 	}
 
@@ -42,8 +46,18 @@ func NewBackend(server, username, password string) (loraserver.GatewayBackend, e
 }
 
 // Close closes the backend.
+// Note that this closes the backend one-way (gateway to backend).
+// This makes it possible to perform a graceful shutdown (e.g. when there are
+// still packets to send back to the gateway).
 func (b *Backend) Close() error {
-	b.conn.Disconnect(250) // wait 250 milisec to complete pending operations
+	log.Info("gateway/mqttpubsub: closing backend")
+	log.WithField("topic", rxTopic).Info("gateway/mqttpubsub: unsubscribing from rx topic")
+	if token := b.conn.Unsubscribe(rxTopic); token.Wait() && token.Error() != nil {
+		return token.Error()
+	}
+	log.Info("gateway/mqttpubsub: handling last consumed messages")
+	b.wg.Wait()
+	close(b.rxPacketChan)
 	return nil
 }
 
@@ -68,6 +82,9 @@ func (b *Backend) Send(txPacket loraserver.TXPacket) error {
 }
 
 func (b *Backend) rxPacketHandler(c *mqtt.Client, msg mqtt.Message) {
+	b.wg.Add(1)
+	defer b.wg.Done()
+
 	var rxPacket loraserver.RXPacket
 	dec := gob.NewDecoder(bytes.NewReader(msg.Payload()))
 	if err := dec.Decode(&rxPacket); err != nil {

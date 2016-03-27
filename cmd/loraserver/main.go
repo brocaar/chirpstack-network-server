@@ -78,11 +78,10 @@ func run(c *cli.Context) {
 	}
 
 	// start the loraserver
-	go func() {
-		if err := loraserver.Start(ctx); err != nil {
-			log.Fatal(err)
-		}
-	}()
+	server := loraserver.NewServer(ctx)
+	if err := server.Start(); err != nil {
+		log.Fatal(err)
+	}
 
 	// setup json-rpc api handler
 	apiHandler, err := loraserver.NewJSONRPCHandler(
@@ -115,6 +114,9 @@ func run(c *cli.Context) {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	log.WithField("signal", <-sigChan).Info("signal received")
 	log.Warning("loraserver is shutting down")
+	if err := server.Stop(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {
