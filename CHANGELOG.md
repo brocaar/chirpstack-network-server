@@ -3,6 +3,9 @@
 ## 0.4.0 (untagged)
 
 * Implement confirmed data up
+* Implement (confirmed) data down
+* Implement graceful shutdown
+* Re-subscribe on mqtt connection error (thanks @Magicking)
 * Fix FCnt input bug in web-interface (number was casted to a string, which was rejected by the API)
 
 ## 0.3.1

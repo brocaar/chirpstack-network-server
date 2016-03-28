@@ -21,7 +21,7 @@ Note: This project is under development. Please test and give feedback but know 
 - [x] auto-generated RPC documentation
 - [ ] freeze initial database schema
 - [x] confirmed data up
-- [ ] data down (confirmed and unconfirmed)
+- [x] data down (confirmed and unconfirmed)
 - [ ] handling of mac commands
 - [ ] cross band (only the EU 863-870MHz ISM Band is supported right now)
 - [ ] cross-platform binary build (only linux amd64 is available right now)
