@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 (untagged)
+## 0.4.0
 
 * Implement confirmed data up
 * Implement (confirmed) data down
