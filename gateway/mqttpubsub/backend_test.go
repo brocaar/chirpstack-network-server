@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"testing"
+	"time"
 
 	"github.com/brocaar/loraserver"
 	"github.com/eclipse/paho.mqtt.golang"
@@ -24,6 +25,7 @@ func TestBackend(t *testing.T) {
 			backend, err := NewBackend(conf.Server, conf.Username, conf.Password)
 			So(err, ShouldBeNil)
 			defer backend.Close()
+			time.Sleep(time.Millisecond * 100) // give the backend some time to subscribe to the topic
 
 			Convey("Given the MQTT client is subscribed to gateway/+/tx", func() {
 				txPacketChan := make(chan loraserver.TXPacket)
