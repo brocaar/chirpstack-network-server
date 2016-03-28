@@ -30,15 +30,11 @@ func NewBackend(server, username, password string) (loraserver.GatewayBackend, e
 	opts.AddBroker(server)
 	opts.SetUsername(username)
 	opts.SetPassword(password)
+	opts.SetOnConnectHandler(b.onConnected)
 
 	log.WithField("server", server).Info("gateway/mqttpubsub: connecting to mqtt server")
 	b.conn = mqtt.NewClient(opts)
 	if token := b.conn.Connect(); token.Wait() && token.Error() != nil {
-		return nil, token.Error()
-	}
-
-	log.WithField("topic", rxTopic).Info("gateway/mqttpubsub: subscribing to rx topic")
-	if token := b.conn.Subscribe(rxTopic, 0, b.rxPacketHandler); token.Wait() && token.Error() != nil {
 		return nil, token.Error()
 	}
 
@@ -92,4 +88,12 @@ func (b *Backend) rxPacketHandler(c *mqtt.Client, msg mqtt.Message) {
 		return
 	}
 	b.rxPacketChan <- rxPacket
+}
+
+// Subscribe to Topic
+func (b *Backend) onConnected(c *mqtt.Client) {
+	log.WithField("topic", "gateway/+/rx").Info("gateway/mqttpubsub: subscribing to rx topic")
+	if token := b.conn.Subscribe("gateway/+/rx", 0, b.rxPacketHandler); token.Wait() && token.Error() != nil {
+		log.WithField("error", "gateway/+/rx").Errorf("gateway/mqttpubsub: subscribing to rx topic error: %s", token.Error())
+	}
 }

@@ -34,15 +34,11 @@ func NewBackend(server, username, password string) (loraserver.ApplicationBacken
 	opts.AddBroker(server)
 	opts.SetUsername(username)
 	opts.SetPassword(password)
+	opts.SetOnConnectHandler(b.onConnected)
 
 	log.WithField("server", server).Info("application/mqttpubsub: connecting to mqtt server")
 	b.conn = mqtt.NewClient(opts)
 	if token := b.conn.Connect(); token.Wait() && token.Error() != nil {
-		return nil, token.Error()
-	}
-
-	log.WithField("topic", txTopic).Info("application/mqttpubsub: subscribing to tx topic")
-	if token := b.conn.Subscribe(txTopic, 0, b.txPayloadHandler); token.Wait() && token.Error() != nil {
 		return nil, token.Error()
 	}
 
@@ -116,4 +112,12 @@ func (b *Backend) txPayloadHandler(c *mqtt.Client, msg mqtt.Message) {
 	}
 
 	b.txPayloadChan <- txPayload
+}
+
+// Subscribe to Topic
+func (b *Backend) onConnected(c *mqtt.Client) {
+	log.WithField("topic", "application/+/node/+/tx").Info("application/mqttpubsub: subscribing to tx topic")
+	if token := b.conn.Subscribe("application/+/node/+/tx", 0, b.txPayloadHandler); token.Wait() && token.Error() != nil {
+		log.WithField("error", "application/+/node/+/tx").Errorf("application/mqttpubsub: subscribing to tx topic error: %s", token.Error())
+	}
 }
