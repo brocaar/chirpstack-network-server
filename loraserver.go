@@ -277,7 +277,6 @@ func handleDataDownReply(ctx Context, rxPacket RXPacket, ns NodeSession) error {
 		macPL.FRMPayload = []lorawan.Payload{
 			&lorawan.DataPayload{Bytes: txPayload.Data},
 		}
-		log.Warning(string(txPayload.Data))
 		if err := macPL.EncryptFRMPayload(ns.AppSKey); err != nil {
 			return fmt.Errorf("could not encrypt FRMPayload: %s", err)
 		}
