@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"sync"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/brocaar/loraserver"
@@ -34,15 +35,12 @@ func NewBackend(server, username, password string) (loraserver.ApplicationBacken
 	opts.AddBroker(server)
 	opts.SetUsername(username)
 	opts.SetPassword(password)
+	opts.SetOnConnectHandler(b.onConnected)
+	opts.SetConnectionLostHandler(b.onConnectionLost)
 
 	log.WithField("server", server).Info("application/mqttpubsub: connecting to mqtt server")
 	b.conn = mqtt.NewClient(opts)
 	if token := b.conn.Connect(); token.Wait() && token.Error() != nil {
-		return nil, token.Error()
-	}
-
-	log.WithField("topic", txTopic).Info("application/mqttpubsub: subscribing to tx topic")
-	if token := b.conn.Subscribe(txTopic, 0, b.txPayloadHandler); token.Wait() && token.Error() != nil {
 		return nil, token.Error()
 	}
 
@@ -116,4 +114,21 @@ func (b *Backend) txPayloadHandler(c *mqtt.Client, msg mqtt.Message) {
 	}
 
 	b.txPayloadChan <- txPayload
+}
+
+func (b *Backend) onConnected(c *mqtt.Client) {
+	log.Info("application/mqttpubsub: connected to mqtt server")
+	for {
+		log.WithField("topic", txTopic).Info("application/mqttpubsub: subscribing to tx topic")
+		if token := b.conn.Subscribe(txTopic, 0, b.txPayloadHandler); token.Wait() && token.Error() != nil {
+			log.WithField("topic", txTopic).Errorf("application/mqttpubsub: subscribe failed: %s", token.Error())
+			time.Sleep(time.Second)
+			continue
+		}
+		return
+	}
+}
+
+func (b *Backend) onConnectionLost(c *mqtt.Client, reason error) {
+	log.Errorf("application/mqttpubsub: mqtt connection error: %s", reason)
 }
