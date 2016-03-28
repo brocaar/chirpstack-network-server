@@ -12,9 +12,10 @@ import (
 func TestHandleDataUpPackets(t *testing.T) {
 	conf := getConfig()
 
-	Convey("Given a dummy gateway and application backend and a clean Redis database", t, func() {
+	Convey("Given a clean state", t, func() {
 		app := &testApplicationBackend{
 			rxPayloadChan: make(chan RXPayload, 1),
+			txPayloadChan: make(chan TXPayload),
 		}
 		gw := &testGatewayBackend{
 			rxPacketChan: make(chan RXPacket),
@@ -41,7 +42,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 			}
 			So(saveNodeSession(p, ns), ShouldBeNil)
 
-			Convey("Given UnconfirmedDataUp packet", func() {
+			Convey("Given an UnconfirmedDataUp packet", func() {
 				macPL := lorawan.NewMACPayload(true)
 				macPL.FHDR = lorawan.FHDR{
 					DevAddr: ns.DevAddr,
@@ -63,23 +64,41 @@ func TestHandleDataUpPackets(t *testing.T) {
 				So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
 
 				rxPacket := RXPacket{
-					RXInfo: RXInfo{
-						MAC:        [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Time:       time.Now().UTC(),
-						Timestamp:  708016819,
-						Frequency:  868.5,
-						Channel:    2,
-						RFChain:    1,
-						CRCStatus:  1,
-						Modulation: "LORA",
-						DataRate:   DataRate{LoRa: "SF7BW125"},
-						CodeRate:   "4/5",
-						RSSI:       -51,
-						LoRaSNR:    7,
-						Size:       16,
-					},
 					PHYPayload: phy,
 				}
+
+				Convey("Given that the application backend returns an error", func() {
+					app.err = errors.New("BOOM")
+
+					Convey("Then handleRXPacket returns an error", func() {
+						So(handleRXPacket(ctx, rxPacket), ShouldNotBeNil)
+
+						Convey("Then the FCntUp has not been incremented", func() {
+							nsUpdated, err := getNodeSession(p, ns.DevAddr)
+							So(err, ShouldBeNil)
+							So(nsUpdated, ShouldResemble, ns)
+						})
+					})
+				})
+
+				Convey("When the frame-counter is invalid", func() {
+					ns.FCntUp = 11
+					So(saveNodeSession(p, ns), ShouldBeNil)
+
+					Convey("Then handleRXPacket returns a frame-counter related error", func() {
+						err := handleRXPacket(ctx, rxPacket)
+						So(err, ShouldResemble, errors.New("invalid FCnt or too many dropped frames"))
+					})
+				})
+
+				Convey("When the MIC is invalid", func() {
+					rxPacket.PHYPayload.MIC = [4]byte{1, 2, 3, 4}
+
+					Convey("Then handleRXPacket returns a MIC related error", func() {
+						err := handleRXPacket(ctx, rxPacket)
+						So(err, ShouldResemble, errors.New("invalid MIC"))
+					})
+				})
 
 				Convey("When calling handleRXPacket", func() {
 					So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
@@ -112,36 +131,141 @@ func TestHandleDataUpPackets(t *testing.T) {
 					})
 				})
 
-				Convey("Given that the application backend returns an error", func() {
-					app.err = errors.New("BOOM")
+				Convey("Given an enqueued TXPayload (unconfirmed)", func() {
+					txPayload := TXPayload{
+						Confirmed: false,
+						DevEUI:    ns.DevEUI,
+						FPort:     5,
+						Data:      []byte("hello back!"),
+					}
+					So(addTXPayloadToQueue(p, txPayload), ShouldBeNil)
 
 					Convey("When calling handleRXPacket", func() {
-						So(handleRXPacket(ctx, rxPacket), ShouldNotBeNil)
+						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
 
-						Convey("Then the FCntUp has not been incremented", func() {
-							nsUpdated, err := getNodeSession(p, ns.DevAddr)
+						Convey("Then the packet is received by the application backend", func() {
+							_ = <-app.rxPayloadChan
+						})
+
+						Convey("Then two identical packets are sent to the gateway (two receive windows)", func() {
+							txPacket1 := <-gw.txPacketChan
+							txPacket2 := <-gw.txPacketChan
+							So(txPacket1.PHYPayload, ShouldResemble, txPacket2.PHYPayload)
+
+							macPL, ok := txPacket1.PHYPayload.MACPayload.(*lorawan.MACPayload)
+							So(ok, ShouldBeTrue)
+
+							Convey("Then these packets contain the expected values", func() {
+								So(txPacket1.PHYPayload.MHDR.MType, ShouldEqual, lorawan.UnconfirmedDataDown)
+								So(macPL.FHDR.FCnt, ShouldEqual, ns.FCntDown)
+								So(macPL.FHDR.FCtrl.ACK, ShouldBeFalse)
+								So(*macPL.FPort, ShouldEqual, 5)
+
+								So(macPL.DecryptFRMPayload(ns.AppSKey), ShouldBeNil)
+								So(len(macPL.FRMPayload), ShouldEqual, 1)
+								pl, ok := macPL.FRMPayload[0].(*lorawan.DataPayload)
+								So(ok, ShouldBeTrue)
+								So(pl.Bytes, ShouldResemble, []byte("hello back!"))
+							})
+						})
+
+						Convey("Then the FCntDown was incremented", func() {
+							ns2, err := getNodeSession(p, ns.DevAddr)
 							So(err, ShouldBeNil)
-							So(nsUpdated, ShouldResemble, ns)
+							So(ns2.FCntDown, ShouldEqual, ns.FCntDown+1)
+						})
+
+						Convey("Then the TXPayload queue is empty", func() {
+							_, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
+							So(err, ShouldEqual, errDoesNotExist)
 						})
 					})
 				})
 
-				Convey("When the frame-counter is invalid", func() {
-					ns.FCntUp = 11
-					So(saveNodeSession(p, ns), ShouldBeNil)
+				Convey("Given an enqueued TXPayload (confirmed)", func() {
+					txPayload := TXPayload{
+						Confirmed: true,
+						DevEUI:    ns.DevEUI,
+						FPort:     5,
+						Data:      []byte("hello back!"),
+					}
+					So(addTXPayloadToQueue(p, txPayload), ShouldBeNil)
 
-					Convey("Then handleRXPacket returns a frame-counter related error", func() {
-						err := handleRXPacket(ctx, rxPacket)
-						So(err, ShouldResemble, errors.New("invalid FCnt or too many dropped frames"))
-					})
-				})
+					Convey("When calling handleRXPacket", func() {
+						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
 
-				Convey("When the MIC is invalid", func() {
-					rxPacket.PHYPayload.MIC = [4]byte{1, 2, 3, 4}
+						Convey("Then the packet is received by the application backend", func() {
+							_ = <-app.rxPayloadChan
+						})
 
-					Convey("Then handleRXPacket returns a MIC related error", func() {
-						err := handleRXPacket(ctx, rxPacket)
-						So(err, ShouldResemble, errors.New("invalid MIC"))
+						Convey("Then two identical packets are sent to the gateway (two receive windows)", func() {
+							txPacket1 := <-gw.txPacketChan
+							txPacket2 := <-gw.txPacketChan
+							So(txPacket1.PHYPayload, ShouldResemble, txPacket2.PHYPayload)
+
+							macPL, ok := txPacket1.PHYPayload.MACPayload.(*lorawan.MACPayload)
+							So(ok, ShouldBeTrue)
+
+							Convey("Then these packets contain the expected values", func() {
+								So(txPacket1.PHYPayload.MHDR.MType, ShouldEqual, lorawan.ConfirmedDataDown)
+								So(macPL.FHDR.FCnt, ShouldEqual, ns.FCntDown)
+								So(macPL.FHDR.FCtrl.ACK, ShouldBeFalse)
+								So(*macPL.FPort, ShouldEqual, 5)
+
+								So(macPL.DecryptFRMPayload(ns.AppSKey), ShouldBeNil)
+								So(len(macPL.FRMPayload), ShouldEqual, 1)
+								pl, ok := macPL.FRMPayload[0].(*lorawan.DataPayload)
+								So(ok, ShouldBeTrue)
+								So(pl.Bytes, ShouldResemble, []byte("hello back!"))
+							})
+						})
+
+						Convey("Then the TXPayload is still in the queue", func() {
+							tx, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
+							So(err, ShouldBeNil)
+							So(tx, ShouldResemble, txPayload)
+						})
+
+						Convey("Then the FCntDown was not incremented", func() {
+							ns2, err := getNodeSession(p, ns.DevAddr)
+							So(err, ShouldBeNil)
+							So(ns2.FCntDown, ShouldEqual, ns.FCntDown)
+
+							Convey("Given the node sends an ACK", func() {
+								macPL := lorawan.NewMACPayload(true)
+								macPL.FHDR = lorawan.FHDR{
+									DevAddr: ns.DevAddr,
+									FCnt:    11,
+									FCtrl: lorawan.FCtrl{
+										ACK: true,
+									},
+								}
+								phy := lorawan.NewPHYPayload(true)
+								phy.MHDR = lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataUp,
+									Major: lorawan.LoRaWANR1,
+								}
+								phy.MACPayload = macPL
+								So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
+
+								rxPacket := RXPacket{
+									PHYPayload: phy,
+								}
+
+								So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
+
+								Convey("Then the FCntDown was incremented", func() {
+									ns2, err := getNodeSession(p, ns.DevAddr)
+									So(err, ShouldBeNil)
+									So(ns2.FCntDown, ShouldEqual, ns.FCntDown+1)
+
+									Convey("Then the TXPayload queue is empty", func() {
+										_, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
+										So(err, ShouldEqual, errDoesNotExist)
+									})
+								})
+							})
+						})
 					})
 				})
 			})
@@ -168,21 +292,6 @@ func TestHandleDataUpPackets(t *testing.T) {
 				So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
 
 				rxPacket := RXPacket{
-					RXInfo: RXInfo{
-						MAC:        [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Time:       time.Now().UTC(),
-						Timestamp:  708016819,
-						Frequency:  868.5,
-						Channel:    2,
-						RFChain:    1,
-						CRCStatus:  1,
-						Modulation: "LORA",
-						DataRate:   DataRate{LoRa: "SF7BW125"},
-						CodeRate:   "4/5",
-						RSSI:       -51,
-						LoRaSNR:    7,
-						Size:       16,
-					},
 					PHYPayload: phy,
 				}
 
@@ -207,6 +316,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 						macPL, ok := txPacket1.PHYPayload.MACPayload.(*lorawan.MACPayload)
 						So(ok, ShouldBeTrue)
+
 						So(macPL.FHDR.FCtrl.ACK, ShouldBeTrue)
 						So(macPL.FHDR.FCnt, ShouldEqual, 5)
 
@@ -217,6 +327,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 						})
 					})
 				})
+
 			})
 		})
 	})
@@ -274,21 +385,6 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 				So(phy.SetMIC(node.AppKey), ShouldBeNil)
 
 				rxPacket := RXPacket{
-					RXInfo: RXInfo{
-						MAC:        [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Time:       time.Now().UTC(),
-						Timestamp:  708016819,
-						Frequency:  868.5,
-						Channel:    2,
-						RFChain:    1,
-						CRCStatus:  1,
-						Modulation: "LORA",
-						DataRate:   DataRate{LoRa: "SF7BW125"},
-						CodeRate:   "4/5",
-						RSSI:       -51,
-						LoRaSNR:    7,
-						Size:       16,
-					},
 					PHYPayload: phy,
 				}
 

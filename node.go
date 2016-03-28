@@ -242,7 +242,11 @@ func clearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) error {
 	c := p.Get()
 	defer c.Close()
 	_, err := redis.Int(c.Do("DEL", key))
-	return err
+	if err != nil {
+		return err
+	}
+	log.WithField("dev_eui", devEUI).Info("in-process payload removed")
+	return nil
 }
 
 // NodeAPI exports the Node related functions.

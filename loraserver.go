@@ -41,6 +41,11 @@ func (s *Server) Start() error {
 		handleRXPackets(s.ctx)
 		s.wg.Done()
 	}()
+	go func() {
+		s.wg.Add(1)
+		handleTXPayloads(s.ctx)
+		s.wg.Done()
+	}()
 	return nil
 }
 
@@ -57,6 +62,20 @@ func (s *Server) Stop() error {
 	log.Info("waiting for pending packets to complete")
 	s.wg.Wait()
 	return nil
+}
+
+func handleTXPayloads(ctx Context) {
+	var wg sync.WaitGroup
+	for txPayload := range ctx.Application.TXPayloadChan() {
+		go func(txPayload TXPayload) {
+			wg.Add(1)
+			if err := addTXPayloadToQueue(ctx.RedisPool, txPayload); err != nil {
+				log.Errorf("could not add TXPayload to queue: %s", err)
+			}
+			wg.Done()
+		}(txPayload)
+	}
+	wg.Wait()
 }
 
 func handleRXPackets(ctx Context) {
@@ -198,11 +217,38 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 	}
 
 	// handle downlink (ACK)
+	time.Sleep(CollectDataDownWait)
 	return handleDataDownReply(ctx, rxPacket, ns)
 }
 
 func handleDataDownReply(ctx Context, rxPacket RXPacket, ns NodeSession) error {
-	if rxPacket.PHYPayload.MHDR.MType != lorawan.ConfirmedDataUp {
+	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
+	if !ok {
+		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
+	}
+
+	// the last payload was received by the node
+	if macPL.FHDR.FCtrl.ACK {
+		if err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
+			return fmt.Errorf("could not clear in-process TXPayload: %s", err)
+		}
+		ns.FCntDown++
+		if err := saveNodeSession(ctx.RedisPool, ns); err != nil {
+			return fmt.Errorf("could not update node-session: %s", err)
+		}
+	}
+
+	// check if there are payloads pending in the queue
+	txPayload, remaining, err := getTXPayloadAndRemainingFromQueue(ctx.RedisPool, ns.DevEUI)
+
+	// errDoesNotExist should not be handled as an error, it just means there
+	// is no queue / the queue is empty
+	if err != nil && err != errDoesNotExist {
+		return fmt.Errorf("could not get TXPayload from queue: %s", err)
+	}
+
+	// nothing pending in the queue and no need to ACK RXPacket
+	if rxPacket.PHYPayload.MHDR.MType != lorawan.ConfirmedDataUp && err == errDoesNotExist {
 		return nil
 	}
 
@@ -211,15 +257,39 @@ func handleDataDownReply(ctx Context, rxPacket RXPacket, ns NodeSession) error {
 		MType: lorawan.UnconfirmedDataDown,
 		Major: lorawan.LoRaWANR1,
 	}
-
-	macPL := lorawan.NewMACPayload(true)
+	macPL = lorawan.NewMACPayload(false)
 	macPL.FHDR = lorawan.FHDR{
 		DevAddr: ns.DevAddr,
 		FCtrl: lorawan.FCtrl{
-			ACK: true,
+			ACK: rxPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp, // set ACK to true when received packet needs an ACK
 		},
 		FCnt: ns.FCntDown,
 	}
+
+	// add the payload from the queue
+	if err == nil {
+		macPL.FHDR.FCtrl.FPending = remaining
+
+		if txPayload.Confirmed {
+			phy.MHDR.MType = lorawan.ConfirmedDataDown
+		}
+		macPL.FPort = &txPayload.FPort
+		macPL.FRMPayload = []lorawan.Payload{
+			&lorawan.DataPayload{Bytes: txPayload.Data},
+		}
+		log.Warning(string(txPayload.Data))
+		if err := macPL.EncryptFRMPayload(ns.AppSKey); err != nil {
+			return fmt.Errorf("could not encrypt FRMPayload: %s", err)
+		}
+
+		// remove the payload from the queue when not confirmed
+		if !txPayload.Confirmed {
+			if err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
+				return err
+			}
+		}
+	}
+
 	phy.MACPayload = macPL
 	if err := phy.SetMIC(ns.NwkSKey); err != nil {
 		return fmt.Errorf("could not set MIC: %s", err)
@@ -253,10 +323,13 @@ func handleDataDownReply(ctx Context, rxPacket RXPacket, ns NodeSession) error {
 		return fmt.Errorf("sending TXPacket to the gateway failed: %s", err)
 	}
 
-	// increment counter
-	ns.FCntDown++
-	if err := saveNodeSession(ctx.RedisPool, ns); err != nil {
-		return fmt.Errorf("could not update node-session: %s", err)
+	// increment the FCntDown when MType != ConfirmedDataDown. In case of
+	// ConfirmedDataDown we increment on ACK.
+	if phy.MHDR.MType != lorawan.ConfirmedDataDown {
+		ns.FCntDown++
+		if err := saveNodeSession(ctx.RedisPool, ns); err != nil {
+			return fmt.Errorf("could not update node-session: %s", err)
+		}
 	}
 
 	return nil

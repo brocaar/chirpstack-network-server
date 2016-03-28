@@ -15,6 +15,7 @@ import (
 // Packet collection constants
 const (
 	CollectAndCallOnceWait = time.Millisecond * 100 // the time to wait for the same packet received by multiple gateways
+	CollectDataDownWait    = time.Millisecond * 100 // the time to wait on possible downlink payloads from the application
 )
 
 // DataRate types
