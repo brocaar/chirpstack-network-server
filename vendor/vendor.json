@@ -18,6 +18,12 @@
 			"revisionTime": "2016-02-27T08:56:50-08:00"
 		},
 		{
+			"origin": "github.com/brocaar/loraserver/vendor/github.com/eclipse/paho.mqtt.golang",
+			"path": "github.com/eclipse/paho.mqtt.golang",
+			"revision": "4ab3e867810d1ec5f35157c59e965054dbf43a0d",
+			"revisionTime": "2016-03-29T15:37:06+01:00"
+		},
+		{
 			"path": "github.com/elazarl/go-bindata-assetfs",
 			"revision": "57eb5e1fc594ad4b0b1dbea7b286d299e0cb43c2",
 			"revisionTime": "2015-12-24T06:54:52+02:00"

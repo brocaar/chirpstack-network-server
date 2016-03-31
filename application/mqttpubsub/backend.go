@@ -20,7 +20,7 @@ var txTopicRegex = regexp.MustCompile(`application/(\w+)/node/(\w+)/tx`)
 
 // Backend implements a MQTT pub-sub application backend.
 type Backend struct {
-	conn          *mqtt.Client
+	conn          mqtt.Client
 	txPayloadChan chan loraserver.TXPayload
 	wg            sync.WaitGroup
 }
@@ -83,7 +83,7 @@ func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, payload loraserver.RXPayloa
 	return nil
 }
 
-func (b *Backend) txPayloadHandler(c *mqtt.Client, msg mqtt.Message) {
+func (b *Backend) txPayloadHandler(c mqtt.Client, msg mqtt.Message) {
 	b.wg.Add(1)
 	defer b.wg.Done()
 
@@ -116,7 +116,7 @@ func (b *Backend) txPayloadHandler(c *mqtt.Client, msg mqtt.Message) {
 	b.txPayloadChan <- txPayload
 }
 
-func (b *Backend) onConnected(c *mqtt.Client) {
+func (b *Backend) onConnected(c mqtt.Client) {
 	log.Info("application/mqttpubsub: connected to mqtt server")
 	for {
 		log.WithField("topic", txTopic).Info("application/mqttpubsub: subscribing to tx topic")
@@ -129,6 +129,6 @@ func (b *Backend) onConnected(c *mqtt.Client) {
 	}
 }
 
-func (b *Backend) onConnectionLost(c *mqtt.Client, reason error) {
+func (b *Backend) onConnectionLost(c mqtt.Client, reason error) {
 	log.Errorf("application/mqttpubsub: mqtt connection error: %s", reason)
 }

@@ -16,7 +16,7 @@ const rxTopic = "gateway/+/rx"
 
 // Backend implements a MQTT pub-sub backend.
 type Backend struct {
-	conn         *mqtt.Client
+	conn         mqtt.Client
 	rxPacketChan chan loraserver.RXPacket
 	wg           sync.WaitGroup
 }
@@ -79,7 +79,7 @@ func (b *Backend) Send(txPacket loraserver.TXPacket) error {
 	return nil
 }
 
-func (b *Backend) rxPacketHandler(c *mqtt.Client, msg mqtt.Message) {
+func (b *Backend) rxPacketHandler(c mqtt.Client, msg mqtt.Message) {
 	b.wg.Add(1)
 	defer b.wg.Done()
 
@@ -92,7 +92,7 @@ func (b *Backend) rxPacketHandler(c *mqtt.Client, msg mqtt.Message) {
 	b.rxPacketChan <- rxPacket
 }
 
-func (b *Backend) onConnected(c *mqtt.Client) {
+func (b *Backend) onConnected(c mqtt.Client) {
 	log.Info("gateway/mqttpubsub: connected to mqtt server")
 	for {
 		log.WithField("topic", rxTopic).Info("gateway/mqttpubsub: subscribing to rx topic")
@@ -105,6 +105,6 @@ func (b *Backend) onConnected(c *mqtt.Client) {
 	}
 }
 
-func (b *Backend) onConnectionLost(c *mqtt.Client, reason error) {
+func (b *Backend) onConnectionLost(c mqtt.Client, reason error) {
 	log.Errorf("gateway/mqttpubsub: mqtt connection error: %s", reason)
 }

@@ -29,7 +29,7 @@ func TestBackend(t *testing.T) {
 
 			Convey("Given the MQTT client is subscribed to node/+/rx", func() {
 				rxPacketChan := make(chan loraserver.RXPayload)
-				token := c.Subscribe("application/+/node/+/rx", 0, func(c *mqtt.Client, msg mqtt.Message) {
+				token := c.Subscribe("application/+/node/+/rx", 0, func(c mqtt.Client, msg mqtt.Message) {
 					var rxPacket loraserver.RXPayload
 					if err := json.Unmarshal(msg.Payload(), &rxPacket); err != nil {
 						t.Fatal(err)

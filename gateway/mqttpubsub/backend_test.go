@@ -29,7 +29,7 @@ func TestBackend(t *testing.T) {
 
 			Convey("Given the MQTT client is subscribed to gateway/+/tx", func() {
 				txPacketChan := make(chan loraserver.TXPacket)
-				token := c.Subscribe("gateway/+/tx", 0, func(c *mqtt.Client, msg mqtt.Message) {
+				token := c.Subscribe("gateway/+/tx", 0, func(c mqtt.Client, msg mqtt.Message) {
 					var txPacket loraserver.TXPacket
 					dec := gob.NewDecoder(bytes.NewReader(msg.Payload()))
 					if err := dec.Decode(&txPacket); err != nil {
