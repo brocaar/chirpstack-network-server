@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.1
+
+* Update mqtt vendor to fix various connection issues
+* Fix shutting down server when mqtt server is unresponsive
+
 ## 0.4.0
 
 * Implement confirmed data up
