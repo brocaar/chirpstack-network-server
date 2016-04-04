@@ -26,6 +26,13 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+func signalError(c chan<- error, err error) {
+	select {
+	case c <- err:
+	default:
+	}
+}
+
 func openConnection(uri *url.URL, tlsc *tls.Config, timeout time.Duration) (net.Conn, error) {
 	switch uri.Scheme {
 	case "ws":
@@ -87,10 +94,10 @@ func incoming(c *client) {
 	case <-c.stop:
 		DEBUG.Println(NET, "incoming stopped")
 		return
-		// Not trying to disconnect, send the error to the errors channel
+	// Not trying to disconnect, send the error to the errors channel
 	default:
-		ERROR.Println(NET, "incoming stopped with error")
-		c.errors <- err
+		ERROR.Println(NET, "incoming stopped with error", err)
+		signalError(c.errors, err)
 		return
 	}
 }
@@ -109,19 +116,14 @@ func outgoing(c *client) {
 			return
 		case pub := <-c.obound:
 			msg := pub.p.(*packets.PublishPacket)
-			if msg.Qos != 0 && msg.MessageID == 0 {
-				msg.MessageID = c.getID(pub.t)
-				pub.t.(*PublishToken).messageID = msg.MessageID
-			}
-			//persist_obound(c.persist, msg)
 
 			if c.options.WriteTimeout > 0 {
 				c.conn.SetWriteDeadline(time.Now().Add(c.options.WriteTimeout))
 			}
 
 			if err := msg.Write(c.conn); err != nil {
-				ERROR.Println(NET, "outgoing stopped with error")
-				c.errors <- err
+				ERROR.Println(NET, "outgoing stopped with error", err)
+				signalError(c.errors, err)
 				return
 			}
 
@@ -144,8 +146,8 @@ func outgoing(c *client) {
 			}
 			DEBUG.Println(NET, "obound priority msg to write, type", reflect.TypeOf(msg.p))
 			if err := msg.p.Write(c.conn); err != nil {
-				ERROR.Println(NET, "outgoing stopped with error")
-				c.errors <- err
+				ERROR.Println(NET, "outgoing stopped with error", err)
+				signalError(c.errors, err)
 				return
 			}
 			switch msg.p.(type) {
@@ -174,12 +176,12 @@ func alllogic(c *client) {
 		select {
 		case msg := <-c.ibound:
 			DEBUG.Println(NET, "logic got msg on ibound")
-			//persist_ibound(c.persist, msg)
+			persistInbound(c.persist, msg)
 			switch msg.(type) {
 			case *packets.PingrespPacket:
 				DEBUG.Println(NET, "received pingresp")
 				c.pingRespTimer.Stop()
-				c.pingTimer.Reset(c.options.PingTimeout)
+				c.pingTimer.Reset(c.options.KeepAlive)
 			case *packets.SubackPacket:
 				sa := msg.(*packets.SubackPacket)
 				DEBUG.Println(NET, "received suback, id:", sa.MessageID)
@@ -218,19 +220,8 @@ func alllogic(c *client) {
 					c.oboundP <- &PacketAndToken{p: pa, t: nil}
 					DEBUG.Println(NET, "done putting puback msg on obound")
 				case 0:
-					select {
-					case c.incomingPubChan <- pp:
-						DEBUG.Println(NET, "done putting msg on incomingPubChan")
-					case err, ok := <-c.errors:
-						DEBUG.Println(NET, "error while putting msg on pubChanZero")
-						// We are unblocked, but need to put the error back on so the outer
-						// select can handle it appropriately.
-						if ok {
-							go func(errVal error, errChan chan error) {
-								errChan <- errVal
-							}(err, c.errors)
-						}
-					}
+					c.incomingPubChan <- pp
+					DEBUG.Println(NET, "done putting msg on incomingPubChan")
 				}
 			case *packets.PubackPacket:
 				pa := msg.(*packets.PubackPacket)
@@ -267,7 +258,7 @@ func alllogic(c *client) {
 			WARN.Println(NET, "logic stopped")
 			return
 		case err := <-c.errors:
-			ERROR.Println(NET, "logic got error")
+			ERROR.Println(NET, "logic received from error channel, other components have errored, stopping")
 			c.internalConnLost(err)
 			return
 		}

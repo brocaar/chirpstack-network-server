@@ -210,6 +210,7 @@ func (c *client) Connect() Token {
 			} else {
 				t.err = fmt.Errorf("%s : %s", packets.ConnErrors[rc], err)
 			}
+			c.setConnected(disconnected)
 			t.flowComplete()
 			return
 		}
@@ -219,7 +220,7 @@ func (c *client) Connect() Token {
 		c.obound = make(chan *PacketAndToken, c.options.MessageChannelDepth)
 		c.oboundP = make(chan *PacketAndToken, c.options.MessageChannelDepth)
 		c.ibound = make(chan packets.ControlPacket)
-		c.errors = make(chan error)
+		c.errors = make(chan error, 1)
 		c.stop = make(chan struct{})
 		c.pingTimer = time.NewTimer(c.options.KeepAlive)
 		c.pingRespTimer = time.NewTimer(time.Duration(10) * time.Second)
@@ -403,10 +404,13 @@ func (c *client) forceDisconnect() {
 }
 
 func (c *client) internalConnLost(err error) {
-	close(c.stop)
-	c.conn.Close()
-	c.workers.Wait()
+	// Only do anything if this was called and we are still "connected"
+	// forceDisconnect can cause incoming/outgoing/alllogic to end with
+	// error from closing the socket but state will be "disconnected"
 	if c.IsConnected() {
+		close(c.stop)
+		c.conn.Close()
+		c.workers.Wait()
 		if c.options.OnConnectionLost != nil {
 			go c.options.OnConnectionLost(c, err)
 		}
@@ -421,7 +425,7 @@ func (c *client) internalConnLost(err error) {
 func (c *client) disconnect() {
 	select {
 	case <-c.stop:
-		//someone else has already closed the channel, must be error
+		DEBUG.Println("In disconnect and stop channel is already closed")
 	default:
 		close(c.stop)
 	}
@@ -463,6 +467,11 @@ func (c *client) Publish(topic string, qos byte, retained bool, payload interfac
 	}
 
 	DEBUG.Println(CLI, "sending publish message, topic:", topic)
+	if pub.Qos != 0 && pub.MessageID == 0 {
+		pub.MessageID = c.getID(token)
+		token.messageID = pub.MessageID
+	}
+	persistOutbound(c.persist, pub)
 	c.obound <- &PacketAndToken{p: pub, t: token}
 	return token
 }
