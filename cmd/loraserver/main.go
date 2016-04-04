@@ -111,11 +111,20 @@ func run(c *cli.Context) {
 	}()
 
 	sigChan := make(chan os.Signal)
+	exitChan := make(chan struct{})
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	log.WithField("signal", <-sigChan).Info("signal received")
-	log.Warning("loraserver is shutting down")
-	if err := server.Stop(); err != nil {
-		log.Fatal(err)
+	go func() {
+		log.Warning("stopping loraserver")
+		if err := server.Stop(); err != nil {
+			log.Fatal(err)
+		}
+		exitChan <- struct{}{}
+	}()
+	select {
+	case <-exitChan:
+	case s := <-sigChan:
+		log.WithField("signal", s).Info("signal received, stopping immediately")
 	}
 }
 
