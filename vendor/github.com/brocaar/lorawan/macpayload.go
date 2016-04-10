@@ -129,6 +129,8 @@ func (p *MACPayload) UnmarshalBinary(data []byte) error {
 		return errors.New("lorawan: at least 7 bytes needed to decode FHDR")
 	}
 
+	p.FHDR.uplink = p.uplink
+
 	// unmarshal FCtrl so we know the FOptsLen
 	if err := p.FHDR.FCtrl.UnmarshalBinary(data[4:5]); err != nil {
 		return err

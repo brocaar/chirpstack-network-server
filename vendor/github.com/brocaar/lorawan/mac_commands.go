@@ -41,7 +41,7 @@ type macPayloadInfo struct {
 var macPayloadRegistry = map[bool]map[cid]macPayloadInfo{
 	false: map[cid]macPayloadInfo{
 		LinkCheckAns:     {2, func() Payload { return &LinkCheckAnsPayload{} }},
-		LinkADRReq:       {4, func() Payload { return &LinkADRAnsPayload{} }},
+		LinkADRReq:       {4, func() Payload { return &LinkADRReqPayload{} }},
 		DutyCycleReq:     {1, func() Payload { return &DutyCycleReqPayload{} }},
 		RXParamSetupReq:  {4, func() Payload { return &RX2SetupReqPayload{} }},
 		NewChannelReq:    {4, func() Payload { return &NewChannelReqPayload{} }},
