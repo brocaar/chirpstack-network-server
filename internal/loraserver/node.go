@@ -2,13 +2,13 @@ package loraserver
 
 import (
 	"bytes"
-	"database/sql/driver"
 	"encoding/gob"
 	"errors"
 	"fmt"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
@@ -17,73 +17,13 @@ import (
 // NodeTXPayloadQueueTTL defines the TTL of the node TXPayload queue
 var NodeTXPayloadQueueTTL = time.Hour * 24 * 5
 
-// UsedDevNonceCount is the number of used dev-nonces to track.
-const UsedDevNonceCount = 10
-
 const (
 	nodeTXPayloadQueueTempl     = "node_tx_queue_%s"
 	nodeTXPayloadInProcessTempl = "node_tx_in_process_%s"
 )
 
-// DevNonceList represents a list of dev nonces
-type DevNonceList [][2]byte
-
-// Scan implements the sql.Scanner interface.
-func (l *DevNonceList) Scan(src interface{}) error {
-	if src == nil {
-		*l = make([][2]byte, 0)
-		return nil
-	}
-
-	b, ok := src.([]byte)
-	if !ok {
-		return fmt.Errorf("src must be of type []byte, got: %T", src)
-	}
-	if len(b)%2 != 0 {
-		return errors.New("the length of src must be a multiple of 2")
-	}
-	for i := 0; i < len(b); i += 2 {
-		*l = append(*l, [2]byte{b[i], b[i+1]})
-	}
-	return nil
-}
-
-// Value implements the driver.Valuer interface.
-func (l DevNonceList) Value() (driver.Value, error) {
-	b := make([]byte, 0, len(l)/2)
-	for _, n := range l {
-		b = append(b, n[:]...)
-	}
-	return b, nil
-}
-
-// Node contains the information of a node.
-type Node struct {
-	DevEUI        lorawan.EUI64     `db:"dev_eui" json:"devEUI"`
-	AppEUI        lorawan.EUI64     `db:"app_eui" json:"appEUI"`
-	AppKey        lorawan.AES128Key `db:"app_key" json:"appKey"`
-	UsedDevNonces DevNonceList      `db:"used_dev_nonces" json:"usedDevNonces"`
-}
-
-// ValidateDevNonce returns if the given dev-nonce is valid.
-// When valid, it will be added to UsedDevNonces. This does
-// not update the Node in the database!
-func (n *Node) ValidateDevNonce(nonce [2]byte) bool {
-	for _, used := range n.UsedDevNonces {
-		if nonce == used {
-			return false
-		}
-	}
-	n.UsedDevNonces = append(n.UsedDevNonces, nonce)
-	if len(n.UsedDevNonces) > UsedDevNonceCount {
-		n.UsedDevNonces = n.UsedDevNonces[len(n.UsedDevNonces)-UsedDevNonceCount:]
-	}
-
-	return true
-}
-
 // createNode creates the given Node.
-func createNode(db *sqlx.DB, n Node) error {
+func createNode(db *sqlx.DB, n models.Node) error {
 	_, err := db.Exec("insert into node (dev_eui, app_eui, app_key) values ($1, $2, $3)",
 		n.DevEUI[:],
 		n.AppEUI[:],
@@ -96,7 +36,7 @@ func createNode(db *sqlx.DB, n Node) error {
 }
 
 // updateNode updates the given Node.
-func updateNode(db *sqlx.DB, n Node) error {
+func updateNode(db *sqlx.DB, n models.Node) error {
 	res, err := db.Exec("update node set app_eui = $1, app_key = $2, used_dev_nonces = $3 where dev_eui = $4",
 		n.AppEUI[:],
 		n.AppKey[:],
@@ -137,19 +77,19 @@ func deleteNode(db *sqlx.DB, devEUI lorawan.EUI64) error {
 }
 
 // getNode returns the Node for the given DevEUI.
-func getNode(db *sqlx.DB, devEUI lorawan.EUI64) (Node, error) {
-	var node Node
+func getNode(db *sqlx.DB, devEUI lorawan.EUI64) (models.Node, error) {
+	var node models.Node
 	return node, db.Get(&node, "select * from node where dev_eui = $1", devEUI[:])
 }
 
 // getNodes returns a slice of nodes, sorted by DevEUI.
-func getNodes(db *sqlx.DB, limit, offset int) ([]Node, error) {
-	var nodes []Node
+func getNodes(db *sqlx.DB, limit, offset int) ([]models.Node, error) {
+	var nodes []models.Node
 	return nodes, db.Select(&nodes, "select * from node order by dev_eui limit $1 offset $2", limit, offset)
 }
 
 // addTXPayloadToQueue adds the given TXPayload to the queue.
-func addTXPayloadToQueue(p *redis.Pool, payload TXPayload) error {
+func addTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(payload); err != nil {
@@ -183,8 +123,8 @@ func addTXPayloadToQueue(p *redis.Pool, payload TXPayload) error {
 // in-process when consuming). After a successful transmission, don't forget
 // to call clearInProcessTXPayload.
 // errDoesNotExist is returned when there are no items to send.
-func getTXPayloadAndRemainingFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (TXPayload, bool, error) {
-	var txPayload TXPayload
+func getTXPayloadAndRemainingFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (models.TXPayload, bool, error) {
+	var txPayload models.TXPayload
 	queueKey := fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)
 	pendingKey := fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)
 
@@ -262,21 +202,21 @@ func NewNodeAPI(ctx Context) *NodeAPI {
 }
 
 // Get returns the Node for the given DevEUI.
-func (a *NodeAPI) Get(devEUI lorawan.EUI64, node *Node) error {
+func (a *NodeAPI) Get(devEUI lorawan.EUI64, node *models.Node) error {
 	var err error
 	*node, err = getNode(a.ctx.DB, devEUI)
 	return err
 }
 
 // GetList returns a list of nodes (given a limit and offset).
-func (a *NodeAPI) GetList(req GetListRequest, nodes *[]Node) error {
+func (a *NodeAPI) GetList(req models.GetListRequest, nodes *[]models.Node) error {
 	var err error
 	*nodes, err = getNodes(a.ctx.DB, req.Limit, req.Offset)
 	return err
 }
 
 // Create creates the given Node.
-func (a *NodeAPI) Create(node Node, devEUI *lorawan.EUI64) error {
+func (a *NodeAPI) Create(node models.Node, devEUI *lorawan.EUI64) error {
 	if err := createNode(a.ctx.DB, node); err != nil {
 		return err
 	}
@@ -285,7 +225,7 @@ func (a *NodeAPI) Create(node Node, devEUI *lorawan.EUI64) error {
 }
 
 // Update updatest the given Node.
-func (a *NodeAPI) Update(node Node, devEUI *lorawan.EUI64) error {
+func (a *NodeAPI) Update(node models.Node, devEUI *lorawan.EUI64) error {
 	if err := updateNode(a.ctx.DB, node); err != nil {
 		return err
 	}

@@ -4,7 +4,8 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/brocaar/loraserver/migrations"
+	"github.com/brocaar/loraserver/internal/loraserver/migrations"
+	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
@@ -59,16 +60,16 @@ func mustResetDB(db *sqlx.DB) {
 }
 
 type testGatewayBackend struct {
-	rxPacketChan chan RXPacket
-	txPacketChan chan TXPacket
+	rxPacketChan chan models.RXPacket
+	txPacketChan chan models.TXPacket
 }
 
-func (b *testGatewayBackend) Send(txPacket TXPacket) error {
+func (b *testGatewayBackend) Send(txPacket models.TXPacket) error {
 	b.txPacketChan <- txPacket
 	return nil
 }
 
-func (b *testGatewayBackend) RXPacketChan() chan RXPacket {
+func (b *testGatewayBackend) RXPacketChan() chan models.RXPacket {
 	return b.rxPacketChan
 }
 
@@ -80,12 +81,12 @@ func (b *testGatewayBackend) Close() error {
 }
 
 type testApplicationBackend struct {
-	txPayloadChan chan TXPayload
-	rxPayloadChan chan RXPayload
+	txPayloadChan chan models.TXPayload
+	rxPayloadChan chan models.RXPayload
 	err           error
 }
 
-func (b *testApplicationBackend) Send(devEUI, appEUI lorawan.EUI64, payload RXPayload) error {
+func (b *testApplicationBackend) Send(devEUI, appEUI lorawan.EUI64, payload models.RXPayload) error {
 	b.rxPayloadChan <- payload
 	return b.err
 }
@@ -97,6 +98,6 @@ func (b *testApplicationBackend) Close() error {
 	return nil
 }
 
-func (b *testApplicationBackend) TXPayloadChan() chan TXPayload {
+func (b *testApplicationBackend) TXPayloadChan() chan models.TXPayload {
 	return b.txPayloadChan
 }

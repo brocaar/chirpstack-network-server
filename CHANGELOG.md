@@ -7,6 +7,8 @@ Note: this release is incompatible with lora-semtech-bridge <= 1.0.1
 * Replaced hardcoded tx related settings by lorawan/band defined variables
 * Minor changes to TX / RX structs
 * Change gateway encoding to json (from gob encoding)
+* Source-code re-structure (internal code is now under `internal/...`,
+  exported packet related structs are now under `models/...`)
 
 ## 0.4.1
 

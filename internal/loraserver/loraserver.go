@@ -9,6 +9,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 )
@@ -51,7 +52,7 @@ func (s *Server) Start() error {
 }
 
 // Stop closes the gateway and application backends and waits for the
-// server to complete the pending packets.
+// server to complete the pending models.
 func (s *Server) Stop() error {
 	if err := s.ctx.Gateway.Close(); err != nil {
 		return err
@@ -68,7 +69,7 @@ func (s *Server) Stop() error {
 func handleTXPayloads(ctx Context) {
 	var wg sync.WaitGroup
 	for txPayload := range ctx.Application.TXPayloadChan() {
-		go func(txPayload TXPayload) {
+		go func(txPayload models.TXPayload) {
 			wg.Add(1)
 			if err := addTXPayloadToQueue(ctx.RedisPool, txPayload); err != nil {
 				log.Errorf("could not add TXPayload to queue: %s", err)
@@ -82,7 +83,7 @@ func handleTXPayloads(ctx Context) {
 func handleRXPackets(ctx Context) {
 	var wg sync.WaitGroup
 	for rxPacket := range ctx.Gateway.RXPacketChan() {
-		go func(rxPacket RXPacket) {
+		go func(rxPacket models.RXPacket) {
 			wg.Add(1)
 			if err := handleRXPacket(ctx, rxPacket); err != nil {
 				log.Errorf("error while processing RXPacket: %s", err)
@@ -93,7 +94,7 @@ func handleRXPackets(ctx Context) {
 	wg.Wait()
 }
 
-func handleRXPacket(ctx Context, rxPacket RXPacket) error {
+func handleRXPacket(ctx Context, rxPacket models.RXPacket) error {
 	switch rxPacket.PHYPayload.MHDR.MType {
 	case lorawan.JoinRequest:
 		return validateAndCollectJoinRequestPacket(ctx, rxPacket)
@@ -104,7 +105,7 @@ func handleRXPacket(ctx Context, rxPacket RXPacket) error {
 	}
 }
 
-func validateAndCollectDataUpRXPacket(ctx Context, rxPacket RXPacket) error {
+func validateAndCollectDataUpRXPacket(ctx Context, rxPacket models.RXPacket) error {
 	// MACPayload must be of type *lorawan.MACPayload
 	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
@@ -199,7 +200,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 				data = dataPL.Bytes
 			}
 
-			err = ctx.Application.Send(ns.DevEUI, ns.AppEUI, RXPayload{
+			err = ctx.Application.Send(ns.DevEUI, ns.AppEUI, models.RXPayload{
 				DevEUI:       ns.DevEUI,
 				GatewayCount: len(rxPackets),
 				FPort:        *macPL.FPort,
@@ -222,7 +223,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 	return handleDataDownReply(ctx, rxPacket, ns)
 }
 
-func handleDataDownReply(ctx Context, rxPacket RXPacket, ns NodeSession) error {
+func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSession) error {
 	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
@@ -295,8 +296,8 @@ func handleDataDownReply(ctx Context, rxPacket RXPacket, ns NodeSession) error {
 		return fmt.Errorf("could not set MIC: %s", err)
 	}
 
-	txPacket := TXPacket{
-		TXInfo: TXInfo{
+	txPacket := models.TXPacket{
+		TXInfo: models.TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
 			Timestamp: rxPacket.RXInfo.Timestamp + uint32(band.ReceiveDelay1/time.Microsecond),
 			Frequency: rxPacket.RXInfo.Frequency,
@@ -332,7 +333,7 @@ func handleDataDownReply(ctx Context, rxPacket RXPacket, ns NodeSession) error {
 	return nil
 }
 
-func validateAndCollectJoinRequestPacket(ctx Context, rxPacket RXPacket) error {
+func validateAndCollectJoinRequestPacket(ctx Context, rxPacket models.RXPacket) error {
 	// MACPayload must be of type *lorawan.JoinRequestPayload
 	jrPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.JoinRequestPayload)
 	if !ok {
@@ -416,7 +417,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("could not get AppSKey: %s", err)
 	}
 
-	ns := NodeSession{
+	ns := models.NodeSession{
 		DevAddr:  devAddr,
 		DevEUI:   jrPL.DevEUI,
 		AppSKey:  appSKey,
@@ -453,8 +454,8 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("could not encrypt join-accept: %s", err)
 	}
 
-	txPacket := TXPacket{
-		TXInfo: TXInfo{
+	txPacket := models.TXPacket{
+		TXInfo: models.TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
 			Timestamp: rxPacket.RXInfo.Timestamp + uint32(band.JoinAcceptDelay1/time.Microsecond),
 			Frequency: rxPacket.RXInfo.Frequency,

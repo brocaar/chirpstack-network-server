@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -14,12 +15,12 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 	Convey("Given a clean state", t, func() {
 		app := &testApplicationBackend{
-			rxPayloadChan: make(chan RXPayload, 1),
-			txPayloadChan: make(chan TXPayload),
+			rxPayloadChan: make(chan models.RXPayload, 1),
+			txPayloadChan: make(chan models.TXPayload),
 		}
 		gw := &testGatewayBackend{
-			rxPacketChan: make(chan RXPacket),
-			txPacketChan: make(chan TXPacket, 2),
+			rxPacketChan: make(chan models.RXPacket),
+			txPacketChan: make(chan models.TXPacket, 2),
 		}
 		p := NewRedisPool(conf.RedisURL)
 		mustFlushRedis(p)
@@ -31,14 +32,14 @@ func TestHandleDataUpPackets(t *testing.T) {
 		}
 
 		Convey("Given a stored node session", func() {
-			ns := NodeSession{
-				DevAddr:  lorawan.DevAddr{1, 2, 3, 4},
-				DevEUI:   lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-				AppSKey:  lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-				NwkSKey:  lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			ns := models.NodeSession{
+				DevAddr:  [4]byte{1, 2, 3, 4},
+				DevEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				AppSKey:  [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				NwkSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 				FCntUp:   8,
 				FCntDown: 5,
-				AppEUI:   lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
+				AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 			}
 			So(saveNodeSession(p, ns), ShouldBeNil)
 
@@ -63,7 +64,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 				phy.MACPayload = macPL
 				So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
 
-				rxPacket := RXPacket{
+				rxPacket := models.RXPacket{
 					PHYPayload: phy,
 				}
 
@@ -105,7 +106,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 					Convey("Then the packet is correctly received by the application backend", func() {
 						packet := <-app.rxPayloadChan
-						So(packet, ShouldResemble, RXPayload{
+						So(packet, ShouldResemble, models.RXPayload{
 							DevEUI:       ns.DevEUI,
 							FPort:        1,
 							GatewayCount: 1,
@@ -132,7 +133,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 				})
 
 				Convey("Given an enqueued TXPayload (unconfirmed)", func() {
-					txPayload := TXPayload{
+					txPayload := models.TXPayload{
 						Confirmed: false,
 						DevEUI:    ns.DevEUI,
 						FPort:     5,
@@ -183,7 +184,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 				})
 
 				Convey("Given an enqueued TXPayload (confirmed)", func() {
-					txPayload := TXPayload{
+					txPayload := models.TXPayload{
 						Confirmed: true,
 						DevEUI:    ns.DevEUI,
 						FPort:     5,
@@ -248,7 +249,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 								phy.MACPayload = macPL
 								So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
 
-								rxPacket := RXPacket{
+								rxPacket := models.RXPacket{
 									PHYPayload: phy,
 								}
 
@@ -291,7 +292,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 				phy.MACPayload = macPL
 				So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
 
-				rxPacket := RXPacket{
+				rxPacket := models.RXPacket{
 					PHYPayload: phy,
 				}
 
@@ -300,7 +301,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 					Convey("Then the packet is correctly received by the application backend", func() {
 						packet := <-app.rxPayloadChan
-						So(packet, ShouldResemble, RXPayload{
+						So(packet, ShouldResemble, models.RXPayload{
 							DevEUI:       ns.DevEUI,
 							FPort:        1,
 							GatewayCount: 1,
@@ -338,11 +339,11 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 
 	Convey("Given a dummy gateway and application backend and a clean Postgres and Redis database", t, func() {
 		a := &testApplicationBackend{
-			rxPayloadChan: make(chan RXPayload, 1),
+			rxPayloadChan: make(chan models.RXPayload, 1),
 		}
 		g := &testGatewayBackend{
-			rxPacketChan: make(chan RXPacket),
-			txPacketChan: make(chan TXPacket, 2),
+			rxPacketChan: make(chan models.RXPacket),
+			txPacketChan: make(chan models.TXPacket, 2),
 		}
 		p := NewRedisPool(conf.RedisURL)
 		mustFlushRedis(p)
@@ -358,13 +359,13 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 		}
 
 		Convey("Given a node and application in the database", func() {
-			app := Application{
+			app := models.Application{
 				AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				Name:   "test app",
 			}
 			So(createApplication(ctx.DB, app), ShouldBeNil)
 
-			node := Node{
+			node := models.Node{
 				DevEUI: [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 				AppEUI: app.AppEUI,
 				AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
@@ -384,7 +385,7 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 				}
 				So(phy.SetMIC(node.AppKey), ShouldBeNil)
 
-				rxPacket := RXPacket{
+				rxPacket := models.RXPacket{
 					PHYPayload: phy,
 				}
 

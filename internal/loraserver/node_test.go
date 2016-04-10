@@ -4,13 +4,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestValidateDevNonce(t *testing.T) {
 	Convey("Given a Node", t, func() {
-		n := Node{
+		n := models.Node{
 			UsedDevNonces: make([][2]byte, 0),
 		}
 
@@ -69,11 +70,11 @@ func TestTXPayloadQueue(t *testing.T) {
 
 		Convey("Given two TXPayload structs (a and b) for the same DevEUI", func() {
 			devEUI := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}
-			a := TXPayload{
+			a := models.TXPayload{
 				DevEUI: devEUI,
 				Data:   []byte("hello!"),
 			}
-			b := TXPayload{
+			b := models.TXPayload{
 				DevEUI: devEUI,
 				Data:   []byte("world"),
 			}
@@ -155,14 +156,14 @@ func TestNodeAPI(t *testing.T) {
 		api := NewNodeAPI(ctx)
 
 		Convey("Given an application is created (fk constraint)", func() {
-			app := Application{
+			app := models.Application{
 				AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				Name:   "test app",
 			}
 			// we need to create the app since the node has a fk constraint
 			So(createApplication(ctx.DB, app), ShouldBeNil)
 
-			node := Node{
+			node := models.Node{
 				DevEUI:        [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 				AppEUI:        [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				AppKey:        [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
@@ -175,7 +176,7 @@ func TestNodeAPI(t *testing.T) {
 				So(devEUI, ShouldEqual, node.DevEUI)
 
 				Convey("Then the node has been created", func() {
-					var node2 Node
+					var node2 models.Node
 					So(api.Get(node.DevEUI, &node2), ShouldBeNil)
 					So(node2, ShouldResemble, node)
 
@@ -195,8 +196,8 @@ func TestNodeAPI(t *testing.T) {
 				})
 
 				Convey("Then the list of nodes has size 1", func() {
-					var nodes []Node
-					So(api.GetList(GetListRequest{
+					var nodes []models.Node
+					So(api.GetList(models.GetListRequest{
 						Limit:  10,
 						Offset: 0,
 					}, &nodes), ShouldBeNil)

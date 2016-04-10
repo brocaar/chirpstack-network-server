@@ -24,7 +24,7 @@ func TestGetRPCServicesDoc(t *testing.T) {
 
 					Convey("Which has the expected argument and reply", func() {
 						So(meth.ArgumentTypeName, ShouldEqual, "Application")
-						So(meth.ArgumentPkgPath, ShouldEqual, "github.com/brocaar/loraserver")
+						So(meth.ArgumentPkgPath, ShouldEqual, "github.com/brocaar/loraserver/models")
 						So(meth.ArgumentJSON, ShouldContainSubstring, "appEUI")
 						So(meth.ArgumentJSON, ShouldContainSubstring, "Application.Create")
 						So(meth.ReplyTypeName, ShouldEqual, "EUI64")

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/loraserver"
+	"github.com/brocaar/loraserver/models"
 	"github.com/eclipse/paho.mqtt.golang"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -27,9 +27,9 @@ func TestBackend(t *testing.T) {
 			time.Sleep(time.Millisecond * 100) // give the backend some time to subscribe to the topic
 
 			Convey("Given the MQTT client is subscribed to gateway/+/tx", func() {
-				txPacketChan := make(chan loraserver.TXPacket)
+				txPacketChan := make(chan models.TXPacket)
 				token := c.Subscribe("gateway/+/tx", 0, func(c mqtt.Client, msg mqtt.Message) {
-					var txPacket loraserver.TXPacket
+					var txPacket models.TXPacket
 					if err := json.Unmarshal(msg.Payload(), &txPacket); err != nil {
 						t.Fatal(err)
 					}
@@ -39,8 +39,8 @@ func TestBackend(t *testing.T) {
 				So(token.Error(), ShouldBeNil)
 
 				Convey("When sending a TXPacket (from the Backend)", func() {
-					txPacket := loraserver.TXPacket{
-						TXInfo: loraserver.TXInfo{
+					txPacket := models.TXPacket{
+						TXInfo: models.TXInfo{
 							MAC: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 						},
 					}
@@ -53,8 +53,8 @@ func TestBackend(t *testing.T) {
 				})
 
 				Convey("When sending a RXPacket (from the MQTT client)", func() {
-					rxPacket := loraserver.RXPacket{
-						RXInfo: loraserver.RXInfo{
+					rxPacket := models.RXPacket{
+						RXInfo: models.RXInfo{
 							Time: time.Now().UTC(),
 							MAC:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 						},

@@ -1,5 +1,5 @@
-//go:generate go-bindata -prefix ../../migrations/ -pkg migrations -o ../../migrations/migrations.go ../../migrations/
-//go:generate go-bindata -prefix ../../static/ -pkg static -o ../../static/static.go ../../static/...
+//go:generate go-bindata -prefix ../../migrations/ -pkg migrations -o ../../internal/loraserver/migrations/migrations_gen.go ../../migrations/
+//go:generate go-bindata -prefix ../../static/ -pkg static -o ../../internal/loraserver/static/static_gen.go ../../static/...
 
 package main
 
@@ -10,17 +10,19 @@ import (
 	"os/signal"
 	"syscall"
 
+	_ "github.com/lib/pq"
+
 	log "github.com/Sirupsen/logrus"
-	"github.com/brocaar/loraserver"
-	application "github.com/brocaar/loraserver/application/mqttpubsub"
-	gateway "github.com/brocaar/loraserver/gateway/mqttpubsub"
-	"github.com/brocaar/loraserver/migrations"
-	"github.com/brocaar/loraserver/static"
+	application "github.com/brocaar/loraserver/internal/loraserver/application/mqttpubsub"
+	gateway "github.com/brocaar/loraserver/internal/loraserver/gateway/mqttpubsub"
+
+	"github.com/brocaar/loraserver/internal/loraserver"
+	"github.com/brocaar/loraserver/internal/loraserver/migrations"
+	"github.com/brocaar/loraserver/internal/loraserver/static"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 	"github.com/codegangsta/cli"
 	"github.com/elazarl/go-bindata-assetfs"
-	_ "github.com/lib/pq"
 	"github.com/rubenv/sql-migrate"
 )
 

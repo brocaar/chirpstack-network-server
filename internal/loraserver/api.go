@@ -50,9 +50,3 @@ func (h *JSONRPCHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Errorf("could not handle json-rpc request: %s", err)
 	}
 }
-
-// GetListRequest represents the request for getting a list of objects.
-type GetListRequest struct {
-	Limit  int `json:"limit"`
-	Offset int `json:"offset"`
-}

@@ -9,7 +9,8 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/brocaar/loraserver"
+	"github.com/brocaar/loraserver/internal/loraserver"
+	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/eclipse/paho.mqtt.golang"
 )
@@ -21,14 +22,14 @@ var txTopicRegex = regexp.MustCompile(`application/(\w+)/node/(\w+)/tx`)
 // Backend implements a MQTT pub-sub application backend.
 type Backend struct {
 	conn          mqtt.Client
-	txPayloadChan chan loraserver.TXPayload
+	txPayloadChan chan models.TXPayload
 	wg            sync.WaitGroup
 }
 
 // NewBackend creates a new Backend.
 func NewBackend(server, username, password string) (loraserver.ApplicationBackend, error) {
 	b := Backend{
-		txPayloadChan: make(chan loraserver.TXPayload),
+		txPayloadChan: make(chan models.TXPayload),
 	}
 
 	opts := mqtt.NewClientOptions()
@@ -64,12 +65,12 @@ func (b *Backend) Close() error {
 }
 
 // TXPayloadChan returns the TXPayload channel.
-func (b *Backend) TXPayloadChan() chan loraserver.TXPayload {
+func (b *Backend) TXPayloadChan() chan models.TXPayload {
 	return b.txPayloadChan
 }
 
 // Send sends the given (collected) RXPackets the application.
-func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, payload loraserver.RXPayload) error {
+func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, payload models.RXPayload) error {
 	bytes, err := json.Marshal(payload)
 	if err != nil {
 		return err
@@ -98,7 +99,7 @@ func (b *Backend) txPayloadHandler(c mqtt.Client, msg mqtt.Message) {
 		return
 	}
 
-	var txPayload loraserver.TXPayload
+	var txPayload models.TXPayload
 	dec := json.NewDecoder(bytes.NewReader(msg.Payload()))
 	if err := dec.Decode(&txPayload); err != nil {
 		log.Errorf("application/mqttpubsub: could not decode ApplicationTXPayload: %s", err)

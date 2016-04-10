@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/loraserver"
+	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/eclipse/paho.mqtt.golang"
 	. "github.com/smartystreets/goconvey/convey"
@@ -28,9 +28,9 @@ func TestBackend(t *testing.T) {
 			time.Sleep(time.Millisecond * 100) // give the backend some time to subscribe to the topic
 
 			Convey("Given the MQTT client is subscribed to node/+/rx", func() {
-				rxPacketChan := make(chan loraserver.RXPayload)
+				rxPacketChan := make(chan models.RXPayload)
 				token := c.Subscribe("application/+/node/+/rx", 0, func(c mqtt.Client, msg mqtt.Message) {
-					var rxPacket loraserver.RXPayload
+					var rxPacket models.RXPayload
 					if err := json.Unmarshal(msg.Payload(), &rxPacket); err != nil {
 						t.Fatal(err)
 					}
@@ -43,7 +43,7 @@ func TestBackend(t *testing.T) {
 					devEUI := lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1}
 					appEUI := lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2}
 
-					rxPacket := loraserver.RXPayload{
+					rxPacket := models.RXPayload{
 						DevEUI: devEUI,
 					}
 					So(backend.Send(devEUI, appEUI, rxPacket), ShouldBeNil)
@@ -57,7 +57,7 @@ func TestBackend(t *testing.T) {
 			})
 
 			Convey("Given a ApplicationTXPayload is published by the MQTT client", func() {
-				pl := loraserver.TXPayload{
+				pl := models.TXPayload{
 					Confirmed: false,
 					DevEUI:    [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 					FPort:     1,

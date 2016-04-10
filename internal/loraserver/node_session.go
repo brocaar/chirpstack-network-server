@@ -11,8 +11,8 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
 	"github.com/garyburd/redigo/redis"
 )
 
@@ -25,35 +25,9 @@ const (
 	nodeSessionKeyTempl = "node_session_%s"
 )
 
-// NodeSession contains the informatio of a node-session (an activated node).
-type NodeSession struct {
-	DevAddr  lorawan.DevAddr   `db:"dev_addr" json:"devAddr"`
-	AppEUI   lorawan.EUI64     `db:"app_eui" json:"appEUI"`
-	DevEUI   lorawan.EUI64     `db:"dev_eui" json:"devEUI"`
-	AppSKey  lorawan.AES128Key `db:"app_s_key" json:"appSKey"`
-	NwkSKey  lorawan.AES128Key `db:"nwk_s_key" json:"nwkSKey"`
-	FCntUp   uint32            `db:"fcnt_up" json:"fCntUp"`
-	FCntDown uint32            `db:"fcnt_down" json:"fCntDown"`
-}
-
-// ValidateAndGetFullFCntUp validates if the given fCntUp is valid
-// and returns the full 32 bit frame-counter.
-// Note that the LoRaWAN packet only contains the 16 LSB, so in order
-// to validate the MIC, the full 32 bit frame-counter needs to be set.
-// After a succesful validation of the FCntUp and the MIC, don't forget
-// to synchronize the Node FCntUp with the packet FCnt.
-func (n NodeSession) ValidateAndGetFullFCntUp(fCntUp uint32) (uint32, bool) {
-	// we need to compare the difference of the 16 LSB
-	gap := uint32(uint16(fCntUp) - uint16(n.FCntUp%65536))
-	if gap < band.MaxFCntGap {
-		return n.FCntUp + gap, true
-	}
-	return 0, false
-}
-
 // createNodeSession does the same as saveNodeSession except that it does not
 // overwrite an exisitng record.
-func createNodeSession(p *redis.Pool, s NodeSession) error {
+func createNodeSession(p *redis.Pool, s models.NodeSession) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(s); err != nil {
@@ -79,7 +53,7 @@ func createNodeSession(p *redis.Pool, s NodeSession) error {
 
 // saveNodeSession saves the node session. Note that the session will automatically
 // expire after NodeSessionTTL.
-func saveNodeSession(p *redis.Pool, s NodeSession) error {
+func saveNodeSession(p *redis.Pool, s models.NodeSession) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(s); err != nil {
@@ -104,8 +78,8 @@ func saveNodeSession(p *redis.Pool, s NodeSession) error {
 }
 
 // getNodeSession returns the NodeSession for the given DevAddr.
-func getNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (NodeSession, error) {
-	var ns NodeSession
+func getNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (models.NodeSession, error) {
+	var ns models.NodeSession
 
 	c := p.Get()
 	defer c.Close()
@@ -119,8 +93,8 @@ func getNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (NodeSession, error)
 }
 
 // getNodeSessionByDevEUI returns the NodeSession for the given DevEUI.
-func getNodeSessionByDevEUI(p *redis.Pool, devEUI lorawan.EUI64) (NodeSession, error) {
-	var ns NodeSession
+func getNodeSessionByDevEUI(p *redis.Pool, devEUI lorawan.EUI64) (models.NodeSession, error) {
+	var ns models.NodeSession
 
 	c := p.Get()
 	defer c.Close()
@@ -242,14 +216,14 @@ func NewNodeSessionAPI(ctx Context) *NodeSessionAPI {
 }
 
 // Get returns the NodeSession for the given DevAddr.
-func (a *NodeSessionAPI) Get(devAddr lorawan.DevAddr, ns *NodeSession) error {
+func (a *NodeSessionAPI) Get(devAddr lorawan.DevAddr, ns *models.NodeSession) error {
 	var err error
 	*ns, err = getNodeSession(a.ctx.RedisPool, devAddr)
 	return err
 }
 
 // GetByDevEUI returns the NodeSession for the given DevEUI.
-func (a *NodeSessionAPI) GetByDevEUI(devEUI lorawan.EUI64, ns *NodeSession) error {
+func (a *NodeSessionAPI) GetByDevEUI(devEUI lorawan.EUI64, ns *models.NodeSession) error {
 	var err error
 	*ns, err = getNodeSessionByDevEUI(a.ctx.RedisPool, devEUI)
 	return err
@@ -258,7 +232,7 @@ func (a *NodeSessionAPI) GetByDevEUI(devEUI lorawan.EUI64, ns *NodeSession) erro
 // Create creates the given NodeSession (activation by personalization).
 // The DevAddr must contain the same NwkID as the configured NetID.
 // Sessions will expire automatically after the configured TTL.
-func (a *NodeSessionAPI) Create(ns NodeSession, devAddr *lorawan.DevAddr) error {
+func (a *NodeSessionAPI) Create(ns models.NodeSession, devAddr *lorawan.DevAddr) error {
 	// validate the NwkID
 	if ns.DevAddr.NwkID() != a.ctx.NetID.NwkID() {
 		return fmt.Errorf("DevAddr must contain NwkID %s", hex.EncodeToString([]byte{a.ctx.NetID.NwkID()}))
@@ -282,7 +256,7 @@ func (a *NodeSessionAPI) Create(ns NodeSession, devAddr *lorawan.DevAddr) error 
 }
 
 // Update updates the given NodeSession.
-func (a *NodeSessionAPI) Update(ns NodeSession, devEUI *lorawan.EUI64) error {
+func (a *NodeSessionAPI) Update(ns models.NodeSession, devEUI *lorawan.EUI64) error {
 	if err := saveNodeSession(a.ctx.RedisPool, ns); err != nil {
 		return err
 	}

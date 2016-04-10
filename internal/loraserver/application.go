@@ -3,20 +3,15 @@ package loraserver
 import (
 	"errors"
 
+	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/jmoiron/sqlx"
 
 	log "github.com/Sirupsen/logrus"
 )
 
-// Application contains the information of an application.
-type Application struct {
-	AppEUI lorawan.EUI64 `db:"app_eui" json:"appEUI"`
-	Name   string        `db:"name" json:"name"`
-}
-
 // createApplication creates the given Application
-func createApplication(db *sqlx.DB, a Application) error {
+func createApplication(db *sqlx.DB, a models.Application) error {
 	_, err := db.Exec("insert into application (app_eui, name) values ($1, $2)",
 		a.AppEUI[:],
 		a.Name,
@@ -28,19 +23,19 @@ func createApplication(db *sqlx.DB, a Application) error {
 }
 
 // getApplication returns the Application for the given AppEUI.
-func getApplication(db *sqlx.DB, appEUI lorawan.EUI64) (Application, error) {
-	var app Application
+func getApplication(db *sqlx.DB, appEUI lorawan.EUI64) (models.Application, error) {
+	var app models.Application
 	return app, db.Get(&app, "select * from application where app_eui = $1", appEUI[:])
 }
 
 // getApplications returns a slice of applications.
-func getApplications(db *sqlx.DB, limit, offset int) ([]Application, error) {
-	var apps []Application
+func getApplications(db *sqlx.DB, limit, offset int) ([]models.Application, error) {
+	var apps []models.Application
 	return apps, db.Select(&apps, "select * from application order by app_eui limit $1 offset $2", limit, offset)
 }
 
 // updateApplication updates the given Application.
-func updateApplication(db *sqlx.DB, a Application) error {
+func updateApplication(db *sqlx.DB, a models.Application) error {
 	res, err := db.Exec("update application set name = $1 where app_eui = $2",
 		a.Name,
 		a.AppEUI[:],
@@ -93,21 +88,21 @@ func NewApplicationAPI(ctx Context) *ApplicationAPI {
 }
 
 // Get returns the Application for the given AppEUI.
-func (a *ApplicationAPI) Get(appEUI lorawan.EUI64, app *Application) error {
+func (a *ApplicationAPI) Get(appEUI lorawan.EUI64, app *models.Application) error {
 	var err error
 	*app, err = getApplication(a.ctx.DB, appEUI)
 	return err
 }
 
 // GetList returns a list of applications (given a limit and offset).
-func (a *ApplicationAPI) GetList(req GetListRequest, apps *[]Application) error {
+func (a *ApplicationAPI) GetList(req models.GetListRequest, apps *[]models.Application) error {
 	var err error
 	*apps, err = getApplications(a.ctx.DB, req.Limit, req.Offset)
 	return err
 }
 
 // Create creates the given application.
-func (a *ApplicationAPI) Create(app Application, appEUI *lorawan.EUI64) error {
+func (a *ApplicationAPI) Create(app models.Application, appEUI *lorawan.EUI64) error {
 	if err := createApplication(a.ctx.DB, app); err != nil {
 		return err
 	}
@@ -116,7 +111,7 @@ func (a *ApplicationAPI) Create(app Application, appEUI *lorawan.EUI64) error {
 }
 
 // Update updates the given Application.
-func (a *ApplicationAPI) Update(app Application, appEUI *lorawan.EUI64) error {
+func (a *ApplicationAPI) Update(app models.Application, appEUI *lorawan.EUI64) error {
 	if err := updateApplication(a.ctx.DB, app); err != nil {
 		return err
 	}

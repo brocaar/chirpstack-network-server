@@ -3,6 +3,7 @@ package loraserver
 import (
 	"testing"
 
+	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -21,7 +22,7 @@ func TestApplicationAPI(t *testing.T) {
 
 		api := NewApplicationAPI(ctx)
 
-		app := Application{
+		app := models.Application{
 			AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			Name:   "test app",
 		}
@@ -32,7 +33,7 @@ func TestApplicationAPI(t *testing.T) {
 			So(appEUI, ShouldEqual, app.AppEUI)
 
 			Convey("Then the application was created", func() {
-				var app2 Application
+				var app2 models.Application
 				So(api.Get(app.AppEUI, &app2), ShouldBeNil)
 				So(app2, ShouldResemble, app)
 
@@ -46,8 +47,8 @@ func TestApplicationAPI(t *testing.T) {
 			})
 
 			Convey("Then the list of applications has size 1", func() {
-				var apps []Application
-				So(api.GetList(GetListRequest{
+				var apps []models.Application
+				So(api.GetList(models.GetListRequest{
 					Limit:  10,
 					Offset: 0,
 				}, &apps), ShouldBeNil)
@@ -56,7 +57,7 @@ func TestApplicationAPI(t *testing.T) {
 
 			Convey("Then the application can be deleted", func() {
 				var appEUI lorawan.EUI64
-				var app2 Application
+				var app2 models.Application
 				So(api.Delete(app.AppEUI, &appEUI), ShouldBeNil)
 				So(api.Get(app.AppEUI, &app2), ShouldNotBeNil)
 			})

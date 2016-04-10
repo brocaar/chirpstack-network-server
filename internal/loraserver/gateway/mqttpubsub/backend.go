@@ -8,7 +8,8 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/brocaar/loraserver"
+	"github.com/brocaar/loraserver/internal/loraserver"
+	"github.com/brocaar/loraserver/models"
 	"github.com/eclipse/paho.mqtt.golang"
 )
 
@@ -17,14 +18,14 @@ const rxTopic = "gateway/+/rx"
 // Backend implements a MQTT pub-sub backend.
 type Backend struct {
 	conn         mqtt.Client
-	rxPacketChan chan loraserver.RXPacket
+	rxPacketChan chan models.RXPacket
 	wg           sync.WaitGroup
 }
 
 // NewBackend creates a new Backend.
 func NewBackend(server, username, password string) (loraserver.GatewayBackend, error) {
 	b := Backend{
-		rxPacketChan: make(chan loraserver.RXPacket),
+		rxPacketChan: make(chan models.RXPacket),
 	}
 
 	opts := mqtt.NewClientOptions()
@@ -60,12 +61,12 @@ func (b *Backend) Close() error {
 }
 
 // RXPacketChan returns the RXPacket channel.
-func (b *Backend) RXPacketChan() chan loraserver.RXPacket {
+func (b *Backend) RXPacketChan() chan models.RXPacket {
 	return b.rxPacketChan
 }
 
 // Send sends the given TXPacket to the gateway.
-func (b *Backend) Send(txPacket loraserver.TXPacket) error {
+func (b *Backend) Send(txPacket models.TXPacket) error {
 	bytes, err := json.Marshal(txPacket)
 	if err != nil {
 		return err
@@ -85,7 +86,7 @@ func (b *Backend) rxPacketHandler(c mqtt.Client, msg mqtt.Message) {
 
 	log.Info("gateway/mqttpubsub: RXPacket received")
 
-	var rxPacket loraserver.RXPacket
+	var rxPacket models.RXPacket
 	if err := json.Unmarshal(msg.Payload(), &rxPacket); err != nil {
 		log.WithFields(log.Fields{
 			"data_base64": base64.StdEncoding.EncodeToString(msg.Payload()),

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 	"github.com/garyburd/redigo/redis"
@@ -18,7 +19,7 @@ func TestNodeSession(t *testing.T) {
 		mustFlushRedis(p)
 
 		Convey("Given a NodeSession", func() {
-			ns := NodeSession{
+			ns := models.NodeSession{
 				DevAddr: [4]byte{1, 2, 3, 4},
 				DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			}
@@ -124,13 +125,13 @@ func TestNodeSessionAPI(t *testing.T) {
 		api := NewNodeSessionAPI(ctx)
 
 		Convey("Given an application and node are created (fk constraints)", func() {
-			app := Application{
+			app := models.Application{
 				AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				Name:   "test app",
 			}
 			So(createApplication(ctx.DB, app), ShouldBeNil)
 
-			node := Node{
+			node := models.Node{
 				DevEUI:        [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 				AppEUI:        [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				AppKey:        [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
@@ -138,7 +139,7 @@ func TestNodeSessionAPI(t *testing.T) {
 			}
 			So(createNode(ctx.DB, node), ShouldBeNil)
 
-			ns := NodeSession{
+			ns := models.NodeSession{
 				DevAddr:  [4]byte{6, 2, 3, 4},
 				DevEUI:   node.DevEUI,
 				AppEUI:   node.AppEUI,
@@ -154,7 +155,7 @@ func TestNodeSessionAPI(t *testing.T) {
 				So(devAddr, ShouldResemble, ns.DevAddr)
 
 				Convey("Then the session has been created", func() {
-					var ns2 NodeSession
+					var ns2 models.NodeSession
 					So(api.Get(ns.DevAddr, &ns2), ShouldBeNil)
 					So(ns2, ShouldResemble, ns)
 
@@ -165,7 +166,7 @@ func TestNodeSessionAPI(t *testing.T) {
 				})
 
 				Convey("Then the session can be retrieved by DevEUI", func() {
-					var ns2 NodeSession
+					var ns2 models.NodeSession
 					So(api.GetByDevEUI(ns.DevEUI, &ns2), ShouldBeNil)
 					So(ns2, ShouldResemble, ns)
 				})

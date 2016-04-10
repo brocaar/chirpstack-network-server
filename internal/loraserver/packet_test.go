@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -13,12 +14,12 @@ import (
 func TestRXPackets(t *testing.T) {
 	Convey("Given a slice of RXPacket with different RSSI values", t, func() {
 		rxPackets := RXPackets{
-			{RXInfo: RXInfo{RSSI: 1}},
-			{RXInfo: RXInfo{RSSI: 3}},
-			{RXInfo: RXInfo{RSSI: 7}},
-			{RXInfo: RXInfo{RSSI: 9}},
-			{RXInfo: RXInfo{RSSI: 6}},
-			{RXInfo: RXInfo{RSSI: 4}},
+			{RXInfo: models.RXInfo{RSSI: 1}},
+			{RXInfo: models.RXInfo{RSSI: 3}},
+			{RXInfo: models.RXInfo{RSSI: 7}},
+			{RXInfo: models.RXInfo{RSSI: 9}},
+			{RXInfo: models.RXInfo{RSSI: 6}},
+			{RXInfo: models.RXInfo{RSSI: 4}},
 		}
 
 		Convey("After sorting", func() {
@@ -91,8 +92,8 @@ func TestCollectAndCallOnce(t *testing.T) {
 					var wg sync.WaitGroup
 					for _, gw := range test.Gateways {
 						wg.Add(1)
-						packet := RXPacket{
-							RXInfo: RXInfo{
+						packet := models.RXPacket{
+							RXInfo: models.RXInfo{
 								MAC: gw,
 							},
 							PHYPayload: phy,
