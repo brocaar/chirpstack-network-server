@@ -2,8 +2,11 @@
 
 ## 0.5.0 (in development)
 
+Note: this release is incompatible with lora-semtech-bridge <= 1.0.1
+
 * Replaced hardcoded tx related settings by lorawan/band defined variables
-* Minor (but backwards incompatible) changes to TX / RX related struct (update lora-semtech-bridge to the latest version!)
+* Minor changes to TX / RX structs
+* Change gateway encoding to json (from gob encoding)
 
 ## 0.4.1
 
