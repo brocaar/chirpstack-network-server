@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 	"github.com/garyburd/redigo/redis"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -52,16 +53,16 @@ func TestNodeSession(t *testing.T) {
 					FullFCnt   uint32
 					Valid      bool
 				}{
-					{0, 1, 1, true},                                                       // ideal case counter was incremented
-					{1, 1, 1, true},                                                       // re-transmission
-					{2, 1, 0, false},                                                      // old packet received
-					{0, lorawan.MaxFCntGap, 0, false},                                     // gap should be less than MaxFCntGap
-					{0, lorawan.MaxFCntGap - 1, lorawan.MaxFCntGap - 1, true},             // gap is exactly within the allowed MaxFCntGap
-					{65536, lorawan.MaxFCntGap - 1, lorawan.MaxFCntGap - 1 + 65536, true}, // roll-over happened, gap ix exactly within allowed MaxFCntGap
-					{65535, lorawan.MaxFCntGap, 0, false},                                 // roll-over happened, but too many lost frames
-					{65535, 0, 65536, true},                                               // roll-over happened
-					{65536, 0, 65536, true},                                               // re-transmission
-					{4294967295, 0, 0, true},                                              // 32 bit roll-over happened, counter started at 0 again
+					{0, 1, 1, true},                                                 // ideal case counter was incremented
+					{1, 1, 1, true},                                                 // re-transmission
+					{2, 1, 0, false},                                                // old packet received
+					{0, band.MaxFCntGap, 0, false},                                  // gap should be less than MaxFCntGap
+					{0, band.MaxFCntGap - 1, band.MaxFCntGap - 1, true},             // gap is exactly within the allowed MaxFCntGap
+					{65536, band.MaxFCntGap - 1, band.MaxFCntGap - 1 + 65536, true}, // roll-over happened, gap ix exactly within allowed MaxFCntGap
+					{65535, band.MaxFCntGap, 0, false},                              // roll-over happened, but too many lost frames
+					{65535, 0, 65536, true},                                         // roll-over happened
+					{65536, 0, 65536, true},                                         // re-transmission
+					{4294967295, 0, 0, true},                                        // 32 bit roll-over happened, counter started at 0 again
 				}
 
 				for _, test := range testTable {

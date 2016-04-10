@@ -10,6 +10,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 )
 
 var (
@@ -297,9 +298,9 @@ func handleDataDownReply(ctx Context, rxPacket RXPacket, ns NodeSession) error {
 	txPacket := TXPacket{
 		TXInfo: TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
-			Timestamp: rxPacket.RXInfo.Timestamp + uint32(lorawan.ReceiveDelay1/time.Microsecond),
+			Timestamp: rxPacket.RXInfo.Timestamp + uint32(band.ReceiveDelay1/time.Microsecond),
 			Frequency: rxPacket.RXInfo.Frequency,
-			Power:     14,
+			Power:     band.DefaultTXPower,
 			DataRate:  rxPacket.RXInfo.DataRate,
 			CodeRate:  rxPacket.RXInfo.CodeRate,
 		},
@@ -312,12 +313,9 @@ func handleDataDownReply(ctx Context, rxPacket RXPacket, ns NodeSession) error {
 	}
 
 	// window 2
-	// TODO: define regio specific constants
-	txPacket.TXInfo.Timestamp = rxPacket.RXInfo.Timestamp + uint32(lorawan.ReceiveDelay2/time.Microsecond)
-	txPacket.TXInfo.Frequency = 869.525
-	txPacket.TXInfo.DataRate = DataRate{
-		LoRa: "SF12BW125",
-	}
+	txPacket.TXInfo.Timestamp = rxPacket.RXInfo.Timestamp + uint32(band.ReceiveDelay2/time.Microsecond)
+	txPacket.TXInfo.Frequency = band.RX2Frequency
+	txPacket.TXInfo.DataRate = band.DataRateConfiguration[band.RX2DataRate]
 	if err := ctx.Gateway.Send(txPacket); err != nil {
 		return fmt.Errorf("sending TXPacket to the gateway failed: %s", err)
 	}
@@ -458,9 +456,9 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	txPacket := TXPacket{
 		TXInfo: TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
-			Timestamp: rxPacket.RXInfo.Timestamp + uint32(lorawan.JoinAcceptDelay1/time.Microsecond),
+			Timestamp: rxPacket.RXInfo.Timestamp + uint32(band.JoinAcceptDelay1/time.Microsecond),
 			Frequency: rxPacket.RXInfo.Frequency,
-			Power:     14,
+			Power:     band.DefaultTXPower,
 			DataRate:  rxPacket.RXInfo.DataRate,
 			CodeRate:  rxPacket.RXInfo.CodeRate,
 		},
@@ -473,12 +471,9 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	}
 
 	// window 2
-	// TODO: define regio specific constants
-	txPacket.TXInfo.Timestamp = rxPacket.RXInfo.Timestamp + uint32(lorawan.JoinAcceptDelay2/time.Microsecond)
-	txPacket.TXInfo.Frequency = 869.525
-	txPacket.TXInfo.DataRate = DataRate{
-		LoRa: "SF12BW125",
-	}
+	txPacket.TXInfo.Timestamp = rxPacket.RXInfo.Timestamp + uint32(band.JoinAcceptDelay2/time.Microsecond)
+	txPacket.TXInfo.Frequency = band.RX2Frequency
+	txPacket.TXInfo.DataRate = band.DataRateConfiguration[band.RX2DataRate]
 	if err = ctx.Gateway.Send(txPacket); err != nil {
 		return fmt.Errorf("sending TXPacket to the gateway failed: %s", err)
 	}

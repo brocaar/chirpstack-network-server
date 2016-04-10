@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0 (in development)
+
+* Replaced hardcoded tx related settings by lorawan/band defined variables
+* Minor (but backwards incompatible) changes to TX / RX related struct (update lora-semtech-bridge to the latest version!)
+
 ## 0.4.1
 
 * Update mqtt vendor to fix various connection issues

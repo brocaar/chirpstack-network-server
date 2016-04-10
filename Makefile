@@ -4,7 +4,7 @@ VERSION := $(shell git describe --always)
 build:
 	@echo "Compiling source"
 	@mkdir -p bin
-	@GOBIN="$(CURDIR)/bin" go install -ldflags "-X main.version=$(VERSION)" $(PKGS)
+	@GOBIN="$(CURDIR)/bin" go install -tags eu_863_870 -ldflags "-X main.version=$(VERSION)" $(PKGS)
 
 clean:
 	@echo "Cleaning up workspace"
@@ -17,7 +17,7 @@ test:
 		golint $$pkg ; \
 	done
 	@go vet $(PKGS)
-	@go test -p 1 -cover -v $(PKGS)
+	@go test -p 1 -cover -v $(PKGS) -tags eu_863_870
 
 package: clean build
 	@echo "Creating package"

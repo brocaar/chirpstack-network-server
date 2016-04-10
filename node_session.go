@@ -12,6 +12,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 	"github.com/garyburd/redigo/redis"
 )
 
@@ -44,7 +45,7 @@ type NodeSession struct {
 func (n NodeSession) ValidateAndGetFullFCntUp(fCntUp uint32) (uint32, bool) {
 	// we need to compare the difference of the 16 LSB
 	gap := uint32(uint16(fCntUp) - uint16(n.FCntUp%65536))
-	if gap < lorawan.MaxFCntGap {
+	if gap < band.MaxFCntGap {
 		return n.FCntUp + gap, true
 	}
 	return 0, false

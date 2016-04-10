@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 	"github.com/garyburd/redigo/redis"
 )
 
@@ -17,26 +18,6 @@ const (
 	CollectAndCallOnceWait = time.Millisecond * 100 // the time to wait for the same packet received by multiple gateways
 	CollectDataDownWait    = time.Millisecond * 100 // the time to wait on possible downlink payloads from the application
 )
-
-// DataRate types
-const (
-	DataRateLoRa = "LORA"
-	DataRateFSK  = "FSK"
-)
-
-// DataRate contains either the LoRa datarate identifier or the FSK datarate.
-type DataRate struct {
-	LoRa string // LoRa datarate identifier (e.g. SF12BW500)  OR
-	FSK  uint   // FSK datarate (the frame's bit rate in Hz)
-}
-
-// Modulation returns the modulation type.
-func (r DataRate) Modulation() string {
-	if r.LoRa != "" {
-		return DataRateLoRa
-	}
-	return DataRateFSK
-}
 
 // RXPackets is a slice of RXPacket. It implements sort.Interface
 // to sort the slice of packets by signal strength so that the
@@ -67,19 +48,18 @@ type RXPacket struct {
 
 // RXInfo contains the RX information.
 type RXInfo struct {
-	MAC        lorawan.EUI64 // MAC address of the gateway
-	Time       time.Time     // receive time
-	Timestamp  uint32        // gateway internal receive timestamp with microsecond precision, will rollover every ~ 72 minutes
-	Frequency  float64       // frequency in Mhz
-	Channel    uint          // concentrator IF channel used for RX
-	RFChain    uint          // RF chain used for RX
-	CRCStatus  int           // 1 = OK, -1 = fail, 0 = no CRC
-	Modulation string        // "LORA" or "FSK"
-	CodeRate   string        // ECC code rate
-	RSSI       int           // RSSI in dBm
-	LoRaSNR    float64       // LoRa signal-to-noise ratio in dB
-	Size       uint          // packet payload size
-	DataRate   DataRate      // RX datarate (either LoRa or FSK)
+	MAC       lorawan.EUI64 // MAC address of the gateway
+	Time      time.Time     // receive time
+	Timestamp uint32        // gateway internal receive timestamp with microsecond precision, will rollover every ~ 72 minutes
+	Frequency int           // frequency in Hz
+	Channel   int           // concentrator IF channel used for RX
+	RFChain   int           // RF chain used for RX
+	CRCStatus int           // 1 = OK, -1 = fail, 0 = no CRC
+	CodeRate  string        // ECC code rate
+	RSSI      int           // RSSI in dBm
+	LoRaSNR   float64       // LoRa signal-to-noise ratio in dB
+	Size      int           // packet payload size
+	DataRate  band.DataRate // RX datarate (either LoRa or FSK)
 }
 
 // TXPacket contains the PHYPayload which should be send to the
@@ -94,12 +74,12 @@ type TXInfo struct {
 	MAC                lorawan.EUI64 // MAC address of the gateway
 	Immediately        bool          // send the packet immediately (ignore Time)
 	Timestamp          uint32        // gateway internal receive timestamp with microsecond precision, will rollover every ~ 72 minutes
-	Frequency          float64       // frequency in MHz
-	RFChain            uint          // RF chain to use for TX
-	Power              uint          // TX power to use in dBm
-	DataRate           DataRate      // TX datarate (either LoRa or FSK)
+	Frequency          int           // frequency in Hz
+	RFChain            int           // RF chain to use for TX
+	Power              int           // TX power to use in dBm
+	DataRate           band.DataRate // TX datarate (either LoRa or FSK)
 	CodeRate           string        // ECC code rate
-	FrequencyDeviation uint          // FSK frequency deviation (unsigned integer, in Hz)
+	FrequencyDeviation int           // FSK frequency deviation (unsigned integer, in Hz)
 	DisableCRC         bool          // disable the CRC of the physical layer
 }
 

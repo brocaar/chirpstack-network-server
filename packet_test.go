@@ -10,24 +10,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestDataRate(t *testing.T) {
-	Convey("Given a DataRate", t, func() {
-		dr := DataRate{}
-		Convey("Given the LoRa field is set", func() {
-			dr.LoRa = "SF12BW125"
-			Convey("Then Modulation is LORA", func() {
-				So(dr.Modulation(), ShouldEqual, "LORA")
-			})
-		})
-		Convey("Given the FSK field is set", func() {
-			dr.FSK = 5000
-			Convey("Then Modulation is FSK", func() {
-				So(dr.Modulation(), ShouldEqual, "FSK")
-			})
-		})
-	})
-}
-
 func TestRXPackets(t *testing.T) {
 	Convey("Given a slice of RXPacket with different RSSI values", t, func() {
 		rxPackets := RXPackets{

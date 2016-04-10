@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +17,7 @@ import (
 	"github.com/brocaar/loraserver/migrations"
 	"github.com/brocaar/loraserver/static"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 	"github.com/codegangsta/cli"
 	"github.com/elazarl/go-bindata-assetfs"
 	_ "github.com/lib/pq"
@@ -132,7 +134,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "loraserver"
 	app.Usage = "network-server for LoRaWAN networks"
-	app.Version = version
+	app.Version = fmt.Sprintf("%s (compiled for %s)", version, band.Name)
 	app.Copyright = "See http://github.com/brocaar/loraserver for copyright information"
 	app.Action = run
 	app.Flags = []cli.Flag{
