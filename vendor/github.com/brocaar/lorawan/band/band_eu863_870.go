@@ -9,14 +9,14 @@ const Name = "EU 863-870"
 
 // DataRateConfiguration defines the available data rates
 var DataRateConfiguration = [...]DataRate{
-	{SpreadFactor: 12, Bandwith: 125},
-	{SpreadFactor: 11, Bandwith: 125},
-	{SpreadFactor: 10, Bandwith: 125},
-	{SpreadFactor: 9, Bandwith: 125},
-	{SpreadFactor: 8, Bandwith: 125},
-	{SpreadFactor: 7, Bandwith: 125},
-	{SpreadFactor: 7, Bandwith: 250},
-	{DataRate: 50000},
+	{Modulation: LoRaModulation, SpreadFactor: 12, Bandwith: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 11, Bandwith: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 10, Bandwith: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 9, Bandwith: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 8, Bandwith: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwith: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwith: 250},
+	{Modulation: FSKModulation, DataRate: 50000},
 }
 
 // DefaultTXPower defines the default TX power in dBm

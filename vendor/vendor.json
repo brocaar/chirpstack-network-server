@@ -9,7 +9,7 @@
 		},
 		{
 			"path": "github.com/brocaar/lorawan",
-			"revision": "25c8c428832f3971a9b3c2c67c14b79d779ffbdd",
+			"revision": "2d1381efdfbbb6833cf0a56b1f945d95cc965d67",
 			"revisionTime": "2016-04-08T19:12:52+02:00",
 			"tree": true
 		},
