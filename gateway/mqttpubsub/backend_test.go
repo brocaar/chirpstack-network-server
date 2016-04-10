@@ -1,8 +1,7 @@
 package mqttpubsub
 
 import (
-	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -31,8 +30,7 @@ func TestBackend(t *testing.T) {
 				txPacketChan := make(chan loraserver.TXPacket)
 				token := c.Subscribe("gateway/+/tx", 0, func(c mqtt.Client, msg mqtt.Message) {
 					var txPacket loraserver.TXPacket
-					dec := gob.NewDecoder(bytes.NewReader(msg.Payload()))
-					if err := dec.Decode(&txPacket); err != nil {
+					if err := json.Unmarshal(msg.Payload(), &txPacket); err != nil {
 						t.Fatal(err)
 					}
 					txPacketChan <- txPacket
@@ -57,13 +55,13 @@ func TestBackend(t *testing.T) {
 				Convey("When sending a RXPacket (from the MQTT client)", func() {
 					rxPacket := loraserver.RXPacket{
 						RXInfo: loraserver.RXInfo{
-							MAC: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							Time: time.Now().UTC(),
+							MAC:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 						},
 					}
-					var buf bytes.Buffer
-					enc := gob.NewEncoder(&buf)
-					So(enc.Encode(rxPacket), ShouldBeNil)
-					token := c.Publish("gateway/0102030405060708/rx", 0, false, buf.Bytes())
+					b, err := json.Marshal(rxPacket)
+					So(err, ShouldBeNil)
+					token := c.Publish("gateway/0102030405060708/rx", 0, false, b)
 					token.Wait()
 					So(token.Error(), ShouldBeNil)
 

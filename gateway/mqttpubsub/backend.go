@@ -1,8 +1,8 @@
 package mqttpubsub
 
 import (
-	"bytes"
-	"encoding/gob"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -66,29 +66,33 @@ func (b *Backend) RXPacketChan() chan loraserver.RXPacket {
 
 // Send sends the given TXPacket to the gateway.
 func (b *Backend) Send(txPacket loraserver.TXPacket) error {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(txPacket); err != nil {
+	bytes, err := json.Marshal(txPacket)
+	if err != nil {
 		return err
 	}
+
 	topic := fmt.Sprintf("gateway/%s/tx", txPacket.TXInfo.MAC)
-	log.WithField("topic", topic).Info("gateway/mqttpubsub: publishing message")
-	if token := b.conn.Publish(topic, 0, false, buf.Bytes()); token.Wait() && token.Error() != nil {
-		return token.Error()
-	}
-	return nil
+	log.WithField("topic", topic).Info("gateway/mqttpubsub: publishing TXPacket")
+
+	token := b.conn.Publish(topic, 0, false, bytes)
+	token.Wait()
+	return token.Error()
 }
 
 func (b *Backend) rxPacketHandler(c mqtt.Client, msg mqtt.Message) {
 	b.wg.Add(1)
 	defer b.wg.Done()
 
+	log.Info("gateway/mqttpubsub: RXPacket received")
+
 	var rxPacket loraserver.RXPacket
-	dec := gob.NewDecoder(bytes.NewReader(msg.Payload()))
-	if err := dec.Decode(&rxPacket); err != nil {
-		log.Errorf("gateway/mqttpubsub: could not decode RXPacket: %s", err)
+	if err := json.Unmarshal(msg.Payload(), &rxPacket); err != nil {
+		log.WithFields(log.Fields{
+			"data_base64": base64.StdEncoding.EncodeToString(msg.Payload()),
+		}).Errorf("gateway/mqttpubsub: could not decode RXPacket: %s", err)
 		return
 	}
+
 	b.rxPacketChan <- rxPacket
 }
 
