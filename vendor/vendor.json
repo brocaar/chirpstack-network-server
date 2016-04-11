@@ -40,8 +40,8 @@
 		},
 		{
 			"path": "github.com/jacobsa/crypto/cmac",
-			"revision": "bf13d379f5e7e0bbfc85ad339211f5c0dde70f95",
-			"revisionTime": "2016-02-18T11:02:31+11:00"
+			"revision": "42daa9d04c68a12aca47231abd9fb7f8aac27ef7",
+			"revisionTime": "2016-04-11T08:58:39+10:00"
 		},
 		{
 			"path": "github.com/jacobsa/crypto/common",

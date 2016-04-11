@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build 386 arm,!arm64
+
 package cmac
 
 import (
@@ -28,16 +30,18 @@ func xorBlock(
 	// Check assumptions. (These are compile-time constants, so this should
 	// compile out.)
 	const wordSize = unsafe.Sizeof(uintptr(0))
-	if blockSize != 2*wordSize {
+	if blockSize != 4*wordSize {
 		log.Panicf("%d %d", blockSize, wordSize)
 	}
 
 	// Convert.
-	a := (*[2]uintptr)(aPtr)
-	b := (*[2]uintptr)(bPtr)
-	dst := (*[2]uintptr)(dstPtr)
+	a := (*[4]uintptr)(aPtr)
+	b := (*[4]uintptr)(bPtr)
+	dst := (*[4]uintptr)(dstPtr)
 
 	// Compute.
 	dst[0] = a[0] ^ b[0]
 	dst[1] = a[1] ^ b[1]
+	dst[2] = a[2] ^ b[2]
+	dst[3] = a[3] ^ b[3]
 }
