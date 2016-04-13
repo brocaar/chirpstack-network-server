@@ -33,30 +33,30 @@ const (
 // macPayloadInfo contains the info about a MAC payload
 type macPayloadInfo struct {
 	size    int
-	payload func() Payload
+	payload func() MACCommandPayload
 }
 
 // macPayloadRegistry contains the info for uplink and downlink MAC payloads
 // in the format map[uplink]map[CID].
 var macPayloadRegistry = map[bool]map[cid]macPayloadInfo{
 	false: map[cid]macPayloadInfo{
-		LinkCheckAns:     {2, func() Payload { return &LinkCheckAnsPayload{} }},
-		LinkADRReq:       {4, func() Payload { return &LinkADRReqPayload{} }},
-		DutyCycleReq:     {1, func() Payload { return &DutyCycleReqPayload{} }},
-		RXParamSetupReq:  {4, func() Payload { return &RX2SetupReqPayload{} }},
-		NewChannelReq:    {4, func() Payload { return &NewChannelReqPayload{} }},
-		RXTimingSetupReq: {1, func() Payload { return &RXTimingSetupReqPayload{} }},
+		LinkCheckAns:     {2, func() MACCommandPayload { return &LinkCheckAnsPayload{} }},
+		LinkADRReq:       {4, func() MACCommandPayload { return &LinkADRReqPayload{} }},
+		DutyCycleReq:     {1, func() MACCommandPayload { return &DutyCycleReqPayload{} }},
+		RXParamSetupReq:  {4, func() MACCommandPayload { return &RX2SetupReqPayload{} }},
+		NewChannelReq:    {4, func() MACCommandPayload { return &NewChannelReqPayload{} }},
+		RXTimingSetupReq: {1, func() MACCommandPayload { return &RXTimingSetupReqPayload{} }},
 	},
 	true: map[cid]macPayloadInfo{
-		LinkADRAns:      {1, func() Payload { return &LinkADRAnsPayload{} }},
-		RXParamSetupAns: {1, func() Payload { return &RX2SetupAnsPayload{} }},
-		DevStatusAns:    {2, func() Payload { return &DevStatusAnsPayload{} }},
-		NewChannelAns:   {1, func() Payload { return &NewChannelAnsPayload{} }},
+		LinkADRAns:      {1, func() MACCommandPayload { return &LinkADRAnsPayload{} }},
+		RXParamSetupAns: {1, func() MACCommandPayload { return &RX2SetupAnsPayload{} }},
+		DevStatusAns:    {2, func() MACCommandPayload { return &DevStatusAnsPayload{} }},
+		NewChannelAns:   {1, func() MACCommandPayload { return &NewChannelAnsPayload{} }},
 	},
 }
 
-// getMACPayloadAndSize returns a new Payload instance and it's size.
-func getMACPayloadAndSize(uplink bool, c cid) (Payload, int, error) {
+// getMACPayloadAndSize returns a new MACCommandPayload instance and it's size.
+func getMACPayloadAndSize(uplink bool, c cid) (MACCommandPayload, int, error) {
 	v, ok := macPayloadRegistry[uplink][c]
 	if !ok {
 		return nil, 0, fmt.Errorf("lorawan: payload unknown for uplink=%v and CID=%v", uplink, c)
@@ -65,11 +65,17 @@ func getMACPayloadAndSize(uplink bool, c cid) (Payload, int, error) {
 	return v.payload(), v.size, nil
 }
 
+// MACCommandPayload is the interface that every MACCommand payload
+// must implement.
+type MACCommandPayload interface {
+	MarshalBinary() (data []byte, err error)
+	UnmarshalBinary(data []byte) error
+}
+
 // MACCommand represents a MAC command with optional payload.
 type MACCommand struct {
 	CID     cid
-	Payload Payload
-	uplink  bool // true=uplink, false=downlink
+	Payload MACCommandPayload
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -86,13 +92,13 @@ func (m MACCommand) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary decodes the object from binary form.
-func (m *MACCommand) UnmarshalBinary(data []byte) error {
+func (m *MACCommand) UnmarshalBinary(uplink bool, data []byte) error {
 	if len(data) == 0 {
 		return errors.New("lorawan: at least 1 byte of data is expected")
 	}
 	m.CID = cid(data[0])
 	if len(data) > 1 {
-		p, _, err := getMACPayloadAndSize(m.uplink, m.CID)
+		p, _, err := getMACPayloadAndSize(uplink, m.CID)
 		if err != nil {
 			return err
 		}

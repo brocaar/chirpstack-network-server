@@ -58,8 +58,8 @@ Encryption and decryption of the FRMPayload is done by calling
 EncryptFRMPayload() and DecryptFRMPayload(). After encryption (and thus
 before decryption), the bytes are stored in the DataPayload struct.
 
-    err := macPayload.EncryptFRMPayload(key)
-    err := macPayload.DecryptFRMPayload(key)
+    err := phyPayload.EncryptFRMPayload(key)
+    err := phyPayload.DecryptFRMPayload(key)
 
 All payloads implement the Payload interface. Based on the MIC value, you
 should be able to know to which type to cast the Payload value, so you will

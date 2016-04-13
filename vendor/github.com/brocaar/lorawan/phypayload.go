@@ -4,6 +4,7 @@ package lorawan
 
 import (
 	"crypto/aes"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
@@ -101,14 +102,6 @@ type PHYPayload struct {
 	MHDR       MHDR
 	MACPayload Payload
 	MIC        [4]byte
-	uplink     bool
-}
-
-// NewPHYPayload returns a new PHYPayload instance set to either uplink or downlink.
-// This is needed since there is a difference in how uplink and downlink
-// payloads are (un)marshalled and encrypted / decrypted.
-func NewPHYPayload(uplink bool) PHYPayload {
-	return PHYPayload{uplink: uplink}
 }
 
 // calculateMIC calculates and returns the MIC.
@@ -140,7 +133,7 @@ func (p PHYPayload) calculateMIC(key AES128Key) ([]byte, error) {
 
 	b0 := make([]byte, 16)
 	b0[0] = 0x49
-	if !p.uplink {
+	if !p.isUplink() {
 		b0[5] = 1
 	}
 	b, err = macPayload.FHDR.DevAddr.MarshalBinary()
@@ -373,17 +366,65 @@ func (p *PHYPayload) DecryptJoinAcceptPayload(appKey AES128Key) error {
 
 	p.MACPayload = &JoinAcceptPayload{}
 	copy(p.MIC[:], pt[len(pt)-4:len(pt)]) // set the decrypted MIC
-	return p.MACPayload.UnmarshalBinary(pt[0 : len(pt)-4])
+	return p.MACPayload.UnmarshalBinary(p.isUplink(), pt[0:len(pt)-4])
+}
+
+// EncryptFRMPayload encrypts the FRMPayload with the given key.
+func (p *PHYPayload) EncryptFRMPayload(key AES128Key) error {
+	macPL, ok := p.MACPayload.(*MACPayload)
+	if !ok {
+		return errors.New("lorawan: MACPayload must be of type *MACPayload")
+	}
+
+	// nothing to encrypt
+	if len(macPL.FRMPayload) == 0 {
+		return nil
+	}
+
+	data, err := macPL.marshalPayload()
+	if err != nil {
+		return err
+	}
+
+	data, err = EncryptFRMPayload(key, p.isUplink(), macPL.FHDR.DevAddr, macPL.FHDR.FCnt, data)
+	if err != nil {
+		return err
+	}
+
+	// store the encrypted data in a DataPayload
+	macPL.FRMPayload = []Payload{&DataPayload{Bytes: data}}
+
+	return nil
+}
+
+// DecryptFRMPayload decrypts the FRMPayload with the given key.
+func (p *PHYPayload) DecryptFRMPayload(key AES128Key) error {
+	if err := p.EncryptFRMPayload(key); err != nil {
+		return err
+	}
+
+	macPL, ok := p.MACPayload.(*MACPayload)
+	if !ok {
+		return errors.New("lorawan: MACPayload must be of type *MACPayload")
+	}
+
+	// the FRMPayload contains MAC commands, which we need to unmarshal
+	if macPL.FPort != nil && *macPL.FPort == 0 {
+		dp, ok := macPL.FRMPayload[0].(*DataPayload)
+		if !ok {
+			return errors.New("lorawan: a DataPayload was expected")
+		}
+
+		return macPL.unmarshalPayload(p.isUplink(), dp.Bytes)
+	}
+
+	return nil
 }
 
 // MarshalBinary marshals the object in binary form.
 func (p PHYPayload) MarshalBinary() ([]byte, error) {
 	if p.MACPayload == nil {
 		return []byte{}, errors.New("lorawan: MACPayload should not be nil")
-	}
-
-	if mpl, ok := p.MACPayload.(*MACPayload); ok {
-		mpl.uplink = p.uplink
 	}
 
 	var out []byte
@@ -408,51 +449,104 @@ func (p *PHYPayload) UnmarshalBinary(data []byte) error {
 	if len(data) < 5 {
 		return errors.New("lorawan: at least 5 bytes needed to decode PHYPayload")
 	}
+	isUplink := p.isUplink()
 
+	// MHDR
 	if err := p.MHDR.UnmarshalBinary(data[0:1]); err != nil {
 		return err
 	}
 
+	// MACPayload
 	switch p.MHDR.MType {
 	case JoinRequest:
 		p.MACPayload = &JoinRequestPayload{}
 	case JoinAccept:
 		p.MACPayload = &DataPayload{}
 	default:
-		p.MACPayload = &MACPayload{uplink: p.uplink}
+		p.MACPayload = &MACPayload{}
 	}
-
-	if err := p.MACPayload.UnmarshalBinary(data[1 : len(data)-4]); err != nil {
+	if err := p.MACPayload.UnmarshalBinary(isUplink, data[1:len(data)-4]); err != nil {
 		return err
 	}
+
+	// MIC
 	for i := 0; i < 4; i++ {
 		p.MIC[i] = data[len(data)-4+i]
 	}
 	return nil
 }
 
-// GobEncode implements the gob.GobEncoder interface.
-func (p PHYPayload) GobEncode() ([]byte, error) {
-	out := make([]byte, 1)
-	if p.uplink {
-		out[0] = 1
-	}
-
+// MarshalText encodes the PHYPayload into base64.
+func (p PHYPayload) MarshalText() ([]byte, error) {
 	b, err := p.MarshalBinary()
 	if err != nil {
 		return nil, err
 	}
-	out = append(out, b...)
-	return out, nil
+	return []byte(base64.StdEncoding.EncodeToString(b)), nil
 }
 
-// GobDecode implements the gob.GobEncoder interface.
-func (p *PHYPayload) GobDecode(data []byte) error {
-	if len(data) < 1 {
-		return errors.New("lorawan: at least 1 byte needed for GobDecode")
+// UnmarshalText decodes the PHYPayload from base64.
+func (p *PHYPayload) UnmarshalText(text []byte) error {
+	b, err := base64.StdEncoding.DecodeString(string(text))
+	if err != nil {
+		return err
 	}
-	if data[0] == 1 {
-		p.uplink = true
+	return p.UnmarshalBinary(b)
+}
+
+// isUplink returns a bool indicating if the packet is uplink or downlink.
+// Note that for MType Proprietary it can't derrive if the packet is uplink
+// or downlink. This is fine (I think) since it is also unknown how to
+// calculate the MIC and the format of the MACPayload. A pluggable
+// MIC calculation and MACPayload for Proprietary MType is still TODO.
+func (p PHYPayload) isUplink() bool {
+	switch p.MHDR.MType {
+	case JoinRequest, UnconfirmedDataUp, ConfirmedDataUp:
+		return true
+	default:
+		return false
 	}
-	return p.UnmarshalBinary(data[1:])
+}
+
+// EncryptFRMPayload encrypts the FRMPayload (slice of bytes).
+// Note that EncryptFRMPayload is used for both encryption and decryption.
+func EncryptFRMPayload(key AES128Key, uplink bool, devAddr DevAddr, fCnt uint32, data []byte) ([]byte, error) {
+	pLen := len(data)
+	if pLen%16 != 0 {
+		// append with empty bytes so that len(data) is a multiple of 16
+		data = append(data, make([]byte, 16-(pLen%16))...)
+	}
+
+	block, err := aes.NewCipher(key[:])
+	if err != nil {
+		return nil, err
+	}
+	if block.BlockSize() != 16 {
+		return nil, errors.New("lorawan: block size of 16 was expected")
+	}
+
+	s := make([]byte, 16)
+	a := make([]byte, 16)
+	a[0] = 0x01
+	if !uplink {
+		a[5] = 0x01
+	}
+
+	b, err := devAddr.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+	copy(a[6:10], b)
+	binary.LittleEndian.PutUint32(a[10:14], uint32(fCnt))
+
+	for i := 0; i < len(data)/16; i++ {
+		a[15] = byte(i + 1)
+		block.Encrypt(s, a)
+
+		for j := 0; j < len(s); j++ {
+			data[i*16+j] = data[i*16+j] ^ s[j]
+		}
+	}
+
+	return data[0:pLen], nil
 }

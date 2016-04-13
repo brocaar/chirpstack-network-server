@@ -8,10 +8,16 @@
 			"revisionTime": "2016-02-24T16:10:30-05:00"
 		},
 		{
+			"checksumSHA1": "j8kFqS4GnkiizFG94cHR8zLMAZA=",
 			"path": "github.com/brocaar/lorawan",
-			"revision": "2d1381efdfbbb6833cf0a56b1f945d95cc965d67",
-			"revisionTime": "2016-04-08T19:12:52+02:00",
-			"tree": true
+			"revision": "61f52e3008626c275b62a72090a7ef13a6294764",
+			"revisionTime": "2016-04-16T09:33:49Z"
+		},
+		{
+			"checksumSHA1": "JhsEl+poxTkTUc4HyjvI7KTnIiw=",
+			"path": "github.com/brocaar/lorawan/band",
+			"revision": "61f52e3008626c275b62a72090a7ef13a6294764",
+			"revisionTime": "2016-04-16T09:33:49Z"
 		},
 		{
 			"path": "github.com/codegangsta/cli",
@@ -40,11 +46,15 @@
 			"revisionTime": "2016-03-02T15:46:02-08:00"
 		},
 		{
+			"checksumSHA1": "YEZ/qI/rjyPhyyjuGI0NysuKIfA=",
+			"origin": "github.com/brocaar/loraserver/vendor/github.com/jacobsa/crypto/cmac",
 			"path": "github.com/jacobsa/crypto/cmac",
 			"revision": "42daa9d04c68a12aca47231abd9fb7f8aac27ef7",
 			"revisionTime": "2016-04-11T08:58:39+10:00"
 		},
 		{
+			"checksumSHA1": "NBvtX91AEKxFLmj8mwwhXEKl6d0=",
+			"origin": "github.com/brocaar/loraserver/vendor/github.com/jacobsa/crypto/common",
 			"path": "github.com/jacobsa/crypto/common",
 			"revision": "bf13d379f5e7e0bbfc85ad339211f5c0dde70f95",
 			"revisionTime": "2016-02-18T11:02:31+11:00"
@@ -124,5 +134,6 @@
 			"revision": "c87af80f3cc5036b55b83d77171e156791085e2e",
 			"revisionTime": "2015-02-04T09:55:30+01:00"
 		}
-	]
+	],
+	"rootPath": "github.com/brocaar/loraserver"
 }

@@ -9,13 +9,13 @@ const Name = "EU 863-870"
 
 // DataRateConfiguration defines the available data rates
 var DataRateConfiguration = [...]DataRate{
-	{Modulation: LoRaModulation, SpreadFactor: 12, Bandwith: 125},
-	{Modulation: LoRaModulation, SpreadFactor: 11, Bandwith: 125},
-	{Modulation: LoRaModulation, SpreadFactor: 10, Bandwith: 125},
-	{Modulation: LoRaModulation, SpreadFactor: 9, Bandwith: 125},
-	{Modulation: LoRaModulation, SpreadFactor: 8, Bandwith: 125},
-	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwith: 125},
-	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwith: 250},
+	{Modulation: LoRaModulation, SpreadFactor: 12, Bandwidth: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 11, Bandwidth: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 10, Bandwidth: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 9, Bandwidth: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwidth: 125},
+	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwidth: 250},
 	{Modulation: FSKModulation, DataRate: 50000},
 }
 

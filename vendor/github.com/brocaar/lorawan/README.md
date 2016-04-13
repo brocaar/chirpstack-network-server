@@ -20,7 +20,7 @@ The Following message types (MType) are implemented:
     * UnconfirmedDataDown
     * ConfirmedDataUp
     * ConfirmedDataDown
-    * Proprietary
+    * Proprietary (todo: add pluggable function for MIC calculation / validation)
 
 The following MAC commands (and their optional payloads) are implemented:
 
@@ -61,8 +61,8 @@ Encryption and decryption of the FRMPayload is done by calling
 EncryptFRMPayload() and DecryptFRMPayload(). After encryption (and thus
 before decryption), the bytes are stored in the DataPayload struct.
 
-    err := macPayload.EncryptFRMPayload(key)
-    err := macPayload.DecryptFRMPayload(key)
+    err := phyPayload.EncryptFRMPayload(key)
+    err := phyPayload.DecryptFRMPayload(key)
 
 All payloads implement the Payload interface. Based on the MIC value, you
 should be able to know to which type to cast the Payload value, so you will
@@ -75,6 +75,13 @@ When using this package, knowledge about the LoRaWAN specification is needed.
 You can request the LoRaWAN specification here:
 https://www.lora-alliance.org/For-Developers/LoRaWANDevelopers
 
+## ISM band configuration
+
+The LoRaWAN specification defines various band specific defaults and
+configuration. These can be found in the ``band`` sub-package. Note that you
+need to compile your project with the corresponding build tag of the ISM band.
+E.g. for the EU 863-870 ISM band you would need to compile your project
+with the tag ``eu_863_870``. Note that part is still work in progress.
 
 ## Documentation
 

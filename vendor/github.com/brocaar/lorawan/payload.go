@@ -1,30 +1,27 @@
 package lorawan
 
 import (
-	"encoding"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"strings"
 )
 
 // EUI64 data type
 type EUI64 [8]byte
 
-// MarshalJSON implements json.Marshaler.
-func (e EUI64) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + e.String() + `"`), nil
+// MarshalText implements encoding.TextMarshaler.
+func (e EUI64) MarshalText() ([]byte, error) {
+	return []byte(e.String()), nil
 }
 
-// UnmarshalJSON implements json.Unmarshaler.
-func (e *EUI64) UnmarshalJSON(data []byte) error {
-	hexStr := strings.Trim(string(data), `"`)
-	b, err := hex.DecodeString(hexStr)
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (e *EUI64) UnmarshalText(text []byte) error {
+	b, err := hex.DecodeString(string(text))
 	if err != nil {
 		return err
 	}
-	if len(b) != len(e) {
+	if len(e) != len(b) {
 		return fmt.Errorf("lorawan: exactly %d bytes are expected", len(e))
 	}
 	copy(e[:], b)
@@ -72,9 +69,12 @@ func (a *EUI64) Scan(src interface{}) error {
 }
 
 // Payload is the interface that every payload needs to implement.
+// Since it might be a MACPayload, an indication must be given if
+// the direction is uplink or downlink (it has different payloads
+// for the same CID, based on direction).
 type Payload interface {
-	encoding.BinaryMarshaler
-	encoding.BinaryUnmarshaler
+	MarshalBinary() (data []byte, err error)
+	UnmarshalBinary(uplink bool, data []byte) error
 }
 
 // DataPayload represents a slice of bytes.
@@ -88,7 +88,7 @@ func (p DataPayload) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary decodes the object from binary form.
-func (p *DataPayload) UnmarshalBinary(data []byte) error {
+func (p *DataPayload) UnmarshalBinary(uplink bool, data []byte) error {
 	p.Bytes = make([]byte, len(data))
 	copy(p.Bytes, data)
 	return nil
@@ -120,7 +120,7 @@ func (p JoinRequestPayload) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary decodes the object from binary form.
-func (p *JoinRequestPayload) UnmarshalBinary(data []byte) error {
+func (p *JoinRequestPayload) UnmarshalBinary(uplink bool, data []byte) error {
 	if len(data) != 18 {
 		return errors.New("lorawan: 18 bytes of data are expected")
 	}
@@ -224,7 +224,7 @@ func (p JoinAcceptPayload) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary decodes the object from binary form.
-func (p *JoinAcceptPayload) UnmarshalBinary(data []byte) error {
+func (p *JoinAcceptPayload) UnmarshalBinary(uplink bool, data []byte) error {
 	l := len(data)
 	if l != 12 && l != 28 {
 		return errors.New("lorawan: 12 or 28 bytes of data are expected (28 bytes if CFList is present)")
