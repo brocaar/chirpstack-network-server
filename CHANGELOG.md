@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.0 (in development)
+## 0.5.0
 
 Note: this release is incompatible with lora-semtech-bridge <= 1.0.1
 
