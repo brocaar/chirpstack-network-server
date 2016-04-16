@@ -141,16 +141,15 @@ func validateAndCollectDataUpRXPacket(ctx Context, rxPacket models.RXPacket) err
 	if macPL.FPort != nil {
 		if *macPL.FPort == 0 {
 			// decrypt FRMPayload with NwkSKey when FPort == 0
-			if err := macPL.DecryptFRMPayload(ns.NwkSKey); err != nil {
+			if err := rxPacket.PHYPayload.DecryptFRMPayload(ns.NwkSKey); err != nil {
 				return err
 			}
 		} else {
-			if err := macPL.DecryptFRMPayload(ns.AppSKey); err != nil {
+			if err := rxPacket.PHYPayload.DecryptFRMPayload(ns.AppSKey); err != nil {
 				return err
 			}
 		}
 	}
-	rxPacket.PHYPayload.MACPayload = macPL
 
 	return collectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPackets RXPackets) error {
 		return handleCollectedDataUpPackets(ctx, rxPackets)
@@ -254,19 +253,22 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		return nil
 	}
 
-	phy := lorawan.NewPHYPayload(false)
-	phy.MHDR = lorawan.MHDR{
-		MType: lorawan.UnconfirmedDataDown,
-		Major: lorawan.LoRaWANR1,
-	}
-	macPL = lorawan.NewMACPayload(false)
-	macPL.FHDR = lorawan.FHDR{
-		DevAddr: ns.DevAddr,
-		FCtrl: lorawan.FCtrl{
-			ACK: rxPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp, // set ACK to true when received packet needs an ACK
+	phy := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.UnconfirmedDataDown,
+			Major: lorawan.LoRaWANR1,
 		},
-		FCnt: ns.FCntDown,
 	}
+	macPL = &lorawan.MACPayload{
+		FHDR: lorawan.FHDR{
+			DevAddr: ns.DevAddr,
+			FCtrl: lorawan.FCtrl{
+				ACK: rxPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp, // set ACK to true when received packet needs an ACK
+			},
+			FCnt: ns.FCntDown,
+		},
+	}
+	phy.MACPayload = macPL
 
 	// add the payload from the queue
 	if err == nil {
@@ -279,7 +281,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		macPL.FRMPayload = []lorawan.Payload{
 			&lorawan.DataPayload{Bytes: txPayload.Data},
 		}
-		if err := macPL.EncryptFRMPayload(ns.AppSKey); err != nil {
+		if err := phy.EncryptFRMPayload(ns.AppSKey); err != nil {
 			return fmt.Errorf("could not encrypt FRMPayload: %s", err)
 		}
 
@@ -291,7 +293,6 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		}
 	}
 
-	phy.MACPayload = macPL
 	if err := phy.SetMIC(ns.NwkSKey); err != nil {
 		return fmt.Errorf("could not set MIC: %s", err)
 	}
@@ -437,15 +438,16 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	}
 
 	// construct the lorawan packet
-	phy := lorawan.NewPHYPayload(false)
-	phy.MHDR = lorawan.MHDR{
-		MType: lorawan.JoinAccept,
-		Major: lorawan.LoRaWANR1,
-	}
-	phy.MACPayload = &lorawan.JoinAcceptPayload{
-		AppNonce: appNonce,
-		NetID:    ctx.NetID,
-		DevAddr:  devAddr,
+	phy := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.JoinAccept,
+			Major: lorawan.LoRaWANR1,
+		},
+		MACPayload: &lorawan.JoinAcceptPayload{
+			AppNonce: appNonce,
+			NetID:    ctx.NetID,
+			DevAddr:  devAddr,
+		},
 	}
 	if err = phy.SetMIC(node.AppKey); err != nil {
 		return fmt.Errorf("could not set MIC: %s", err)

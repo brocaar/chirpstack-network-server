@@ -44,24 +44,25 @@ func TestHandleDataUpPackets(t *testing.T) {
 			So(saveNodeSession(p, ns), ShouldBeNil)
 
 			Convey("Given an UnconfirmedDataUp packet", func() {
-				macPL := lorawan.NewMACPayload(true)
-				macPL.FHDR = lorawan.FHDR{
-					DevAddr: ns.DevAddr,
-					FCnt:    10,
-				}
 				fPort := uint8(1)
-				macPL.FPort = &fPort
-				macPL.FRMPayload = []lorawan.Payload{
-					&lorawan.DataPayload{Bytes: []byte("hello!")},
+				phy := lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.UnconfirmedDataUp,
+						Major: lorawan.LoRaWANR1,
+					},
+					MACPayload: &lorawan.MACPayload{
+						FHDR: lorawan.FHDR{
+							DevAddr: ns.DevAddr,
+							FCnt:    10,
+						},
+						FPort: &fPort,
+						FRMPayload: []lorawan.Payload{
+							&lorawan.DataPayload{Bytes: []byte("hello!")},
+						},
+					},
 				}
-				So(macPL.EncryptFRMPayload(ns.AppSKey), ShouldBeNil)
 
-				phy := lorawan.NewPHYPayload(true)
-				phy.MHDR = lorawan.MHDR{
-					MType: lorawan.UnconfirmedDataUp,
-					Major: lorawan.LoRaWANR1,
-				}
-				phy.MACPayload = macPL
+				So(phy.EncryptFRMPayload(ns.AppSKey), ShouldBeNil)
 				So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
 
 				rxPacket := models.RXPacket{
@@ -162,7 +163,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 								So(macPL.FHDR.FCtrl.ACK, ShouldBeFalse)
 								So(*macPL.FPort, ShouldEqual, 5)
 
-								So(macPL.DecryptFRMPayload(ns.AppSKey), ShouldBeNil)
+								So(txPacket1.PHYPayload.DecryptFRMPayload(ns.AppSKey), ShouldBeNil)
 								So(len(macPL.FRMPayload), ShouldEqual, 1)
 								pl, ok := macPL.FRMPayload[0].(*lorawan.DataPayload)
 								So(ok, ShouldBeTrue)
@@ -213,7 +214,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 								So(macPL.FHDR.FCtrl.ACK, ShouldBeFalse)
 								So(*macPL.FPort, ShouldEqual, 5)
 
-								So(macPL.DecryptFRMPayload(ns.AppSKey), ShouldBeNil)
+								So(txPacket1.PHYPayload.DecryptFRMPayload(ns.AppSKey), ShouldBeNil)
 								So(len(macPL.FRMPayload), ShouldEqual, 1)
 								pl, ok := macPL.FRMPayload[0].(*lorawan.DataPayload)
 								So(ok, ShouldBeTrue)
@@ -233,20 +234,21 @@ func TestHandleDataUpPackets(t *testing.T) {
 							So(ns2.FCntDown, ShouldEqual, ns.FCntDown)
 
 							Convey("Given the node sends an ACK", func() {
-								macPL := lorawan.NewMACPayload(true)
-								macPL.FHDR = lorawan.FHDR{
-									DevAddr: ns.DevAddr,
-									FCnt:    11,
-									FCtrl: lorawan.FCtrl{
-										ACK: true,
+								phy := lorawan.PHYPayload{
+									MHDR: lorawan.MHDR{
+										MType: lorawan.UnconfirmedDataUp,
+										Major: lorawan.LoRaWANR1,
+									},
+									MACPayload: &lorawan.MACPayload{
+										FHDR: lorawan.FHDR{
+											DevAddr: ns.DevAddr,
+											FCnt:    11,
+											FCtrl: lorawan.FCtrl{
+												ACK: true,
+											},
+										},
 									},
 								}
-								phy := lorawan.NewPHYPayload(true)
-								phy.MHDR = lorawan.MHDR{
-									MType: lorawan.UnconfirmedDataUp,
-									Major: lorawan.LoRaWANR1,
-								}
-								phy.MACPayload = macPL
 								So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
 
 								rxPacket := models.RXPacket{
@@ -272,24 +274,25 @@ func TestHandleDataUpPackets(t *testing.T) {
 			})
 
 			Convey("Given a ConfirmedDataUp packet", func() {
-				macPL := lorawan.NewMACPayload(true)
-				macPL.FHDR = lorawan.FHDR{
-					DevAddr: ns.DevAddr,
-					FCnt:    10,
-				}
 				fPort := uint8(1)
-				macPL.FPort = &fPort
-				macPL.FRMPayload = []lorawan.Payload{
-					&lorawan.DataPayload{Bytes: []byte("hello!")},
+				phy := lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.ConfirmedDataUp,
+						Major: lorawan.LoRaWANR1,
+					},
+					MACPayload: &lorawan.MACPayload{
+						FHDR: lorawan.FHDR{
+							DevAddr: ns.DevAddr,
+							FCnt:    10,
+						},
+						FPort: &fPort,
+						FRMPayload: []lorawan.Payload{
+							&lorawan.DataPayload{Bytes: []byte("hello!")},
+						},
+					},
 				}
-				So(macPL.EncryptFRMPayload(ns.AppSKey), ShouldBeNil)
 
-				phy := lorawan.NewPHYPayload(true)
-				phy.MHDR = lorawan.MHDR{
-					MType: lorawan.ConfirmedDataUp,
-					Major: lorawan.LoRaWANR1,
-				}
-				phy.MACPayload = macPL
+				So(phy.EncryptFRMPayload(ns.AppSKey), ShouldBeNil)
 				So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
 
 				rxPacket := models.RXPacket{
@@ -373,15 +376,16 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 			So(createNode(ctx.DB, node), ShouldBeNil)
 
 			Convey("Given a JoinRequest packet", func() {
-				phy := lorawan.NewPHYPayload(true)
-				phy.MHDR = lorawan.MHDR{
-					MType: lorawan.JoinRequest,
-					Major: lorawan.LoRaWANR1,
-				}
-				phy.MACPayload = &lorawan.JoinRequestPayload{
-					AppEUI:   app.AppEUI,
-					DevEUI:   node.DevEUI,
-					DevNonce: [2]byte{1, 2},
+				phy := lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.JoinRequest,
+						Major: lorawan.LoRaWANR1,
+					},
+					MACPayload: &lorawan.JoinRequestPayload{
+						AppEUI:   app.AppEUI,
+						DevEUI:   node.DevEUI,
+						DevNonce: [2]byte{1, 2},
+					},
 				}
 				So(phy.SetMIC(node.AppKey), ShouldBeNil)
 

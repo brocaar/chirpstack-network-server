@@ -45,12 +45,13 @@ func TestCollectAndCallOnce(t *testing.T) {
 		c.Close()
 
 		Convey("Given a single LoRaWAN packet", func() {
-			phy := lorawan.NewPHYPayload(true)
-			phy.MIC = [4]byte{1, 2, 3, 4}
-			phy.MACPayload = &lorawan.MACPayload{}
-			phy.MHDR = lorawan.MHDR{
-				MType: lorawan.UnconfirmedDataUp,
-				Major: lorawan.LoRaWANR1,
+			phy := lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MIC:        [4]byte{1, 2, 3, 4},
+				MACPayload: &lorawan.MACPayload{},
 			}
 
 			testTable := []struct {
