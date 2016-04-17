@@ -14,10 +14,11 @@
 			"revisionTime": "2016-04-16T09:33:49Z"
 		},
 		{
-			"checksumSHA1": "JhsEl+poxTkTUc4HyjvI7KTnIiw=",
+			"checksumSHA1": "Aj6/AlM74fTWzev+Li6Si9KynJU=",
+			"origin": "github.com/brocaar/loraserver/vendor/github.com/brocaar/lorawan/band",
 			"path": "github.com/brocaar/lorawan/band",
-			"revision": "61f52e3008626c275b62a72090a7ef13a6294764",
-			"revisionTime": "2016-04-16T09:33:49Z"
+			"revision": "701d895780c438307bba7f70991be16b6b4955a3",
+			"revisionTime": "2016-04-17T10:01:52Z"
 		},
 		{
 			"path": "github.com/codegangsta/cli",

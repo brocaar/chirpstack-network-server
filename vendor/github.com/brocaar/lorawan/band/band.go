@@ -15,7 +15,7 @@ type DataRate struct {
 	Modulation   Modulation `json:"modulation"`
 	SpreadFactor int        `json:"spreadFactor,omitempty"` // used for LoRa
 	Bandwidth    int        `json:"bandwidth,omitempty"`    // in kHz, used for LoRa
-	DataRate     int        `json:"dataRate,omitempty"`     // bits per second, used for FSK
+	BitRate      int        `json:"bitRate,omitempty"`      // bits per second, used for FSK
 }
 
 // MaxPayloadSize defines the max payload size

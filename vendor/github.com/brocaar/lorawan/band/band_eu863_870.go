@@ -16,7 +16,7 @@ var DataRateConfiguration = [...]DataRate{
 	{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 125},
 	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwidth: 125},
 	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwidth: 250},
-	{Modulation: FSKModulation, DataRate: 50000},
+	{Modulation: FSKModulation, BitRate: 50000},
 }
 
 // DefaultTXPower defines the default TX power in dBm
