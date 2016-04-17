@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1
+
+* Expose RX RSSI to application
+
 ## 0.5.0
 
 Note: this release is incompatible with lora-semtech-bridge <= 1.0.1

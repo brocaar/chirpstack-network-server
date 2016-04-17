@@ -203,6 +203,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 				DevEUI:       ns.DevEUI,
 				GatewayCount: len(rxPackets),
 				FPort:        *macPL.FPort,
+				RSSI:         rxPacket.RXInfo.RSSI,
 				Data:         data,
 			})
 			if err != nil {
