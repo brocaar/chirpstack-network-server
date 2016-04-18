@@ -66,6 +66,22 @@ const RX2Frequency = 869525000
 // RX2DataRate defines the RX2 receive window data rate to use
 const RX2DataRate = 0
 
+// UplinkChannelConfiguration defines the (default) available uplink channels
+var UplinkChannelConfiguration = [...]Channel{
+	{Frequency: 868100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+	{Frequency: 868300000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+	{Frequency: 868500000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+}
+
+// DownlinkChannelConfiguration defines the (default) available downlink channels.
+var DownlinkChannelConfiguration = UplinkChannelConfiguration
+
+// GetRX1Frequency returns the frequency to be used for RX1 given
+// the uplink frequency and data rate.
+func GetRX1Frequency(frequency, dataRate int) (int, error) {
+	return frequency, nil
+}
+
 // Default settings for this band
 const (
 	ReceiveDelay1    time.Duration = time.Second

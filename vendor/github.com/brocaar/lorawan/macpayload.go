@@ -89,10 +89,8 @@ func (p MACPayload) MarshalBinary() ([]byte, error) {
 			return nil, errors.New("lorawan: FPort must be set when FRMPayload is not empty")
 		}
 		return out, nil
-	} else {
-		if len(p.FHDR.FOpts) != 0 && *p.FPort == 0 {
-			return nil, errors.New("lorawan: FPort must not be 0 when FOpts are set")
-		}
+	} else if len(p.FHDR.FOpts) != 0 && *p.FPort == 0 {
+		return nil, errors.New("lorawan: FPort must not be 0 when FOpts are set")
 	}
 
 	out = append(out, *p.FPort)

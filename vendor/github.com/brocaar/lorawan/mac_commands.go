@@ -345,11 +345,12 @@ func (p RX2SetupReqPayload) MarshalBinary() ([]byte, error) {
 	if p.Frequency >= 16777216 { // 2^24
 		return b, errors.New("lorawan: max value of Frequency is 2^24-1")
 	}
-	if bytes, err := p.DLsettings.MarshalBinary(); err != nil {
+	bytes, err := p.DLsettings.MarshalBinary()
+	if err != nil {
 		return b, err
-	} else {
-		b[0] = bytes[0]
 	}
+	b[0] = bytes[0]
+
 	binary.LittleEndian.PutUint32(b[1:5], p.Frequency)
 	// we don't return the last octet which is fine since we're only interested
 	// in the 24 LSB of Frequency

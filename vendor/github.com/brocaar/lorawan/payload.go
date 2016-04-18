@@ -56,15 +56,15 @@ func (e *EUI64) UnmarshalBinary(data []byte) error {
 }
 
 // Scan implements sql.Scanner.
-func (a *EUI64) Scan(src interface{}) error {
+func (e *EUI64) Scan(src interface{}) error {
 	b, ok := src.([]byte)
 	if !ok {
 		return errors.New("lorawan: []byte type expected")
 	}
-	if len(b) != len(a) {
-		return fmt.Errorf("lorawan []byte must have length %d", len(a))
+	if len(b) != len(e) {
+		return fmt.Errorf("lorawan []byte must have length %d", len(e))
 	}
-	copy(a[:], b)
+	copy(e[:], b)
 	return nil
 }
 

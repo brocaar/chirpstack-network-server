@@ -1,8 +1,11 @@
-// +build !eu_863_870
+// +build !eu_863_870,!us_902_928
 
 package band
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 // Name defines the name of the band
 const Name = "placeholder"
@@ -31,6 +34,18 @@ const RX2Frequency = 0
 
 // RX2DataRate defines the RX2 receive window data rate to use
 const RX2DataRate = 0
+
+// UplinkChannelConfiguration defines the (default) available uplink channels
+var UplinkChannelConfiguration = [0]Channel{}
+
+// DownlinkChannelConfiguration defines the (default) available downlink channels.
+var DownlinkChannelConfiguration = [0]Channel{}
+
+// GetRX1Frequency returns the frequency to be used for RX1 given
+// the uplink frequency and data rate.
+func GetRX1Frequency(frequency, dataRate int) (int, error) {
+	return 0, errors.New("lorawan/band: not implemented")
+}
 
 // Default settings for this band
 const (
