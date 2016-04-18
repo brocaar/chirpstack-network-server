@@ -298,13 +298,22 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		return fmt.Errorf("could not set MIC: %s", err)
 	}
 
+	dr, err := band.GetDataRate(rxPacket.RXInfo.DataRate)
+	if err != nil {
+		return err
+	}
+	rx1Frequency, err := band.GetRX1Frequency(rxPacket.RXInfo.Frequency, dr)
+	if err != nil {
+		return err
+	}
+
 	txPacket := models.TXPacket{
 		TXInfo: models.TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
 			Timestamp: rxPacket.RXInfo.Timestamp + uint32(band.ReceiveDelay1/time.Microsecond),
-			Frequency: rxPacket.RXInfo.Frequency,
+			Frequency: rx1Frequency,
 			Power:     band.DefaultTXPower,
-			DataRate:  rxPacket.RXInfo.DataRate,
+			DataRate:  band.DataRateConfiguration[band.RX1DROffsetConfiguration[dr][0]], // currently offset is not configurable
 			CodeRate:  rxPacket.RXInfo.CodeRate,
 		},
 		PHYPayload: phy,
@@ -457,13 +466,22 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("could not encrypt join-accept: %s", err)
 	}
 
+	dr, err := band.GetDataRate(rxPacket.RXInfo.DataRate)
+	if err != nil {
+		return err
+	}
+	rx1Frequency, err := band.GetRX1Frequency(rxPacket.RXInfo.Frequency, dr)
+	if err != nil {
+		return err
+	}
+
 	txPacket := models.TXPacket{
 		TXInfo: models.TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
 			Timestamp: rxPacket.RXInfo.Timestamp + uint32(band.JoinAcceptDelay1/time.Microsecond),
-			Frequency: rxPacket.RXInfo.Frequency,
+			Frequency: rx1Frequency,
 			Power:     band.DefaultTXPower,
-			DataRate:  rxPacket.RXInfo.DataRate,
+			DataRate:  band.DataRateConfiguration[band.RX1DROffsetConfiguration[dr][0]], // currently offset is not configurable
 			CodeRate:  rxPacket.RXInfo.CodeRate,
 		},
 		PHYPayload: phy,
