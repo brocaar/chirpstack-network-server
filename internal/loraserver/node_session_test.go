@@ -115,11 +115,16 @@ func TestNodeSessionAPI(t *testing.T) {
 		mustResetDB(db)
 		p := NewRedisPool(conf.RedisURL)
 		mustFlushRedis(p)
+		nodeManager, err := NewNodeManager(db)
+		So(err, ShouldBeNil)
+		nodeApplicationsManager, err := NewNodeApplicationsManager(db)
+		So(err, ShouldBeNil)
 
 		ctx := Context{
-			DB:        db,
-			RedisPool: p,
-			NetID:     [3]byte{1, 2, 3},
+			NodeManager:    nodeManager,
+			NodeAppManager: nodeApplicationsManager,
+			RedisPool:      p,
+			NetID:          [3]byte{1, 2, 3},
 		}
 
 		api := NewNodeSessionAPI(ctx)
@@ -129,7 +134,7 @@ func TestNodeSessionAPI(t *testing.T) {
 				AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				Name:   "test app",
 			}
-			So(createApplication(ctx.DB, app), ShouldBeNil)
+			So(ctx.NodeAppManager.create(app), ShouldBeNil)
 
 			node := models.Node{
 				DevEUI:        [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
@@ -137,7 +142,7 @@ func TestNodeSessionAPI(t *testing.T) {
 				AppKey:        [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 				UsedDevNonces: [][2]byte{},
 			}
-			So(createNode(ctx.DB, node), ShouldBeNil)
+			So(ctx.NodeManager.create(node), ShouldBeNil)
 
 			ns := models.NodeSession{
 				DevAddr:  [4]byte{6, 2, 3, 4},

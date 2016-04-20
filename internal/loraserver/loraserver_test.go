@@ -363,12 +363,17 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 		db, err := OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		mustResetDB(db)
+		nodeManager, err := NewNodeManager(db)
+		So(err, ShouldBeNil)
+		nodeApplicationsManager, err := NewNodeApplicationsManager(db)
+		So(err, ShouldBeNil)
 
 		ctx := Context{
-			RedisPool:   p,
-			Gateway:     g,
-			Application: a,
-			DB:          db,
+			RedisPool:      p,
+			NodeManager:    nodeManager,
+			NodeAppManager: nodeApplicationsManager,
+			Gateway:        g,
+			Application:    a,
 		}
 
 		Convey("Given a node and application in the database", func() {
@@ -376,14 +381,14 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 				AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				Name:   "test app",
 			}
-			So(createApplication(ctx.DB, app), ShouldBeNil)
+			So(ctx.NodeAppManager.create(app), ShouldBeNil)
 
 			node := models.Node{
 				DevEUI: [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 				AppEUI: app.AppEUI,
 				AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 			}
-			So(createNode(ctx.DB, node), ShouldBeNil)
+			So(ctx.NodeManager.create(node), ShouldBeNil)
 
 			Convey("Given a JoinRequest packet", func() {
 				phy := lorawan.PHYPayload{
@@ -434,7 +439,7 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 						})
 
 						Convey("Then the dev-nonce was added to the used dev-nonces", func() {
-							node, err := getNode(ctx.DB, node.DevEUI)
+							node, err := ctx.NodeManager.get(node.DevEUI)
 							So(err, ShouldBeNil)
 							So([2]byte{1, 2}, ShouldBeIn, node.UsedDevNonces)
 						})
