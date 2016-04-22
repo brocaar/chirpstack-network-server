@@ -239,16 +239,17 @@ func (a *NodeSessionAPI) Create(ns models.NodeSession, devAddr *lorawan.DevAddr)
 	}
 
 	// validate that the node exists
-	if _, err := getNode(a.ctx.DB, ns.DevEUI); err != nil {
+	var node models.Node
+	var err error
+	if node, err = getNode(a.ctx.DB, ns.DevEUI); err != nil {
 		return err
 	}
 
-	// validate that the app exists
-	if _, err := getApplication(a.ctx.DB, ns.AppEUI); err != nil {
-		return err
+	if ns.AppEUI != node.AppEUI {
+		return fmt.Errorf("Unexpected AppEUI while creating node session: %v", ns.AppEUI)
 	}
 
-	if err := createNodeSession(a.ctx.RedisPool, ns); err != nil {
+	if err = createNodeSession(a.ctx.RedisPool, ns); err != nil {
 		return err
 	}
 	*devAddr = ns.DevAddr
