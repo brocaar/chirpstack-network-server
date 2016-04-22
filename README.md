@@ -23,7 +23,7 @@ Note: This project is under development. Please test and give feedback but know 
 - [x] JSON-RPC API (documentation can be found in the web-interface)
 - [ ] handling of mac commands
 - [ ] cross band (only the EU 863-870MHz ISM Band is supported right now)
-- [ ] cross-platform binary build (only linux amd64 is available right now)
+- [x] cross-platform binary build (arm / Raspberry Pi, OS X, Linux and Windows are provided)
 
 ## Documentation
 
