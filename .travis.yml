@@ -12,7 +12,7 @@ deploy:
   api_key:
     secure: Jc77WnvZXxpfayDcgN71pN51ZKr/LT58a0BG6FEnVkEW2ZnhxhIrI/p8XPcPRSgz0J/BKXlLWCjJXRQ9BDYAJ7ZDXAubmxtjz5Zhkf9QiKYvkujj2sxaU+1qmNA0x86lm9o4EFbcjUZ2CKk8EB7vx+5OZss6VxpNmaOiCkv7BaenCm/hYowHWaqHu9Wkg9vU53KV9WTLqAGEllw3HglPew/kOBK8QVi25NcohWZZAiQ6wkzGkCpiFUiMWcts7iqjri7O1AaN/LqwP+8wzV9BtvH6JUCG0nkz6ek7wNZ2ubBb6R4jx1dIHifpwRbdjK1jJwlxruhM7Yswu9yGxT9YUcd1IN6ZFxblaea7Nom9ck0I90PPbj9+W0W3MluvsrUTyiP+gxD19DJ8+WI9rCoAyZRqvKoWcrHByvjDkymetghwkACddF0UMCvorDZKt7wWzoG0fnhOgf1AyaDEWQq9dz7xp2Ae/xJR3W2yM3HQ2tbkgWq9QIQYzbG9L/6lEmXdn+DHBk8LShcPfTgDwLfeS5LRl8FiXHow4Sdkd+ffjuUxCP0E6Fr/JpueiE3l0bLCc/aLP8hd6GrQGBDUuP84T1INPXltcqNPevrMXp9R8oWtSTYBurPA8QikNScZ3Zh1WU+w32oagCZb1YXdRnm3oeZYXFjWb/r3o7VDyxnSOcM=
   file_glob: true
-  file: "builds/*.tar.gz"
+  file: "dist/*.tar.gz"
   on:
     tags: true
     repo: brocaar/loraserver
