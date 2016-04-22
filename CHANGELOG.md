@@ -2,7 +2,8 @@
 
 ## 0.5.1
 
-* Expose RX RSSI to application
+* Expose RX RSSI (signal strength) to application
+* Provide binaries for multiple platforms
 
 ## 0.5.0
 
