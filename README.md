@@ -22,14 +22,26 @@ Note: This project is under development. Please test and give feedback but know 
 - [x] web-interface
 - [x] JSON-RPC API (documentation can be found in the web-interface)
 - [ ] handling of mac commands
-- [ ] cross band (only the EU 863-870MHz ISM Band is supported right now)
-- [x] cross-platform binary build (arm / Raspberry Pi, OS X, Linux and Windows are provided)
+- [ ] cross band
+  - [x] EU 863-870 Mhz
+  - [ ] US 902-928 Mhz: [help wanted](https://github.com/brocaar/loraserver/issues/9)
+  - [ ] AU 915-928 Mhz: [almost there](https://github.com/brocaar/loraserver/pull/8)
 
 ## Documentation
 
 See the [wiki](https://github.com/brocaar/loraserver/wiki/Getting-started)
 for documentation about setting up the LoRa Server and receiving and sending
 data.
+
+## Downloads
+
+Pre-compiled binaries are available for:
+
+* Linux (and ARM build for e.g. Raspberry Pi)
+* OS X
+* Windows
+
+See [releases](https://github.com/brocaar/loraserver/releases).
 
 ## License
 
