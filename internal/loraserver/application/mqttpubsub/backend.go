@@ -121,7 +121,7 @@ func (b *Backend) onConnected(c mqtt.Client) {
 	log.Info("application/mqttpubsub: connected to mqtt server")
 	for {
 		log.WithField("topic", txTopic).Info("application/mqttpubsub: subscribing to tx topic")
-		if token := b.conn.Subscribe(txTopic, 0, b.txPayloadHandler); token.Wait() && token.Error() != nil {
+		if token := b.conn.Subscribe(txTopic, 2, b.txPayloadHandler); token.Wait() && token.Error() != nil {
 			log.WithField("topic", txTopic).Errorf("application/mqttpubsub: subscribe failed: %s", token.Error())
 			time.Sleep(time.Second)
 			continue
