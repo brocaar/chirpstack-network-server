@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brocaar/loraserver/internal/loraserver"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/eclipse/paho.mqtt.golang"
@@ -14,15 +15,17 @@ import (
 func TestBackend(t *testing.T) {
 	conf := getConfig()
 
-	Convey("Given a MQTT client", t, func() {
+	Convey("Given a MQTT client and Redis database", t, func() {
 		opts := mqtt.NewClientOptions().AddBroker(conf.Server).SetUsername(conf.Username).SetPassword(conf.Password)
 		c := mqtt.NewClient(opts)
 		token := c.Connect()
 		token.Wait()
 		So(token.Error(), ShouldBeNil)
 
+		p := loraserver.NewRedisPool(conf.RedisURL)
+
 		Convey("Given a new Backend", func() {
-			backend, err := NewBackend(conf.Server, conf.Username, conf.Password)
+			backend, err := NewBackend(p, conf.Server, conf.Username, conf.Password)
 			So(err, ShouldBeNil)
 			defer backend.Close()
 			time.Sleep(time.Millisecond * 100) // give the backend some time to subscribe to the topic

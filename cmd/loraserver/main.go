@@ -53,7 +53,7 @@ func run(c *cli.Context) {
 	}
 
 	// setup application backend
-	app, err := application.NewBackend(c.String("app-mqtt-server"), c.String("app-mqtt-username"), c.String("app-mqtt-password"))
+	app, err := application.NewBackend(rp, c.String("app-mqtt-server"), c.String("app-mqtt-username"), c.String("app-mqtt-password"))
 	if err != nil {
 		log.Fatalf("could not setup application backend: %s", err)
 	}

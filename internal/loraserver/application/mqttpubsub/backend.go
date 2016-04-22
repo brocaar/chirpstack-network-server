@@ -2,6 +2,7 @@ package mqttpubsub
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -13,9 +14,13 @@ import (
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/eclipse/paho.mqtt.golang"
+	"github.com/garyburd/redigo/redis"
 )
 
 const txTopic = "application/+/node/+/tx"
+
+// DownlinkLockTTL defines the downlink lock ttl.
+const DownlinkLockTTL = time.Millisecond * 100
 
 var txTopicRegex = regexp.MustCompile(`application/(\w+)/node/(\w+)/tx`)
 
@@ -24,12 +29,14 @@ type Backend struct {
 	conn          mqtt.Client
 	txPayloadChan chan models.TXPayload
 	wg            sync.WaitGroup
+	redisPool     *redis.Pool
 }
 
 // NewBackend creates a new Backend.
-func NewBackend(server, username, password string) (loraserver.ApplicationBackend, error) {
+func NewBackend(p *redis.Pool, server, username, password string) (loraserver.ApplicationBackend, error) {
 	b := Backend{
 		txPayloadChan: make(chan models.TXPayload),
+		redisPool:     p,
 	}
 
 	opts := mqtt.NewClientOptions()
@@ -111,6 +118,29 @@ func (b *Backend) txPayloadHandler(c mqtt.Client, msg mqtt.Message) {
 			"topic_dev_eui":   match[2],
 			"payload_dev_eui": txPayload.DevEUI,
 		}).Warning("topic DevEUI did not match payload DevEUI")
+		return
+	}
+
+	// Since with MQTT all subscribers will receive the downlink messages sent
+	// by the application, the first loraserver receiving the message must lock it,
+	// so that other instances can ignore the message.
+	// Besides taking a hash of the payload (so that only the same payload
+	// results into the same lock), the MQTT message id is taken into account
+	// (note that this field is only set on QoS > 0).
+	h := sha1.New()
+	h.Write(msg.Payload())
+	key := fmt.Sprintf("app_backend_%x_%d_lock", h.Sum(nil), msg.MessageID())
+	redisConn := b.redisPool.Get()
+	defer redisConn.Close()
+
+	_, err := redis.String(redisConn.Do("SET", key, "lock", "PX", int64(DownlinkLockTTL/time.Millisecond), "NX"))
+	if err != nil {
+		if err == redis.ErrNil {
+			// the payload is already being processed by an other instance
+			// of Lora Server.
+			return
+		}
+		log.Errorf("application/mqttpubsub: could not acquire download payload lock: %s", err)
 		return
 	}
 
