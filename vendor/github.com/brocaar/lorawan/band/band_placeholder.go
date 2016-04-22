@@ -1,4 +1,4 @@
-// +build !eu_863_870,!us_902_928
+// +build !eu_863_870,!us_902_928,!au_915_928
 
 package band
 
