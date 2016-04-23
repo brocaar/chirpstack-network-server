@@ -25,7 +25,7 @@ Note: This project is under development. Please test and give feedback but know 
 - [ ] cross band
   - [x] EU 863-870 Mhz
   - [ ] US 902-928 Mhz: [help wanted](https://github.com/brocaar/loraserver/issues/9)
-  - [ ] AU 915-928 Mhz: [almost there](https://github.com/brocaar/loraserver/pull/8)
+  - [ ] AU 915-928 Mhz: [help wanted](https://github.com/brocaar/loraserver/issues/10)
 
 ## Documentation
 
