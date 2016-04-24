@@ -17,7 +17,8 @@ type GatewayBackend interface {
 // An application backend is responsible forwarding data to the application
 // and receiving data that should be sent to the node.
 type ApplicationBackend interface {
-	Send(devEUI, appEUI lorawan.EUI64, payload models.RXPayload) error // send the given payload to the application
-	TXPayloadChan() chan models.TXPayload                              // channel containing the received payloads from the application
-	Close() error                                                      // close the application backend
+	Send(devEUI, appEUI lorawan.EUI64, payload models.RXPayload) error                           // send the given payload to the application
+	Notify(devEUI, appEUI lorawan.EUI64, typ models.NotificationType, payload interface{}) error // send the given notification to the application
+	TXPayloadChan() chan models.TXPayload                                                        // channel containing the received payloads from the application
+	Close() error                                                                                // close the application backend
 }

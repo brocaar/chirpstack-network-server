@@ -76,7 +76,7 @@ func (b *Backend) TXPayloadChan() chan models.TXPayload {
 	return b.txPayloadChan
 }
 
-// Send sends the given (collected) RXPackets the application.
+// Send sends the given RXPayload to the application.
 func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, payload models.RXPayload) error {
 	bytes, err := json.Marshal(payload)
 	if err != nil {
@@ -88,6 +88,30 @@ func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, payload models.RXPayload) e
 	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
 		return token.Error()
 	}
+	return nil
+}
+
+// Notify sends the given notification to the application.
+func (b *Backend) Notify(devEUI, appEUI lorawan.EUI64, typ models.NotificationType, payload interface{}) error {
+	var topicSuffix string
+	switch typ {
+	case models.JoinNotification:
+		topicSuffix = "join"
+	default:
+		return fmt.Errorf("application/mqttpubsub: unknown notification type: %s", typ)
+	}
+
+	bytes, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	topic := fmt.Sprintf("application/%s/node/%s/%s", appEUI, devEUI, topicSuffix)
+	log.WithField("topic", topic).Info("application/mqttpubsub: publishing notification")
+	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
+		return token.Error()
+	}
+
 	return nil
 }
 

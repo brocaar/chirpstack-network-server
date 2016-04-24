@@ -81,13 +81,19 @@ func (b *testGatewayBackend) Close() error {
 }
 
 type testApplicationBackend struct {
-	txPayloadChan chan models.TXPayload
-	rxPayloadChan chan models.RXPayload
-	err           error
+	txPayloadChan           chan models.TXPayload
+	rxPayloadChan           chan models.RXPayload
+	notificationPayloadChan chan interface{}
+	err                     error
 }
 
 func (b *testApplicationBackend) Send(devEUI, appEUI lorawan.EUI64, payload models.RXPayload) error {
 	b.rxPayloadChan <- payload
+	return b.err
+}
+
+func (b *testApplicationBackend) Notify(devEUI, appEUI lorawan.EUI64, typ models.NotificationType, payload interface{}) error {
+	b.notificationPayloadChan <- payload
 	return b.err
 }
 

@@ -30,7 +30,7 @@ func TestBackend(t *testing.T) {
 			defer backend.Close()
 			time.Sleep(time.Millisecond * 100) // give the backend some time to subscribe to the topic
 
-			Convey("Given the MQTT client is subscribed to node/+/rx", func() {
+			Convey("Given the MQTT client is subscribed to application/+/node/+/rx", func() {
 				rxPacketChan := make(chan models.RXPayload)
 				token := c.Subscribe("application/+/node/+/rx", 0, func(c mqtt.Client, msg mqtt.Message) {
 					var rxPacket models.RXPayload
@@ -42,7 +42,7 @@ func TestBackend(t *testing.T) {
 				token.Wait()
 				So(token.Error(), ShouldBeNil)
 
-				Convey("When sending a ApplicationRXPacket (from the backend)", func() {
+				Convey("When sending a RXPayload (from the backend)", func() {
 					devEUI := lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1}
 					appEUI := lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2}
 
@@ -59,7 +59,37 @@ func TestBackend(t *testing.T) {
 				})
 			})
 
-			Convey("Given a ApplicationTXPayload is published by the MQTT client", func() {
+			Convey("Given the MQTT client is subscribed to application/+/node/+/join", func() {
+				joinNotificationChan := make(chan models.JoinNotificationPayload)
+				token := c.Subscribe("application/+/node/+/join", 0, func(c mqtt.Client, msg mqtt.Message) {
+					var join models.JoinNotificationPayload
+					if err := json.Unmarshal(msg.Payload(), &join); err != nil {
+						t.Fatal(err)
+					}
+					joinNotificationChan <- join
+				})
+				token.Wait()
+				So(token.Error(), ShouldBeNil)
+
+				Convey("When sending a join notification (from the backend)", func() {
+					now := time.Now().UTC()
+					devEUI := lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1}
+					appEUI := lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2}
+
+					join := models.JoinNotificationPayload{
+						DevEUI: devEUI,
+						Time:   now,
+					}
+					So(backend.Notify(devEUI, appEUI, models.JoinNotification, join), ShouldBeNil)
+
+					Convey("Then the same packet is consumed by the MQTT client", func() {
+						packet := <-joinNotificationChan
+						So(packet, ShouldResemble, join)
+					})
+				})
+			})
+
+			Convey("Given a TXPayload is published by the MQTT client", func() {
 				pl := models.TXPayload{
 					Confirmed: false,
 					DevEUI:    [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
