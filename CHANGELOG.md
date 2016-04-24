@@ -1,5 +1,9 @@
 # Changelog
 
+## Untagged
+
+* Publish notification to application on node join
+
 ## 0.5.1
 
 * Expose RX RSSI (signal strength) to application

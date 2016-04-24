@@ -351,7 +351,8 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 
 	Convey("Given a dummy gateway and application backend and a clean Postgres and Redis database", t, func() {
 		a := &testApplicationBackend{
-			rxPayloadChan: make(chan models.RXPayload, 1),
+			rxPayloadChan:           make(chan models.RXPayload, 1),
+			notificationPayloadChan: make(chan interface{}, 1),
 		}
 		g := &testGatewayBackend{
 			rxPacketChan: make(chan models.RXPacket),
@@ -436,6 +437,13 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 							node, err := getNode(ctx.DB, node.DevEUI)
 							So(err, ShouldBeNil)
 							So([2]byte{1, 2}, ShouldBeIn, node.UsedDevNonces)
+						})
+
+						Convey("Then a join notification was sent to the application", func() {
+							notification := <-a.notificationPayloadChan
+							join, ok := notification.(models.JoinNotificationPayload)
+							So(ok, ShouldBeTrue)
+							So(join.DevEUI, ShouldResemble, node.DevEUI)
 						})
 					})
 				})

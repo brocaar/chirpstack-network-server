@@ -500,5 +500,9 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("sending TXPacket to the gateway failed: %s", err)
 	}
 
-	return nil
+	// send a notification to the application that a node joined the network
+	return ctx.Application.Notify(ns.DevEUI, ns.AppEUI, models.JoinNotification, models.JoinNotificationPayload{
+		DevEUI: ns.DevEUI,
+		Time:   time.Now(),
+	})
 }
