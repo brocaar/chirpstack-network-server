@@ -352,7 +352,7 @@ func validateAndCollectJoinRequestPacket(ctx Context, rxPacket models.RXPacket) 
 	}
 
 	// get node information for this DevEUI
-	node, err := getNode(ctx.DB, jrPL.DevEUI)
+	node, err := ctx.NodeManager.get(jrPL.DevEUI)
 	if err != nil {
 		return fmt.Errorf("could not get node: %s", err)
 	}
@@ -396,7 +396,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	}
 
 	// get node information for this DevEUI
-	node, err := getNode(ctx.DB, jrPL.DevEUI)
+	node, err := ctx.NodeManager.get(jrPL.DevEUI)
 	if err != nil {
 		return fmt.Errorf("could not get node: %s", err)
 	}
@@ -443,7 +443,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	}
 
 	// update the node (with updated used dev-nonces)
-	if err = updateNode(ctx.DB, node); err != nil {
+	if err = ctx.NodeManager.update(node); err != nil {
 		return fmt.Errorf("could not update the node: %s", err)
 	}
 

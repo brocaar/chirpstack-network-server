@@ -15,9 +15,11 @@ func TestApplicationAPI(t *testing.T) {
 		db, err := OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		mustResetDB(db)
+		nodeApplicationsManager, err := NewNodeApplicationsManager(db)
+		So(err, ShouldBeNil)
 
 		ctx := Context{
-			DB: db,
+			NodeAppManager: nodeApplicationsManager,
 		}
 
 		api := NewApplicationAPI(ctx)

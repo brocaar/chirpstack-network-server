@@ -22,3 +22,21 @@ type ApplicationBackend interface {
 	TXPayloadChan() chan models.TXPayload                                                        // channel containing the received payloads from the application
 	Close() error                                                                                // close the application backend
 }
+
+// NodeManager is the interface for managing the known nodes to the system.
+type NodeManager interface {
+	create(n models.Node) error                       // create creates a given Node
+	update(n models.Node) error                       // update updates the given Node.
+	delete(devEUI lorawan.EUI64) error                // delete deletes the Node matching the given DevEUI.
+	get(devEUI lorawan.EUI64) (models.Node, error)    // get returns the Node for the given DevEUI.
+	getList(limit, offset int) ([]models.Node, error) // getList returns a slice of nodes, sorted by DevEUI.
+}
+
+// NodeApplicationsManager is the interface for managing the applications to which nodes can belong.
+type NodeApplicationsManager interface {
+	create(n models.Application) error                       // create creates a given Application.
+	update(n models.Application) error                       // update updates the given Application.
+	delete(appEUI lorawan.EUI64) error                       // delete deletes the Application matching the given EUI.
+	get(appEUI lorawan.EUI64) (models.Application, error)    // get returns the Application for the given EUI.
+	getList(limit, offset int) ([]models.Application, error) // getList returns a slice of applications.
+}

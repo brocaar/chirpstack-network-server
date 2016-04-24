@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/elazarl/go-bindata-assetfs"
 	_ "github.com/lib/pq"
 
 	log "github.com/Sirupsen/logrus"
@@ -22,7 +23,6 @@ import (
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 	"github.com/codegangsta/cli"
-	"github.com/elazarl/go-bindata-assetfs"
 	"github.com/rubenv/sql-migrate"
 )
 
@@ -73,12 +73,22 @@ func run(c *cli.Context) {
 		log.WithField("count", n).Info("migrations applied")
 	}
 
+	nodeManager, err := loraserver.NewNodeManager(db)
+	if err != nil {
+		log.Fatalf("could not setup node manager: %v", err)
+	}
+	nodeApplicationsManager, err := loraserver.NewNodeApplicationsManager(db)
+	if err != nil {
+		log.Fatalf("could not setup node applications manager: %v", err)
+	}
+
 	ctx := loraserver.Context{
-		DB:          db,
-		RedisPool:   rp,
-		Gateway:     gw,
-		Application: app,
-		NetID:       netID,
+		NodeManager:    nodeManager,
+		NodeAppManager: nodeApplicationsManager,
+		RedisPool:      rp,
+		Gateway:        gw,
+		Application:    app,
+		NetID:          netID,
 	}
 
 	// start the loraserver

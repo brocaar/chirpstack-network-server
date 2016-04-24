@@ -148,9 +148,14 @@ func TestNodeAPI(t *testing.T) {
 		db, err := OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		mustResetDB(db)
+		nodeManager, err := NewNodeManager(db)
+		So(err, ShouldBeNil)
+		nodeApplicationsManager, err := NewNodeApplicationsManager(db)
+		So(err, ShouldBeNil)
 
 		ctx := Context{
-			DB: db,
+			NodeManager:    nodeManager,
+			NodeAppManager: nodeApplicationsManager,
 		}
 
 		api := NewNodeAPI(ctx)
@@ -161,7 +166,7 @@ func TestNodeAPI(t *testing.T) {
 				Name:   "test app",
 			}
 			// we need to create the app since the node has a fk constraint
-			So(createApplication(ctx.DB, app), ShouldBeNil)
+			So(ctx.NodeAppManager.create(app), ShouldBeNil)
 
 			node := models.Node{
 				DevEUI:        [8]byte{8, 7, 6, 5, 4, 3, 2, 1},

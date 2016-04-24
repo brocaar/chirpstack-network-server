@@ -3,7 +3,6 @@ package loraserver
 import (
 	"bytes"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/garyburd/redigo/redis"
-	"github.com/jmoiron/sqlx"
 )
 
 // NodeTXPayloadQueueTTL defines the TTL of the node TXPayload queue
@@ -21,72 +19,6 @@ const (
 	nodeTXPayloadQueueTempl     = "node_tx_queue_%s"
 	nodeTXPayloadInProcessTempl = "node_tx_in_process_%s"
 )
-
-// createNode creates the given Node.
-func createNode(db *sqlx.DB, n models.Node) error {
-	_, err := db.Exec("insert into node (dev_eui, app_eui, app_key) values ($1, $2, $3)",
-		n.DevEUI[:],
-		n.AppEUI[:],
-		n.AppKey[:],
-	)
-	if err == nil {
-		log.WithField("dev_eui", n.DevEUI).Info("node created")
-	}
-	return err
-}
-
-// updateNode updates the given Node.
-func updateNode(db *sqlx.DB, n models.Node) error {
-	res, err := db.Exec("update node set app_eui = $1, app_key = $2, used_dev_nonces = $3 where dev_eui = $4",
-		n.AppEUI[:],
-		n.AppKey[:],
-		n.UsedDevNonces,
-		n.DevEUI[:],
-	)
-	if err != nil {
-		return err
-	}
-	ra, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if ra == 0 {
-		return errors.New("DevEUI did not match any rows")
-	}
-	log.WithField("dev_eui", n.DevEUI).Info("node updated")
-	return nil
-}
-
-// deleteNode deletes the Node matching the given DevEUI.
-func deleteNode(db *sqlx.DB, devEUI lorawan.EUI64) error {
-	res, err := db.Exec("delete from node where dev_eui = $1",
-		devEUI[:],
-	)
-	if err != nil {
-		return err
-	}
-	ra, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if ra == 0 {
-		return errors.New("DevEUI did not match any rows")
-	}
-	log.WithField("dev_eui", devEUI).Info("node deleted")
-	return nil
-}
-
-// getNode returns the Node for the given DevEUI.
-func getNode(db *sqlx.DB, devEUI lorawan.EUI64) (models.Node, error) {
-	var node models.Node
-	return node, db.Get(&node, "select * from node where dev_eui = $1", devEUI[:])
-}
-
-// getNodes returns a slice of nodes, sorted by DevEUI.
-func getNodes(db *sqlx.DB, limit, offset int) ([]models.Node, error) {
-	var nodes []models.Node
-	return nodes, db.Select(&nodes, "select * from node order by dev_eui limit $1 offset $2", limit, offset)
-}
 
 // addTXPayloadToQueue adds the given TXPayload to the queue.
 func addTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
@@ -204,20 +136,20 @@ func NewNodeAPI(ctx Context) *NodeAPI {
 // Get returns the Node for the given DevEUI.
 func (a *NodeAPI) Get(devEUI lorawan.EUI64, node *models.Node) error {
 	var err error
-	*node, err = getNode(a.ctx.DB, devEUI)
+	*node, err = a.ctx.NodeManager.get(devEUI)
 	return err
 }
 
 // GetList returns a list of nodes (given a limit and offset).
 func (a *NodeAPI) GetList(req models.GetListRequest, nodes *[]models.Node) error {
 	var err error
-	*nodes, err = getNodes(a.ctx.DB, req.Limit, req.Offset)
+	*nodes, err = a.ctx.NodeManager.getList(req.Limit, req.Offset)
 	return err
 }
 
 // Create creates the given Node.
 func (a *NodeAPI) Create(node models.Node, devEUI *lorawan.EUI64) error {
-	if err := createNode(a.ctx.DB, node); err != nil {
+	if err := a.ctx.NodeManager.create(node); err != nil {
 		return err
 	}
 	*devEUI = node.DevEUI
@@ -226,7 +158,7 @@ func (a *NodeAPI) Create(node models.Node, devEUI *lorawan.EUI64) error {
 
 // Update updatest the given Node.
 func (a *NodeAPI) Update(node models.Node, devEUI *lorawan.EUI64) error {
-	if err := updateNode(a.ctx.DB, node); err != nil {
+	if err := a.ctx.NodeManager.update(node); err != nil {
 		return err
 	}
 	*devEUI = node.DevEUI
@@ -235,7 +167,7 @@ func (a *NodeAPI) Update(node models.Node, devEUI *lorawan.EUI64) error {
 
 // Delete deletes the node matching the given DevEUI.
 func (a *NodeAPI) Delete(devEUI lorawan.EUI64, deletedDevEUI *lorawan.EUI64) error {
-	if err := deleteNode(a.ctx.DB, devEUI); err != nil {
+	if err := a.ctx.NodeManager.delete(devEUI); err != nil {
 		return err
 	}
 	*deletedDevEUI = devEUI
