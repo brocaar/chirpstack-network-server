@@ -17,6 +17,10 @@ import (
 // NodeTXPayloadQueueTTL defines the TTL of the node TXPayload queue
 var NodeTXPayloadQueueTTL = time.Hour * 24 * 5
 
+// errEmptyQueue defines the error returned when the queue is empty.
+// Note that depending the context, this error might not be a real error.
+var errEmptyQueue = errors.New("the queue is empty or does not exist")
+
 const (
 	nodeTXPayloadQueueTempl     = "node_tx_queue_%s"
 	nodeTXPayloadInProcessTempl = "node_tx_in_process_%s"
@@ -29,10 +33,11 @@ func createNode(db *sqlx.DB, n models.Node) error {
 		n.AppEUI[:],
 		n.AppKey[:],
 	)
-	if err == nil {
-		log.WithField("dev_eui", n.DevEUI).Info("node created")
+	if err != nil {
+		return fmt.Errorf("create node %s error: %s", n.DevEUI, err)
 	}
-	return err
+	log.WithField("dev_eui", n.DevEUI).Info("node created")
+	return nil
 }
 
 // updateNode updates the given Node.
@@ -44,14 +49,14 @@ func updateNode(db *sqlx.DB, n models.Node) error {
 		n.DevEUI[:],
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("update node %s error: %s", n.DevEUI, err)
 	}
 	ra, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
 	if ra == 0 {
-		return errors.New("DevEUI did not match any rows")
+		return fmt.Errorf("node %s does not exist", n.DevEUI)
 	}
 	log.WithField("dev_eui", n.DevEUI).Info("node updated")
 	return nil
@@ -63,14 +68,14 @@ func deleteNode(db *sqlx.DB, devEUI lorawan.EUI64) error {
 		devEUI[:],
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("delete node %s error: %s", devEUI, err)
 	}
 	ra, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
 	if ra == 0 {
-		return errors.New("DevEUI did not match any rows")
+		return fmt.Errorf("node %s does not exist", devEUI)
 	}
 	log.WithField("dev_eui", devEUI).Info("node deleted")
 	return nil
@@ -79,13 +84,21 @@ func deleteNode(db *sqlx.DB, devEUI lorawan.EUI64) error {
 // getNode returns the Node for the given DevEUI.
 func getNode(db *sqlx.DB, devEUI lorawan.EUI64) (models.Node, error) {
 	var node models.Node
-	return node, db.Get(&node, "select * from node where dev_eui = $1", devEUI[:])
+	err := db.Get(&node, "select * from node where dev_eui = $1", devEUI[:])
+	if err != nil {
+		return node, fmt.Errorf("get node %s error: %s", devEUI, err)
+	}
+	return node, nil
 }
 
 // getNodes returns a slice of nodes, sorted by DevEUI.
 func getNodes(db *sqlx.DB, limit, offset int) ([]models.Node, error) {
 	var nodes []models.Node
-	return nodes, db.Select(&nodes, "select * from node order by dev_eui limit $1 offset $2", limit, offset)
+	err := db.Select(&nodes, "select * from node order by dev_eui limit $1 offset $2", limit, offset)
+	if err != nil {
+		return nodes, fmt.Errorf("get nodes error: %s", err)
+	}
+	return nodes, nil
 }
 
 // addTXPayloadToQueue adds the given TXPayload to the queue.
@@ -93,7 +106,7 @@ func addTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(payload); err != nil {
-		return err
+		return fmt.Errorf("encode tx payload for node %s error: %s", payload.DevEUI, err)
 	}
 
 	c := p.Get()
@@ -108,11 +121,10 @@ func addTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
 	_, err := c.Do("EXEC")
 
 	if err != nil {
-		return err
+		return fmt.Errorf("add tx payload to queue for node %s error: %s", payload.DevEUI, err)
 	}
 
-	log.WithField("dev_eui", payload.DevEUI).Info("payload added to queue")
-
+	log.WithField("dev_eui", payload.DevEUI).Info("tx payload added to queue")
 	return nil
 }
 
@@ -122,7 +134,7 @@ func addTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
 // to be re-transmitted or an item from the queue (which will be marked as
 // in-process when consuming). After a successful transmission, don't forget
 // to call clearInProcessTXPayload.
-// errDoesNotExist is returned when there are no items to send.
+// errEmptyQueue is returned when there are no items to send.
 func getTXPayloadAndRemainingFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (models.TXPayload, bool, error) {
 	var txPayload models.TXPayload
 	queueKey := fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)
@@ -137,21 +149,25 @@ func getTXPayloadAndRemainingFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (mod
 
 	b, err := redis.Bytes(c.Receive())
 	if err != nil && err != redis.ErrNil { // something went wrong
-		return txPayload, false, err
+		return txPayload, false, fmt.Errorf("get tx payload from in-process queue for node %s error: %s", devEUI, err)
 	}
 	if err == nil { // there is an in-process item
 		// read the queue size
 		i, err := redis.Int(c.Receive())
 		if err != nil {
-			return txPayload, false, err
+			return txPayload, false, fmt.Errorf("read node %s queue size error: %s", devEUI, err)
 		}
-		return txPayload, i > 0, gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload)
+		err = gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload)
+		if err != nil {
+			return txPayload, false, fmt.Errorf("decode tx payload for node %s error: %s", devEUI, err)
+		}
+		return txPayload, i > 0, nil
 	}
 
 	// redis.ErrNil error was returned, return item from the queue
 	i, err := redis.Int(c.Receive())
 	if i == 0 {
-		return txPayload, false, errDoesNotExist
+		return txPayload, false, errEmptyQueue
 	}
 
 	c.Send("RPOPLPUSH", queueKey, pendingKey)
@@ -162,17 +178,22 @@ func getTXPayloadAndRemainingFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (mod
 	b, err = redis.Bytes(c.Receive())
 	if err != nil {
 		if err == redis.ErrNil {
-			err = errDoesNotExist
+			err = errEmptyQueue
 		}
-		return txPayload, false, err
+		return txPayload, false, fmt.Errorf("get tx payload from queue for node %s error: %s", devEUI, err)
 	}
 	// read remaining items
 	i, err = redis.Int(c.Receive())
 	if err != nil {
-		return txPayload, false, err
+		return txPayload, false, fmt.Errorf("read remaining tx payload items in queue for node %s error: %s", devEUI, err)
 	}
 
-	return txPayload, i > 0, gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload)
+	err = gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload)
+	if err != nil {
+		return txPayload, false, fmt.Errorf("encode tx payload for node %s error: %s", devEUI, err)
+	}
+
+	return txPayload, i > 0, nil
 }
 
 // clearInProcessTXPayload clears the in-process TXPayload (to be called
@@ -183,9 +204,9 @@ func clearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) error {
 	defer c.Close()
 	_, err := redis.Int(c.Do("DEL", key))
 	if err != nil {
-		return err
+		return fmt.Errorf("clear in-process tx payload for node %s failed: %s", devEUI, err)
 	}
-	log.WithField("dev_eui", devEUI).Info("in-process payload removed")
+	log.WithField("dev_eui", devEUI).Info("in-process tx payload removed")
 	return nil
 }
 

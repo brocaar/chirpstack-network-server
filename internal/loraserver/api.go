@@ -2,6 +2,7 @@ package loraserver
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/rpc"
@@ -21,7 +22,7 @@ func NewJSONRPCHandler(srvcs ...interface{}) (http.Handler, error) {
 	s := rpc.NewServer()
 	for _, srvc := range srvcs {
 		if err := s.RegisterName(getRPCServiceName(srvc), srvc); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("register rpc service error: %s", err)
 		}
 	}
 	docs, err := getRPCServicesDoc(srvcs...)
@@ -36,7 +37,7 @@ func (h *JSONRPCHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		enc := json.NewEncoder(w)
 		if err := enc.Encode(h.docs); err != nil {
-			log.Errorf("could not marshal rpc docs to json: %s", err)
+			log.Errorf("marshal rpc docs error: %s", err)
 		}
 		return
 	}
@@ -47,6 +48,6 @@ func (h *JSONRPCHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}{w, r.Body}
 
 	if err := h.server.ServeRequest(jsonrpc.NewServerCodec(conn)); err != nil {
-		log.Errorf("could not handle json-rpc request: %s", err)
+		log.Errorf("rpc request error: %s", err)
 	}
 }

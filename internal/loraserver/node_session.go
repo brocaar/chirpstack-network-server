@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"encoding/gob"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"time"
 
@@ -31,7 +30,7 @@ func createNodeSession(p *redis.Pool, s models.NodeSession) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(s); err != nil {
-		return err
+		return fmt.Errorf("encode node-session for node %s error: %s", s.DevEUI, err)
 	}
 
 	c := p.Get()
@@ -40,11 +39,11 @@ func createNodeSession(p *redis.Pool, s models.NodeSession) error {
 	exp := int64(NodeSessionTTL) / int64(time.Millisecond)
 
 	if _, err := redis.String(c.Do("SET", fmt.Sprintf(nodeSessionKeyTempl, s.DevAddr), buf.Bytes(), "NX", "PX", exp)); err != nil {
-		return err
+		return fmt.Errorf("create node-session %s for node %s error: %s", s.DevAddr, s.DevEUI, err)
 	}
 	// DevEUI -> DevAddr pointer
 	if _, err := redis.String(c.Do("PSETEX", fmt.Sprintf(nodeSessionKeyTempl, s.DevEUI), exp, s.DevAddr.String())); err != nil {
-		return err
+		return fmt.Errorf("create pointer node %s -> DevAddr %s error: %s", s.DevEUI, s.DevAddr, err)
 	}
 
 	log.WithField("dev_addr", s.DevAddr).Info("node-session created")
@@ -57,7 +56,7 @@ func saveNodeSession(p *redis.Pool, s models.NodeSession) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(s); err != nil {
-		return err
+		return fmt.Errorf("encode node-session for node %s error: %s", s.DevEUI, err)
 	}
 
 	c := p.Get()
@@ -66,11 +65,11 @@ func saveNodeSession(p *redis.Pool, s models.NodeSession) error {
 	exp := int64(NodeSessionTTL) / int64(time.Millisecond)
 
 	if _, err := redis.String(c.Do("PSETEX", fmt.Sprintf(nodeSessionKeyTempl, s.DevAddr), exp, buf.Bytes())); err != nil {
-		return err
+		return fmt.Errorf("save node-session %s for node %s error: %s", s.DevAddr, s.DevEUI, err)
 	}
 	// DevEUI -> DevAddr pointer
 	if _, err := redis.String(c.Do("PSETEX", fmt.Sprintf(nodeSessionKeyTempl, s.DevEUI), exp, s.DevAddr.String())); err != nil {
-		return err
+		return fmt.Errorf("create pointer node %s -> DevAddr %s error: %s", s.DevEUI, s.DevAddr, err)
 	}
 
 	log.WithField("dev_addr", s.DevAddr).Info("node-session saved")
@@ -86,10 +85,15 @@ func getNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (models.NodeSession,
 
 	val, err := redis.Bytes(c.Do("GET", fmt.Sprintf(nodeSessionKeyTempl, devAddr)))
 	if err != nil {
-		return ns, err
+		return ns, fmt.Errorf("get node-session for DevAddr %s error: %s", devAddr, err)
 	}
 
-	return ns, gob.NewDecoder(bytes.NewReader(val)).Decode(&ns)
+	err = gob.NewDecoder(bytes.NewReader(val)).Decode(&ns)
+	if err != nil {
+		return ns, fmt.Errorf("decode node-session %s error: %s", devAddr, err)
+	}
+
+	return ns, nil
 }
 
 // getNodeSessionByDevEUI returns the NodeSession for the given DevEUI.
@@ -101,15 +105,20 @@ func getNodeSessionByDevEUI(p *redis.Pool, devEUI lorawan.EUI64) (models.NodeSes
 
 	devAddr, err := redis.String(c.Do("GET", fmt.Sprintf(nodeSessionKeyTempl, devEUI)))
 	if err != nil {
-		return ns, err
+		return ns, fmt.Errorf("get node-session pointer for node %s error: %s", devEUI, err)
 	}
 
-	b, err := redis.Bytes(c.Do("GET", fmt.Sprintf(nodeSessionKeyTempl, devAddr)))
+	val, err := redis.Bytes(c.Do("GET", fmt.Sprintf(nodeSessionKeyTempl, devAddr)))
 	if err != nil {
-		return ns, err
+		return ns, fmt.Errorf("get node-session for DevAddr %s error: %s", devAddr, err)
 	}
 
-	return ns, gob.NewDecoder(bytes.NewReader(b)).Decode(&ns)
+	err = gob.NewDecoder(bytes.NewReader(val)).Decode(&ns)
+	if err != nil {
+		return ns, fmt.Errorf("decode node-session %s error: %s", devAddr, err)
+	}
+
+	return ns, nil
 }
 
 // deleteNodeSession deletes the NodeSession matching the given DevAddr.
@@ -119,10 +128,10 @@ func deleteNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) error {
 
 	val, err := redis.Int(c.Do("DEL", fmt.Sprintf(nodeSessionKeyTempl, devAddr)))
 	if err != nil {
-		return err
+		return fmt.Errorf("delete node-session %s error: %s", devAddr, err)
 	}
 	if val == 0 {
-		return errors.New("object does not exist")
+		return fmt.Errorf("node-session %s does not exist", devAddr)
 	}
 	log.WithField("dev_addr", devAddr).Info("node-session deleted")
 	return nil
@@ -135,7 +144,7 @@ func getRandomDevAddr(p *redis.Pool, netID lorawan.NetID) (lorawan.DevAddr, erro
 	var d lorawan.DevAddr
 	b := make([]byte, len(d))
 	if _, err := rand.Read(b); err != nil {
-		return d, err
+		return d, fmt.Errorf("could not read from random reader: %s", err)
 	}
 	copy(d[:], b)
 	d[0] = d[0] & 1                    // zero out 7 msb
@@ -147,10 +156,10 @@ func getRandomDevAddr(p *redis.Pool, netID lorawan.NetID) (lorawan.DevAddr, erro
 	key := "node_session_" + d.String()
 	val, err := redis.Int(c.Do("EXISTS", key))
 	if err != nil {
-		return lorawan.DevAddr{}, err
+		return lorawan.DevAddr{}, fmt.Errorf("test DevAddr %s exist error: %s", d, err)
 	}
 	if val == 1 {
-		return lorawan.DevAddr{}, errors.New("DevAddr already exists")
+		return lorawan.DevAddr{}, fmt.Errorf("DevAddr %s already exists", d)
 	}
 	return d, nil
 }
@@ -246,7 +255,7 @@ func (a *NodeSessionAPI) Create(ns models.NodeSession, devAddr *lorawan.DevAddr)
 	}
 
 	if ns.AppEUI != node.AppEUI {
-		return fmt.Errorf("Unexpected AppEUI while creating node session: %v", ns.AppEUI)
+		return fmt.Errorf("DevEUI %s belongs to AppEUI %s, got AppEUI %s", ns.AppEUI, node.AppEUI, ns.AppEUI)
 	}
 
 	if err = createNodeSession(a.ctx.RedisPool, ns); err != nil {

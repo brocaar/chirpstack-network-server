@@ -1,13 +1,13 @@
 package loraserver
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
-	"github.com/garyburd/redigo/redis"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -27,7 +27,7 @@ func TestNodeSession(t *testing.T) {
 			Convey("When getting a non-existing NodeSession", func() {
 				_, err := getNodeSession(p, ns.DevAddr)
 				Convey("Then an error is returned", func() {
-					So(err, ShouldEqual, redis.ErrNil)
+					So(err, ShouldResemble, errors.New("get node-session for DevAddr 01020304 error: redigo: nil returned"))
 				})
 			})
 

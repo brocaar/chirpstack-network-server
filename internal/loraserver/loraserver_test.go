@@ -184,7 +184,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 						Convey("Then the TXPayload queue is empty", func() {
 							_, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
-							So(err, ShouldEqual, errDoesNotExist)
+							So(err, ShouldEqual, errEmptyQueue)
 						})
 					})
 				})
@@ -269,7 +269,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 									Convey("Then the TXPayload queue is empty", func() {
 										_, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
-										So(err, ShouldEqual, errDoesNotExist)
+										So(err, ShouldEqual, errEmptyQueue)
 									})
 								})
 							})

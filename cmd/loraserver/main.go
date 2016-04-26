@@ -32,14 +32,14 @@ func run(c *cli.Context) {
 	// parse the NetID
 	var netID lorawan.NetID
 	if err := netID.UnmarshalText([]byte(c.String("net-id"))); err != nil {
-		log.Fatalf("could not parse NetID: %s", err)
+		log.Fatalf("NetID parse error: %s", err)
 	}
 
 	// connect to the database
 	log.Info("connecting to postgresql")
 	db, err := loraserver.OpenDatabase(c.String("postgres-dsn"))
 	if err != nil {
-		log.Fatalf("could not connect to the database: %s", err)
+		log.Fatalf("database connection error: %s", err)
 	}
 
 	// setup redis pool
@@ -49,13 +49,13 @@ func run(c *cli.Context) {
 	// setup gateway backend
 	gw, err := gateway.NewBackend(c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"))
 	if err != nil {
-		log.Fatalf("could not setup gateway backend: %s", err)
+		log.Fatalf("gateway-backend setup failed: %s", err)
 	}
 
 	// setup application backend
 	app, err := application.NewBackend(rp, c.String("app-mqtt-server"), c.String("app-mqtt-username"), c.String("app-mqtt-password"))
 	if err != nil {
-		log.Fatalf("could not setup application backend: %s", err)
+		log.Fatalf("application-backend setup failed: %s", err)
 	}
 
 	// auto-migrate the database
@@ -68,7 +68,7 @@ func run(c *cli.Context) {
 		}
 		n, err := migrate.Exec(db.DB, "postgres", m, migrate.Up)
 		if err != nil {
-			log.Fatalf("migrations failed: %s", err)
+			log.Fatalf("applying migrations failed: %s", err)
 		}
 		log.WithField("count", n).Info("migrations applied")
 	}

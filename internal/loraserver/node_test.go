@@ -81,8 +81,8 @@ func TestTXPayloadQueue(t *testing.T) {
 
 			Convey("When getting an item from the non-existing queue", func() {
 				_, _, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
-				Convey("Then an errDoesNotExist error is returned", func() {
-					So(err, ShouldEqual, errDoesNotExist)
+				Convey("Then an errEmptyQueue error is returned", func() {
+					So(err, ShouldEqual, errEmptyQueue)
 				})
 			})
 
@@ -96,7 +96,7 @@ func TestTXPayloadQueue(t *testing.T) {
 					Convey("Then after 150 ms the queue has expired", func() {
 						time.Sleep(150 * time.Millisecond)
 						_, _, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
-						So(err, ShouldEqual, errDoesNotExist)
+						So(err, ShouldEqual, errEmptyQueue)
 					})
 
 					Convey("When consuming an item from the queue", func() {

@@ -1,6 +1,7 @@
 package loraserver
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
@@ -19,9 +20,12 @@ const (
 func OpenDatabase(dsn string) (*sqlx.DB, error) {
 	db, err := sqlx.Open("postgres", dsn)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("database connection error: %s", err)
 	}
-	return db, db.Ping()
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("ping database error: %s", err)
+	}
+	return db, nil
 }
 
 // NewRedisPool returns a new Redis connection pool.
@@ -32,13 +36,16 @@ func NewRedisPool(redisURL string) *redis.Pool {
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.DialURL(redisURL)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("redis connection error: %s", err)
 			}
 			return c, err
 		},
 		TestOnBorrow: func(c redis.Conn, t time.Time) error {
 			_, err := c.Do("PING")
-			return err
+			if err != nil {
+				return fmt.Errorf("ping redis error: %s")
+			}
+			return nil
 		},
 	}
 }

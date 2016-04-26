@@ -3,6 +3,7 @@ package mqttpubsub
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -46,10 +47,10 @@ func NewBackend(p *redis.Pool, server, username, password string) (loraserver.Ap
 	opts.SetOnConnectHandler(b.onConnected)
 	opts.SetConnectionLostHandler(b.onConnectionLost)
 
-	log.WithField("server", server).Info("application/mqttpubsub: connecting to mqtt server")
+	log.WithField("server", server).Info("application/mqttpubsub: connecting to mqtt broker")
 	b.conn = mqtt.NewClient(opts)
 	if token := b.conn.Connect(); token.Wait() && token.Error() != nil {
-		return nil, token.Error()
+		return nil, fmt.Errorf("application/mqttpubsub: connecting to broker failed: %s", token.Error())
 	}
 
 	return &b, nil
@@ -63,9 +64,9 @@ func (b *Backend) Close() error {
 	log.Info("application/mqttpubsub: closing backend")
 	log.WithField("topic", txTopic).Info("application/mqttpubsub: unsubscribing from tx topic")
 	if token := b.conn.Unsubscribe(txTopic); token.Wait() && token.Error() != nil {
-		return token.Error()
+		return fmt.Errorf("application/mqttpubsub: unsubscribe from %s failed: %s", txTopic, token.Error())
 	}
-	log.Info("application/mqttpubsub: handling last consumed messages")
+	log.Info("application/mqttpubsub: handling last messages")
 	b.wg.Wait()
 	close(b.txPayloadChan)
 	return nil
@@ -80,13 +81,13 @@ func (b *Backend) TXPayloadChan() chan models.TXPayload {
 func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, payload models.RXPayload) error {
 	bytes, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		return fmt.Errorf("application/mqttpubsub: rx payload marshal error: %s", err)
 	}
 
 	topic := fmt.Sprintf("application/%s/node/%s/rx", appEUI, devEUI)
-	log.WithField("topic", topic).Info("application/mqttpubsub: publishing message")
+	log.WithField("topic", topic).Info("application/mqttpubsub: publishing tx payload")
 	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
-		return token.Error()
+		return fmt.Errorf("application/mqttpubsub: publish tx payload failed: %s", token.Error())
 	}
 	return nil
 }
@@ -98,18 +99,21 @@ func (b *Backend) Notify(devEUI, appEUI lorawan.EUI64, typ models.NotificationTy
 	case models.JoinNotification:
 		topicSuffix = "join"
 	default:
-		return fmt.Errorf("application/mqttpubsub: unknown notification type: %s", typ)
+		return fmt.Errorf("application/mqttpubsub: notification type unknown: %s", typ)
 	}
 
 	bytes, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		return fmt.Errorf("application/mqttpubsub: notification marshal error: %s", err)
 	}
 
 	topic := fmt.Sprintf("application/%s/node/%s/%s", appEUI, devEUI, topicSuffix)
-	log.WithField("topic", topic).Info("application/mqttpubsub: publishing notification")
+	log.WithFields(log.Fields{
+		"topic": topic,
+		"type":  typ,
+	}).Info("application/mqttpubsub: publishing notification")
 	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
-		return token.Error()
+		return fmt.Errorf("application/mqttpubsub: publish notification failed: %s", token.Error())
 	}
 
 	return nil
@@ -119,21 +123,23 @@ func (b *Backend) txPayloadHandler(c mqtt.Client, msg mqtt.Message) {
 	b.wg.Add(1)
 	defer b.wg.Done()
 
-	log.WithField("topic", msg.Topic()).Info("application/mqttpubsub: payload received")
+	log.WithField("topic", msg.Topic()).Info("application/mqttpubsub: tx payload received")
 
 	// get the DevEUI from the topic. with mqtt it is possible to perform
 	// authorization on a per topic level. we need to be sure that the
 	// topic DevEUI matches the payload DevEUI.
 	match := txTopicRegex.FindStringSubmatch(msg.Topic())
 	if len(match) != 3 {
-		log.WithField("topic", msg.Topic()).Error("application/mqttpubsub: regex did not match")
+		log.WithField("topic", msg.Topic()).Error("application/mqttpubsub: topic regex match error")
 		return
 	}
 
 	var txPayload models.TXPayload
 	dec := json.NewDecoder(bytes.NewReader(msg.Payload()))
 	if err := dec.Decode(&txPayload); err != nil {
-		log.Errorf("application/mqttpubsub: could not decode ApplicationTXPayload: %s", err)
+		log.WithFields(log.Fields{
+			"data_base64": base64.StdEncoding.EncodeToString(msg.Payload()),
+		}).Errorf("application/mqttpubsub: tx payload unmarshal error: %s", err)
 		return
 	}
 
@@ -141,7 +147,7 @@ func (b *Backend) txPayloadHandler(c mqtt.Client, msg mqtt.Message) {
 		log.WithFields(log.Fields{
 			"topic_dev_eui":   match[2],
 			"payload_dev_eui": txPayload.DevEUI,
-		}).Warning("topic DevEUI did not match payload DevEUI")
+		}).Warning("topic DevEUI must match payload DevEUI")
 		return
 	}
 
@@ -164,7 +170,7 @@ func (b *Backend) txPayloadHandler(c mqtt.Client, msg mqtt.Message) {
 			// of Lora Server.
 			return
 		}
-		log.Errorf("application/mqttpubsub: could not acquire download payload lock: %s", err)
+		log.Errorf("application/mqttpubsub: acquire downlink payload lock error: %s", err)
 		return
 	}
 
@@ -176,7 +182,7 @@ func (b *Backend) onConnected(c mqtt.Client) {
 	for {
 		log.WithField("topic", txTopic).Info("application/mqttpubsub: subscribing to tx topic")
 		if token := b.conn.Subscribe(txTopic, 2, b.txPayloadHandler); token.Wait() && token.Error() != nil {
-			log.WithField("topic", txTopic).Errorf("application/mqttpubsub: subscribe failed: %s", token.Error())
+			log.WithField("topic", txTopic).Errorf("application/mqttpubsub: subscribe error: %s", token.Error())
 			time.Sleep(time.Second)
 			continue
 		}

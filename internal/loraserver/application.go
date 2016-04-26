@@ -1,7 +1,7 @@
 package loraserver
 
 import (
-	"errors"
+	"fmt"
 
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
@@ -16,22 +16,31 @@ func createApplication(db *sqlx.DB, a models.Application) error {
 		a.AppEUI[:],
 		a.Name,
 	)
-	if err == nil {
-		log.WithField("app_eui", a.AppEUI).Info("application created")
+	if err != nil {
+		return fmt.Errorf("create application %s error: %s", a.AppEUI, err)
 	}
-	return err
+	log.WithField("app_eui", a.AppEUI).Info("application created")
+	return nil
 }
 
 // getApplication returns the Application for the given AppEUI.
 func getApplication(db *sqlx.DB, appEUI lorawan.EUI64) (models.Application, error) {
 	var app models.Application
-	return app, db.Get(&app, "select * from application where app_eui = $1", appEUI[:])
+	err := db.Get(&app, "select * from application where app_eui = $1", appEUI[:])
+	if err != nil {
+		return app, fmt.Errorf("get application %s error: %s", appEUI, err)
+	}
+	return app, nil
 }
 
 // getApplications returns a slice of applications.
 func getApplications(db *sqlx.DB, limit, offset int) ([]models.Application, error) {
 	var apps []models.Application
-	return apps, db.Select(&apps, "select * from application order by app_eui limit $1 offset $2", limit, offset)
+	err := db.Select(&apps, "select * from application order by app_eui limit $1 offset $2", limit, offset)
+	if err != nil {
+		return apps, fmt.Errorf("get applications error: %s", err)
+	}
+	return apps, nil
 }
 
 // updateApplication updates the given Application.
@@ -41,14 +50,14 @@ func updateApplication(db *sqlx.DB, a models.Application) error {
 		a.AppEUI[:],
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("update application %s error: %s", a.AppEUI, err)
 	}
 	ra, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
 	if ra == 0 {
-		return errors.New("AppEUI did not match any rows")
+		return fmt.Errorf("application %s does not exist", a.AppEUI)
 	}
 	log.WithField("app_eui", a.AppEUI).Info("application updated")
 	return nil
@@ -61,14 +70,14 @@ func deleteApplication(db *sqlx.DB, appEUI lorawan.EUI64) error {
 		appEUI[:],
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("delete application %s error: %s", appEUI, err)
 	}
 	ra, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
 	if ra == 0 {
-		return errors.New("AppEUI did not match any rows")
+		return fmt.Errorf("application %s does not exist", appEUI)
 	}
 
 	log.WithField("app_eui", appEUI).Info("application deleted")

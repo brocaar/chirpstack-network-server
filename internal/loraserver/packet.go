@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"sort"
 	"time"
 
@@ -53,7 +54,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket models.RXPacket, callback func(p
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(rxPacket); err != nil {
-		return err
+		return fmt.Errorf("encode rx packet error: %s", err)
 	}
 	c := p.Get()
 	defer c.Close()
@@ -67,7 +68,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket models.RXPacket, callback func(p
 	c.Send("PEXPIRE", key, int64(CollectAndCallOnceWait*2)/int64(time.Millisecond))
 	_, err := c.Do("EXEC")
 	if err != nil {
-		return err
+		return fmt.Errorf("add rx packet to collect set error: %s", err)
 	}
 
 	// acquire a lock on processing this packet
@@ -78,7 +79,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket models.RXPacket, callback func(p
 			// so there is nothing to do anymore :-)
 			return nil
 		}
-		return err
+		return fmt.Errorf("acquire lock error: %s", err)
 	}
 
 	// wait the configured amount of time, more packets might be received
@@ -89,16 +90,16 @@ func collectAndCallOnce(p *redis.Pool, rxPacket models.RXPacket, callback func(p
 	rxPackets := make(RXPackets, 0)
 	payloads, err := redis.ByteSlices(c.Do("SMEMBERS", key))
 	if err != nil {
-		return err
+		return fmt.Errorf("get collect set members error: %s", err)
 	}
 	if len(payloads) == 0 {
-		return errors.New("the collected packets set returned zero items")
+		return errors.New("zero items in collect set")
 	}
 
 	for _, b := range payloads {
 		var packet models.RXPacket
 		if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&packet); err != nil {
-			return err
+			return fmt.Errorf("decode rx packet error: %s", err)
 		}
 		rxPackets = append(rxPackets, packet)
 	}
