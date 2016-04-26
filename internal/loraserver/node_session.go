@@ -267,6 +267,11 @@ func (a *NodeSessionAPI) Create(ns models.NodeSession, devAddr *lorawan.DevAddr)
 
 // Update updates the given NodeSession.
 func (a *NodeSessionAPI) Update(ns models.NodeSession, devEUI *lorawan.EUI64) error {
+	// validate the NwkID
+	if ns.DevAddr.NwkID() != a.ctx.NetID.NwkID() {
+		return fmt.Errorf("DevAddr must contain NwkID %s", hex.EncodeToString([]byte{a.ctx.NetID.NwkID()}))
+	}
+
 	if err := saveNodeSession(a.ctx.RedisPool, ns); err != nil {
 		return err
 	}
