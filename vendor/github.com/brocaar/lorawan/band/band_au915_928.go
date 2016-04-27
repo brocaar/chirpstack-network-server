@@ -1,4 +1,4 @@
-// +build us_902_928
+// +build au_915_928
 
 package band
 
@@ -11,7 +11,7 @@ func init() {
 	// initialize uplink channel 0 - 63
 	for i := 0; i < 64; i++ {
 		UplinkChannelConfiguration[i] = Channel{
-			Frequency: 902300000 + (i * 200000),
+			Frequency: 915200000 + (i * 200000),
 			DataRates: []int{0, 1, 2, 3},
 		}
 	}
@@ -19,7 +19,7 @@ func init() {
 	// initialize uplink channel 64 - 71
 	for i := 0; i < 8; i++ {
 		UplinkChannelConfiguration[i+64] = Channel{
-			Frequency: 903000000 + (i * 1600000),
+			Frequency: 915900000 + (i * 1600000),
 			DataRates: []int{4},
 		}
 	}
@@ -28,30 +28,30 @@ func init() {
 	for i := 0; i < 8; i++ {
 		DownlinkChannelConfiguration[i] = Channel{
 			Frequency: 923300000 + (i * 600000),
-			DataRates: []int{10, 11, 12, 13},
+			DataRates: []int{8, 9, 10, 11, 12, 13},
 		}
 	}
 }
 
 // Name defines the name of the band
-const Name = "US 902-928"
+const Name = "AU 915-928"
 
 // DataRateConfiguration defines the available data rates
 var DataRateConfiguration = [...]DataRate{
-	{Modulation: LoRaModulation, SpreadFactor: 10, Bandwidth: 125},
-	{Modulation: LoRaModulation, SpreadFactor: 9, Bandwidth: 125},
-	{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 125},
-	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwidth: 125},
-	{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 500},
+	{Modulation: LoRaModulation, SpreadFactor: 10, Bandwidth: 125}, //0
+	{Modulation: LoRaModulation, SpreadFactor: 9, Bandwidth: 125},  //1
+	{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 125},  //2
+	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwidth: 125},  //3
+	{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 500},  //4
 	{}, // RFU
 	{}, // RFU
 	{}, // RFU
-	{Modulation: LoRaModulation, SpreadFactor: 12, Bandwidth: 500},
-	{Modulation: LoRaModulation, SpreadFactor: 11, Bandwidth: 500},
-	{Modulation: LoRaModulation, SpreadFactor: 10, Bandwidth: 500},
-	{Modulation: LoRaModulation, SpreadFactor: 9, Bandwidth: 500},
-	{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 500},
-	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwidth: 500},
+	{Modulation: LoRaModulation, SpreadFactor: 12, Bandwidth: 500}, //8
+	{Modulation: LoRaModulation, SpreadFactor: 11, Bandwidth: 500}, //9
+	{Modulation: LoRaModulation, SpreadFactor: 10, Bandwidth: 500}, //10
+	{Modulation: LoRaModulation, SpreadFactor: 9, Bandwidth: 500},  //11
+	{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 500},  //12
+	{Modulation: LoRaModulation, SpreadFactor: 7, Bandwidth: 500},  //13
 	{}, // RFU
 	{}, // RFU
 }
@@ -62,20 +62,21 @@ const DefaultTXPower = 20
 // CFListAllowed defines if the optional JoinAccept CFList is allowed for this band
 const CFListAllowed = false
 
+// LoRaWAN 1.0. Standard - Section 7.5.3
 // TXPowerConfiguration defines the available TXPower settings in dBm
 var TXPowerConfiguration = [...]int{
-	30,
-	28,
-	26,
-	24,
-	22,
-	20,
-	18,
-	16,
-	14,
-	12,
-	10,
-	0,
+	30, // 0
+	28, // 1
+	26, // 2
+	24, // 3
+	22, // 4
+	20, // 5
+	18, // 6
+	16, // 7
+	14, // 8
+	12, // 9
+	10, // 10
+	0,  // RFU
 	0,
 	0,
 	0,
@@ -86,7 +87,7 @@ var TXPowerConfiguration = [...]int{
 var MACPayloadSizeConfiguration = [...]MaxPayloadSize{
 	{M: 19, N: 11},
 	{M: 61, N: 53},
-	{M: 137, N: 129},
+	{M: 134, N: 126},
 	{M: 250, N: 242},
 	{M: 250, N: 242},
 	{}, // Not defined
@@ -110,15 +111,6 @@ var RX1DROffsetConfiguration = [...][4]int{
 	{12, 11, 10, 9},
 	{13, 12, 11, 10},
 	{13, 13, 12, 11},
-	{}, // Not defined
-	{}, // Not defined
-	{}, // Not defined
-	{8, 8, 8, 8},
-	{9, 8, 8, 8},
-	{10, 9, 8, 8},
-	{11, 10, 9, 8},
-	{12, 11, 10, 9},
-	{13, 12, 11, 10},
 }
 
 // RX2Frequency defines the RX2 receive window frequency to use (in Hz)
@@ -148,6 +140,7 @@ func GetRX1Frequency(frequency, dataRate int) (int, error) {
 	return DownlinkChannelConfiguration[chanNum%8].Frequency, nil
 }
 
+// To get a channel number from a frequency in MHz
 func getChannelNumber(frequency, dataRate int) (int, error) {
 	for chanNum, channel := range UplinkChannelConfiguration {
 		if frequency == channel.Frequency {
