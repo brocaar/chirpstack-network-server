@@ -1,12 +1,13 @@
 # Changelog
 
-## Untagged
+## 0.6.0
 
 * Implement various notifications to the application (see [receiving data](receiving-data.md)):
 	* Node join accept (``application/[AppEUI]/node/[DevEUI]/join``)
 	* Errors (e.g. max payload size exceeded) (``application/[AppEUI]/node/[DevEUI]/error``)
 	* ACK of confirmed data down (``application/[AppEUI]/node/[DevEUI]/ack``)
-* Handle duplicated downlink payloads (when running multiple LoRa Server instances each receiving the TXPayload from MQTT)
+* Handle duplicated downlink payloads (when running multiple LoRa Server instances each server
+  is receiving the TXPayload from MQTT, just one needs to handle it)
 * Fix: use only one receive-window
 
 ## 0.5.1
