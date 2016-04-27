@@ -29,7 +29,7 @@ Note: This project is under development. Please test and give feedback but know 
 
 ## Documentation
 
-See the [wiki](https://github.com/brocaar/loraserver/wiki/Getting-started)
+See the [http://loraserver.readthedocs.org/](http://loraserver.readthedocs.org/)
 for documentation about setting up the LoRa Server and receiving and sending
 data.
 
