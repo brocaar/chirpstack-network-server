@@ -80,9 +80,10 @@ func TestTXPayloadQueue(t *testing.T) {
 			}
 
 			Convey("When getting an item from the non-existing queue", func() {
-				_, _, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
-				Convey("Then an errEmptyQueue error is returned", func() {
-					So(err, ShouldEqual, errEmptyQueue)
+				txPayload, _, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
+				Convey("Then nil is returned", func() {
+					So(err, ShouldEqual, nil)
+					So(txPayload, ShouldEqual, nil)
 				})
 			})
 
@@ -95,15 +96,16 @@ func TestTXPayloadQueue(t *testing.T) {
 
 					Convey("Then after 150 ms the queue has expired", func() {
 						time.Sleep(150 * time.Millisecond)
-						_, _, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
-						So(err, ShouldEqual, errEmptyQueue)
+						txPayload, _, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
+						So(err, ShouldBeNil)
+						So(txPayload, ShouldBeNil)
 					})
 
 					Convey("When consuming an item from the queue", func() {
 						pl, r, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
 						So(err, ShouldBeNil)
 						Convey("Then it equals to struct a", func() {
-							So(pl, ShouldResemble, a)
+							So(pl, ShouldResemble, &a)
 						})
 						Convey("Then there are remaining items in the queue", func() {
 							So(r, ShouldBeTrue)
@@ -113,7 +115,7 @@ func TestTXPayloadQueue(t *testing.T) {
 							pl, r, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
 							So(err, ShouldBeNil)
 							Convey("Then it equals to struct a (again)", func() {
-								So(pl, ShouldResemble, a)
+								So(pl, ShouldResemble, &a)
 							})
 							Convey("Then there are remaining items in the queue", func() {
 								So(r, ShouldBeTrue)
@@ -127,7 +129,7 @@ func TestTXPayloadQueue(t *testing.T) {
 								pl, r, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
 								So(err, ShouldBeNil)
 								Convey("Then it equals to struct b", func() {
-									So(pl, ShouldResemble, b)
+									So(pl, ShouldResemble, &b)
 								})
 								Convey("Then there are no remaining items in the queue", func() {
 									So(r, ShouldBeFalse)

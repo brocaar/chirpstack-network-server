@@ -70,6 +70,7 @@ type RXPayload struct {
 
 // TXPayload contains the payload to be sent to the node.
 type TXPayload struct {
+	Reference string        `json:"reference"` // external reference that needs to be defined by the application, used for error notifications
 	Confirmed bool          `json:"confirmed"` // indicates if the packet needs to be confirmed with an ACK
 	DevEUI    lorawan.EUI64 `json:"devEUI"`    // the DevEUI of the node to send the payload to
 	FPort     uint8         `json:"fPort"`     // the FPort

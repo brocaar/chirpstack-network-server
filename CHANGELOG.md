@@ -2,7 +2,8 @@
 
 ## Untagged
 
-* Publish notification to application on node join
+* Publish notification to application on node join (``application/[AppEUI]/node/[DevEUI]/join``)
+* Publish error notifications to application on payload size error (``application/[AppEUI]/node/[DevEUI]/error``)
 * Handle duplicated downlink payloads (when running multiple LoRa Server instances each receiving the TXPayload from MQTT)
 * Fix: use only one receive-window
 

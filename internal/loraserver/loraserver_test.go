@@ -16,12 +16,13 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 	Convey("Given a clean state", t, func() {
 		app := &testApplicationBackend{
-			rxPayloadChan: make(chan models.RXPayload, 1),
-			txPayloadChan: make(chan models.TXPayload),
+			rxPayloadChan:           make(chan models.RXPayload, 1),
+			txPayloadChan:           make(chan models.TXPayload, 1),
+			notificationPayloadChan: make(chan interface{}, 1),
 		}
 		gw := &testGatewayBackend{
-			rxPacketChan: make(chan models.RXPacket),
-			txPacketChan: make(chan models.TXPacket, 2),
+			rxPacketChan: make(chan models.RXPacket, 1),
+			txPacketChan: make(chan models.TXPacket, 1),
 		}
 		p := NewRedisPool(conf.RedisURL)
 		mustFlushRedis(p)
@@ -181,8 +182,35 @@ func TestHandleDataUpPackets(t *testing.T) {
 						})
 
 						Convey("Then the TXPayload queue is empty", func() {
-							_, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
-							So(err, ShouldEqual, errEmptyQueue)
+							txPayload, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
+							So(err, ShouldBeNil)
+							So(txPayload, ShouldBeNil)
+						})
+					})
+				})
+
+				Convey("Given an enqueued TXPayload which exceeds the max size", func() {
+					txPayload := models.TXPayload{
+						DevEUI:    ns.DevEUI,
+						FPort:     5,
+						Data:      []byte("hello back!hello back!hello back!hello back!hello back!hello back!hello back!hello back!hello back!hello back!"),
+						Reference: "testcase",
+					}
+					So(addTXPayloadToQueue(p, txPayload), ShouldBeNil)
+
+					Convey("When calling handleRXPacket", func() {
+						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
+
+						Convey("Then an error notification is received by the application backend", func() {
+							notification := <-app.notificationPayloadChan
+							_, ok := notification.(models.ErrorNotification)
+							So(ok, ShouldBeTrue)
+						})
+
+						Convey("Then the TXPayload queue is empty", func() {
+							txPayload, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
+							So(err, ShouldBeNil)
+							So(txPayload, ShouldBeNil)
 						})
 					})
 				})
@@ -226,7 +254,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 						Convey("Then the TXPayload is still in the queue", func() {
 							tx, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
 							So(err, ShouldBeNil)
-							So(tx, ShouldResemble, txPayload)
+							So(tx, ShouldResemble, &txPayload)
 						})
 
 						Convey("Then the FCntDown was not incremented", func() {
@@ -264,8 +292,9 @@ func TestHandleDataUpPackets(t *testing.T) {
 									So(ns2.FCntDown, ShouldEqual, ns.FCntDown+1)
 
 									Convey("Then the TXPayload queue is empty", func() {
-										_, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
-										So(err, ShouldEqual, errEmptyQueue)
+										txPayload, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
+										So(err, ShouldBeNil)
+										So(txPayload, ShouldBeNil)
 									})
 								})
 							})
@@ -303,6 +332,32 @@ func TestHandleDataUpPackets(t *testing.T) {
 						DataRate:  band.DataRateConfiguration[band.UplinkChannelConfiguration[0].DataRates[0]],
 					},
 				}
+
+				Convey("Given an enqueued TXPayload which exceeds the max size", func() {
+					txPayload := models.TXPayload{
+						DevEUI:    ns.DevEUI,
+						FPort:     5,
+						Data:      []byte("hello back!hello back!hello back!hello back!hello back!hello back!hello back!hello back!hello back!hello back!"),
+						Reference: "testcase",
+					}
+					So(addTXPayloadToQueue(p, txPayload), ShouldBeNil)
+
+					Convey("When calling handleRXPacket", func() {
+						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
+
+						Convey("Then an error notification is received by the application backend", func() {
+							notification := <-app.notificationPayloadChan
+							_, ok := notification.(models.ErrorNotification)
+							So(ok, ShouldBeTrue)
+						})
+
+						Convey("Then the TXPayload queue is empty", func() {
+							txPayload, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
+							So(err, ShouldBeNil)
+							So(txPayload, ShouldBeNil)
+						})
+					})
+				})
 
 				Convey("When calling handleRXPacket", func() {
 					So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
@@ -348,8 +403,8 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 			notificationPayloadChan: make(chan interface{}, 1),
 		}
 		g := &testGatewayBackend{
-			rxPacketChan: make(chan models.RXPacket),
-			txPacketChan: make(chan models.TXPacket, 2),
+			rxPacketChan: make(chan models.RXPacket, 1),
+			txPacketChan: make(chan models.TXPacket, 1),
 		}
 		p := NewRedisPool(conf.RedisURL)
 		mustFlushRedis(p)
