@@ -191,24 +191,33 @@ func getTXPayloadAndRemainingFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (*mo
 
 	err = gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload)
 	if err != nil {
-		return &txPayload, false, fmt.Errorf("encode tx payload for node %s error: %s", devEUI, err)
+		return &txPayload, false, fmt.Errorf("decode tx payload for node %s error: %s", devEUI, err)
 	}
 
 	return &txPayload, i > 0, nil
 }
 
 // clearInProcessTXPayload clears the in-process TXPayload (to be called
-// after a successful transmission).
-func clearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) error {
+// after a successful transmission). It returns the TXPayload or nil when
+// nothing was cleared (it already expired).
+func clearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPayload, error) {
+	var txPayload models.TXPayload
 	key := fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)
 	c := p.Get()
 	defer c.Close()
-	_, err := redis.Int(c.Do("DEL", key))
+	b, err := redis.Bytes(c.Do("RPOP", key))
 	if err != nil {
-		return fmt.Errorf("clear in-process tx payload for node %s failed: %s", devEUI, err)
+		if err == redis.ErrNil {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("clear in-process tx payload for node %s failed: %s", devEUI, err)
 	}
 	log.WithField("dev_eui", devEUI).Info("in-process tx payload removed")
-	return nil
+	err = gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload)
+	if err != nil {
+		return nil, fmt.Errorf("decode tx payload for node %s error: %s", devEUI, err)
+	}
+	return &txPayload, nil
 }
 
 // NodeAPI exports the Node related functions.

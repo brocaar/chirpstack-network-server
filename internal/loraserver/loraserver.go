@@ -235,12 +235,22 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 
 	// the last payload was received by the node
 	if macPL.FHDR.FCtrl.ACK {
-		if err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
+		txPayload, err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI)
+		if err != nil {
 			return err
 		}
 		ns.FCntDown++
-		if err := saveNodeSession(ctx.RedisPool, ns); err != nil {
+		if err = saveNodeSession(ctx.RedisPool, ns); err != nil {
 			return err
+		}
+		if txPayload != nil {
+			err = ctx.Application.SendNotification(ns.DevEUI, ns.AppEUI, models.ACKNotificationType, models.ACKNotification{
+				Reference: txPayload.Reference,
+				DevEUI:    ns.DevEUI,
+			})
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -290,7 +300,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		// validate the max payload size
 		if len(txPayload.Data) > band.MACPayloadSizeConfiguration[rx1DR].N {
 			// remove the payload from the queue regarding confirmed or not
-			if err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
+			if _, err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
 				return err
 			}
 
@@ -311,7 +321,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		} else {
 			// remove the payload from the queue when not confirmed
 			if !txPayload.Confirmed {
-				if err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
+				if _, err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
 					return err
 				}
 			}
@@ -542,6 +552,5 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	return ctx.Application.SendNotification(ns.DevEUI, ns.AppEUI, models.JoinNotificationType, models.JoinNotification{
 		DevAddr: ns.DevAddr,
 		DevEUI:  ns.DevEUI,
-		Time:    time.Now(),
 	})
 }

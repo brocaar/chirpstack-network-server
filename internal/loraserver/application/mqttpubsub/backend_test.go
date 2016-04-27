@@ -72,13 +72,11 @@ func TestBackend(t *testing.T) {
 				So(token.Error(), ShouldBeNil)
 
 				Convey("When sending a join notification (from the backend)", func() {
-					now := time.Now().UTC()
 					devEUI := lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1}
 					appEUI := lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2}
 
 					join := models.JoinNotification{
 						DevEUI: devEUI,
-						Time:   now,
 					}
 					So(backend.SendNotification(devEUI, appEUI, models.JoinNotificationType, join), ShouldBeNil)
 

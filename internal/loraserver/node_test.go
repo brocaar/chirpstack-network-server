@@ -123,7 +123,9 @@ func TestTXPayloadQueue(t *testing.T) {
 						})
 
 						Convey("After clearing the in-process payload", func() {
-							So(clearInProcessTXPayload(p, devEUI), ShouldBeNil)
+							txPayload, err := clearInProcessTXPayload(p, devEUI)
+							So(txPayload, ShouldResemble, pl)
+							So(err, ShouldBeNil)
 
 							Convey("When consuming an item from the queue", func() {
 								pl, r, err := getTXPayloadAndRemainingFromQueue(p, devEUI)

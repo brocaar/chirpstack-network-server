@@ -32,9 +32,19 @@ Topic for join notifications. Example payload:
 
 ```json
 {
-    "devAddr": "06682ea2",          // device address
-    "DevEUI": "0202020202020202",   // device EUI
-    "time": "2009-11-10T23:00:00Z"  // timestamp
+    "devAddr": "06682ea2",        // device address
+    "DevEUI": "0202020202020202"  // device EUI
+}
+```
+
+## application/[AppEUI]/node/[DevEUI]/ack
+
+Topic for ACK notifications. Example payload:
+
+```json
+{
+    "reference": "abcd1234",      // the reference given when sending the downlink payload
+    "devEUI": "0202020202020202"  // device EUI
 }
 ```
 

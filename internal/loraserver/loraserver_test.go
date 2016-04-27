@@ -296,6 +296,12 @@ func TestHandleDataUpPackets(t *testing.T) {
 										So(err, ShouldBeNil)
 										So(txPayload, ShouldBeNil)
 									})
+
+									Convey("Then an ACK notification was sent", func() {
+										notification := <-app.notificationPayloadChan
+										_, ok := notification.(models.ACKNotification)
+										So(ok, ShouldBeTrue)
+									})
 								})
 							})
 						})
