@@ -8,7 +8,7 @@ The endpoint of the RPC handler is `/rpc`.
 
 ## Examples
 
-To create an application with AppEUI `0102030405060708``, post the following
+To create an application with AppEUI ``0102030405060708``, post the following
 body to ``/rpc``:
 
 ```json
