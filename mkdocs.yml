@@ -1,0 +1,10 @@
+site_name: LoRa Server documentation
+pages:
+  - index.md
+  - getting-started.md
+  - activating-nodes.md
+  - receiving-data.md
+  - sending-data.md
+  - configuration.md
+  - api.md
+theme: readthedocs
