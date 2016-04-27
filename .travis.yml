@@ -1,6 +1,6 @@
 language: go
 go:
-  - 1.6
+  - 1.6.2
 script:
   - docker-compose run --rm loraserver make test
 services:

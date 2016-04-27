@@ -1,4 +1,4 @@
-FROM golang:1.6.1
+FROM golang:1.6.2
 
 ENV PROJECT_PATH=/go/src/github.com/brocaar/loraserver
 ENV PATH=$PATH:$PROJECT_PATH/bin
