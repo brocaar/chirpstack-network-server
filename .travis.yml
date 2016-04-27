@@ -3,12 +3,12 @@ go:
 - 1.6
 script:
 - docker-compose run --rm loraserver make test
-- GOOS=linux GOARCH=amd64 make package
-- GOOS=linux GOARCH=386 make package
-- GOOS=linux GOARCH=arm make package
-- GOOS=darwin GOARCH=amd64 make package
-- GOOS=windows BINEXT=.exe GOARCH=386 make package
-- GOOS=windows BINEXT=.exe GOARCH=amd64 make package
+- BANDS="au_915_928 eu_863_870 us_902_928" GOOS=linux GOARCH=amd64 make package
+- BANDS="au_915_928 eu_863_870 us_902_928" GOOS=linux GOARCH=386 make package
+- BANDS="au_915_928 eu_863_870 us_902_928" GOOS=linux GOARCH=arm make package
+- BANDS="au_915_928 eu_863_870 us_902_928" GOOS=darwin GOARCH=amd64 make package
+- BANDS="au_915_928 eu_863_870 us_902_928" GOOS=windows BINEXT=.exe GOARCH=386 make package
+- BANDS="au_915_928 eu_863_870 us_902_928" GOOS=windows BINEXT=.exe GOARCH=amd64 make package
 services:
 - docker
 deploy:
