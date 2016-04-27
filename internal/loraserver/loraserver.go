@@ -83,7 +83,7 @@ func handleRXPackets(ctx Context) {
 			wg.Add(1)
 			if err := handleRXPacket(ctx, rxPacket); err != nil {
 				data, _ := rxPacket.PHYPayload.MarshalText()
-				log.WithField("data_base64", data).Errorf("processing rx packet error: %s", err)
+				log.WithField("data_base64", string(data)).Errorf("processing rx packet error: %s", err)
 			}
 			wg.Done()
 		}(rxPacket)
