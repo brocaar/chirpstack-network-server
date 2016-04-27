@@ -21,6 +21,10 @@ Currently implemented:
 - over-the-air activation (OTAA)
 - web-interface
 - JSON-RPC API (see web-interface for documentation)
+- ISM bands
+	- EU 863-870
+	- US 902-928
+	- AU 915-928
 
 ## Downloads
 

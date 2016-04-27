@@ -7,4 +7,5 @@ pages:
   - sending-data.md
   - configuration.md
   - api.md
+  - changelog.md
 theme: readthedocs

@@ -12,22 +12,24 @@ applications and nodes can be done with the provided web-interface or JSON-RPC A
 
 ![web-interface](docs/img/webinterface.jpg)
 
+
 ## Features
 
-Note: This project is under development. Please test and give feedback but know that things might break! 
+Note: This project is under development.
+Please test and give feedback but know that things might break!
 
-- [x] unconfirmed data up
-- [x] confirmed data up
-- [x] data down (confirmed and unconfirmed)
-- [x] activation by personalization
-- [x] over-the-air activation
-- [x] web-interface
-- [x] JSON-RPC API (documentation can be found in the web-interface)
-- [ ] handling of mac commands
-- [ ] cross band
-  - [x] EU 863-870 Mhz
-  - [ ] US 902-928 Mhz: [help wanted](https://github.com/brocaar/loraserver/issues/9)
-  - [ ] AU 915-928 Mhz: [help wanted](https://github.com/brocaar/loraserver/issues/10)
+Currently implemented:
+
+- (unconfirmed) data up
+- (confirmed) data down
+- activation by personalization (ABP)
+- over-the-air activation (OTAA)
+- web-interface
+- JSON-RPC API (see web-interface for documentation)
+- ISM bands
+	- EU 863-870
+	- US 902-928
+	- AU 915-928
 
 ## Documentation
 
@@ -47,4 +49,4 @@ See [releases](https://github.com/brocaar/loraserver/releases).
 
 ## License
 
-This package is licensed under the MIT license. See ``LICENSE``.
+LoRa Server is licensed under the MIT license. See ``LICENSE``.
