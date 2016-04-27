@@ -1,20 +1,21 @@
 # Sending data
 
-Applications are able to send data back to the node by sending a payload over MQTT. The MQTT topic which the application needs to use is `application/[AppEUI]/node/[DevEUI]/tx`, e.g. `application/0101010101010101/node/0202020202020202/tx`.
+Applications are able to send data to the nodes by using MQTT. All data sent
+will be enqueued by LoRa Server until the next receive window with the node.
+Note that max payload length restrictions apply, see the LoRaWAN specifications
+for details about the restrictions for your region.
 
-Note that data will only be sent once a receive window is open (which is initiated by the node).
+## application/[AppEUI]/node/[DevEUI]/tx
 
-LoRa Server will enqueue all received payloads (and in the case there are multiple payloads to send, it will tell the node that there are more frames pending). When sending a confirmed payload, LoRa Server will keep the payload in the queue until the node has sent back an ack.
-
-## Example
+Example payload:
 
 ```json
 {
-    "confirmed": true,
-    "devEUI": "0202020202020202",
-    "fPort": 10,
-    "data": "...."
+    "reference": "abcd1234",       // reference given by the application, will be used on error
+    "confirmed": true,             // whether the payload must be sent as confirmed data down or not
+    "devEUI": "0202020202020202",  // the device to sent the data to
+    "fPort": 10,                   // FPort to use
+    "data": "...."                 // base64 encoded data (plaintext, will be encrypted by LoRa Server)
 }
-```
 
-Note that the payload needs to be JSON encoded. The `data` key must be the plaintext data in base64 encoding. LoRa Server will take care of the encryption.
+```

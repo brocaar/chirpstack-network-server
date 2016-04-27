@@ -2,7 +2,7 @@
 
 ## Requirements
 
-Before you install the LoRa Server, make sure you've installed the requirements below:
+Before you install the LoRa Server, make sure you've installed the following requirements:
 
 #### MQTT server
 
@@ -21,19 +21,48 @@ LoRa Server stores all session-related and non-persistent data into a [Redis](ht
 
 #### LoRa Semtech Bridge
 
-Most LoRa gateways use a [protocol](https://github.com/Lora-net/packet_forwarder/blob/master/PROTOCOL.TXT) defined by Semtech (UDP). To publish these packets over MQTT, you need to install [LoRa Semtech Bridge](https://github.com/brocaar/lora-semtech-bridge).
+Most LoRa gateways are using a [UDP protocol](https://github.com/Lora-net/packet_forwarder/blob/master/PROTOCOL.TXT)
+defined by Semtech (UDP). To publish these packets over MQTT, you need to install
+[LoRa Semtech Bridge](https://github.com/brocaar/lora-semtech-bridge).
 
 ## Install LoRa Server
 
-* Download and unpack a pre-compiled binary from the [releases](https://github.com/brocaar/loraserver/releases) page. Alternatively, build the code from source (not covered).
+#### Download
 
-* For a full list of arguments that you can pass to the ``loraserver`` binary,
-  run it with the ``--help`` flag. Note that all arguments can be passed as
-  environment variables as well. When running ``loraserver`` with the
-  ``--db-automigrate`` flag, it will automatically create (or update) the
-  database schema (see the migrations folder in this repository).
-  See [Configuration](configuration.md) for details on each config option.
+Download and unpack a pre-compiled binary from the
+[releases](https://github.com/brocaar/loraserver/releases) page. Alternatively,
+build the code from source.
 
-* After you've started ``loraserver`` successfully, point your browser to [http://localhost:8000/](http://localhost:8000/).
+#### Configuration
 
-* You should now be able to add applications and nodes and either activate your node by personalization (ABP) or over-the-air (OTAA).
+All configuration is done by either environment variables or command-line
+arguments. Arguments and environment variables can be mixed. 
+
+Run ``./loraserver --help`` for a list of available arguments.
+See [Configuration](configuration.md) for details on each config option.
+It is a good idea to start LoRa Server with ``--db-automigrate`` so that
+database tables will be created automatically.
+
+#### Starting LoRa Server
+
+When you've created a PostgreSQL database, it is time to start LoRa Server.
+This might look like:
+
+```base
+./loraserver \
+	--db-automigrate \  # apply database migrations on start
+	--net-id 010203 \   # LoRaWAN NetID, see specifications for details
+	--postgres-dsn "postgres://user:password@localhost/loraserver?sslmode=disable"  # PostgreSQL credentials, hostname and database
+```
+
+#### Create application and node
+
+Now that your LoRa Server instance is running, it is time to create
+your first Application and Node. Point your browser to 
+[http://localhost:8000/](http://localhost:8000/) for the web-interface.
+
+#### Provision node
+
+Now you have setup the AppEUI, DevEUI and AppKey in the web-interface,
+you're able to provision your node. See [activating nodes](activating-nodes.md)
+for more details.
