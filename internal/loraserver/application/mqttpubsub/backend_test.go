@@ -60,9 +60,9 @@ func TestBackend(t *testing.T) {
 			})
 
 			Convey("Given the MQTT client is subscribed to application/+/node/+/join", func() {
-				joinNotificationChan := make(chan models.JoinNotificationPayload)
+				joinNotificationChan := make(chan models.JoinNotification)
 				token := c.Subscribe("application/+/node/+/join", 0, func(c mqtt.Client, msg mqtt.Message) {
-					var join models.JoinNotificationPayload
+					var join models.JoinNotification
 					if err := json.Unmarshal(msg.Payload(), &join); err != nil {
 						t.Fatal(err)
 					}
@@ -76,11 +76,11 @@ func TestBackend(t *testing.T) {
 					devEUI := lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1}
 					appEUI := lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2}
 
-					join := models.JoinNotificationPayload{
+					join := models.JoinNotification{
 						DevEUI: devEUI,
 						Time:   now,
 					}
-					So(backend.Notify(devEUI, appEUI, models.JoinNotification, join), ShouldBeNil)
+					So(backend.SendNotification(devEUI, appEUI, models.JoinNotificationType, join), ShouldBeNil)
 
 					Convey("Then the same packet is consumed by the MQTT client", func() {
 						packet := <-joinNotificationChan

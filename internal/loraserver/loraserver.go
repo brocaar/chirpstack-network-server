@@ -506,8 +506,9 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	}
 
 	// send a notification to the application that a node joined the network
-	return ctx.Application.Notify(ns.DevEUI, ns.AppEUI, models.JoinNotification, models.JoinNotificationPayload{
-		DevEUI: ns.DevEUI,
-		Time:   time.Now(),
+	return ctx.Application.SendNotification(ns.DevEUI, ns.AppEUI, models.JoinNotificationType, models.JoinNotification{
+		DevAddr: ns.DevAddr,
+		DevEUI:  ns.DevEUI,
+		Time:    time.Now(),
 	})
 }

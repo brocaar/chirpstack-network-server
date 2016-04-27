@@ -441,7 +441,7 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 
 						Convey("Then a join notification was sent to the application", func() {
 							notification := <-a.notificationPayloadChan
-							join, ok := notification.(models.JoinNotificationPayload)
+							join, ok := notification.(models.JoinNotification)
 							So(ok, ShouldBeTrue)
 							So(join.DevEUI, ShouldResemble, node.DevEUI)
 						})

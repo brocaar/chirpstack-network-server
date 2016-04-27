@@ -92,11 +92,11 @@ func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, payload models.RXPayload) e
 	return nil
 }
 
-// Notify sends the given notification to the application.
-func (b *Backend) Notify(devEUI, appEUI lorawan.EUI64, typ models.NotificationType, payload interface{}) error {
+// SendNotification sends the given notification to the application.
+func (b *Backend) SendNotification(devEUI, appEUI lorawan.EUI64, typ models.NotificationType, payload interface{}) error {
 	var topicSuffix string
 	switch typ {
-	case models.JoinNotification:
+	case models.JoinNotificationType:
 		topicSuffix = "join"
 	default:
 		return fmt.Errorf("application/mqttpubsub: notification type unknown: %s", typ)
@@ -110,7 +110,6 @@ func (b *Backend) Notify(devEUI, appEUI lorawan.EUI64, typ models.NotificationTy
 	topic := fmt.Sprintf("application/%s/node/%s/%s", appEUI, devEUI, topicSuffix)
 	log.WithFields(log.Fields{
 		"topic": topic,
-		"type":  typ,
 	}).Info("application/mqttpubsub: publishing notification")
 	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("application/mqttpubsub: publish notification failed: %s", token.Error())

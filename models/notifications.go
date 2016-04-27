@@ -13,12 +13,13 @@ type NotificationType int
 
 // Available notification types.
 const (
-	JoinNotification = iota
+	JoinNotificationType = iota
 )
 
-// JoinNotificationPayload defines the payload sent to the application on
-// a JoinNotification event.
-type JoinNotificationPayload struct {
-	DevEUI lorawan.EUI64 `json:"devEUI"`
-	Time   time.Time     `json:"time"`
+// JoinNotification defines the payload sent to the application on
+// a JoinNotificationType event.
+type JoinNotification struct {
+	DevAddr lorawan.DevAddr `json:"devAddr"`
+	DevEUI  lorawan.EUI64   `json:"devEUI"`
+	Time    time.Time       `json:"time"`
 }
