@@ -8,7 +8,10 @@
 	* ACK of confirmed data down (``application/[AppEUI]/node/[DevEUI]/ack``)
 * Handle duplicated downlink payloads (when running multiple LoRa Server instances each server
   is receiving the TXPayload from MQTT, just one needs to handle it)
-* Fix: use only one receive-window
+* New ISM bands:
+	* US 902-928 band (thanks @gzwsc2007 for testing)
+	* AU 915-928 band (thanks @Mehradzie for implementing and testing)
+* Fix: use only one receive-window (thanks @gzwsc2007)
 
 ## 0.5.1
 
