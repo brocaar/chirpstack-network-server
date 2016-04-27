@@ -328,13 +328,14 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		return fmt.Errorf("send tx packet (rx window 1) to gateway error: %s", err)
 	}
 
+	// TODO: implement receive window 1 / 2 switch. Based on duty cycle status of gateway?
 	// window 2
-	txPacket.TXInfo.Timestamp = rxPacket.RXInfo.Timestamp + uint32(band.ReceiveDelay2/time.Microsecond)
-	txPacket.TXInfo.Frequency = band.RX2Frequency
-	txPacket.TXInfo.DataRate = band.DataRateConfiguration[band.RX2DataRate]
-	if err := ctx.Gateway.Send(txPacket); err != nil {
-		return fmt.Errorf("send tx packet (rx window 2) to gateway error: %s", err)
-	}
+	// txPacket.TXInfo.Timestamp = rxPacket.RXInfo.Timestamp + uint32(band.ReceiveDelay2/time.Microsecond)
+	// txPacket.TXInfo.Frequency = band.RX2Frequency
+	// txPacket.TXInfo.DataRate = band.DataRateConfiguration[band.RX2DataRate]
+	// if err := ctx.Gateway.Send(txPacket); err != nil {
+	// 	return fmt.Errorf("send tx packet (rx window 2) to gateway error: %s", err)
+	// }
 
 	// increment the FCntDown when MType != ConfirmedDataDown. In case of
 	// ConfirmedDataDown we increment on ACK.
@@ -497,13 +498,14 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("send tx packet (rx window 1) to gateway error: %s", err)
 	}
 
+	// TODO: implement receive window 1 / 2 switch. Based on duty cycle status of gateway?
 	// window 2
-	txPacket.TXInfo.Timestamp = rxPacket.RXInfo.Timestamp + uint32(band.JoinAcceptDelay2/time.Microsecond)
-	txPacket.TXInfo.Frequency = band.RX2Frequency
-	txPacket.TXInfo.DataRate = band.DataRateConfiguration[band.RX2DataRate]
-	if err = ctx.Gateway.Send(txPacket); err != nil {
-		return fmt.Errorf("send tx packet (rx window 2) to gateway error: %s", err)
-	}
+	// txPacket.TXInfo.Timestamp = rxPacket.RXInfo.Timestamp + uint32(band.JoinAcceptDelay2/time.Microsecond)
+	// txPacket.TXInfo.Frequency = band.RX2Frequency
+	// txPacket.TXInfo.DataRate = band.DataRateConfiguration[band.RX2DataRate]
+	// if err = ctx.Gateway.Send(txPacket); err != nil {
+	// 	return fmt.Errorf("send tx packet (rx window 2) to gateway error: %s", err)
+	// }
 
 	// send a notification to the application that a node joined the network
 	return ctx.Application.SendNotification(ns.DevEUI, ns.AppEUI, models.JoinNotificationType, models.JoinNotification{

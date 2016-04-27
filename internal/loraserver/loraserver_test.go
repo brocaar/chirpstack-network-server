@@ -154,21 +154,19 @@ func TestHandleDataUpPackets(t *testing.T) {
 							_ = <-app.rxPayloadChan
 						})
 
-						Convey("Then two identical packets are sent to the gateway (two receive windows)", func() {
-							txPacket1 := <-gw.txPacketChan
-							txPacket2 := <-gw.txPacketChan
-							So(txPacket1.PHYPayload, ShouldResemble, txPacket2.PHYPayload)
+						Convey("Then a packet is sent to the gateway", func() {
+							txPacket := <-gw.txPacketChan
 
-							macPL, ok := txPacket1.PHYPayload.MACPayload.(*lorawan.MACPayload)
+							macPL, ok := txPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
 							So(ok, ShouldBeTrue)
 
-							Convey("Then these packets contain the expected values", func() {
-								So(txPacket1.PHYPayload.MHDR.MType, ShouldEqual, lorawan.UnconfirmedDataDown)
+							Convey("Then this packet contains the expected values", func() {
+								So(txPacket.PHYPayload.MHDR.MType, ShouldEqual, lorawan.UnconfirmedDataDown)
 								So(macPL.FHDR.FCnt, ShouldEqual, ns.FCntDown)
 								So(macPL.FHDR.FCtrl.ACK, ShouldBeFalse)
 								So(*macPL.FPort, ShouldEqual, 5)
 
-								So(txPacket1.PHYPayload.DecryptFRMPayload(ns.AppSKey), ShouldBeNil)
+								So(txPacket.PHYPayload.DecryptFRMPayload(ns.AppSKey), ShouldBeNil)
 								So(len(macPL.FRMPayload), ShouldEqual, 1)
 								pl, ok := macPL.FRMPayload[0].(*lorawan.DataPayload)
 								So(ok, ShouldBeTrue)
@@ -205,21 +203,19 @@ func TestHandleDataUpPackets(t *testing.T) {
 							_ = <-app.rxPayloadChan
 						})
 
-						Convey("Then two identical packets are sent to the gateway (two receive windows)", func() {
-							txPacket1 := <-gw.txPacketChan
-							txPacket2 := <-gw.txPacketChan
-							So(txPacket1.PHYPayload, ShouldResemble, txPacket2.PHYPayload)
+						Convey("Then a packet is sent to the gateway", func() {
+							txPacket := <-gw.txPacketChan
 
-							macPL, ok := txPacket1.PHYPayload.MACPayload.(*lorawan.MACPayload)
+							macPL, ok := txPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
 							So(ok, ShouldBeTrue)
 
-							Convey("Then these packets contain the expected values", func() {
-								So(txPacket1.PHYPayload.MHDR.MType, ShouldEqual, lorawan.ConfirmedDataDown)
+							Convey("Then this packet contains the expected values", func() {
+								So(txPacket.PHYPayload.MHDR.MType, ShouldEqual, lorawan.ConfirmedDataDown)
 								So(macPL.FHDR.FCnt, ShouldEqual, ns.FCntDown)
 								So(macPL.FHDR.FCtrl.ACK, ShouldBeFalse)
 								So(*macPL.FPort, ShouldEqual, 5)
 
-								So(txPacket1.PHYPayload.DecryptFRMPayload(ns.AppSKey), ShouldBeNil)
+								So(txPacket.PHYPayload.DecryptFRMPayload(ns.AppSKey), ShouldBeNil)
 								So(len(macPL.FRMPayload), ShouldEqual, 1)
 								pl, ok := macPL.FRMPayload[0].(*lorawan.DataPayload)
 								So(ok, ShouldBeTrue)
@@ -321,13 +317,10 @@ func TestHandleDataUpPackets(t *testing.T) {
 						})
 					})
 
-					Convey("Then two ACK packets are sent to the gateway (two receive windows)", func() {
-						txPacket1 := <-gw.txPacketChan
-						txPacket2 := <-gw.txPacketChan
+					Convey("Then a ACK packet is sent to the gateway", func() {
+						txPacket := <-gw.txPacketChan
 
-						So(txPacket1.PHYPayload.MIC, ShouldEqual, txPacket2.PHYPayload.MIC)
-
-						macPL, ok := txPacket1.PHYPayload.MACPayload.(*lorawan.MACPayload)
+						macPL, ok := txPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
 						So(ok, ShouldBeTrue)
 
 						So(macPL.FHDR.FCtrl.ACK, ShouldBeTrue)
@@ -416,13 +409,8 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 						So(phy.DecryptJoinAcceptPayload(node.AppKey), ShouldBeNil)
 						So(phy.MHDR.MType, ShouldEqual, lorawan.JoinAccept)
 
-						Convey("Then the first delay is 5 sec", func() {
+						Convey("Then the delay is 5 sec", func() {
 							So(txPacket.TXInfo.Timestamp, ShouldEqual, rxPacket.RXInfo.Timestamp+uint32(5*time.Second/time.Microsecond))
-						})
-
-						Convey("Then the second delay is 6 sec", func() {
-							txPacket = <-g.txPacketChan
-							So(txPacket.TXInfo.Timestamp, ShouldEqual, rxPacket.RXInfo.Timestamp+uint32(6*time.Second/time.Microsecond))
 						})
 
 						Convey("Then a node-session was created", func() {

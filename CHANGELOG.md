@@ -3,6 +3,8 @@
 ## Untagged
 
 * Publish notification to application on node join
+* Handle duplicated downlink payloads (when running multiple LoRa Server instances each receiving the TXPayload from MQTT)
+* Fix: use only one receive-window
 
 ## 0.5.1
 
