@@ -8,18 +8,18 @@
 			"revisionTime": "2016-02-24T16:10:30-05:00"
 		},
 		{
-			"checksumSHA1": "XXF/kgYxf4bi4gi5pWmQe4wjoiU=",
+			"checksumSHA1": "rPe1XFg26Ct6oJ1whHhVdsrCBqc=",
 			"origin": "github.com/brocaar/loraserver/vendor/github.com/brocaar/lorawan",
 			"path": "github.com/brocaar/lorawan",
-			"revision": "1e532f8ceaf23c7a884fb481561fd2086e391b91",
-			"revisionTime": "2016-04-18T16:55:08Z"
+			"revision": "2077e7765444eb39573a8590e38d09d895a38c0a",
+			"revisionTime": "2016-04-30T13:16:26Z"
 		},
 		{
-			"checksumSHA1": "KHS73f7X5gLEoAkTOv7r8jb1fFI=",
+			"checksumSHA1": "L9TAYOUO8+Hvc+YuYkKcZxBI+hM=",
 			"origin": "github.com/brocaar/loraserver/vendor/github.com/brocaar/lorawan/band",
 			"path": "github.com/brocaar/lorawan/band",
-			"revision": "4bc82efd6cdcbeb59fce64224bea607a163becd0",
-			"revisionTime": "2016-04-27T07:19:39Z"
+			"revision": "2077e7765444eb39573a8590e38d09d895a38c0a",
+			"revisionTime": "2016-04-30T13:16:26Z"
 		},
 		{
 			"path": "github.com/codegangsta/cli",

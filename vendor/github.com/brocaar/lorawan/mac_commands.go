@@ -44,7 +44,7 @@ var macPayloadRegistry = map[bool]map[cid]macPayloadInfo{
 		LinkADRReq:       {4, func() MACCommandPayload { return &LinkADRReqPayload{} }},
 		DutyCycleReq:     {1, func() MACCommandPayload { return &DutyCycleReqPayload{} }},
 		RXParamSetupReq:  {4, func() MACCommandPayload { return &RX2SetupReqPayload{} }},
-		NewChannelReq:    {4, func() MACCommandPayload { return &NewChannelReqPayload{} }},
+		NewChannelReq:    {5, func() MACCommandPayload { return &NewChannelReqPayload{} }},
 		RXTimingSetupReq: {1, func() MACCommandPayload { return &RXTimingSetupReqPayload{} }},
 	},
 	true: map[cid]macPayloadInfo{
@@ -479,7 +479,7 @@ func (p NewChannelReqPayload) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary decodes the object from binary form.
 func (p *NewChannelReqPayload) UnmarshalBinary(data []byte) error {
 	if len(data) != 5 {
-		return errors.New("lorawan: 4 bytes of data are expected")
+		return errors.New("lorawan: 5 bytes of data are expected")
 	}
 	p.ChIndex = data[0]
 	p.MinDR = data[4] & ((1 << 3) ^ (1 << 2) ^ (1 << 1) ^ (1 << 0))
