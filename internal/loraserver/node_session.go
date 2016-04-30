@@ -212,6 +212,21 @@ func getSKey(typ byte, appkey lorawan.AES128Key, netID lorawan.NetID, appNonce [
 	return key, nil
 }
 
+// validateAndGetFullFCntUp validates if the given fCntUp is valid
+// and returns the full 32 bit frame-counter.
+// Note that the LoRaWAN packet only contains the 16 LSB, so in order
+// to validate the MIC, the full 32 bit frame-counter needs to be set.
+// After a succesful validation of the FCntUp and the MIC, don't forget
+// to synchronize the Node FCntUp with the packet FCnt.
+func validateAndGetFullFCntUp(n models.NodeSession, fCntUp uint32) (uint32, bool) {
+	// we need to compare the difference of the 16 LSB
+	gap := uint32(uint16(fCntUp) - uint16(n.FCntUp%65536))
+	if gap < Band.MaxFCntGap {
+		return n.FCntUp + gap, true
+	}
+	return 0, false
+}
+
 // NodeSessionAPI exports the NodeSession related functions.
 type NodeSessionAPI struct {
 	ctx Context

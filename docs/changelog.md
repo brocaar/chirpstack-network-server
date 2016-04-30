@@ -1,5 +1,10 @@
 # Changelog
 
+## Untagged
+
+* Band configuration can now be specified with the ``--band`` argument
+  (no more separate binaries per ism band)
+
 ## 0.6.0
 
 * Implement various notifications to the application (see [receiving data](receiving-data.md)):

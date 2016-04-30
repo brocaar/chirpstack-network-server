@@ -7,13 +7,20 @@ import (
 	"github.com/brocaar/loraserver/internal/loraserver/migrations"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/rubenv/sql-migrate"
 )
 
 func init() {
+	var err error
 	log.SetLevel(log.ErrorLevel)
+
+	Band, err = band.GetConfig(band.EU_863_870)
+	if err != nil {
+		panic(err)
+	}
 }
 
 type config struct {

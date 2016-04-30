@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	_ "github.com/lib/pq"
@@ -15,18 +16,23 @@ import (
 	log "github.com/Sirupsen/logrus"
 	application "github.com/brocaar/loraserver/internal/loraserver/application/mqttpubsub"
 	gateway "github.com/brocaar/loraserver/internal/loraserver/gateway/mqttpubsub"
+	"github.com/brocaar/lorawan/band"
 
 	"github.com/brocaar/loraserver/internal/loraserver"
 	"github.com/brocaar/loraserver/internal/loraserver/migrations"
 	"github.com/brocaar/loraserver/internal/loraserver/static"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
 	"github.com/codegangsta/cli"
 	"github.com/elazarl/go-bindata-assetfs"
 	"github.com/rubenv/sql-migrate"
 )
 
 var version string // set by the compiler
+var bands = []string{
+	string(band.AU_915_928),
+	string(band.EU_863_870),
+	string(band.US_902_928),
+}
 
 func run(c *cli.Context) {
 	// parse the NetID
@@ -34,6 +40,20 @@ func run(c *cli.Context) {
 	if err := netID.UnmarshalText([]byte(c.String("net-id"))); err != nil {
 		log.Fatalf("NetID parse error: %s", err)
 	}
+
+	// get the band config
+	bandConfig, err := band.GetConfig(band.Name(c.String("band")))
+	if err != nil {
+		log.Fatal(err)
+	}
+	loraserver.Band = bandConfig
+
+	log.WithFields(log.Fields{
+		"version": version,
+		"net_id":  netID.String(),
+		"nwk_id":  netID.NwkID(),
+		"band":    c.String("band"),
+	}).Info("starting LoRa Server")
 
 	// connect to the database
 	log.Info("connecting to postgresql")
@@ -136,19 +156,26 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "loraserver"
 	app.Usage = "network-server for LoRaWAN networks"
-	app.Version = fmt.Sprintf("%s (compiled for %s)", version, band.Name)
+	app.Version = version
 	app.Copyright = "See http://github.com/brocaar/loraserver for copyright information"
 	app.Action = run
 	app.Flags = []cli.Flag{
-		cli.BoolFlag{
-			Name:   "db-automigrate",
-			Usage:  "automatically apply database migrations",
-			EnvVar: "DB_AUTOMIGRATE",
-		},
 		cli.StringFlag{
 			Name:   "net-id",
 			Usage:  "network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203)",
 			EnvVar: "NET_ID",
+		},
+		cli.StringFlag{
+			Name:   "band",
+			Usage:  fmt.Sprintf("ism band configuration to use. valid options are: %s", strings.Join(bands, ", ")),
+			Value:  "EU_863_870",
+			EnvVar: "BAND",
+		},
+		cli.StringFlag{
+			Name:   "http-bind",
+			Usage:  "ip:port to bind the http api server to",
+			Value:  "0.0.0.0:8000",
+			EnvVar: "HTTP_BIND",
 		},
 		cli.StringFlag{
 			Name:   "postgres-dsn",
@@ -162,11 +189,10 @@ func main() {
 			Value:  "redis://localhost:6379",
 			EnvVar: "REDIS_URL",
 		},
-		cli.StringFlag{
-			Name:   "http-bind",
-			Usage:  "ip:port to bind the http api server to",
-			Value:  "0.0.0.0:8000",
-			EnvVar: "HTTP_BIND",
+		cli.BoolFlag{
+			Name:   "db-automigrate",
+			Usage:  "automatically apply database migrations",
+			EnvVar: "DB_AUTOMIGRATE",
 		},
 		cli.StringFlag{
 			Name:   "gw-mqtt-server",

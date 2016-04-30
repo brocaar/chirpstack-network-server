@@ -35,10 +35,10 @@ postgres_test:
     - POSTGRES_DB=loraserver
 
 redis:
-  image: redis:3.0.7
+  image: redis:3.0.7-alpine
 
 redis_test:
-  image: redis:3.0.7
+  image: redis:3.0.7-alpine
 
 mosquitto:
   image: ansi/mosquitto

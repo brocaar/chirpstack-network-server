@@ -4,13 +4,6 @@ All configuration is either done by command-line arguments or environment variab
 a mix of both. Execute ``./loraserver --help`` to see all available configuration
 options for your version.
 
-#### --db-automigrate / DB_AUTOMIGRATE
-
-Given that you already created the PostgreSQL database, this will apply all
-(forward) database migrations. If you prefer to apply these migrations manually,
-see the [migrations](https://github.com/brocaar/loraserver/tree/master/migrations)
-folder in the source repository for the raw SQL.
-
 #### --net-id / NET_ID
 
 This sets the ``NetID`` of your LoRaWAN network. Taken from the LoRaWAN specifications:
@@ -22,6 +15,16 @@ This sets the ``NetID`` of your LoRaWAN network. Taken from the LoRaWAN specific
 
 The value needs to be [HEX](https://en.wikipedia.org/wiki/Hexadecimal) encoded, e.g. ``010203``.
 
+#### --band / BAND
+
+This sets the ISM band specific configuration to use. Executing ``./loraserver --help``
+will show you all the available ISM bands available.
+
+#### --http-bind / HTTP_BIND
+
+This sets the ``IP:PORT`` on which the http server
+(web-interface and RPC API) will bind.
+
 #### --postgres-dsn / POSTGRES_DSN
 
 This sets the PostgreSQL data-source name.
@@ -32,10 +35,12 @@ for all available options.
 
 This sets the Redis URL, see [https://www.iana.org/assignments/uri-schemes/prov/redis](https://www.iana.org/assignments/uri-schemes/prov/redis) for all available options.
 
-#### --http-bind / HTTP_BIND
+#### --db-automigrate / DB_AUTOMIGRATE
 
-This sets the ``IP:PORT`` on which the http server
-(web-interface and RPC API) will bind.
+Given that you already created the PostgreSQL database, this will apply all
+(forward) database migrations. If you prefer to apply these migrations manually,
+see the [migrations](https://github.com/brocaar/loraserver/tree/master/migrations)
+folder in the source repository for the raw SQL.
 
 #### --gw-mqtt-server / GW_MQTT_SERVER
 

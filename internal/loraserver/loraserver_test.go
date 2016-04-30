@@ -7,7 +7,6 @@ import (
 
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -70,8 +69,8 @@ func TestHandleDataUpPackets(t *testing.T) {
 				rxPacket := models.RXPacket{
 					PHYPayload: phy,
 					RXInfo: models.RXInfo{
-						Frequency: band.UplinkChannelConfiguration[0].Frequency,
-						DataRate:  band.DataRateConfiguration[band.UplinkChannelConfiguration[0].DataRates[0]],
+						Frequency: Band.UplinkChannels[0].Frequency,
+						DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
 					},
 				}
 
@@ -334,8 +333,8 @@ func TestHandleDataUpPackets(t *testing.T) {
 				rxPacket := models.RXPacket{
 					PHYPayload: phy,
 					RXInfo: models.RXInfo{
-						Frequency: band.UplinkChannelConfiguration[0].Frequency,
-						DataRate:  band.DataRateConfiguration[band.UplinkChannelConfiguration[0].DataRates[0]],
+						Frequency: Band.UplinkChannels[0].Frequency,
+						DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
 					},
 				}
 
@@ -456,8 +455,8 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 				rxPacket := models.RXPacket{
 					PHYPayload: phy,
 					RXInfo: models.RXInfo{
-						Frequency: band.UplinkChannelConfiguration[0].Frequency,
-						DataRate:  band.DataRateConfiguration[band.UplinkChannelConfiguration[0].DataRates[0]],
+						Frequency: Band.UplinkChannels[0].Frequency,
+						DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
 					},
 				}
 

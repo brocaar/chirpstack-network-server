@@ -1,7 +1,6 @@
 package loraserver
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"strings"
@@ -13,6 +12,9 @@ import (
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 )
+
+// Band is the ISM band configuration to use
+var Band band.Band
 
 // Server represents a LoRaWAN network-server.
 type Server struct {
@@ -29,11 +31,6 @@ func NewServer(ctx Context) *Server {
 
 // Start starts the server.
 func (s *Server) Start() error {
-	log.WithFields(log.Fields{
-		"net_id": s.ctx.NetID,
-		"nwk_id": hex.EncodeToString([]byte{s.ctx.NetID.NwkID()}),
-	}).Info("starting loraserver")
-
 	go func() {
 		s.wg.Add(1)
 		handleRXPackets(s.ctx)
@@ -116,7 +113,7 @@ func validateAndCollectDataUpRXPacket(ctx Context, rxPacket models.RXPacket) err
 	}
 
 	// validate and get the full int32 FCnt
-	fullFCnt, ok := ns.ValidateAndGetFullFCntUp(macPL.FHDR.FCnt)
+	fullFCnt, ok := validateAndGetFullFCntUp(ns, macPL.FHDR.FCnt)
 	if !ok {
 		log.WithFields(log.Fields{
 			"dev_addr":    macPL.FHDR.DevAddr,
@@ -266,17 +263,19 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	}
 
 	// get TX DR
-	uplinkDR, err := band.GetDataRate(rxPacket.RXInfo.DataRate)
+	uplinkDR, err := Band.GetDataRate(rxPacket.RXInfo.DataRate)
 	if err != nil {
 		return err
 	}
-	// get RX1 frequency
-	rx1Frequency, err := band.GetRX1Frequency(rxPacket.RXInfo.Frequency, uplinkDR)
+	// get TX channel
+	uplinkChannel, err := Band.GetChannel(rxPacket.RXInfo.Frequency, uplinkDR)
 	if err != nil {
 		return err
 	}
+	// get RX1 channel
+	rx1Channel := Band.GetRX1Channel(uplinkChannel)
 	// get RX1 DR
-	rx1DR := band.RX1DROffsetConfiguration[uplinkDR][0] // DR offset is not yet implemented
+	rx1DR := Band.RX1DataRate[uplinkDR][0] // DR offset is not yet implemented
 
 	phy := lorawan.PHYPayload{
 		MHDR: lorawan.MHDR{
@@ -298,7 +297,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	// add the payload from the queue
 	if txPayload != nil {
 		// validate the max payload size
-		if len(txPayload.Data) > band.MACPayloadSizeConfiguration[rx1DR].N {
+		if len(txPayload.Data) > Band.MaxPayloadSize[rx1DR].N {
 			// remove the payload from the queue regarding confirmed or not
 			if _, err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
 				return err
@@ -308,12 +307,12 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 				"dev_eui":             ns.DevEUI,
 				"data_rate":           rx1DR,
 				"frmpayload_size":     len(txPayload.Data),
-				"max_frmpayload_size": band.MACPayloadSizeConfiguration[rx1DR].N,
+				"max_frmpayload_size": Band.MaxPayloadSize[rx1DR].N,
 			}).Warning("downlink payload max size exceeded")
 			err = ctx.Application.SendNotification(ns.DevEUI, ns.AppEUI, models.ErrorNotificationType, models.ErrorNotification{
 				Reference: txPayload.Reference,
 				DevEUI:    ns.DevEUI,
-				Message:   fmt.Sprintf("downlink payload max size exceeded (dr: %d, allowed: %d, got: %d)", rx1DR, band.MACPayloadSizeConfiguration[rx1DR].N, len(txPayload.Data)),
+				Message:   fmt.Sprintf("downlink payload max size exceeded (dr: %d, allowed: %d, got: %d)", rx1DR, Band.MaxPayloadSize[rx1DR].N, len(txPayload.Data)),
 			})
 			if err != nil {
 				return err
@@ -355,10 +354,10 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	txPacket := models.TXPacket{
 		TXInfo: models.TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
-			Timestamp: rxPacket.RXInfo.Timestamp + uint32(band.ReceiveDelay1/time.Microsecond),
-			Frequency: rx1Frequency,
-			Power:     band.DefaultTXPower,
-			DataRate:  band.DataRateConfiguration[rx1DR],
+			Timestamp: rxPacket.RXInfo.Timestamp + uint32(Band.ReceiveDelay1/time.Microsecond),
+			Frequency: Band.DownlinkChannels[rx1Channel].Frequency,
+			Power:     Band.DefaultTXPower,
+			DataRate:  Band.DataRates[rx1DR],
 			CodeRate:  rxPacket.RXInfo.CodeRate,
 		},
 		PHYPayload: phy,
@@ -368,15 +367,6 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	if err := ctx.Gateway.Send(txPacket); err != nil {
 		return fmt.Errorf("send tx packet (rx window 1) to gateway error: %s", err)
 	}
-
-	// TODO: implement receive window 1 / 2 switch. Based on duty cycle status of gateway?
-	// window 2
-	// txPacket.TXInfo.Timestamp = rxPacket.RXInfo.Timestamp + uint32(band.ReceiveDelay2/time.Microsecond)
-	// txPacket.TXInfo.Frequency = band.RX2Frequency
-	// txPacket.TXInfo.DataRate = band.DataRateConfiguration[band.RX2DataRate]
-	// if err := ctx.Gateway.Send(txPacket); err != nil {
-	// 	return fmt.Errorf("send tx packet (rx window 2) to gateway error: %s", err)
-	// }
 
 	// increment the FCntDown when MType != ConfirmedDataDown. In case of
 	// ConfirmedDataDown we increment on ACK.
@@ -513,22 +503,28 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("encrypt join-accept error: %s", err)
 	}
 
-	dr, err := band.GetDataRate(rxPacket.RXInfo.DataRate)
+	// get TX DR
+	uplinkDR, err := Band.GetDataRate(rxPacket.RXInfo.DataRate)
 	if err != nil {
 		return err
 	}
-	rx1Frequency, err := band.GetRX1Frequency(rxPacket.RXInfo.Frequency, dr)
+	// get TX channel
+	uplinkChannel, err := Band.GetChannel(rxPacket.RXInfo.Frequency, uplinkDR)
 	if err != nil {
 		return err
 	}
+	// get RX1 channel
+	rx1Channel := Band.GetRX1Channel(uplinkChannel)
+	// get RX1 DR
+	rx1DR := Band.RX1DataRate[uplinkDR][0]
 
 	txPacket := models.TXPacket{
 		TXInfo: models.TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
-			Timestamp: rxPacket.RXInfo.Timestamp + uint32(band.JoinAcceptDelay1/time.Microsecond),
-			Frequency: rx1Frequency,
-			Power:     band.DefaultTXPower,
-			DataRate:  band.DataRateConfiguration[band.RX1DROffsetConfiguration[dr][0]], // currently offset is not configurable
+			Timestamp: rxPacket.RXInfo.Timestamp + uint32(Band.JoinAcceptDelay1/time.Microsecond),
+			Frequency: Band.DownlinkChannels[rx1Channel].Frequency,
+			Power:     Band.DefaultTXPower,
+			DataRate:  Band.DataRates[rx1DR],
 			CodeRate:  rxPacket.RXInfo.CodeRate,
 		},
 		PHYPayload: phy,
@@ -538,15 +534,6 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	if err = ctx.Gateway.Send(txPacket); err != nil {
 		return fmt.Errorf("send tx packet (rx window 1) to gateway error: %s", err)
 	}
-
-	// TODO: implement receive window 1 / 2 switch. Based on duty cycle status of gateway?
-	// window 2
-	// txPacket.TXInfo.Timestamp = rxPacket.RXInfo.Timestamp + uint32(band.JoinAcceptDelay2/time.Microsecond)
-	// txPacket.TXInfo.Frequency = band.RX2Frequency
-	// txPacket.TXInfo.DataRate = band.DataRateConfiguration[band.RX2DataRate]
-	// if err = ctx.Gateway.Send(txPacket); err != nil {
-	// 	return fmt.Errorf("send tx packet (rx window 2) to gateway error: %s", err)
-	// }
 
 	// send a notification to the application that a node joined the network
 	return ctx.Application.SendNotification(ns.DevEUI, ns.AppEUI, models.JoinNotificationType, models.JoinNotification{

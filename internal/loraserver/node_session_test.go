@@ -7,7 +7,6 @@ import (
 
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -47,7 +46,7 @@ func TestNodeSession(t *testing.T) {
 				})
 			})
 
-			Convey("When calling ValidateAndGetFullFCntUp", func() {
+			Convey("When calling validateAndGetFullFCntUp", func() {
 				testTable := []struct {
 					ServerFCnt uint32
 					NodeFCnt   uint32
@@ -57,10 +56,10 @@ func TestNodeSession(t *testing.T) {
 					{0, 1, 1, true},                                                 // ideal case counter was incremented
 					{1, 1, 1, true},                                                 // re-transmission
 					{2, 1, 0, false},                                                // old packet received
-					{0, band.MaxFCntGap, 0, false},                                  // gap should be less than MaxFCntGap
-					{0, band.MaxFCntGap - 1, band.MaxFCntGap - 1, true},             // gap is exactly within the allowed MaxFCntGap
-					{65536, band.MaxFCntGap - 1, band.MaxFCntGap - 1 + 65536, true}, // roll-over happened, gap ix exactly within allowed MaxFCntGap
-					{65535, band.MaxFCntGap, 0, false},                              // roll-over happened, but too many lost frames
+					{0, Band.MaxFCntGap, 0, false},                                  // gap should be less than MaxFCntGap
+					{0, Band.MaxFCntGap - 1, Band.MaxFCntGap - 1, true},             // gap is exactly within the allowed MaxFCntGap
+					{65536, Band.MaxFCntGap - 1, Band.MaxFCntGap - 1 + 65536, true}, // roll-over happened, gap ix exactly within allowed MaxFCntGap
+					{65535, Band.MaxFCntGap, 0, false},                              // roll-over happened, but too many lost frames
 					{65535, 0, 65536, true},                                         // roll-over happened
 					{65536, 0, 65536, true},                                         // re-transmission
 					{4294967295, 0, 0, true},                                        // 32 bit roll-over happened, counter started at 0 again
@@ -69,7 +68,7 @@ func TestNodeSession(t *testing.T) {
 				for _, test := range testTable {
 					Convey(fmt.Sprintf("Then when FCntUp=%d, ValidateAndGetFullFCntUp(%d) should return (%d, %t)", test.ServerFCnt, test.NodeFCnt, test.FullFCnt, test.Valid), func() {
 						ns.FCntUp = test.ServerFCnt
-						fullFCntUp, ok := ns.ValidateAndGetFullFCntUp(test.NodeFCnt)
+						fullFCntUp, ok := validateAndGetFullFCntUp(ns, test.NodeFCnt)
 						So(ok, ShouldEqual, test.Valid)
 						So(fullFCntUp, ShouldEqual, test.FullFCnt)
 					})
