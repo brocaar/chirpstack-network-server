@@ -12,6 +12,7 @@ const (
 	JoinNotificationType = iota
 	ErrorNotificationType
 	ACKNotificationType
+	RXInfoNotificationType
 )
 
 // JoinNotification defines the payload sent to the application on
@@ -29,9 +30,18 @@ type ErrorNotification struct {
 	Message   string        `json:"message"`
 }
 
-// ACKNotification struct defines the payload sent to the application
+// ACKNotification defines the payload sent to the application
 // on an ACK event.
 type ACKNotification struct {
 	Reference string        `json:"reference"` // refers to the given reference by the application
 	DevEUI    lorawan.EUI64 `json:"devEUI"`
+}
+
+// RXInfoNotification defines the payload sent to the network-controller
+// on each received packet.
+type RXInfoNotification struct {
+	DevEUI lorawan.EUI64 `json:"devEUI"`
+	ADR    bool          `json:"adr"`
+	FCnt   uint32        `json:"fCnt"`
+	RXInfo []RXInfo      `json:"rxInfo"`
 }

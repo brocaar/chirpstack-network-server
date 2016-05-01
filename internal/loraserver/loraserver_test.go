@@ -17,7 +17,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 		app := &testApplicationBackend{
 			rxPayloadChan:           make(chan models.RXPayload, 1),
 			txPayloadChan:           make(chan models.TXPayload, 1),
-			notificationPayloadChan: make(chan interface{}, 1),
+			notificationPayloadChan: make(chan interface{}, 10),
 		}
 		gw := &testGatewayBackend{
 			rxPacketChan: make(chan models.RXPacket, 1),
@@ -110,6 +110,12 @@ func TestHandleDataUpPackets(t *testing.T) {
 				Convey("When calling handleRXPacket", func() {
 					So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
 
+					Convey("Then a rx info notification was sent", func() {
+						notification := <-app.notificationPayloadChan
+						_, ok := notification.(models.RXInfoNotification)
+						So(ok, ShouldBeTrue)
+					})
+
 					Convey("Then the packet is correctly received by the application backend", func() {
 						packet := <-app.rxPayloadChan
 						So(packet, ShouldResemble, models.RXPayload{
@@ -149,6 +155,11 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 					Convey("When calling handleRXPacket", func() {
 						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
+
+						Convey("Then a rx info notification was sent", func() {
+							notification := <-app.notificationPayloadChan
+							So(notification, ShouldHaveSameTypeAs, models.RXInfoNotification{})
+						})
 
 						Convey("Then the packet is received by the application backend", func() {
 							_ = <-app.rxPayloadChan
@@ -200,10 +211,11 @@ func TestHandleDataUpPackets(t *testing.T) {
 					Convey("When calling handleRXPacket", func() {
 						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
 
-						Convey("Then an error notification is received by the application backend", func() {
+						Convey("Then an rx info and error notification was sent", func() {
 							notification := <-app.notificationPayloadChan
-							_, ok := notification.(models.ErrorNotification)
-							So(ok, ShouldBeTrue)
+							So(notification, ShouldHaveSameTypeAs, models.RXInfoNotification{})
+							notification = <-app.notificationPayloadChan
+							So(notification, ShouldHaveSameTypeAs, models.ErrorNotification{})
 						})
 
 						Convey("Then the TXPayload queue is empty", func() {
@@ -225,6 +237,11 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 					Convey("When calling handleRXPacket", func() {
 						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
+
+						Convey("Then an rx info and ACK notification were sent", func() {
+							notification := <-app.notificationPayloadChan
+							So(notification, ShouldHaveSameTypeAs, models.RXInfoNotification{})
+						})
 
 						Convey("Then the packet is received by the application backend", func() {
 							_ = <-app.rxPayloadChan
@@ -283,6 +300,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 									PHYPayload: phy,
 								}
 
+								_ = <-app.notificationPayloadChan // drain the notification channel
 								So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
 
 								Convey("Then the FCntDown was incremented", func() {
@@ -296,10 +314,11 @@ func TestHandleDataUpPackets(t *testing.T) {
 										So(txPayload, ShouldBeNil)
 									})
 
-									Convey("Then an ACK notification was sent", func() {
+									Convey("Then an rx info and ACK notification were sent", func() {
 										notification := <-app.notificationPayloadChan
-										_, ok := notification.(models.ACKNotification)
-										So(ok, ShouldBeTrue)
+										So(notification, ShouldHaveSameTypeAs, models.RXInfoNotification{})
+										notification = <-app.notificationPayloadChan
+										So(notification, ShouldHaveSameTypeAs, models.ACKNotification{})
 									})
 								})
 							})
@@ -350,10 +369,11 @@ func TestHandleDataUpPackets(t *testing.T) {
 					Convey("When calling handleRXPacket", func() {
 						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
 
-						Convey("Then an error notification is received by the application backend", func() {
+						Convey("Then an rx info and error notification were sent", func() {
 							notification := <-app.notificationPayloadChan
-							_, ok := notification.(models.ErrorNotification)
-							So(ok, ShouldBeTrue)
+							So(notification, ShouldHaveSameTypeAs, models.RXInfoNotification{})
+							notification = <-app.notificationPayloadChan
+							So(notification, ShouldHaveSameTypeAs, models.ErrorNotification{})
 						})
 
 						Convey("Then the TXPayload queue is empty", func() {
@@ -405,7 +425,7 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 	Convey("Given a dummy gateway and application backend and a clean Postgres and Redis database", t, func() {
 		a := &testApplicationBackend{
 			rxPayloadChan:           make(chan models.RXPayload, 1),
-			notificationPayloadChan: make(chan interface{}, 1),
+			notificationPayloadChan: make(chan interface{}, 10),
 		}
 		g := &testGatewayBackend{
 			rxPacketChan: make(chan models.RXPacket, 1),

@@ -102,6 +102,8 @@ func (b *Backend) SendNotification(devEUI, appEUI lorawan.EUI64, typ models.Noti
 		topicSuffix = "error"
 	case models.ACKNotificationType:
 		topicSuffix = "ack"
+	case models.RXInfoNotificationType:
+		topicSuffix = "rxinfo"
 	default:
 		return fmt.Errorf("application/mqttpubsub: notification type unknown: %s", typ)
 	}

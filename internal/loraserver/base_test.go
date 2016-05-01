@@ -95,13 +95,19 @@ type testApplicationBackend struct {
 }
 
 func (b *testApplicationBackend) Send(devEUI, appEUI lorawan.EUI64, payload models.RXPayload) error {
+	if b.err != nil {
+		return b.err
+	}
 	b.rxPayloadChan <- payload
-	return b.err
+	return nil
 }
 
 func (b *testApplicationBackend) SendNotification(devEUI, appEUI lorawan.EUI64, typ models.NotificationType, payload interface{}) error {
+	if b.err != nil {
+		return b.err
+	}
 	b.notificationPayloadChan <- payload
-	return b.err
+	return nil
 }
 
 func (b *testApplicationBackend) Close() error {

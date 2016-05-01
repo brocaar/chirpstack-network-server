@@ -180,6 +180,11 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 		"mtype":    rxPackets[0].PHYPayload.MHDR.MType,
 	}).Info("packet(s) collected")
 
+	// send rx info notification to be used by the network-controller
+	if err = sendRXInfoNotification(ctx, ns.AppEUI, ns.DevEUI, rxPackets); err != nil {
+		return fmt.Errorf("send rx info notification error: %s", err)
+	}
+
 	if macPL.FPort != nil {
 		if *macPL.FPort == 0 {
 			log.Warn("todo: implement FPort == 0 packets")
