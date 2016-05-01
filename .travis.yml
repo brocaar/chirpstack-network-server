@@ -2,7 +2,7 @@ language: go
 go:
   - 1.6.2
 script:
-  - docker-compose run --rm loraserver make test
+  - make run-compose-test
 services:
   - docker
 before_deploy:

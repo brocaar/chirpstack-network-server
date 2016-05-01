@@ -38,3 +38,6 @@ serve: build
 update-vendor:
 	@echo "Updating vendored packages"
 	@govendor update +external
+
+run-compose-test:
+	docker-compose run --rm loraserver make test
