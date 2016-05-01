@@ -60,3 +60,34 @@ specification for the max allowed payload size for your region. Example:
     "message": "error message"  // the content of the error message
 }
 ```
+
+## application/[AppEUI]/node/[DevEUI]/rxinfo
+
+Topic for for rx information of received packets (e.g. frequency, bandwidth,
+ADR, ...). Example payload:
+
+```json
+{
+	"devEUI": "0202020202020202",
+	"adr": false,
+	"fCnt": 1,
+	"rxInfo": [{
+		"mac": "1dee08d0b691d149",
+		"time": "2016-05-01T10:50:54.973189Z",
+		"timestamp": 1794488451,
+		"frequency": 868100000,
+		"channel": 0,
+		"rfChain": 1,
+		"crcStatus": 1,
+		"codeRate": "4/5",
+		"rssi": -54,
+		"loRaSNR": 10.2,
+		"size": 17,
+		"dataRate": {
+			"modulation": "LORA",
+			"spreadFactor": 7,
+			"bandwidth": 125
+		}
+	}]
+}
+```
