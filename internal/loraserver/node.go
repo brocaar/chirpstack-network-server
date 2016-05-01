@@ -136,62 +136,80 @@ func addTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
 // to call clearInProcessTXPayload.
 // nil is returned when there are no items in the queue.
 func getTXPayloadAndRemainingFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPayload, bool, error) {
+	// in-process queue
+	inProcessTXPayload, remaining, err := getTXPayloadAndRemainingFromInProcess(p, devEUI)
+	if err != nil {
+		return nil, false, fmt.Errorf("get tx payload from in-process queue error: %s", err)
+	}
+	// TXPayload in process or nothing remaining in the queue
+	if inProcessTXPayload != nil || !remaining {
+		return inProcessTXPayload, remaining, nil
+	}
+
 	var txPayload models.TXPayload
 	queueKey := fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)
-	pendingKey := fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)
+	inProcessKey := fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)
 
 	c := p.Get()
 	defer c.Close()
 
-	c.Send("LINDEX", pendingKey, -1)
+	c.Send("RPOPLPUSH", queueKey, inProcessKey)
 	c.Send("LLEN", queueKey)
 	c.Flush()
 
+	// read bytes
 	b, err := redis.Bytes(c.Receive())
-	if err != nil && err != redis.ErrNil { // something went wrong
-		return &txPayload, false, fmt.Errorf("get tx payload from in-process queue for node %s error: %s", devEUI, err)
-	}
-	if err == nil { // there is an in-process item
-		// read the queue size
-		i, err := redis.Int(c.Receive())
-		if err != nil {
-			return nil, false, fmt.Errorf("read node %s queue size error: %s", devEUI, err)
-		}
-		err = gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload)
-		if err != nil {
-			return nil, false, fmt.Errorf("decode tx payload for node %s error: %s", devEUI, err)
-		}
-		return &txPayload, i > 0, nil
-	}
-
-	// redis.ErrNil error was returned, return item from the queue
-	// read remaining items
-	i, err := redis.Int(c.Receive())
-	if i == 0 {
-		return nil, false, nil
-	}
-
-	c.Send("RPOPLPUSH", queueKey, pendingKey)
-	c.Send("LLEN", queueKey)
-	c.Flush()
-
-	// read payload from queue
-	b, err = redis.Bytes(c.Receive())
 	if err != nil {
 		if err == redis.ErrNil {
 			return nil, false, nil
 		}
-		return &txPayload, false, fmt.Errorf("get tx payload from queue for node %s error: %s", devEUI, err)
-	}
-	// read remaining items
-	i, err = redis.Int(c.Receive())
-	if err != nil {
-		return &txPayload, false, fmt.Errorf("read remaining tx payload items in queue for node %s error: %s", devEUI, err)
+		return nil, false, fmt.Errorf("get tx payload from queue for node %s error: %s", devEUI, err)
 	}
 
-	err = gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload)
+	// read remaining
+	i, err := redis.Int(c.Receive())
 	if err != nil {
-		return &txPayload, false, fmt.Errorf("decode tx payload for node %s error: %s", devEUI, err)
+		return nil, false, fmt.Errorf("read remaining tx payload items in queue for node %s error: %s", devEUI, err)
+	}
+
+	if err = gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload); err != nil {
+		return nil, false, fmt.Errorf("decode tx payload for node %s error: %s", devEUI, err)
+	}
+	return &txPayload, i > 0, nil
+}
+
+func getTXPayloadAndRemainingFromInProcess(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPayload, bool, error) {
+	var txPayload models.TXPayload
+	queueKey := fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)
+	inProcessKey := fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)
+
+	c := p.Get()
+	defer c.Close()
+
+	c.Send("LINDEX", inProcessKey, -1)
+	c.Send("LLEN", queueKey)
+	c.Flush()
+
+	b, err := redis.Bytes(c.Receive())
+	if err != nil {
+		// nothing in-process, just return the queue size
+		if err == redis.ErrNil {
+			i, err := redis.Int(c.Receive())
+			if err != nil {
+				return nil, false, fmt.Errorf("read node %s queue size error: %s", devEUI, err)
+			}
+			return nil, i > 0, nil
+		}
+		return nil, false, fmt.Errorf("get tx payload from in-process queue for node %s error: %s", devEUI, err)
+	}
+
+	i, err := redis.Int(c.Receive())
+	if err != nil {
+		return nil, false, fmt.Errorf("read node %s queue size error: %s", devEUI, err)
+	}
+
+	if err = gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload); err != nil {
+		return nil, false, fmt.Errorf("decode tx payload for node %s error: %s", devEUI, err)
 	}
 
 	return &txPayload, i > 0, nil
