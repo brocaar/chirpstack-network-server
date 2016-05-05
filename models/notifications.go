@@ -9,7 +9,7 @@ type NotificationType int
 
 // Available notification types.
 const (
-	JoinNotificationType = iota
+	JoinNotificationType NotificationType = iota
 	ErrorNotificationType
 	ACKNotificationType
 	RXInfoNotificationType
