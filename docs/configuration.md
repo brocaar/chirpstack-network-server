@@ -20,6 +20,8 @@ This sets the ``NetID`` of your LoRaWAN network. Taken from the LoRaWAN specific
 > Neighboring or overlapping networks must have different NwkIDs. The remaining 17 MSB
 > can be freely chosen by the network operator.
 
+The value needs to be [HEX](https://en.wikipedia.org/wiki/Hexadecimal) encoded, e.g. ``010203``.
+
 #### --postgres-dsn / POSTGRES_DSN
 
 This sets the PostgreSQL data-source name.
