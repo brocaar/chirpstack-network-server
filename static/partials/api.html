@@ -5,7 +5,7 @@
   <div ng-repeat="(apiName, api) in apis">
     <h2>{{ apiName }} methods</h2>
     <div ng-repeat="(methodName, method) in api.methods">
-      <h4><a href="https://godoc.org/github.com/brocaar/loraserver#{{ apiName }}API.{{ methodName }}">{{ apiName }}.{{ methodName }}</a></h4>
+      <h4><a href="https://godoc.org/github.com/brocaar/loraserver/internal/loraserver#{{ apiName }}API.{{ methodName }}">{{ apiName }}.{{ methodName }}</a></h4>
       <div class="panel panel-default">
         <div class="panel-heading">
           <h3 class="panel-title">Request: <span class="pull-right">{{ method.argumentTypeName }} <span ng-if="method.argumentPkgPath != ''">(<a href="https://godoc.org/{{ method.argumentPkgPath }}#{{ method.argumentTypeName }}">{{ method.argumentPkgPath }}</a>)</span></span></h3>

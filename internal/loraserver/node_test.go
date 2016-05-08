@@ -205,6 +205,7 @@ func TestNodeAPI(t *testing.T) {
 						Limit:  10,
 						Offset: 0,
 					}, &nodes), ShouldBeNil)
+					So(nodes, ShouldHaveLength, 1)
 				})
 			})
 		})
