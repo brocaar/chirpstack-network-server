@@ -1,8 +1,8 @@
 # Changelog
 
-## Untagged
+## 0.6.1
 
-* Band configuration can now be specified with the ``--band`` argument
+* Band configuration must now be specified with the ``--band`` argument
   (no more separate binaries per ism band)
 * RX info notifications (``application/[AppEUI]/node/[DevEUI]/rxinfo``)
 

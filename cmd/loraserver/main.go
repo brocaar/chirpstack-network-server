@@ -42,6 +42,9 @@ func run(c *cli.Context) {
 	}
 
 	// get the band config
+	if c.String("band") == "" {
+		log.Fatalf("--band is undefined, valid options are: %s", strings.Join(bands, ", "))
+	}
 	bandConfig, err := band.GetConfig(band.Name(c.String("band")))
 	if err != nil {
 		log.Fatal(err)
@@ -51,7 +54,6 @@ func run(c *cli.Context) {
 	log.WithFields(log.Fields{
 		"version": version,
 		"net_id":  netID.String(),
-		"nwk_id":  netID.NwkID(),
 		"band":    c.String("band"),
 	}).Info("starting LoRa Server")
 
@@ -168,7 +170,6 @@ func main() {
 		cli.StringFlag{
 			Name:   "band",
 			Usage:  fmt.Sprintf("ism band configuration to use. valid options are: %s", strings.Join(bands, ", ")),
-			Value:  "EU_863_870",
 			EnvVar: "BAND",
 		},
 		cli.StringFlag{
