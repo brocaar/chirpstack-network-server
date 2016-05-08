@@ -45,6 +45,11 @@
             <label for="appKey" class="control-label">AppKey:</label>
             <input type="text" class="form-control" id="appKey" ng-model="node.appKey">
           </div>
+          <div class="form-group">
+            <label for="rxDelay" class="control-label">RXDelay:</label>
+            <input type="number" class="form-control" id="rxDelay" ng-model="node.rxDelay">
+			<p class="help-block">When left to 0, the default delay will be used.</p>
+          </div>
         </form>
       </div>
       <div class="modal-footer">
@@ -76,6 +81,11 @@
           <div class="form-group">
             <label for="appKey" class="control-label">AppKey:</label>
             <input type="text" class="form-control" id="appKey" ng-model="node.appKey">
+          </div>
+          <div class="form-group">
+            <label for="rxDelay" class="control-label">RXDelay:</label>
+            <input type="number" class="form-control" id="rxDelay" ng-model="node.rxDelay">
+			<p class="help-block">When left to 0, the default delay will be used.</p>
           </div>
         </form>
       </div>
@@ -117,6 +127,11 @@
           <div class="form-group">
             <label for="fCntDown" class="control-label">FCnt (down):</label>
             <input type="number" class="form-control" id="fCntDown" ng-model="ns.fCntDown">
+          </div>
+          <div class="form-group">
+            <label for="rxDelay" class="control-label">RXDelay:</label>
+            <input type="number" class="form-control" id="rxDelay" ng-model="ns.rxDelay">
+			<p class="help-block">When left to 0, the default delay will be used.</p>
           </div>
           <div class="form-group">
             <label for="devEUI" class="control-label">DevEUI:</label>

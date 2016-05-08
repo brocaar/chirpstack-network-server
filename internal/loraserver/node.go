@@ -28,10 +28,15 @@ const (
 
 // createNode creates the given Node.
 func createNode(db *sqlx.DB, n models.Node) error {
-	_, err := db.Exec("insert into node (dev_eui, app_eui, app_key) values ($1, $2, $3)",
+	if n.RXDelay > 15 {
+		return errors.New("max value of RXDelay is 15")
+	}
+
+	_, err := db.Exec("insert into node (dev_eui, app_eui, app_key, rx_delay) values ($1, $2, $3, $4)",
 		n.DevEUI[:],
 		n.AppEUI[:],
 		n.AppKey[:],
+		n.RXDelay,
 	)
 	if err != nil {
 		return fmt.Errorf("create node %s error: %s", n.DevEUI, err)
@@ -42,10 +47,15 @@ func createNode(db *sqlx.DB, n models.Node) error {
 
 // updateNode updates the given Node.
 func updateNode(db *sqlx.DB, n models.Node) error {
-	res, err := db.Exec("update node set app_eui = $1, app_key = $2, used_dev_nonces = $3 where dev_eui = $4",
+	if n.RXDelay > 15 {
+		return errors.New("max value of RXDelay is 15")
+	}
+
+	res, err := db.Exec("update node set app_eui = $1, app_key = $2, used_dev_nonces = $3, rx_delay = $4 where dev_eui = $5",
 		n.AppEUI[:],
 		n.AppKey[:],
 		n.UsedDevNonces,
+		n.RXDelay,
 		n.DevEUI[:],
 	)
 	if err != nil {

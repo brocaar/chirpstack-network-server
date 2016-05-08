@@ -1,5 +1,10 @@
 # Changelog
 
+## Untagged
+
+* Implement RXDelay on node join-request (configurable through node config
+  in web-interface / API)
+
 ## 0.6.1
 
 * Band configuration must now be specified with the ``--band`` argument

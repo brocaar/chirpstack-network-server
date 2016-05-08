@@ -11,4 +11,5 @@ type NodeSession struct {
 	NwkSKey  lorawan.AES128Key `db:"nwk_s_key" json:"nwkSKey"`
 	FCntUp   uint32            `db:"fcnt_up" json:"fCntUp"`
 	FCntDown uint32            `db:"fcnt_down" json:"fCntDown"`
+	RXDelay  uint8             `db:"rx_delay" json:"rxDelay"`
 }

@@ -29,6 +29,10 @@ package: clean build
 	@cd dist/$(VERSION) && tar -pczf ../loraserver_$(VERSION)_$(GOOS)_$(GOARCH).tar.gz .
 	@rm -rf dist/$(VERSION)
 
+generate:
+	@echo "Running go generate"
+	@go generate ./...
+
 # shortcuts for development
 
 serve: build
