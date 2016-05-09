@@ -114,7 +114,8 @@ func run(c *cli.Context) {
 		loraserver.NewApplicationAPI(ctx),
 		loraserver.NewNodeAPI(ctx),
 		loraserver.NewNodeSessionAPI(ctx),
-		loraserver.NewChannelSetAPI(ctx),
+		loraserver.NewChannelListAPI(ctx),
+		loraserver.NewChannelAPI(ctx),
 	)
 	if err != nil {
 		log.Fatal(err)

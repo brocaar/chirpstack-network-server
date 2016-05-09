@@ -9,102 +9,102 @@ import (
 	"github.com/brocaar/loraserver/models"
 )
 
-// createChannelSet creates the given ChannelSet.
-func createChannelSet(db *sqlx.DB, cs *models.ChannelSet) error {
-	err := db.Get(&cs.ID, "insert into channel_set (name) values ($1) returning id",
-		cs.Name,
+// createChannelList creates the given ChannelList.
+func createChannelList(db *sqlx.DB, cl *models.ChannelList) error {
+	err := db.Get(&cl.ID, "insert into channel_list (name) values ($1) returning id",
+		cl.Name,
 	)
 	if err != nil {
-		return fmt.Errorf("create channel-set '%s' error: %s", cs.Name, err)
+		return fmt.Errorf("create channel-list '%s' error: %s", cl.Name, err)
 	}
 	log.WithFields(log.Fields{
-		"id":   cs.ID,
-		"name": cs.Name,
-	}).Info("channel-set created")
+		"id":   cl.ID,
+		"name": cl.Name,
+	}).Info("channel-list created")
 	return nil
 }
 
-// updateChannelSet updates the given ChannelSet.
-func updateChannelSet(db *sqlx.DB, cs models.ChannelSet) error {
-	res, err := db.Exec("update channel_set set name = $1 where id = $2",
-		cs.Name,
-		cs.ID,
+// updateChannelList updates the given ChannelList.
+func updateChannelList(db *sqlx.DB, cl models.ChannelList) error {
+	res, err := db.Exec("update channel_list set name = $1 where id = $2",
+		cl.Name,
+		cl.ID,
 	)
 	if err != nil {
-		return fmt.Errorf("update channel-set %d error: %s", cs.ID, err)
+		return fmt.Errorf("update channel-list %d error: %s", cl.ID, err)
 	}
 	ra, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
 	if ra == 0 {
-		return fmt.Errorf("channel-set %d does not exist", cs.ID)
+		return fmt.Errorf("channel-list %d does not exist", cl.ID)
 	}
-	log.WithField("id", cs.ID).Info("channel-set updated")
+	log.WithField("id", cl.ID).Info("channel-list updated")
 	return nil
 }
 
-// getChannelSet returns the ChannelSet for the given id.
-func getChannelSet(db *sqlx.DB, id int64) (models.ChannelSet, error) {
-	var cs models.ChannelSet
-	err := db.Get(&cs, "select * from channel_set where id = $1", id)
+// getChannelList returns the ChannelList for the given id.
+func getChannelList(db *sqlx.DB, id int64) (models.ChannelList, error) {
+	var cl models.ChannelList
+	err := db.Get(&cl, "select * from channel_list where id = $1", id)
 	if err != nil {
-		return cs, fmt.Errorf("get channel-set %d error: %s", id, err)
+		return cl, fmt.Errorf("get channel-list %d error: %s", id, err)
 	}
-	return cs, nil
+	return cl, nil
 }
 
-// getChannelSets returns a list of ChannelSet items.
-func getChannelSets(db *sqlx.DB, limit, offset int) ([]models.ChannelSet, error) {
-	var channelSets []models.ChannelSet
-	err := db.Select(&channelSets, "select * from channel_set order by name limit $1 offset $2", limit, offset)
+// getChannelLists returns a list of ChannelList items.
+func getChannelLists(db *sqlx.DB, limit, offset int) ([]models.ChannelList, error) {
+	var channelLists []models.ChannelList
+	err := db.Select(&channelLists, "select * from channel_list order by name limit $1 offset $2", limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("get channel-sets error: %s", err)
+		return nil, fmt.Errorf("get channel-list list error: %s", err)
 	}
-	return channelSets, nil
+	return channelLists, nil
 }
 
-// deleteChannelSet deletes the ChannelSet matching the given id.
-func deleteChannelSet(db *sqlx.DB, id int64) error {
-	res, err := db.Exec("delete from channel_set where id = $1",
+// deleteChannelList deletes the ChannelList matching the given id.
+func deleteChannelList(db *sqlx.DB, id int64) error {
+	res, err := db.Exec("delete from channel_list where id = $1",
 		id,
 	)
 	if err != nil {
-		return fmt.Errorf("delete channel-set %d error: %s", id, err)
+		return fmt.Errorf("delete channel-list %d error: %s", id, err)
 	}
 	ra, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
 	if ra == 0 {
-		return fmt.Errorf("channel-set %d does not exist", id)
+		return fmt.Errorf("channel-list %d does not exist", id)
 	}
-	log.WithField("id", id).Info("channel-set deleted")
+	log.WithField("id", id).Info("channel-list deleted")
 	return nil
 }
 
 // createChannel creates the given channel.
 func createChannel(db *sqlx.DB, c *models.Channel) error {
-	err := db.Get(&c.ID, "insert into channel (channel_set_id, channel, frequency) values ($1, $2, $3) returning id",
-		c.ChannelSetID,
+	err := db.Get(&c.ID, "insert into channel (channel_list_id, channel, frequency) values ($1, $2, $3) returning id",
+		c.ChannelListID,
 		c.Channel,
 		c.Frequency,
 	)
 	if err != nil {
-		return fmt.Errorf("create channel %d for channel-set %d error: %s", c.Channel, c.ChannelSetID, err)
+		return fmt.Errorf("create channel %d for channel-list %d error: %s", c.Channel, c.ChannelListID, err)
 	}
 	log.WithFields(log.Fields{
-		"channel_set_id": c.ChannelSetID,
-		"channel":        c.Channel,
-		"id":             c.ID,
+		"channel_list_id": c.ChannelListID,
+		"channel":         c.Channel,
+		"id":              c.ID,
 	}).Info("channel created")
 	return nil
 }
 
 // updateChannel updates the given Channel.
 func updateChannel(db *sqlx.DB, c models.Channel) error {
-	res, err := db.Exec("update channel set channel_set_id = $1, channel = $2, frequency = $3 where id = $4",
-		c.ChannelSetID,
+	res, err := db.Exec("update channel set channel_list_id = $1, channel = $2, frequency = $3 where id = $4",
+		c.ChannelListID,
 		c.Channel,
 		c.Frequency,
 		c.ID,
@@ -152,63 +152,63 @@ func getChannel(db *sqlx.DB, id int64) (models.Channel, error) {
 	return channel, nil
 }
 
-// getChannels returns the Channels for the given ChannelSet id.
-func getChannelsForChannelSet(db *sqlx.DB, channelSetID int64) ([]models.Channel, error) {
+// getChannelsForChannelList returns the Channels for the given ChannelList id.
+func getChannelsForChannelList(db *sqlx.DB, channelListID int64) ([]models.Channel, error) {
 	var channels []models.Channel
-	err := db.Select(&channels, "select * from channel where channel_set_id = $1 order by channel", channelSetID)
+	err := db.Select(&channels, "select * from channel where channel_list_id = $1 order by channel", channelListID)
 	if err != nil {
-		return nil, fmt.Errorf("get channels for channel-set %d error: %s", channelSetID, err)
+		return nil, fmt.Errorf("get channels for channel-list %d error: %s", channelListID, err)
 	}
 	return channels, nil
 }
 
-// ChannelSetAPI struct exports the channel-set related functions.
-type ChannelSetAPI struct {
+// ChannelListAPI struct exports the channel-list related functions.
+type ChannelListAPI struct {
 	ctx Context
 }
 
-// NewChannelSetAPI creates a new ChannelAPI.
-func NewChannelSetAPI(ctx Context) *ChannelSetAPI {
-	return &ChannelSetAPI{
+// NewChannelListAPI creates a new ChannelAPI.
+func NewChannelListAPI(ctx Context) *ChannelListAPI {
+	return &ChannelListAPI{
 		ctx: ctx,
 	}
 }
 
-// Create creates the given ChannelSet.
-func (a *ChannelSetAPI) Create(cs models.ChannelSet, id *int64) error {
-	if err := createChannelSet(a.ctx.DB, &cs); err != nil {
+// Create creates the given ChannelList.
+func (a *ChannelListAPI) Create(cl models.ChannelList, id *int64) error {
+	if err := createChannelList(a.ctx.DB, &cl); err != nil {
 		return err
 	}
-	*id = cs.ID
+	*id = cl.ID
 	return nil
 }
 
-// Update updates the given ChannelSet.
-func (a *ChannelSetAPI) Update(cs models.ChannelSet, id *int64) error {
-	if err := updateChannelSet(a.ctx.DB, cs); err != nil {
+// Update updates the given ChannelList.
+func (a *ChannelListAPI) Update(cl models.ChannelList, id *int64) error {
+	if err := updateChannelList(a.ctx.DB, cl); err != nil {
 		return err
 	}
-	*id = cs.ID
+	*id = cl.ID
 	return nil
 }
 
-// Get returns the ChannelSet matching the given id.
-func (a *ChannelSetAPI) Get(id int64, cs *models.ChannelSet) error {
+// Get returns the ChannelList matching the given id.
+func (a *ChannelListAPI) Get(id int64, cl *models.ChannelList) error {
 	var err error
-	*cs, err = getChannelSet(a.ctx.DB, id)
+	*cl, err = getChannelList(a.ctx.DB, id)
 	return err
 }
 
-// GetList returns a list of ChannelSet items.
-func (a *ChannelSetAPI) GetList(req models.GetListRequest, sets *[]models.ChannelSet) error {
+// GetList returns a list of ChannelList items.
+func (a *ChannelListAPI) GetList(req models.GetListRequest, sets *[]models.ChannelList) error {
 	var err error
-	*sets, err = getChannelSets(a.ctx.DB, req.Limit, req.Offset)
+	*sets, err = getChannelLists(a.ctx.DB, req.Limit, req.Offset)
 	return err
 }
 
-// Delete deletes the ChannelSet matching the given id.
-func (a *ChannelSetAPI) Delete(id int64, deletedID *int64) error {
-	if err := deleteChannelSet(a.ctx.DB, id); err != nil {
+// Delete deletes the ChannelList matching the given id.
+func (a *ChannelListAPI) Delete(id int64, deletedID *int64) error {
+	if err := deleteChannelList(a.ctx.DB, id); err != nil {
 		return err
 	}
 	*deletedID = id
@@ -254,10 +254,10 @@ func (a *ChannelAPI) Delete(id int64, deletedID *int64) error {
 	return nil
 }
 
-// GetForChannelSet returns the channels for the given ChannelSet id.
-func (a *ChannelAPI) GetForChannelSet(id int64, channels *[]models.Channel) error {
+// GetForChannelList returns the channels for the given ChannelList id.
+func (a *ChannelAPI) GetForChannelList(id int64, channels *[]models.Channel) error {
 	var err error
-	*channels, err = getChannelsForChannelSet(a.ctx.DB, id)
+	*channels, err = getChannelsForChannelList(a.ctx.DB, id)
 	return err
 }
 
