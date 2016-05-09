@@ -33,6 +33,14 @@ loraserver.config(['$routeProvider',
                 templateUrl: 'partials/nodes.html',
                 controller: 'NodeListCtrl'
             }).
+            when('/channels', {
+                templateUrl: 'partials/channel_lists.html',
+                controller: 'ChannelListListCtrl'
+            }).
+            when('/channels/:list', {
+                templateUrl: 'partials/channel_list.html',
+                controller: 'ChannelListCtrl'
+            }).
             when('/api', {
                 templateUrl: 'partials/api.html',
                 controller: 'APICtrl'
@@ -182,9 +190,118 @@ loraserverControllers.controller('NodeListCtrl', ['$scope', '$http', '$routePara
         if($routeParams.node) {
             $http.rpc('Node.Get', $routeParams.node).success(function(data) {
                 $scope.node = data.result;
-                console.log(data);
                 $('#editModal').modal().on('hidden.bs.modal', function() { history.go(-1); });
             });
         };
         $scope.page = 'nodes';
+    }]);
+
+// manage channel lists
+loraserverControllers.controller('ChannelListListCtrl', ['$scope', '$http', '$routeParams', '$route',
+    function ($scope, $http, $routeParams, $route) {
+        $scope.page = 'channels';
+        $http.rpc('ChannelList.GetList', {'limit': 9999, 'offset': 0}).success(function(data) {
+            $scope.channelLists = data.result;
+        });
+
+        $scope.createList = function(cl) {
+            if (cl == null) {
+                $('#createChannelListModal').modal().on('hidden.bs.modal', function() {
+                    $route.reload();
+                });
+            } else {
+                $http.rpc('ChannelList.Create', cl).success(function(data) {
+                    if (data.error == null) {
+                        $('#createChannelListModal').modal('hide');
+                    }
+                    $scope.error = data.error;
+                });
+            }
+        };
+
+        $scope.editList = function(cl) {
+            $http.rpc('ChannelList.Get', cl.id).success(function(data) {
+                $scope.channelList = data.result;
+                $('#editChannelListModal').modal().on('hidden.bs.modal', function() {
+                    $route.reload();
+                });
+            });
+        };
+
+        $scope.updateList = function(cl) {
+            $http.rpc('ChannelList.Update', cl).success(function(data) {
+                if (data.error == null) {
+                    $('#editChannelListModal').modal('hide');
+                }
+                $scope.error = data.error;
+            });
+        };
+
+        $scope.deleteList = function(cl) {
+            if (confirm('Are you sure you want to delete ' + cl.name + '?')) {
+                $http.rpc('ChannelList.Delete', cl.id).success(function(data) {
+                    if (data.error != null) {
+                        alert(data.error);
+                    }
+                    $route.reload();
+                });
+            }
+        };
+    }]);
+
+// manage channel list
+loraserverControllers.controller('ChannelListCtrl', ['$scope', '$http', '$routeParams', '$route',
+    function ($scope, $http, $routeParams, $route) {
+        $scope.page = 'channels';
+        $http.rpc('ChannelList.Get', parseInt($routeParams.list)).success(function(data) {
+            $scope.channelList = data.result;
+        });
+        $http.rpc('Channel.GetForChannelList', parseInt($routeParams.list)).success(function(data) {
+            $scope.channels = data.result;
+        });
+
+        $scope.createChannel = function(c) {
+            if (c == null) {
+                $('#createChannelModal').modal().on('hidden.bs.modal', function() {
+                    $route.reload();
+                });
+            } else {
+                c.channelListID = $scope.channelList.id;
+                $http.rpc('Channel.Create', c).success(function(data) {
+                    if (data.error == null) {
+                        $('#createChannelModal').modal('hide');
+                    }
+                    $scope.error = data.error;
+                });
+            }
+        };
+
+        $scope.editChannel = function(c) {
+            $http.rpc('Channel.Get', c.id).success(function(data) {
+                $scope.channel = data.result;
+                $('#editChannelModal').modal().on('hidden.bs.modal', function() {
+                    $route.reload();
+                });
+            });
+        };
+
+        $scope.updateChannel = function(c) {
+            $http.rpc('Channel.Update', c).success(function(data) {
+                if (data.error == null) {
+                    $('#editChannelModal').modal('hide');
+                }
+                $scope.error = data.error;
+            });
+        };
+
+        $scope.deleteChannel = function(c) {
+            if (confirm('Are you sure you want to delete channel # ' + c.channel + '?')) {
+                $http.rpc('Channel.Delete', c.id).success(function(data) {
+                    if (data.error != null) {
+                        alert(data.error);
+                    }
+                    $route.reload();
+                });
+            }
+        };
     }]);
