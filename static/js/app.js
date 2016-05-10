@@ -119,6 +119,10 @@ loraserverControllers.controller('NodeListCtrl', ['$scope', '$http', '$routePara
             $scope.nodes = data.result;
         });
 
+        $http.rpc('ChannelList.GetList', {'limit': 9999, 'offset': 0}).success(function(data) {
+            $scope.channelLists = data.result;
+        });
+
         $scope.create = function(node) {
             if (node == null) {
                 $('#createModal').modal().on('hidden.bs.modal', function(){
