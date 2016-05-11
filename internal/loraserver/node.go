@@ -32,11 +32,21 @@ func createNode(db *sqlx.DB, n models.Node) error {
 		return errors.New("max value of RXDelay is 15")
 	}
 
-	_, err := db.Exec("insert into node (dev_eui, app_eui, app_key, rx_delay, channel_list_id) values ($1, $2, $3, $4, $5)",
+	_, err := db.Exec(`
+		insert into node (
+			dev_eui,
+			app_eui,
+			app_key,
+			rx_delay,
+			rx1_dr_offset,
+			channel_list_id
+		)
+		values ($1, $2, $3, $4, $5, $6)`,
 		n.DevEUI[:],
 		n.AppEUI[:],
 		n.AppKey[:],
 		n.RXDelay,
+		n.RX1DROffset,
 		n.ChannelListID,
 	)
 	if err != nil {
@@ -52,13 +62,22 @@ func updateNode(db *sqlx.DB, n models.Node) error {
 		return errors.New("max value of RXDelay is 15")
 	}
 
-	res, err := db.Exec("update node set app_eui = $1, app_key = $2, used_dev_nonces = $3, rx_delay = $4, channel_list_id = $5 where dev_eui = $6",
+	res, err := db.Exec(`
+		update node set
+			app_eui = $2,
+			app_key = $3,
+			used_dev_nonces = $4,
+			rx_delay = $5,
+			rx1_dr_offset = $6,
+			channel_list_id = $7
+		where dev_eui = $1`,
+		n.DevEUI[:],
 		n.AppEUI[:],
 		n.AppKey[:],
 		n.UsedDevNonces,
 		n.RXDelay,
+		n.RX1DROffset,
 		n.ChannelListID,
-		n.DevEUI[:],
 	)
 	if err != nil {
 		return fmt.Errorf("update node %s error: %s", n.DevEUI, err)

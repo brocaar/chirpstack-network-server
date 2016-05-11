@@ -51,6 +51,7 @@ type Node struct {
 	UsedDevNonces DevNonceList      `db:"used_dev_nonces" json:"usedDevNonces"`
 
 	RXDelay       uint8  `db:"rx_delay" json:"rxDelay"`
+	RX1DROffset   uint8  `db:"rx1_dr_offset" json:"rx1DROffset"`
 	ChannelListID *int64 `db:"channel_list_id" json:"channelListID"`
 }
 
