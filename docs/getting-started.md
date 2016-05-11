@@ -18,6 +18,7 @@ LoRa Server stores all persistent data into a [PostgreSQL](http://www.postgresql
 #### Redis
 
 LoRa Server stores all session-related and non-persistent data into a [Redis](http://redis.io/) database.
+Note that at least Redis 2.6.0 is required.
 
 #### LoRa Semtech Bridge
 
