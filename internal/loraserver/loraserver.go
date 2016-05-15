@@ -489,6 +489,19 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("update node error: %s", err)
 	}
 
+	// The RX1DRoffset field sets the offset between the uplink data rate and the
+	// downlink data rate used to communicate with the end-device on the first
+	// reception slot (RX1). As a default this offset is 0.
+	var defaultRX1DRoffset uint8 = 0
+
+	//var rX2DataRate uint8 = Band.RX2DataRate
+
+	// The DLsettings field contains the downlink configuration
+	dLSettings := lorawan.DLsettings{
+		uint8(Band.RX2DataRate),
+		defaultRX1DRoffset,
+	}
+
 	// construct the lorawan packet
 	phy := lorawan.PHYPayload{
 		MHDR: lorawan.MHDR{
@@ -496,9 +509,10 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 			Major: lorawan.LoRaWANR1,
 		},
 		MACPayload: &lorawan.JoinAcceptPayload{
-			AppNonce: appNonce,
-			NetID:    ctx.NetID,
-			DevAddr:  devAddr,
+			AppNonce:   appNonce,
+			NetID:      ctx.NetID,
+			DevAddr:    devAddr,
+			DLSettings: dLSettings,
 		},
 	}
 	if err = phy.SetMIC(node.AppKey); err != nil {
