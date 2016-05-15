@@ -78,12 +78,12 @@ func TestChannelAPI(t *testing.T) {
 
 			c1 := models.Channel{
 				ChannelListID: cl.ID,
-				Channel:       0,
+				Channel:       3,
 				Frequency:     868100000,
 			}
 			c2 := models.Channel{
 				ChannelListID: cl.ID,
-				Channel:       1,
+				Channel:       5,
 				Frequency:     868200000,
 			}
 

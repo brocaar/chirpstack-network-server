@@ -9,7 +9,7 @@ create table channel (
 	channel_list_id bigint references channel_list on delete cascade not null,
 	channel integer not null,
 	frequency integer not null,
-	check (channel >= 0 and frequency > 0),
+	check (channel >= 3 and channel <= 7 and frequency > 0),
 	unique (channel_list_id, channel)
 );
 
