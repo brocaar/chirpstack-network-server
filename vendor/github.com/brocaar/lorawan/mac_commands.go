@@ -304,39 +304,39 @@ func (p *DutyCycleReqPayload) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-// DLsettings represents the DLsettings fields (downlink settings).
-type DLsettings struct {
+// DLSettings represents the DLSettings fields (downlink settings).
+type DLSettings struct {
 	RX2DataRate uint8
-	RX1DRoffset uint8
+	RX1DROffset uint8
 }
 
 // MarshalBinary marshals the object in binary form.
-func (s DLsettings) MarshalBinary() ([]byte, error) {
+func (s DLSettings) MarshalBinary() ([]byte, error) {
 	b := make([]byte, 0, 1)
 	if s.RX2DataRate > 15 {
 		return b, errors.New("lorawan: max value of RX2DataRate is 15")
 	}
-	if s.RX1DRoffset > 7 {
-		return b, errors.New("lorawan: max value of RX1DRoffset is 7")
+	if s.RX1DROffset > 7 {
+		return b, errors.New("lorawan: max value of RX1DROffset is 7")
 	}
-	b = append(b, s.RX2DataRate^(s.RX1DRoffset<<4))
+	b = append(b, s.RX2DataRate^(s.RX1DROffset<<4))
 	return b, nil
 }
 
 // UnmarshalBinary decodes the object from binary form.
-func (s *DLsettings) UnmarshalBinary(data []byte) error {
+func (s *DLSettings) UnmarshalBinary(data []byte) error {
 	if len(data) != 1 {
 		return errors.New("lorawan: 1 byte of data is expected")
 	}
 	s.RX2DataRate = data[0] & ((1 << 3) ^ (1 << 2) ^ (1 << 1) ^ (1 << 0))
-	s.RX1DRoffset = (data[0] & ((1 << 6) ^ (1 << 5) ^ (1 << 4))) >> 4
+	s.RX1DROffset = (data[0] & ((1 << 6) ^ (1 << 5) ^ (1 << 4))) >> 4
 	return nil
 }
 
 // RX2SetupReqPayload represents the RX2SetupReq payload.
 type RX2SetupReqPayload struct {
 	Frequency  uint32
-	DLsettings DLsettings
+	DLSettings DLSettings
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -345,7 +345,7 @@ func (p RX2SetupReqPayload) MarshalBinary() ([]byte, error) {
 	if p.Frequency >= 16777216 { // 2^24
 		return b, errors.New("lorawan: max value of Frequency is 2^24-1")
 	}
-	bytes, err := p.DLsettings.MarshalBinary()
+	bytes, err := p.DLSettings.MarshalBinary()
 	if err != nil {
 		return b, err
 	}
@@ -362,7 +362,7 @@ func (p *RX2SetupReqPayload) UnmarshalBinary(data []byte) error {
 	if len(data) != 4 {
 		return errors.New("lorawan: 4 bytes of data are expected")
 	}
-	if err := p.DLsettings.UnmarshalBinary(data[0:1]); err != nil {
+	if err := p.DLSettings.UnmarshalBinary(data[0:1]); err != nil {
 		return err
 	}
 	// append one block of empty bits at the end of the slice since the
@@ -378,7 +378,7 @@ func (p *RX2SetupReqPayload) UnmarshalBinary(data []byte) error {
 type RX2SetupAnsPayload struct {
 	ChannelACK     bool
 	RX2DataRateACK bool
-	RX1DRoffsetACK bool
+	RX1DROffsetACK bool
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -390,7 +390,7 @@ func (p RX2SetupAnsPayload) MarshalBinary() ([]byte, error) {
 	if p.RX2DataRateACK {
 		b = b ^ (1 << 1)
 	}
-	if p.RX1DRoffsetACK {
+	if p.RX1DROffsetACK {
 		b = b ^ (1 << 2)
 	}
 	return []byte{b}, nil
@@ -403,7 +403,7 @@ func (p *RX2SetupAnsPayload) UnmarshalBinary(data []byte) error {
 	}
 	p.ChannelACK = data[0]&(1<<0) > 0
 	p.RX2DataRateACK = data[0]&(1<<1) > 0
-	p.RX1DRoffsetACK = data[0]&(1<<2) > 0
+	p.RX1DROffsetACK = data[0]&(1<<2) > 0
 	return nil
 }
 
@@ -522,7 +522,7 @@ func (p *NewChannelAnsPayload) UnmarshalBinary(data []byte) error {
 
 // RXTimingSetupReqPayload represents the RXTimingSetupReq payload.
 type RXTimingSetupReqPayload struct {
-	Delay uint8
+	Delay uint8 // 0=1s, 1=1s, 2=2s, ... 15=15s
 }
 
 // MarshalBinary marshals the object in binary form.

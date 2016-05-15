@@ -182,13 +182,17 @@ type JoinAcceptPayload struct {
 	AppNonce   [3]byte
 	NetID      [3]byte
 	DevAddr    DevAddr
-	DLSettings DLsettings
-	RXDelay    uint8
+	DLSettings DLSettings
+	RXDelay    uint8 // 0=1s, 1=1s, 2=2s, ... 15=15s
 	CFList     *CFList
 }
 
 // MarshalBinary marshals the object in binary form.
 func (p JoinAcceptPayload) MarshalBinary() ([]byte, error) {
+	if p.RXDelay > 15 {
+		return nil, errors.New("lorawan: the max value of RXDelay is 15")
+	}
+
 	out := make([]byte, 0, 12)
 
 	// little endian

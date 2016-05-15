@@ -78,7 +78,8 @@ https://www.lora-alliance.org/For-Developers/LoRaWANDevelopers
 ## ISM band configuration
 
 The LoRaWAN specification defines various region specific defaults and
-configuration. These can be found in the ``band`` sub-package. 
+configuration. These can be found in the ``band`` sub-package. Note that
+this is still work in progress and that not all bands are defined yet.
 
 ## Documentation
 
