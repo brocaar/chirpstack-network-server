@@ -280,7 +280,10 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	// get RX1 channel
 	rx1Channel := Band.GetRX1Channel(uplinkChannel)
 	// get RX1 DR
-	rx1DR := Band.RX1DataRate[uplinkDR][ns.RX1DROffset]
+	rx1DR, err := Band.GetRX1DataRateForOffset(uplinkDR, int(ns.RX1DROffset))
+	if err != nil {
+		return err
+	}
 	// get rx delay
 	rxDelay := Band.ReceiveDelay1
 	if ns.RXDelay > 0 {
