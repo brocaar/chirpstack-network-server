@@ -144,6 +144,18 @@ func (b *Band) GetDataRate(dr DataRate) (int, error) {
 	return 0, errors.New("lorawan/band: the given data-rate does not exist")
 }
 
+// GetRX1DataRateForOffset returns the data-rate for the given offset.
+func (b *Band) GetRX1DataRateForOffset(dr, drOffset int) (int, error) {
+	if dr >= len(b.RX1DataRate) {
+		return 0, fmt.Errorf("lorawan/band: invalid data-rate: %d", dr)
+	}
+
+	if drOffset >= len(b.RX1DataRate[dr]) {
+		return 0, fmt.Errorf("lorawan/band: invalid data-rate offset: %d", drOffset)
+	}
+	return b.RX1DataRate[dr][drOffset], nil
+}
+
 // GetConfig returns the band configuration for the given band.
 func GetConfig(name Name) (Band, error) {
 	switch name {
