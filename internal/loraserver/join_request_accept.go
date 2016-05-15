@@ -107,8 +107,9 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		FCntUp:   0,
 		FCntDown: 0,
 
-		AppEUI:  node.AppEUI,
-		RXDelay: node.RXDelay,
+		AppEUI:      node.AppEUI,
+		RXDelay:     node.RXDelay,
+		RX1DROffset: node.RX1DROffset,
 	}
 	if err = saveNodeSession(ctx.RedisPool, ns); err != nil {
 		return fmt.Errorf("save node-session error: %s", err)
@@ -130,6 +131,10 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 			NetID:    ctx.NetID,
 			DevAddr:  ns.DevAddr,
 			RXDelay:  ns.RXDelay,
+			DLSettings: lorawan.DLSettings{
+				RX2DataRate: uint8(Band.RX2DataRate),
+				RX1DROffset: ns.RX1DROffset,
+			},
 		},
 	}
 	if err = phy.SetMIC(node.AppKey); err != nil {

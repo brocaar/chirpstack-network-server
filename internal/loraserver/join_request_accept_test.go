@@ -46,7 +46,8 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 				AppEUI: app.AppEUI,
 				AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 
-				RXDelay: 3,
+				RXDelay:     3,
+				RX1DROffset: 2,
 			}
 			So(createNode(ctx.DB, node), ShouldBeNil)
 
@@ -88,6 +89,12 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 						Convey("Then the RXDelay is set to 3s", func() {
 							jaPL := phy.MACPayload.(*lorawan.JoinAcceptPayload)
 							So(jaPL.RXDelay, ShouldEqual, 3)
+						})
+
+						Convey("Then the DLSettings are set correctly", func() {
+							jaPL := phy.MACPayload.(*lorawan.JoinAcceptPayload)
+							So(jaPL.DLSettings.RX2DataRate, ShouldEqual, uint8(Band.RX2DataRate))
+							So(jaPL.DLSettings.RX1DROffset, ShouldEqual, node.RX1DROffset)
 						})
 
 						Convey("Then a node-session was created", func() {
