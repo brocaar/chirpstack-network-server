@@ -1,11 +1,12 @@
 # Changelog
 
-## Untagged
+## 0.7.0
 
 * Complete join-accept payload with:
 	* RXDelay
 	* DLSettings (RX2 data-rate and RX1 data-rate offset)
-	* CFList (optional channel-list, see LoRaWAN specs if this is available for your region)
+	* CFList (optional channel-list, see LoRaWAN specs to see if this
+	  option is available for your region)
 
   All values can be set / created throught the API or web-interface
 
