@@ -269,6 +269,36 @@ func clearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPay
 	return &txPayload, nil
 }
 
+// getCFListForNode returns the CFList for the given node if the
+// used ISM band allows using a CFList.
+func getCFListForNode(db *sqlx.DB, node models.Node) (*lorawan.CFList, error) {
+	if node.ChannelListID == nil {
+		return nil, nil
+	}
+
+	if !Band.ImplementsCFlist {
+		log.WithFields(log.Fields{
+			"dev_eui": node.DevEUI,
+			"app_eui": node.AppEUI,
+		}).Warning("node has channel-list, but CFList not allowed for selected band")
+		return nil, nil
+	}
+
+	channels, err := getChannelsForChannelList(db, *node.ChannelListID)
+	if err != nil {
+		return nil, err
+	}
+
+	var cFList lorawan.CFList
+	for _, channel := range channels {
+		if len(cFList) <= channel.Channel-3 {
+			return nil, fmt.Errorf("invalid channel index for CFList: %d", channel.Channel)
+		}
+		cFList[channel.Channel-3] = uint32(channel.Frequency)
+	}
+	return &cFList, nil
+}
+
 // NodeAPI exports the Node related functions.
 type NodeAPI struct {
 	ctx Context

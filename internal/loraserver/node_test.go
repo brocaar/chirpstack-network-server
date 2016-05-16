@@ -145,6 +145,85 @@ func TestTXPayloadQueue(t *testing.T) {
 	})
 }
 
+func TestGetCFListForNode(t *testing.T) {
+	conf := getConfig()
+
+	Convey("Given an application, node (without channel-list) and channel-list with 2 channels", t, func() {
+		db, err := OpenDatabase(conf.PostgresDSN)
+		So(err, ShouldBeNil)
+		mustResetDB(db)
+
+		ctx := Context{
+			DB: db,
+		}
+
+		channelList := models.ChannelList{
+			Name: "test channels",
+		}
+		So(createChannelList(ctx.DB, &channelList), ShouldBeNil)
+		So(createChannel(ctx.DB, &models.Channel{
+			ChannelListID: channelList.ID,
+			Channel:       3,
+			Frequency:     868400000,
+		}), ShouldBeNil)
+		So(createChannel(ctx.DB, &models.Channel{
+			ChannelListID: channelList.ID,
+			Channel:       4,
+			Frequency:     868500000,
+		}), ShouldBeNil)
+
+		app := models.Application{
+			AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Name:   "test app",
+		}
+		So(createApplication(ctx.DB, app), ShouldBeNil)
+
+		node := models.Node{
+			DevEUI: [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			AppEUI: app.AppEUI,
+		}
+		So(createNode(ctx.DB, node), ShouldBeNil)
+
+		Convey("Then getCFListForNode returns nil", func() {
+			cFList, err := getCFListForNode(ctx.DB, node)
+			So(err, ShouldBeNil)
+			So(cFList, ShouldBeNil)
+		})
+
+		Convey("Given the node has the channel-list configured", func() {
+			node.ChannelListID = &channelList.ID
+			So(updateNode(ctx.DB, node), ShouldBeNil)
+
+			Convey("Then getCFListForNode returns the CFList with the configured channels", func() {
+				cFList, err := getCFListForNode(ctx.DB, node)
+				So(err, ShouldBeNil)
+
+				So(cFList, ShouldResemble, &lorawan.CFList{
+					868400000,
+					868500000,
+					0,
+					0,
+					0,
+				})
+			})
+
+			Convey("Given the configured ISM band does not allow a CFList", func() {
+				defer func() {
+					Band.ImplementsCFlist = true
+				}()
+				Band.ImplementsCFlist = false
+
+				Convey("Then getCFListForNode returns nil", func() {
+					cFList, err := getCFListForNode(ctx.DB, node)
+					So(err, ShouldBeNil)
+					So(cFList, ShouldBeNil)
+				})
+			})
+		})
+
+	})
+}
+
 func TestNodeAPI(t *testing.T) {
 	conf := getConfig()
 
