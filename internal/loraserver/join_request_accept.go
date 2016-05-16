@@ -89,6 +89,12 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("get AppNonce error: %s", err)
 	}
 
+	// get the (optional) CFList
+	cFList, err := getCFListForNode(ctx.DB, node)
+	if err != nil {
+		return fmt.Errorf("get CFList for node error: %s", err)
+	}
+
 	// get keys
 	nwkSKey, err := getNwkSKey(node.AppKey, ctx.NetID, appNonce, jrPL.DevNonce)
 	if err != nil {
@@ -135,6 +141,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 				RX2DataRate: uint8(Band.RX2DataRate),
 				RX1DROffset: ns.RX1DROffset,
 			},
+			CFList: cFList,
 		},
 	}
 	if err = phy.SetMIC(node.AppKey); err != nil {
