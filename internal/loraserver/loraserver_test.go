@@ -23,6 +23,11 @@ func TestHandleDataUpPackets(t *testing.T) {
 			rxPacketChan: make(chan models.RXPacket, 1),
 			txPacketChan: make(chan models.TXPacket, 1),
 		}
+		ctrl := &testControllerBackend{
+			rxMACPayloadChan:  make(chan models.MACPayload, 1),
+			txMACPayloadChan:  make(chan models.MACPayload, 1),
+			rxInfoPayloadChan: make(chan models.RXInfoPayload, 1),
+		}
 		p := NewRedisPool(conf.RedisURL)
 		mustFlushRedis(p)
 
@@ -30,6 +35,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 			RedisPool:   p,
 			Gateway:     gw,
 			Application: app,
+			Controller:  ctrl,
 		}
 
 		Convey("Given a stored node session", func() {
@@ -110,10 +116,8 @@ func TestHandleDataUpPackets(t *testing.T) {
 				Convey("When calling handleRXPacket", func() {
 					So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
 
-					Convey("Then a rx info notification was sent", func() {
-						notification := <-app.notificationPayloadChan
-						_, ok := notification.(models.RXInfoPayload)
-						So(ok, ShouldBeTrue)
+					Convey("Then a rx info payload was sent to the network-controller", func() {
+						_ = <-ctrl.rxInfoPayloadChan
 					})
 
 					Convey("Then the packet is correctly received by the application backend", func() {
@@ -156,9 +160,8 @@ func TestHandleDataUpPackets(t *testing.T) {
 					Convey("When calling handleRXPacket", func() {
 						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
 
-						Convey("Then a rx info notification was sent", func() {
-							notification := <-app.notificationPayloadChan
-							So(notification, ShouldHaveSameTypeAs, models.RXInfoPayload{})
+						Convey("Then a rx info payload was sent to the network-controller", func() {
+							_ = ctrl.rxInfoPayloadChan
 						})
 
 						Convey("Then the packet is received by the application backend", func() {
@@ -211,10 +214,9 @@ func TestHandleDataUpPackets(t *testing.T) {
 					Convey("When calling handleRXPacket", func() {
 						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
 
-						Convey("Then an rx info and error notification was sent", func() {
+						Convey("Then a rx info payload and error notification were sent", func() {
+							_ = ctrl.rxInfoPayloadChan
 							notification := <-app.notificationPayloadChan
-							So(notification, ShouldHaveSameTypeAs, models.RXInfoPayload{})
-							notification = <-app.notificationPayloadChan
 							So(notification, ShouldHaveSameTypeAs, models.ErrorNotification{})
 						})
 
@@ -238,9 +240,8 @@ func TestHandleDataUpPackets(t *testing.T) {
 					Convey("When calling handleRXPacket", func() {
 						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
 
-						Convey("Then an rx info and ACK notification were sent", func() {
-							notification := <-app.notificationPayloadChan
-							So(notification, ShouldHaveSameTypeAs, models.RXInfoPayload{})
+						Convey("Then an rx info payload was sent to the network-controller", func() {
+							_ = ctrl.rxInfoPayloadChan
 						})
 
 						Convey("Then the packet is received by the application backend", func() {
@@ -299,8 +300,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 								rxPacket := models.RXPacket{
 									PHYPayload: phy,
 								}
-
-								_ = <-app.notificationPayloadChan // drain the notification channel
+								_ = <-ctrl.rxInfoPayloadChan // empty the channel
 								So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
 
 								Convey("Then the FCntDown was incremented", func() {
@@ -314,10 +314,9 @@ func TestHandleDataUpPackets(t *testing.T) {
 										So(txPayload, ShouldBeNil)
 									})
 
-									Convey("Then an rx info and ACK notification were sent", func() {
+									Convey("Then an rx info payload and ACK notification were sent", func() {
+										_ = ctrl.rxInfoPayloadChan
 										notification := <-app.notificationPayloadChan
-										So(notification, ShouldHaveSameTypeAs, models.RXInfoPayload{})
-										notification = <-app.notificationPayloadChan
 										So(notification, ShouldHaveSameTypeAs, models.ACKNotification{})
 									})
 								})
@@ -369,10 +368,9 @@ func TestHandleDataUpPackets(t *testing.T) {
 					Convey("When calling handleRXPacket", func() {
 						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
 
-						Convey("Then an rx info and error notification were sent", func() {
+						Convey("Then an rx info payload and error notification were sent", func() {
+							_ = ctrl.rxInfoPayloadChan
 							notification := <-app.notificationPayloadChan
-							So(notification, ShouldHaveSameTypeAs, models.RXInfoPayload{})
-							notification = <-app.notificationPayloadChan
 							So(notification, ShouldHaveSameTypeAs, models.ErrorNotification{})
 						})
 

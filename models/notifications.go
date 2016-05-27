@@ -12,7 +12,6 @@ const (
 	JoinNotificationType NotificationType = iota
 	ErrorNotificationType
 	ACKNotificationType
-	RXInfoNotificationType
 )
 
 // JoinNotification defines the payload sent to the application on

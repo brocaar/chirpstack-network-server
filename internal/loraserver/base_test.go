@@ -120,3 +120,28 @@ func (b *testApplicationBackend) Close() error {
 func (b *testApplicationBackend) TXPayloadChan() chan models.TXPayload {
 	return b.txPayloadChan
 }
+
+type testControllerBackend struct {
+	rxMACPayloadChan  chan models.MACPayload
+	txMACPayloadChan  chan models.MACPayload
+	rxInfoPayloadChan chan models.RXInfoPayload
+}
+
+func (b *testControllerBackend) SendRXInfoPayload(AppEUI, DevEUI lorawan.EUI64, payload models.RXInfoPayload) error {
+	b.rxInfoPayloadChan <- payload
+	return nil
+}
+
+func (b *testControllerBackend) SendMACPayload(appEUI, devEUI lorawan.EUI64, mac models.MACPayload) error {
+	b.rxMACPayloadChan <- mac
+	return nil
+}
+
+func (b *testControllerBackend) TXMACPayloadChan() chan models.MACPayload {
+	return b.txMACPayloadChan
+}
+
+func (b *testControllerBackend) Close() error {
+	close(b.txMACPayloadChan)
+	return nil
+}

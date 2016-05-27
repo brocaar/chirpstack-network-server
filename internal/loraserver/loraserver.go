@@ -53,6 +53,9 @@ func (s *Server) Stop() error {
 	if err := s.ctx.Application.Close(); err != nil {
 		return fmt.Errorf("close application backend error: %s", err)
 	}
+	if err := s.ctx.Controller.Close(); err != nil {
+		return fmt.Errorf("close network-controller backend error: %s", err)
+	}
 
 	log.Info("waiting for pending packets to complete")
 	s.wg.Wait()
