@@ -5,6 +5,7 @@ pages:
   - activating-nodes.md
   - receiving-data.md
   - sending-data.md
+  - network-controlling.md
   - configuration.md
   - api.md
   - changelog.md
