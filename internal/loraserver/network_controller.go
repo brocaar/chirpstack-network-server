@@ -7,8 +7,8 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-// sendRXInfoNotification sends the RXInfoNotification to the network-controller.
-func sendRXInfoNotification(ctx Context, appEUI, devEUI lorawan.EUI64, rxPackets RXPackets) error {
+// sendRXInfoPayload sends the RXInfoPayload to the network-controller.
+func sendRXInfoPayload(ctx Context, appEUI, devEUI lorawan.EUI64, rxPackets RXPackets) error {
 	if len(rxPackets) == 0 {
 		return fmt.Errorf("length of rx packets must be at least 1")
 	}
@@ -23,18 +23,15 @@ func sendRXInfoNotification(ctx Context, appEUI, devEUI lorawan.EUI64, rxPackets
 		rxInfo = append(rxInfo, rxPacket.RXInfo)
 	}
 
-	rxInfoNotification := models.RXInfoNotification{
+	rxInfoPayload := models.RXInfoPayload{
 		DevEUI: devEUI,
 		ADR:    macPL.FHDR.FCtrl.ADR,
 		FCnt:   macPL.FHDR.FCnt,
 		RXInfo: rxInfo,
 	}
 
-	// TODO: should the backend be more generic, or should we create a separate
-	// network-controller backend? For now we're using the Application backend
-	// to send out the notification.
-	if err := ctx.Application.SendNotification(devEUI, appEUI, models.RXInfoNotificationType, rxInfoNotification); err != nil {
-		return fmt.Errorf("send rx info notification error: %s", err)
+	if err := ctx.Controller.SendRXInfoPayload(appEUI, devEUI, rxInfoPayload); err != nil {
+		return fmt.Errorf("send rx info payload error: %s", err)
 	}
 	return nil
 }

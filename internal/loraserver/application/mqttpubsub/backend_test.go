@@ -49,7 +49,7 @@ func TestBackend(t *testing.T) {
 					rxPacket := models.RXPayload{
 						DevEUI: devEUI,
 					}
-					So(backend.Send(devEUI, appEUI, rxPacket), ShouldBeNil)
+					So(backend.SendRXPayload(appEUI, devEUI, rxPacket), ShouldBeNil)
 
 					Convey("Then the same packet is consumed by the MQTT client", func() {
 						packet := <-rxPacketChan
@@ -78,7 +78,7 @@ func TestBackend(t *testing.T) {
 					join := models.JoinNotification{
 						DevEUI: devEUI,
 					}
-					So(backend.SendNotification(devEUI, appEUI, models.JoinNotificationType, join), ShouldBeNil)
+					So(backend.SendNotification(appEUI, devEUI, models.JoinNotificationType, join), ShouldBeNil)
 
 					Convey("Then the same packet is consumed by the MQTT client", func() {
 						packet := <-joinNotificationChan

@@ -71,7 +71,7 @@ type testGatewayBackend struct {
 	txPacketChan chan models.TXPacket
 }
 
-func (b *testGatewayBackend) Send(txPacket models.TXPacket) error {
+func (b *testGatewayBackend) SendTXPacket(txPacket models.TXPacket) error {
 	b.txPacketChan <- txPacket
 	return nil
 }
@@ -94,7 +94,7 @@ type testApplicationBackend struct {
 	err                     error
 }
 
-func (b *testApplicationBackend) Send(devEUI, appEUI lorawan.EUI64, payload models.RXPayload) error {
+func (b *testApplicationBackend) SendRXPayload(appEUI, devEUI lorawan.EUI64, payload models.RXPayload) error {
 	if b.err != nil {
 		return b.err
 	}
@@ -102,7 +102,7 @@ func (b *testApplicationBackend) Send(devEUI, appEUI lorawan.EUI64, payload mode
 	return nil
 }
 
-func (b *testApplicationBackend) SendNotification(devEUI, appEUI lorawan.EUI64, typ models.NotificationType, payload interface{}) error {
+func (b *testApplicationBackend) SendNotification(appEUI, devEUI lorawan.EUI64, typ models.NotificationType, payload interface{}) error {
 	if b.err != nil {
 		return b.err
 	}

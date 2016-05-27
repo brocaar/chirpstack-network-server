@@ -76,3 +76,19 @@ type TXPayload struct {
 	FPort     uint8         `json:"fPort"`     // the FPort
 	Data      []byte        `json:"data"`      // the data to send (unencrypted, in JSON this must be the base64 representation of the data)
 }
+
+// MACPayload contains data from a MAC command.
+type MACPayload struct {
+	Reference  string        `json:"reference,omitempty"` // external reference that needs to be defined by the network-controller
+	DevEUI     lorawan.EUI64 `json:"devEUI"`
+	MACCommand []byte        `json:"macCommand"`
+}
+
+// RXInfoPayload defines the payload containing the RX information sent to
+// the network-controller on each received packet.
+type RXInfoPayload struct {
+	DevEUI lorawan.EUI64 `json:"devEUI"`
+	ADR    bool          `json:"adr"`
+	FCnt   uint32        `json:"fCnt"`
+	RXInfo []RXInfo      `json:"rxInfo"`
+}

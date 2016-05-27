@@ -52,7 +52,7 @@ func TestBackend(t *testing.T) {
 							MACPayload: &lorawan.MACPayload{},
 						},
 					}
-					So(backend.Send(txPacket), ShouldBeNil)
+					So(backend.SendTXPacket(txPacket), ShouldBeNil)
 
 					Convey("Then the same packet is consumed by the MQTT client", func() {
 						packet := <-txPacketChan

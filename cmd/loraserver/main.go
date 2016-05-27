@@ -15,6 +15,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	application "github.com/brocaar/loraserver/internal/loraserver/application/mqttpubsub"
+	controller "github.com/brocaar/loraserver/internal/loraserver/controller/mqttpubsub"
 	gateway "github.com/brocaar/loraserver/internal/loraserver/gateway/mqttpubsub"
 	"github.com/brocaar/lorawan/band"
 
@@ -80,6 +81,12 @@ func run(c *cli.Context) {
 		log.Fatalf("application-backend setup failed: %s", err)
 	}
 
+	// setup controller backend
+	ctrl, err := controller.NewBackend(rp, c.String("controller-mqtt-server"), c.String("controller-mqtt-username"), c.String("controller-mqtt-password"))
+	if err != nil {
+		log.Fatalf("controller-backend setup failed: %s", err)
+	}
+
 	// auto-migrate the database
 	if c.Bool("db-automigrate") {
 		log.Info("applying database migrations")
@@ -100,6 +107,7 @@ func run(c *cli.Context) {
 		RedisPool:   rp,
 		Gateway:     gw,
 		Application: app,
+		Controller:  ctrl,
 		NetID:       netID,
 	}
 
@@ -227,6 +235,22 @@ func main() {
 		cli.StringFlag{
 			Name:   "app-mqtt-password",
 			Usage:  "Application-backend MQTT password",
+			EnvVar: "APP_MQTT_PASSWORD",
+		},
+		cli.StringFlag{
+			Name:   "controller-mqtt-server",
+			Usage:  "Network-controller backend MQTT server",
+			Value:  "tcp://localhost:1883",
+			EnvVar: "CONTROLLER_MQTT_SERVER",
+		},
+		cli.StringFlag{
+			Name:   "controller-mqtt-username",
+			Usage:  "Network-controller backend MQTT username",
+			EnvVar: "APP_MQTT_USERNAME",
+		},
+		cli.StringFlag{
+			Name:   "controller-mqtt-password",
+			Usage:  "Network-controller backend MQTT password",
 			EnvVar: "APP_MQTT_PASSWORD",
 		},
 	}

@@ -13,5 +13,6 @@ type Context struct {
 	RedisPool   *redis.Pool
 	Gateway     GatewayBackend
 	Application ApplicationBackend
+	Controller  NetworkControllerBackend
 	NetID       lorawan.NetID
 }

@@ -112,7 +112,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 					Convey("Then a rx info notification was sent", func() {
 						notification := <-app.notificationPayloadChan
-						_, ok := notification.(models.RXInfoNotification)
+						_, ok := notification.(models.RXInfoPayload)
 						So(ok, ShouldBeTrue)
 					})
 
@@ -158,7 +158,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 						Convey("Then a rx info notification was sent", func() {
 							notification := <-app.notificationPayloadChan
-							So(notification, ShouldHaveSameTypeAs, models.RXInfoNotification{})
+							So(notification, ShouldHaveSameTypeAs, models.RXInfoPayload{})
 						})
 
 						Convey("Then the packet is received by the application backend", func() {
@@ -213,7 +213,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 						Convey("Then an rx info and error notification was sent", func() {
 							notification := <-app.notificationPayloadChan
-							So(notification, ShouldHaveSameTypeAs, models.RXInfoNotification{})
+							So(notification, ShouldHaveSameTypeAs, models.RXInfoPayload{})
 							notification = <-app.notificationPayloadChan
 							So(notification, ShouldHaveSameTypeAs, models.ErrorNotification{})
 						})
@@ -240,7 +240,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 						Convey("Then an rx info and ACK notification were sent", func() {
 							notification := <-app.notificationPayloadChan
-							So(notification, ShouldHaveSameTypeAs, models.RXInfoNotification{})
+							So(notification, ShouldHaveSameTypeAs, models.RXInfoPayload{})
 						})
 
 						Convey("Then the packet is received by the application backend", func() {
@@ -316,7 +316,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 									Convey("Then an rx info and ACK notification were sent", func() {
 										notification := <-app.notificationPayloadChan
-										So(notification, ShouldHaveSameTypeAs, models.RXInfoNotification{})
+										So(notification, ShouldHaveSameTypeAs, models.RXInfoPayload{})
 										notification = <-app.notificationPayloadChan
 										So(notification, ShouldHaveSameTypeAs, models.ACKNotification{})
 									})
@@ -371,7 +371,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 						Convey("Then an rx info and error notification were sent", func() {
 							notification := <-app.notificationPayloadChan
-							So(notification, ShouldHaveSameTypeAs, models.RXInfoNotification{})
+							So(notification, ShouldHaveSameTypeAs, models.RXInfoPayload{})
 							notification = <-app.notificationPayloadChan
 							So(notification, ShouldHaveSameTypeAs, models.ErrorNotification{})
 						})

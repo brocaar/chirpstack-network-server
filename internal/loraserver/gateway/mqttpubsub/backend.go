@@ -65,8 +65,8 @@ func (b *Backend) RXPacketChan() chan models.RXPacket {
 	return b.rxPacketChan
 }
 
-// Send sends the given TXPacket to the gateway.
-func (b *Backend) Send(txPacket models.TXPacket) error {
+// SendTXPacket sends the given TXPacket to the gateway.
+func (b *Backend) SendTXPacket(txPacket models.TXPacket) error {
 	bytes, err := json.Marshal(txPacket)
 	if err != nil {
 		return fmt.Errorf("gateway/mqttpubsub: tx packet marshal error: %s", err)

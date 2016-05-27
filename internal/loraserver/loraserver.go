@@ -181,7 +181,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 	}).Info("packet(s) collected")
 
 	// send rx info notification to be used by the network-controller
-	if err = sendRXInfoNotification(ctx, ns.AppEUI, ns.DevEUI, rxPackets); err != nil {
+	if err = sendRXInfoPayload(ctx, ns.AppEUI, ns.DevEUI, rxPackets); err != nil {
 		return fmt.Errorf("send rx info notification error: %s", err)
 	}
 
@@ -201,7 +201,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 				data = dataPL.Bytes
 			}
 
-			err = ctx.Application.Send(ns.DevEUI, ns.AppEUI, models.RXPayload{
+			err = ctx.Application.SendRXPayload(ns.AppEUI, ns.DevEUI, models.RXPayload{
 				DevEUI:       ns.DevEUI,
 				GatewayCount: len(rxPackets),
 				FPort:        *macPL.FPort,
@@ -246,7 +246,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 			return err
 		}
 		if txPayload != nil {
-			err = ctx.Application.SendNotification(ns.DevEUI, ns.AppEUI, models.ACKNotificationType, models.ACKNotification{
+			err = ctx.Application.SendNotification(ns.AppEUI, ns.DevEUI, models.ACKNotificationType, models.ACKNotification{
 				Reference: txPayload.Reference,
 				DevEUI:    ns.DevEUI,
 			})
@@ -322,7 +322,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 				"frmpayload_size":     len(txPayload.Data),
 				"max_frmpayload_size": Band.MaxPayloadSize[rx1DR].N,
 			}).Warning("downlink payload max size exceeded")
-			err = ctx.Application.SendNotification(ns.DevEUI, ns.AppEUI, models.ErrorNotificationType, models.ErrorNotification{
+			err = ctx.Application.SendNotification(ns.AppEUI, ns.DevEUI, models.ErrorNotificationType, models.ErrorNotification{
 				Reference: txPayload.Reference,
 				DevEUI:    ns.DevEUI,
 				Message:   fmt.Sprintf("downlink payload max size exceeded (dr: %d, allowed: %d, got: %d)", rx1DR, Band.MaxPayloadSize[rx1DR].N, len(txPayload.Data)),
@@ -377,7 +377,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	}
 
 	// window 1
-	if err := ctx.Gateway.Send(txPacket); err != nil {
+	if err := ctx.Gateway.SendTXPacket(txPacket); err != nil {
 		return fmt.Errorf("send tx packet (rx window 1) to gateway error: %s", err)
 	}
 

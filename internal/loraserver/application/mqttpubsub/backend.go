@@ -2,7 +2,6 @@ package mqttpubsub
 
 import (
 	"bytes"
-	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -77,8 +76,8 @@ func (b *Backend) TXPayloadChan() chan models.TXPayload {
 	return b.txPayloadChan
 }
 
-// Send sends the given RXPayload to the application.
-func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, payload models.RXPayload) error {
+// SendRXPayload sends the given RXPayload to the application.
+func (b *Backend) SendRXPayload(appEUI, devEUI lorawan.EUI64, payload models.RXPayload) error {
 	bytes, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("application/mqttpubsub: rx payload marshal error: %s", err)
@@ -93,7 +92,7 @@ func (b *Backend) Send(devEUI, appEUI lorawan.EUI64, payload models.RXPayload) e
 }
 
 // SendNotification sends the given notification to the application.
-func (b *Backend) SendNotification(devEUI, appEUI lorawan.EUI64, typ models.NotificationType, payload interface{}) error {
+func (b *Backend) SendNotification(appEUI, devEUI lorawan.EUI64, typ models.NotificationType, payload interface{}) error {
 	var topicSuffix string
 	switch typ {
 	case models.JoinNotificationType:
@@ -152,19 +151,15 @@ func (b *Backend) txPayloadHandler(c mqtt.Client, msg mqtt.Message) {
 		log.WithFields(log.Fields{
 			"topic_dev_eui":   match[2],
 			"payload_dev_eui": txPayload.DevEUI,
-		}).Warning("topic DevEUI must match payload DevEUI")
+		}).Warning("application/mqttpubsub: topic DevEUI must match payload DevEUI")
 		return
 	}
 
 	// Since with MQTT all subscribers will receive the downlink messages sent
 	// by the application, the first loraserver receiving the message must lock it,
 	// so that other instances can ignore the message.
-	// Besides taking a hash of the payload (so that only the same payload
-	// results into the same lock), the MQTT message id is taken into account
-	// (note that this field is only set on QoS > 0).
-	h := sha1.New()
-	h.Write(msg.Payload())
-	key := fmt.Sprintf("app_backend_%x_%d_lock", h.Sum(nil), msg.MessageID())
+	// As an unique id, the Reference field is used.
+	key := fmt.Sprintf("app_backend_%s_lock", txPayload.Reference)
 	redisConn := b.redisPool.Get()
 	defer redisConn.Close()
 

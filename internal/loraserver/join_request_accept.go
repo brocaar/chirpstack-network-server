@@ -179,12 +179,12 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	}
 
 	// window 1
-	if err = ctx.Gateway.Send(txPacket); err != nil {
+	if err = ctx.Gateway.SendTXPacket(txPacket); err != nil {
 		return fmt.Errorf("send tx packet (rx window 1) to gateway error: %s", err)
 	}
 
 	// send a notification to the application that a node joined the network
-	return ctx.Application.SendNotification(ns.DevEUI, ns.AppEUI, models.JoinNotificationType, models.JoinNotification{
+	return ctx.Application.SendNotification(ns.AppEUI, ns.DevEUI, models.JoinNotificationType, models.JoinNotification{
 		DevAddr: ns.DevAddr,
 		DevEUI:  ns.DevEUI,
 	})
