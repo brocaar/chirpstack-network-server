@@ -217,7 +217,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 						Convey("Then a rx info payload and error notification were sent", func() {
 							_ = ctrl.rxInfoPayloadChan
 							notification := <-app.notificationPayloadChan
-							So(notification, ShouldHaveSameTypeAs, models.ErrorNotification{})
+							So(notification, ShouldHaveSameTypeAs, models.ErrorPayload{})
 						})
 
 						Convey("Then the TXPayload queue is empty", func() {
@@ -371,7 +371,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 						Convey("Then an rx info payload and error notification were sent", func() {
 							_ = ctrl.rxInfoPayloadChan
 							notification := <-app.notificationPayloadChan
-							So(notification, ShouldHaveSameTypeAs, models.ErrorNotification{})
+							So(notification, ShouldHaveSameTypeAs, models.ErrorPayload{})
 						})
 
 						Convey("Then the TXPayload queue is empty", func() {

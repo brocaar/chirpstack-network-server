@@ -84,6 +84,31 @@ func TestBackend(t *testing.T) {
 				})
 			})
 
+			Convey("given the MQTT client is subscribed to application/+/node/+/mac/error", func() {
+				errChan := make(chan models.ErrorPayload)
+				token := c.Subscribe("application/+/node/+/mac/error", 0, func(c mqtt.Client, msg mqtt.Message) {
+					var pl models.ErrorPayload
+					if err := json.Unmarshal(msg.Payload(), &pl); err != nil {
+						panic(err)
+					}
+					errChan <- pl
+				})
+				token.Wait()
+				So(token.Error(), ShouldBeNil)
+
+				Convey("When sending an ErrorPayload from the backend", func() {
+					pl := models.ErrorPayload{
+						Message: "boom boom!",
+					}
+					So(backend.SendErrorPayload(appEUI, devEUI, pl), ShouldBeNil)
+
+					Convey("Then the same ErrorPayload was received by the MQTT client", func() {
+						pl2 := <-errChan
+						So(pl2, ShouldResemble, pl)
+					})
+				})
+			})
+
 			Convey("Given the MQTT client publishes a MAC command to application/01010101010101/node/0202020202020202/mac/tx", func() {
 				topic := "application/01010101010101/node/0202020202020202/mac/tx"
 				mac := models.MACPayload{

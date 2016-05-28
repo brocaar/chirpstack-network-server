@@ -124,6 +124,7 @@ func (b *testApplicationBackend) TXPayloadChan() chan models.TXPayload {
 type testControllerBackend struct {
 	rxMACPayloadChan  chan models.MACPayload
 	txMACPayloadChan  chan models.MACPayload
+	errorPayloadChan  chan models.ErrorPayload
 	rxInfoPayloadChan chan models.RXInfoPayload
 }
 
@@ -134,6 +135,11 @@ func (b *testControllerBackend) SendRXInfoPayload(AppEUI, DevEUI lorawan.EUI64, 
 
 func (b *testControllerBackend) SendMACPayload(appEUI, devEUI lorawan.EUI64, mac models.MACPayload) error {
 	b.rxMACPayloadChan <- mac
+	return nil
+}
+
+func (b *testControllerBackend) SendErrorPayload(appEUI, devEUI lorawan.EUI64, payload models.ErrorPayload) error {
+	b.errorPayloadChan <- payload
 	return nil
 }
 

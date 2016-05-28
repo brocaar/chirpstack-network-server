@@ -29,6 +29,7 @@ type ApplicationBackend interface {
 type NetworkControllerBackend interface {
 	SendRXInfoPayload(appEUI, devEUI lorawan.EUI64, payload models.RXInfoPayload) error // send the given RXInfoPayload to the network-controller
 	SendMACPayload(appEUI, devEUI lorawan.EUI64, payload models.MACPayload) error       // send the given MACPayload to the network-controller
+	SendErrorPayload(appEUI, devEUI lorawan.EUI64, payload models.ErrorPayload) error   // send the given ErrorPayload to the network-controller
 	TXMACPayloadChan() chan models.MACPayload                                           // returns channel MACPayload items to send to the nodes
 	Close() error                                                                       // close the network-controller backend
 }

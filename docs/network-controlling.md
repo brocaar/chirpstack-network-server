@@ -49,6 +49,18 @@ Topic for received MAC commands (from the nodes). Example payload:
 }
 ```
 
+### application/[appEUI]/node/[DevEUI]/mac/error
+
+Topic for error notifications. An error might be raised when the MAC comment
+sent could not be processed. Example payload:
+
+```json
+{
+    "reference": "abcd1234",    // the reference given when sending the MAC command
+    "message": "error message"  // the content of the error message
+}
+```
+
 ## Sending data
 
 ### application/[AppEUI]/node/[DevEUI]/mac/tx

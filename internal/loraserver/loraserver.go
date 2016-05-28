@@ -325,7 +325,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 				"frmpayload_size":     len(txPayload.Data),
 				"max_frmpayload_size": Band.MaxPayloadSize[rx1DR].N,
 			}).Warning("downlink payload max size exceeded")
-			err = ctx.Application.SendNotification(ns.AppEUI, ns.DevEUI, models.ErrorNotificationType, models.ErrorNotification{
+			err = ctx.Application.SendNotification(ns.AppEUI, ns.DevEUI, models.ErrorNotificationType, models.ErrorPayload{
 				Reference: txPayload.Reference,
 				DevEUI:    ns.DevEUI,
 				Message:   fmt.Sprintf("downlink payload max size exceeded (dr: %d, allowed: %d, got: %d)", rx1DR, Band.MaxPayloadSize[rx1DR].N, len(txPayload.Data)),

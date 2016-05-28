@@ -82,7 +82,20 @@ func (b *Backend) SendRXInfoPayload(appEUI, devEUI lorawan.EUI64, payload models
 	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("controller/mqttpubsub: publish rxinfo payload failed: %s", token.Error())
 	}
+	return nil
+}
 
+// SendErrorPayload sends the given ErrorPayload to the network-controller.
+func (b *Backend) SendErrorPayload(appEUI, devEUI lorawan.EUI64, payload models.ErrorPayload) error {
+	bytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("controller/mqttpubsub: error payload marshal error: %s", err)
+	}
+	topic := fmt.Sprintf("application/%s/node/%s/mac/error", appEUI, devEUI)
+	log.WithField("topic", topic).Info("controller/mqttpubsub: publishing error payload")
+	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
+		return fmt.Errorf("controller/mqttpubsub: publish error payload failed: %s", token.Error())
+	}
 	return nil
 }
 

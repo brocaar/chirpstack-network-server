@@ -21,14 +21,6 @@ type JoinNotification struct {
 	DevEUI  lorawan.EUI64   `json:"devEUI"`
 }
 
-// ErrorNotification defines the payload sent to the application
-// on an error event.
-type ErrorNotification struct {
-	Reference string        `json:"reference"` // refers to the given reference by the application
-	DevEUI    lorawan.EUI64 `json:"devEUI"`
-	Message   string        `json:"message"`
-}
-
 // ACKNotification defines the payload sent to the application
 // on an ACK event.
 type ACKNotification struct {

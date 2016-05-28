@@ -92,3 +92,10 @@ type RXInfoPayload struct {
 	FCnt   uint32        `json:"fCnt"`
 	RXInfo []RXInfo      `json:"rxInfo"`
 }
+
+// ErrorPayload defines the payload sent on an error event.
+type ErrorPayload struct {
+	Reference string        `json:"reference"` // refers to the given reference
+	DevEUI    lorawan.EUI64 `json:"devEUI"`
+	Message   string        `json:"message"`
+}
