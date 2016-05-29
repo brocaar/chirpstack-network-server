@@ -80,6 +80,7 @@ type TXPayload struct {
 // MACPayload contains data from a MAC command.
 type MACPayload struct {
 	Reference  string        `json:"reference,omitempty"` // external reference that needs to be defined by the network-controller
+	FRMPayload bool          `json:"frmPayload"`          // indicating if the mac command was or must be sent as a FRMPayload (and thus encrypted)
 	DevEUI     lorawan.EUI64 `json:"devEUI"`
 	MACCommand []byte        `json:"macCommand"`
 }

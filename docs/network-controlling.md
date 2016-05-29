@@ -45,6 +45,7 @@ Topic for received MAC commands (from the nodes). Example payload:
 ```json
 {
 	"devEUI": "0202020202020202",  // device EUI
+	"frmPayload": false,           // the MAC command was not received as a FRMPayload 
 	"macCommand": "..."            // base64 encoded MAC command data
 }
 ```
@@ -71,6 +72,7 @@ Topic for sending MAC commands to the node. Example payload:
 {
 	"reference": "abcd1234",       // reference given by the network-controller
 	"devEUI": "0202020202020202",  // the device to sent the MAC command to
+	"frmPayload": true,            // the MAC command will be sent as FRMPayload (and thus be encrypted)
 	"macCommand": "..."            // base64 encoded MAC command data
 }
 ```
