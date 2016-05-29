@@ -188,9 +188,29 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("send rx info notification error: %s", err)
 	}
 
+	// handle FOpts mac commands (if any)
+	if len(macPL.FHDR.FOpts) > 0 {
+		if err := handleMACCommands(ctx, ns.AppEUI, ns.DevEUI, false, macPL.FHDR.FOpts); err != nil {
+			return fmt.Errorf("handle FOpts mac commands error: %s", err)
+		}
+	}
+
 	if macPL.FPort != nil {
 		if *macPL.FPort == 0 {
-			log.Warn("todo: implement FPort == 0 packets")
+			if len(macPL.FRMPayload) == 0 {
+				return errors.New("expected mac commands, but FRMPayload is empty (FPort=0)")
+			}
+			var commands []lorawan.MACCommand
+			for _, pl := range macPL.FRMPayload {
+				cmd, ok := pl.(*lorawan.MACCommand)
+				if !ok {
+					return fmt.Errorf("expected MACPayload, but got %T", macPL.FRMPayload)
+				}
+				commands = append(commands, *cmd)
+			}
+			if err := handleMACCommands(ctx, ns.AppEUI, ns.DevEUI, true, commands); err != nil {
+				return fmt.Errorf("handle FRMPayload mac commands error: %s", err)
+			}
 		} else {
 			var data []byte
 
