@@ -190,7 +190,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 
 	// handle FOpts mac commands (if any)
 	if len(macPL.FHDR.FOpts) > 0 {
-		if err := handleMACCommands(ctx, ns.AppEUI, ns.DevEUI, false, macPL.FHDR.FOpts); err != nil {
+		if err := handleUplinkMACCommands(ctx, ns.AppEUI, ns.DevEUI, false, macPL.FHDR.FOpts); err != nil {
 			return fmt.Errorf("handle FOpts mac commands error: %s", err)
 		}
 	}
@@ -208,7 +208,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 				}
 				commands = append(commands, *cmd)
 			}
-			if err := handleMACCommands(ctx, ns.AppEUI, ns.DevEUI, true, commands); err != nil {
+			if err := handleUplinkMACCommands(ctx, ns.AppEUI, ns.DevEUI, true, commands); err != nil {
 				return fmt.Errorf("handle FRMPayload mac commands error: %s", err)
 			}
 		} else {
@@ -249,6 +249,31 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("handling downlink data for node %s failed: %s", ns.DevEUI, err)
 	}
 
+	return nil
+}
+
+func handleUplinkMACCommands(ctx Context, appEUI, devEUI lorawan.EUI64, frmPayload bool, commands []lorawan.MACCommand) error {
+	for _, cmd := range commands {
+		log.WithFields(log.Fields{
+			"dev_eui":     devEUI,
+			"cid":         cmd.CID,
+			"frm_payload": frmPayload,
+		}).Info("mac command received")
+
+		b, err := cmd.MarshalBinary()
+		if err != nil {
+			return fmt.Errorf("binary marshal mac command error: %s", err)
+		}
+
+		err = ctx.Controller.SendMACPayload(appEUI, devEUI, models.MACPayload{
+			DevEUI:     devEUI,
+			FRMPayload: frmPayload,
+			MACCommand: b,
+		})
+		if err != nil {
+			return fmt.Errorf("send mac payload error: %s", err)
+		}
+	}
 	return nil
 }
 
