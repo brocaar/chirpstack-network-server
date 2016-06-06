@@ -24,7 +24,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 			txPacketChan: make(chan models.TXPacket, 1),
 		}
 		ctrl := &testControllerBackend{
-			rxMACPayloadChan:  make(chan models.MACPayload, 1),
+			rxMACPayloadChan:  make(chan models.MACPayload, 2),
 			txMACPayloadChan:  make(chan models.MACPayload, 1),
 			rxInfoPayloadChan: make(chan models.RXInfoPayload, 1),
 		}
@@ -49,6 +49,129 @@ func TestHandleDataUpPackets(t *testing.T) {
 				AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 			}
 			So(saveNodeSession(p, ns), ShouldBeNil)
+
+			Convey("Given two mac commands", func() {
+				mac1 := lorawan.MACCommand{
+					CID: lorawan.LinkCheckReq,
+				}
+				mac2 := lorawan.MACCommand{
+					CID: lorawan.LinkADRAns,
+					Payload: &lorawan.LinkADRAnsPayload{
+						ChannelMaskACK: true,
+						DataRateACK:    false,
+						PowerACK:       false,
+					},
+				}
+
+				Convey("Given an UnconfirmedDataUp packet with the mac commands as FOpts", func() {
+					phy := lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+								FOpts:   []lorawan.MACCommand{mac1, mac2},
+							},
+						},
+					}
+
+					So(phy.EncryptFRMPayload(ns.NwkSKey), ShouldBeNil)
+					So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
+					rxPacket := models.RXPacket{
+						PHYPayload: phy,
+						RXInfo: models.RXInfo{
+							Frequency: Band.UplinkChannels[0].Frequency,
+							DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
+						},
+					}
+
+					Convey("When calling handleRXPacket", func() {
+						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
+
+						Convey("Then an rx info payload was sent to the network-controller", func() {
+							_ = <-ctrl.rxInfoPayloadChan
+						})
+
+						Convey("Then the MAC commands were received by the network-controller", func() {
+							pl1 := <-ctrl.rxMACPayloadChan
+							b1, err := mac1.MarshalBinary()
+							So(err, ShouldBeNil)
+							pl2 := <-ctrl.rxMACPayloadChan
+							b2, err := mac2.MarshalBinary()
+							So(err, ShouldBeNil)
+
+							So(pl1, ShouldResemble, models.MACPayload{
+								DevEUI:     ns.DevEUI,
+								MACCommand: b1,
+							})
+							So(pl2, ShouldResemble, models.MACPayload{
+								DevEUI:     ns.DevEUI,
+								MACCommand: b2,
+							})
+						})
+					})
+				})
+
+				Convey("Given an UnconfirmedDataUp packet with the mac commands as FRMPayload", func() {
+					fPort := uint8(0)
+					phy := lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort:      &fPort,
+							FRMPayload: []lorawan.Payload{&mac1, &mac2},
+						},
+					}
+
+					So(phy.EncryptFRMPayload(ns.NwkSKey), ShouldBeNil)
+					So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
+
+					rxPacket := models.RXPacket{
+						PHYPayload: phy,
+						RXInfo: models.RXInfo{
+							Frequency: Band.UplinkChannels[0].Frequency,
+							DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
+						},
+					}
+
+					Convey("When calling handleRXPacket", func() {
+						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
+
+						Convey("Then an rx info payload was sent to the network-controller", func() {
+							_ = <-ctrl.rxInfoPayloadChan
+						})
+
+						Convey("Then the MAC commands were received by the network-controller", func() {
+							pl1 := <-ctrl.rxMACPayloadChan
+							b1, err := mac1.MarshalBinary()
+							So(err, ShouldBeNil)
+							pl2 := <-ctrl.rxMACPayloadChan
+							b2, err := mac2.MarshalBinary()
+							So(err, ShouldBeNil)
+
+							So(pl1, ShouldResemble, models.MACPayload{
+								DevEUI:     ns.DevEUI,
+								MACCommand: b1,
+								FRMPayload: true,
+							})
+							So(pl2, ShouldResemble, models.MACPayload{
+								DevEUI:     ns.DevEUI,
+								MACCommand: b2,
+								FRMPayload: true,
+							})
+						})
+					})
+				})
+			})
 
 			Convey("Given an UnconfirmedDataUp packet", func() {
 				fPort := uint8(1)
