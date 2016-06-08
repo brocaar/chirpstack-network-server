@@ -169,7 +169,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	txPacket := models.TXPacket{
 		TXInfo: models.TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
-			Timestamp: rxPacket.RXInfo.Timestamp + uint32(Band.JoinAcceptDelay1/time.Microsecond),
+			Timestamp: rxPacket.RXInfo.Timestamp + uint64(Band.JoinAcceptDelay1/time.Microsecond),
 			Frequency: Band.DownlinkChannels[rx1Channel].Frequency,
 			Power:     Band.DefaultTXPower,
 			DataRate:  Band.DataRates[rx1DR],

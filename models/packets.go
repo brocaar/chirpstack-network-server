@@ -17,7 +17,7 @@ type RXPacket struct {
 type RXInfo struct {
 	MAC       lorawan.EUI64 `json:"mac"`       // MAC address of the gateway
 	Time      time.Time     `json:"time"`      // receive time
-	Timestamp uint32        `json:"timestamp"` // gateway internal receive timestamp with microsecond precision, will rollover every ~ 72 minutes
+	Timestamp uint64        `json:"timestamp"` // gateway internal receive timestamp with microsecond precision, will rollover every ~ 72 minutes
 	Frequency int           `json:"frequency"` // frequency in Hz
 	Channel   int           `json:"channel"`   // concentrator IF channel used for RX
 	RFChain   int           `json:"rfChain"`   // RF chain used for RX
@@ -40,7 +40,7 @@ type TXPacket struct {
 type TXInfo struct {
 	MAC         lorawan.EUI64 `json:"mac"`         // MAC address of the gateway
 	Immediately bool          `json:"immediately"` // send the packet immediately (ignore Time)
-	Timestamp   uint32        `json:"timestamp"`   // gateway internal receive timestamp with microsecond precision, will rollover every ~ 72 minutes
+	Timestamp   uint64        `json:"timestamp"`   // gateway internal receive timestamp with microsecond precision, will rollover every ~ 72 minutes
 	Frequency   int           `json:"frequency"`   // frequency in Hz
 	Power       int           `json:"power"`       // TX power to use in dBm
 	DataRate    band.DataRate `json:"dataRate"`    // TX datarate (either LoRa or FSK)
