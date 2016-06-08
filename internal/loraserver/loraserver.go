@@ -367,7 +367,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	txPacket := models.TXPacket{
 		TXInfo: models.TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
-			Timestamp: rxPacket.RXInfo.Timestamp + uint32(rxDelay/time.Microsecond),
+			Timestamp: rxPacket.RXInfo.Timestamp + uint64(rxDelay/time.Microsecond),
 			Frequency: Band.DownlinkChannels[rx1Channel].Frequency,
 			Power:     Band.DefaultTXPower,
 			DataRate:  Band.DataRates[rx1DR],
