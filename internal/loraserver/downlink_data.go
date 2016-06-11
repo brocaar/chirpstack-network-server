@@ -9,6 +9,46 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+type dataDownProperties struct {
+	rx1Channel int
+	rx1DR      int
+	rxDelay    time.Duration
+}
+
+func getDataDownProperties(rxInfo models.RXInfo, ns models.NodeSession) (dataDownProperties, error) {
+	var err error
+	var prop dataDownProperties
+
+	// get TX DR
+	uplinkDR, err := Band.GetDataRate(rxInfo.DataRate)
+	if err != nil {
+		return prop, err
+	}
+
+	// get TX channel
+	uplinkChannel, err := Band.GetChannel(rxInfo.Frequency, uplinkDR)
+	if err != nil {
+		return prop, err
+	}
+
+	// get RX1 channel
+	prop.rx1Channel = Band.GetRX1Channel(uplinkChannel)
+
+	// get RX1 DR
+	prop.rx1DR, err = Band.GetRX1DataRateForOffset(uplinkDR, int(ns.RX1DROffset))
+	if err != nil {
+		return prop, err
+	}
+
+	// get rx delay
+	prop.rxDelay = Band.ReceiveDelay1
+	if ns.RXDelay > 0 {
+		prop.rxDelay = time.Duration(ns.RXDelay) * time.Second
+	}
+
+	return prop, nil
+}
+
 func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSession) error {
 	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
@@ -47,27 +87,10 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		return nil
 	}
 
-	// get TX DR
-	uplinkDR, err := Band.GetDataRate(rxPacket.RXInfo.DataRate)
+	// get data down properies
+	properties, err := getDataDownProperties(rxPacket.RXInfo, ns)
 	if err != nil {
-		return err
-	}
-	// get TX channel
-	uplinkChannel, err := Band.GetChannel(rxPacket.RXInfo.Frequency, uplinkDR)
-	if err != nil {
-		return err
-	}
-	// get RX1 channel
-	rx1Channel := Band.GetRX1Channel(uplinkChannel)
-	// get RX1 DR
-	rx1DR, err := Band.GetRX1DataRateForOffset(uplinkDR, int(ns.RX1DROffset))
-	if err != nil {
-		return err
-	}
-	// get rx delay
-	rxDelay := Band.ReceiveDelay1
-	if ns.RXDelay > 0 {
-		rxDelay = time.Duration(ns.RXDelay) * time.Second
+		return fmt.Errorf("get data down properties error: %s", err)
 	}
 
 	phy := lorawan.PHYPayload{
@@ -90,7 +113,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	// add the payload from the queue
 	if txPayload != nil {
 		// validate the max payload size
-		if len(txPayload.Data) > Band.MaxPayloadSize[rx1DR].N {
+		if len(txPayload.Data) > Band.MaxPayloadSize[properties.rx1DR].N {
 			// remove the payload from the queue regarding confirmed or not
 			if _, err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
 				return err
@@ -98,14 +121,14 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 
 			log.WithFields(log.Fields{
 				"dev_eui":             ns.DevEUI,
-				"data_rate":           rx1DR,
+				"data_rate":           properties.rx1DR,
 				"frmpayload_size":     len(txPayload.Data),
-				"max_frmpayload_size": Band.MaxPayloadSize[rx1DR].N,
+				"max_frmpayload_size": Band.MaxPayloadSize[properties.rx1DR].N,
 			}).Warning("downlink payload max size exceeded")
 			err = ctx.Application.SendNotification(ns.AppEUI, ns.DevEUI, models.ErrorNotificationType, models.ErrorPayload{
 				Reference: txPayload.Reference,
 				DevEUI:    ns.DevEUI,
-				Message:   fmt.Sprintf("downlink payload max size exceeded (dr: %d, allowed: %d, got: %d)", rx1DR, Band.MaxPayloadSize[rx1DR].N, len(txPayload.Data)),
+				Message:   fmt.Sprintf("downlink payload max size exceeded (dr: %d, allowed: %d, got: %d)", properties.rx1DR, Band.MaxPayloadSize[properties.rx1DR].N, len(txPayload.Data)),
 			})
 			if err != nil {
 				return err
@@ -147,10 +170,10 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	txPacket := models.TXPacket{
 		TXInfo: models.TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
-			Timestamp: rxPacket.RXInfo.Timestamp + uint32(rxDelay/time.Microsecond),
-			Frequency: Band.DownlinkChannels[rx1Channel].Frequency,
+			Timestamp: rxPacket.RXInfo.Timestamp + uint32(properties.rxDelay/time.Microsecond),
+			Frequency: Band.DownlinkChannels[properties.rx1Channel].Frequency,
 			Power:     Band.DefaultTXPower,
-			DataRate:  Band.DataRates[rx1DR],
+			DataRate:  Band.DataRates[properties.rx1DR],
 			CodeRate:  rxPacket.RXInfo.CodeRate,
 		},
 		PHYPayload: phy,
