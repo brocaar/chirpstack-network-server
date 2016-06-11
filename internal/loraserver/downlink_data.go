@@ -55,27 +55,6 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
 	}
 
-	// the last payload was received by the node
-	if macPL.FHDR.FCtrl.ACK {
-		txPayload, err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI)
-		if err != nil {
-			return err
-		}
-		ns.FCntDown++
-		if err = saveNodeSession(ctx.RedisPool, ns); err != nil {
-			return err
-		}
-		if txPayload != nil {
-			err = ctx.Application.SendNotification(ns.AppEUI, ns.DevEUI, models.ACKNotificationType, models.ACKNotification{
-				Reference: txPayload.Reference,
-				DevEUI:    ns.DevEUI,
-			})
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	// check if there are payloads pending in the queue
 	txPayload, remaining, err := getTXPayloadAndRemainingFromQueue(ctx.RedisPool, ns.DevEUI)
 	if err != nil {

@@ -152,6 +152,13 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 		return err
 	}
 
+	// handle uplink ACK
+	if macPL.FHDR.FCtrl.ACK {
+		if err := handleUplinkACK(ctx, ns); err != nil {
+			return fmt.Errorf("handle uplink ack error: %s", err)
+		}
+	}
+
 	// handle downlink (ACK)
 	time.Sleep(CollectDataDownWait)
 	if err := handleDataDownReply(ctx, rxPacket, ns); err != nil {
@@ -181,6 +188,27 @@ func handleUplinkMACCommands(ctx Context, appEUI, devEUI lorawan.EUI64, frmPaylo
 		})
 		if err != nil {
 			return fmt.Errorf("send mac payload error: %s", err)
+		}
+	}
+	return nil
+}
+
+func handleUplinkACK(ctx Context, ns models.NodeSession) error {
+	txPayload, err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI)
+	if err != nil {
+		return err
+	}
+	ns.FCntDown++
+	if err = saveNodeSession(ctx.RedisPool, ns); err != nil {
+		return err
+	}
+	if txPayload != nil {
+		err = ctx.Application.SendNotification(ns.AppEUI, ns.DevEUI, models.ACKNotificationType, models.ACKNotification{
+			Reference: txPayload.Reference,
+			DevEUI:    ns.DevEUI,
+		})
+		if err != nil {
+			return err
 		}
 	}
 	return nil
