@@ -1,6 +1,7 @@
 package loraserver
 
 import (
+	"encoding/base64"
 	"fmt"
 	"sync"
 
@@ -38,6 +39,11 @@ func (s *Server) Start() error {
 		handleTXPayloads(s.ctx)
 		s.wg.Done()
 	}()
+	go func() {
+		s.wg.Add(1)
+		handleTXMACPayloads(s.ctx)
+		s.wg.Done()
+	}()
 	return nil
 }
 
@@ -54,7 +60,7 @@ func (s *Server) Stop() error {
 		return fmt.Errorf("close network-controller backend error: %s", err)
 	}
 
-	log.Info("waiting for pending packets to complete")
+	log.Info("waiting for pending actions to complete")
 	s.wg.Wait()
 	return nil
 }
@@ -65,7 +71,11 @@ func handleTXPayloads(ctx Context) {
 		go func(txPayload models.TXPayload) {
 			wg.Add(1)
 			if err := addTXPayloadToQueue(ctx.RedisPool, txPayload); err != nil {
-				log.WithField("dev_eui", txPayload.DevEUI).Errorf("add tx payload to queue error: %s", err)
+				log.WithFields(log.Fields{
+					"dev_eui":     txPayload.DevEUI,
+					"reference":   txPayload.Reference,
+					"data_base64": base64.StdEncoding.EncodeToString(txPayload.Data),
+				}).Errorf("add tx-payload to queue error: %s", err)
 			}
 			wg.Done()
 		}(txPayload)
@@ -84,6 +94,24 @@ func handleRXPackets(ctx Context) {
 			}
 			wg.Done()
 		}(rxPacket)
+	}
+	wg.Wait()
+}
+
+func handleTXMACPayloads(ctx Context) {
+	var wg sync.WaitGroup
+	for txMACPayload := range ctx.Controller.TXMACPayloadChan() {
+		go func(txMACPayload models.MACPayload) {
+			wg.Add(1)
+			if err := addTXMACToQueue(ctx, txMACPayload); err != nil {
+				log.WithFields(log.Fields{
+					"dev_eui":     txMACPayload.DevEUI,
+					"reference":   txMACPayload.Reference,
+					"data_base64": base64.StdEncoding.EncodeToString(txMACPayload.MACCommand),
+				}).Errorf("add tx mac-payload to queue error: %s", err)
+			}
+			wg.Done()
+		}(txMACPayload)
 	}
 	wg.Wait()
 }
