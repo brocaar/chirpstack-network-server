@@ -137,7 +137,7 @@ func addTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(payload); err != nil {
-		return fmt.Errorf("encode tx payload for node %s error: %s", payload.DevEUI, err)
+		return fmt.Errorf("encode tx-payload for node %s error: %s", payload.DevEUI, err)
 	}
 
 	c := p.Get()
@@ -152,10 +152,13 @@ func addTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
 	_, err := c.Do("EXEC")
 
 	if err != nil {
-		return fmt.Errorf("add tx payload to queue for node %s error: %s", payload.DevEUI, err)
+		return fmt.Errorf("add tx-payload to queue for node %s error: %s", payload.DevEUI, err)
 	}
 
-	log.WithField("dev_eui", payload.DevEUI).Info("tx payload added to queue")
+	log.WithFields(log.Fields{
+		"dev_eui":   payload.DevEUI,
+		"reference": payload.Reference,
+	}).Info("tx-payload added to queue")
 	return nil
 }
 
@@ -264,7 +267,7 @@ func clearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPay
 	log.WithField("dev_eui", devEUI).Info("in-process tx payload removed")
 	err = gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload)
 	if err != nil {
-		return nil, fmt.Errorf("decode tx payload for node %s error: %s", devEUI, err)
+		return nil, fmt.Errorf("decode-tx payload for node %s error: %s", devEUI, err)
 	}
 	return &txPayload, nil
 }

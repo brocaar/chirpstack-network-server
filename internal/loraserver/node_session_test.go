@@ -105,6 +105,53 @@ func TestgetRandomDevAddr(t *testing.T) {
 	})
 }
 
+func TestMACPayloadTXQueue(t *testing.T) {
+	conf := getConfig()
+
+	Convey("Given a clean Redis database", t, func() {
+		p := NewRedisPool(conf.RedisURL)
+		mustFlushRedis(p)
+
+		Convey("Given a node-session", func() {
+			ns := models.NodeSession{
+				DevAddr: [4]byte{1, 2, 3, 4},
+				DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			}
+			So(createNodeSession(p, ns), ShouldBeNil)
+
+			Convey("When adding MACPayload a and b to the queue", func() {
+				a := models.MACPayload{
+					Reference: "a",
+					DevEUI:    ns.DevEUI,
+				}
+				b := models.MACPayload{
+					Reference: "b",
+					DevEUI:    ns.DevEUI,
+				}
+				So(addMACPayloadToTXQueue(p, a), ShouldBeNil)
+				So(addMACPayloadToTXQueue(p, b), ShouldBeNil)
+
+				Convey("Then readMACPayloadTXQueue returns both MACPayload in the correct order", func() {
+					payloads, err := readMACPayloadTXQueue(p, ns.DevAddr)
+					So(err, ShouldBeNil)
+					So(payloads, ShouldResemble, []models.MACPayload{a, b})
+				})
+
+				Convey("When deleting MACPayload a", func() {
+					So(deleteMACPayloadFromTXQueue(p, ns.DevAddr, a), ShouldBeNil)
+
+					Convey("Then only MACPayload b is in the queue", func() {
+						payloads, err := readMACPayloadTXQueue(p, ns.DevAddr)
+						So(err, ShouldBeNil)
+						So(payloads, ShouldResemble, []models.MACPayload{b})
+					})
+				})
+			})
+		})
+
+	})
+}
+
 func TestNodeSessionAPI(t *testing.T) {
 	conf := getConfig()
 
