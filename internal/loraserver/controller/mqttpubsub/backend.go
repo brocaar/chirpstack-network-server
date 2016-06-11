@@ -173,7 +173,7 @@ func (b *Backend) txMACPayloadHandler(c mqtt.Client, msg mqtt.Message) {
 	// by the application, the first loraserver receiving the message must lock it,
 	// so that other instances can ignore the message.
 	// As an unique id, the Reference field is used.
-	key := fmt.Sprintf("controller_backend_%s_lock", pl.Reference)
+	key := fmt.Sprintf("controller_backend_%s_%s_lock", pl.DevEUI, pl.Reference)
 	redisConn := b.redisPool.Get()
 	defer redisConn.Close()
 
