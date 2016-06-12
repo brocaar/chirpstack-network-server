@@ -152,6 +152,47 @@ func TestMACPayloadTXQueue(t *testing.T) {
 	})
 }
 
+func TestFilterMACPayloads(t *testing.T) {
+	Convey("Given a set of MACPayload items", t, func() {
+		a := models.MACPayload{
+			FRMPayload: false,
+			MACCommand: []byte{1, 2, 3, 4, 5},
+		}
+		b := models.MACPayload{
+			FRMPayload: false,
+			MACCommand: []byte{9, 8, 7},
+		}
+		c := models.MACPayload{
+			FRMPayload: true,
+			MACCommand: []byte{9, 8, 7, 6, 5, 4, 3, 2, 1},
+		}
+		d := models.MACPayload{
+			FRMPayload: true,
+			MACCommand: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		}
+		allPayloads := []models.MACPayload{a, b, c, d}
+
+		Convey("When filtering on 15 bytes and FRMPayload=false", func() {
+			payloads := filterMACPayloads(allPayloads, false, 15)
+			Convey("Then the expected set is returned", func() {
+				So(payloads, ShouldResemble, []models.MACPayload{a, b})
+			})
+		})
+
+		Convey("When filtering on 15 bytes and FRMPayload=true", func() {
+			payloads := filterMACPayloads(allPayloads, true, 15)
+			Convey("Then the expected set is returned", func() {
+				So(payloads, ShouldResemble, []models.MACPayload{c})
+			})
+		})
+
+		Convey("Whe filtering on 100 bytes and FRMPayload=true", func() {
+			payloads := filterMACPayloads(allPayloads, true, 100)
+			So(payloads, ShouldResemble, []models.MACPayload{c, d})
+		})
+	})
+}
+
 func TestNodeSessionAPI(t *testing.T) {
 	conf := getConfig()
 

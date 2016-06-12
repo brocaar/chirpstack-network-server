@@ -241,6 +241,23 @@ func readMACPayloadTXQueue(p *redis.Pool, devAddr lorawan.DevAddr) ([]models.MAC
 	return out, nil
 }
 
+// filterMACPayloads filters the given slice of MACPayload elements based
+// on the given criteria (FRMPayload and max-bytes).
+func filterMACPayloads(payloads []models.MACPayload, frmPayload bool, maxBytes int) []models.MACPayload {
+	var out []models.MACPayload
+	var byteCount int
+	for _, pl := range payloads {
+		if pl.FRMPayload == frmPayload {
+			byteCount += len(pl.MACCommand)
+			if byteCount > maxBytes {
+				return out
+			}
+			out = append(out, pl)
+		}
+	}
+	return out
+}
+
 // deleteMACPayloadFromTXQueue deletes the given MACPayload from the tx queue
 // of the given device address.
 func deleteMACPayloadFromTXQueue(p *redis.Pool, devAddr lorawan.DevAddr, pl models.MACPayload) error {
