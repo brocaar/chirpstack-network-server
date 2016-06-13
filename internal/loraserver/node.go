@@ -162,91 +162,68 @@ func addTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
 	return nil
 }
 
-// getTXPayloadAndRemainingFromQueue returns the first TXPayload to send
-// to the node and a bool indicating if there are more payloads pending to be
-// send. This is either an in-process item (e.g. an item that needs
-// to be re-transmitted or an item from the queue (which will be marked as
-// in-process when consuming). After a successful transmission, don't forget
-// to call clearInProcessTXPayload.
-// nil is returned when there are no items in the queue.
-func getTXPayloadAndRemainingFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPayload, bool, error) {
-	// in-process queue
-	inProcessTXPayload, remaining, err := getTXPayloadAndRemainingFromInProcess(p, devEUI)
-	if err != nil {
-		return nil, false, fmt.Errorf("get tx payload from in-process queue error: %s", err)
-	}
-	// TXPayload in process or nothing remaining in the queue
-	if inProcessTXPayload != nil || !remaining {
-		return inProcessTXPayload, remaining, nil
-	}
-
-	var txPayload models.TXPayload
-	queueKey := fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)
-	inProcessKey := fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)
-
+// getTXPayloadQueueSize returns the total TXPayload elements in the queue
+// (including the in-process queue).
+func getTXPayloadQueueSize(p *redis.Pool, devEUI lorawan.EUI64) (int, error) {
+	var count int
 	c := p.Get()
 	defer c.Close()
 
-	c.Send("RPOPLPUSH", queueKey, inProcessKey)
-	c.Send("LLEN", queueKey)
-	c.Flush()
-
-	// read bytes
-	b, err := redis.Bytes(c.Receive())
+	i, err := redis.Int(c.Do("LLEN", fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)))
 	if err != nil {
-		if err == redis.ErrNil {
-			return nil, false, nil
-		}
-		return nil, false, fmt.Errorf("get tx payload from queue for node %s error: %s", devEUI, err)
+		return 0, fmt.Errorf("get in-process tx-payload queue length error: %s", err)
 	}
+	count += i
 
-	// read remaining
-	i, err := redis.Int(c.Receive())
+	i, err = redis.Int(c.Do("LLEN", fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)))
 	if err != nil {
-		return nil, false, fmt.Errorf("read remaining tx payload items in queue for node %s error: %s", devEUI, err)
+		return 0, fmt.Errorf("get tx-payload queue length error: %s", err)
 	}
-
-	if err = gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload); err != nil {
-		return nil, false, fmt.Errorf("decode tx payload for node %s error: %s", devEUI, err)
-	}
-	return &txPayload, i > 0, nil
+	count += i
+	return count, nil
 }
 
-func getTXPayloadAndRemainingFromInProcess(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPayload, bool, error) {
+// getTXPayloadFromQueue returns the first TXPayload to send to the node.
+// The TXPayload either is a payload that is still in-process (e.g. a payload
+// that needs to be re-transmitted) or an item from the queue.
+// After a successful transmission, don't forget to call
+// clearInProcessTXPayload.
+// errEmptyQueue is returned when the queue is empty / does not exist.
+func getTXPayloadFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (models.TXPayload, error) {
 	var txPayload models.TXPayload
 	queueKey := fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)
 	inProcessKey := fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)
+	exp := int64(NodeTXPayloadQueueTTL) / int64(time.Millisecond)
 
 	c := p.Get()
 	defer c.Close()
 
-	c.Send("LINDEX", inProcessKey, -1)
-	c.Send("LLEN", queueKey)
-	c.Flush()
-
-	b, err := redis.Bytes(c.Receive())
+	// in-process
+	b, err := redis.Bytes(c.Do("LINDEX", inProcessKey, -1))
 	if err != nil {
-		// nothing in-process, just return the queue size
-		if err == redis.ErrNil {
-			i, err := redis.Int(c.Receive())
-			if err != nil {
-				return nil, false, fmt.Errorf("read node %s queue size error: %s", devEUI, err)
-			}
-			return nil, i > 0, nil
+		if err != redis.ErrNil {
+			return txPayload, fmt.Errorf("get tx-payload from in-process error: %s", err)
 		}
-		return nil, false, fmt.Errorf("get tx payload from in-process queue for node %s error: %s", devEUI, err)
-	}
 
-	i, err := redis.Int(c.Receive())
-	if err != nil {
-		return nil, false, fmt.Errorf("read node %s queue size error: %s", devEUI, err)
+		// in-process is empty, read from queue
+		b, err = redis.Bytes(c.Do("RPOPLPUSH", queueKey, inProcessKey))
+		if err != nil {
+			if err != redis.ErrNil {
+				return txPayload, fmt.Errorf("get tx-payload from queue error: %s", err)
+			}
+			return txPayload, errEmptyQueue
+		}
+		_, err = redis.Int(c.Do("PEXPIRE", inProcessKey, exp))
+		if err != nil {
+			return txPayload, fmt.Errorf("set expire on %s error: %s", inProcessKey, err)
+		}
 	}
 
 	if err = gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload); err != nil {
-		return nil, false, fmt.Errorf("decode tx payload for node %s error: %s", devEUI, err)
+		return txPayload, fmt.Errorf("decode tx-payload for node %s error: %s", devEUI, err)
 	}
 
-	return &txPayload, i > 0, nil
+	return txPayload, nil
 }
 
 // clearInProcessTXPayload clears the in-process TXPayload (to be called
@@ -264,11 +241,16 @@ func clearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPay
 		}
 		return nil, fmt.Errorf("clear in-process tx payload for node %s failed: %s", devEUI, err)
 	}
-	log.WithField("dev_eui", devEUI).Info("in-process tx payload removed")
+
 	err = gob.NewDecoder(bytes.NewReader(b)).Decode(&txPayload)
 	if err != nil {
-		return nil, fmt.Errorf("decode-tx payload for node %s error: %s", devEUI, err)
+		return nil, fmt.Errorf("decode tx-payload for node %s error: %s", devEUI, err)
 	}
+
+	log.WithFields(log.Fields{
+		"dev_eui":   devEUI,
+		"reference": txPayload.Reference,
+	}).Info("in-process tx payload removed")
 	return &txPayload, nil
 }
 

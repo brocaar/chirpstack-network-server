@@ -80,10 +80,9 @@ func TestTXPayloadQueue(t *testing.T) {
 			}
 
 			Convey("When getting an item from the non-existing queue", func() {
-				txPayload, _, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
-				Convey("Then nil is returned", func() {
-					So(err, ShouldEqual, nil)
-					So(txPayload, ShouldEqual, nil)
+				_, err := getTXPayloadFromQueue(p, devEUI)
+				Convey("Then errEmptyQueue error is returned", func() {
+					So(err, ShouldResemble, errEmptyQueue)
 				})
 			})
 
@@ -94,47 +93,61 @@ func TestTXPayloadQueue(t *testing.T) {
 					So(addTXPayloadToQueue(p, a), ShouldBeNil)
 					So(addTXPayloadToQueue(p, b), ShouldBeNil)
 
+					Convey("Then the queue size is 2", func() {
+						count, err := getTXPayloadQueueSize(p, devEUI)
+						So(err, ShouldBeNil)
+						So(count, ShouldEqual, 2)
+					})
+
 					Convey("Then after 150 ms the queue has expired", func() {
 						time.Sleep(150 * time.Millisecond)
-						txPayload, _, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
-						So(err, ShouldBeNil)
-						So(txPayload, ShouldBeNil)
+						_, err := getTXPayloadFromQueue(p, devEUI)
+						So(err, ShouldResemble, errEmptyQueue)
 					})
 
 					Convey("When consuming an item from the queue", func() {
-						pl, r, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
+						pl, err := getTXPayloadFromQueue(p, devEUI)
 						So(err, ShouldBeNil)
-						Convey("Then it equals to struct a", func() {
-							So(pl, ShouldResemble, &a)
+
+						Convey("Then the queue size is still 2", func() {
+							count, err := getTXPayloadQueueSize(p, devEUI)
+							So(err, ShouldBeNil)
+							So(count, ShouldEqual, 2)
 						})
-						Convey("Then there are remaining items in the queue", func() {
-							So(r, ShouldBeTrue)
+
+						Convey("Then it equals to struct a", func() {
+							So(pl, ShouldResemble, a)
 						})
 
 						Convey("When consuming an item from the queue again", func() {
-							pl, r, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
+							pl, err := getTXPayloadFromQueue(p, devEUI)
 							So(err, ShouldBeNil)
 							Convey("Then it equals to struct a (again)", func() {
-								So(pl, ShouldResemble, &a)
-							})
-							Convey("Then there are remaining items in the queue", func() {
-								So(r, ShouldBeTrue)
+								So(pl, ShouldResemble, a)
 							})
 						})
 
+						Convey("THen after 150 ms the queue has expired (both in-process and the queue)", func() {
+							time.Sleep(100 * time.Millisecond)
+							_, err := getTXPayloadFromQueue(p, devEUI)
+							So(err, ShouldResemble, errEmptyQueue)
+						})
+
 						Convey("After clearing the in-process payload", func() {
-							txPayload, err := clearInProcessTXPayload(p, devEUI)
-							So(txPayload, ShouldResemble, pl)
+							_, err := clearInProcessTXPayload(p, devEUI)
 							So(err, ShouldBeNil)
 
+							Convey("Then the queue size is 1", func() {
+								count, err := getTXPayloadQueueSize(p, devEUI)
+								So(err, ShouldBeNil)
+								So(count, ShouldEqual, 1)
+							})
+
 							Convey("When consuming an item from the queue", func() {
-								pl, r, err := getTXPayloadAndRemainingFromQueue(p, devEUI)
+								pl, err := getTXPayloadFromQueue(p, devEUI)
 								So(err, ShouldBeNil)
 								Convey("Then it equals to struct b", func() {
-									So(pl, ShouldResemble, &b)
-								})
-								Convey("Then there are no remaining items in the queue", func() {
-									So(r, ShouldBeFalse)
+									So(pl, ShouldResemble, b)
 								})
 							})
 						})

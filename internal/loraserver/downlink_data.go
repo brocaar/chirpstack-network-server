@@ -55,21 +55,61 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
 	}
 
-	// check if there are payloads pending in the queue
-	txPayload, remaining, err := getTXPayloadAndRemainingFromQueue(ctx.RedisPool, ns.DevEUI)
-	if err != nil {
-		return err
-	}
-
-	// nothing pending in the queue and no need to ACK RXPacket
-	if rxPacket.PHYPayload.MHDR.MType != lorawan.ConfirmedDataUp && txPayload == nil {
-		return nil
-	}
-
 	// get data down properies
 	properties, err := getDataDownProperties(rxPacket.RXInfo, ns)
 	if err != nil {
 		return fmt.Errorf("get data down properties error: %s", err)
+	}
+
+	// get the queue size
+	queueSize, err := getTXPayloadQueueSize(ctx.RedisPool, ns.DevEUI)
+	if err != nil {
+		return err
+	}
+
+	// check if there are payloads pending in the queue
+	var hasPayload bool
+	txPayload, err := getTXPayloadFromQueue(ctx.RedisPool, ns.DevEUI)
+	if err != nil {
+		if err != errEmptyQueue {
+			return err
+		} else if err == errEmptyQueue && rxPacket.PHYPayload.MHDR.MType == lorawan.UnconfirmedDataUp {
+			// nothing in the queue, and we don't have to ACK the uplink packet
+			return nil
+		}
+	} else {
+		// validate that the payload does not exceed the max payload length
+		if len(txPayload.Data) > Band.MaxPayloadSize[properties.rx1DR].N {
+			// remove the payload from the queue regarding confirmed or not
+			if _, err = clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
+				return err
+			}
+
+			// log a warning
+			log.WithFields(log.Fields{
+				"dev_eui":             ns.DevEUI,
+				"data_rate":           properties.rx1DR,
+				"frmpayload_size":     len(txPayload.Data),
+				"max_frmpayload_size": Band.MaxPayloadSize[properties.rx1DR].N,
+			}).Warning("downlink payload max size exceeded")
+
+			// notify the application
+			err = ctx.Application.SendNotification(ns.AppEUI, ns.DevEUI, models.ErrorNotificationType, models.ErrorPayload{
+				Reference: txPayload.Reference,
+				DevEUI:    ns.DevEUI,
+				Message:   fmt.Sprintf("downlink payload max size exceeded (dr: %d, allowed: %d, got: %d)", properties.rx1DR, Band.MaxPayloadSize[properties.rx1DR].N, len(txPayload.Data)),
+			})
+			if err != nil {
+				return err
+			}
+
+			if rxPacket.PHYPayload.MHDR.MType == lorawan.UnconfirmedDataDown {
+				// no payload, no ack needed so we're done
+				return nil
+			}
+		} else {
+			hasPayload = true
+		}
 	}
 
 	phy := lorawan.PHYPayload{
@@ -82,59 +122,25 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		FHDR: lorawan.FHDR{
 			DevAddr: ns.DevAddr,
 			FCtrl: lorawan.FCtrl{
-				ACK: rxPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp, // set ACK to true when received packet needs an ACK
+				ACK: rxPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp, // set ACK when uplink packet was of type ConfirmedDataUp
 			},
 			FCnt: ns.FCntDown,
 		},
 	}
 	phy.MACPayload = macPL
 
-	// add the payload from the queue
-	if txPayload != nil {
-		// validate the max payload size
-		if len(txPayload.Data) > Band.MaxPayloadSize[properties.rx1DR].N {
-			// remove the payload from the queue regarding confirmed or not
-			if _, err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
-				return err
-			}
+	// add the payload to FRMPayload field
+	if hasPayload {
+		macPL.FHDR.FCtrl.FPending = queueSize-1 > 0 // -1 is the payload will be sent now or has been discarded because of max size
 
-			log.WithFields(log.Fields{
-				"dev_eui":             ns.DevEUI,
-				"data_rate":           properties.rx1DR,
-				"frmpayload_size":     len(txPayload.Data),
-				"max_frmpayload_size": Band.MaxPayloadSize[properties.rx1DR].N,
-			}).Warning("downlink payload max size exceeded")
-			err = ctx.Application.SendNotification(ns.AppEUI, ns.DevEUI, models.ErrorNotificationType, models.ErrorPayload{
-				Reference: txPayload.Reference,
-				DevEUI:    ns.DevEUI,
-				Message:   fmt.Sprintf("downlink payload max size exceeded (dr: %d, allowed: %d, got: %d)", properties.rx1DR, Band.MaxPayloadSize[properties.rx1DR].N, len(txPayload.Data)),
-			})
-			if err != nil {
-				return err
-			}
-		} else {
-			// remove the payload from the queue when not confirmed
-			if !txPayload.Confirmed {
-				if _, err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
-					return err
-				}
-			}
-
-			macPL.FHDR.FCtrl.FPending = remaining
-			if txPayload.Confirmed {
-				phy.MHDR.MType = lorawan.ConfirmedDataDown
-			}
-			macPL.FPort = &txPayload.FPort
-			macPL.FRMPayload = []lorawan.Payload{
-				&lorawan.DataPayload{Bytes: txPayload.Data},
-			}
+		if txPayload.Confirmed {
+			phy.MHDR.MType = lorawan.ConfirmedDataDown
 		}
-	}
 
-	// when the payload did not pass the validation and there is no ACK set,
-	// there is nothing to send
-	if !macPL.FHDR.FCtrl.ACK && len(macPL.FRMPayload) == 0 {
-		return nil
+		macPL.FPort = &txPayload.FPort
+		macPL.FRMPayload = []lorawan.Payload{
+			&lorawan.DataPayload{Bytes: txPayload.Data},
+		}
 	}
 
 	// if there is no payload set, encrypt will just do nothing
@@ -163,11 +169,15 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		return fmt.Errorf("send tx packet (rx window 1) to gateway error: %s", err)
 	}
 
-	// increment the FCntDown when MType != ConfirmedDataDown. In case of
-	// ConfirmedDataDown we increment on ACK.
+	// increment the FCntDown when MType != ConfirmedDataDown and clear
+	// in-process queue. In case of ConfirmedDataDown we increment on ACK.
 	if phy.MHDR.MType != lorawan.ConfirmedDataDown {
 		ns.FCntDown++
-		if err := saveNodeSession(ctx.RedisPool, ns); err != nil {
+		if err = saveNodeSession(ctx.RedisPool, ns); err != nil {
+			return err
+		}
+
+		if _, err = clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
 			return err
 		}
 	}

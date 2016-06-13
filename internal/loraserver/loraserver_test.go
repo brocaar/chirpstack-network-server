@@ -318,9 +318,8 @@ func TestHandleDataUpPackets(t *testing.T) {
 						})
 
 						Convey("Then the TXPayload queue is empty", func() {
-							txPayload, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
-							So(err, ShouldBeNil)
-							So(txPayload, ShouldBeNil)
+							_, err := getTXPayloadFromQueue(p, ns.DevEUI)
+							So(err, ShouldResemble, errEmptyQueue)
 						})
 					})
 				})
@@ -344,9 +343,8 @@ func TestHandleDataUpPackets(t *testing.T) {
 						})
 
 						Convey("Then the TXPayload queue is empty", func() {
-							txPayload, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
-							So(err, ShouldBeNil)
-							So(txPayload, ShouldBeNil)
+							_, err := getTXPayloadFromQueue(p, ns.DevEUI)
+							So(err, ShouldResemble, errEmptyQueue)
 						})
 					})
 				})
@@ -392,9 +390,9 @@ func TestHandleDataUpPackets(t *testing.T) {
 						})
 
 						Convey("Then the TXPayload is still in the queue", func() {
-							tx, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
+							tx, err := getTXPayloadFromQueue(p, ns.DevEUI)
 							So(err, ShouldBeNil)
-							So(tx, ShouldResemble, &txPayload)
+							So(tx, ShouldResemble, txPayload)
 						})
 
 						Convey("Then the FCntDown was not incremented", func() {
@@ -422,6 +420,10 @@ func TestHandleDataUpPackets(t *testing.T) {
 
 								rxPacket := models.RXPacket{
 									PHYPayload: phy,
+									RXInfo: models.RXInfo{
+										Frequency: Band.UplinkChannels[0].Frequency,
+										DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
+									},
 								}
 								_ = <-ctrl.rxInfoPayloadChan // empty the channel
 								So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
@@ -432,9 +434,8 @@ func TestHandleDataUpPackets(t *testing.T) {
 									So(ns2.FCntDown, ShouldEqual, ns.FCntDown+1)
 
 									Convey("Then the TXPayload queue is empty", func() {
-										txPayload, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
-										So(err, ShouldBeNil)
-										So(txPayload, ShouldBeNil)
+										_, err := getTXPayloadFromQueue(p, ns.DevEUI)
+										So(err, ShouldResemble, errEmptyQueue)
 									})
 
 									Convey("Then an rx info payload and ACK notification were sent", func() {
@@ -498,9 +499,8 @@ func TestHandleDataUpPackets(t *testing.T) {
 						})
 
 						Convey("Then the TXPayload queue is empty", func() {
-							txPayload, _, err := getTXPayloadAndRemainingFromQueue(p, ns.DevEUI)
-							So(err, ShouldBeNil)
-							So(txPayload, ShouldBeNil)
+							_, err := getTXPayloadFromQueue(p, ns.DevEUI)
+							So(err, ShouldResemble, errEmptyQueue)
 						})
 					})
 				})
