@@ -105,14 +105,81 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		return fmt.Errorf("get data down properties error: %s", err)
 	}
 
-	// check if there are payloads pending in the queue
-	txPayload, err := getNextValidTXPayloadForDRFromQueue(ctx, ns, properties.rx1DR)
+	var frmMACCommands bool
+	var macPayloads []models.MACPayload
+	allMACPayloads, err := readMACPayloadTXQueue(ctx.RedisPool, ns.DevAddr)
 	if err != nil {
-		return fmt.Errorf("get next valid tx-payload error: %s", err)
+		return fmt.Errorf("read mac-payload tx queue error: %s", err)
 	}
 
-	// uplink was unconfirmed and no downlink data in queue
-	if txPayload == nil && rxPacket.PHYPayload.MHDR.MType == lorawan.UnconfirmedDataUp {
+	if len(allMACPayloads) > 0 {
+		if allMACPayloads[0].FRMPayload {
+			// the first mac-commands must be sent as FRMPayload, filter the rest
+			// of the MACPayload items with the same property, respecting the
+			// max FRMPayload size for the data-rate.
+			frmMACCommands = true
+			macPayloads = filterMACPayloads(allMACPayloads, true, Band.MaxPayloadSize[properties.rx1DR].N)
+		} else {
+			// the first mac-command must be sent as FOpts, filter the rest of
+			// the MACPayload items with the same property, respecting the
+			// max FOpts size of 15.
+			macPayloads = filterMACPayloads(allMACPayloads, false, 15)
+		}
+	}
+
+	// if the MACCommands (if any) are not sent as FRMPayload, check if there
+	// is a tx-payload in the queue and validate if the FOpts + FRMPayload
+	// does not exceed the max payload size.
+	var txPayload *models.TXPayload
+	if !frmMACCommands {
+		// check if there are payloads pending in the queue
+		txPayload, err = getNextValidTXPayloadForDRFromQueue(ctx, ns, properties.rx1DR)
+		if err != nil {
+			return fmt.Errorf("get next valid tx-payload error: %s", err)
+		}
+
+		var macByteCount int
+		for _, mac := range macPayloads {
+			macByteCount += len(mac.MACCommand)
+		}
+
+		if txPayload != nil && len(txPayload.Data)+macByteCount > Band.MaxPayloadSize[properties.rx1DR].N {
+			log.WithFields(log.Fields{
+				"data_rate": properties.rx1DR,
+				"dev_eui":   ns.DevEUI,
+				"reference": txPayload.Reference,
+			}).Info("scheduling tx-payload for next downlink, mac-commands + payload exceeds max size")
+			txPayload = nil
+		}
+	}
+
+	// convert the MACPayload items into MACCommand items
+	var macCommmands []lorawan.MACCommand
+	for _, pl := range macPayloads {
+		var mac lorawan.MACCommand
+		if err := mac.UnmarshalBinary(false, pl.MACCommand); err != nil {
+			// in case the mac commands can't be unmarshaled, the payload
+			// is ignored and an error sent to the network-controller
+			errStr := fmt.Sprintf("unmarshal mac command error: %s", err)
+			log.WithFields(log.Fields{
+				"dev_eui":   ns.DevEUI,
+				"reference": pl.Reference,
+			}).Warning(errStr)
+			err = ctx.Controller.SendErrorPayload(ns.AppEUI, ns.DevEUI, models.ErrorPayload{
+				Reference: pl.Reference,
+				DevEUI:    ns.DevEUI,
+				Message:   errStr,
+			})
+			if err != nil {
+				return fmt.Errorf("send error payload to network-controller error: %s", err)
+			}
+			continue
+		}
+		macCommmands = append(macCommmands, mac)
+	}
+
+	// uplink was unconfirmed and no downlink data in queue and no mac commands to send
+	if txPayload == nil && rxPacket.PHYPayload.MHDR.MType == lorawan.UnconfirmedDataUp && len(macCommmands) == 0 {
 		return nil
 	}
 
@@ -120,6 +187,9 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	queueSize, err := getTXPayloadQueueSize(ctx.RedisPool, ns.DevEUI)
 	if err != nil {
 		return err
+	}
+	if txPayload != nil {
+		queueSize-- // substract the current tx-payload from the queue-size
 	}
 
 	phy := lorawan.PHYPayload{
@@ -132,17 +202,32 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		FHDR: lorawan.FHDR{
 			DevAddr: ns.DevAddr,
 			FCtrl: lorawan.FCtrl{
-				ACK: rxPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp, // set ACK when uplink packet was of type ConfirmedDataUp
+				ACK:      rxPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp, // set ACK when uplink packet was of type ConfirmedDataUp
+				FPending: queueSize > 0 || len(allMACPayloads) != len(macPayloads),  // items in the queue or not all mac commands being sent
 			},
 			FCnt: ns.FCntDown,
 		},
 	}
 	phy.MACPayload = macPL
 
-	// add the payload to FRMPayload field
-	if txPayload != nil {
-		macPL.FHDR.FCtrl.FPending = queueSize-1 > 0 // -1 is the payload will be sent now or has been discarded because of max size
+	if len(macCommmands) > 0 {
+		if frmMACCommands {
+			var fPort uint8 // 0
+			var frmPayload []lorawan.Payload
+			for _, pl := range macCommmands {
+				frmPayload = append(frmPayload, &pl)
+			}
+			macPL.FPort = &fPort
+			macPL.FRMPayload = frmPayload
+		} else {
+			macPL.FHDR.FOpts = macCommmands
+		}
+	}
 
+	// add the payload to FRMPayload field
+	// note that txPayload is by definition nil when there are mac commands
+	// to send in the FRMPayload field.
+	if txPayload != nil {
 		if txPayload.Confirmed {
 			phy.MHDR.MType = lorawan.ConfirmedDataDown
 		}
@@ -189,6 +274,13 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 
 		if _, err = clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
 			return err
+		}
+	}
+
+	// remove the mac commands from the queue
+	for _, pl := range macPayloads {
+		if err = deleteMACPayloadFromTXQueue(ctx.RedisPool, ns.DevAddr, pl); err != nil {
+			return fmt.Errorf("delete mac-payload from tx queue error: %s", err)
 		}
 	}
 

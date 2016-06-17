@@ -27,6 +27,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 			rxMACPayloadChan:  make(chan models.MACPayload, 2),
 			txMACPayloadChan:  make(chan models.MACPayload, 1),
 			rxInfoPayloadChan: make(chan models.RXInfoPayload, 1),
+			errorPayloadChan:  make(chan models.ErrorPayload, 1),
 		}
 		p := NewRedisPool(conf.RedisURL)
 		mustFlushRedis(p)
@@ -50,7 +51,7 @@ func TestHandleDataUpPackets(t *testing.T) {
 			}
 			So(saveNodeSession(p, ns), ShouldBeNil)
 
-			Convey("Given two mac commands", func() {
+			Convey("Given two uplink mac commands", func() {
 				mac1 := lorawan.MACCommand{
 					CID: lorawan.LinkCheckReq,
 				}
@@ -268,6 +269,79 @@ func TestHandleDataUpPackets(t *testing.T) {
 							// nothing to do
 						}
 						So(received, ShouldEqual, false)
+					})
+				})
+
+				Convey("Given 18 bytes of MAC commands (FOpts)", func() {
+					macPayloads := []models.MACPayload{
+						{Reference: "a", DevEUI: ns.DevEUI, MACCommand: []byte{2, 10, 5}},
+						{Reference: "b", DevEUI: ns.DevEUI, MACCommand: []byte{6}},
+						{Reference: "c", DevEUI: ns.DevEUI, MACCommand: []byte{4, 15}},
+						{Reference: "d", DevEUI: ns.DevEUI, MACCommand: []byte{4, 15, 16}}, // invalid payload, should be discarded + error notification
+						{Reference: "e", DevEUI: ns.DevEUI, MACCommand: []byte{2, 10, 5}},
+						{Reference: "f", DevEUI: ns.DevEUI, MACCommand: []byte{2, 10, 5}},
+						{Reference: "g", DevEUI: ns.DevEUI, MACCommand: []byte{2, 10, 6}}, // this payload should stay in the queue
+					}
+					for _, pl := range macPayloads {
+						So(addMACPayloadToTXQueue(p, pl), ShouldBeNil)
+					}
+
+					Convey("When calling handleRXPacket", func() {
+						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
+
+						Convey("Then a rx info payload was sent to the network-controller", func() {
+							_ = <-ctrl.rxInfoPayloadChan
+						})
+
+						Convey("Then an error notification was sent to the network-controller (mac command d is invalid)", func() {
+							errPL := <-ctrl.errorPayloadChan
+							So(errPL.Reference, ShouldEqual, "d")
+							So(ctrl.errorPayloadChan, ShouldHaveLength, 0)
+						})
+
+						Convey("Then the packet is correctly received by the application backend", func() {
+							packet := <-app.rxPayloadChan
+							So(packet, ShouldResemble, models.RXPayload{
+								DevEUI:       ns.DevEUI,
+								FPort:        1,
+								GatewayCount: 1,
+								Data:         []byte("hello!"),
+							})
+						})
+
+						Convey("Then the FCntUp must be synced", func() {
+							nsUpdated, err := getNodeSession(p, ns.DevAddr)
+							So(err, ShouldBeNil)
+							So(nsUpdated.FCntUp, ShouldEqual, 10)
+						})
+
+						Convey("Then a packet was sent to the gateway", func() {
+							txPacket := <-gw.txPacketChan
+
+							macPL, ok := txPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
+							So(ok, ShouldBeTrue)
+
+							Convey("Then this packet contains three MAC commands", func() {
+								So(macPL.FHDR.FOpts, ShouldResemble, []lorawan.MACCommand{
+									{CID: lorawan.LinkCheckAns, Payload: &lorawan.LinkCheckAnsPayload{Margin: 10, GwCnt: 5}},
+									{CID: lorawan.DevStatusReq},
+									{CID: lorawan.DutyCycleReq, Payload: &lorawan.DutyCycleReqPayload{MaxDCCycle: 15}},
+									{CID: lorawan.LinkCheckAns, Payload: &lorawan.LinkCheckAnsPayload{Margin: 10, GwCnt: 5}},
+									{CID: lorawan.LinkCheckAns, Payload: &lorawan.LinkCheckAnsPayload{Margin: 10, GwCnt: 5}},
+								})
+							})
+
+							Convey("Then there must be one packet left in the queue", func() {
+								macPayloads, err := readMACPayloadTXQueue(p, ns.DevAddr)
+								So(err, ShouldBeNil)
+								So(macPayloads, ShouldHaveLength, 1)
+								So(macPayloads[0].Reference, ShouldEqual, "g")
+
+								Convey("Then the FPending field must be true", func() {
+									So(macPL.FHDR.FCtrl.FPending, ShouldBeTrue)
+								})
+							})
+						})
 					})
 				})
 
