@@ -109,6 +109,14 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 			if len(macPL.FRMPayload) == 0 {
 				return errors.New("expected mac commands, but FRMPayload is empty (FPort=0)")
 			}
+
+			// since the PHYPayload has been marshaled / unmarshaled when
+			// storing it into and retrieving it from the database, we need
+			// to decode the MAC commands from the FRMPayload.
+			if err = rxPacket.PHYPayload.DecodeFRMPayloadToMACCommands(); err != nil {
+				return fmt.Errorf("decode FRMPayload field to MACCommand items error: %s", err)
+			}
+
 			var commands []lorawan.MACCommand
 			for _, pl := range macPL.FRMPayload {
 				cmd, ok := pl.(*lorawan.MACCommand)
