@@ -8,11 +8,10 @@
 			"revisionTime": "2016-02-24T16:10:30-05:00"
 		},
 		{
-			"checksumSHA1": "P6dqsGv4QtjulaUQA+Lerkc+Faw=",
-			"origin": "github.com/brocaar/loraserver/vendor/github.com/brocaar/lorawan",
+			"checksumSHA1": "ya7tMk+wexXh1cmbdp0Sw0lbM1k=",
 			"path": "github.com/brocaar/lorawan",
-			"revision": "09dc25ff6fb66facb2f8a055c29182c8c73167f1",
-			"revisionTime": "2016-05-15T17:13:56Z"
+			"revision": "be799be7b529ec03666a5c553c1f4b1ef3f6728e",
+			"revisionTime": "2016-06-18T09:49:21Z"
 		},
 		{
 			"checksumSHA1": "Br8FZLBfv+Vzk9HtH41bG4LOCd0=",

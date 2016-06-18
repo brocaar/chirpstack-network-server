@@ -35,9 +35,7 @@ The following MAC commands (and their optional payloads) are implemented:
     * NewChannelAns
     * RXTimingSetupReq
     * RXTimingSetupAns
-    * Support for proprietary commands (0x80 - 0xFF) will be implemented in the
-      future (mapping between CID and payload (size) is already done in a map
-      called macPayloadRegistry)
+    * Proprietary commands (0x80 - 0xFF) can be registered with RegisterProprietaryMACCommand
 
 Support for calculating and setting the MIC is done by calling SetMIC():
 

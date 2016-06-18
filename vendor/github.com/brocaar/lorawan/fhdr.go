@@ -182,7 +182,7 @@ func (h *FHDR) UnmarshalBinary(uplink bool, data []byte) error {
 	if len(data) > 7 {
 		var pLen int
 		for i := 0; i < len(data[7:]); i++ {
-			if _, s, err := getMACPayloadAndSize(uplink, cid(data[7+i])); err != nil {
+			if _, s, err := getMACPayloadAndSize(uplink, CID(data[7+i])); err != nil {
 				pLen = 0
 			} else {
 				pLen = s
