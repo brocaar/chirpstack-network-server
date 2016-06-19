@@ -84,9 +84,9 @@ func (b *Backend) SendRXPayload(appEUI, devEUI lorawan.EUI64, payload models.RXP
 	}
 
 	topic := fmt.Sprintf("application/%s/node/%s/rx", appEUI, devEUI)
-	log.WithField("topic", topic).Info("application/mqttpubsub: publishing tx payload")
+	log.WithField("topic", topic).Info("application/mqttpubsub: publishing rx payload")
 	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("application/mqttpubsub: publish tx payload failed: %s", token.Error())
+		return fmt.Errorf("application/mqttpubsub: publish rx payload failed: %s", token.Error())
 	}
 	return nil
 }
