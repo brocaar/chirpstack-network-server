@@ -3,7 +3,11 @@
 ## 0.8.0 (unreleased)
 
 * Implement network-controller backend
-* Implement support for sending and receiving MAC commands
+* Implement support for sending and receiving MAC commands (no support for proprietary commands yet)
+* Refactor test scenarios
+
+**Note:** You need to update to LoRa Semtech Bridge 2.0.1+ or 1.1.4+ since
+it fixes a mac command related marshaling issue.
 
 ## 0.7.0
 
