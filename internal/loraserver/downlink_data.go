@@ -214,8 +214,8 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		if frmMACCommands {
 			var fPort uint8 // 0
 			var frmPayload []lorawan.Payload
-			for _, pl := range macCommmands {
-				frmPayload = append(frmPayload, &pl)
+			for i, _ := range macCommmands {
+				frmPayload = append(frmPayload, &macCommmands[i])
 			}
 			macPL.FPort = &fPort
 			macPL.FRMPayload = frmPayload
@@ -239,8 +239,14 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	}
 
 	// if there is no payload set, encrypt will just do nothing
-	if err := phy.EncryptFRMPayload(ns.AppSKey); err != nil {
-		return fmt.Errorf("encrypt FRMPayload error: %s", err)
+	if len(macCommmands) > 0 && frmMACCommands {
+		if err := phy.EncryptFRMPayload(ns.NwkSKey); err != nil {
+			return fmt.Errorf("encrypt FRMPayload error: %s", err)
+		}
+	} else {
+		if err := phy.EncryptFRMPayload(ns.AppSKey); err != nil {
+			return fmt.Errorf("encrypt FRMPayload error: %s", err)
+		}
 	}
 
 	if err := phy.SetMIC(ns.NwkSKey); err != nil {
@@ -272,8 +278,10 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 			return err
 		}
 
-		if _, err = clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
-			return err
+		if txPayload != nil {
+			if _, err = clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
+				return err
+			}
 		}
 	}
 
