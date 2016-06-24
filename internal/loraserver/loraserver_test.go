@@ -2,6 +2,7 @@ package loraserver
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -10,10 +11,35 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestHandleDataUpPackets(t *testing.T) {
+type dataUpTestCase struct {
+	Name                         string              // name of the test
+	RXInfo                       models.RXInfo       // rx-info of the "received" packet
+	EncryptFRMPayloadKey         lorawan.AES128Key   // key to use for encrypting the uplink FRMPayload
+	DecryptExpectedFRMPayloadKey lorawan.AES128Key   // key to use for decrypting the downlink FRMPayload
+	SetMICKey                    lorawan.AES128Key   // key to use for setting the mic
+	PHYPayload                   lorawan.PHYPayload  // (unencrypted) "received" PHYPayload
+	ApplicationBackendError      error               // error returned by the application backend
+	TXPayloadQueue               []models.TXPayload  // tx-payload queue
+	TXMACPayloadInProcess        *models.TXPayload   // tx-payload in-process queue
+	TXMACPayloadQueue            []models.MACPayload // downlink mac-command queue
+
+	ExpectedControllerRXInfoPayloads []models.RXInfoPayload
+	ExpectedControllerRXMACPayloads  []models.MACPayload
+	ExpectedControllerErrorPayloads  []models.ErrorPayload
+	ExpectedApplicationRXPayloads    []models.RXPayload
+	ExpectedApplicationNotifications []interface{} // to be refactored into separate types
+	ExpectedGatewayTXPackets         []models.TXPacket
+	ExpectedFCntUp                   uint32
+	ExpectedFCntDown                 uint32
+	ExpectedHandleRXPacketError      error
+	ExpectedTXMACPayloadQueue        []models.MACPayload
+	ExpectedGetTXPayloadFromQueue    *models.TXPayload
+}
+
+func TestHandleDataUpScenarios(t *testing.T) {
 	conf := getConfig()
 
-	Convey("Given a clean state", t, func() {
+	Convey("Given a clean state, test backends and a node-session", t, func() {
 		app := &testApplicationBackend{
 			rxPayloadChan:           make(chan models.RXPayload, 1),
 			txPayloadChan:           make(chan models.TXPayload, 1),
@@ -39,86 +65,360 @@ func TestHandleDataUpPackets(t *testing.T) {
 			Controller:  ctrl,
 		}
 
-		Convey("Given a stored node session", func() {
-			ns := models.NodeSession{
-				DevAddr:  [4]byte{1, 2, 3, 4},
-				DevEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-				AppSKey:  [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-				NwkSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-				FCntUp:   8,
-				FCntDown: 5,
-				AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+		ns := models.NodeSession{
+			DevAddr:  [4]byte{1, 2, 3, 4},
+			DevEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppSKey:  [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+			NwkSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:   8,
+			FCntDown: 5,
+			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+		}
+		So(createNodeSession(ctx.RedisPool, ns), ShouldBeNil)
+
+		rxInfo := models.RXInfo{
+			Frequency: Band.UplinkChannels[0].Frequency,
+			DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
+		}
+
+		var fPortZero uint8
+		var fPortOne uint8 = 1
+
+		Convey("Given a set of test-scenarios for basic flows (nothing in queue)", func() {
+			tests := []dataUpTestCase{
+				// errors
+				{
+					Name:                    "the application backend returns an error",
+					RXInfo:                  rxInfo,
+					EncryptFRMPayloadKey:    ns.AppSKey,
+					SetMICKey:               ns.NwkSKey,
+					ApplicationBackendError: errors.New("BOOM!"),
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedFCntUp:              8,
+					ExpectedFCntDown:            5,
+					ExpectedHandleRXPacketError: errors.New("send rx payload to application error: BOOM!"),
+				},
+				{
+					Name:                 "the frame-counter is invalid",
+					RXInfo:               rxInfo,
+					EncryptFRMPayloadKey: ns.AppSKey,
+					SetMICKey:            ns.NwkSKey,
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    7,
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedFCntUp:              8,
+					ExpectedFCntDown:            5,
+					ExpectedHandleRXPacketError: errors.New("invalid FCnt or too many dropped frames"),
+				},
+				{
+					Name:                 "the mic is invalid",
+					RXInfo:               rxInfo,
+					EncryptFRMPayloadKey: ns.AppSKey,
+					SetMICKey:            ns.AppSKey,
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedFCntUp:              8,
+					ExpectedFCntDown:            5,
+					ExpectedHandleRXPacketError: errors.New("invalid MIC"),
+				},
+				// basic flows
+				{
+					Name:                 "unconfirmed uplink data with payload",
+					RXInfo:               rxInfo,
+					EncryptFRMPayloadKey: ns.AppSKey,
+					SetMICKey:            ns.NwkSKey,
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort:      &fPortOne,
+							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1, Data: []byte{1, 2, 3, 4}},
+					},
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 5,
+				},
+				{
+					Name:                 "unconfirmed uplink data without payload (just a FPort)",
+					RXInfo:               rxInfo,
+					EncryptFRMPayloadKey: ns.AppSKey,
+					SetMICKey:            ns.NwkSKey,
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1},
+					},
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 5,
+				},
+				{
+					Name:                 "confirmed uplink data with payload",
+					RXInfo:               rxInfo,
+					EncryptFRMPayloadKey: ns.AppSKey,
+					SetMICKey:            ns.NwkSKey,
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.ConfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort:      &fPortOne,
+							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1, Data: []byte{1, 2, 3, 4}},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 1000000,
+								Frequency: rxInfo.Frequency,
+								Power:     14,
+								DataRate:  rxInfo.DataRate,
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+										FCtrl: lorawan.FCtrl{
+											ACK: true,
+										},
+									},
+								},
+							},
+						},
+					},
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 6,
+				},
+				{
+					Name:                 "confirmed uplink data without payload",
+					RXInfo:               rxInfo,
+					EncryptFRMPayloadKey: ns.AppSKey,
+					SetMICKey:            ns.NwkSKey,
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.ConfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 1000000,
+								Frequency: rxInfo.Frequency,
+								Power:     14,
+								DataRate:  rxInfo.DataRate,
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+										FCtrl: lorawan.FCtrl{
+											ACK: true,
+										},
+									},
+								},
+							},
+						},
+					},
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 6,
+				},
+				{
+					Name:                 "two uplink mac commands (FOpts)",
+					RXInfo:               rxInfo,
+					EncryptFRMPayloadKey: ns.NwkSKey,
+					SetMICKey:            ns.NwkSKey,
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+								FOpts: []lorawan.MACCommand{
+									{CID: lorawan.LinkCheckReq},
+									{CID: lorawan.LinkADRAns, Payload: &lorawan.LinkADRAnsPayload{ChannelMaskACK: true}},
+								},
+							},
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedControllerRXMACPayloads: []models.MACPayload{
+						{DevEUI: ns.DevEUI, MACCommand: []byte{2}},
+						{DevEUI: ns.DevEUI, MACCommand: []byte{3, 1}},
+					},
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 5,
+				},
+				{
+					Name:                 "two uplink mac commands (FRMPayload)",
+					RXInfo:               rxInfo,
+					EncryptFRMPayloadKey: ns.NwkSKey,
+					SetMICKey:            ns.NwkSKey,
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort: &fPortZero,
+							FRMPayload: []lorawan.Payload{
+								&lorawan.MACCommand{CID: lorawan.LinkCheckReq},
+								&lorawan.MACCommand{CID: lorawan.LinkADRAns, Payload: &lorawan.LinkADRAnsPayload{ChannelMaskACK: true}},
+							},
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedControllerRXMACPayloads: []models.MACPayload{
+						{DevEUI: ns.DevEUI, FRMPayload: true, MACCommand: []byte{2}},
+						{DevEUI: ns.DevEUI, FRMPayload: true, MACCommand: []byte{3, 1}},
+					},
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 5,
+				},
 			}
-			So(saveNodeSession(p, ns), ShouldBeNil)
 
-			Convey("Given two uplink mac commands", func() {
-				mac1 := lorawan.MACCommand{
-					CID: lorawan.LinkCheckReq,
-				}
-				mac2 := lorawan.MACCommand{
-					CID: lorawan.LinkADRAns,
-					Payload: &lorawan.LinkADRAnsPayload{
-						ChannelMaskACK: true,
-						DataRateACK:    false,
-						PowerACK:       false,
+			runDataUpTests(ctx, ns.DevEUI, ns.DevAddr, tests)
+		})
+
+		Convey("Given a set of test-scenarios for mac-command queue", func() {
+			var fPortThree uint8 = 3
+
+			tests := []dataUpTestCase{
+				{
+					Name:                 "unconfirmed uplink data + two downlink mac commands in queue (FOpts)",
+					RXInfo:               rxInfo,
+					EncryptFRMPayloadKey: ns.AppSKey,
+					SetMICKey:            ns.NwkSKey,
+					TXMACPayloadQueue: []models.MACPayload{
+						{DevEUI: ns.DevEUI, MACCommand: []byte{6}},
+						{DevEUI: ns.DevEUI, MACCommand: []byte{8, 3}},
 					},
-				}
 
-				Convey("Given an UnconfirmedDataUp packet with the mac commands as FOpts", func() {
-					phy := lorawan.PHYPayload{
-						MHDR: lorawan.MHDR{
-							MType: lorawan.UnconfirmedDataUp,
-							Major: lorawan.LoRaWANR1,
-						},
-						MACPayload: &lorawan.MACPayload{
-							FHDR: lorawan.FHDR{
-								DevAddr: ns.DevAddr,
-								FCnt:    10,
-								FOpts:   []lorawan.MACCommand{mac1, mac2},
-							},
-						},
-					}
-
-					So(phy.EncryptFRMPayload(ns.NwkSKey), ShouldBeNil)
-					So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
-					rxPacket := models.RXPacket{
-						PHYPayload: phy,
-						RXInfo: models.RXInfo{
-							Frequency: Band.UplinkChannels[0].Frequency,
-							DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
-						},
-					}
-
-					Convey("When calling handleRXPacket", func() {
-						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
-
-						Convey("Then an rx info payload was sent to the network-controller", func() {
-							_ = <-ctrl.rxInfoPayloadChan
-						})
-
-						Convey("Then the MAC commands were received by the network-controller", func() {
-							pl1 := <-ctrl.rxMACPayloadChan
-							b1, err := mac1.MarshalBinary()
-							So(err, ShouldBeNil)
-							pl2 := <-ctrl.rxMACPayloadChan
-							b2, err := mac2.MarshalBinary()
-							So(err, ShouldBeNil)
-
-							So(pl1, ShouldResemble, models.MACPayload{
-								DevEUI:     ns.DevEUI,
-								MACCommand: b1,
-							})
-							So(pl2, ShouldResemble, models.MACPayload{
-								DevEUI:     ns.DevEUI,
-								MACCommand: b2,
-							})
-						})
-					})
-				})
-
-				Convey("Given an UnconfirmedDataUp packet with the mac commands as FRMPayload", func() {
-					fPort := uint8(0)
-					phy := lorawan.PHYPayload{
+					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
 							MType: lorawan.UnconfirmedDataUp,
 							Major: lorawan.LoRaWANR1,
@@ -128,152 +428,251 @@ func TestHandleDataUpPackets(t *testing.T) {
 								DevAddr: ns.DevAddr,
 								FCnt:    10,
 							},
-							FPort:      &fPort,
-							FRMPayload: []lorawan.Payload{&mac1, &mac2},
-						},
-					}
-
-					So(phy.EncryptFRMPayload(ns.NwkSKey), ShouldBeNil)
-					So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
-
-					rxPacket := models.RXPacket{
-						PHYPayload: phy,
-						RXInfo: models.RXInfo{
-							Frequency: Band.UplinkChannels[0].Frequency,
-							DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
-						},
-					}
-
-					Convey("When calling handleRXPacket", func() {
-						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
-
-						Convey("Then an rx info payload was sent to the network-controller", func() {
-							_ = <-ctrl.rxInfoPayloadChan
-						})
-
-						Convey("Then the MAC commands were received by the network-controller", func() {
-							pl1 := <-ctrl.rxMACPayloadChan
-							b1, err := mac1.MarshalBinary()
-							So(err, ShouldBeNil)
-							pl2 := <-ctrl.rxMACPayloadChan
-							b2, err := mac2.MarshalBinary()
-							So(err, ShouldBeNil)
-
-							So(pl1, ShouldResemble, models.MACPayload{
-								DevEUI:     ns.DevEUI,
-								MACCommand: b1,
-								FRMPayload: true,
-							})
-							So(pl2, ShouldResemble, models.MACPayload{
-								DevEUI:     ns.DevEUI,
-								MACCommand: b2,
-								FRMPayload: true,
-							})
-						})
-					})
-				})
-			})
-
-			Convey("Given an UnconfirmedDataUp packet", func() {
-				fPort := uint8(1)
-				phy := lorawan.PHYPayload{
-					MHDR: lorawan.MHDR{
-						MType: lorawan.UnconfirmedDataUp,
-						Major: lorawan.LoRaWANR1,
-					},
-					MACPayload: &lorawan.MACPayload{
-						FHDR: lorawan.FHDR{
-							DevAddr: ns.DevAddr,
-							FCnt:    10,
-						},
-						FPort: &fPort,
-						FRMPayload: []lorawan.Payload{
-							&lorawan.DataPayload{Bytes: []byte("hello!")},
+							FPort:      &fPortOne,
+							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
 						},
 					},
-				}
 
-				So(phy.EncryptFRMPayload(ns.AppSKey), ShouldBeNil)
-				So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
-
-				rxPacket := models.RXPacket{
-					PHYPayload: phy,
-					RXInfo: models.RXInfo{
-						Frequency: Band.UplinkChannels[0].Frequency,
-						DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
 					},
-				}
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1, Data: []byte{1, 2, 3, 4}},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 1000000,
+								Frequency: rxInfo.Frequency,
+								Power:     14,
+								DataRate:  rxInfo.DataRate,
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+										FOpts: []lorawan.MACCommand{
+											{CID: lorawan.CID(6)},
+											{CID: lorawan.CID(8), Payload: &lorawan.RXTimingSetupReqPayload{Delay: 3}},
+										},
+									},
+								},
+							},
+						},
+					},
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 6,
+				},
+				{
+					Name:                         "unconfirmed uplink data + two downlink mac commands in queue (FOpts) + unconfirmed tx-payload in queue",
+					RXInfo:                       rxInfo,
+					EncryptFRMPayloadKey:         ns.AppSKey,
+					DecryptExpectedFRMPayloadKey: ns.AppSKey,
+					SetMICKey:                    ns.NwkSKey,
+					TXPayloadQueue: []models.TXPayload{
+						{DevEUI: ns.DevEUI, FPort: 3, Data: []byte{4, 5, 6}},
+					},
+					TXMACPayloadQueue: []models.MACPayload{
+						{DevEUI: ns.DevEUI, MACCommand: []byte{6}},
+						{DevEUI: ns.DevEUI, MACCommand: []byte{8, 3}},
+					},
 
-				Convey("Given that the application backend returns an error", func() {
-					app.err = errors.New("BOOM")
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort:      &fPortOne,
+							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+						},
+					},
 
-					Convey("Then handleRXPacket returns an error", func() {
-						So(handleRXPacket(ctx, rxPacket), ShouldNotBeNil)
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1, Data: []byte{1, 2, 3, 4}},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 1000000,
+								Frequency: rxInfo.Frequency,
+								Power:     14,
+								DataRate:  rxInfo.DataRate,
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+										FOpts: []lorawan.MACCommand{
+											{CID: lorawan.CID(6)},
+											{CID: lorawan.CID(8), Payload: &lorawan.RXTimingSetupReqPayload{Delay: 3}},
+										},
+									},
+									FPort: &fPortThree,
+									FRMPayload: []lorawan.Payload{
+										&lorawan.DataPayload{Bytes: []byte{4, 5, 6}},
+									},
+								},
+							},
+						},
+					},
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 6,
+				},
+				{
+					Name:                         "unconfirmed uplink data + two downlink mac commands in queue (FRMPayload)",
+					RXInfo:                       rxInfo,
+					EncryptFRMPayloadKey:         ns.AppSKey,
+					DecryptExpectedFRMPayloadKey: ns.NwkSKey,
+					SetMICKey:                    ns.NwkSKey,
+					TXMACPayloadQueue: []models.MACPayload{
+						{DevEUI: ns.DevEUI, FRMPayload: true, MACCommand: []byte{6}},
+						{DevEUI: ns.DevEUI, FRMPayload: true, MACCommand: []byte{8, 3}},
+					},
 
-						Convey("Then the FCntUp has not been incremented", func() {
-							nsUpdated, err := getNodeSession(p, ns.DevAddr)
-							So(err, ShouldBeNil)
-							So(nsUpdated, ShouldResemble, ns)
-						})
-					})
-				})
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort:      &fPortOne,
+							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+						},
+					},
 
-				Convey("When the frame-counter is invalid", func() {
-					ns.FCntUp = 11
-					So(saveNodeSession(p, ns), ShouldBeNil)
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1, Data: []byte{1, 2, 3, 4}},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 1000000,
+								Frequency: rxInfo.Frequency,
+								Power:     14,
+								DataRate:  rxInfo.DataRate,
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+									},
+									FPort: &fPortZero,
+									FRMPayload: []lorawan.Payload{
+										&lorawan.MACCommand{CID: lorawan.CID(6)},
+										&lorawan.MACCommand{CID: lorawan.CID(8), Payload: &lorawan.RXTimingSetupReqPayload{Delay: 3}},
+									},
+								},
+							},
+						},
+					},
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 6,
+				},
+				{
+					Name:                         "unconfirmed uplink data + two downlink mac commands in queue (FRMPayload) + unconfirmed tx-payload in queue",
+					RXInfo:                       rxInfo,
+					EncryptFRMPayloadKey:         ns.AppSKey,
+					DecryptExpectedFRMPayloadKey: ns.NwkSKey,
+					SetMICKey:                    ns.NwkSKey,
+					TXPayloadQueue: []models.TXPayload{
+						{DevEUI: ns.DevEUI, FPort: 3, Data: []byte{4, 5, 6}},
+					},
+					TXMACPayloadQueue: []models.MACPayload{
+						{DevEUI: ns.DevEUI, FRMPayload: true, MACCommand: []byte{6}},
+						{DevEUI: ns.DevEUI, FRMPayload: true, MACCommand: []byte{8, 3}},
+					},
 
-					Convey("Then handleRXPacket returns a frame-counter related error", func() {
-						err := handleRXPacket(ctx, rxPacket)
-						So(err, ShouldResemble, errors.New("invalid FCnt or too many dropped frames"))
-					})
-				})
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort:      &fPortOne,
+							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+						},
+					},
 
-				Convey("When the MIC is invalid", func() {
-					rxPacket.PHYPayload.MIC = [4]byte{1, 2, 3, 4}
-
-					Convey("Then handleRXPacket returns a MIC related error", func() {
-						err := handleRXPacket(ctx, rxPacket)
-						So(err, ShouldResemble, errors.New("invalid MIC"))
-					})
-				})
-
-				Convey("When calling handleRXPacket", func() {
-					So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
-
-					Convey("Then a rx info payload was sent to the network-controller", func() {
-						_ = <-ctrl.rxInfoPayloadChan
-					})
-
-					Convey("Then the packet is correctly received by the application backend", func() {
-						packet := <-app.rxPayloadChan
-						So(packet, ShouldResemble, models.RXPayload{
-							DevEUI:       ns.DevEUI,
-							FPort:        1,
-							GatewayCount: 1,
-							Data:         []byte("hello!"),
-						})
-					})
-
-					Convey("Then the FCntUp must be synced", func() {
-						nsUpdated, err := getNodeSession(p, ns.DevAddr)
-						So(err, ShouldBeNil)
-						So(nsUpdated.FCntUp, ShouldEqual, 10)
-					})
-
-					Convey("Then no downlink data was sent to the gateway", func() {
-						var received bool
-						select {
-						case <-gw.txPacketChan:
-							received = true
-						case <-time.After(time.Second):
-							// nothing to do
-						}
-						So(received, ShouldEqual, false)
-					})
-				})
-
-				Convey("Given 18 bytes of MAC commands (FOpts)", func() {
-					macPayloads := []models.MACPayload{
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1, Data: []byte{1, 2, 3, 4}},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 1000000,
+								Frequency: rxInfo.Frequency,
+								Power:     14,
+								DataRate:  rxInfo.DataRate,
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+										FCtrl: lorawan.FCtrl{
+											FPending: true,
+										},
+									},
+									FPort: &fPortZero,
+									FRMPayload: []lorawan.Payload{
+										&lorawan.MACCommand{CID: lorawan.CID(6)},
+										&lorawan.MACCommand{CID: lorawan.CID(8), Payload: &lorawan.RXTimingSetupReqPayload{Delay: 3}},
+									},
+								},
+							},
+						},
+					},
+					ExpectedGetTXPayloadFromQueue: &models.TXPayload{DevEUI: ns.DevEUI, FPort: 3, Data: []byte{4, 5, 6}},
+					ExpectedFCntUp:                10,
+					ExpectedFCntDown:              6,
+				},
+				{
+					Name:                 "unconfirmed uplink data + 18 bytes of MAC commands (FOpts) of which one is invalid",
+					RXInfo:               rxInfo,
+					EncryptFRMPayloadKey: ns.AppSKey,
+					SetMICKey:            ns.NwkSKey,
+					TXMACPayloadQueue: []models.MACPayload{
 						{Reference: "a", DevEUI: ns.DevEUI, MACCommand: []byte{2, 10, 5}},
 						{Reference: "b", DevEUI: ns.DevEUI, MACCommand: []byte{6}},
 						{Reference: "c", DevEUI: ns.DevEUI, MACCommand: []byte{4, 15}},
@@ -281,337 +680,440 @@ func TestHandleDataUpPackets(t *testing.T) {
 						{Reference: "e", DevEUI: ns.DevEUI, MACCommand: []byte{2, 10, 5}},
 						{Reference: "f", DevEUI: ns.DevEUI, MACCommand: []byte{2, 10, 5}},
 						{Reference: "g", DevEUI: ns.DevEUI, MACCommand: []byte{2, 10, 6}}, // this payload should stay in the queue
-					}
-					for _, pl := range macPayloads {
-						So(addMACPayloadToTXQueue(p, pl), ShouldBeNil)
-					}
+					},
 
-					Convey("When calling handleRXPacket", func() {
-						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort:      &fPortOne,
+							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+						},
+					},
 
-						Convey("Then a rx info payload was sent to the network-controller", func() {
-							_ = <-ctrl.rxInfoPayloadChan
-						})
-
-						Convey("Then an error notification was sent to the network-controller (mac command d is invalid)", func() {
-							errPL := <-ctrl.errorPayloadChan
-							So(errPL.Reference, ShouldEqual, "d")
-							So(ctrl.errorPayloadChan, ShouldHaveLength, 0)
-						})
-
-						Convey("Then the packet is correctly received by the application backend", func() {
-							packet := <-app.rxPayloadChan
-							So(packet, ShouldResemble, models.RXPayload{
-								DevEUI:       ns.DevEUI,
-								FPort:        1,
-								GatewayCount: 1,
-								Data:         []byte("hello!"),
-							})
-						})
-
-						Convey("Then the FCntUp must be synced", func() {
-							nsUpdated, err := getNodeSession(p, ns.DevAddr)
-							So(err, ShouldBeNil)
-							So(nsUpdated.FCntUp, ShouldEqual, 10)
-						})
-
-						Convey("Then a packet was sent to the gateway", func() {
-							txPacket := <-gw.txPacketChan
-
-							macPL, ok := txPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
-							So(ok, ShouldBeTrue)
-
-							Convey("Then this packet contains three MAC commands", func() {
-								So(macPL.FHDR.FOpts, ShouldResemble, []lorawan.MACCommand{
-									{CID: lorawan.LinkCheckAns, Payload: &lorawan.LinkCheckAnsPayload{Margin: 10, GwCnt: 5}},
-									{CID: lorawan.DevStatusReq},
-									{CID: lorawan.DutyCycleReq, Payload: &lorawan.DutyCycleReqPayload{MaxDCCycle: 15}},
-									{CID: lorawan.LinkCheckAns, Payload: &lorawan.LinkCheckAnsPayload{Margin: 10, GwCnt: 5}},
-									{CID: lorawan.LinkCheckAns, Payload: &lorawan.LinkCheckAnsPayload{Margin: 10, GwCnt: 5}},
-								})
-							})
-
-							Convey("Then there must be one packet left in the queue", func() {
-								macPayloads, err := readMACPayloadTXQueue(p, ns.DevAddr)
-								So(err, ShouldBeNil)
-								So(macPayloads, ShouldHaveLength, 1)
-								So(macPayloads[0].Reference, ShouldEqual, "g")
-
-								Convey("Then the FPending field must be true", func() {
-									So(macPL.FHDR.FCtrl.FPending, ShouldBeTrue)
-								})
-							})
-						})
-					})
-				})
-
-				Convey("Given an enqueued TXPayload (unconfirmed)", func() {
-					txPayload := models.TXPayload{
-						Confirmed: false,
-						DevEUI:    ns.DevEUI,
-						FPort:     5,
-						Data:      []byte("hello back!"),
-					}
-					So(addTXPayloadToQueue(p, txPayload), ShouldBeNil)
-
-					Convey("When calling handleRXPacket", func() {
-						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
-
-						Convey("Then a rx info payload was sent to the network-controller", func() {
-							_ = ctrl.rxInfoPayloadChan
-						})
-
-						Convey("Then the packet is received by the application backend", func() {
-							_ = <-app.rxPayloadChan
-						})
-
-						Convey("Then a packet is sent to the gateway", func() {
-							txPacket := <-gw.txPacketChan
-
-							macPL, ok := txPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
-							So(ok, ShouldBeTrue)
-
-							Convey("Then this packet contains the expected values", func() {
-								So(txPacket.PHYPayload.MHDR.MType, ShouldEqual, lorawan.UnconfirmedDataDown)
-								So(macPL.FHDR.FCnt, ShouldEqual, ns.FCntDown)
-								So(macPL.FHDR.FCtrl.ACK, ShouldBeFalse)
-								So(*macPL.FPort, ShouldEqual, 5)
-
-								So(txPacket.PHYPayload.DecryptFRMPayload(ns.AppSKey), ShouldBeNil)
-								So(len(macPL.FRMPayload), ShouldEqual, 1)
-								pl, ok := macPL.FRMPayload[0].(*lorawan.DataPayload)
-								So(ok, ShouldBeTrue)
-								So(pl.Bytes, ShouldResemble, []byte("hello back!"))
-							})
-						})
-
-						Convey("Then the FCntDown was incremented", func() {
-							ns2, err := getNodeSession(p, ns.DevAddr)
-							So(err, ShouldBeNil)
-							So(ns2.FCntDown, ShouldEqual, ns.FCntDown+1)
-						})
-
-						Convey("Then the TXPayload queue is empty", func() {
-							_, err := getTXPayloadFromQueue(p, ns.DevEUI)
-							So(err, ShouldResemble, errEmptyQueue)
-						})
-					})
-				})
-
-				Convey("Given an enqueued TXPayload which exceeds the max size", func() {
-					txPayload := models.TXPayload{
-						DevEUI:    ns.DevEUI,
-						FPort:     5,
-						Data:      []byte("hello back!hello back!hello back!hello back!hello back!hello back!hello back!hello back!hello back!hello back!"),
-						Reference: "testcase",
-					}
-					So(addTXPayloadToQueue(p, txPayload), ShouldBeNil)
-
-					Convey("When calling handleRXPacket", func() {
-						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
-
-						Convey("Then a rx info payload and error notification were sent", func() {
-							_ = ctrl.rxInfoPayloadChan
-							notification := <-app.notificationPayloadChan
-							So(notification, ShouldHaveSameTypeAs, models.ErrorPayload{})
-						})
-
-						Convey("Then the TXPayload queue is empty", func() {
-							_, err := getTXPayloadFromQueue(p, ns.DevEUI)
-							So(err, ShouldResemble, errEmptyQueue)
-						})
-					})
-				})
-
-				Convey("Given an enqueued TXPayload (confirmed)", func() {
-					txPayload := models.TXPayload{
-						Confirmed: true,
-						DevEUI:    ns.DevEUI,
-						FPort:     5,
-						Data:      []byte("hello back!"),
-					}
-					So(addTXPayloadToQueue(p, txPayload), ShouldBeNil)
-
-					Convey("When calling handleRXPacket", func() {
-						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
-
-						Convey("Then an rx info payload was sent to the network-controller", func() {
-							_ = ctrl.rxInfoPayloadChan
-						})
-
-						Convey("Then the packet is received by the application backend", func() {
-							_ = <-app.rxPayloadChan
-						})
-
-						Convey("Then a packet is sent to the gateway", func() {
-							txPacket := <-gw.txPacketChan
-
-							macPL, ok := txPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
-							So(ok, ShouldBeTrue)
-
-							Convey("Then this packet contains the expected values", func() {
-								So(txPacket.PHYPayload.MHDR.MType, ShouldEqual, lorawan.ConfirmedDataDown)
-								So(macPL.FHDR.FCnt, ShouldEqual, ns.FCntDown)
-								So(macPL.FHDR.FCtrl.ACK, ShouldBeFalse)
-								So(*macPL.FPort, ShouldEqual, 5)
-
-								So(txPacket.PHYPayload.DecryptFRMPayload(ns.AppSKey), ShouldBeNil)
-								So(len(macPL.FRMPayload), ShouldEqual, 1)
-								pl, ok := macPL.FRMPayload[0].(*lorawan.DataPayload)
-								So(ok, ShouldBeTrue)
-								So(pl.Bytes, ShouldResemble, []byte("hello back!"))
-							})
-						})
-
-						Convey("Then the TXPayload is still in the queue", func() {
-							tx, err := getTXPayloadFromQueue(p, ns.DevEUI)
-							So(err, ShouldBeNil)
-							So(tx, ShouldResemble, txPayload)
-						})
-
-						Convey("Then the FCntDown was not incremented", func() {
-							ns2, err := getNodeSession(p, ns.DevAddr)
-							So(err, ShouldBeNil)
-							So(ns2.FCntDown, ShouldEqual, ns.FCntDown)
-
-							Convey("Given the node sends an ACK", func() {
-								phy := lorawan.PHYPayload{
-									MHDR: lorawan.MHDR{
-										MType: lorawan.UnconfirmedDataUp,
-										Major: lorawan.LoRaWANR1,
-									},
-									MACPayload: &lorawan.MACPayload{
-										FHDR: lorawan.FHDR{
-											DevAddr: ns.DevAddr,
-											FCnt:    11,
-											FCtrl: lorawan.FCtrl{
-												ACK: true,
-											},
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedControllerErrorPayloads: []models.ErrorPayload{
+						{Reference: "d", DevEUI: ns.DevEUI, Message: "unmarshal mac command error: lorawan: 1 byte of data is expected"},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1, Data: []byte{1, 2, 3, 4}},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 1000000,
+								Frequency: rxInfo.Frequency,
+								Power:     14,
+								DataRate:  rxInfo.DataRate,
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+										FCtrl: lorawan.FCtrl{
+											FPending: true,
+										},
+										FOpts: []lorawan.MACCommand{
+											{CID: lorawan.LinkCheckAns, Payload: &lorawan.LinkCheckAnsPayload{Margin: 10, GwCnt: 5}},
+											{CID: lorawan.DevStatusReq},
+											{CID: lorawan.DutyCycleReq, Payload: &lorawan.DutyCycleReqPayload{MaxDCCycle: 15}},
+											{CID: lorawan.LinkCheckAns, Payload: &lorawan.LinkCheckAnsPayload{Margin: 10, GwCnt: 5}},
+											{CID: lorawan.LinkCheckAns, Payload: &lorawan.LinkCheckAnsPayload{Margin: 10, GwCnt: 5}},
 										},
 									},
-								}
-								So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
-
-								rxPacket := models.RXPacket{
-									PHYPayload: phy,
-									RXInfo: models.RXInfo{
-										Frequency: Band.UplinkChannels[0].Frequency,
-										DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
-									},
-								}
-								_ = <-ctrl.rxInfoPayloadChan // empty the channel
-								So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
-
-								Convey("Then the FCntDown was incremented", func() {
-									ns2, err := getNodeSession(p, ns.DevAddr)
-									So(err, ShouldBeNil)
-									So(ns2.FCntDown, ShouldEqual, ns.FCntDown+1)
-
-									Convey("Then the TXPayload queue is empty", func() {
-										_, err := getTXPayloadFromQueue(p, ns.DevEUI)
-										So(err, ShouldResemble, errEmptyQueue)
-									})
-
-									Convey("Then an rx info payload and ACK notification were sent", func() {
-										_ = ctrl.rxInfoPayloadChan
-										notification := <-app.notificationPayloadChan
-										So(notification, ShouldHaveSameTypeAs, models.ACKNotification{})
-									})
-								})
-							})
-						})
-					})
-				})
-			})
-
-			Convey("Given a ConfirmedDataUp packet", func() {
-				fPort := uint8(1)
-				phy := lorawan.PHYPayload{
-					MHDR: lorawan.MHDR{
-						MType: lorawan.ConfirmedDataUp,
-						Major: lorawan.LoRaWANR1,
-					},
-					MACPayload: &lorawan.MACPayload{
-						FHDR: lorawan.FHDR{
-							DevAddr: ns.DevAddr,
-							FCnt:    10,
-						},
-						FPort: &fPort,
-						FRMPayload: []lorawan.Payload{
-							&lorawan.DataPayload{Bytes: []byte("hello!")},
+								},
+							},
 						},
 					},
-				}
-
-				So(phy.EncryptFRMPayload(ns.AppSKey), ShouldBeNil)
-				So(phy.SetMIC(ns.NwkSKey), ShouldBeNil)
-
-				rxPacket := models.RXPacket{
-					PHYPayload: phy,
-					RXInfo: models.RXInfo{
-						Frequency: Band.UplinkChannels[0].Frequency,
-						DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
+					ExpectedTXMACPayloadQueue: []models.MACPayload{
+						{Reference: "g", DevEUI: ns.DevEUI, MACCommand: []byte{2, 10, 6}},
 					},
-				}
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 6,
+				},
+			}
 
-				Convey("Given an enqueued TXPayload which exceeds the max size", func() {
-					txPayload := models.TXPayload{
-						DevEUI:    ns.DevEUI,
-						FPort:     5,
-						Data:      []byte("hello back!hello back!hello back!hello back!hello back!hello back!hello back!hello back!hello back!hello back!"),
-						Reference: "testcase",
-					}
-					So(addTXPayloadToQueue(p, txPayload), ShouldBeNil)
-
-					Convey("When calling handleRXPacket", func() {
-						So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
-
-						Convey("Then an rx info payload and error notification were sent", func() {
-							_ = ctrl.rxInfoPayloadChan
-							notification := <-app.notificationPayloadChan
-							So(notification, ShouldHaveSameTypeAs, models.ErrorPayload{})
-						})
-
-						Convey("Then the TXPayload queue is empty", func() {
-							_, err := getTXPayloadFromQueue(p, ns.DevEUI)
-							So(err, ShouldResemble, errEmptyQueue)
-						})
-					})
-				})
-
-				Convey("When calling handleRXPacket", func() {
-					So(handleRXPacket(ctx, rxPacket), ShouldBeNil)
-
-					Convey("Then the packet is correctly received by the application backend", func() {
-						packet := <-app.rxPayloadChan
-						So(packet, ShouldResemble, models.RXPayload{
-							DevEUI:       ns.DevEUI,
-							FPort:        1,
-							GatewayCount: 1,
-							Data:         []byte("hello!"),
-						})
-					})
-
-					Convey("Then a ACK packet is sent to the gateway", func() {
-						txPacket := <-gw.txPacketChan
-
-						macPL, ok := txPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
-						So(ok, ShouldBeTrue)
-
-						So(macPL.FHDR.FCtrl.ACK, ShouldBeTrue)
-						So(macPL.FHDR.FCnt, ShouldEqual, 5)
-
-						Convey("Then the FCntDown counter has incremented", func() {
-							ns, err := getNodeSession(ctx.RedisPool, ns.DevAddr)
-							So(err, ShouldBeNil)
-							So(ns.FCntDown, ShouldEqual, 6)
-						})
-					})
-				})
-
-			})
+			runDataUpTests(ctx, ns.DevEUI, ns.DevAddr, tests)
 		})
+
+		Convey("Given a set of test-scenarios for tx-payload queue", func() {
+			var fPortTen uint8 = 10
+
+			tests := []dataUpTestCase{
+				{
+					Name:                         "unconfirmed uplink data + one unconfirmed downlink payload in queue",
+					RXInfo:                       rxInfo,
+					EncryptFRMPayloadKey:         ns.AppSKey,
+					DecryptExpectedFRMPayloadKey: ns.AppSKey,
+					SetMICKey:                    ns.NwkSKey,
+					TXPayloadQueue: []models.TXPayload{
+						{Reference: "a", DevEUI: ns.DevEUI, FPort: 10, Data: []byte{1, 2, 3, 4}},
+					},
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 1000000,
+								Frequency: rxInfo.Frequency,
+								Power:     14,
+								DataRate:  rxInfo.DataRate,
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+									},
+									FPort: &fPortTen,
+									FRMPayload: []lorawan.Payload{
+										&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}},
+									},
+								},
+							},
+						},
+					},
+
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 6,
+				},
+				{
+					Name:                         "unconfirmed uplink data + two unconfirmed downlink payloads in queue",
+					RXInfo:                       rxInfo,
+					EncryptFRMPayloadKey:         ns.AppSKey,
+					DecryptExpectedFRMPayloadKey: ns.AppSKey,
+					SetMICKey:                    ns.NwkSKey,
+					TXPayloadQueue: []models.TXPayload{
+						{Reference: "a", DevEUI: ns.DevEUI, FPort: 10, Data: []byte{1, 2, 3, 4}},
+						{Reference: "b", DevEUI: ns.DevEUI, FPort: 10, Data: []byte{4, 3, 2, 1}},
+					},
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 1000000,
+								Frequency: rxInfo.Frequency,
+								Power:     14,
+								DataRate:  rxInfo.DataRate,
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+										FCtrl: lorawan.FCtrl{
+											FPending: true,
+										},
+									},
+									FPort: &fPortTen,
+									FRMPayload: []lorawan.Payload{
+										&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}},
+									},
+								},
+							},
+						},
+					},
+
+					ExpectedFCntUp:                10,
+					ExpectedFCntDown:              6,
+					ExpectedGetTXPayloadFromQueue: &models.TXPayload{Reference: "b", DevEUI: ns.DevEUI, FPort: 10, Data: []byte{4, 3, 2, 1}},
+				},
+				{
+					Name:                         "unconfirmed uplink data + one confirmed downlink payload in queue",
+					RXInfo:                       rxInfo,
+					EncryptFRMPayloadKey:         ns.AppSKey,
+					DecryptExpectedFRMPayloadKey: ns.AppSKey,
+					SetMICKey:                    ns.NwkSKey,
+					TXPayloadQueue: []models.TXPayload{
+						{Reference: "a", Confirmed: true, DevEUI: ns.DevEUI, FPort: 10, Data: []byte{1, 2, 3, 4}},
+					},
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 1000000,
+								Frequency: rxInfo.Frequency,
+								Power:     14,
+								DataRate:  rxInfo.DataRate,
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.ConfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+									},
+									FPort: &fPortTen,
+									FRMPayload: []lorawan.Payload{
+										&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}},
+									},
+								},
+							},
+						},
+					},
+
+					ExpectedFCntUp:                10,
+					ExpectedFCntDown:              5, // will be incremented after the node ACKs the frame
+					ExpectedGetTXPayloadFromQueue: &models.TXPayload{Reference: "a", Confirmed: true, DevEUI: ns.DevEUI, FPort: 10, Data: []byte{1, 2, 3, 4}},
+				},
+				{
+					Name:                         "unconfirmed uplink data with ACK + one confirmed downlink payload in in-process queue",
+					RXInfo:                       rxInfo,
+					EncryptFRMPayloadKey:         ns.AppSKey,
+					DecryptExpectedFRMPayloadKey: ns.AppSKey,
+					SetMICKey:                    ns.NwkSKey,
+					TXMACPayloadInProcess:        &models.TXPayload{Reference: "a", Confirmed: true, DevEUI: ns.DevEUI, FPort: 10, Data: []byte{1, 2, 3, 4}},
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+								FCtrl: lorawan.FCtrl{
+									ACK: true,
+								},
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1},
+					},
+					ExpectedApplicationNotifications: []interface{}{
+						models.ACKNotification{Reference: "a", DevEUI: ns.DevEUI},
+					},
+
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 6, // has been updated because of the ACK
+				},
+				{
+					Name:                         "unconfirmed uplink data + two unconfirmed downlink payload in queue of which the first exceeds the max payload size (for dr 0)",
+					RXInfo:                       rxInfo,
+					EncryptFRMPayloadKey:         ns.AppSKey,
+					DecryptExpectedFRMPayloadKey: ns.AppSKey,
+					SetMICKey:                    ns.NwkSKey,
+					TXPayloadQueue: []models.TXPayload{
+						{Reference: "a", DevEUI: ns.DevEUI, FPort: 10, Data: make([]byte, 52)},
+						{Reference: "b", DevEUI: ns.DevEUI, FPort: 10, Data: []byte{1, 2, 3, 4}},
+					},
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1},
+					},
+					ExpectedApplicationNotifications: []interface{}{
+						models.ErrorPayload{Reference: "a", DevEUI: ns.DevEUI, Message: "downlink payload max size exceeded (dr: 0, allowed: 51, got: 52)"},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 1000000,
+								Frequency: rxInfo.Frequency,
+								Power:     14,
+								DataRate:  rxInfo.DataRate,
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+									},
+									FPort: &fPortTen,
+									FRMPayload: []lorawan.Payload{
+										&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}},
+									},
+								},
+							},
+						},
+					},
+
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 6,
+				},
+				{
+					Name:                         "unconfirmed uplink data + one unconfirmed downlink payload in queue (exactly max size for dr 0) + one mac command",
+					RXInfo:                       rxInfo,
+					EncryptFRMPayloadKey:         ns.AppSKey,
+					DecryptExpectedFRMPayloadKey: ns.AppSKey,
+					SetMICKey:                    ns.NwkSKey,
+					TXPayloadQueue: []models.TXPayload{
+						{Reference: "a", DevEUI: ns.DevEUI, FPort: 10, Data: make([]byte, 51)},
+					},
+					TXMACPayloadQueue: []models.MACPayload{
+						{DevEUI: ns.DevEUI, MACCommand: []byte{6}},
+					},
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 1000000,
+								Frequency: rxInfo.Frequency,
+								Power:     14,
+								DataRate:  rxInfo.DataRate,
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+										FCtrl: lorawan.FCtrl{
+											FPending: true,
+										},
+										FOpts: []lorawan.MACCommand{
+											{CID: lorawan.CID(6)},
+										},
+									},
+								},
+							},
+						},
+					},
+
+					ExpectedFCntUp:                10,
+					ExpectedFCntDown:              6,
+					ExpectedGetTXPayloadFromQueue: &models.TXPayload{Reference: "a", DevEUI: ns.DevEUI, FPort: 10, Data: make([]byte, 51)},
+				},
+			}
+
+			runDataUpTests(ctx, ns.DevEUI, ns.DevAddr, tests)
+		})
+
 	})
+
 }
 
 func TestHandleJoinRequestPackets(t *testing.T) {
@@ -726,4 +1228,109 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 			})
 		})
 	})
+}
+
+func runDataUpTests(ctx Context, devEUI lorawan.EUI64, devAddr lorawan.DevAddr, tests []dataUpTestCase) {
+	for i, test := range tests {
+		Convey(fmt.Sprintf("When testing: %s [%d]", test.Name, i), func() {
+			ctx.Application.(*testApplicationBackend).err = test.ApplicationBackendError
+
+			for _, pl := range test.TXPayloadQueue {
+				So(addTXPayloadToQueue(ctx.RedisPool, pl), ShouldBeNil)
+			}
+
+			for _, mac := range test.TXMACPayloadQueue {
+				So(addMACPayloadToTXQueue(ctx.RedisPool, mac), ShouldBeNil)
+			}
+
+			if test.TXMACPayloadInProcess != nil {
+				So(addTXPayloadToQueue(ctx.RedisPool, *test.TXMACPayloadInProcess), ShouldBeNil)
+				_, err := getTXPayloadFromQueue(ctx.RedisPool, devEUI) // getting an item from the queue will put it into in-process
+				So(err, ShouldBeNil)
+			}
+
+			So(test.PHYPayload.EncryptFRMPayload(test.EncryptFRMPayloadKey), ShouldBeNil)
+			So(test.PHYPayload.SetMIC(test.SetMICKey), ShouldBeNil)
+
+			rxPacket := models.RXPacket{
+				PHYPayload: test.PHYPayload,
+				RXInfo:     test.RXInfo,
+			}
+
+			So(handleRXPacket(ctx, rxPacket), ShouldResemble, test.ExpectedHandleRXPacketError)
+
+			Convey("Then the expected rx-info payloads are sent to the network-controller", func() {
+				So(ctx.Controller.(*testControllerBackend).rxInfoPayloadChan, ShouldHaveLength, len(test.ExpectedControllerRXInfoPayloads))
+				for _, expPL := range test.ExpectedControllerRXInfoPayloads {
+					pl := <-ctx.Controller.(*testControllerBackend).rxInfoPayloadChan
+					So(pl, ShouldResemble, expPL)
+				}
+			})
+
+			Convey("Then the expected error payloads are sent to the network-controller", func() {
+				So(ctx.Controller.(*testControllerBackend).errorPayloadChan, ShouldHaveLength, len(test.ExpectedControllerErrorPayloads))
+				for _, expPL := range test.ExpectedControllerErrorPayloads {
+					pl := <-ctx.Controller.(*testControllerBackend).errorPayloadChan
+					So(pl, ShouldResemble, expPL)
+				}
+			})
+
+			Convey("Then the expected mac-commands are received by the network-controller", func() {
+				So(ctx.Controller.(*testControllerBackend).rxMACPayloadChan, ShouldHaveLength, len(test.ExpectedControllerRXMACPayloads))
+				for _, expPl := range test.ExpectedControllerRXMACPayloads {
+					pl := <-ctx.Controller.(*testControllerBackend).rxMACPayloadChan
+					So(pl, ShouldResemble, expPl)
+				}
+			})
+
+			Convey("Then the expected rx-payloads are received by the application-backend", func() {
+				So(ctx.Application.(*testApplicationBackend).rxPayloadChan, ShouldHaveLength, len(test.ExpectedApplicationRXPayloads))
+				for _, expPL := range test.ExpectedApplicationRXPayloads {
+					pl := <-ctx.Application.(*testApplicationBackend).rxPayloadChan
+					So(pl, ShouldResemble, expPL)
+				}
+			})
+
+			Convey("Then the expected notifications are received by the application-backend", func() {
+				So(ctx.Application.(*testApplicationBackend).notificationPayloadChan, ShouldHaveLength, len(test.ExpectedApplicationNotifications))
+				for _, expPL := range test.ExpectedApplicationNotifications {
+					pl := <-ctx.Application.(*testApplicationBackend).notificationPayloadChan
+					So(pl, ShouldResemble, expPL)
+				}
+			})
+
+			Convey("Then the expected tx-packets are received by the gateway (FRMPayload decrypted and MIC ignored)", func() {
+				So(ctx.Gateway.(*testGatewayBackend).txPacketChan, ShouldHaveLength, len(test.ExpectedGatewayTXPackets))
+				for _, expPL := range test.ExpectedGatewayTXPackets {
+					pl := <-ctx.Gateway.(*testGatewayBackend).txPacketChan
+					So(pl.PHYPayload.DecryptFRMPayload(test.DecryptExpectedFRMPayloadKey), ShouldBeNil)
+					expPL.PHYPayload.MIC = pl.PHYPayload.MIC
+					So(pl, ShouldResemble, expPL)
+				}
+			})
+
+			Convey("Then the frame-counters are as expected", func() {
+				ns, err := getNodeSessionByDevEUI(ctx.RedisPool, devEUI)
+				So(err, ShouldBeNil)
+				So(ns.FCntDown, ShouldEqual, test.ExpectedFCntDown)
+				So(ns.FCntUp, ShouldEqual, test.ExpectedFCntUp)
+			})
+
+			Convey("Then the MACPayload tx-queue is as expected", func() {
+				macQueue, err := readMACPayloadTXQueue(ctx.RedisPool, devAddr)
+				So(err, ShouldBeNil)
+				So(macQueue, ShouldResemble, test.ExpectedTXMACPayloadQueue)
+			})
+
+			Convey("Then the next TXPayload is as expected", func() {
+				txPL, err := getTXPayloadFromQueue(ctx.RedisPool, devEUI)
+				if test.ExpectedGetTXPayloadFromQueue == nil {
+					So(err, ShouldResemble, errEmptyQueue)
+				} else {
+					So(err, ShouldBeNil)
+					So(txPL, ShouldResemble, *test.ExpectedGetTXPayloadFromQueue)
+				}
+			})
+		})
+	}
 }
