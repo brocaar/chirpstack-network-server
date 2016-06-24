@@ -1,4 +1,4 @@
-# Network controlling
+# Network controller
 
 LoRa Server does not implement a network-controller, but it provides
 an api to integrate your own network-controller with LoRa Server.
