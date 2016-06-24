@@ -84,7 +84,7 @@ func TestBackend(t *testing.T) {
 				})
 			})
 
-			Convey("given the MQTT client is subscribed to application/+/node/+/mac/error", func() {
+			Convey("Given the MQTT client is subscribed to application/+/node/+/mac/error", func() {
 				errChan := make(chan models.ErrorPayload)
 				token := c.Subscribe("application/+/node/+/mac/error", 0, func(c mqtt.Client, msg mqtt.Message) {
 					var pl models.ErrorPayload

@@ -127,7 +127,7 @@ func TestTXPayloadQueue(t *testing.T) {
 							})
 						})
 
-						Convey("THen after 150 ms the queue has expired (both in-process and the queue)", func() {
+						Convey("Then after 150 ms the queue has expired (both in-process and the queue)", func() {
 							time.Sleep(100 * time.Millisecond)
 							_, err := getTXPayloadFromQueue(p, devEUI)
 							So(err, ShouldResemble, errEmptyQueue)

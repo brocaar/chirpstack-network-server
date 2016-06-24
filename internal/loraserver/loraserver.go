@@ -31,18 +31,18 @@ func NewServer(ctx Context) *Server {
 func (s *Server) Start() error {
 	go func() {
 		s.wg.Add(1)
+		defer s.wg.Done()
 		handleRXPackets(s.ctx)
-		s.wg.Done()
 	}()
 	go func() {
 		s.wg.Add(1)
+		defer s.wg.Done()
 		handleTXPayloads(s.ctx)
-		s.wg.Done()
 	}()
 	go func() {
 		s.wg.Add(1)
+		defer s.wg.Done()
 		handleTXMACPayloads(s.ctx)
-		s.wg.Done()
 	}()
 	return nil
 }
@@ -70,6 +70,7 @@ func handleTXPayloads(ctx Context) {
 	for txPayload := range ctx.Application.TXPayloadChan() {
 		go func(txPayload models.TXPayload) {
 			wg.Add(1)
+			defer wg.Done()
 			if err := addTXPayloadToQueue(ctx.RedisPool, txPayload); err != nil {
 				log.WithFields(log.Fields{
 					"dev_eui":     txPayload.DevEUI,
@@ -77,7 +78,6 @@ func handleTXPayloads(ctx Context) {
 					"data_base64": base64.StdEncoding.EncodeToString(txPayload.Data),
 				}).Errorf("add tx-payload to queue error: %s", err)
 			}
-			wg.Done()
 		}(txPayload)
 	}
 	wg.Wait()
@@ -88,11 +88,11 @@ func handleRXPackets(ctx Context) {
 	for rxPacket := range ctx.Gateway.RXPacketChan() {
 		go func(rxPacket models.RXPacket) {
 			wg.Add(1)
+			defer wg.Done()
 			if err := handleRXPacket(ctx, rxPacket); err != nil {
 				data, _ := rxPacket.PHYPayload.MarshalText()
 				log.WithField("data_base64", string(data)).Errorf("processing rx packet error: %s", err)
 			}
-			wg.Done()
 		}(rxPacket)
 	}
 	wg.Wait()
@@ -103,6 +103,7 @@ func handleTXMACPayloads(ctx Context) {
 	for txMACPayload := range ctx.Controller.TXMACPayloadChan() {
 		go func(txMACPayload models.MACPayload) {
 			wg.Add(1)
+			defer wg.Done()
 			if err := addMACPayloadToTXQueue(ctx.RedisPool, txMACPayload); err != nil {
 				log.WithFields(log.Fields{
 					"dev_eui":     txMACPayload.DevEUI,
@@ -110,7 +111,6 @@ func handleTXMACPayloads(ctx Context) {
 					"data_base64": base64.StdEncoding.EncodeToString(txMACPayload.MACCommand),
 				}).Errorf("add tx mac-payload to queue error: %s", err)
 			}
-			wg.Done()
 		}(txMACPayload)
 	}
 	wg.Wait()
