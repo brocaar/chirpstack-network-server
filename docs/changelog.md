@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.0 (unreleased)
+
+* Implement network-controller backend
+* Implement support for sending and receiving MAC commands
+
 ## 0.7.0
 
 * Complete join-accept payload with:

@@ -19,6 +19,7 @@ Currently implemented:
 - (confirmed) data down
 - activation by personalization (ABP)
 - over-the-air activation (OTAA)
+- sending / receiving of MAC commands
 - web-interface
 - JSON-RPC API (see web-interface for documentation)
 - ISM bands

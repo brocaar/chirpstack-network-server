@@ -66,3 +66,15 @@ This sets the MQTT username for the application backend.
 
 This sets the MQTT password for the application backend.
 
+#### --controller-mqtt-server / CONTROLLER_MQTT_SERVER
+
+This sets the MQTT server to connect the network-controller backend to.
+
+#### --controller-mqtt-username / CONTROLLER_MQTT_USERNAME
+
+This sets the MQTT username for the network-controller backend.
+
+#### --controller-mqtt-password / CONTROLLER_MQTT_PASSWORD
+
+This sets the MQTT password for the network-controller backend.
+
