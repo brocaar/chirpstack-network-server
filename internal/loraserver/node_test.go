@@ -298,6 +298,13 @@ func TestNodeAPI(t *testing.T) {
 						Offset: 0,
 					}, &nodes), ShouldBeNil)
 					So(nodes, ShouldHaveLength, 1)
+
+					So(api.GetListForAppEUI(models.GetListForAppEUIRequest{
+						AppEUI: node.AppEUI,
+						Limit:  10,
+						Offset: 0,
+					}, &nodes), ShouldBeNil)
+					So(nodes, ShouldHaveLength, 1)
 				})
 			})
 		})

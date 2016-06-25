@@ -132,6 +132,16 @@ func getNodes(db *sqlx.DB, limit, offset int) ([]models.Node, error) {
 	return nodes, nil
 }
 
+// getNodesForAppEUI returns a slice of nodes, sorted by DevEUI, for the given AppEUI.
+func getNodesForAppEUI(db *sqlx.DB, appEUI lorawan.EUI64, limit, offset int) ([]models.Node, error) {
+	var nodes []models.Node
+	err := db.Select(&nodes, "select * from node where app_eui = $1 order by dev_eui limit $2 offset $3", appEUI[:], limit, offset)
+	if err != nil {
+		return nodes, fmt.Errorf("get nodes error: %s", err)
+	}
+	return nodes, nil
+}
+
 // addTXPayloadToQueue adds the given TXPayload to the queue.
 func addTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
 	var buf bytes.Buffer
@@ -307,6 +317,13 @@ func (a *NodeAPI) Get(devEUI lorawan.EUI64, node *models.Node) error {
 func (a *NodeAPI) GetList(req models.GetListRequest, nodes *[]models.Node) error {
 	var err error
 	*nodes, err = getNodes(a.ctx.DB, req.Limit, req.Offset)
+	return err
+}
+
+// GetListForAppEUI returns a list of nodes (given an AppEUI, limit and offset).
+func (a *NodeAPI) GetListForAppEUI(req models.GetListForAppEUIRequest, nodes *[]models.Node) error {
+	var err error
+	*nodes, err = getNodesForAppEUI(a.ctx.DB, req.AppEUI, req.Limit, req.Offset)
 	return err
 }
 

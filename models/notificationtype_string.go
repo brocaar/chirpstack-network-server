@@ -4,9 +4,9 @@ package models
 
 import "fmt"
 
-const _NotificationType_name = "JoinNotificationTypeErrorNotificationTypeACKNotificationTypeRXInfoNotificationType"
+const _NotificationType_name = "JoinNotificationTypeErrorNotificationTypeACKNotificationType"
 
-var _NotificationType_index = [...]uint8{0, 20, 41, 60, 82}
+var _NotificationType_index = [...]uint8{0, 20, 41, 60}
 
 func (i NotificationType) String() string {
 	if i < 0 || i >= NotificationType(len(_NotificationType_index)-1) {
