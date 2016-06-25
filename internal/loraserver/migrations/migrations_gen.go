@@ -104,7 +104,7 @@ func _0002_join_accept_paramsSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "0002_join_accept_params.sql", size: 845, mode: os.FileMode(420), modTime: time.Unix(1463330460, 0)}
+	info := bindataFileInfo{name: "0002_join_accept_params.sql", size: 845, mode: os.FileMode(420), modTime: time.Unix(1463414765, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

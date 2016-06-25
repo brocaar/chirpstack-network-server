@@ -16,19 +16,20 @@
         <td>{{ app.appEUI }}</td>
         <td>{{ app.name }}</td>
         <td class="text-right">
-          <a class="btn btn-sm btn-default" href="/#/applications/{{ app.appEUI }}">Edit</a>
-          <button class="btn btn-sm btn-danger" ng-click="delete(app)">Delete</a>
+          <a class="btn btn-sm btn-default" href="/#/applications/{{app.appEUI}}">Nodes</a>
+          <button class="btn btn-sm btn-default" ng-click="editApplication(app)">Edit</button>
+          <button class="btn btn-sm btn-danger" ng-click="deleteApplication(app)">Delete</button>
         </td>
       </tr>
     </tbody>
   </table>
 
   <div class="btn-group" role="group" aria-label="...">
-    <button type="button" class="btn btn-default" ng-click="create()">Create application</button>
+    <button type="button" class="btn btn-default" ng-click="createApplication()">Create application</button>
   </div>
 </div>
 
-<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+<div class="modal fade" id="editApplicationModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -46,7 +47,7 @@
       <div class="modal-footer">
         <div class="pull-left text-danger" ng-if="error">{{ error }}</div>
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" ng-click="update(app)">Save changes</button>
+        <button type="button" class="btn btn-primary" ng-click="updateApplication(app)">Save changes</button>
       </div>
     </div>
   </div>
@@ -74,7 +75,7 @@
       <div class="modal-footer">
         <div class="pull-left text-danger" ng-if="error">{{ error }}</div>
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" ng-click="create(app)">Create application</button>
+        <button type="button" class="btn btn-primary" ng-click="createApplication(app)">Create application</button>
       </div>
     </div>
   </div>
