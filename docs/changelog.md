@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.8.0 (unreleased)
+## 0.8.0
 
 * Implement network-controller backend
 * Implement support for sending and receiving MAC commands (no support for proprietary commands yet)
