@@ -1,8 +1,6 @@
 # LoRa Server
 
 [![Build Status](https://travis-ci.org/brocaar/loraserver.svg?branch=master)](https://travis-ci.org/brocaar/loraserver)
-[![Documentation Status](https://readthedocs.org/projects/loraserver/badge/?version=latest)](http://loraserver.readthedocs.org/en/latest/?badge=latest)
-[![Documentation Status](https://readthedocs.org/projects/loraserver/badge/?version=stable)](http://loraserver.readthedocs.org/en/stable/?badge=stable)
 [![GoDoc](https://godoc.org/github.com/brocaar/loraserver?status.svg)](https://godoc.org/github.com/brocaar/loraserver)
 
 *LoRa Server* is a LoRaWAN network-server. It is responsible for the
