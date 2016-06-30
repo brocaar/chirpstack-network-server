@@ -34,7 +34,7 @@ Currently implemented:
 
 ## Documentation
 
-See the [http://loraserver.readthedocs.org/](http://loraserver.readthedocs.org/)
+See [http://docs.loraserver.io/loraserver/](http://docs.loraserver.io/loraserver/)
 for documentation about setting up the LoRa Server and receiving and sending
 data.
 
