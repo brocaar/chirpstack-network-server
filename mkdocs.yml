@@ -9,8 +9,9 @@ pages:
   - receiving-data.md
   - sending-data.md
   - network-controller.md
-  - configuration.md
   - api.md
+  - configuration.md
+  - frequently-asked-questions.md
   - changelog.md
 
 extra:
