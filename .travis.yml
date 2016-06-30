@@ -1,24 +1,49 @@
 language: go
+sudo: required
 go:
   - 1.6.2
+before_install:
+  - sudo apt-get -qq update
+
 script:
   - make run-compose-test
+
 services:
   - docker
+
 before_deploy:
+  - sudo apt-get install -y python-pip
+  - sudo pip install -r requirements.txt
+  - mkdocs build
+
   - GOOS=linux GOARCH=amd64 make package
   - GOOS=linux GOARCH=386 make package
   - GOOS=linux GOARCH=arm make package
   - GOOS=darwin GOARCH=amd64 make package
   - GOOS=windows BINEXT=.exe GOARCH=386 make package
   - GOOS=windows BINEXT=.exe GOARCH=amd64 make package
+
 deploy:
-  skip_cleanup: true
-  provider: releases
-  api_key:
-    secure: Jc77WnvZXxpfayDcgN71pN51ZKr/LT58a0BG6FEnVkEW2ZnhxhIrI/p8XPcPRSgz0J/BKXlLWCjJXRQ9BDYAJ7ZDXAubmxtjz5Zhkf9QiKYvkujj2sxaU+1qmNA0x86lm9o4EFbcjUZ2CKk8EB7vx+5OZss6VxpNmaOiCkv7BaenCm/hYowHWaqHu9Wkg9vU53KV9WTLqAGEllw3HglPew/kOBK8QVi25NcohWZZAiQ6wkzGkCpiFUiMWcts7iqjri7O1AaN/LqwP+8wzV9BtvH6JUCG0nkz6ek7wNZ2ubBb6R4jx1dIHifpwRbdjK1jJwlxruhM7Yswu9yGxT9YUcd1IN6ZFxblaea7Nom9ck0I90PPbj9+W0W3MluvsrUTyiP+gxD19DJ8+WI9rCoAyZRqvKoWcrHByvjDkymetghwkACddF0UMCvorDZKt7wWzoG0fnhOgf1AyaDEWQq9dz7xp2Ae/xJR3W2yM3HQ2tbkgWq9QIQYzbG9L/6lEmXdn+DHBk8LShcPfTgDwLfeS5LRl8FiXHow4Sdkd+ffjuUxCP0E6Fr/JpueiE3l0bLCc/aLP8hd6GrQGBDUuP84T1INPXltcqNPevrMXp9R8oWtSTYBurPA8QikNScZ3Zh1WU+w32oagCZb1YXdRnm3oeZYXFjWb/r3o7VDyxnSOcM=
-  file_glob: true
-  file: "dist/*.tar.gz"
-  on:
-    tags: true
-    repo: brocaar/loraserver
+  - provider: releases
+    skip_cleanup: true
+    api_key:
+      secure: Jc77WnvZXxpfayDcgN71pN51ZKr/LT58a0BG6FEnVkEW2ZnhxhIrI/p8XPcPRSgz0J/BKXlLWCjJXRQ9BDYAJ7ZDXAubmxtjz5Zhkf9QiKYvkujj2sxaU+1qmNA0x86lm9o4EFbcjUZ2CKk8EB7vx+5OZss6VxpNmaOiCkv7BaenCm/hYowHWaqHu9Wkg9vU53KV9WTLqAGEllw3HglPew/kOBK8QVi25NcohWZZAiQ6wkzGkCpiFUiMWcts7iqjri7O1AaN/LqwP+8wzV9BtvH6JUCG0nkz6ek7wNZ2ubBb6R4jx1dIHifpwRbdjK1jJwlxruhM7Yswu9yGxT9YUcd1IN6ZFxblaea7Nom9ck0I90PPbj9+W0W3MluvsrUTyiP+gxD19DJ8+WI9rCoAyZRqvKoWcrHByvjDkymetghwkACddF0UMCvorDZKt7wWzoG0fnhOgf1AyaDEWQq9dz7xp2Ae/xJR3W2yM3HQ2tbkgWq9QIQYzbG9L/6lEmXdn+DHBk8LShcPfTgDwLfeS5LRl8FiXHow4Sdkd+ffjuUxCP0E6Fr/JpueiE3l0bLCc/aLP8hd6GrQGBDUuP84T1INPXltcqNPevrMXp9R8oWtSTYBurPA8QikNScZ3Zh1WU+w32oagCZb1YXdRnm3oeZYXFjWb/r3o7VDyxnSOcM=
+    file_glob: true
+    file: "dist/*.tar.gz"
+    on:
+      tags: true
+      repo: brocaar/loraserver
+
+  - provider: s3
+    skip_cleanup: true
+    access_key_id: AKIAJLTNEMD6RLNMP2NQ
+    secret_access_key:
+      secure: pnQNOFBYjOJ05WtwQxKHT/Wlgnefgox8OjaTL7xU7pDafDxlP24IKcCA9D7rg6ofWoX/OEcbtfFgJJOGRGCOheB3jji/HKlfVQJwANCJyF2mViveHSBniLPS7SlQ4YXiH1+bS0d+iPMzCiGVkBnH1v6ezzr7TDsb6436hHVI7FJZzJXy+QXX8A04pxXRtl9KJySlVR4hpcMQdY8mADFmmQ8LXjCMlIOBVjj00YCVMoZoE0WCQSmA0UB2LaMF1k0256FjPiIVJKXXh6TZmGmBpgt89D9IAQWjumgZZptGKoOBCfaLQdoS+hXsJmx3AgDWzqyx+tYiz/EXu6sjSWWDNIpvBhkHTPkTqDQqKUevL8WYdvrp42wk1/OxeqBpwh5SMA3uST6smqJ+EUS/8hmCVKQyfzvqf/hSYxARm5Qpa1yvEGwHnqXA3KoqZl8DMTivggmP/uN73kocZXwZeI7Dv8bIhSgQ+yHDgBCVR8UGhXtUp78aUIANxndVXvyJQKy9ThVCXJwtZCbAD5w88xt9LMAfnVmPQcf+i4aDWGDNR51VwysnGeixOUvLFPtD0EWx9W1lFtwQtK1hjXnm6SPkJ3CudMPjjpI/6QrHdv6lHMAd8qPlAEiz/OhdZxDkpENYUXk07mzJMB73K5+GMZqtuPCRBH1xJYg7m7IILT3QtPE=
+    bucket: docs.loraserver.io
+    local-dir: site
+    upload-dir: loraserver
+    acl: public_read
+    region: eu-west-1
+    on:
+      branch: master
+      repo: brocaar/loraserver

@@ -1,4 +1,7 @@
 site_name: LoRa Server documentation
+repo_url: https://github.com/brocaar/loraserver
+theme_dir: docs/material
+
 pages:
   - index.md
   - getting-started.md
@@ -9,5 +12,14 @@ pages:
   - configuration.md
   - api.md
   - changelog.md
-theme: readthedocs
-repo_url: https://github.com/brocaar/loraserver/
+
+extra:
+  version: '0.8.0'
+  github:
+    download_release: true
+
+markdown_extensions:
+  - admonition
+  - codehilite(css_class=code)
+
+google_analytics: ['UA-3512995-9', 'docs.loraserver.io']
