@@ -52,8 +52,7 @@ for the following actions:
 4. Click **Set Join Parameter**
 5. Click **Join Network**
 
-## Your node not here?
-
-Please help making this guide complete! Fork the [github.com/brocaar/loraserver](https://github.com/brocaar/loraserver)
-repository, update this page (under ``docs``) with the actions needed to setup
-your node and create a pull-request :-)
+!!! info "Your node not here?"
+    Please help making this guide complete! Fork the [github.com/brocaar/loraserver](https://github.com/brocaar/loraserver)
+    repository, update this page with the actions needed to setup your node
+    and create a pull-request :-)
