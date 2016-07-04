@@ -4,14 +4,16 @@ import "github.com/brocaar/lorawan"
 
 // NodeSession contains the informatio of a node-session (an activated node).
 type NodeSession struct {
-	DevAddr  lorawan.DevAddr   `db:"dev_addr" json:"devAddr"`
-	AppEUI   lorawan.EUI64     `db:"app_eui" json:"appEUI"`
-	DevEUI   lorawan.EUI64     `db:"dev_eui" json:"devEUI"`
-	AppSKey  lorawan.AES128Key `db:"app_s_key" json:"appSKey"`
-	NwkSKey  lorawan.AES128Key `db:"nwk_s_key" json:"nwkSKey"`
-	FCntUp   uint32            `db:"fcnt_up" json:"fCntUp"`
-	FCntDown uint32            `db:"fcnt_down" json:"fCntDown"`
+	DevAddr  lorawan.DevAddr   `json:"devAddr"`
+	AppEUI   lorawan.EUI64     `json:"appEUI"`
+	DevEUI   lorawan.EUI64     `json:"devEUI"`
+	AppSKey  lorawan.AES128Key `json:"appSKey"`
+	NwkSKey  lorawan.AES128Key `json:"nwkSKey"`
+	FCntUp   uint32            `json:"fCntUp"`
+	FCntDown uint32            `json:"fCntDown"`
 
-	RXDelay     uint8 `db:"rx_delay" json:"rxDelay"`
-	RX1DROffset uint8 `db:"rx1_dr_offset" json:"rx1DROffset"`
+	RXDelay     uint8 `json:"rxDelay"`
+	RX1DROffset uint8 `json:"rx1DROffset"`
+
+	CFList *lorawan.CFList `json:"cFlist"`
 }

@@ -10,9 +10,10 @@ import (
 )
 
 type dataDownProperties struct {
-	rx1Channel int
-	rx1DR      int
-	rxDelay    time.Duration
+	rx1Channel   int
+	rx1DR        int
+	rx1Frequency int
+	rxDelay      time.Duration
 }
 
 func getDataDownProperties(rxInfo models.RXInfo, ns models.NodeSession) (dataDownProperties, error) {
@@ -26,7 +27,7 @@ func getDataDownProperties(rxInfo models.RXInfo, ns models.NodeSession) (dataDow
 	}
 
 	// get TX channel
-	uplinkChannel, err := Band.GetChannel(rxInfo.Frequency, uplinkDR)
+	uplinkChannel, err := Band.GetChannel(rxInfo.Frequency, ns.CFList)
 	if err != nil {
 		return prop, err
 	}
@@ -36,6 +37,12 @@ func getDataDownProperties(rxInfo models.RXInfo, ns models.NodeSession) (dataDow
 
 	// get RX1 DR
 	prop.rx1DR, err = Band.GetRX1DataRateForOffset(uplinkDR, int(ns.RX1DROffset))
+	if err != nil {
+		return prop, err
+	}
+
+	// get RX1 frequency
+	prop.rx1Frequency, err = Band.GetDownlinkFrequency(prop.rx1Channel, ns.CFList)
 	if err != nil {
 		return prop, err
 	}
@@ -214,7 +221,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		if frmMACCommands {
 			var fPort uint8 // 0
 			var frmPayload []lorawan.Payload
-			for i, _ := range macCommmands {
+			for i := range macCommmands {
 				frmPayload = append(frmPayload, &macCommmands[i])
 			}
 			macPL.FPort = &fPort
@@ -257,7 +264,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		TXInfo: models.TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
 			Timestamp: rxPacket.RXInfo.Timestamp + uint32(properties.rxDelay/time.Microsecond),
-			Frequency: Band.DownlinkChannels[properties.rx1Channel].Frequency,
+			Frequency: properties.rx1Frequency,
 			Power:     Band.DefaultTXPower,
 			DataRate:  Band.DataRates[properties.rx1DR],
 			CodeRate:  rxPacket.RXInfo.CodeRate,

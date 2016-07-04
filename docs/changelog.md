@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.1
+
+* Bugfix: 'fix unknown channel for frequency' error when using custom-channels (`CFList`)
+  (thanks @arjansplit)
+
 ## 0.8.0
 
 * Implement network-controller backend

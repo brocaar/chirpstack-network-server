@@ -116,6 +116,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		AppEUI:      node.AppEUI,
 		RXDelay:     node.RXDelay,
 		RX1DROffset: node.RX1DROffset,
+		CFList:      cFList,
 	}
 	if err = saveNodeSession(ctx.RedisPool, ns); err != nil {
 		return fmt.Errorf("save node-session error: %s", err)
@@ -157,7 +158,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		return err
 	}
 	// get TX channel
-	uplinkChannel, err := Band.GetChannel(rxPacket.RXInfo.Frequency, uplinkDR)
+	uplinkChannel, err := Band.GetChannel(rxPacket.RXInfo.Frequency, nil)
 	if err != nil {
 		return err
 	}
