@@ -56,6 +56,9 @@ type GatewayStatsPacket struct {
 	Altitude            float64       `json:"altitude"`
 	RXPacketsReceived   int           `json:"rxPacketsReceived"`
 	RXPacketsReceivedOK int           `json:"rxPacketsReceivedOK"`
+	Platform            string        `json:"platform"`
+	ContactEmail        string        `json:"contactEmail"`
+	Description         string        `json:"description"`
 }
 
 // RXPayload contains the received (decrypted) payload from the node
