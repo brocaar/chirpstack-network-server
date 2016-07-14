@@ -113,9 +113,9 @@ func deleteNode(db *sqlx.DB, devEUI lorawan.EUI64) error {
 }
 
 // getNode returns the Node for the given DevEUI.
-func getNode(db *sqlx.DB, devEUI lorawan.EUI64) (models.Node, error) {
+func getNode(db *sqlx.DB, devEUI lorawan.EUI64, appEUI lorawan.EUI64) (models.Node, error) {
 	var node models.Node
-	err := db.Get(&node, "select * from node where dev_eui = $1", devEUI[:])
+	err := db.Get(&node, "select * from node where dev_eui = $1 and app_eui = $2", devEUI[:], appEUI[:])
 	if err != nil {
 		return node, fmt.Errorf("get node %s error: %s", devEUI, err)
 	}
@@ -307,9 +307,9 @@ func NewNodeAPI(ctx Context) *NodeAPI {
 }
 
 // Get returns the Node for the given DevEUI.
-func (a *NodeAPI) Get(devEUI lorawan.EUI64, node *models.Node) error {
+func (a *NodeAPI) Get(devEUI lorawan.EUI64, appEUI lorawan.EUI64, node *models.Node) error {
 	var err error
-	*node, err = getNode(a.ctx.DB, devEUI)
+	*node, err = getNode(a.ctx.DB, devEUI, appEUI)
 	return err
 }
 

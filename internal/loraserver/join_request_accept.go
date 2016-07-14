@@ -21,7 +21,7 @@ func validateAndCollectJoinRequestPacket(ctx Context, rxPacket models.RXPacket) 
 	}
 
 	// get node information for this DevEUI
-	node, err := getNode(ctx.DB, jrPL.DevEUI)
+	node, err := getNode(ctx.DB, jrPL.DevEUI, jrPL.AppEUI)
 	if err != nil {
 		return err
 	}
@@ -66,8 +66,8 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		"mtype":    rxPackets[0].PHYPayload.MHDR.MType,
 	}).Info("packet(s) collected")
 
-	// get node information for this DevEUI
-	node, err := getNode(ctx.DB, jrPL.DevEUI)
+	// get node information for this DevEUI and it's AppEUI
+	node, err := getNode(ctx.DB, jrPL.DevEUI, jrPL.AppEUI)
 	if err != nil {
 		return err
 	}
