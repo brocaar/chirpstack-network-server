@@ -1158,6 +1158,33 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 			}
 			So(createNode(ctx.DB, node), ShouldBeNil)
 
+			Convey("Given a JoinRequest with correct DevEUI but incorrect AppEUI", func() {
+				phy := lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.JoinRequest,
+						Major: lorawan.LoRaWANR1,
+					},
+					MACPayload: &lorawan.JoinRequestPayload{
+						AppEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 9},
+						DevEUI:   node.DevEUI,
+						DevNonce: [2]byte{1, 2},
+					},
+				}
+				So(phy.SetMIC(node.AppKey), ShouldBeNil)
+
+				rxPacket := models.RXPacket{
+					PHYPayload: phy,
+					RXInfo: models.RXInfo{
+						Frequency: Band.UplinkChannels[0].Frequency,
+						DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
+					},
+				}
+
+				Convey("then handleRXPacket returns an error", func() {
+					So(handleRXPacket(ctx, rxPacket), ShouldResemble, errors.New("node 0807060504030201 belongs to application 0102030405060708, 0102030405060709 was given"))
+				})
+			})
+
 			Convey("Given a JoinRequest packet", func() {
 				phy := lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{

@@ -26,6 +26,11 @@ func validateAndCollectJoinRequestPacket(ctx Context, rxPacket models.RXPacket) 
 		return err
 	}
 
+	// validate that the DevEUI belongs to the given AppEUI
+	if node.AppEUI != jrPL.AppEUI {
+		return fmt.Errorf("node %s belongs to application %s, %s was given", jrPL.DevEUI, node.AppEUI, jrPL.AppEUI)
+	}
+
 	// validate the MIC
 	ok, err = rxPacket.PHYPayload.ValidateMIC(node.AppKey)
 	if err != nil {
