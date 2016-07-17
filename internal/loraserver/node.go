@@ -264,6 +264,23 @@ func clearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPay
 	return &txPayload, nil
 }
 
+// flushTXPayloadQueue flushes the tx payload queue for the given DevEUI.
+func flushTXPayloadQueue(p *redis.Pool, devEUI lorawan.EUI64) error {
+	keys := []interface{}{
+		fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI),
+		fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI),
+	}
+
+	c := p.Get()
+	defer c.Close()
+
+	_, err := redis.Int(c.Do("DEL", keys...))
+	if err != nil {
+		return fmt.Errorf("flush tx-payload queue for DevEUI %s error: %s", devEUI, err)
+	}
+	return nil
+}
+
 // getCFListForNode returns the CFList for the given node if the
 // used ISM band allows using a CFList.
 func getCFListForNode(db *sqlx.DB, node models.Node) (*lorawan.CFList, error) {
@@ -351,5 +368,14 @@ func (a *NodeAPI) Delete(devEUI lorawan.EUI64, deletedDevEUI *lorawan.EUI64) err
 		return err
 	}
 	*deletedDevEUI = devEUI
+	return nil
+}
+
+// FlushTXPayloadQueue flushes the tx-payload queue for the given DevEUI.
+func (a *NodeAPI) FlushTXPayloadQueue(devEUI lorawan.EUI64, affectedDevEUI *lorawan.EUI64) error {
+	if err := flushTXPayloadQueue(a.ctx.RedisPool, devEUI); err != nil {
+		return err
+	}
+	*affectedDevEUI = devEUI
 	return nil
 }

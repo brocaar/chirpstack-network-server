@@ -127,6 +127,16 @@ func TestTXPayloadQueue(t *testing.T) {
 							})
 						})
 
+						Convey("When flushing the queue", func() {
+							So(flushTXPayloadQueue(p, devEUI), ShouldBeNil)
+
+							Convey("Then the queue size is 0", func() {
+								count, err := getTXPayloadQueueSize(p, devEUI)
+								So(err, ShouldBeNil)
+								So(count, ShouldEqual, 0)
+							})
+						})
+
 						Convey("Then after 150 ms the queue has expired (both in-process and the queue)", func() {
 							time.Sleep(100 * time.Millisecond)
 							_, err := getTXPayloadFromQueue(p, devEUI)
