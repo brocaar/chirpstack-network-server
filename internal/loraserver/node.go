@@ -278,6 +278,9 @@ func flushTXPayloadQueue(p *redis.Pool, devEUI lorawan.EUI64) error {
 	if err != nil {
 		return fmt.Errorf("flush tx-payload queue for DevEUI %s error: %s", devEUI, err)
 	}
+	log.WithFields(log.Fields{
+		"dev_eui": devEUI,
+	}).Info("tx-payload queue flushed")
 	return nil
 }
 
