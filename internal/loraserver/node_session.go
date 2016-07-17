@@ -380,7 +380,7 @@ func (a *NodeSessionAPI) Create(ns models.NodeSession, devAddr *lorawan.DevAddr)
 	// validate that the node exists
 	var node models.Node
 	var err error
-	if node, err = getNode(a.ctx.DB, ns.DevEUI); err != nil {
+	if node, err = getNode(a.ctx.DB, ns.DevEUI, ns.AppEUI); err != nil {
 		return err
 	}
 
