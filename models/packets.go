@@ -49,14 +49,15 @@ type TXInfo struct {
 
 // GatewayStatsPacket contains the information of a gateway.
 type GatewayStatsPacket struct {
-	MAC                 lorawan.EUI64 `json:"mac"`
-	Time                time.Time     `json:"time"`
-	Latitude            float64       `json:"latitude"`
-	Longitude           float64       `json:"longitude"`
-	Altitude            float64       `json:"altitude"`
-	RXPacketsReceived   int           `json:"rxPacketsReceived"`
-	RXPacketsReceivedOK int           `json:"rxPacketsReceivedOK"`
-	TXPacketsEmitted    int           `json:"txPacketsEmitted"`
+	MAC                 lorawan.EUI64          `json:"mac"`
+	Time                time.Time              `json:"time"`
+	Latitude            float64                `json:"latitude"`
+	Longitude           float64                `json:"longitude"`
+	Altitude            float64                `json:"altitude"`
+	RXPacketsReceived   int                    `json:"rxPacketsReceived"`
+	RXPacketsReceivedOK int                    `json:"rxPacketsReceivedOK"`
+	TXPacketsEmitted    int                    `json:"txPacketsEmitted"`
+	CustomData          map[string]interface{} `json:"customData"` // custom fields defined by alternative packet_forwarder versions (e.g. TTN sends platform, contactEmail, and description)
 }
 
 // RXPayload contains the received (decrypted) payload from the node
