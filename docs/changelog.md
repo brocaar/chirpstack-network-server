@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.2
+
+* Validate the join-request DevEUI belongs to the given AppEUI
+* Implement `Node.FlushTXPayloadQueue` API method
+* Update `GatewayStatsPacket` struct (`CustomData` and `TXPacketsEmitted`, to
+  be implemented by the lora-gateway-bridge).
+
+
 ## 0.8.1
 
 * Bugfix: 'fix unknown channel for frequency' error when using custom-channels (`CFList`)
