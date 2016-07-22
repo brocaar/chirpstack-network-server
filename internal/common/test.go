@@ -1,15 +1,19 @@
 package common
 
 import (
-	"log"
 	"os"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	migrate "github.com/rubenv/sql-migrate"
 
 	"github.com/brocaar/loraserver/internal/loraserver/migrations"
 )
+
+func init() {
+	log.SetLevel(log.ErrorLevel)
+}
 
 // TestConfig contains the test configuration.
 type TestConfig struct {
