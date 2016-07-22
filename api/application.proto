@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package api;
+
+// for grpc-gateway
+import "google/api/annotations.proto";
+
+// Application is the service managing the applications.
+service Application {
+	// Create creates the given application.
+	rpc Create(CreateApplicationRequest) returns (CreateApplicationResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/application/create"
+			body: "*"
+		};
+	}
+
+	// Get returns the application for the given AppEUI.
+	rpc Get(GetApplicationRequest) returns (GetApplicationResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/application/get"
+			body: "*"
+		};	
+	}
+
+	// Delete deletes the application matching the given AppEUI.
+	rpc Delete(DeleteApplicationRequest) returns (DeleteApplicationResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/application/delete"
+			body: "*"
+		};
+	}
+
+	// List lists the applications.
+	rpc List(ListApplicationRequest) returns (ListApplicationResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/application/list"
+			body: "*"
+		};
+	}
+
+	// Update updates the application matching the given AppEUI.
+	rpc Update(UpdateApplicationRequest) returns (UpdateApplicationResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/application/update"
+			body: "*"
+		};
+	}
+}
+
+message CreateApplicationRequest {
+	string appEUI = 1;
+	string name = 2;
+}
+
+message CreateApplicationResponse {}
+
+message GetApplicationRequest {
+	string appEUI = 1;
+}
+
+message GetApplicationResponse {
+	string appEUI = 1;
+	string name = 2;	
+}
+
+message DeleteApplicationRequest {
+	string appEUI = 1;
+}
+
+message DeleteApplicationResponse {}
+
+message ListApplicationRequest {
+	int64 limit = 1;
+	int64 offset = 2;	
+}
+
+message ListApplicationResponse {
+	int64 totalCount = 1;
+	repeated GetApplicationResponse result = 2;
+}
+
+message UpdateApplicationRequest {
+	string appEUI = 1;
+	string name = 2;
+}
+
+message UpdateApplicationResponse {}
