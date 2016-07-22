@@ -5,17 +5,19 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestNodeSession(t *testing.T) {
-	conf := getConfig()
+	conf := common.GetTestConfig()
 
 	Convey("Given a clean Redis database", t, func() {
 		p := NewRedisPool(conf.RedisURL)
-		mustFlushRedis(p)
+		common.MustFlushRedis(p)
 
 		Convey("Given a NodeSession", func() {
 			ns := models.NodeSession{
@@ -80,7 +82,7 @@ func TestNodeSession(t *testing.T) {
 }
 
 func TestgetRandomDevAddr(t *testing.T) {
-	conf := getConfig()
+	conf := common.GetTestConfig()
 
 	Convey("Given a Redis database and NetID 010203", t, func() {
 		p := NewRedisPool(conf.RedisURL)
@@ -106,11 +108,11 @@ func TestgetRandomDevAddr(t *testing.T) {
 }
 
 func TestMACPayloadTXQueue(t *testing.T) {
-	conf := getConfig()
+	conf := common.GetTestConfig()
 
 	Convey("Given a clean Redis database", t, func() {
 		p := NewRedisPool(conf.RedisURL)
-		mustFlushRedis(p)
+		common.MustFlushRedis(p)
 
 		Convey("Given a node-session", func() {
 			ns := models.NodeSession{
@@ -194,14 +196,14 @@ func TestFilterMACPayloads(t *testing.T) {
 }
 
 func TestNodeSessionAPI(t *testing.T) {
-	conf := getConfig()
+	conf := common.GetTestConfig()
 
 	Convey("Given a clean database and an API instance", t, func() {
 		db, err := OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
-		mustResetDB(db)
+		common.MustResetDB(db)
 		p := NewRedisPool(conf.RedisURL)
-		mustFlushRedis(p)
+		common.MustFlushRedis(p)
 
 		ctx := Context{
 			DB:        db,
@@ -216,7 +218,7 @@ func TestNodeSessionAPI(t *testing.T) {
 				AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				Name:   "test app",
 			}
-			So(createApplication(ctx.DB, app), ShouldBeNil)
+			So(storage.CreateApplication(ctx.DB, app), ShouldBeNil)
 
 			node := models.Node{
 				DevEUI:        [8]byte{8, 7, 6, 5, 4, 3, 2, 1},

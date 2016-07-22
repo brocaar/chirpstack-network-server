@@ -3,17 +3,19 @@ package loraserver
 import (
 	"testing"
 
-	"github.com/brocaar/loraserver/models"
 	. "github.com/smartystreets/goconvey/convey"
+
+	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/models"
 )
 
 func TestChannelSetAPI(t *testing.T) {
-	conf := getConfig()
+	conf := common.GetTestConfig()
 
 	Convey("Given a clean database and an API instance", t, func() {
 		db, err := OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
-		mustResetDB(db)
+		common.MustResetDB(db)
 
 		ctx := Context{
 			DB: db,
@@ -58,12 +60,12 @@ func TestChannelSetAPI(t *testing.T) {
 }
 
 func TestChannelAPI(t *testing.T) {
-	conf := getConfig()
+	conf := common.GetTestConfig()
 
 	Convey("Given a clean database and an API instance", t, func() {
 		db, err := OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
-		mustResetDB(db)
+		common.MustResetDB(db)
 
 		ctx := Context{
 			DB: db,

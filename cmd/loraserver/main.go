@@ -5,27 +5,27 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
-	_ "github.com/lib/pq"
-
 	log "github.com/Sirupsen/logrus"
+	"github.com/codegangsta/cli"
+	_ "github.com/lib/pq"
+	"github.com/rubenv/sql-migrate"
+	"golang.org/x/net/context"
+
+	"github.com/brocaar/loraserver/internal/api"
+	"github.com/brocaar/loraserver/internal/loraserver"
 	application "github.com/brocaar/loraserver/internal/loraserver/application/mqttpubsub"
 	controller "github.com/brocaar/loraserver/internal/loraserver/controller/mqttpubsub"
 	gateway "github.com/brocaar/loraserver/internal/loraserver/gateway/mqttpubsub"
-	"github.com/brocaar/lorawan/band"
-
-	"github.com/brocaar/loraserver/internal/loraserver"
 	"github.com/brocaar/loraserver/internal/loraserver/migrations"
-	"github.com/brocaar/loraserver/internal/loraserver/static"
 	"github.com/brocaar/lorawan"
-	"github.com/codegangsta/cli"
-	"github.com/elazarl/go-bindata-assetfs"
-	"github.com/rubenv/sql-migrate"
+	"github.com/brocaar/lorawan/band"
 )
 
 var version string // set by the compiler
@@ -36,6 +36,10 @@ var bands = []string{
 }
 
 func run(c *cli.Context) {
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	// parse the NetID
 	var netID lorawan.NetID
 	if err := netID.UnmarshalText([]byte(c.String("net-id"))); err != nil {
@@ -102,7 +106,7 @@ func run(c *cli.Context) {
 		log.WithField("count", n).Info("migrations applied")
 	}
 
-	ctx := loraserver.Context{
+	lsCtx := loraserver.Context{
 		DB:          db,
 		RedisPool:   rp,
 		Gateway:     gw,
@@ -112,33 +116,53 @@ func run(c *cli.Context) {
 	}
 
 	// start the loraserver
-	server := loraserver.NewServer(ctx)
+	server := loraserver.NewServer(lsCtx)
 	if err := server.Start(); err != nil {
 		log.Fatal(err)
 	}
 
-	// setup json-rpc api handler
-	apiHandler, err := loraserver.NewJSONRPCHandler(
-		loraserver.NewApplicationAPI(ctx),
-		loraserver.NewNodeAPI(ctx),
-		loraserver.NewNodeSessionAPI(ctx),
-		loraserver.NewChannelListAPI(ctx),
-		loraserver.NewChannelAPI(ctx),
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.WithField("path", "/rpc").Info("registering json-rpc handler")
-	http.Handle("/rpc", apiHandler)
+	// setup the grpc api
+	go func() {
+		server := api.GetGRPCServer(ctx, lsCtx)
+		list, err := net.Listen("tcp", c.String("grpc-bind"))
+		if err != nil {
+			log.Fatalf("error creating gRPC listener: %s", err)
+		}
+		log.WithField("bind", c.String("grpc-bind")).Info("starting gRPC listener")
+		log.Fatal(server.Serve(list))
+	}()
 
-	// setup static file server (for the gui)
-	log.WithField("path", "/").Info("registering gui handler")
-	http.Handle("/", http.FileServer(&assetfs.AssetFS{
-		Asset:     static.Asset,
-		AssetDir:  static.AssetDir,
-		AssetInfo: static.AssetInfo,
-		Prefix:    "",
-	}))
+	// setup the json gateway
+	jsonHandler, err := api.GetJSONGateway(ctx, lsCtx, c.String("grpc-bind"))
+	if err != nil {
+		log.Fatalf("get json gateway error: %s", err)
+	}
+	http.Handle("/", jsonHandler)
+
+	/*
+		// setup json-rpc api handler
+		apiHandler, err := loraserver.NewJSONRPCHandler(
+			loraserver.NewApplicationAPI(lsCtx),
+			loraserver.NewNodeAPI(lsCtx),
+			loraserver.NewNodeSessionAPI(lsCtx),
+			loraserver.NewChannelListAPI(lsCtx),
+			loraserver.NewChannelAPI(lsCtx),
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.WithField("path", "/rpc").Info("registering json-rpc handler")
+		http.Handle("/rpc", apiHandler)
+
+		// setup static file server (for the gui)
+		log.WithField("path", "/").Info("registering gui handler")
+		http.Handle("/", http.FileServer(&assetfs.AssetFS{
+			Asset:     static.Asset,
+			AssetDir:  static.AssetDir,
+			AssetInfo: static.AssetInfo,
+			Prefix:    "",
+		}))
+	*/
 
 	// start the http server
 	go func() {
@@ -187,6 +211,12 @@ func main() {
 			Usage:  "ip:port to bind the http api server to",
 			Value:  "0.0.0.0:8000",
 			EnvVar: "HTTP_BIND",
+		},
+		cli.StringFlag{
+			Name:   "grpc-bind",
+			Usage:  "ip:port to bind the gRPC api server to",
+			Value:  "0.0.0.0:9000",
+			EnvVar: "GRPC_BIND",
 		},
 		cli.StringFlag{
 			Name:   "postgres-dsn",

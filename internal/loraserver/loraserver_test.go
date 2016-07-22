@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
@@ -37,7 +39,7 @@ type dataUpTestCase struct {
 }
 
 func TestHandleDataUpScenarios(t *testing.T) {
-	conf := getConfig()
+	conf := common.GetTestConfig()
 
 	Convey("Given a clean state, test backends and a node-session", t, func() {
 		app := &testApplicationBackend{
@@ -56,7 +58,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 			errorPayloadChan:  make(chan models.ErrorPayload, 1),
 		}
 		p := NewRedisPool(conf.RedisURL)
-		mustFlushRedis(p)
+		common.MustFlushRedis(p)
 
 		ctx := Context{
 			RedisPool:   p,
@@ -1117,7 +1119,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 }
 
 func TestHandleJoinRequestPackets(t *testing.T) {
-	conf := getConfig()
+	conf := common.GetTestConfig()
 
 	Convey("Given a dummy gateway and application backend and a clean Postgres and Redis database", t, func() {
 		a := &testApplicationBackend{
@@ -1129,10 +1131,10 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 			txPacketChan: make(chan models.TXPacket, 1),
 		}
 		p := NewRedisPool(conf.RedisURL)
-		mustFlushRedis(p)
+		common.MustFlushRedis(p)
 		db, err := OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
-		mustResetDB(db)
+		common.MustResetDB(db)
 
 		ctx := Context{
 			RedisPool:   p,
@@ -1146,7 +1148,7 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 				AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				Name:   "test app",
 			}
-			So(createApplication(ctx.DB, app), ShouldBeNil)
+			So(storage.CreateApplication(ctx.DB, app), ShouldBeNil)
 
 			node := models.Node{
 				DevEUI: [8]byte{8, 7, 6, 5, 4, 3, 2, 1},

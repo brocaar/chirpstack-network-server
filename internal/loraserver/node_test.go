@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
@@ -62,11 +64,11 @@ func TestValidateDevNonce(t *testing.T) {
 }
 
 func TestTXPayloadQueue(t *testing.T) {
-	conf := getConfig()
+	conf := common.GetTestConfig()
 
 	Convey("Given a clean Redis database", t, func() {
 		p := NewRedisPool(conf.RedisURL)
-		mustFlushRedis(p)
+		common.MustFlushRedis(p)
 
 		Convey("Given two TXPayload structs (a and b) for the same DevEUI", func() {
 			devEUI := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}
@@ -169,12 +171,12 @@ func TestTXPayloadQueue(t *testing.T) {
 }
 
 func TestGetCFListForNode(t *testing.T) {
-	conf := getConfig()
+	conf := common.GetTestConfig()
 
 	Convey("Given an application, node (without channel-list) and channel-list with 2 channels", t, func() {
 		db, err := OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
-		mustResetDB(db)
+		common.MustResetDB(db)
 
 		ctx := Context{
 			DB: db,
@@ -199,7 +201,7 @@ func TestGetCFListForNode(t *testing.T) {
 			AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			Name:   "test app",
 		}
-		So(createApplication(ctx.DB, app), ShouldBeNil)
+		So(storage.CreateApplication(ctx.DB, app), ShouldBeNil)
 
 		node := models.Node{
 			DevEUI: [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
@@ -248,12 +250,12 @@ func TestGetCFListForNode(t *testing.T) {
 }
 
 func TestNodeAPI(t *testing.T) {
-	conf := getConfig()
+	conf := common.GetTestConfig()
 
 	Convey("Given a clean database and an API instance", t, func() {
 		db, err := OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
-		mustResetDB(db)
+		common.MustResetDB(db)
 
 		ctx := Context{
 			DB: db,
@@ -267,7 +269,7 @@ func TestNodeAPI(t *testing.T) {
 				Name:   "test app",
 			}
 			// we need to create the app since the node has a fk constraint
-			So(createApplication(ctx.DB, app), ShouldBeNil)
+			So(storage.CreateApplication(ctx.DB, app), ShouldBeNil)
 
 			node := models.Node{
 				DevEUI:        [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
