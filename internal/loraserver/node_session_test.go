@@ -16,7 +16,7 @@ func TestNodeSession(t *testing.T) {
 	conf := common.GetTestConfig()
 
 	Convey("Given a clean Redis database", t, func() {
-		p := NewRedisPool(conf.RedisURL)
+		p := storage.NewRedisPool(conf.RedisURL)
 		common.MustFlushRedis(p)
 
 		Convey("Given a NodeSession", func() {
@@ -55,16 +55,16 @@ func TestNodeSession(t *testing.T) {
 					FullFCnt   uint32
 					Valid      bool
 				}{
-					{0, 1, 1, true},                                                 // ideal case counter was incremented
-					{1, 1, 1, true},                                                 // re-transmission
-					{2, 1, 0, false},                                                // old packet received
-					{0, Band.MaxFCntGap, 0, false},                                  // gap should be less than MaxFCntGap
-					{0, Band.MaxFCntGap - 1, Band.MaxFCntGap - 1, true},             // gap is exactly within the allowed MaxFCntGap
-					{65536, Band.MaxFCntGap - 1, Band.MaxFCntGap - 1 + 65536, true}, // roll-over happened, gap ix exactly within allowed MaxFCntGap
-					{65535, Band.MaxFCntGap, 0, false},                              // roll-over happened, but too many lost frames
-					{65535, 0, 65536, true},                                         // roll-over happened
-					{65536, 0, 65536, true},                                         // re-transmission
-					{4294967295, 0, 0, true},                                        // 32 bit roll-over happened, counter started at 0 again
+					{0, 1, 1, true},                                                               // ideal case counter was incremented
+					{1, 1, 1, true},                                                               // re-transmission
+					{2, 1, 0, false},                                                              // old packet received
+					{0, common.Band.MaxFCntGap, 0, false},                                         // gap should be less than MaxFCntGap
+					{0, common.Band.MaxFCntGap - 1, common.Band.MaxFCntGap - 1, true},             // gap is exactly within the allowed MaxFCntGap
+					{65536, common.Band.MaxFCntGap - 1, common.Band.MaxFCntGap - 1 + 65536, true}, // roll-over happened, gap ix exactly within allowed MaxFCntGap
+					{65535, common.Band.MaxFCntGap, 0, false},                                     // roll-over happened, but too many lost frames
+					{65535, 0, 65536, true},                                                       // roll-over happened
+					{65536, 0, 65536, true},                                                       // re-transmission
+					{4294967295, 0, 0, true},                                                      // 32 bit roll-over happened, counter started at 0 again
 				}
 
 				for _, test := range testTable {
@@ -85,7 +85,7 @@ func TestgetRandomDevAddr(t *testing.T) {
 	conf := common.GetTestConfig()
 
 	Convey("Given a Redis database and NetID 010203", t, func() {
-		p := NewRedisPool(conf.RedisURL)
+		p := storage.NewRedisPool(conf.RedisURL)
 		netID := lorawan.NetID{1, 2, 3}
 
 		Convey("When calling getRandomDevAddr many times, it should always return an unique DevAddr", func() {
@@ -111,7 +111,7 @@ func TestMACPayloadTXQueue(t *testing.T) {
 	conf := common.GetTestConfig()
 
 	Convey("Given a clean Redis database", t, func() {
-		p := NewRedisPool(conf.RedisURL)
+		p := storage.NewRedisPool(conf.RedisURL)
 		common.MustFlushRedis(p)
 
 		Convey("Given a node-session", func() {
@@ -199,10 +199,10 @@ func TestNodeSessionAPI(t *testing.T) {
 	conf := common.GetTestConfig()
 
 	Convey("Given a clean database and an API instance", t, func() {
-		db, err := OpenDatabase(conf.PostgresDSN)
+		db, err := storage.OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		common.MustResetDB(db)
-		p := NewRedisPool(conf.RedisURL)
+		p := storage.NewRedisPool(conf.RedisURL)
 		common.MustFlushRedis(p)
 
 		ctx := Context{
@@ -226,7 +226,7 @@ func TestNodeSessionAPI(t *testing.T) {
 				AppKey:        [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 				UsedDevNonces: [][2]byte{},
 			}
-			So(createNode(ctx.DB, node), ShouldBeNil)
+			So(storage.CreateNode(ctx.DB, node), ShouldBeNil)
 
 			ns := models.NodeSession{
 				DevAddr:  [4]byte{6, 2, 3, 4},

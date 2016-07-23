@@ -7,6 +7,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 )
@@ -202,7 +203,7 @@ func handleUplinkMACCommands(ctx Context, appEUI, devEUI lorawan.EUI64, frmPaylo
 }
 
 func handleUplinkACK(ctx Context, ns models.NodeSession) error {
-	txPayload, err := clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI)
+	txPayload, err := storage.ClearInProcessTXPayload(ctx.RedisPool, ns.DevEUI)
 	if err != nil {
 		return err
 	}

@@ -6,13 +6,10 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
 )
-
-// Band is the ISM band configuration to use
-var Band band.Band
 
 // Server represents a LoRaWAN network-server.
 type Server struct {
@@ -71,7 +68,7 @@ func handleTXPayloads(ctx Context) {
 		go func(txPayload models.TXPayload) {
 			wg.Add(1)
 			defer wg.Done()
-			if err := addTXPayloadToQueue(ctx.RedisPool, txPayload); err != nil {
+			if err := storage.AddTXPayloadToQueue(ctx.RedisPool, txPayload); err != nil {
 				log.WithFields(log.Fields{
 					"dev_eui":     txPayload.DevEUI,
 					"reference":   txPayload.Reference,

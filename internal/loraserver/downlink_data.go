@@ -5,6 +5,8 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 )
@@ -21,34 +23,34 @@ func getDataDownProperties(rxInfo models.RXInfo, ns models.NodeSession) (dataDow
 	var prop dataDownProperties
 
 	// get TX DR
-	uplinkDR, err := Band.GetDataRate(rxInfo.DataRate)
+	uplinkDR, err := common.Band.GetDataRate(rxInfo.DataRate)
 	if err != nil {
 		return prop, err
 	}
 
 	// get TX channel
-	uplinkChannel, err := Band.GetChannel(rxInfo.Frequency, ns.CFList)
+	uplinkChannel, err := common.Band.GetChannel(rxInfo.Frequency, ns.CFList)
 	if err != nil {
 		return prop, err
 	}
 
 	// get RX1 channel
-	prop.rx1Channel = Band.GetRX1Channel(uplinkChannel)
+	prop.rx1Channel = common.Band.GetRX1Channel(uplinkChannel)
 
 	// get RX1 DR
-	prop.rx1DR, err = Band.GetRX1DataRateForOffset(uplinkDR, int(ns.RX1DROffset))
+	prop.rx1DR, err = common.Band.GetRX1DataRateForOffset(uplinkDR, int(ns.RX1DROffset))
 	if err != nil {
 		return prop, err
 	}
 
 	// get RX1 frequency
-	prop.rx1Frequency, err = Band.GetDownlinkFrequency(prop.rx1Channel, ns.CFList)
+	prop.rx1Frequency, err = common.Band.GetDownlinkFrequency(prop.rx1Channel, ns.CFList)
 	if err != nil {
 		return prop, err
 	}
 
 	// get rx delay
-	prop.rxDelay = Band.ReceiveDelay1
+	prop.rxDelay = common.Band.ReceiveDelay1
 	if ns.RXDelay > 0 {
 		prop.rxDelay = time.Duration(ns.RXDelay) * time.Second
 	}
@@ -61,21 +63,21 @@ func getDataDownProperties(rxInfo models.RXInfo, ns models.NodeSession) (dataDow
 // be discarded and a notification will be sent to the application.
 func getNextValidTXPayloadForDRFromQueue(ctx Context, ns models.NodeSession, dataRate int) (*models.TXPayload, error) {
 	for {
-		txPayload, err := getTXPayloadFromQueue(ctx.RedisPool, ns.DevEUI)
+		txPayload, err := storage.GetTXPayloadFromQueue(ctx.RedisPool, ns.DevEUI)
 		if err != nil {
-			if err == errEmptyQueue {
+			if err == common.ErrEmptyQueue {
 				return nil, nil
 			}
 			return nil, err
 		}
 
-		if len(txPayload.Data) <= Band.MaxPayloadSize[dataRate].N {
+		if len(txPayload.Data) <= common.Band.MaxPayloadSize[dataRate].N {
 			return &txPayload, nil
 		}
 
 		// the payload exceeded the max payload size for the current data-rate
 		// we'll remove the payload from the queue and notify the application
-		if _, err = clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
+		if _, err = storage.ClearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
 			return nil, err
 		}
 
@@ -84,7 +86,7 @@ func getNextValidTXPayloadForDRFromQueue(ctx Context, ns models.NodeSession, dat
 			"dev_eui":             ns.DevEUI,
 			"data_rate":           dataRate,
 			"frmpayload_size":     len(txPayload.Data),
-			"max_frmpayload_size": Band.MaxPayloadSize[dataRate].N,
+			"max_frmpayload_size": common.Band.MaxPayloadSize[dataRate].N,
 			"reference":           txPayload.Reference,
 		}).Warning("downlink payload max size exceeded")
 
@@ -92,7 +94,7 @@ func getNextValidTXPayloadForDRFromQueue(ctx Context, ns models.NodeSession, dat
 		err = ctx.Application.SendNotification(ns.AppEUI, ns.DevEUI, models.ErrorNotificationType, models.ErrorPayload{
 			Reference: txPayload.Reference,
 			DevEUI:    ns.DevEUI,
-			Message:   fmt.Sprintf("downlink payload max size exceeded (dr: %d, allowed: %d, got: %d)", dataRate, Band.MaxPayloadSize[dataRate].N, len(txPayload.Data)),
+			Message:   fmt.Sprintf("downlink payload max size exceeded (dr: %d, allowed: %d, got: %d)", dataRate, common.Band.MaxPayloadSize[dataRate].N, len(txPayload.Data)),
 		})
 		if err != nil {
 			return nil, err
@@ -125,7 +127,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 			// of the MACPayload items with the same property, respecting the
 			// max FRMPayload size for the data-rate.
 			frmMACCommands = true
-			macPayloads = filterMACPayloads(allMACPayloads, true, Band.MaxPayloadSize[properties.rx1DR].N)
+			macPayloads = filterMACPayloads(allMACPayloads, true, common.Band.MaxPayloadSize[properties.rx1DR].N)
 		} else {
 			// the first mac-command must be sent as FOpts, filter the rest of
 			// the MACPayload items with the same property, respecting the
@@ -150,7 +152,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 			macByteCount += len(mac.MACCommand)
 		}
 
-		if txPayload != nil && len(txPayload.Data)+macByteCount > Band.MaxPayloadSize[properties.rx1DR].N {
+		if txPayload != nil && len(txPayload.Data)+macByteCount > common.Band.MaxPayloadSize[properties.rx1DR].N {
 			log.WithFields(log.Fields{
 				"data_rate": properties.rx1DR,
 				"dev_eui":   ns.DevEUI,
@@ -191,7 +193,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	}
 
 	// get the queue size (the size includes the current payload)
-	queueSize, err := getTXPayloadQueueSize(ctx.RedisPool, ns.DevEUI)
+	queueSize, err := storage.GetTXPayloadQueueSize(ctx.RedisPool, ns.DevEUI)
 	if err != nil {
 		return err
 	}
@@ -265,8 +267,8 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 			MAC:       rxPacket.RXInfo.MAC,
 			Timestamp: rxPacket.RXInfo.Timestamp + uint32(properties.rxDelay/time.Microsecond),
 			Frequency: properties.rx1Frequency,
-			Power:     Band.DefaultTXPower,
-			DataRate:  Band.DataRates[properties.rx1DR],
+			Power:     common.Band.DefaultTXPower,
+			DataRate:  common.Band.DataRates[properties.rx1DR],
 			CodeRate:  rxPacket.RXInfo.CodeRate,
 		},
 		PHYPayload: phy,
@@ -286,7 +288,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		}
 
 		if txPayload != nil {
-			if _, err = clearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
+			if _, err = storage.ClearInProcessTXPayload(ctx.RedisPool, ns.DevEUI); err != nil {
 				return err
 			}
 		}

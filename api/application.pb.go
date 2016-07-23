@@ -7,6 +7,7 @@ Package api is a generated protocol buffer package.
 
 It is generated from these files:
 	application.proto
+	node.proto
 
 It has these top-level messages:
 	CreateApplicationRequest
@@ -19,6 +20,19 @@ It has these top-level messages:
 	ListApplicationResponse
 	UpdateApplicationRequest
 	UpdateApplicationResponse
+	CreateNodeRequest
+	CreateNodeResponse
+	GetNodeRequest
+	GetNodeResponse
+	DeleteNodeRequest
+	DeleteNodeResponse
+	ListNodeRequest
+	ListNodeResponse
+	ListNodeByAppEUIRequest
+	UpdateNodeRequest
+	UpdateNodeResponse
+	FlushTXPayloadQueueRequest
+	FlushTXPayloadQueueResponse
 */
 package api
 

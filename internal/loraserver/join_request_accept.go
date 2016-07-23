@@ -7,6 +7,8 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 )
@@ -21,7 +23,7 @@ func validateAndCollectJoinRequestPacket(ctx Context, rxPacket models.RXPacket) 
 	}
 
 	// get node information for this DevEUI
-	node, err := getNode(ctx.DB, jrPL.DevEUI)
+	node, err := storage.GetNode(ctx.DB, jrPL.DevEUI)
 	if err != nil {
 		return err
 	}
@@ -72,7 +74,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	}).Info("packet(s) collected")
 
 	// get node information for this DevEUI
-	node, err := getNode(ctx.DB, jrPL.DevEUI)
+	node, err := storage.GetNode(ctx.DB, jrPL.DevEUI)
 	if err != nil {
 		return err
 	}
@@ -95,7 +97,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	}
 
 	// get the (optional) CFList
-	cFList, err := getCFListForNode(ctx.DB, node)
+	cFList, err := storage.GetCFListForNode(ctx.DB, node)
 	if err != nil {
 		return fmt.Errorf("get CFList for node error: %s", err)
 	}
@@ -128,7 +130,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	}
 
 	// update the node (with updated used dev-nonces)
-	if err = updateNode(ctx.DB, node); err != nil {
+	if err = storage.UpdateNode(ctx.DB, node); err != nil {
 		return fmt.Errorf("update node error: %s", err)
 	}
 
@@ -144,7 +146,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 			DevAddr:  ns.DevAddr,
 			RXDelay:  ns.RXDelay,
 			DLSettings: lorawan.DLSettings{
-				RX2DataRate: uint8(Band.RX2DataRate),
+				RX2DataRate: uint8(common.Band.RX2DataRate),
 				RX1DROffset: ns.RX1DROffset,
 			},
 			CFList: cFList,
@@ -158,27 +160,27 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	}
 
 	// get TX DR
-	uplinkDR, err := Band.GetDataRate(rxPacket.RXInfo.DataRate)
+	uplinkDR, err := common.Band.GetDataRate(rxPacket.RXInfo.DataRate)
 	if err != nil {
 		return err
 	}
 	// get TX channel
-	uplinkChannel, err := Band.GetChannel(rxPacket.RXInfo.Frequency, nil)
+	uplinkChannel, err := common.Band.GetChannel(rxPacket.RXInfo.Frequency, nil)
 	if err != nil {
 		return err
 	}
 	// get RX1 channel
-	rx1Channel := Band.GetRX1Channel(uplinkChannel)
+	rx1Channel := common.Band.GetRX1Channel(uplinkChannel)
 	// get RX1 DR
-	rx1DR := Band.RX1DataRate[uplinkDR][0]
+	rx1DR := common.Band.RX1DataRate[uplinkDR][0]
 
 	txPacket := models.TXPacket{
 		TXInfo: models.TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
-			Timestamp: rxPacket.RXInfo.Timestamp + uint32(Band.JoinAcceptDelay1/time.Microsecond),
-			Frequency: Band.DownlinkChannels[rx1Channel].Frequency,
-			Power:     Band.DefaultTXPower,
-			DataRate:  Band.DataRates[rx1DR],
+			Timestamp: rxPacket.RXInfo.Timestamp + uint32(common.Band.JoinAcceptDelay1/time.Microsecond),
+			Frequency: common.Band.DownlinkChannels[rx1Channel].Frequency,
+			Power:     common.Band.DefaultTXPower,
+			DataRate:  common.Band.DataRates[rx1DR],
 			CodeRate:  rxPacket.RXInfo.CodeRate,
 		},
 		PHYPayload: phy,

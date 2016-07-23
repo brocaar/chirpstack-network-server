@@ -10,6 +10,8 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/garyburd/redigo/redis"
@@ -336,7 +338,7 @@ func getSKey(typ byte, appkey lorawan.AES128Key, netID lorawan.NetID, appNonce [
 func validateAndGetFullFCntUp(n models.NodeSession, fCntUp uint32) (uint32, bool) {
 	// we need to compare the difference of the 16 LSB
 	gap := uint32(uint16(fCntUp) - uint16(n.FCntUp%65536))
-	if gap < Band.MaxFCntGap {
+	if gap < common.Band.MaxFCntGap {
 		return n.FCntUp + gap, true
 	}
 	return 0, false
@@ -380,7 +382,7 @@ func (a *NodeSessionAPI) Create(ns models.NodeSession, devAddr *lorawan.DevAddr)
 	// validate that the node exists
 	var node models.Node
 	var err error
-	if node, err = getNode(a.ctx.DB, ns.DevEUI); err != nil {
+	if node, err = storage.GetNode(a.ctx.DB, ns.DevEUI); err != nil {
 		return err
 	}
 

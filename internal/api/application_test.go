@@ -9,13 +9,14 @@ import (
 	pb "github.com/brocaar/loraserver/api"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/loraserver"
+	"github.com/brocaar/loraserver/internal/storage"
 )
 
 func TestApplicationAPI(t *testing.T) {
 	conf := common.GetTestConfig()
 
 	Convey("Given a clean database and api instance", t, func() {
-		db, err := loraserver.OpenDatabase(conf.PostgresDSN)
+		db, err := storage.OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		common.MustResetDB(db)
 

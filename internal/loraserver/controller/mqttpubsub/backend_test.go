@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/loraserver/internal/loraserver"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/eclipse/paho.mqtt.golang"
@@ -24,7 +24,7 @@ func TestBackend(t *testing.T) {
 		token.Wait()
 		So(token.Error(), ShouldBeNil)
 
-		p := loraserver.NewRedisPool(conf.RedisURL)
+		p := storage.NewRedisPool(conf.RedisURL)
 
 		Convey("Given a new Backend", func() {
 			backend, err := NewBackend(p, conf.Server, conf.Username, conf.Password)

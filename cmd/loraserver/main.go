@@ -19,11 +19,13 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/brocaar/loraserver/internal/api"
+	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/loraserver"
 	application "github.com/brocaar/loraserver/internal/loraserver/application/mqttpubsub"
 	controller "github.com/brocaar/loraserver/internal/loraserver/controller/mqttpubsub"
 	gateway "github.com/brocaar/loraserver/internal/loraserver/gateway/mqttpubsub"
 	"github.com/brocaar/loraserver/internal/loraserver/migrations"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 )
@@ -54,7 +56,7 @@ func run(c *cli.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	loraserver.Band = bandConfig
+	common.Band = bandConfig
 
 	log.WithFields(log.Fields{
 		"version": version,
@@ -64,14 +66,14 @@ func run(c *cli.Context) {
 
 	// connect to the database
 	log.Info("connecting to postgresql")
-	db, err := loraserver.OpenDatabase(c.String("postgres-dsn"))
+	db, err := storage.OpenDatabase(c.String("postgres-dsn"))
 	if err != nil {
 		log.Fatalf("database connection error: %s", err)
 	}
 
 	// setup redis pool
 	log.Info("setup redis connection pool")
-	rp := loraserver.NewRedisPool(c.String("redis-url"))
+	rp := storage.NewRedisPool(c.String("redis-url"))
 
 	// setup gateway backend
 	gw, err := gateway.NewBackend(c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"))

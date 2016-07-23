@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
@@ -39,7 +40,7 @@ func TestCollectAndCallOnce(t *testing.T) {
 	conf := common.GetTestConfig()
 
 	Convey("Given a Redis connection pool", t, func() {
-		p := NewRedisPool(conf.RedisURL)
+		p := storage.NewRedisPool(conf.RedisURL)
 		c := p.Get()
 		_, err := c.Do("FLUSHALL")
 		So(err, ShouldBeNil)

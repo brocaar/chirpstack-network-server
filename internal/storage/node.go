@@ -1,4 +1,4 @@
-package loraserver
+package storage
 
 import (
 	"bytes"
@@ -8,26 +8,21 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/brocaar/loraserver/models"
-	"github.com/brocaar/lorawan"
 	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
+
+	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/models"
+	"github.com/brocaar/lorawan"
 )
-
-// NodeTXPayloadQueueTTL defines the TTL of the node TXPayload queue
-var NodeTXPayloadQueueTTL = time.Hour * 24 * 5
-
-// errEmptyQueue defines the error returned when the queue is empty.
-// Note that depending the context, this error might not be a real error.
-var errEmptyQueue = errors.New("the queue is empty or does not exist")
 
 const (
 	nodeTXPayloadQueueTempl     = "node_tx_queue_%s"
 	nodeTXPayloadInProcessTempl = "node_tx_in_process_%s"
 )
 
-// createNode creates the given Node.
-func createNode(db *sqlx.DB, n models.Node) error {
+// CreateNode creates the given Node.
+func CreateNode(db *sqlx.DB, n models.Node) error {
 	if n.RXDelay > 15 {
 		return errors.New("max value of RXDelay is 15")
 	}
@@ -56,8 +51,8 @@ func createNode(db *sqlx.DB, n models.Node) error {
 	return nil
 }
 
-// updateNode updates the given Node.
-func updateNode(db *sqlx.DB, n models.Node) error {
+// UpdateNode updates the given Node.
+func UpdateNode(db *sqlx.DB, n models.Node) error {
 	if n.RXDelay > 15 {
 		return errors.New("max value of RXDelay is 15")
 	}
@@ -93,8 +88,8 @@ func updateNode(db *sqlx.DB, n models.Node) error {
 	return nil
 }
 
-// deleteNode deletes the Node matching the given DevEUI.
-func deleteNode(db *sqlx.DB, devEUI lorawan.EUI64) error {
+// DeleteNode deletes the Node matching the given DevEUI.
+func DeleteNode(db *sqlx.DB, devEUI lorawan.EUI64) error {
 	res, err := db.Exec("delete from node where dev_eui = $1",
 		devEUI[:],
 	)
@@ -112,8 +107,8 @@ func deleteNode(db *sqlx.DB, devEUI lorawan.EUI64) error {
 	return nil
 }
 
-// getNode returns the Node for the given DevEUI.
-func getNode(db *sqlx.DB, devEUI lorawan.EUI64) (models.Node, error) {
+// GetNode returns the Node for the given DevEUI.
+func GetNode(db *sqlx.DB, devEUI lorawan.EUI64) (models.Node, error) {
 	var node models.Node
 	err := db.Get(&node, "select * from node where dev_eui = $1", devEUI[:])
 	if err != nil {
@@ -122,8 +117,32 @@ func getNode(db *sqlx.DB, devEUI lorawan.EUI64) (models.Node, error) {
 	return node, nil
 }
 
-// getNodes returns a slice of nodes, sorted by DevEUI.
-func getNodes(db *sqlx.DB, limit, offset int) ([]models.Node, error) {
+// GetNodesCount returns the total number of nodes.
+func GetNodesCount(db *sqlx.DB) (int, error) {
+	var count struct {
+		Count int
+	}
+	err := db.Get(&count, "select count(*) as count from node")
+	if err != nil {
+		return 0, fmt.Errorf("get nodes count error: %s", err)
+	}
+	return count.Count, nil
+}
+
+// GetNodesForAppEUICount returns the total number of nodes given an AppEUI.
+func GetNodesForAppEUICount(db *sqlx.DB, appEUI lorawan.EUI64) (int, error) {
+	var count struct {
+		Count int
+	}
+	err := db.Get(&count, "select count(*) as count from node where app_eui = $1", appEUI[:])
+	if err != nil {
+		return 0, fmt.Errorf("get nodes count for app_eui=%s error: %s", appEUI, err)
+	}
+	return count.Count, nil
+}
+
+// GetNodes returns a slice of nodes, sorted by DevEUI.
+func GetNodes(db *sqlx.DB, limit, offset int) ([]models.Node, error) {
 	var nodes []models.Node
 	err := db.Select(&nodes, "select * from node order by dev_eui limit $1 offset $2", limit, offset)
 	if err != nil {
@@ -132,8 +151,8 @@ func getNodes(db *sqlx.DB, limit, offset int) ([]models.Node, error) {
 	return nodes, nil
 }
 
-// getNodesForAppEUI returns a slice of nodes, sorted by DevEUI, for the given AppEUI.
-func getNodesForAppEUI(db *sqlx.DB, appEUI lorawan.EUI64, limit, offset int) ([]models.Node, error) {
+// GetNodesForAppEUI returns a slice of nodes, sorted by DevEUI, for the given AppEUI.
+func GetNodesForAppEUI(db *sqlx.DB, appEUI lorawan.EUI64, limit, offset int) ([]models.Node, error) {
 	var nodes []models.Node
 	err := db.Select(&nodes, "select * from node where app_eui = $1 order by dev_eui limit $2 offset $3", appEUI[:], limit, offset)
 	if err != nil {
@@ -142,8 +161,8 @@ func getNodesForAppEUI(db *sqlx.DB, appEUI lorawan.EUI64, limit, offset int) ([]
 	return nodes, nil
 }
 
-// addTXPayloadToQueue adds the given TXPayload to the queue.
-func addTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
+// AddTXPayloadToQueue adds the given TXPayload to the queue.
+func AddTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(payload); err != nil {
@@ -153,7 +172,7 @@ func addTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
 	c := p.Get()
 	defer c.Close()
 
-	exp := int64(NodeTXPayloadQueueTTL) / int64(time.Millisecond)
+	exp := int64(common.NodeTXPayloadQueueTTL) / int64(time.Millisecond)
 	key := fmt.Sprintf(nodeTXPayloadQueueTempl, payload.DevEUI)
 
 	c.Send("MULTI")
@@ -172,9 +191,9 @@ func addTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
 	return nil
 }
 
-// getTXPayloadQueueSize returns the total TXPayload elements in the queue
+// GetTXPayloadQueueSize returns the total TXPayload elements in the queue
 // (including the in-process queue).
-func getTXPayloadQueueSize(p *redis.Pool, devEUI lorawan.EUI64) (int, error) {
+func GetTXPayloadQueueSize(p *redis.Pool, devEUI lorawan.EUI64) (int, error) {
 	var count int
 	c := p.Get()
 	defer c.Close()
@@ -193,17 +212,17 @@ func getTXPayloadQueueSize(p *redis.Pool, devEUI lorawan.EUI64) (int, error) {
 	return count, nil
 }
 
-// getTXPayloadFromQueue returns the first TXPayload to send to the node.
+// GetTXPayloadFromQueue returns the first TXPayload to send to the node.
 // The TXPayload either is a payload that is still in-process (e.g. a payload
 // that needs to be re-transmitted) or an item from the queue.
 // After a successful transmission, don't forget to call
 // clearInProcessTXPayload.
 // errEmptyQueue is returned when the queue is empty / does not exist.
-func getTXPayloadFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (models.TXPayload, error) {
+func GetTXPayloadFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (models.TXPayload, error) {
 	var txPayload models.TXPayload
 	queueKey := fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)
 	inProcessKey := fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)
-	exp := int64(NodeTXPayloadQueueTTL) / int64(time.Millisecond)
+	exp := int64(common.NodeTXPayloadQueueTTL) / int64(time.Millisecond)
 
 	c := p.Get()
 	defer c.Close()
@@ -221,7 +240,7 @@ func getTXPayloadFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (models.TXPayloa
 			if err != redis.ErrNil {
 				return txPayload, fmt.Errorf("get tx-payload from queue error: %s", err)
 			}
-			return txPayload, errEmptyQueue
+			return txPayload, common.ErrEmptyQueue
 		}
 		_, err = redis.Int(c.Do("PEXPIRE", inProcessKey, exp))
 		if err != nil {
@@ -236,10 +255,10 @@ func getTXPayloadFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (models.TXPayloa
 	return txPayload, nil
 }
 
-// clearInProcessTXPayload clears the in-process TXPayload (to be called
+// ClearInProcessTXPayload clears the in-process TXPayload (to be called
 // after a successful transmission). It returns the TXPayload or nil when
 // nothing was cleared (it already expired).
-func clearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPayload, error) {
+func ClearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPayload, error) {
 	var txPayload models.TXPayload
 	key := fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)
 	c := p.Get()
@@ -264,8 +283,8 @@ func clearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPay
 	return &txPayload, nil
 }
 
-// flushTXPayloadQueue flushes the tx payload queue for the given DevEUI.
-func flushTXPayloadQueue(p *redis.Pool, devEUI lorawan.EUI64) error {
+// FlushTXPayloadQueue flushes the tx payload queue for the given DevEUI.
+func FlushTXPayloadQueue(p *redis.Pool, devEUI lorawan.EUI64) error {
 	keys := []interface{}{
 		fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI),
 		fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI),
@@ -284,14 +303,14 @@ func flushTXPayloadQueue(p *redis.Pool, devEUI lorawan.EUI64) error {
 	return nil
 }
 
-// getCFListForNode returns the CFList for the given node if the
+// GetCFListForNode returns the CFList for the given node if the
 // used ISM band allows using a CFList.
-func getCFListForNode(db *sqlx.DB, node models.Node) (*lorawan.CFList, error) {
+func GetCFListForNode(db *sqlx.DB, node models.Node) (*lorawan.CFList, error) {
 	if node.ChannelListID == nil {
 		return nil, nil
 	}
 
-	if !Band.ImplementsCFlist {
+	if !common.Band.ImplementsCFlist {
 		log.WithFields(log.Fields{
 			"dev_eui": node.DevEUI,
 			"app_eui": node.AppEUI,
@@ -299,7 +318,7 @@ func getCFListForNode(db *sqlx.DB, node models.Node) (*lorawan.CFList, error) {
 		return nil, nil
 	}
 
-	channels, err := getChannelsForChannelList(db, *node.ChannelListID)
+	channels, err := GetChannelsForChannelList(db, *node.ChannelListID)
 	if err != nil {
 		return nil, err
 	}
@@ -312,73 +331,4 @@ func getCFListForNode(db *sqlx.DB, node models.Node) (*lorawan.CFList, error) {
 		cFList[channel.Channel-3] = uint32(channel.Frequency)
 	}
 	return &cFList, nil
-}
-
-// NodeAPI exports the Node related functions.
-type NodeAPI struct {
-	ctx Context
-}
-
-// NewNodeAPI creates a new NodeAPI.
-func NewNodeAPI(ctx Context) *NodeAPI {
-	return &NodeAPI{
-		ctx: ctx,
-	}
-}
-
-// Get returns the Node for the given DevEUI.
-func (a *NodeAPI) Get(devEUI lorawan.EUI64, node *models.Node) error {
-	var err error
-	*node, err = getNode(a.ctx.DB, devEUI)
-	return err
-}
-
-// GetList returns a list of nodes (given a limit and offset).
-func (a *NodeAPI) GetList(req models.GetListRequest, nodes *[]models.Node) error {
-	var err error
-	*nodes, err = getNodes(a.ctx.DB, req.Limit, req.Offset)
-	return err
-}
-
-// GetListForAppEUI returns a list of nodes (given an AppEUI, limit and offset).
-func (a *NodeAPI) GetListForAppEUI(req models.GetListForAppEUIRequest, nodes *[]models.Node) error {
-	var err error
-	*nodes, err = getNodesForAppEUI(a.ctx.DB, req.AppEUI, req.Limit, req.Offset)
-	return err
-}
-
-// Create creates the given Node.
-func (a *NodeAPI) Create(node models.Node, devEUI *lorawan.EUI64) error {
-	if err := createNode(a.ctx.DB, node); err != nil {
-		return err
-	}
-	*devEUI = node.DevEUI
-	return nil
-}
-
-// Update updatest the given Node.
-func (a *NodeAPI) Update(node models.Node, devEUI *lorawan.EUI64) error {
-	if err := updateNode(a.ctx.DB, node); err != nil {
-		return err
-	}
-	*devEUI = node.DevEUI
-	return nil
-}
-
-// Delete deletes the node matching the given DevEUI.
-func (a *NodeAPI) Delete(devEUI lorawan.EUI64, deletedDevEUI *lorawan.EUI64) error {
-	if err := deleteNode(a.ctx.DB, devEUI); err != nil {
-		return err
-	}
-	*deletedDevEUI = devEUI
-	return nil
-}
-
-// FlushTXPayloadQueue flushes the tx-payload queue for the given DevEUI.
-func (a *NodeAPI) FlushTXPayloadQueue(devEUI lorawan.EUI64, affectedDevEUI *lorawan.EUI64) error {
-	if err := flushTXPayloadQueue(a.ctx.RedisPool, devEUI); err != nil {
-		return err
-	}
-	*affectedDevEUI = devEUI
-	return nil
 }

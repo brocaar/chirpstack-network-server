@@ -1,13 +1,11 @@
-package loraserver
+package storage
 
 import (
 	"testing"
 	"time"
 
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
-	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -82,37 +80,37 @@ func TestTXPayloadQueue(t *testing.T) {
 			}
 
 			Convey("When getting an item from the non-existing queue", func() {
-				_, err := getTXPayloadFromQueue(p, devEUI)
+				_, err := GetTXPayloadFromQueue(p, devEUI)
 				Convey("Then errEmptyQueue error is returned", func() {
-					So(err, ShouldResemble, errEmptyQueue)
+					So(err, ShouldResemble, common.ErrEmptyQueue)
 				})
 			})
 
 			Convey("Given the NodePayloadQueueTTL is 100 ms", func() {
-				NodeTXPayloadQueueTTL = 100 * time.Millisecond
+				common.NodeTXPayloadQueueTTL = 100 * time.Millisecond
 
 				Convey("Given struct a and b are pushed to the queue", func() {
-					So(addTXPayloadToQueue(p, a), ShouldBeNil)
-					So(addTXPayloadToQueue(p, b), ShouldBeNil)
+					So(AddTXPayloadToQueue(p, a), ShouldBeNil)
+					So(AddTXPayloadToQueue(p, b), ShouldBeNil)
 
 					Convey("Then the queue size is 2", func() {
-						count, err := getTXPayloadQueueSize(p, devEUI)
+						count, err := GetTXPayloadQueueSize(p, devEUI)
 						So(err, ShouldBeNil)
 						So(count, ShouldEqual, 2)
 					})
 
 					Convey("Then after 150 ms the queue has expired", func() {
 						time.Sleep(150 * time.Millisecond)
-						_, err := getTXPayloadFromQueue(p, devEUI)
-						So(err, ShouldResemble, errEmptyQueue)
+						_, err := GetTXPayloadFromQueue(p, devEUI)
+						So(err, ShouldResemble, common.ErrEmptyQueue)
 					})
 
 					Convey("When consuming an item from the queue", func() {
-						pl, err := getTXPayloadFromQueue(p, devEUI)
+						pl, err := GetTXPayloadFromQueue(p, devEUI)
 						So(err, ShouldBeNil)
 
 						Convey("Then the queue size is still 2", func() {
-							count, err := getTXPayloadQueueSize(p, devEUI)
+							count, err := GetTXPayloadQueueSize(p, devEUI)
 							So(err, ShouldBeNil)
 							So(count, ShouldEqual, 2)
 						})
@@ -122,7 +120,7 @@ func TestTXPayloadQueue(t *testing.T) {
 						})
 
 						Convey("When consuming an item from the queue again", func() {
-							pl, err := getTXPayloadFromQueue(p, devEUI)
+							pl, err := GetTXPayloadFromQueue(p, devEUI)
 							So(err, ShouldBeNil)
 							Convey("Then it equals to struct a (again)", func() {
 								So(pl, ShouldResemble, a)
@@ -130,10 +128,10 @@ func TestTXPayloadQueue(t *testing.T) {
 						})
 
 						Convey("When flushing the queue", func() {
-							So(flushTXPayloadQueue(p, devEUI), ShouldBeNil)
+							So(FlushTXPayloadQueue(p, devEUI), ShouldBeNil)
 
 							Convey("Then the queue size is 0", func() {
-								count, err := getTXPayloadQueueSize(p, devEUI)
+								count, err := GetTXPayloadQueueSize(p, devEUI)
 								So(err, ShouldBeNil)
 								So(count, ShouldEqual, 0)
 							})
@@ -141,22 +139,22 @@ func TestTXPayloadQueue(t *testing.T) {
 
 						Convey("Then after 150 ms the queue has expired (both in-process and the queue)", func() {
 							time.Sleep(100 * time.Millisecond)
-							_, err := getTXPayloadFromQueue(p, devEUI)
-							So(err, ShouldResemble, errEmptyQueue)
+							_, err := GetTXPayloadFromQueue(p, devEUI)
+							So(err, ShouldResemble, common.ErrEmptyQueue)
 						})
 
 						Convey("After clearing the in-process payload", func() {
-							_, err := clearInProcessTXPayload(p, devEUI)
+							_, err := ClearInProcessTXPayload(p, devEUI)
 							So(err, ShouldBeNil)
 
 							Convey("Then the queue size is 1", func() {
-								count, err := getTXPayloadQueueSize(p, devEUI)
+								count, err := GetTXPayloadQueueSize(p, devEUI)
 								So(err, ShouldBeNil)
 								So(count, ShouldEqual, 1)
 							})
 
 							Convey("When consuming an item from the queue", func() {
-								pl, err := getTXPayloadFromQueue(p, devEUI)
+								pl, err := GetTXPayloadFromQueue(p, devEUI)
 								So(err, ShouldBeNil)
 								Convey("Then it equals to struct b", func() {
 									So(pl, ShouldResemble, b)
@@ -170,6 +168,7 @@ func TestTXPayloadQueue(t *testing.T) {
 	})
 }
 
+/*
 func TestGetCFListForNode(t *testing.T) {
 	conf := common.GetTestConfig()
 
@@ -201,7 +200,7 @@ func TestGetCFListForNode(t *testing.T) {
 			AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			Name:   "test app",
 		}
-		So(storage.CreateApplication(ctx.DB, app), ShouldBeNil)
+		So(createApplication(ctx.DB, app), ShouldBeNil)
 
 		node := models.Node{
 			DevEUI: [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
@@ -248,75 +247,87 @@ func TestGetCFListForNode(t *testing.T) {
 
 	})
 }
+*/
 
-func TestNodeAPI(t *testing.T) {
+func TestNodeMethods(t *testing.T) {
 	conf := common.GetTestConfig()
 
-	Convey("Given a clean database and an API instance", t, func() {
+	Convey("Given a clean database with application", t, func() {
 		db, err := OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		common.MustResetDB(db)
 
-		ctx := Context{
-			DB: db,
+		app := models.Application{
+			AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Name:   "test app",
 		}
+		So(CreateApplication(db, app), ShouldBeNil)
 
-		api := NewNodeAPI(ctx)
-
-		Convey("Given an application is created (fk constraint)", func() {
-			app := models.Application{
-				AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-				Name:   "test app",
-			}
-			// we need to create the app since the node has a fk constraint
-			So(storage.CreateApplication(ctx.DB, app), ShouldBeNil)
-
+		Convey("When creating a node", func() {
 			node := models.Node{
-				DevEUI:        [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
-				AppEUI:        [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-				AppKey:        [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-				UsedDevNonces: [][2]byte{},
+				DevEUI: [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+				AppEUI: app.AppEUI,
+				AppKey: [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+
+				RXDelay:     2,
+				RX1DROffset: 3,
 			}
+			So(CreateNode(db, node), ShouldBeNil)
 
-			Convey("When calling Create", func() {
-				var devEUI lorawan.EUI64
-				So(api.Create(node, &devEUI), ShouldBeNil)
-				So(devEUI, ShouldEqual, node.DevEUI)
+			Convey("Whe can get it", func() {
+				node2, err := GetNode(db, node.DevEUI)
+				node2.UsedDevNonces = nil
+				So(err, ShouldBeNil)
+				So(node2, ShouldResemble, node)
+			})
 
-				Convey("Then the node has been created", func() {
-					var node2 models.Node
-					So(api.Get(node.DevEUI, &node2), ShouldBeNil)
+			Convey("Then get nodes returns a single item", func() {
+				nodes, err := GetNodes(db, 10, 0)
+				So(err, ShouldBeNil)
+				So(nodes, ShouldHaveLength, 1)
+				nodes[0].UsedDevNonces = nil
+				So(nodes[0], ShouldResemble, node)
+			})
+
+			Convey("Then get nodes for AppEUI returns a single item", func() {
+				nodes, err := GetNodesForAppEUI(db, app.AppEUI, 10, 0)
+				So(err, ShouldBeNil)
+				So(nodes, ShouldHaveLength, 1)
+				nodes[0].UsedDevNonces = nil
+				So(nodes[0], ShouldResemble, node)
+			})
+
+			Convey("Then get nodes count returns 1", func() {
+				count, err := GetNodesCount(db)
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 1)
+			})
+
+			Convey("Then get nodes count for AppEUI returns 1", func() {
+				count, err := GetNodesForAppEUICount(db, app.AppEUI)
+				So(err, ShouldBeNil)
+				So(count, ShouldEqual, 1)
+			})
+
+			Convey("When updating the node", func() {
+				node.AppKey = [16]byte{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+				So(UpdateNode(db, node), ShouldBeNil)
+
+				Convey("Then the nodes has been updated", func() {
+					node2, err := GetNode(db, node.DevEUI)
+					So(err, ShouldBeNil)
+					node2.UsedDevNonces = nil
 					So(node2, ShouldResemble, node)
-
-					Convey("Then the node can ben updated", func() {
-						node.UsedDevNonces = [][2]byte{
-							{1, 2},
-						}
-						So(api.Update(node, &devEUI), ShouldBeNil)
-						So(api.Get(node.DevEUI, &node2), ShouldBeNil)
-						So(node2, ShouldResemble, node)
-					})
-
-					Convey("Then the node can be deleted", func() {
-						So(api.Delete(node.DevEUI, &devEUI), ShouldBeNil)
-						So(api.Get(node.DevEUI, &node2), ShouldNotBeNil)
-					})
 				})
+			})
 
-				Convey("Then the list of nodes has size 1", func() {
-					var nodes []models.Node
-					So(api.GetList(models.GetListRequest{
-						Limit:  10,
-						Offset: 0,
-					}, &nodes), ShouldBeNil)
-					So(nodes, ShouldHaveLength, 1)
+			Convey("When deleting the node", func() {
+				So(DeleteNode(db, node.DevEUI), ShouldBeNil)
 
-					So(api.GetListForAppEUI(models.GetListForAppEUIRequest{
-						AppEUI: node.AppEUI,
-						Limit:  10,
-						Offset: 0,
-					}, &nodes), ShouldBeNil)
-					So(nodes, ShouldHaveLength, 1)
+				Convey("Then get nodes count returns 0", func() {
+					count, err := GetNodesCount(db)
+					So(err, ShouldBeNil)
+					So(count, ShouldEqual, 0)
 				})
 			})
 		})

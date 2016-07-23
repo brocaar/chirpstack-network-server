@@ -57,7 +57,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 			rxInfoPayloadChan: make(chan models.RXInfoPayload, 1),
 			errorPayloadChan:  make(chan models.ErrorPayload, 1),
 		}
-		p := NewRedisPool(conf.RedisURL)
+		p := storage.NewRedisPool(conf.RedisURL)
 		common.MustFlushRedis(p)
 
 		ctx := Context{
@@ -79,8 +79,8 @@ func TestHandleDataUpScenarios(t *testing.T) {
 		So(createNodeSession(ctx.RedisPool, ns), ShouldBeNil)
 
 		rxInfo := models.RXInfo{
-			Frequency: Band.UplinkChannels[0].Frequency,
-			DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
+			Frequency: common.Band.UplinkChannels[0].Frequency,
+			DataRate:  common.Band.DataRates[common.Band.UplinkChannels[0].DataRates[0]],
 		}
 
 		var fPortZero uint8
@@ -1130,9 +1130,9 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 			rxPacketChan: make(chan models.RXPacket, 1),
 			txPacketChan: make(chan models.TXPacket, 1),
 		}
-		p := NewRedisPool(conf.RedisURL)
+		p := storage.NewRedisPool(conf.RedisURL)
 		common.MustFlushRedis(p)
-		db, err := OpenDatabase(conf.PostgresDSN)
+		db, err := storage.OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		common.MustResetDB(db)
 
@@ -1158,7 +1158,7 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 				RXDelay:     3,
 				RX1DROffset: 2,
 			}
-			So(createNode(ctx.DB, node), ShouldBeNil)
+			So(storage.CreateNode(ctx.DB, node), ShouldBeNil)
 
 			Convey("Given a JoinRequest with correct DevEUI but incorrect AppEUI", func() {
 				phy := lorawan.PHYPayload{
@@ -1177,8 +1177,8 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 				rxPacket := models.RXPacket{
 					PHYPayload: phy,
 					RXInfo: models.RXInfo{
-						Frequency: Band.UplinkChannels[0].Frequency,
-						DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
+						Frequency: common.Band.UplinkChannels[0].Frequency,
+						DataRate:  common.Band.DataRates[common.Band.UplinkChannels[0].DataRates[0]],
 					},
 				}
 
@@ -1204,8 +1204,8 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 				rxPacket := models.RXPacket{
 					PHYPayload: phy,
 					RXInfo: models.RXInfo{
-						Frequency: Band.UplinkChannels[0].Frequency,
-						DataRate:  Band.DataRates[Band.UplinkChannels[0].DataRates[0]],
+						Frequency: common.Band.UplinkChannels[0].Frequency,
+						DataRate:  common.Band.DataRates[common.Band.UplinkChannels[0].DataRates[0]],
 					},
 				}
 
@@ -1229,7 +1229,7 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 
 						Convey("Then the DLSettings are set correctly", func() {
 							jaPL := phy.MACPayload.(*lorawan.JoinAcceptPayload)
-							So(jaPL.DLSettings.RX2DataRate, ShouldEqual, uint8(Band.RX2DataRate))
+							So(jaPL.DLSettings.RX2DataRate, ShouldEqual, uint8(common.Band.RX2DataRate))
 							So(jaPL.DLSettings.RX1DROffset, ShouldEqual, node.RX1DROffset)
 						})
 
@@ -1241,7 +1241,7 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 						})
 
 						Convey("Then the dev-nonce was added to the used dev-nonces", func() {
-							node, err := getNode(ctx.DB, node.DevEUI)
+							node, err := storage.GetNode(ctx.DB, node.DevEUI)
 							So(err, ShouldBeNil)
 							So([2]byte{1, 2}, ShouldBeIn, node.UsedDevNonces)
 						})
@@ -1265,7 +1265,7 @@ func runDataUpTests(ctx Context, devEUI lorawan.EUI64, devAddr lorawan.DevAddr, 
 			ctx.Application.(*testApplicationBackend).err = test.ApplicationBackendError
 
 			for _, pl := range test.TXPayloadQueue {
-				So(addTXPayloadToQueue(ctx.RedisPool, pl), ShouldBeNil)
+				So(storage.AddTXPayloadToQueue(ctx.RedisPool, pl), ShouldBeNil)
 			}
 
 			for _, mac := range test.TXMACPayloadQueue {
@@ -1273,8 +1273,8 @@ func runDataUpTests(ctx Context, devEUI lorawan.EUI64, devAddr lorawan.DevAddr, 
 			}
 
 			if test.TXMACPayloadInProcess != nil {
-				So(addTXPayloadToQueue(ctx.RedisPool, *test.TXMACPayloadInProcess), ShouldBeNil)
-				_, err := getTXPayloadFromQueue(ctx.RedisPool, devEUI) // getting an item from the queue will put it into in-process
+				So(storage.AddTXPayloadToQueue(ctx.RedisPool, *test.TXMACPayloadInProcess), ShouldBeNil)
+				_, err := storage.GetTXPayloadFromQueue(ctx.RedisPool, devEUI) // getting an item from the queue will put it into in-process
 				So(err, ShouldBeNil)
 			}
 
@@ -1352,9 +1352,9 @@ func runDataUpTests(ctx Context, devEUI lorawan.EUI64, devAddr lorawan.DevAddr, 
 			})
 
 			Convey("Then the next TXPayload is as expected", func() {
-				txPL, err := getTXPayloadFromQueue(ctx.RedisPool, devEUI)
+				txPL, err := storage.GetTXPayloadFromQueue(ctx.RedisPool, devEUI)
 				if test.ExpectedGetTXPayloadFromQueue == nil {
-					So(err, ShouldResemble, errEmptyQueue)
+					So(err, ShouldResemble, common.ErrEmptyQueue)
 				} else {
 					So(err, ShouldBeNil)
 					So(txPL, ShouldResemble, *test.ExpectedGetTXPayloadFromQueue)

@@ -2,6 +2,7 @@ package loraserver
 
 import (
 	log "github.com/Sirupsen/logrus"
+	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -11,7 +12,7 @@ func init() {
 	var err error
 	log.SetLevel(log.ErrorLevel)
 
-	Band, err = band.GetConfig(band.EU_863_870)
+	common.Band, err = band.GetConfig(band.EU_863_870)
 	if err != nil {
 		panic(err)
 	}

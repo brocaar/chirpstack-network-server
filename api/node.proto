@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+package api;
+
+// for grpc-gateway
+import "google/api/annotations.proto";
+
+// Node is the service managing the nodes.
+service Node {
+	// Create creates the given node.
+	rpc Create(CreateNodeRequest) returns (CreateNodeResponse) {
+		option(google.api.http) = {
+			post: "/api/v1/node/create"
+			body: "*"
+		};
+	}
+
+	// Get returns the node for the requested DevEUI.
+	rpc Get(GetNodeRequest) returns (GetNodeResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/node/get"
+			body: "*"
+		};
+	}
+
+	// Delete deletes the node matching the given DevEUI.
+	rpc Delete(DeleteNodeRequest) returns (DeleteNodeResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/node/delete"
+			body: "*"
+		};
+	}
+
+	// List lists the nodes.
+	rpc List(ListNodeRequest) returns (ListNodeResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/node/list"
+			body: "*"
+		};
+	}
+
+	// ListByAppEUI lists the nodes by given AppEUI.
+	rpc ListByAppEUI(ListNodeByAppEUIRequest) returns (ListNodeResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/node/listByAppEUI"
+			body: "*"
+		};
+	}
+
+	// Update updates the node matching the given DevEUI.
+	rpc Update(UpdateNodeRequest) returns (UpdateNodeResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/node/update"
+			body: "*"
+		};
+	}
+
+	// FlushTXPayloadQueue flushes the tx payload queue for the given DevEUI.
+	rpc FlushTXPayloadQueue(FlushTXPayloadQueueRequest) returns (FlushTXPayloadQueueResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/node/flushTXPayloadQueue"
+			body: "*"
+		};
+	}
+}
+
+message CreateNodeRequest {
+	string devEUI = 1;
+	string appEUI = 2;
+	string appKey = 3;
+	uint32 rxDelay = 4;
+	uint32 rx1DROffset = 5;
+	int64 channelListID = 6;
+}
+
+message CreateNodeResponse {}
+
+message GetNodeRequest {
+	string devEUI = 1;
+}
+
+message GetNodeResponse {
+	string devEUI = 1;
+	string appEUI = 2;
+	string appKey = 3;
+	uint32 rxDelay = 4;
+	uint32 rx1DROffset = 5;
+	int64 channelListID = 6;
+};
+
+message DeleteNodeRequest {
+	string devEUI = 1;
+}
+
+message DeleteNodeResponse {}
+
+message ListNodeRequest {
+	int64 limit = 1;
+	int64 offset = 2;
+}
+
+message ListNodeResponse {
+	int64 totalCount = 1;
+	repeated GetNodeResponse result = 2;
+}
+
+message ListNodeByAppEUIRequest {
+	int64 limit = 1;
+	int64 offset = 2;
+	string appEUI = 3;
+}
+
+message UpdateNodeRequest {
+	string devEUI = 1;
+	string appEUI = 2;
+	string appKey = 3;
+	uint32 rxDelay = 4;
+	uint32 rx1DROffset = 5;
+	int64 channelListID = 6;
+}
+
+message UpdateNodeResponse {}
+
+message FlushTXPayloadQueueRequest {
+	string devEUI = 1;
+}
+
+message FlushTXPayloadQueueResponse {}

@@ -20,6 +20,7 @@ func GetGRPCServer(ctx context.Context, lsCtx loraserver.Context) *grpc.Server {
 	server := grpc.NewServer(opts...)
 
 	pb.RegisterApplicationServer(server, NewApplicationAPI(lsCtx))
+	pb.RegisterNodeServer(server, NewNodeAPI(lsCtx))
 	return server
 }
 
@@ -39,6 +40,9 @@ func GetJSONGateway(ctx context.Context, lsCtx loraserver.Context, grpcBind stri
 
 	if err := pb.RegisterApplicationHandlerFromEndpoint(ctx, mux, apiEndpoint, opts); err != nil {
 		return nil, fmt.Errorf("register application handler error: %s", err)
+	}
+	if err := pb.RegisterNodeHandlerFromEndpoint(ctx, mux, apiEndpoint, opts); err != nil {
+		return nil, fmt.Errorf("register node handler error: %s", err)
 	}
 
 	return mux, nil

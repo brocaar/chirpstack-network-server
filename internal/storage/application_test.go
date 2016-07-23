@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/loraserver"
 	"github.com/brocaar/loraserver/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -13,7 +12,7 @@ func TestApplicationMethods(t *testing.T) {
 	conf := common.GetTestConfig()
 
 	Convey("Given a clean database", t, func() {
-		db, err := loraserver.OpenDatabase(conf.PostgresDSN)
+		db, err := OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		common.MustResetDB(db)
 

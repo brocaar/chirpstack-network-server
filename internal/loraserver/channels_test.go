@@ -6,6 +6,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
 )
 
@@ -13,7 +14,7 @@ func TestChannelSetAPI(t *testing.T) {
 	conf := common.GetTestConfig()
 
 	Convey("Given a clean database and an API instance", t, func() {
-		db, err := OpenDatabase(conf.PostgresDSN)
+		db, err := storage.OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		common.MustResetDB(db)
 
@@ -63,7 +64,7 @@ func TestChannelAPI(t *testing.T) {
 	conf := common.GetTestConfig()
 
 	Convey("Given a clean database and an API instance", t, func() {
-		db, err := OpenDatabase(conf.PostgresDSN)
+		db, err := storage.OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		common.MustResetDB(db)
 
