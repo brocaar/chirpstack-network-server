@@ -76,7 +76,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 			FCntDown: 5,
 			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 		}
-		So(createNodeSession(ctx.RedisPool, ns), ShouldBeNil)
+		So(storage.CreateNodeSession(ctx.RedisPool, ns), ShouldBeNil)
 
 		rxInfo := models.RXInfo{
 			Frequency: common.Band.UplinkChannels[0].Frequency,
@@ -1236,7 +1236,7 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 						Convey("Then a node-session was created", func() {
 							jaPL := phy.MACPayload.(*lorawan.JoinAcceptPayload)
 
-							_, err := getNodeSession(ctx.RedisPool, jaPL.DevAddr)
+							_, err := storage.GetNodeSession(ctx.RedisPool, jaPL.DevAddr)
 							So(err, ShouldBeNil)
 						})
 
@@ -1269,7 +1269,7 @@ func runDataUpTests(ctx Context, devEUI lorawan.EUI64, devAddr lorawan.DevAddr, 
 			}
 
 			for _, mac := range test.TXMACPayloadQueue {
-				So(addMACPayloadToTXQueue(ctx.RedisPool, mac), ShouldBeNil)
+				So(storage.AddMACPayloadToTXQueue(ctx.RedisPool, mac), ShouldBeNil)
 			}
 
 			if test.TXMACPayloadInProcess != nil {
@@ -1339,14 +1339,14 @@ func runDataUpTests(ctx Context, devEUI lorawan.EUI64, devAddr lorawan.DevAddr, 
 			})
 
 			Convey("Then the frame-counters are as expected", func() {
-				ns, err := getNodeSessionByDevEUI(ctx.RedisPool, devEUI)
+				ns, err := storage.GetNodeSessionByDevEUI(ctx.RedisPool, devEUI)
 				So(err, ShouldBeNil)
 				So(ns.FCntDown, ShouldEqual, test.ExpectedFCntDown)
 				So(ns.FCntUp, ShouldEqual, test.ExpectedFCntUp)
 			})
 
 			Convey("Then the MACPayload tx-queue is as expected", func() {
-				macQueue, err := readMACPayloadTXQueue(ctx.RedisPool, devAddr)
+				macQueue, err := storage.ReadMACPayloadTXQueue(ctx.RedisPool, devAddr)
 				So(err, ShouldBeNil)
 				So(macQueue, ShouldResemble, test.ExpectedTXMACPayloadQueue)
 			})

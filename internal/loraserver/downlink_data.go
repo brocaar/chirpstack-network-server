@@ -116,7 +116,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 
 	var frmMACCommands bool
 	var macPayloads []models.MACPayload
-	allMACPayloads, err := readMACPayloadTXQueue(ctx.RedisPool, ns.DevAddr)
+	allMACPayloads, err := storage.ReadMACPayloadTXQueue(ctx.RedisPool, ns.DevAddr)
 	if err != nil {
 		return fmt.Errorf("read mac-payload tx queue error: %s", err)
 	}
@@ -127,12 +127,12 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 			// of the MACPayload items with the same property, respecting the
 			// max FRMPayload size for the data-rate.
 			frmMACCommands = true
-			macPayloads = filterMACPayloads(allMACPayloads, true, common.Band.MaxPayloadSize[properties.rx1DR].N)
+			macPayloads = storage.FilterMACPayloads(allMACPayloads, true, common.Band.MaxPayloadSize[properties.rx1DR].N)
 		} else {
 			// the first mac-command must be sent as FOpts, filter the rest of
 			// the MACPayload items with the same property, respecting the
 			// max FOpts size of 15.
-			macPayloads = filterMACPayloads(allMACPayloads, false, 15)
+			macPayloads = storage.FilterMACPayloads(allMACPayloads, false, 15)
 		}
 	}
 
@@ -283,7 +283,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	// in-process queue. In case of ConfirmedDataDown we increment on ACK.
 	if phy.MHDR.MType != lorawan.ConfirmedDataDown {
 		ns.FCntDown++
-		if err = saveNodeSession(ctx.RedisPool, ns); err != nil {
+		if err = storage.SaveNodeSession(ctx.RedisPool, ns); err != nil {
 			return err
 		}
 
@@ -296,7 +296,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 
 	// remove the mac commands from the queue
 	for _, pl := range macPayloads {
-		if err = deleteMACPayloadFromTXQueue(ctx.RedisPool, ns.DevAddr, pl); err != nil {
+		if err = storage.DeleteMACPayloadFromTXQueue(ctx.RedisPool, ns.DevAddr, pl); err != nil {
 			return fmt.Errorf("delete mac-payload from tx queue error: %s", err)
 		}
 	}

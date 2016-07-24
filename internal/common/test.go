@@ -9,10 +9,17 @@ import (
 	migrate "github.com/rubenv/sql-migrate"
 
 	"github.com/brocaar/loraserver/internal/loraserver/migrations"
+	"github.com/brocaar/lorawan/band"
 )
 
 func init() {
+	var err error
 	log.SetLevel(log.ErrorLevel)
+
+	Band, err = band.GetConfig(band.EU_863_870)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // TestConfig contains the test configuration.

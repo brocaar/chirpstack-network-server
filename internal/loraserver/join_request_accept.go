@@ -85,7 +85,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 	}
 
 	// get random (free) DevAddr
-	devAddr, err := getRandomDevAddr(ctx.RedisPool, ctx.NetID)
+	devAddr, err := storage.GetRandomDevAddr(ctx.RedisPool, ctx.NetID)
 	if err != nil {
 		return fmt.Errorf("get random DevAddr error: %s", err)
 	}
@@ -125,7 +125,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		RX1DROffset: node.RX1DROffset,
 		CFList:      cFList,
 	}
-	if err = saveNodeSession(ctx.RedisPool, ns); err != nil {
+	if err = storage.SaveNodeSession(ctx.RedisPool, ns); err != nil {
 		return fmt.Errorf("save node-session error: %s", err)
 	}
 

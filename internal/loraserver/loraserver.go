@@ -101,7 +101,7 @@ func handleTXMACPayloads(ctx Context) {
 		go func(txMACPayload models.MACPayload) {
 			wg.Add(1)
 			defer wg.Done()
-			if err := addMACPayloadToTXQueue(ctx.RedisPool, txMACPayload); err != nil {
+			if err := storage.AddMACPayloadToTXQueue(ctx.RedisPool, txMACPayload); err != nil {
 				log.WithFields(log.Fields{
 					"dev_eui":     txMACPayload.DevEUI,
 					"reference":   txMACPayload.Reference,

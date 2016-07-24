@@ -23,6 +23,7 @@ func GetGRPCServer(ctx context.Context, lsCtx loraserver.Context) *grpc.Server {
 	pb.RegisterNodeServer(server, NewNodeAPI(lsCtx))
 	pb.RegisterChannelListServer(server, NewChannelListAPI(lsCtx))
 	pb.RegisterChannelServer(server, NewChannelAPI(lsCtx))
+	pb.RegisterNodeSessionServer(server, NewNodeSessionAPI(lsCtx))
 	return server
 }
 
@@ -51,6 +52,9 @@ func GetJSONGateway(ctx context.Context, lsCtx loraserver.Context, grpcBind stri
 	}
 	if err := pb.RegisterChannelHandlerFromEndpoint(ctx, mux, apiEndpoint, opts); err != nil {
 		return nil, fmt.Errorf("register channel handler error: %s", err)
+	}
+	if err := pb.RegisterNodeSessionHandlerFromEndpoint(ctx, mux, apiEndpoint, opts); err != nil {
+		return nil, fmt.Errorf("register node-session handler error: %s", err)
 	}
 
 	return mux, nil

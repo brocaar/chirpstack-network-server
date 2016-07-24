@@ -20,13 +20,13 @@ func validateAndCollectDataUpRXPacket(ctx Context, rxPacket models.RXPacket) err
 	}
 
 	// get the session data
-	ns, err := getNodeSession(ctx.RedisPool, macPL.FHDR.DevAddr)
+	ns, err := storage.GetNodeSession(ctx.RedisPool, macPL.FHDR.DevAddr)
 	if err != nil {
 		return err
 	}
 
 	// validate and get the full int32 FCnt
-	fullFCnt, ok := validateAndGetFullFCntUp(ns, macPL.FHDR.FCnt)
+	fullFCnt, ok := storage.ValidateAndGetFullFCntUp(ns, macPL.FHDR.FCnt)
 	if !ok {
 		log.WithFields(log.Fields{
 			"dev_addr":    macPL.FHDR.DevAddr,
@@ -81,7 +81,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
 	}
 
-	ns, err := getNodeSession(ctx.RedisPool, macPL.FHDR.DevAddr)
+	ns, err := storage.GetNodeSession(ctx.RedisPool, macPL.FHDR.DevAddr)
 	if err != nil {
 		return err
 	}
@@ -157,7 +157,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 
 	// sync counter with that of the device
 	ns.FCntUp = macPL.FHDR.FCnt
-	if err := saveNodeSession(ctx.RedisPool, ns); err != nil {
+	if err := storage.SaveNodeSession(ctx.RedisPool, ns); err != nil {
 		return err
 	}
 
@@ -208,7 +208,7 @@ func handleUplinkACK(ctx Context, ns models.NodeSession) error {
 		return err
 	}
 	ns.FCntDown++
-	if err = saveNodeSession(ctx.RedisPool, ns); err != nil {
+	if err = storage.SaveNodeSession(ctx.RedisPool, ns); err != nil {
 		return err
 	}
 	if txPayload != nil {

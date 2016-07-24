@@ -1,0 +1,235 @@
+package api
+
+import (
+	"encoding/hex"
+	"fmt"
+
+	"golang.org/x/net/context"
+
+	pb "github.com/brocaar/loraserver/api"
+	"github.com/brocaar/loraserver/internal/loraserver"
+	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/loraserver/models"
+	"github.com/brocaar/lorawan"
+)
+
+// NodeSessionAPI exposes the node-session related functions.
+type NodeSessionAPI struct {
+	ctx loraserver.Context
+}
+
+// NewNodeSessionAPI creates a new NodeSessionAPI.
+func NewNodeSessionAPI(ctx loraserver.Context) *NodeSessionAPI {
+	return &NodeSessionAPI{ctx: ctx}
+}
+
+// Create creates the given node-session. The DevAddr must contain the same NwkID as the configured NetID. Node-sessions will expire automatically after the configured TTL.
+func (a *NodeSessionAPI) Create(ctx context.Context, req *pb.CreateNodeSessionRequest) (*pb.CreateNodeSessionResponse, error) {
+	var appEUI, devEUI lorawan.EUI64
+	var appSKey, nwkSKey lorawan.AES128Key
+	var devAddr lorawan.DevAddr
+
+	if err := appEUI.UnmarshalText([]byte(req.AppEUI)); err != nil {
+		return nil, err
+	}
+	if err := devEUI.UnmarshalText([]byte(req.DevEUI)); err != nil {
+		return nil, err
+	}
+	if err := appSKey.UnmarshalText([]byte(req.AppSKey)); err != nil {
+		return nil, err
+	}
+	if err := nwkSKey.UnmarshalText([]byte(req.NwkSKey)); err != nil {
+		return nil, err
+	}
+	if err := devAddr.UnmarshalText([]byte(req.DevAddr)); err != nil {
+		return nil, err
+	}
+
+	var cFList *lorawan.CFList
+	if len(req.CFList) > len(cFList) {
+		return nil, fmt.Errorf("max CFList channels is %d", len(cFList))
+	}
+	if len(req.CFList) > 0 {
+		cFList = &lorawan.CFList{}
+		for i, f := range req.CFList {
+			cFList[i] = f
+		}
+	}
+
+	ns := models.NodeSession{
+		DevAddr:     devAddr,
+		AppEUI:      appEUI,
+		DevEUI:      devEUI,
+		AppSKey:     appSKey,
+		NwkSKey:     nwkSKey,
+		FCntUp:      req.FCntUp,
+		FCntDown:    req.FCntDown,
+		RXDelay:     uint8(req.RxDelay),
+		RX1DROffset: uint8(req.Rx1DROffset),
+		CFList:      cFList,
+	}
+
+	if err := a.validateNodeSession(ns); err != nil {
+		return nil, err
+	}
+
+	if err := storage.CreateNodeSession(a.ctx.RedisPool, ns); err != nil {
+		return nil, err
+	}
+
+	return &pb.CreateNodeSessionResponse{}, nil
+}
+
+func (a *NodeSessionAPI) validateNodeSession(ns models.NodeSession) error {
+	// validate the NwkID
+	if ns.DevAddr.NwkID() != a.ctx.NetID.NwkID() {
+		return fmt.Errorf("DevAddr must contain NwkID %s", hex.EncodeToString([]byte{a.ctx.NetID.NwkID()}))
+	}
+
+	// validate that the node exists
+	var node models.Node
+	var err error
+	if node, err = storage.GetNode(a.ctx.DB, ns.DevEUI); err != nil {
+		return err
+	}
+
+	// validate that the node belongs to the given AppEUI.
+	if ns.AppEUI != node.AppEUI {
+		return fmt.Errorf("DevEUI %s belongs to AppEUI %s, got AppEUI %s", ns.AppEUI, node.AppEUI, ns.AppEUI)
+	}
+
+	return nil
+}
+
+// Get returns the node-session matching the given DevAddr.
+func (a *NodeSessionAPI) Get(ctx context.Context, req *pb.GetNodeSessionRequest) (*pb.GetNodeSessionResponse, error) {
+	var devAddr lorawan.DevAddr
+	if err := devAddr.UnmarshalText([]byte(req.DevAddr)); err != nil {
+		return nil, err
+	}
+
+	ns, err := storage.GetNodeSession(a.ctx.RedisPool, devAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return a.nodeSessionToResponse(ns)
+}
+
+func (a *NodeSessionAPI) nodeSessionToResponse(ns models.NodeSession) (*pb.GetNodeSessionResponse, error) {
+	resp := pb.GetNodeSessionResponse{
+		DevAddr:     ns.DevAddr.String(),
+		AppEUI:      ns.AppEUI.String(),
+		DevEUI:      ns.DevEUI.String(),
+		AppSKey:     ns.AppSKey.String(),
+		NwkSKey:     ns.NwkSKey.String(),
+		FCntUp:      ns.FCntUp,
+		FCntDown:    ns.FCntDown,
+		RxDelay:     uint32(ns.RXDelay),
+		Rx1DROffset: uint32(ns.RX1DROffset),
+	}
+
+	if ns.CFList != nil {
+		resp.CFList = ns.CFList[:]
+	}
+
+	return &resp, nil
+}
+
+// GetByDevEUI returns the node-session matching the given DevEUI.
+func (a *NodeSessionAPI) GetByDevEUI(ctx context.Context, req *pb.GetNodeSessionByDevEUIRequest) (*pb.GetNodeSessionResponse, error) {
+	var eui lorawan.EUI64
+	if err := eui.UnmarshalText([]byte(req.DevEUI)); err != nil {
+		return nil, err
+	}
+
+	ns, err := storage.GetNodeSessionByDevEUI(a.ctx.RedisPool, eui)
+	if err != nil {
+		return nil, err
+	}
+
+	return a.nodeSessionToResponse(ns)
+}
+
+// Update updates the given node-session.
+func (a *NodeSessionAPI) Update(ctx context.Context, req *pb.UpdateNodeSessionRequest) (*pb.UpdateNodeSessionResponse, error) {
+	var appEUI, devEUI lorawan.EUI64
+	var appSKey, nwkSKey lorawan.AES128Key
+	var devAddr lorawan.DevAddr
+
+	if err := appEUI.UnmarshalText([]byte(req.AppEUI)); err != nil {
+		return nil, err
+	}
+	if err := devEUI.UnmarshalText([]byte(req.DevEUI)); err != nil {
+		return nil, err
+	}
+	if err := appSKey.UnmarshalText([]byte(req.AppSKey)); err != nil {
+		return nil, err
+	}
+	if err := nwkSKey.UnmarshalText([]byte(req.NwkSKey)); err != nil {
+		return nil, err
+	}
+	if err := devAddr.UnmarshalText([]byte(req.DevAddr)); err != nil {
+		return nil, err
+	}
+
+	var cFList *lorawan.CFList
+	if len(req.CFList) > len(cFList) {
+		return nil, fmt.Errorf("max CFList channels is %d", len(cFList))
+	}
+	if len(req.CFList) > 0 {
+		cFList = &lorawan.CFList{}
+		for i, f := range req.CFList {
+			cFList[i] = f
+		}
+	}
+
+	ns := models.NodeSession{
+		DevAddr:     devAddr,
+		AppEUI:      appEUI,
+		DevEUI:      devEUI,
+		AppSKey:     appSKey,
+		NwkSKey:     nwkSKey,
+		FCntUp:      req.FCntUp,
+		FCntDown:    req.FCntDown,
+		RXDelay:     uint8(req.RxDelay),
+		RX1DROffset: uint8(req.Rx1DROffset),
+		CFList:      cFList,
+	}
+
+	if err := a.validateNodeSession(ns); err != nil {
+		return nil, err
+	}
+
+	if err := storage.SaveNodeSession(a.ctx.RedisPool, ns); err != nil {
+		return nil, err
+	}
+
+	return &pb.UpdateNodeSessionResponse{}, nil
+}
+
+// Delete deletes the node-session matching the given DevAddr.
+func (a *NodeSessionAPI) Delete(ctx context.Context, req *pb.DeleteNodeSessionRequest) (*pb.DeleteNodeSessionResponse, error) {
+	var devAddr lorawan.DevAddr
+	if err := devAddr.UnmarshalText([]byte(req.DevAddr)); err != nil {
+		return nil, err
+	}
+
+	if err := storage.DeleteNodeSession(a.ctx.RedisPool, devAddr); err != nil {
+		return nil, err
+	}
+
+	return &pb.DeleteNodeSessionResponse{}, nil
+}
+
+// GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
+func (a *NodeSessionAPI) GetRandomDevAddr(ctx context.Context, req *pb.GetRandomDevAddrRequest) (*pb.GetRandomDevAddrResponse, error) {
+	devAddr, err := storage.GetRandomDevAddr(a.ctx.RedisPool, a.ctx.NetID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.GetRandomDevAddrResponse{
+		DevAddr: devAddr.String(),
+	}, nil
+}

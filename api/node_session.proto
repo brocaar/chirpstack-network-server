@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+package api;
+
+// for grpc-gateway
+import "google/api/annotations.proto";
+
+// NodeSession is the service managing node-sessions.
+service NodeSession {
+	// Create creates the given node-session. The DevAddr must contain the same NwkID as the configured NetID. Node-sessions will expire automatically after the configured TTL.
+	rpc Create(CreateNodeSessionRequest) returns (CreateNodeSessionResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/node-session/create"
+			body: "*"
+		};
+	}
+
+	// Get returns the node-session matching the given DevAddr.
+	rpc Get(GetNodeSessionRequest) returns (GetNodeSessionResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/node-session/get"
+			body: "*"
+		};
+	}
+
+	// GetByDevEUI returns the node-session matching the given DevEUI.
+	rpc GetByDevEUI(GetNodeSessionByDevEUIRequest) returns (GetNodeSessionResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/node-session/getByDevEUI"
+			body: "*"
+		};
+	}
+
+	// Update updates the given node-session.
+	rpc Update(UpdateNodeSessionRequest) returns (UpdateNodeSessionResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/node-session/update"
+			body: "*"
+		};
+	}
+
+	// Delete deletes the node-session matching the given DevAddr.
+	rpc Delete(DeleteNodeSessionRequest) returns (DeleteNodeSessionResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/node-session/delete"
+			body: "*"
+		};
+	}
+
+	// GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
+	rpc GetRandomDevAddr(GetRandomDevAddrRequest) returns (GetRandomDevAddrResponse) {
+		option (google.api.http) = {
+			post: "/api/v1/node-session/getRandomDevAddr"
+			body: "*"
+		};
+	}
+}
+
+message CreateNodeSessionRequest {
+	string devAddr = 1;
+	string appEUI = 2;
+	string devEUI = 3;
+	string appSKey = 4;
+	string nwkSKey = 5;
+	uint32 fCntUp = 6;
+	uint32 fCntDown = 7;
+	uint32 rxDelay = 8;
+	uint32 rx1DROffset = 9;
+	repeated uint32 cFList = 10;
+}
+
+message CreateNodeSessionResponse {}
+
+message GetNodeSessionRequest {
+	string devAddr = 1;
+}
+
+message GetNodeSessionResponse {
+	string devAddr = 1;
+	string appEUI = 2;
+	string devEUI = 3;
+	string appSKey = 4;
+	string nwkSKey = 5;
+	uint32 fCntUp = 6;
+	uint32 fCntDown = 7;
+	uint32 rxDelay = 8;
+	uint32 rx1DROffset = 9;
+	repeated uint32 cFList = 10;
+}
+
+message GetNodeSessionByDevEUIRequest {
+	string devEUI = 1;
+}
+
+message UpdateNodeSessionRequest {
+	string devAddr = 1;
+	string appEUI = 2;
+	string devEUI = 3;
+	string appSKey = 4;
+	string nwkSKey = 5;
+	uint32 fCntUp = 6;
+	uint32 fCntDown = 7;
+	uint32 rxDelay = 8;
+	uint32 rx1DROffset = 9;
+	repeated uint32 cFList = 10;
+}
+
+message UpdateNodeSessionResponse {}
+
+message DeleteNodeSessionRequest {
+	string devAddr = 1;
+}
+
+message DeleteNodeSessionResponse {}
+
+message GetRandomDevAddrRequest {}
+
+message GetRandomDevAddrResponse {
+	string devAddr = 1;
+}

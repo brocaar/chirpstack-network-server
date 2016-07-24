@@ -9,6 +9,7 @@ It is generated from these files:
 	application.proto
 	node.proto
 	channels.proto
+	node_session.proto
 
 It has these top-level messages:
 	CreateApplicationRequest
@@ -54,6 +55,17 @@ It has these top-level messages:
 	DeleteChannelResponse
 	ListChannelsByChannelListRequest
 	ListChannelsByChannelListResponse
+	CreateNodeSessionRequest
+	CreateNodeSessionResponse
+	GetNodeSessionRequest
+	GetNodeSessionResponse
+	GetNodeSessionByDevEUIRequest
+	UpdateNodeSessionRequest
+	UpdateNodeSessionResponse
+	DeleteNodeSessionRequest
+	DeleteNodeSessionResponse
+	GetRandomDevAddrRequest
+	GetRandomDevAddrResponse
 */
 package api
 
