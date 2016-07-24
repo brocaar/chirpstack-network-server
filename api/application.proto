@@ -10,7 +10,7 @@ service Application {
 	// Create creates the given application.
 	rpc Create(CreateApplicationRequest) returns (CreateApplicationResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/application/create"
+			post: "/api/v1/application"
 			body: "*"
 		};
 	}
@@ -18,71 +18,79 @@ service Application {
 	// Get returns the application for the given AppEUI.
 	rpc Get(GetApplicationRequest) returns (GetApplicationResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/application/get"
-			body: "*"
+			get: "/api/v1/application/{appEUI}"
 		};	
 	}
 
 	// Delete deletes the application matching the given AppEUI.
 	rpc Delete(DeleteApplicationRequest) returns (DeleteApplicationResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/application/delete"
-			body: "*"
+			delete: "/api/v1/application/{appEUI}"
 		};
 	}
 
-	// List lists the applications.
+	// List lists the applications given an offset and limit.
 	rpc List(ListApplicationRequest) returns (ListApplicationResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/application/list"
-			body: "*"
+			get: "/api/v1/application/{offset}/{limit}"
 		};
 	}
 
 	// Update updates the application matching the given AppEUI.
 	rpc Update(UpdateApplicationRequest) returns (UpdateApplicationResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/application/update"
+			put: "/api/v1/application/{appEUI}"
 			body: "*"
 		};
 	}
 }
 
 message CreateApplicationRequest {
-	string appEUI = 1;
-	string name = 2;
+	// hex encoded AppEUI
+	string appEUI = 1; 
+    // name of the application
+	string name = 2; 
 }
 
 message CreateApplicationResponse {}
 
 message GetApplicationRequest {
+	// hex encoded AppEUI
 	string appEUI = 1;
 }
 
 message GetApplicationResponse {
+	// hex encoded AppEUI
 	string appEUI = 1;
-	string name = 2;	
+	// name of the application
+	string name = 2;
 }
 
 message DeleteApplicationRequest {
+	// hex encoded AppEUI
 	string appEUI = 1;
 }
 
 message DeleteApplicationResponse {}
 
 message ListApplicationRequest {
-	int64 limit = 1;
-	int64 offset = 2;	
+	// max number of results to return
+	int64 limit = 1; 
+	// result offset (for pagination)
+	int64 offset = 2; 
 }
 
 message ListApplicationResponse {
-	int64 totalCount = 1;
+	// total number of applications
+	int64 totalCount = 1; 
 	repeated GetApplicationResponse result = 2;
 }
 
 message UpdateApplicationRequest {
-	string appEUI = 1;
-	string name = 2;
+	// hex encoded AppEUI
+	string appEUI = 1; 
+	// name of the application
+	string name = 2; 
 }
 
 message UpdateApplicationResponse {}

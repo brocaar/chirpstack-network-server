@@ -1,5 +1,5 @@
 //go:generate go-bindata -prefix ../../migrations/ -pkg migrations -o ../../internal/loraserver/migrations/migrations_gen.go ../../migrations/
-//go:generate go-bindata -prefix ../../static/ -pkg static -o ../../internal/loraserver/static/static_gen.go ../../static/...
+//go:generate go-bindata -prefix ../../static/ -pkg static -o ../../internal/static/static_gen.go ../../static/...
 
 package main
 
@@ -14,6 +14,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	assetfs "github.com/elazarl/go-bindata-assetfs"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/rubenv/sql-migrate"
 	"golang.org/x/net/context"
@@ -25,6 +27,7 @@ import (
 	controller "github.com/brocaar/loraserver/internal/loraserver/controller/mqttpubsub"
 	gateway "github.com/brocaar/loraserver/internal/loraserver/gateway/mqttpubsub"
 	"github.com/brocaar/loraserver/internal/loraserver/migrations"
+	"github.com/brocaar/loraserver/internal/static"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -134,42 +137,31 @@ func run(c *cli.Context) {
 		log.Fatal(server.Serve(list))
 	}()
 
-	// setup the json gateway
+	// setup the http server
+	r := mux.NewRouter()
+
+	// setup json api
 	jsonHandler, err := api.GetJSONGateway(ctx, lsCtx, c.String("grpc-bind"))
 	if err != nil {
 		log.Fatalf("get json gateway error: %s", err)
 	}
-	http.Handle("/", jsonHandler)
+	log.WithField("path", "/api/v1/").Info("registering api handler")
+	r.HandleFunc("/api/v1/{service}", api.SwaggerHandlerFunc).Methods("get")
+	r.PathPrefix("/api/v1/").Handler(jsonHandler)
 
-	/*
-		// setup json-rpc api handler
-		apiHandler, err := loraserver.NewJSONRPCHandler(
-			loraserver.NewApplicationAPI(lsCtx),
-			loraserver.NewNodeAPI(lsCtx),
-			loraserver.NewNodeSessionAPI(lsCtx),
-			loraserver.NewChannelListAPI(lsCtx),
-			loraserver.NewChannelAPI(lsCtx),
-		)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.WithField("path", "/rpc").Info("registering json-rpc handler")
-		http.Handle("/rpc", apiHandler)
-
-		// setup static file server (for the gui)
-		log.WithField("path", "/").Info("registering gui handler")
-		http.Handle("/", http.FileServer(&assetfs.AssetFS{
-			Asset:     static.Asset,
-			AssetDir:  static.AssetDir,
-			AssetInfo: static.AssetInfo,
-			Prefix:    "",
-		}))
-	*/
+	// setup static file server (for the gui)
+	log.WithField("path", "/").Info("registering gui handler")
+	r.PathPrefix("/").Handler(http.FileServer(&assetfs.AssetFS{
+		Asset:     static.Asset,
+		AssetDir:  static.AssetDir,
+		AssetInfo: static.AssetInfo,
+		Prefix:    "",
+	}))
 
 	// start the http server
 	go func() {
 		log.WithField("bind", c.String("http-bind")).Info("starting http server")
-		log.Fatal(http.ListenAndServe(c.String("http-bind"), nil))
+		log.Fatal(http.ListenAndServe(c.String("http-bind"), r))
 	}()
 
 	sigChan := make(chan os.Signal)

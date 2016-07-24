@@ -1,0 +1,375 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "node_session.proto",
+    "version": "version not set"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/node-session/create": {
+      "post": {
+        "summary": "Create creates the given node-session. The DevAddr must contain the same NwkID as the configured NetID. Node-sessions will expire automatically after the configured TTL.",
+        "operationId": "Create",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiCreateNodeSessionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiCreateNodeSessionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "NodeSession"
+        ]
+      }
+    },
+    "/api/v1/node-session/delete": {
+      "post": {
+        "summary": "Delete deletes the node-session matching the given DevAddr.",
+        "operationId": "Delete",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiDeleteNodeSessionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiDeleteNodeSessionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "NodeSession"
+        ]
+      }
+    },
+    "/api/v1/node-session/get": {
+      "post": {
+        "summary": "Get returns the node-session matching the given DevAddr.",
+        "operationId": "Get",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiGetNodeSessionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiGetNodeSessionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "NodeSession"
+        ]
+      }
+    },
+    "/api/v1/node-session/getByDevEUI": {
+      "post": {
+        "summary": "GetByDevEUI returns the node-session matching the given DevEUI.",
+        "operationId": "GetByDevEUI",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiGetNodeSessionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiGetNodeSessionByDevEUIRequest"
+            }
+          }
+        ],
+        "tags": [
+          "NodeSession"
+        ]
+      }
+    },
+    "/api/v1/node-session/getRandomDevAddr": {
+      "post": {
+        "summary": "GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.",
+        "operationId": "GetRandomDevAddr",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiGetRandomDevAddrResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiGetRandomDevAddrRequest"
+            }
+          }
+        ],
+        "tags": [
+          "NodeSession"
+        ]
+      }
+    },
+    "/api/v1/node-session/update": {
+      "post": {
+        "summary": "Update updates the given node-session.",
+        "operationId": "Update",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiUpdateNodeSessionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiUpdateNodeSessionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "NodeSession"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "apiCreateNodeSessionRequest": {
+      "type": "object",
+      "properties": {
+        "appEUI": {
+          "type": "string",
+          "format": "string"
+        },
+        "appSKey": {
+          "type": "string",
+          "format": "string"
+        },
+        "cFList": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "devAddr": {
+          "type": "string",
+          "format": "string"
+        },
+        "devEUI": {
+          "type": "string",
+          "format": "string"
+        },
+        "fCntDown": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "fCntUp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "nwkSKey": {
+          "type": "string",
+          "format": "string"
+        },
+        "rx1DROffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "rxDelay": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "apiCreateNodeSessionResponse": {
+      "type": "object"
+    },
+    "apiDeleteNodeSessionRequest": {
+      "type": "object",
+      "properties": {
+        "devAddr": {
+          "type": "string",
+          "format": "string"
+        }
+      }
+    },
+    "apiDeleteNodeSessionResponse": {
+      "type": "object"
+    },
+    "apiGetNodeSessionByDevEUIRequest": {
+      "type": "object",
+      "properties": {
+        "devEUI": {
+          "type": "string",
+          "format": "string"
+        }
+      }
+    },
+    "apiGetNodeSessionRequest": {
+      "type": "object",
+      "properties": {
+        "devAddr": {
+          "type": "string",
+          "format": "string"
+        }
+      }
+    },
+    "apiGetNodeSessionResponse": {
+      "type": "object",
+      "properties": {
+        "appEUI": {
+          "type": "string",
+          "format": "string"
+        },
+        "appSKey": {
+          "type": "string",
+          "format": "string"
+        },
+        "cFList": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "devAddr": {
+          "type": "string",
+          "format": "string"
+        },
+        "devEUI": {
+          "type": "string",
+          "format": "string"
+        },
+        "fCntDown": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "fCntUp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "nwkSKey": {
+          "type": "string",
+          "format": "string"
+        },
+        "rx1DROffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "rxDelay": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "apiGetRandomDevAddrRequest": {
+      "type": "object"
+    },
+    "apiGetRandomDevAddrResponse": {
+      "type": "object",
+      "properties": {
+        "devAddr": {
+          "type": "string",
+          "format": "string"
+        }
+      }
+    },
+    "apiUpdateNodeSessionRequest": {
+      "type": "object",
+      "properties": {
+        "appEUI": {
+          "type": "string",
+          "format": "string"
+        },
+        "appSKey": {
+          "type": "string",
+          "format": "string"
+        },
+        "cFList": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "devAddr": {
+          "type": "string",
+          "format": "string"
+        },
+        "devEUI": {
+          "type": "string",
+          "format": "string"
+        },
+        "fCntDown": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "fCntUp": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "nwkSKey": {
+          "type": "string",
+          "format": "string"
+        },
+        "rx1DROffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "rxDelay": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "apiUpdateNodeSessionResponse": {
+      "type": "object"
+    }
+  }
+}

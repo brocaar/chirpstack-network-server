@@ -12,16 +12,6 @@ import (
 	"github.com/brocaar/lorawan/band"
 )
 
-func init() {
-	var err error
-	log.SetLevel(log.ErrorLevel)
-
-	Band, err = band.GetConfig(band.EU_863_870)
-	if err != nil {
-		panic(err)
-	}
-}
-
 // TestConfig contains the test configuration.
 type TestConfig struct {
 	RedisURL    string
@@ -30,6 +20,14 @@ type TestConfig struct {
 
 // GetTestConfig returns the test configuration.
 func GetTestConfig() *TestConfig {
+	var err error
+	log.SetLevel(log.ErrorLevel)
+
+	Band, err = band.GetConfig(band.EU_863_870)
+	if err != nil {
+		panic(err)
+	}
+
 	c := &TestConfig{
 		RedisURL: "redis://localhost:6379",
 	}

@@ -1,0 +1,381 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "node.proto",
+    "version": "version not set"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/node/create": {
+      "post": {
+        "summary": "Create creates the given node.",
+        "operationId": "Create",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiCreateNodeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiCreateNodeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Node"
+        ]
+      }
+    },
+    "/api/v1/node/delete": {
+      "post": {
+        "summary": "Delete deletes the node matching the given DevEUI.",
+        "operationId": "Delete",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiDeleteNodeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiDeleteNodeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Node"
+        ]
+      }
+    },
+    "/api/v1/node/flushTXPayloadQueue": {
+      "post": {
+        "summary": "FlushTXPayloadQueue flushes the tx payload queue for the given DevEUI.",
+        "operationId": "FlushTXPayloadQueue",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiFlushTXPayloadQueueResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiFlushTXPayloadQueueRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Node"
+        ]
+      }
+    },
+    "/api/v1/node/get": {
+      "post": {
+        "summary": "Get returns the node for the requested DevEUI.",
+        "operationId": "Get",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiGetNodeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiGetNodeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Node"
+        ]
+      }
+    },
+    "/api/v1/node/list": {
+      "post": {
+        "summary": "List lists the nodes.",
+        "operationId": "List",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiListNodeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiListNodeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Node"
+        ]
+      }
+    },
+    "/api/v1/node/listByAppEUI": {
+      "post": {
+        "summary": "ListByAppEUI lists the nodes by given AppEUI.",
+        "operationId": "ListByAppEUI",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiListNodeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiListNodeByAppEUIRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Node"
+        ]
+      }
+    },
+    "/api/v1/node/update": {
+      "post": {
+        "summary": "Update updates the node matching the given DevEUI.",
+        "operationId": "Update",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiUpdateNodeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiUpdateNodeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Node"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "apiCreateNodeRequest": {
+      "type": "object",
+      "properties": {
+        "appEUI": {
+          "type": "string",
+          "format": "string"
+        },
+        "appKey": {
+          "type": "string",
+          "format": "string"
+        },
+        "channelListID": {
+          "type": "string",
+          "format": "int64"
+        },
+        "devEUI": {
+          "type": "string",
+          "format": "string"
+        },
+        "rx1DROffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "rxDelay": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "apiCreateNodeResponse": {
+      "type": "object"
+    },
+    "apiDeleteNodeRequest": {
+      "type": "object",
+      "properties": {
+        "devEUI": {
+          "type": "string",
+          "format": "string"
+        }
+      }
+    },
+    "apiDeleteNodeResponse": {
+      "type": "object"
+    },
+    "apiFlushTXPayloadQueueRequest": {
+      "type": "object",
+      "properties": {
+        "devEUI": {
+          "type": "string",
+          "format": "string"
+        }
+      }
+    },
+    "apiFlushTXPayloadQueueResponse": {
+      "type": "object"
+    },
+    "apiGetNodeRequest": {
+      "type": "object",
+      "properties": {
+        "devEUI": {
+          "type": "string",
+          "format": "string"
+        }
+      }
+    },
+    "apiGetNodeResponse": {
+      "type": "object",
+      "properties": {
+        "appEUI": {
+          "type": "string",
+          "format": "string"
+        },
+        "appKey": {
+          "type": "string",
+          "format": "string"
+        },
+        "channelListID": {
+          "type": "string",
+          "format": "int64"
+        },
+        "devEUI": {
+          "type": "string",
+          "format": "string"
+        },
+        "rx1DROffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "rxDelay": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "apiListNodeByAppEUIRequest": {
+      "type": "object",
+      "properties": {
+        "appEUI": {
+          "type": "string",
+          "format": "string"
+        },
+        "limit": {
+          "type": "string",
+          "format": "int64"
+        },
+        "offset": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "apiListNodeRequest": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string",
+          "format": "int64"
+        },
+        "offset": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "apiListNodeResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiGetNodeResponse"
+          }
+        },
+        "totalCount": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "apiUpdateNodeRequest": {
+      "type": "object",
+      "properties": {
+        "appEUI": {
+          "type": "string",
+          "format": "string"
+        },
+        "appKey": {
+          "type": "string",
+          "format": "string"
+        },
+        "channelListID": {
+          "type": "string",
+          "format": "int64"
+        },
+        "devEUI": {
+          "type": "string",
+          "format": "string"
+        },
+        "rx1DROffset": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "rxDelay": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "apiUpdateNodeResponse": {
+      "type": "object"
+    }
+  }
+}

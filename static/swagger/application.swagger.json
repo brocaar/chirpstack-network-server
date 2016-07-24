@@ -1,0 +1,268 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "application.proto",
+    "version": "version not set"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/application": {
+      "post": {
+        "summary": "Create creates the given application.",
+        "operationId": "Create",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiCreateApplicationResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiCreateApplicationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Application"
+        ]
+      }
+    },
+    "/api/v1/application/{appEUI}": {
+      "get": {
+        "summary": "Get returns the application for the given AppEUI.",
+        "operationId": "Get",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiGetApplicationResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "appEUI",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          }
+        ],
+        "tags": [
+          "Application"
+        ]
+      },
+      "delete": {
+        "summary": "Delete deletes the application matching the given AppEUI.",
+        "operationId": "Delete",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiDeleteApplicationResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "appEUI",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          }
+        ],
+        "tags": [
+          "Application"
+        ]
+      },
+      "put": {
+        "summary": "Update updates the application matching the given AppEUI.",
+        "operationId": "Update",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiUpdateApplicationResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "appEUI",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiUpdateApplicationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Application"
+        ]
+      }
+    },
+    "/api/v1/application/{offset}/{limit}": {
+      "get": {
+        "summary": "List lists the applications given an offset and limit.",
+        "operationId": "List",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiListApplicationResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "limit",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Application"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "apiCreateApplicationRequest": {
+      "type": "object",
+      "properties": {
+        "appEUI": {
+          "type": "string",
+          "format": "string",
+          "title": "hex encoded AppEUI"
+        },
+        "name": {
+          "type": "string",
+          "format": "string",
+          "title": "name of the application"
+        }
+      }
+    },
+    "apiCreateApplicationResponse": {
+      "type": "object"
+    },
+    "apiDeleteApplicationRequest": {
+      "type": "object",
+      "properties": {
+        "appEUI": {
+          "type": "string",
+          "format": "string",
+          "title": "hex encoded AppEUI"
+        }
+      }
+    },
+    "apiDeleteApplicationResponse": {
+      "type": "object"
+    },
+    "apiGetApplicationRequest": {
+      "type": "object",
+      "properties": {
+        "appEUI": {
+          "type": "string",
+          "format": "string",
+          "title": "hex encoded AppEUI"
+        }
+      }
+    },
+    "apiGetApplicationResponse": {
+      "type": "object",
+      "properties": {
+        "appEUI": {
+          "type": "string",
+          "format": "string",
+          "title": "hex encoded AppEUI"
+        },
+        "name": {
+          "type": "string",
+          "format": "string",
+          "title": "name of the application"
+        }
+      }
+    },
+    "apiListApplicationRequest": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "string",
+          "format": "int64",
+          "title": "max number of results to return"
+        },
+        "offset": {
+          "type": "string",
+          "format": "int64",
+          "title": "result offset (for pagination)"
+        }
+      }
+    },
+    "apiListApplicationResponse": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/apiGetApplicationResponse"
+          }
+        },
+        "totalCount": {
+          "type": "string",
+          "format": "int64",
+          "title": "total number of applications"
+        }
+      }
+    },
+    "apiUpdateApplicationRequest": {
+      "type": "object",
+      "properties": {
+        "appEUI": {
+          "type": "string",
+          "format": "string",
+          "title": "hex encoded AppEUI"
+        },
+        "name": {
+          "type": "string",
+          "format": "string",
+          "title": "name of the application"
+        }
+      }
+    },
+    "apiUpdateApplicationResponse": {
+      "type": "object"
+    }
+  }
+}
