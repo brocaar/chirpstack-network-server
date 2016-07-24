@@ -64,6 +64,18 @@
 			"revisionTime": "2016-07-11T13:55:00Z"
 		},
 		{
+			"checksumSHA1": "iIUYZyoanCQQTUaWsu8b+iOSPt4=",
+			"path": "github.com/gorilla/context",
+			"revision": "aed02d124ae4a0e94fea4541c8effd05bf0c8296",
+			"revisionTime": "2016-05-25T20:33:19Z"
+		},
+		{
+			"checksumSHA1": "aGJgIyxcAwlxb8tbu5g5XOVkPHU=",
+			"path": "github.com/gorilla/mux",
+			"revision": "d391bea3118c9fc17a88d62c9189bb791255e0ef",
+			"revisionTime": "2016-07-18T15:11:58Z"
+		},
+		{
 			"checksumSHA1": "m1ZcuEjYXGa1TVwnZBUdnL3kzhQ=",
 			"path": "github.com/grpc-ecosystem/grpc-gateway/runtime",
 			"revision": "f52d055dc48aec25854ed7d31862f78913cf17d1",
