@@ -10,7 +10,7 @@ service NodeSession {
 	// Create creates the given node-session. The DevAddr must contain the same NwkID as the configured NetID. Node-sessions will expire automatically after the configured TTL.
 	rpc Create(CreateNodeSessionRequest) returns (CreateNodeSessionResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/node-session/create"
+			post: "/api/v1/nodeSession"
 			body: "*"
 		};
 	}
@@ -18,23 +18,21 @@ service NodeSession {
 	// Get returns the node-session matching the given DevAddr.
 	rpc Get(GetNodeSessionRequest) returns (GetNodeSessionResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/node-session/get"
-			body: "*"
+			get: "/api/v1/nodeSession/{devAddr}"
 		};
 	}
 
 	// GetByDevEUI returns the node-session matching the given DevEUI.
 	rpc GetByDevEUI(GetNodeSessionByDevEUIRequest) returns (GetNodeSessionResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/node-session/getByDevEUI"
-			body: "*"
+			get: "/api/v1/nodeSession/devEUI/{devEUI}"
 		};
 	}
 
 	// Update updates the given node-session.
 	rpc Update(UpdateNodeSessionRequest) returns (UpdateNodeSessionResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/node-session/update"
+			put: "/api/v1/nodeSession/{devAddr}"
 			body: "*"
 		};
 	}
@@ -42,25 +40,28 @@ service NodeSession {
 	// Delete deletes the node-session matching the given DevAddr.
 	rpc Delete(DeleteNodeSessionRequest) returns (DeleteNodeSessionResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/node-session/delete"
-			body: "*"
+			delete: "/api/v1/nodeSession/{devAddr}"
 		};
 	}
 
 	// GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
 	rpc GetRandomDevAddr(GetRandomDevAddrRequest) returns (GetRandomDevAddrResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/node-session/getRandomDevAddr"
-			body: "*"
+			post: "/api/v1/nodeSession/getRandomDevAddr"
 		};
 	}
 }
 
 message CreateNodeSessionRequest {
+	// hex encoded DevAddr
 	string devAddr = 1;
+	// hex encoded AppEUI
 	string appEUI = 2;
+	// hex encoded DevEUI
 	string devEUI = 3;
+	// hex encoded AppSKey
 	string appSKey = 4;
+	// hex encoded NwkSKey
 	string nwkSKey = 5;
 	uint32 fCntUp = 6;
 	uint32 fCntDown = 7;
@@ -76,10 +77,15 @@ message GetNodeSessionRequest {
 }
 
 message GetNodeSessionResponse {
+	// hex encoded DevAddr
 	string devAddr = 1;
+	// hex encoded AppEUI
 	string appEUI = 2;
+	// hex encoded DevEUI
 	string devEUI = 3;
+	// hex encoded AppSKey
 	string appSKey = 4;
+	// hex encoded NwkSKey
 	string nwkSKey = 5;
 	uint32 fCntUp = 6;
 	uint32 fCntDown = 7;
@@ -89,14 +95,20 @@ message GetNodeSessionResponse {
 }
 
 message GetNodeSessionByDevEUIRequest {
+	// hex encoded DevEUI
 	string devEUI = 1;
 }
 
 message UpdateNodeSessionRequest {
+	// hex encoded DevAddr
 	string devAddr = 1;
+	// hex encoded AppEUI
 	string appEUI = 2;
+	// hex encoded DevEUI
 	string devEUI = 3;
+	// hex encoded AppSKey
 	string appSKey = 4;
+	// hex encoded NwkSKey
 	string nwkSKey = 5;
 	uint32 fCntUp = 6;
 	uint32 fCntDown = 7;
@@ -108,6 +120,7 @@ message UpdateNodeSessionRequest {
 message UpdateNodeSessionResponse {}
 
 message DeleteNodeSessionRequest {
+	// hex encoded DevAddr
 	string devAddr = 1;
 }
 
@@ -116,5 +129,6 @@ message DeleteNodeSessionResponse {}
 message GetRandomDevAddrRequest {}
 
 message GetRandomDevAddrResponse {
+	// hex encoded DevAddr
 	string devAddr = 1;
 }

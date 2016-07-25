@@ -9,7 +9,7 @@ It is generated from these files:
 	application.proto
 	node.proto
 	channels.proto
-	node-session.proto
+	nodeSession.proto
 
 It has these top-level messages:
 	CreateApplicationRequest

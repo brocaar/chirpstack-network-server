@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "node-session.proto",
+    "title": "nodeSession.proto",
     "version": "version not set"
   },
   "schemes": [
@@ -15,7 +15,7 @@
     "application/json"
   ],
   "paths": {
-    "/api/v1/node-session/create": {
+    "/api/v1/nodeSession": {
       "post": {
         "summary": "Create creates the given node-session. The DevAddr must contain the same NwkID as the configured NetID. Node-sessions will expire automatically after the configured TTL.",
         "operationId": "Create",
@@ -42,62 +42,8 @@
         ]
       }
     },
-    "/api/v1/node-session/delete": {
-      "post": {
-        "summary": "Delete deletes the node-session matching the given DevAddr.",
-        "operationId": "Delete",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/apiDeleteNodeSessionResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiDeleteNodeSessionRequest"
-            }
-          }
-        ],
-        "tags": [
-          "NodeSession"
-        ]
-      }
-    },
-    "/api/v1/node-session/get": {
-      "post": {
-        "summary": "Get returns the node-session matching the given DevAddr.",
-        "operationId": "Get",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/apiGetNodeSessionResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiGetNodeSessionRequest"
-            }
-          }
-        ],
-        "tags": [
-          "NodeSession"
-        ]
-      }
-    },
-    "/api/v1/node-session/getByDevEUI": {
-      "post": {
+    "/api/v1/nodeSession/devEUI/{devEUI}": {
+      "get": {
         "summary": "GetByDevEUI returns the node-session matching the given DevEUI.",
         "operationId": "GetByDevEUI",
         "responses": {
@@ -110,12 +56,11 @@
         },
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
+            "name": "devEUI",
+            "in": "path",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiGetNodeSessionByDevEUIRequest"
-            }
+            "type": "string",
+            "format": "string"
           }
         ],
         "tags": [
@@ -123,7 +68,7 @@
         ]
       }
     },
-    "/api/v1/node-session/getRandomDevAddr": {
+    "/api/v1/nodeSession/getRandomDevAddr": {
       "post": {
         "summary": "GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.",
         "operationId": "GetRandomDevAddr",
@@ -135,23 +80,61 @@
             }
           }
         },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiGetRandomDevAddrRequest"
-            }
-          }
-        ],
         "tags": [
           "NodeSession"
         ]
       }
     },
-    "/api/v1/node-session/update": {
-      "post": {
+    "/api/v1/nodeSession/{devAddr}": {
+      "get": {
+        "summary": "Get returns the node-session matching the given DevAddr.",
+        "operationId": "Get",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiGetNodeSessionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "devAddr",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          }
+        ],
+        "tags": [
+          "NodeSession"
+        ]
+      },
+      "delete": {
+        "summary": "Delete deletes the node-session matching the given DevAddr.",
+        "operationId": "Delete",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiDeleteNodeSessionResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "devAddr",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          }
+        ],
+        "tags": [
+          "NodeSession"
+        ]
+      },
+      "put": {
         "summary": "Update updates the given node-session.",
         "operationId": "Update",
         "responses": {
@@ -163,6 +146,13 @@
           }
         },
         "parameters": [
+          {
+            "name": "devAddr",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          },
           {
             "name": "body",
             "in": "body",
@@ -184,11 +174,13 @@
       "properties": {
         "appEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded AppEUI"
         },
         "appSKey": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded AppSKey"
         },
         "cFList": {
           "type": "array",
@@ -199,11 +191,13 @@
         },
         "devAddr": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevAddr"
         },
         "devEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevEUI"
         },
         "fCntDown": {
           "type": "integer",
@@ -215,7 +209,8 @@
         },
         "nwkSKey": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded NwkSKey"
         },
         "rx1DROffset": {
           "type": "integer",
@@ -235,7 +230,8 @@
       "properties": {
         "devAddr": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevAddr"
         }
       }
     },
@@ -247,7 +243,8 @@
       "properties": {
         "devEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevEUI"
         }
       }
     },
@@ -265,11 +262,13 @@
       "properties": {
         "appEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded AppEUI"
         },
         "appSKey": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded AppSKey"
         },
         "cFList": {
           "type": "array",
@@ -280,11 +279,13 @@
         },
         "devAddr": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevAddr"
         },
         "devEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevEUI"
         },
         "fCntDown": {
           "type": "integer",
@@ -296,7 +297,8 @@
         },
         "nwkSKey": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded NwkSKey"
         },
         "rx1DROffset": {
           "type": "integer",
@@ -316,7 +318,8 @@
       "properties": {
         "devAddr": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevAddr"
         }
       }
     },
@@ -325,11 +328,13 @@
       "properties": {
         "appEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded AppEUI"
         },
         "appSKey": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded AppSKey"
         },
         "cFList": {
           "type": "array",
@@ -340,11 +345,13 @@
         },
         "devAddr": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevAddr"
         },
         "devEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevEUI"
         },
         "fCntDown": {
           "type": "integer",
@@ -356,7 +363,8 @@
         },
         "nwkSKey": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded NwkSKey"
         },
         "rx1DROffset": {
           "type": "integer",
