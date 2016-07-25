@@ -21,7 +21,7 @@ Currently implemented:
 - over-the-air activation (OTAA)
 - sending / receiving of MAC commands
 - web-interface
-- JSON-RPC API (see web-interface for documentation)
+- gRPC and RESTful JSON api (see [API](api.md))
 - ISM bands
 	- EU 863-870
 	- US 902-928
