@@ -8,7 +8,8 @@ Package api is a generated protocol buffer package.
 It is generated from these files:
 	application.proto
 	node.proto
-	channels.proto
+	channel.proto
+	channelList.proto
 	nodeSession.proto
 
 It has these top-level messages:
@@ -35,16 +36,6 @@ It has these top-level messages:
 	UpdateNodeResponse
 	FlushTXPayloadQueueRequest
 	FlushTXPayloadQueueResponse
-	CreateChannelListRequest
-	CreateChannelListResponse
-	UpdateChannelListRequest
-	UpdateChannelListResponse
-	GetChannelListRequest
-	GetChannelListResponse
-	ListChannelListRequest
-	ListChannelListResponse
-	DeleteChannelListRequest
-	DeleteChannelListResponse
 	CreateChannelRequest
 	CreateChannelResponse
 	GetChannelRequest
@@ -55,6 +46,16 @@ It has these top-level messages:
 	DeleteChannelResponse
 	ListChannelsByChannelListRequest
 	ListChannelsByChannelListResponse
+	CreateChannelListRequest
+	CreateChannelListResponse
+	UpdateChannelListRequest
+	UpdateChannelListResponse
+	GetChannelListRequest
+	GetChannelListResponse
+	ListChannelListRequest
+	ListChannelListResponse
+	DeleteChannelListRequest
+	DeleteChannelListResponse
 	CreateNodeSessionRequest
 	CreateNodeSessionResponse
 	GetNodeSessionRequest

@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package api;
+
+// for grpc-gateway
+import "google/api/annotations.proto";
+
+// Channel is the service managing channels.
+service Channel {
+	// Create creates the given channel.
+	rpc Create(CreateChannelRequest) returns (CreateChannelResponse) {
+		option(google.api.http) = {
+			post: "/api/v1/channel"
+			body: "*"
+		};
+	}
+
+	// Get returns the channel matching the given id.
+	rpc Get(GetChannelRequest) returns (GetChannelResponse) {
+		option(google.api.http) = {
+			get: "/api/v1/channel/{id}"
+		};
+	}
+
+	// Update updates the given channel.
+	rpc Update(UpdateChannelRequest) returns (UpdateChannelResponse) {
+		option(google.api.http) = {
+			put: "/api/v1/channel/{id}"
+			body: "*"
+		};
+	}
+
+	// Delete deletes the channel matching the given id.
+	rpc Delete(DeleteChannelRequest) returns (DeleteChannelResponse) {
+		option(google.api.http) = {
+			delete: "/api/v1/channel/{id}"
+		};
+	}
+
+	// ListByChannelList lists the channels matching the given channel-list id.
+	rpc ListByChannelList(ListChannelsByChannelListRequest) returns (ListChannelsByChannelListResponse) {
+		option(google.api.http) = {
+			get: "/api/v1/channel/channelList/{id}"
+		};
+	}
+}
+
+message CreateChannelRequest {
+	int64 channelListID = 1;
+	int64 channel = 2;
+	int64 frequency = 3;
+}
+
+message CreateChannelResponse {
+	int64 id = 1;
+}
+
+message GetChannelRequest {
+	int64 id = 1;
+}
+
+message GetChannelResponse {
+	int64 id = 1;
+	int64 channelListID = 2;
+	int64 channel = 3;
+	int64 frequency = 4;
+}
+
+message UpdateChannelRequest {
+	int64 id = 1;
+	int64 channelListID = 2;
+	int64 channel = 3;
+	int64 frequency = 4;
+}
+
+message UpdateChannelResponse {}
+
+message DeleteChannelRequest {
+	int64 id = 1;
+}
+
+message DeleteChannelResponse {}
+
+message ListChannelsByChannelListRequest {
+	int64 id = 1;
+} 
+
+message ListChannelsByChannelListResponse {
+	repeated GetChannelResponse result = 2;
+}

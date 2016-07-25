@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package api;
+
+// for grpc-gateway
+import "google/api/annotations.proto";
+
+// ChannelList is the service managing channel-lists.
+service ChannelList {
+	// Create creates the given channel-list.
+	rpc Create(CreateChannelListRequest) returns (CreateChannelListResponse) {
+		option(google.api.http) = {
+			post: "/api/v1/channelList"
+		};
+	}
+
+	// Update updates the given channel-list.
+	rpc Update(UpdateChannelListRequest) returns (UpdateChannelListResponse) {
+		option(google.api.http) = {
+			put: "/api/v1/ChannelList/{id}"
+			body: "*"
+		};
+	}
+
+	// Get returns the channel-list matching the given id.
+	rpc Get(GetChannelListRequest) returns (GetChannelListResponse) {
+		option(google.api.http) = {
+			get: "/api/v1/channelList/{id}"
+		};
+	}
+
+	// List lists the channel-lists given an offset and limit.
+	rpc List(ListChannelListRequest) returns (ListChannelListResponse) {
+		option(google.api.http) = {
+			get: "/api/v1/channelList/{offset}/{limit}"
+		};
+	}
+
+	// Delete deletes the channel-list matching the given id.
+	rpc Delete(DeleteChannelListRequest) returns (DeleteChannelListResponse) {
+		option(google.api.http) = {
+			delete: "/api/v1/channelList/{id}"
+		};
+	}
+}
+
+message CreateChannelListRequest {
+	string name = 1;
+}
+
+message CreateChannelListResponse {
+	int64 id = 1;
+}
+
+message UpdateChannelListRequest {
+	int64 id = 1;
+	string name = 2;
+}
+
+message UpdateChannelListResponse {}
+
+message GetChannelListRequest {
+	int64 id = 1;
+}
+
+message GetChannelListResponse {
+	int64 id = 1;
+	string name = 2;
+}
+
+message ListChannelListRequest {
+	int64 limit = 1;
+	int64 offset = 2;
+}
+
+message ListChannelListResponse {
+	int64 totalCount = 1;
+	repeated GetChannelListResponse result = 2;
+}
+
+message DeleteChannelListRequest {
+	int64 id = 1;
+}
+
+message DeleteChannelListResponse {}
+
