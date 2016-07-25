@@ -10,7 +10,7 @@ service Node {
 	// Create creates the given node.
 	rpc Create(CreateNodeRequest) returns (CreateNodeResponse) {
 		option(google.api.http) = {
-			post: "/api/v1/node/create"
+			post: "/api/v1/node"
 			body: "*"
 		};
 	}
@@ -18,39 +18,35 @@ service Node {
 	// Get returns the node for the requested DevEUI.
 	rpc Get(GetNodeRequest) returns (GetNodeResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/node/get"
-			body: "*"
+			get: "/api/v1/node/{devEUI}"
 		};
 	}
 
 	// Delete deletes the node matching the given DevEUI.
 	rpc Delete(DeleteNodeRequest) returns (DeleteNodeResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/node/delete"
-			body: "*"
+			delete: "/api/v1/node/{devEUI}"
 		};
 	}
 
 	// List lists the nodes.
 	rpc List(ListNodeRequest) returns (ListNodeResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/node/list"
-			body: "*"
+			get: "/api/v1/node/{offset}/{limit}"
 		};
 	}
 
 	// ListByAppEUI lists the nodes by given AppEUI.
 	rpc ListByAppEUI(ListNodeByAppEUIRequest) returns (ListNodeResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/node/listByAppEUI"
-			body: "*"
+			get: "/api/v1/node/application/{appEUI}/{offset}/{limit}"
 		};
 	}
 
 	// Update updates the node matching the given DevEUI.
 	rpc Update(UpdateNodeRequest) returns (UpdateNodeResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/node/update"
+			put: "/api/v1/node/{devEUI}"
 			body: "*"
 		};
 	}
@@ -58,16 +54,18 @@ service Node {
 	// FlushTXPayloadQueue flushes the tx payload queue for the given DevEUI.
 	rpc FlushTXPayloadQueue(FlushTXPayloadQueueRequest) returns (FlushTXPayloadQueueResponse) {
 		option (google.api.http) = {
-			post: "/api/v1/node/flushTXPayloadQueue"
-			body: "*"
+			delete: "/api/v1/node/{devEUI}/txPayloadQueue"
 		};
 	}
 }
 
 message CreateNodeRequest {
-	string devEUI = 1;
-	string appEUI = 2;
-	string appKey = 3;
+	// hex encoded DevEUI
+	string devEUI = 1; 
+	// hex encoded AppEUI
+	string appEUI = 2; 
+	// hex encoded AppKey
+	string appKey = 3; 
 	uint32 rxDelay = 4;
 	uint32 rx1DROffset = 5;
 	int64 channelListID = 6;
@@ -76,19 +74,24 @@ message CreateNodeRequest {
 message CreateNodeResponse {}
 
 message GetNodeRequest {
+	// hex encoded DevEUI
 	string devEUI = 1;
 }
 
 message GetNodeResponse {
-	string devEUI = 1;
-	string appEUI = 2;
-	string appKey = 3;
+	// hex encoded DevEUI
+	string devEUI = 1; 
+	// hex encoded AppEUI
+	string appEUI = 2; 
+	// hex encoded AppKey
+	string appKey = 3; 
 	uint32 rxDelay = 4;
 	uint32 rx1DROffset = 5;
 	int64 channelListID = 6;
 };
 
 message DeleteNodeRequest {
+	// hex encoded DevEUI
 	string devEUI = 1;
 }
 
@@ -107,12 +110,16 @@ message ListNodeResponse {
 message ListNodeByAppEUIRequest {
 	int64 limit = 1;
 	int64 offset = 2;
+	// hex encoded AppEUI
 	string appEUI = 3;
 }
 
 message UpdateNodeRequest {
+	// hex encoded DevEUI
 	string devEUI = 1;
+	// hex encoded AppEUI
 	string appEUI = 2;
+	// hex encoded AppKey
 	string appKey = 3;
 	uint32 rxDelay = 4;
 	uint32 rx1DROffset = 5;
@@ -122,6 +129,7 @@ message UpdateNodeRequest {
 message UpdateNodeResponse {}
 
 message FlushTXPayloadQueueRequest {
+	// hex encoded DevEUI
 	string devEUI = 1;
 }
 

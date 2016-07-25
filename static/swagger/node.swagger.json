@@ -15,7 +15,7 @@
     "application/json"
   ],
   "paths": {
-    "/api/v1/node/create": {
+    "/api/v1/node": {
       "post": {
         "summary": "Create creates the given node.",
         "operationId": "Create",
@@ -42,116 +42,8 @@
         ]
       }
     },
-    "/api/v1/node/delete": {
-      "post": {
-        "summary": "Delete deletes the node matching the given DevEUI.",
-        "operationId": "Delete",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/apiDeleteNodeResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiDeleteNodeRequest"
-            }
-          }
-        ],
-        "tags": [
-          "Node"
-        ]
-      }
-    },
-    "/api/v1/node/flushTXPayloadQueue": {
-      "post": {
-        "summary": "FlushTXPayloadQueue flushes the tx payload queue for the given DevEUI.",
-        "operationId": "FlushTXPayloadQueue",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/apiFlushTXPayloadQueueResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiFlushTXPayloadQueueRequest"
-            }
-          }
-        ],
-        "tags": [
-          "Node"
-        ]
-      }
-    },
-    "/api/v1/node/get": {
-      "post": {
-        "summary": "Get returns the node for the requested DevEUI.",
-        "operationId": "Get",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/apiGetNodeResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiGetNodeRequest"
-            }
-          }
-        ],
-        "tags": [
-          "Node"
-        ]
-      }
-    },
-    "/api/v1/node/list": {
-      "post": {
-        "summary": "List lists the nodes.",
-        "operationId": "List",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/apiListNodeResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiListNodeRequest"
-            }
-          }
-        ],
-        "tags": [
-          "Node"
-        ]
-      }
-    },
-    "/api/v1/node/listByAppEUI": {
-      "post": {
+    "/api/v1/node/application/{appEUI}/{offset}/{limit}": {
+      "get": {
         "summary": "ListByAppEUI lists the nodes by given AppEUI.",
         "operationId": "ListByAppEUI",
         "responses": {
@@ -164,12 +56,25 @@
         },
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
+            "name": "appEUI",
+            "in": "path",
             "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiListNodeByAppEUIRequest"
-            }
+            "type": "string",
+            "format": "string"
+          },
+          {
+            "name": "offset",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "limit",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -177,8 +82,56 @@
         ]
       }
     },
-    "/api/v1/node/update": {
-      "post": {
+    "/api/v1/node/{devEUI}": {
+      "get": {
+        "summary": "Get returns the node for the requested DevEUI.",
+        "operationId": "Get",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiGetNodeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "devEUI",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          }
+        ],
+        "tags": [
+          "Node"
+        ]
+      },
+      "delete": {
+        "summary": "Delete deletes the node matching the given DevEUI.",
+        "operationId": "Delete",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiDeleteNodeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "devEUI",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          }
+        ],
+        "tags": [
+          "Node"
+        ]
+      },
+      "put": {
         "summary": "Update updates the node matching the given DevEUI.",
         "operationId": "Update",
         "responses": {
@@ -191,12 +144,78 @@
         },
         "parameters": [
           {
+            "name": "devEUI",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          },
+          {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
               "$ref": "#/definitions/apiUpdateNodeRequest"
             }
+          }
+        ],
+        "tags": [
+          "Node"
+        ]
+      }
+    },
+    "/api/v1/node/{devEUI}/txPayloadQueue": {
+      "delete": {
+        "summary": "FlushTXPayloadQueue flushes the tx payload queue for the given DevEUI.",
+        "operationId": "FlushTXPayloadQueue",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiFlushTXPayloadQueueResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "devEUI",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "string"
+          }
+        ],
+        "tags": [
+          "Node"
+        ]
+      }
+    },
+    "/api/v1/node/{offset}/{limit}": {
+      "get": {
+        "summary": "List lists the nodes.",
+        "operationId": "List",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiListNodeResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "limit",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -211,11 +230,13 @@
       "properties": {
         "appEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded AppEUI"
         },
         "appKey": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded AppKey"
         },
         "channelListID": {
           "type": "string",
@@ -223,7 +244,8 @@
         },
         "devEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevEUI"
         },
         "rx1DROffset": {
           "type": "integer",
@@ -243,7 +265,8 @@
       "properties": {
         "devEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevEUI"
         }
       }
     },
@@ -255,7 +278,8 @@
       "properties": {
         "devEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevEUI"
         }
       }
     },
@@ -267,7 +291,8 @@
       "properties": {
         "devEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevEUI"
         }
       }
     },
@@ -276,11 +301,13 @@
       "properties": {
         "appEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded AppEUI"
         },
         "appKey": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded AppKey"
         },
         "channelListID": {
           "type": "string",
@@ -288,7 +315,8 @@
         },
         "devEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevEUI"
         },
         "rx1DROffset": {
           "type": "integer",
@@ -305,7 +333,8 @@
       "properties": {
         "appEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded AppEUI"
         },
         "limit": {
           "type": "string",
@@ -350,11 +379,13 @@
       "properties": {
         "appEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded AppEUI"
         },
         "appKey": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded AppKey"
         },
         "channelListID": {
           "type": "string",
@@ -362,7 +393,8 @@
         },
         "devEUI": {
           "type": "string",
-          "format": "string"
+          "format": "string",
+          "title": "hex encoded DevEUI"
         },
         "rx1DROffset": {
           "type": "integer",
