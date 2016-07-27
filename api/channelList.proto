@@ -11,13 +11,14 @@ service ChannelList {
 	rpc Create(CreateChannelListRequest) returns (CreateChannelListResponse) {
 		option(google.api.http) = {
 			post: "/api/v1/channelList"
+			body: "*"
 		};
 	}
 
 	// Update updates the given channel-list.
 	rpc Update(UpdateChannelListRequest) returns (UpdateChannelListResponse) {
 		option(google.api.http) = {
-			put: "/api/v1/ChannelList/{id}"
+			put: "/api/v1/channelList/{id}"
 			body: "*"
 		};
 	}

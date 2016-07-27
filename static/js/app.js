@@ -4,15 +4,19 @@ var loraserver = angular.module('loraserver', [
     'loraserverControllers'
     ]);
 
-loraserver.config(["$provide", function($provide) {
-    return $provide.decorator('$http', ['$delegate', function($delegate) {
-        $delegate.rpc = function(method, parameters) {
-            var data = {"method": method, "params": [parameters], "id" : 1};
-            return $delegate.post('/rpc', data, {'headers':{'Content-Type': 'application/json'}});
-        };
-        return $delegate;
-        }]);
-    }]);
+loraserver.directive('stringToNumber', function() {
+  return {
+    require: 'ngModel',
+    link: function(scope, element, attrs, ngModel) {
+      ngModel.$parsers.push(function(value) {
+        return '' + value;
+      });
+      ngModel.$formatters.push(function(value) {
+        return parseFloat(value);
+      });
+    }
+  };
+});
 
 loraserver.config(['$routeProvider',
     function($routeProvider) {
@@ -44,7 +48,7 @@ var loraserverControllers = angular.module('loraserverControllers', []);
 loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$routeParams', '$route',
     function ($scope, $http, $routeParams, $route) {
         $scope.page = 'applications';
-        $http.rpc('Application.GetList', {'limit': 9999, 'offset': 0}).success(function(data) {
+        $http.get('/api/v1/application/0/9999').success(function(data) {
                 $scope.apps = data.result;
         });
 
@@ -54,18 +58,17 @@ loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$ro
                     $route.reload();
                 });
             } else {
-                $http.rpc('Application.Create', app).success(function(data) {
-                    if (data.error == null) {
-                        $('#createModal').modal('hide');
-                    }
-                    $scope.error = data.error;
-                });
+                $http.post('/api/v1/application', app).success(function(data) {
+                    $('#createModal').modal('hide');
+                }).error(function(data) {
+                    $scope.error = data.Error;
+				});
             }
         };
 
         $scope.editApplication = function(app) {
-            $http.rpc('Application.Get', app.appEUI).success(function(data) {
-                $scope.app = data.result;
+            $http.get('/api/v1/application/' + app.appEUI).success(function(data) {
+                $scope.app = data;
                 $('#editApplicationModal').modal().on('hidden.bs.modal', function() {
                     $route.reload();
                 });
@@ -73,22 +76,20 @@ loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$ro
         };
 
         $scope.updateApplication = function(app) {
-            $http.rpc('Application.Update', app).success(function(data) {
-                if (data.error == null) {
-                    $('#editApplicationModal').modal('hide');
-                }
-                $scope.error = data.error;
+            $http.put('/api/v1/application/' + app.appEUI, app).success(function(data) {
+                $('#editApplicationModal').modal('hide');
+			}).error(function(data) {
+                $scope.error = data.Error;
             });
         };
 
         $scope.deleteApplication = function(app) {
             if (confirm('Are you sure you want to delete ' + app.appEUI + '?')) {
-                $http.rpc('Application.Delete', app.appEUI).success(function(data) {
-                    if (data.error != null) {
-                        alert(data.error);
-                    }
+                $http.delete('/api/v1/application/' + app.appEUI).success(function(data) {
                     $route.reload();
-                });
+                }).error(function(data) {
+					alert(data.Error);
+				});
             }
         };
     }]);
@@ -98,17 +99,17 @@ loraserverControllers.controller('ApplicationCtrl', ['$scope', '$http', '$routeP
     function ($scope, $http, $routeParams, $route) {
         $scope.page = 'applications';
 
-        $http.rpc('Application.Get', $routeParams.application).success(function(data) {
-            $scope.application = data.result;
-        });
+        $http.get('/api/v1/application/' + $routeParams.application).success(function(data) {
+            $scope.application = data;
+        }).error(function(data) {alert(data.Error)});
 
-        $http.rpc('Node.GetListForAppEUI', {'appEUI': $routeParams.application, 'limit': 9999, 'offset': 0}).success(function(data) {
+        $http.get('/api/v1/node/application/' + $routeParams.application + '/0/9999').success(function(data) {
             $scope.nodes = data.result;
-        });
+        }).error(function(data) {alert(data.Error)});
 
-        $http.rpc('ChannelList.GetList', {'limit': 9999, 'offset': 0}).success(function(data) {
+        $http.get('/api/v1/channelList/0/9999').success(function(data) {
             $scope.channelLists = data.result;
-        });
+        }).error(function(data) {alert(data.Error)});
 
         $scope.createNode = function(node) {
             if (node == null) {
@@ -117,75 +118,72 @@ loraserverControllers.controller('ApplicationCtrl', ['$scope', '$http', '$routeP
                 });
             } else {
                 node.appEUI = $routeParams.application;
-                $http.rpc('Node.Create', node).success(function(data) {
-                    if (data.error == null) {
-                        $('#createNodeModal').modal('hide');
-                    }
-                    $scope.error = data.error;
+                $http.post('/api/v1/node', node).success(function(data) {
+                    $('#createNodeModal').modal('hide');
+				}).error(function(data) {
+                    $scope.error = data.Error;
                 });
             }
         };
 
         $scope.editNode = function(node) {
-            $http.rpc('Node.Get', node.devEUI).success(function(data) {
-                $scope.node = data.result;
+            $http.get('/api/v1/node/' + node.devEUI).success(function(data) {
+                $scope.node = data;
                 $('#editNodeModal').modal().on('hidden.bs.modal', function() {
                     $route.reload();
                 });
-            });
+            }).error(function(data){alert(data.Error)});
         };
 
         $scope.updateNode = function(node) {
-            $http.rpc('Node.Update', node).success(function(data) {
-                if (data.error == null) {
-                    $('#editNodeModal').modal('hide');
-                }
-                $scope.error = data.error;
+            $http.put('/api/v1/node/' + node.devEUI, node).success(function(data) {
+                $('#editNodeModal').modal('hide');
+			}).error(function(data) {
+                $scope.error = data.Error;
             });
         };
 
         $scope.deleteNode = function(node) {
             if (confirm('Are you sure you want to delete ' + node.devEUI + '?')) {
-                $http.rpc('Node.Delete', node.devEUI).success(function(data) {
-                   if (data.error != null) {
-                        alert(data.error);
-                    }
+                $http.delete('/api/v1/node/' + node.devEUI).success(function(data) {
                     $route.reload();
-                });
+                }).error(function(data) {alert(data.Error)});
             }
         };
 
         $scope.editNodeSession = function(node) {
-            $http.rpc('NodeSession.GetByDevEUI', node.devEUI).success(function(data) {
-                $scope.ns = data.result;
-                if ($scope.ns == null) {
-                    $scope.ns = {
-                        devEUI: node.devEUI,
-                        appEUI: node.appEUI,
-                        fCntUp: 0,
-                        fCntDown: 0
-                    };
-                }
+            $http.get('/api/v1/nodeSession/devEUI/' + node.devEUI).success(function(data) {
+                $scope.ns = data;
                 $('#nodeSessionModal').modal().on('hidden.bs.modal', function() {
                     $route.reload();
                 });
-            });
+            }).error(function(data){
+                $scope.ns = {
+                    devEUI: node.devEUI,
+                    appEUI: node.appEUI,
+                    fCntUp: 0,
+                    fCntDown: 0
+                };
+                $('#nodeSessionModal').modal().on('hidden.bs.modal', function() {
+                    $route.reload();
+                });
+			});
         };
 
         $scope.updateNodeSession = function(ns) {
-            $http.rpc('NodeSession.Update', ns).success(function(data) {
-               if (data.error == null) {
-                    $('#nodeSessionModal').modal('hide');
-                }
-                $scope.error = data.error; 
-            });
+            $http.put('/api/v1/nodeSession/' + ns.devAddr, ns).success(function(data) {
+                $('#nodeSessionModal').modal('hide');
+            }).error(function(data) {
+                $scope.error = data.Error; 
+			});
         };
 
         $scope.getRandomDevAddr = function(ns) {
-            $http.rpc('NodeSession.GetRandomDevAddr', null).success(function(data) {
-                ns.devAddr = data.result;
-                $scope.error = data.error;
-            });
+            $http.post('/api/v1/nodeSession/getRandomDevAddr').success(function(data) {
+                ns.devAddr = data.devAddr;
+            }).error(function(data) { 
+                $scope.error = data.Error;
+			});
         };
     }]);
 
@@ -193,9 +191,9 @@ loraserverControllers.controller('ApplicationCtrl', ['$scope', '$http', '$routeP
 loraserverControllers.controller('ChannelListListCtrl', ['$scope', '$http', '$routeParams', '$route',
     function ($scope, $http, $routeParams, $route) {
         $scope.page = 'channels';
-        $http.rpc('ChannelList.GetList', {'limit': 9999, 'offset': 0}).success(function(data) {
+        $http.get('/api/v1/channelList/0/9999').success(function(data) {
             $scope.channelLists = data.result;
-        });
+        }).error(function(data){alert(data.Error)});
 
         $scope.createList = function(cl) {
             if (cl == null) {
@@ -203,41 +201,36 @@ loraserverControllers.controller('ChannelListListCtrl', ['$scope', '$http', '$ro
                     $route.reload();
                 });
             } else {
-                $http.rpc('ChannelList.Create', cl).success(function(data) {
-                    if (data.error == null) {
-                        $('#createChannelListModal').modal('hide');
-                    }
-                    $scope.error = data.error;
+                $http.post('/api/v1/channelList', cl).success(function(data) {
+                    $('#createChannelListModal').modal('hide');
+				}).error(function(data) {
+                    $scope.error = data.Error;
                 });
             }
         };
 
         $scope.editList = function(cl) {
-            $http.rpc('ChannelList.Get', cl.id).success(function(data) {
-                $scope.channelList = data.result;
+            $http.get('/api/v1/channelList/' + cl.id).success(function(data) {
+                $scope.channelList = data;
                 $('#editChannelListModal').modal().on('hidden.bs.modal', function() {
                     $route.reload();
                 });
-            });
+            }).error(function(data){alert(data.Error)});
         };
 
         $scope.updateList = function(cl) {
-            $http.rpc('ChannelList.Update', cl).success(function(data) {
-                if (data.error == null) {
-                    $('#editChannelListModal').modal('hide');
-                }
-                $scope.error = data.error;
+            $http.put('/api/v1/channelList/' + cl.id, cl).success(function(data) {
+                $('#editChannelListModal').modal('hide');
+			}).error(function(data) {
+                $scope.error = data.Error;
             });
         };
 
         $scope.deleteList = function(cl) {
             if (confirm('Are you sure you want to delete ' + cl.name + '?')) {
-                $http.rpc('ChannelList.Delete', cl.id).success(function(data) {
-                    if (data.error != null) {
-                        alert(data.error);
-                    }
+                $http.delete('/api/v1/channelList/' + cl.id).success(function(data) {
                     $route.reload();
-                });
+                }).error(function(data){alert(data.Error)});
             }
         };
     }]);
@@ -246,12 +239,12 @@ loraserverControllers.controller('ChannelListListCtrl', ['$scope', '$http', '$ro
 loraserverControllers.controller('ChannelListCtrl', ['$scope', '$http', '$routeParams', '$route',
     function ($scope, $http, $routeParams, $route) {
         $scope.page = 'channels';
-        $http.rpc('ChannelList.Get', parseInt($routeParams.list)).success(function(data) {
-            $scope.channelList = data.result;
-        });
-        $http.rpc('Channel.GetForChannelList', parseInt($routeParams.list)).success(function(data) {
+        $http.get('/api/v1/channelList/' + $routeParams.list).success(function(data) {
+            $scope.channelList = data;
+        }).error(function(data){alert(data.Error)});
+        $http.get('/api/v1/channel/channelList/' + $routeParams.list).success(function(data) {
             $scope.channels = data.result;
-        });
+        }).error(function(data){alert(data.Error)});
 
         $scope.createChannel = function(c) {
             if (c == null) {
@@ -260,41 +253,36 @@ loraserverControllers.controller('ChannelListCtrl', ['$scope', '$http', '$routeP
                 });
             } else {
                 c.channelListID = $scope.channelList.id;
-                $http.rpc('Channel.Create', c).success(function(data) {
-                    if (data.error == null) {
-                        $('#createChannelModal').modal('hide');
-                    }
-                    $scope.error = data.error;
+                $http.post('/api/v1/channel', c).success(function(data) {
+                    $('#createChannelModal').modal('hide');
+				}).error(function(data) {
+                    $scope.error = data.Error;
                 });
             }
         };
 
         $scope.editChannel = function(c) {
-            $http.rpc('Channel.Get', c.id).success(function(data) {
-                $scope.channel = data.result;
+            $http.get('/api/v1/channel/' + c.id).success(function(data) {
+                $scope.channel = data;
                 $('#editChannelModal').modal().on('hidden.bs.modal', function() {
                     $route.reload();
                 });
-            });
+            }).error(function(data){alert(data.Error)});
         };
 
         $scope.updateChannel = function(c) {
-            $http.rpc('Channel.Update', c).success(function(data) {
-                if (data.error == null) {
-                    $('#editChannelModal').modal('hide');
-                }
-                $scope.error = data.error;
+            $http.put('/api/v1/channel/' + c.id, c).success(function(data) {
+                $('#editChannelModal').modal('hide');
+			}).error(function(data) {
+                $scope.error = data.Error;
             });
         };
 
         $scope.deleteChannel = function(c) {
             if (confirm('Are you sure you want to delete channel # ' + c.channel + '?')) {
-                $http.rpc('Channel.Delete', c.id).success(function(data) {
-                    if (data.error != null) {
-                        alert(data.error);
-                    }
+                $http.delete('/api/v1/channel/' + c.id).success(function(data) {
                     $route.reload();
-                });
+                }).error(function(data){alert(data.Error)});
             }
         };
     }]);

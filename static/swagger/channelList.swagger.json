@@ -15,40 +15,6 @@
     "application/json"
   ],
   "paths": {
-    "/api/v1/ChannelList/{id}": {
-      "put": {
-        "summary": "Update updates the given channel-list.",
-        "operationId": "Update",
-        "responses": {
-          "200": {
-            "description": "",
-            "schema": {
-              "$ref": "#/definitions/apiUpdateChannelListResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "format": "int64"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/apiUpdateChannelListRequest"
-            }
-          }
-        ],
-        "tags": [
-          "ChannelList"
-        ]
-      }
-    },
     "/api/v1/channelList": {
       "post": {
         "summary": "Create creates the given channel-list.",
@@ -61,6 +27,16 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiCreateChannelListRequest"
+            }
+          }
+        ],
         "tags": [
           "ChannelList"
         ]
@@ -109,6 +85,38 @@
             "required": true,
             "type": "string",
             "format": "int64"
+          }
+        ],
+        "tags": [
+          "ChannelList"
+        ]
+      },
+      "put": {
+        "summary": "Update updates the given channel-list.",
+        "operationId": "Update",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/apiUpdateChannelListResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/apiUpdateChannelListRequest"
+            }
           }
         ],
         "tags": [
