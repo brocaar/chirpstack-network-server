@@ -23,7 +23,12 @@ will show you all the available ISM bands available.
 #### --http-bind / HTTP_BIND
 
 This sets the ``IP:PORT`` on which the http server
-(web-interface and RPC API) will bind.
+(web-interface and REST API) will bind.
+
+#### --grpc-bind / GRPC_BIND
+
+This sets the ``IP:PORT`` on which the gRPC server
+will bind.
 
 #### --postgres-dsn / POSTGRES_DSN
 
