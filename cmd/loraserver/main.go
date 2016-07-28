@@ -146,7 +146,7 @@ func run(c *cli.Context) {
 		log.Fatalf("get json gateway error: %s", err)
 	}
 	log.WithField("path", "/api/v1/").Info("registering api handler")
-	r.HandleFunc("/api/v1/{service}", api.SwaggerHandlerFunc).Methods("get")
+	r.HandleFunc("/api/v1", api.SwaggerHandlerFunc).Methods("get")
 	r.PathPrefix("/api/v1/").Handler(jsonHandler)
 
 	// setup static file server (for the gui)

@@ -3,7 +3,6 @@ package api
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strings"
 
@@ -14,7 +13,6 @@ import (
 	pb "github.com/brocaar/loraserver/api"
 	"github.com/brocaar/loraserver/internal/loraserver"
 	"github.com/brocaar/loraserver/internal/static"
-	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 )
 
@@ -66,28 +64,11 @@ func GetJSONGateway(ctx context.Context, lsCtx loraserver.Context, grpcBind stri
 
 // SwaggerHandlerFunc serves the Swagger JSON api documentation.
 func SwaggerHandlerFunc(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	service := vars["service"]
-
-	data, err := static.Asset("vendor/swagger/index.html")
+	data, err := static.Asset("swagger/index.html")
 	if err != nil {
 		log.Errorf("get swagger template error: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	templ, err := template.New("swagger").Parse(string(data))
-	if err != nil {
-		log.Errorf("parse swagger template error: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	if err := templ.Execute(w, struct {
-		Service string
-	}{service}); err != nil {
-		log.Errorf("execute swagger template error: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	w.Write(data)
 }

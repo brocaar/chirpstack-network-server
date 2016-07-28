@@ -72,13 +72,6 @@ The following clients are available:
 Since gRPC [can't be used in browsers](http://www.grpc.io/faq/), LoRa Server
 provides a RESTful JSON interface (by using [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway))
 on top of the gRPC interface, exposing the same API methods as the gRPC API.
-Each endpoint provides documentation
-(using [Swagger](http://swagger.io/swagger-ui/)) about its available methods:
-
-* `/api/v1/application` (maps to `ApplicationClient` methods)
-* `/api/v1/node` (maps to `NodeClient` methods) 
-* `/api/v1/nodeSession` (maps to `NodeSessionClient` methods)
-* `/api/v1/channel` (maps to `ChannelClient` methods)
-* `/api/v1/channelList` (maps to `ChannelListClient` methods)
+The JSON API documentation can be found at `/api/v1`.
 
 ![Swagger API](img/swaggerapi.jpg)
