@@ -29,6 +29,8 @@ Currently implemented:
 	- EU 863-870
 	- US 902-928
 	- AU 915-928
+	- Testers needed: EU 433 ([issues/49](https://github.com/brocaar/loraserver/issues/49))
+	- Testers needed: CN 470-510 ([issues/42](https://github.com/brocaar/loraserver/issues/42))
 
 ## Documentation
 
