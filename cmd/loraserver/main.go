@@ -65,6 +65,7 @@ func run(c *cli.Context) {
 		"version": version,
 		"net_id":  netID.String(),
 		"band":    c.String("band"),
+		"docs":    "https://docs.loraserver.io/",
 	}).Info("starting LoRa Server")
 
 	// connect to the database
@@ -133,7 +134,7 @@ func run(c *cli.Context) {
 		if err != nil {
 			log.Fatalf("error creating gRPC listener: %s", err)
 		}
-		log.WithField("bind", c.String("grpc-bind")).Info("starting gRPC listener")
+		log.WithField("bind", c.String("grpc-bind")).Info("starting gRPC server")
 		log.Fatal(server.Serve(list))
 	}()
 
@@ -145,7 +146,7 @@ func run(c *cli.Context) {
 	if err != nil {
 		log.Fatalf("get json gateway error: %s", err)
 	}
-	log.WithField("path", "/api/v1/").Info("registering api handler")
+	log.WithField("path", "/api/v1").Info("registering api handler and documentation endpoint")
 	r.HandleFunc("/api/v1", api.SwaggerHandlerFunc).Methods("get")
 	r.PathPrefix("/api/v1/").Handler(jsonHandler)
 
@@ -160,7 +161,7 @@ func run(c *cli.Context) {
 
 	// start the http server
 	go func() {
-		log.WithField("bind", c.String("http-bind")).Info("starting http server")
+		log.WithField("bind", c.String("http-bind")).Info("starting rest api / gui server")
 		log.Fatal(http.ListenAndServe(c.String("http-bind"), r))
 	}()
 
