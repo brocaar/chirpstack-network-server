@@ -80,12 +80,13 @@ type client struct {
 	options         ClientOptions
 	pingTimer       *time.Timer
 	pingRespTimer   *time.Timer
+	pingResp        chan struct{}
 	status          connStatus
 	workers         sync.WaitGroup
 }
 
 // NewClient will create an MQTT v3.1.1 client with all of the options specified
-// in the provided ClientOptions. The client must have the Start method called
+// in the provided ClientOptions. The client must have the Connect method called
 // on it before it may be used. This is to make sure resources (such as a net
 // connection) are created before the application is actually ready.
 func NewClient(o *ClientOptions) Client {
@@ -156,6 +157,8 @@ func (c *client) Connect() Token {
 	DEBUG.Println(CLI, "Connect()")
 
 	go func() {
+		c.persist.Open()
+
 		c.setConnected(connecting)
 		var rc byte
 		cm := newConnectMsgFromOptions(&c.options)
@@ -211,11 +214,10 @@ func (c *client) Connect() Token {
 				t.err = fmt.Errorf("%s : %s", packets.ConnErrors[rc], err)
 			}
 			c.setConnected(disconnected)
+			c.persist.Close()
 			t.flowComplete()
 			return
 		}
-
-		c.persist.Open()
 
 		c.obound = make(chan *PacketAndToken, c.options.MessageChannelDepth)
 		c.oboundP = make(chan *PacketAndToken, c.options.MessageChannelDepth)
@@ -225,6 +227,7 @@ func (c *client) Connect() Token {
 		c.pingTimer = time.NewTimer(c.options.KeepAlive)
 		c.pingRespTimer = time.NewTimer(time.Duration(10) * time.Second)
 		c.pingRespTimer.Stop()
+		c.pingResp = make(chan struct{}, 1)
 
 		c.incomingPubChan = make(chan *packets.PublishPacket, c.options.MessageChannelDepth)
 		c.msgRouter.matchAndDispatch(c.incomingPubChan, c.options.Order, c)
@@ -408,7 +411,7 @@ func (c *client) internalConnLost(err error) {
 	// forceDisconnect can cause incoming/outgoing/alllogic to end with
 	// error from closing the socket but state will be "disconnected"
 	if c.IsConnected() {
-		close(c.stop)
+		c.closeStop()
 		c.conn.Close()
 		c.workers.Wait()
 		if c.options.OnConnectionLost != nil {
@@ -422,13 +425,19 @@ func (c *client) internalConnLost(err error) {
 	}
 }
 
-func (c *client) disconnect() {
+func (c *client) closeStop() {
+	c.Lock()
+	defer c.Unlock()
 	select {
 	case <-c.stop:
 		DEBUG.Println("In disconnect and stop channel is already closed")
 	default:
 		close(c.stop)
 	}
+}
+
+func (c *client) disconnect() {
+	c.closeStop()
 	c.conn.Close()
 	c.workers.Wait()
 	close(c.stopRouter)

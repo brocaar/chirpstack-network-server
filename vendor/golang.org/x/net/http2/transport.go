@@ -339,7 +339,7 @@ func shouldRetryRequest(req *http.Request, err error) bool {
 	return err == errClientConnUnusable
 }
 
-func (t *Transport) dialClientConn(addr string) (*ClientConn, error) {
+func (t *Transport) dialClientConn(addr string, singleUse bool) (*ClientConn, error) {
 	host, _, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
@@ -348,7 +348,7 @@ func (t *Transport) dialClientConn(addr string) (*ClientConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return t.NewClientConn(tconn)
+	return t.newClientConn(tconn, singleUse)
 }
 
 func (t *Transport) newTLSConfig(host string) *tls.Config {
@@ -409,6 +409,10 @@ func (t *Transport) expectContinueTimeout() time.Duration {
 }
 
 func (t *Transport) NewClientConn(c net.Conn) (*ClientConn, error) {
+	return t.newClientConn(c, false)
+}
+
+func (t *Transport) newClientConn(c net.Conn, singleUse bool) (*ClientConn, error) {
 	if VerboseLogs {
 		t.vlogf("http2: Transport creating client conn to %v", c.RemoteAddr())
 	}
@@ -426,6 +430,7 @@ func (t *Transport) NewClientConn(c net.Conn) (*ClientConn, error) {
 		initialWindowSize:    65535,    // spec default
 		maxConcurrentStreams: 1000,     // "infinite", per spec. 1000 seems good enough.
 		streams:              make(map[uint32]*clientStream),
+		singleUse:            singleUse,
 	}
 	cc.cond = sync.NewCond(&cc.mu)
 	cc.flow.add(int32(initialWindowSize))
@@ -1532,10 +1537,27 @@ var errClosedResponseBody = errors.New("http2: response body closed")
 
 func (b transportResponseBody) Close() error {
 	cs := b.cs
-	if cs.bufPipe.Err() != io.EOF {
-		// TODO: write test for this
-		cs.cc.writeStreamReset(cs.ID, ErrCodeCancel, nil)
+	cc := cs.cc
+
+	serverSentStreamEnd := cs.bufPipe.Err() == io.EOF
+	unread := cs.bufPipe.Len()
+
+	if unread > 0 || !serverSentStreamEnd {
+		cc.mu.Lock()
+		cc.wmu.Lock()
+		if !serverSentStreamEnd {
+			cc.fr.WriteRSTStream(cs.ID, ErrCodeCancel)
+		}
+		// Return connection-level flow control.
+		if unread > 0 {
+			cc.inflow.add(int32(unread))
+			cc.fr.WriteWindowUpdate(0, uint32(unread))
+		}
+		cc.bw.Flush()
+		cc.wmu.Unlock()
+		cc.mu.Unlock()
 	}
+
 	cs.bufPipe.BreakWithError(errClosedResponseBody)
 	return nil
 }
@@ -1543,6 +1565,7 @@ func (b transportResponseBody) Close() error {
 func (rl *clientConnReadLoop) processData(f *DataFrame) error {
 	cc := rl.cc
 	cs := cc.streamByID(f.StreamID, f.StreamEnded())
+	data := f.Data()
 	if cs == nil {
 		cc.mu.Lock()
 		neverSent := cc.nextStreamID
@@ -1556,9 +1579,17 @@ func (rl *clientConnReadLoop) processData(f *DataFrame) error {
 		// TODO: be stricter here? only silently ignore things which
 		// we canceled, but not things which were closed normally
 		// by the peer? Tough without accumulating too much state.
+
+		// But at least return their flow control:
+		if len(data) > 0 {
+			cc.wmu.Lock()
+			cc.fr.WriteWindowUpdate(0, uint32(len(data)))
+			cc.bw.Flush()
+			cc.wmu.Unlock()
+		}
 		return nil
 	}
-	if data := f.Data(); len(data) > 0 {
+	if len(data) > 0 {
 		if cs.bufPipe.b == nil {
 			// Data frame after it's already closed?
 			cc.logf("http2: Transport received DATA frame for closed stream; closing connection")
@@ -1725,8 +1756,10 @@ func (rl *clientConnReadLoop) processPushPromise(f *PushPromiseFrame) error {
 }
 
 func (cc *ClientConn) writeStreamReset(streamID uint32, code ErrCode, err error) {
-	// TODO: do something with err? send it as a debug frame to the peer?
-	// But that's only in GOAWAY. Invent a new frame type? Is there one already?
+	// TODO: map err to more interesting error codes, once the
+	// HTTP community comes up with some. But currently for
+	// RST_STREAM there's no equivalent to GOAWAY frame's debug
+	// data, and the error codes are all pretty vague ("cancel").
 	cc.wmu.Lock()
 	cc.fr.WriteRSTStream(streamID, code)
 	cc.bw.Flush()

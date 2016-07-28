@@ -75,9 +75,10 @@ func openConnection(uri *url.URL, tlsc *tls.Config, timeout time.Duration) (net.
 // actually read incoming messages off the wire
 // send Message object into ibound channel
 func incoming(c *client) {
-	defer c.workers.Done()
 	var err error
 	var cp packets.ControlPacket
+
+	defer c.workers.Done()
 
 	DEBUG.Println(NET, "incoming started")
 
@@ -180,8 +181,7 @@ func alllogic(c *client) {
 			switch msg.(type) {
 			case *packets.PingrespPacket:
 				DEBUG.Println(NET, "received pingresp")
-				c.pingRespTimer.Stop()
-				c.pingTimer.Reset(c.options.KeepAlive)
+				c.pingResp <- struct{}{}
 			case *packets.SubackPacket:
 				sa := msg.(*packets.SubackPacket)
 				DEBUG.Println(NET, "received suback, id:", sa.MessageID)
