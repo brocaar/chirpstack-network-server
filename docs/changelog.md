@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.0
+
+**WARNING:** if you're using the JSON-RPC interface, this will be a breaking
+upgrade, as the JSON-RPC API has been replaced by a gRPC API.
+
+In order to keep the possiblity to access the API from web-based applications
+(e.g. the web-interface), a RESTful JSON API has been implemented on top
+of the gRPC API (using [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway)).
+
+Please refer to the LoRa Server documentation for more information:
+[https://docs.loraserver.io/loraserver/api/](https://docs.loraserver.io/loraserver/api/).
+
 ## 0.8.2
 
 * Validate the join-request DevEUI belongs to the given AppEUI

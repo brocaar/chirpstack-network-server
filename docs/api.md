@@ -69,9 +69,9 @@ The following clients are available:
 
 ## RESTful JSON interface
 
-Since gRPC [can't be used in browsers](http://www.grpc.io/faq/), LoRa Server
-provides a RESTful JSON interface (by using [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway))
-on top of the gRPC interface, exposing the same API methods as the gRPC API.
-The JSON API documentation can be found at `/api/v1`.
+Since gRPC [can't be used in browsers yet](http://www.grpc.io/faq/), LoRa Server
+provides a RESTful JSON API (by using [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway))
+on top of the gRPC API, exposing the same API methods as the gRPC API.
+The REST API documentation and interactive console can be found at `/api/v1`.
 
 ![Swagger API](img/swaggerapi.jpg)
