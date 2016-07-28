@@ -34,7 +34,7 @@ type CreateNodeSessionRequest struct {
 	FCntDown    uint32   `protobuf:"varint,7,opt,name=fCntDown" json:"fCntDown,omitempty"`
 	RxDelay     uint32   `protobuf:"varint,8,opt,name=rxDelay" json:"rxDelay,omitempty"`
 	Rx1DROffset uint32   `protobuf:"varint,9,opt,name=rx1DROffset" json:"rx1DROffset,omitempty"`
-	CFList      []uint32 `protobuf:"varint,10,rep,name=cFList" json:"cFList,omitempty"`
+	CFList      []uint32 `protobuf:"varint,10,rep,packed,name=cFList" json:"cFList,omitempty"`
 }
 
 func (m *CreateNodeSessionRequest) Reset()                    { *m = CreateNodeSessionRequest{} }
@@ -74,7 +74,7 @@ type GetNodeSessionResponse struct {
 	FCntDown    uint32   `protobuf:"varint,7,opt,name=fCntDown" json:"fCntDown,omitempty"`
 	RxDelay     uint32   `protobuf:"varint,8,opt,name=rxDelay" json:"rxDelay,omitempty"`
 	Rx1DROffset uint32   `protobuf:"varint,9,opt,name=rx1DROffset" json:"rx1DROffset,omitempty"`
-	CFList      []uint32 `protobuf:"varint,10,rep,name=cFList" json:"cFList,omitempty"`
+	CFList      []uint32 `protobuf:"varint,10,rep,packed,name=cFList" json:"cFList,omitempty"`
 }
 
 func (m *GetNodeSessionResponse) Reset()                    { *m = GetNodeSessionResponse{} }
@@ -107,7 +107,7 @@ type UpdateNodeSessionRequest struct {
 	FCntDown    uint32   `protobuf:"varint,7,opt,name=fCntDown" json:"fCntDown,omitempty"`
 	RxDelay     uint32   `protobuf:"varint,8,opt,name=rxDelay" json:"rxDelay,omitempty"`
 	Rx1DROffset uint32   `protobuf:"varint,9,opt,name=rx1DROffset" json:"rx1DROffset,omitempty"`
-	CFList      []uint32 `protobuf:"varint,10,rep,name=cFList" json:"cFList,omitempty"`
+	CFList      []uint32 `protobuf:"varint,10,rep,packed,name=cFList" json:"cFList,omitempty"`
 }
 
 func (m *UpdateNodeSessionRequest) Reset()                    { *m = UpdateNodeSessionRequest{} }

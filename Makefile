@@ -31,7 +31,9 @@ package: clean build
 
 generate:
 	@echo "Running go generate"
-	@go generate ./...
+	@go generate api/api.go
+	@go generate cmd/loraserver/main.go
+	@go generate models/notifications.go
 
 # shortcuts for development
 

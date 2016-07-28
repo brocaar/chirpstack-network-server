@@ -1,7 +1,7 @@
 language: go
 sudo: required
 go:
-  - 1.6.2
+  - 1.6.3
 before_install:
   - sudo apt-get -qq update
 
