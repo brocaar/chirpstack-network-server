@@ -113,12 +113,22 @@ type Band struct {
 	// getRX1ChannelFunc implements a function which returns the RX1 channel
 	// based on the uplink / TX channel.
 	getRX1ChannelFunc func(txChannel int) int
+
+	// getRX1FrequencyFunc implements a function which returns the RX1 frequency
+	// given the uplink frequency.
+	getRX1FrequencyFunc func(band *Band, txFrequency int) (int, error)
 }
 
 // GetRX1Channel returns the channel to use for RX1 given the channel used
 // for uplink.
 func (b *Band) GetRX1Channel(txChannel int) int {
 	return b.getRX1ChannelFunc(txChannel)
+}
+
+// GetRX1Frequency returns the frequency to use for RX1 given the uplink
+// frequency.
+func (b *Band) GetRX1Frequency(txFrequency int) (int, error) {
+	return b.getRX1FrequencyFunc(b, txFrequency)
 }
 
 // GetChannel returns the channel index given a frequency and an optional CFList.

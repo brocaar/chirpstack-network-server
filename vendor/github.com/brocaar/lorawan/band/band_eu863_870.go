@@ -76,5 +76,9 @@ func newEU863Band() (Band, error) {
 		getRX1ChannelFunc: func(txChannel int) int {
 			return txChannel
 		},
+
+		getRX1FrequencyFunc: func(b *Band, txFrequency int) (int, error) {
+			return txFrequency, nil
+		},
 	}, nil
 }

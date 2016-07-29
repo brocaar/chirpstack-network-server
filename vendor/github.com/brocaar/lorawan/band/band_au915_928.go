@@ -90,6 +90,16 @@ func newAU915Band() (Band, error) {
 		getRX1ChannelFunc: func(txChannel int) int {
 			return txChannel % 8
 		},
+
+		getRX1FrequencyFunc: func(b *Band, txFrequency int) (int, error) {
+			uplinkChan, err := b.GetChannel(txFrequency, nil)
+			if err != nil {
+				return 0, err
+			}
+
+			rx1Chan := b.GetRX1Channel(uplinkChan)
+			return b.DownlinkChannels[rx1Chan].Frequency, nil
+		},
 	}
 
 	// initialize uplink channel 0 - 63
