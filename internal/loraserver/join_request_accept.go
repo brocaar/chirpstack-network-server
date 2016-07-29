@@ -159,26 +159,24 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		return fmt.Errorf("encrypt join-accept error: %s", err)
 	}
 
-	// get TX DR
+	// get data-rate
 	uplinkDR, err := common.Band.GetDataRate(rxPacket.RXInfo.DataRate)
 	if err != nil {
 		return err
 	}
-	// get TX channel
-	uplinkChannel, err := common.Band.GetChannel(rxPacket.RXInfo.Frequency, nil)
+	rx1DR := common.Band.RX1DataRate[uplinkDR][0]
+
+	// get frequency
+	rx1Freq, err := common.Band.GetRX1Frequency(rxPacket.RXInfo.Frequency)
 	if err != nil {
 		return err
 	}
-	// get RX1 channel
-	rx1Channel := common.Band.GetRX1Channel(uplinkChannel)
-	// get RX1 DR
-	rx1DR := common.Band.RX1DataRate[uplinkDR][0]
 
 	txPacket := models.TXPacket{
 		TXInfo: models.TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
 			Timestamp: rxPacket.RXInfo.Timestamp + uint32(common.Band.JoinAcceptDelay1/time.Microsecond),
-			Frequency: common.Band.DownlinkChannels[rx1Channel].Frequency,
+			Frequency: rx1Freq,
 			Power:     common.Band.DefaultTXPower,
 			DataRate:  common.Band.DataRates[rx1DR],
 			CodeRate:  rxPacket.RXInfo.CodeRate,

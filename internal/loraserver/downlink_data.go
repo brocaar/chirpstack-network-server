@@ -12,7 +12,6 @@ import (
 )
 
 type dataDownProperties struct {
-	rx1Channel   int
 	rx1DR        int
 	rx1Frequency int
 	rxDelay      time.Duration
@@ -28,15 +27,6 @@ func getDataDownProperties(rxInfo models.RXInfo, ns models.NodeSession) (dataDow
 		return prop, err
 	}
 
-	// get TX channel
-	uplinkChannel, err := common.Band.GetChannel(rxInfo.Frequency, ns.CFList)
-	if err != nil {
-		return prop, err
-	}
-
-	// get RX1 channel
-	prop.rx1Channel = common.Band.GetRX1Channel(uplinkChannel)
-
 	// get RX1 DR
 	prop.rx1DR, err = common.Band.GetRX1DataRateForOffset(uplinkDR, int(ns.RX1DROffset))
 	if err != nil {
@@ -44,7 +34,7 @@ func getDataDownProperties(rxInfo models.RXInfo, ns models.NodeSession) (dataDow
 	}
 
 	// get RX1 frequency
-	prop.rx1Frequency, err = common.Band.GetDownlinkFrequency(prop.rx1Channel, ns.CFList)
+	prop.rx1Frequency, err = common.Band.GetRX1Frequency(rxInfo.Frequency)
 	if err != nil {
 		return prop, err
 	}
