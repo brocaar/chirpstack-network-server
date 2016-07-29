@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.1
+
+* Fix `cli.ActionFunc` deprecation warning.
+
 ## 0.9.0
 
 **WARNING:** if you're using the JSON-RPC interface, this will be a breaking
