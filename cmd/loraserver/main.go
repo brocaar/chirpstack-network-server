@@ -40,7 +40,7 @@ var bands = []string{
 	string(band.US_902_928),
 }
 
-func run(c *cli.Context) {
+func run(c *cli.Context) error {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -181,6 +181,8 @@ func run(c *cli.Context) {
 	case s := <-sigChan:
 		log.WithField("signal", s).Info("signal received, stopping immediately")
 	}
+
+	return nil
 }
 
 func main() {
