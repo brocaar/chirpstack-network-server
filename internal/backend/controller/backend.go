@@ -1,4 +1,4 @@
-package mqttpubsub
+package controller
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/brocaar/loraserver/internal/loraserver"
+	"github.com/brocaar/loraserver/internal/backend"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"github.com/eclipse/paho.mqtt.golang"
@@ -33,7 +33,7 @@ type Backend struct {
 }
 
 // NewBackend creates a new Backend.
-func NewBackend(p *redis.Pool, server, username, password string) (loraserver.NetworkControllerBackend, error) {
+func NewBackend(p *redis.Pool, server, username, password string) (backend.NetworkController, error) {
 	b := Backend{
 		txMACPayloadChan: make(chan models.MACPayload),
 		redisPool:        p,
@@ -46,10 +46,10 @@ func NewBackend(p *redis.Pool, server, username, password string) (loraserver.Ne
 	opts.SetOnConnectHandler(b.onConnected)
 	opts.SetConnectionLostHandler(b.onConnectionLost)
 
-	log.WithField("server", server).Info("controller/mqttpubsub: connecting to mqtt broker")
+	log.WithField("server", server).Info("backend/controller: connecting to mqtt broker")
 	b.conn = mqtt.NewClient(opts)
 	if token := b.conn.Connect(); token.Wait() && token.Error() != nil {
-		return nil, fmt.Errorf("controller/mqttpubsub: connecting to broker failed: %s", token.Error())
+		return nil, fmt.Errorf("backend/controller: connecting to broker failed: %s", token.Error())
 	}
 
 	return &b, nil
@@ -59,13 +59,13 @@ func NewBackend(p *redis.Pool, server, username, password string) (loraserver.Ne
 func (b *Backend) SendMACPayload(appEUI, devEUI lorawan.EUI64, pl models.MACPayload) error {
 	bytes, err := json.Marshal(pl)
 	if err != nil {
-		return fmt.Errorf("controller/mqttpubsub: rx mac-payload marshal error: %s", err)
+		return fmt.Errorf("backend/controller: rx mac-payload marshal error: %s", err)
 	}
 
 	topic := fmt.Sprintf("application/%s/node/%s/mac/rx", appEUI, devEUI)
-	log.WithField("topic", topic).Info("controller/mqttpubsub: publishing rx mac-payload")
+	log.WithField("topic", topic).Info("backend/controller: publishing rx mac-payload")
 	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("controller/mqttpubsub: publish rx mac-payload failed: %s", token.Error())
+		return fmt.Errorf("backend/controller: publish rx mac-payload failed: %s", token.Error())
 	}
 	return nil
 }
@@ -74,13 +74,13 @@ func (b *Backend) SendMACPayload(appEUI, devEUI lorawan.EUI64, pl models.MACPayl
 func (b *Backend) SendRXInfoPayload(appEUI, devEUI lorawan.EUI64, payload models.RXInfoPayload) error {
 	bytes, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("controller/mqttpubsub: rxinfo payload marshal error: %s", err)
+		return fmt.Errorf("backend/controller: rxinfo payload marshal error: %s", err)
 	}
 
 	topic := fmt.Sprintf("application/%s/node/%s/rxinfo", appEUI, devEUI)
-	log.WithField("topic", topic).Info("controller/mqttpubsub: publishing rxinfo payload")
+	log.WithField("topic", topic).Info("backend/controller: publishing rxinfo payload")
 	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("controller/mqttpubsub: publish rxinfo payload failed: %s", token.Error())
+		return fmt.Errorf("backend/controller: publish rxinfo payload failed: %s", token.Error())
 	}
 	return nil
 }
@@ -89,12 +89,12 @@ func (b *Backend) SendRXInfoPayload(appEUI, devEUI lorawan.EUI64, payload models
 func (b *Backend) SendErrorPayload(appEUI, devEUI lorawan.EUI64, payload models.ErrorPayload) error {
 	bytes, err := json.Marshal(payload)
 	if err != nil {
-		return fmt.Errorf("controller/mqttpubsub: error payload marshal error: %s", err)
+		return fmt.Errorf("backend/controller: error payload marshal error: %s", err)
 	}
 	topic := fmt.Sprintf("application/%s/node/%s/mac/error", appEUI, devEUI)
-	log.WithField("topic", topic).Info("controller/mqttpubsub: publishing error payload")
+	log.WithField("topic", topic).Info("backend/controller: publishing error payload")
 	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("controller/mqttpubsub: publish error payload failed: %s", token.Error())
+		return fmt.Errorf("backend/controller: publish error payload failed: %s", token.Error())
 	}
 	return nil
 }
@@ -104,12 +104,12 @@ func (b *Backend) SendErrorPayload(appEUI, devEUI lorawan.EUI64, payload models.
 // This makes it possible to perform a graceful shutdown (e.g. when there are
 // still packets to send back to the network-controller).
 func (b *Backend) Close() error {
-	log.Info("controller/mqttpubsub: closing backend")
-	log.WithField("topic", txTopic).Info("controller/mqttpubsub: unsubscribing from tx topic")
+	log.Info("backend/controller: closing backend")
+	log.WithField("topic", txTopic).Info("backend/controller: unsubscribing from tx topic")
 	if token := b.conn.Unsubscribe(txTopic); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("controller/mqttpubsub: unsubscribe from %s failed: %s", txTopic, token.Error())
+		return fmt.Errorf("backend/controller: unsubscribe from %s failed: %s", txTopic, token.Error())
 	}
-	log.Info("controller/mqttpubsub: handling last packets")
+	log.Info("backend/controller: handling last packets")
 	b.wg.Wait()
 	close(b.txMACPayloadChan)
 	return nil
@@ -121,11 +121,11 @@ func (b *Backend) TXMACPayloadChan() chan models.MACPayload {
 }
 
 func (b *Backend) onConnected(c mqtt.Client) {
-	log.Info("controller/mqttpubsub: connected to mqtt broker")
+	log.Info("backend/controller: connected to mqtt broker")
 	for {
-		log.WithField("topic", txTopic).Info("controller/mqttpubsub: subscribing to tx topic")
+		log.WithField("topic", txTopic).Info("backend/controller: subscribing to tx topic")
 		if token := b.conn.Subscribe(txTopic, 2, b.txMACPayloadHandler); token.Wait() && token.Error() != nil {
-			log.WithField("topic", txTopic).Errorf("controller/mqttpubsub: subscribe error: %s", token.Error())
+			log.WithField("topic", txTopic).Errorf("backend/controller: subscribe error: %s", token.Error())
 			time.Sleep(time.Second)
 			continue
 		}
@@ -134,7 +134,7 @@ func (b *Backend) onConnected(c mqtt.Client) {
 }
 
 func (b *Backend) onConnectionLost(c mqtt.Client, reason error) {
-	log.Errorf("controller/mqttpubsub: mqtt connection error: %s", reason)
+	log.Errorf("backend/controller: mqtt connection error: %s", reason)
 }
 
 func (b *Backend) txMACPayloadHandler(c mqtt.Client, msg mqtt.Message) {
@@ -146,7 +146,7 @@ func (b *Backend) txMACPayloadHandler(c mqtt.Client, msg mqtt.Message) {
 	// topic DevEUI matches the payload DevEUI.
 	match := txTopicRegex.FindStringSubmatch(msg.Topic())
 	if len(match) != 3 {
-		log.WithField("topic", msg.Topic()).Error("controller/mqttpubsub: topic regex match error")
+		log.WithField("topic", msg.Topic()).Error("backend/controller: topic regex match error")
 		return
 	}
 
@@ -155,7 +155,7 @@ func (b *Backend) txMACPayloadHandler(c mqtt.Client, msg mqtt.Message) {
 	if err := dec.Decode(&pl); err != nil {
 		log.WithFields(log.Fields{
 			"data_base64": base64.StdEncoding.EncodeToString(msg.Payload()),
-		}).Errorf("controller/mqttpubsub: tx mac-payload unmarshal error: %s", err)
+		}).Errorf("backend/controller: tx mac-payload unmarshal error: %s", err)
 		return
 	}
 
@@ -163,7 +163,7 @@ func (b *Backend) txMACPayloadHandler(c mqtt.Client, msg mqtt.Message) {
 		log.WithFields(log.Fields{
 			"topic_dev_eui": match[2],
 			"mac_dev_eui":   pl.DevEUI,
-		}).Warning("controller/mqttpubsub: topic DevEUI must match mac-payload DevEUI")
+		}).Warning("backend/controller: topic DevEUI must match mac-payload DevEUI")
 		return
 	}
 
@@ -182,10 +182,10 @@ func (b *Backend) txMACPayloadHandler(c mqtt.Client, msg mqtt.Message) {
 			// of Lora Server.
 			return
 		}
-		log.Errorf("controller/mqttpubsub: acquire tx mac-payload lock error: %s", err)
+		log.Errorf("backend/controller: acquire tx mac-payload lock error: %s", err)
 		return
 	}
 
-	log.WithField("topic", msg.Topic()).Info("controller/mqttpubsub: tx mac-payload received")
+	log.WithField("topic", msg.Topic()).Info("backend/controller: tx mac-payload received")
 	b.txMACPayloadChan <- pl
 }

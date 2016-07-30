@@ -1,4 +1,4 @@
-package mqttpubsub
+package controller
 
 import (
 	"os"

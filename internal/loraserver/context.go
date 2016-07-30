@@ -1,6 +1,7 @@
 package loraserver
 
 import (
+	"github.com/brocaar/loraserver/internal/backend"
 	"github.com/brocaar/lorawan"
 	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
@@ -11,8 +12,8 @@ import (
 type Context struct {
 	DB          *sqlx.DB
 	RedisPool   *redis.Pool
-	Gateway     GatewayBackend
-	Application ApplicationBackend
-	Controller  NetworkControllerBackend
+	Gateway     backend.Gateway
+	Application backend.Application
+	Controller  backend.NetworkController
 	NetID       lorawan.NetID
 }

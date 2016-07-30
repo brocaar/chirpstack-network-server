@@ -1,4 +1,4 @@
-package mqttpubsub
+package application
 
 import (
 	"encoding/json"
