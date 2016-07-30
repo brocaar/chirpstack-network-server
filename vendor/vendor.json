@@ -27,6 +27,12 @@
 			"revisionTime": "2016-07-26T01:14:03Z"
 		},
 		{
+			"checksumSHA1": "EsJksAKyY2+r3mY+rdNocSCe1wg=",
+			"path": "github.com/dgrijalva/jwt-go",
+			"revision": "63734eae1ef55eaac06fdc0f312615f2e321e273",
+			"revisionTime": "2016-07-29T16:48:51Z"
+		},
+		{
 			"checksumSHA1": "opuXLaxKgRhnpxjq0a0Fkj39PC0=",
 			"path": "github.com/eclipse/paho.mqtt.golang",
 			"revision": "45f9b18f4864c81d49c3ed01e5faec9eeb05de31",
