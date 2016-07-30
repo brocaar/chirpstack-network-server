@@ -8,7 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	migrate "github.com/rubenv/sql-migrate"
 
-	"github.com/brocaar/loraserver/internal/loraserver/migrations"
+	"github.com/brocaar/loraserver/internal/migrations"
 	"github.com/brocaar/lorawan/band"
 )
 

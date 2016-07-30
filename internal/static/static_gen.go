@@ -146,7 +146,7 @@ func indexHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "index.html", size: 1282, mode: os.FileMode(420), modTime: time.Unix(1469720329, 0)}
+	info := bindataFileInfo{name: "index.html", size: 1282, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -166,7 +166,7 @@ func jsAppJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "js/app.js", size: 10785, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "js/app.js", size: 10785, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -226,7 +226,7 @@ func partialsChannel_listHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "partials/channel_list.html", size: 3751, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "partials/channel_list.html", size: 3751, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -266,7 +266,7 @@ func partialsNavbarHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "partials/navbar.html", size: 1025, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "partials/navbar.html", size: 1025, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -286,7 +286,7 @@ func swaggerApiSwaggerJson() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "swagger/api.swagger.json", size: 20129, mode: os.FileMode(420), modTime: time.Unix(1469721434, 0)}
+	info := bindataFileInfo{name: "swagger/api.swagger.json", size: 20129, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -306,7 +306,7 @@ func swaggerIndexHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "swagger/index.html", size: 2839, mode: os.FileMode(420), modTime: time.Unix(1469721314, 0)}
+	info := bindataFileInfo{name: "swagger/index.html", size: 2839, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -366,7 +366,7 @@ func vendorSwaggerLicense() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/LICENSE", size: 589, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/LICENSE", size: 589, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -386,7 +386,7 @@ func vendorSwaggerCssPrintCss() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/css/print.css", size: 42365, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/css/print.css", size: 42365, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -406,7 +406,7 @@ func vendorSwaggerCssResetCss() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/css/reset.css", size: 1066, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/css/reset.css", size: 1066, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -426,7 +426,7 @@ func vendorSwaggerCssScreenCss() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/css/screen.css", size: 44551, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/css/screen.css", size: 44551, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -446,7 +446,7 @@ func vendorSwaggerCssStyleCss() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/css/style.css", size: 4643, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/css/style.css", size: 4643, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -466,7 +466,7 @@ func vendorSwaggerCssTypographyCss() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/css/typography.css", size: 450, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/css/typography.css", size: 450, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -486,7 +486,7 @@ func vendorSwaggerFontsDroidsansBoldTtf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/fonts/DroidSans-Bold.ttf", size: 42480, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/fonts/DroidSans-Bold.ttf", size: 42480, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -506,7 +506,7 @@ func vendorSwaggerFontsDroidsansTtf() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/fonts/DroidSans.ttf", size: 41028, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/fonts/DroidSans.ttf", size: 41028, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -526,7 +526,7 @@ func vendorSwaggerImagesCollapseGif() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/images/collapse.gif", size: 69, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/images/collapse.gif", size: 69, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -546,7 +546,7 @@ func vendorSwaggerImagesExpandGif() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/images/expand.gif", size: 73, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/images/expand.gif", size: 73, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -566,7 +566,7 @@ func vendorSwaggerImagesExplorer_iconsPng() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/images/explorer_icons.png", size: 5763, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/images/explorer_icons.png", size: 5763, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -586,7 +586,7 @@ func vendorSwaggerImagesFavicon16x16Png() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/images/favicon-16x16.png", size: 645, mode: os.FileMode(493), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/images/favicon-16x16.png", size: 645, mode: os.FileMode(493), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -606,7 +606,7 @@ func vendorSwaggerImagesFavicon32x32Png() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/images/favicon-32x32.png", size: 1654, mode: os.FileMode(493), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/images/favicon-32x32.png", size: 1654, mode: os.FileMode(493), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -626,7 +626,7 @@ func vendorSwaggerImagesFaviconIco() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/images/favicon.ico", size: 5430, mode: os.FileMode(493), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/images/favicon.ico", size: 5430, mode: os.FileMode(493), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -646,7 +646,7 @@ func vendorSwaggerImagesLogo_smallPng() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/images/logo_small.png", size: 770, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/images/logo_small.png", size: 770, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -666,7 +666,7 @@ func vendorSwaggerImagesPet_store_apiPng() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/images/pet_store_api.png", size: 824, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/images/pet_store_api.png", size: 824, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -686,7 +686,7 @@ func vendorSwaggerImagesThrobberGif() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/images/throbber.gif", size: 9257, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/images/throbber.gif", size: 9257, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -706,7 +706,7 @@ func vendorSwaggerImagesWordnik_apiPng() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/images/wordnik_api.png", size: 980, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/images/wordnik_api.png", size: 980, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -726,7 +726,7 @@ func vendorSwaggerIndexHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/index.html", size: 2848, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/index.html", size: 2848, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -746,7 +746,7 @@ func vendorSwaggerLibBackboneMinJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/lib/backbone-min.js", size: 20390, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/lib/backbone-min.js", size: 20390, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -766,7 +766,7 @@ func vendorSwaggerLibHandlebars200Js() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/lib/handlebars-2.0.0.js", size: 48517, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/lib/handlebars-2.0.0.js", size: 48517, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -786,7 +786,7 @@ func vendorSwaggerLibHighlight73PackJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/lib/highlight.7.3.pack.js", size: 7499, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/lib/highlight.7.3.pack.js", size: 7499, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -806,7 +806,7 @@ func vendorSwaggerLibJquery180MinJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/lib/jquery-1.8.0.min.js", size: 92555, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/lib/jquery-1.8.0.min.js", size: 92555, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -826,7 +826,7 @@ func vendorSwaggerLibJqueryBaBbqMinJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/lib/jquery.ba-bbq.min.js", size: 4119, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/lib/jquery.ba-bbq.min.js", size: 4119, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -846,7 +846,7 @@ func vendorSwaggerLibJquerySlidetoMinJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/lib/jquery.slideto.min.js", size: 369, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/lib/jquery.slideto.min.js", size: 369, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -866,7 +866,7 @@ func vendorSwaggerLibJqueryWiggleMinJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/lib/jquery.wiggle.min.js", size: 762, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/lib/jquery.wiggle.min.js", size: 762, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -886,7 +886,7 @@ func vendorSwaggerLibJsoneditorMinJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/lib/jsoneditor.min.js", size: 130042, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/lib/jsoneditor.min.js", size: 130042, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -906,7 +906,7 @@ func vendorSwaggerLibMarkedJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/lib/marked.js", size: 28156, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/lib/marked.js", size: 28156, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -926,7 +926,7 @@ func vendorSwaggerLibSwaggerOauthJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/lib/swagger-oauth.js", size: 11183, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/lib/swagger-oauth.js", size: 11183, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -946,7 +946,7 @@ func vendorSwaggerLibUnderscoreMinJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/lib/underscore-min.js", size: 15626, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/lib/underscore-min.js", size: 15626, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -966,7 +966,7 @@ func vendorSwaggerLibUnderscoreMinMap() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/lib/underscore-min.map", size: 27479, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/lib/underscore-min.map", size: 27479, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -986,7 +986,7 @@ func vendorSwaggerSwaggerUiMinJs() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/swagger/swagger-ui.min.js", size: 326930, mode: os.FileMode(420), modTime: time.Unix(1469720092, 0)}
+	info := bindataFileInfo{name: "vendor/swagger/swagger-ui.min.js", size: 326930, mode: os.FileMode(420), modTime: time.Unix(1469815710, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

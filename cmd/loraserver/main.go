@@ -1,4 +1,4 @@
-//go:generate go-bindata -prefix ../../migrations/ -pkg migrations -o ../../internal/loraserver/migrations/migrations_gen.go ../../migrations/
+//go:generate go-bindata -prefix ../../migrations/ -pkg migrations -o ../../internal/migrations/migrations_gen.go ../../migrations/
 //go:generate go-bindata -prefix ../../static/ -pkg static -o ../../internal/static/static_gen.go ../../static/...
 
 package main
@@ -26,7 +26,7 @@ import (
 	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/loraserver"
-	"github.com/brocaar/loraserver/internal/loraserver/migrations"
+	"github.com/brocaar/loraserver/internal/migrations"
 	"github.com/brocaar/loraserver/internal/static"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
