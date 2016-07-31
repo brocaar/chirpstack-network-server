@@ -75,3 +75,34 @@ on top of the gRPC API, exposing the same API methods as the gRPC API.
 The REST API documentation and interactive console can be found at `/api/v1`.
 
 ![Swagger API](img/swaggerapi.jpg)
+
+## Authentication and authorization
+
+Both the gRPC and RESTful JSON interface provide an option for authentication
+and authorization using JSON web tokens / [JWT](https://jwt.io). To enable
+this option, make sure to start LoRa Server with the `--jwt-secret` argument
+(or `JWT_SECRET` environment variable). 
+
+An example claim illustrating the options that can be included in the token:
+
+```json
+{
+	"exp": 1257894000,             // the unix time when the token expires
+	"admin": false,                // admin users have access to all api methods and resources
+	"api": ["Node.Get"],           // list of api methods the user has access to
+	"apps": ["0102030405060708"],  // list of AppEUIs the user has access to
+	"nodes": ["*"]                 // list of DevEUIs the user has access to
+}
+```
+
+For nodes and applications, besides the (hex encoded) AppEUI / DevEUI a
+wildcard (`*`) can be given to give the user access to all applications
+and / or nodes.
+
+
+The API methods can be given as:
+
+* `[*]`: all methods of all the APIs
+* `["Node.Get"]`: listing each APIs method
+* `["Node.(Get|Delete)"]`: combining multiple methods for the same API
+* `["Node.*"]`: all methods of the Node API

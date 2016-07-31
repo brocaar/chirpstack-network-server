@@ -280,6 +280,17 @@ func main() {
 			Usage:  "Network-controller backend MQTT password",
 			EnvVar: "APP_MQTT_PASSWORD",
 		},
+		cli.StringFlag{
+			Name:   "jwt-secret",
+			Usage:  "JWT secret used for api authentication / authorization (disabled when left blank)",
+			EnvVar: "JWT_SECRET",
+		},
+		cli.StringFlag{
+			Name:   "jwt-algorithm",
+			Usage:  "JWT algorithm used for to generate the signature",
+			Value:  "HS256",
+			EnvVar: "JWT_ALGORITHM",
+		},
 	}
 	app.Run(os.Args)
 }
