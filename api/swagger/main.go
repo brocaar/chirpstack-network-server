@@ -33,7 +33,6 @@ func main() {
 	}
 	swagger := model{
 		Swagger:     "2.0",
-		BasePath:    "/api/v1",
 		Schemes:     []string{"http", "https"},
 		Consumes:    []string{"application/json"},
 		Produces:    []string{"application/json"},

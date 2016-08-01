@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.2
+
+* Fix Swagger base path.
+
 ## 0.9.1
 
 * Fix `cli.ActionFunc` deprecation warning.
