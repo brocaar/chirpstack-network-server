@@ -6,6 +6,9 @@ import (
 	"regexp"
 	"strings"
 
+	"golang.org/x/net/context"
+	"google.golang.org/grpc/metadata"
+
 	"github.com/brocaar/lorawan"
 	jwt "github.com/dgrijalva/jwt-go"
 )
@@ -39,7 +42,7 @@ type Claims struct {
 
 // Validator defines the interface a validator needs to implement.
 type Validator interface {
-	Validate(string, ...ValidatorFunc) error
+	Validate(context.Context, ...ValidatorFunc) error
 }
 
 // ValidatorFunc defines the signature of a claim validator function.
@@ -50,7 +53,7 @@ type NopValidator struct{}
 
 // Validate validates the given token against the given validator funcs.
 // In the case of the NopValidator, it returns always nil.
-func (v NopValidator) Validate(token string, funcs ...ValidatorFunc) error {
+func (v NopValidator) Validate(ctx context.Context, funcs ...ValidatorFunc) error {
 	return nil
 }
 
@@ -68,8 +71,14 @@ func NewJWTValidator(algorithm, secret string) *JWTValidator {
 	}
 }
 
-// Validate validates the given token against the given validator funcs.
-func (v JWTValidator) Validate(tokenStr string, funcs ...ValidatorFunc) error {
+// Validate validates the token from the given context against the given
+// validator funcs.
+func (v JWTValidator) Validate(ctx context.Context, funcs ...ValidatorFunc) error {
+	tokenStr, err := getTokenFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if token.Header["alg"] != v.algorithm {
 			return nil, fmt.Errorf("api/auth: unexpected algorithm %s, expected %s", token.Header["alg"], v.algorithm)
@@ -174,4 +183,18 @@ func ValidateAPIMethod(apiMethod string) ValidatorFunc {
 
 		return fmt.Errorf("no permission to api method: %s", apiMethod)
 	}
+}
+
+func getTokenFromContext(ctx context.Context) (string, error) {
+	md, ok := metadata.FromContext(ctx)
+	if !ok {
+		return "", errors.New("could not get metadata from context")
+	}
+
+	token, ok := md["authorization"]
+	if !ok || len(token) == 0 {
+		return "", errors.New("authorization missing in metadata")
+	}
+
+	return token[0], nil
 }

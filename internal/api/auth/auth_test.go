@@ -5,6 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/metadata"
+
+	"golang.org/x/net/context"
+
 	"github.com/brocaar/lorawan"
 	jwt "github.com/dgrijalva/jwt-go"
 	. "github.com/smartystreets/goconvey/convey"
@@ -201,7 +205,12 @@ func TestJWTValidator(t *testing.T) {
 				ss, err := token.SignedString([]byte(test.Key))
 				So(err, ShouldBeNil)
 
-				So(v.Validate(ss, test.ValidatorFunc), ShouldResemble, test.Error)
+				ctx := context.Background()
+				ctx = metadata.NewContext(ctx, metadata.MD{
+					"authorization": []string{ss},
+				})
+
+				So(v.Validate(ctx, test.ValidatorFunc), ShouldResemble, test.Error)
 			})
 		}
 	})
