@@ -22,12 +22,14 @@ func TestApplicationAPI(t *testing.T) {
 
 		ctx := context.Background()
 		lsCtx := loraserver.Context{DB: db}
-
-		api := NewApplicationAPI(lsCtx)
+		validator := &TestValidator{}
+		api := NewApplicationAPI(lsCtx, validator)
 
 		Convey("When creating an application", func() {
 			_, err := api.Create(ctx, &pb.CreateApplicationRequest{AppEUI: "0102030405060708", Name: "test app"})
 			So(err, ShouldBeNil)
+			So(validator.ctx, ShouldResemble, ctx)
+			So(validator.validatorFuncs, ShouldHaveLength, 2)
 
 			Convey("Then we can get it", func() {
 				resp, err := api.Get(ctx, &pb.GetApplicationRequest{AppEUI: "0102030405060708"})
@@ -38,6 +40,8 @@ func TestApplicationAPI(t *testing.T) {
 			Convey("Then listing the applications returns a single item", func() {
 				resp, err := api.List(ctx, &pb.ListApplicationRequest{Limit: 10})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 1)
 				So(resp.Result, ShouldHaveLength, 1)
 				So(resp.TotalCount, ShouldEqual, 1)
 				So(resp.Result[0], ShouldResemble, &pb.GetApplicationResponse{AppEUI: "0102030405060708", Name: "test app"})
@@ -46,6 +50,8 @@ func TestApplicationAPI(t *testing.T) {
 			Convey("When updating the application", func() {
 				_, err := api.Update(ctx, &pb.UpdateApplicationRequest{AppEUI: "0102030405060708", Name: "test app 2"})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 2)
 
 				Convey("Then the application has been updated", func() {
 					resp, err := api.Get(ctx, &pb.GetApplicationRequest{AppEUI: "0102030405060708"})
@@ -57,6 +63,8 @@ func TestApplicationAPI(t *testing.T) {
 			Convey("After deleting the application", func() {
 				_, err := api.Delete(ctx, &pb.DeleteApplicationRequest{AppEUI: "0102030405060708"})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 2)
 
 				Convey("Then listing the applications resturns zero items", func() {
 					resp, err := api.List(ctx, &pb.ListApplicationRequest{Limit: 10})

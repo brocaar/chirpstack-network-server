@@ -1,9 +1,14 @@
 package api
 
 import (
+	"fmt"
+
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	pb "github.com/brocaar/loraserver/api"
+	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/loraserver"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
@@ -12,13 +17,15 @@ import (
 
 // ApplicationAPI exports the Application related functions.
 type ApplicationAPI struct {
-	ctx loraserver.Context
+	ctx       loraserver.Context
+	validator auth.Validator
 }
 
 // NewApplicationAPI creates a new ApplicationAPI.
-func NewApplicationAPI(ctx loraserver.Context) *ApplicationAPI {
+func NewApplicationAPI(ctx loraserver.Context, validator auth.Validator) *ApplicationAPI {
 	return &ApplicationAPI{
-		ctx: ctx,
+		ctx:       ctx,
+		validator: validator,
 	}
 }
 
@@ -27,6 +34,14 @@ func (a *ApplicationAPI) Get(ctx context.Context, req *pb.GetApplicationRequest)
 	var eui lorawan.EUI64
 	if err := eui.UnmarshalText([]byte(req.AppEUI)); err != nil {
 		return nil, err
+	}
+
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("Application.Get"),
+		auth.ValidateApplication(eui),
+	); err != nil {
+		fmt.Println(err)
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
 	}
 
 	app, err := storage.GetApplication(a.ctx.DB, eui)
@@ -45,6 +60,10 @@ func (a *ApplicationAPI) Get(ctx context.Context, req *pb.GetApplicationRequest)
 
 // List returns a list of applications (given a limit and offset).
 func (a *ApplicationAPI) List(ctx context.Context, req *pb.ListApplicationRequest) (*pb.ListApplicationResponse, error) {
+	if err := a.validator.Validate(ctx, auth.ValidateAPIMethod("Application.List")); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
+	}
+
 	apps, err := storage.GetApplications(a.ctx.DB, int(req.Limit), int(req.Offset))
 	if err != nil {
 		return nil, err
@@ -78,6 +97,13 @@ func (a *ApplicationAPI) Create(ctx context.Context, req *pb.CreateApplicationRe
 		return nil, err
 	}
 
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("Application.Create"),
+		auth.ValidateApplication(eui),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
+	}
+
 	if err := storage.CreateApplication(a.ctx.DB, models.Application{AppEUI: eui, Name: req.Name}); err != nil {
 		return nil, err
 	}
@@ -92,6 +118,13 @@ func (a *ApplicationAPI) Update(ctx context.Context, req *pb.UpdateApplicationRe
 		return nil, err
 	}
 
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("Application.Update"),
+		auth.ValidateApplication(eui),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
+	}
+
 	if err := storage.UpdateApplication(a.ctx.DB, models.Application{AppEUI: eui, Name: req.Name}); err != nil {
 		return nil, err
 	}
@@ -104,6 +137,13 @@ func (a *ApplicationAPI) Delete(ctx context.Context, req *pb.DeleteApplicationRe
 	var eui lorawan.EUI64
 	if err := eui.UnmarshalText([]byte(req.AppEUI)); err != nil {
 		return nil, err
+	}
+
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("Application.Delete"),
+		auth.ValidateApplication(eui),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
 	}
 
 	if err := storage.DeleteApplication(a.ctx.DB, eui); err != nil {

@@ -11,17 +11,18 @@ import (
 	"google.golang.org/grpc"
 
 	pb "github.com/brocaar/loraserver/api"
+	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/loraserver"
 	"github.com/brocaar/loraserver/internal/static"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 )
 
 // GetGRPCServer returns the gRPC API handler.
-func GetGRPCServer(ctx context.Context, lsCtx loraserver.Context) *grpc.Server {
+func GetGRPCServer(ctx context.Context, lsCtx loraserver.Context, validator auth.Validator) *grpc.Server {
 	opts := []grpc.ServerOption{}
 	server := grpc.NewServer(opts...)
 
-	pb.RegisterApplicationServer(server, NewApplicationAPI(lsCtx))
+	pb.RegisterApplicationServer(server, NewApplicationAPI(lsCtx, validator))
 	pb.RegisterNodeServer(server, NewNodeAPI(lsCtx))
 	pb.RegisterChannelListServer(server, NewChannelListAPI(lsCtx))
 	pb.RegisterChannelServer(server, NewChannelAPI(lsCtx))

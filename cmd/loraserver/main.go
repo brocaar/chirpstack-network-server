@@ -21,6 +21,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/brocaar/loraserver/internal/api"
+	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/backend/application"
 	"github.com/brocaar/loraserver/internal/backend/controller"
 	"github.com/brocaar/loraserver/internal/backend/gateway"
@@ -129,7 +130,15 @@ func run(c *cli.Context) error {
 
 	// setup the grpc api
 	go func() {
-		server := api.GetGRPCServer(ctx, lsCtx)
+		var validator auth.Validator
+		if c.String("jwt-secret") != "" && c.String("jwt-algorithm") != "" {
+			validator = auth.NewJWTValidator(c.String("jwt-algorithm"), c.String("jwt-secret"))
+		} else {
+			log.Warning("api authentication and authorization is disabled (no jwt-algorithm or jwt-token set)")
+			validator = auth.NopValidator{}
+		}
+
+		server := api.GetGRPCServer(ctx, lsCtx, validator)
 		list, err := net.Listen("tcp", c.String("grpc-bind"))
 		if err != nil {
 			log.Fatalf("error creating gRPC listener: %s", err)
