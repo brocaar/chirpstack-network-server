@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/brocaar/lorawan"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -13,8 +12,7 @@ import (
 
 // Claims defines the struct containing the token claims.
 type Claims struct {
-	// Expiration defines the date and time when the token expires.
-	Expiration int64 `json:"exp"`
+	jwt.StandardClaims
 
 	// Admin defines if the user has admin permissions. If true, the user has
 	// all permissions.
@@ -39,24 +37,6 @@ type Claims struct {
 	Nodes []string `json:"nodes"`
 }
 
-func (c Claims) validateExpiration(required bool) bool {
-	if c.Expiration == 0 && !required {
-		return true
-	}
-
-	now := time.Now().Unix()
-	return now <= c.Expiration
-}
-
-// Valid returns if the claim is valid (it hasn't expired yet).
-// It doesn't validate the content of the claim (
-func (c Claims) Valid() error {
-	if !c.validateExpiration(false) {
-		return errors.New("token has expired")
-	}
-	return nil
-}
-
 // Validator defines the interface a validator needs to implement.
 type Validator interface {
 	Validate(string, ...ValidatorFunc) error
@@ -78,6 +58,14 @@ func (v NopValidator) Validate(token string, funcs ...ValidatorFunc) error {
 type JWTValidator struct {
 	secret    string
 	algorithm string
+}
+
+// NewJWTValidator creates a new JWTValidator.
+func NewJWTValidator(algorithm, secret string) *JWTValidator {
+	return &JWTValidator{
+		secret:    secret,
+		algorithm: algorithm,
+	}
 }
 
 // Validate validates the given token against the given validator funcs.

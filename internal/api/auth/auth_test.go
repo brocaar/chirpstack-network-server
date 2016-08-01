@@ -175,9 +175,9 @@ func TestJWTValidator(t *testing.T) {
 			{
 				Description:   "valid key and expired token",
 				Key:           v.secret,
-				Claims:        Claims{Admin: true, Expiration: time.Now().Unix() - 1},
+				Claims:        Claims{Admin: true, StandardClaims: jwt.StandardClaims{ExpiresAt: time.Now().Unix() - 1}},
 				ValidatorFunc: ValidateNode([8]byte{1, 2, 3, 4, 5, 6, 7, 8}),
-				Error:         errors.New("api/auth: jwt parse error: token has expired"),
+				Error:         errors.New("api/auth: jwt parse error: token is expired by 1s"),
 			},
 			{
 				Description:   "invalid key",
