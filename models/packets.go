@@ -64,6 +64,7 @@ type GatewayStatsPacket struct {
 // which will be sent to the application.
 type RXPayload struct {
 	DevEUI       lorawan.EUI64 `json:"devEUI"`
+	Time         time.Time     `json:"time"`
 	FPort        uint8         `json:"fPort"`
 	GatewayCount int           `json:"gatewayCount"`
 	RSSI         int           `json:"rssi"`
