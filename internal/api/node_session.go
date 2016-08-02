@@ -2,11 +2,16 @@ package api
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"golang.org/x/net/context"
 
 	pb "github.com/brocaar/loraserver/api"
+	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/loraserver"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
@@ -15,12 +20,16 @@ import (
 
 // NodeSessionAPI exposes the node-session related functions.
 type NodeSessionAPI struct {
-	ctx loraserver.Context
+	ctx       loraserver.Context
+	validator auth.Validator
 }
 
 // NewNodeSessionAPI creates a new NodeSessionAPI.
-func NewNodeSessionAPI(ctx loraserver.Context) *NodeSessionAPI {
-	return &NodeSessionAPI{ctx: ctx}
+func NewNodeSessionAPI(ctx loraserver.Context, validator auth.Validator) *NodeSessionAPI {
+	return &NodeSessionAPI{
+		ctx:       ctx,
+		validator: validator,
+	}
 }
 
 // Create creates the given node-session. The DevAddr must contain the same NwkID as the configured NetID. Node-sessions will expire automatically after the configured TTL.
@@ -43,6 +52,14 @@ func (a *NodeSessionAPI) Create(ctx context.Context, req *pb.CreateNodeSessionRe
 	}
 	if err := devAddr.UnmarshalText([]byte(req.DevAddr)); err != nil {
 		return nil, err
+	}
+
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("NodeSession.Create"),
+		auth.ValidateApplication(appEUI),
+		auth.ValidateNode(devEUI),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
 	}
 
 	var cFList *lorawan.CFList
@@ -95,7 +112,7 @@ func (a *NodeSessionAPI) validateNodeSession(ns models.NodeSession) error {
 
 	// validate that the node belongs to the given AppEUI.
 	if ns.AppEUI != node.AppEUI {
-		return fmt.Errorf("DevEUI %s belongs to AppEUI %s, got AppEUI %s", ns.AppEUI, node.AppEUI, ns.AppEUI)
+		return errors.New("DevEUI belongs to different AppEUI")
 	}
 
 	return nil
@@ -111,6 +128,14 @@ func (a *NodeSessionAPI) Get(ctx context.Context, req *pb.GetNodeSessionRequest)
 	ns, err := storage.GetNodeSession(a.ctx.RedisPool, devAddr)
 	if err != nil {
 		return nil, err
+	}
+
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("NodeSession.Get"),
+		auth.ValidateApplication(ns.AppEUI),
+		auth.ValidateNode(ns.DevEUI),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
 	}
 
 	return a.nodeSessionToResponse(ns)
@@ -148,6 +173,14 @@ func (a *NodeSessionAPI) GetByDevEUI(ctx context.Context, req *pb.GetNodeSession
 		return nil, err
 	}
 
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("NodeSession.GetByDevEUI"),
+		auth.ValidateApplication(ns.AppEUI),
+		auth.ValidateNode(ns.DevEUI),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
+	}
+
 	return a.nodeSessionToResponse(ns)
 }
 
@@ -171,6 +204,14 @@ func (a *NodeSessionAPI) Update(ctx context.Context, req *pb.UpdateNodeSessionRe
 	}
 	if err := devAddr.UnmarshalText([]byte(req.DevAddr)); err != nil {
 		return nil, err
+	}
+
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("NodeSession.Upate"),
+		auth.ValidateApplication(appEUI),
+		auth.ValidateNode(devEUI),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
 	}
 
 	var cFList *lorawan.CFList
@@ -215,6 +256,19 @@ func (a *NodeSessionAPI) Delete(ctx context.Context, req *pb.DeleteNodeSessionRe
 		return nil, err
 	}
 
+	ns, err := storage.GetNodeSession(a.ctx.RedisPool, devAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("NodeSession.Delete"),
+		auth.ValidateApplication(ns.AppEUI),
+		auth.ValidateNode(ns.DevEUI),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
+	}
+
 	if err := storage.DeleteNodeSession(a.ctx.RedisPool, devAddr); err != nil {
 		return nil, err
 	}
@@ -224,6 +278,10 @@ func (a *NodeSessionAPI) Delete(ctx context.Context, req *pb.DeleteNodeSessionRe
 
 // GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
 func (a *NodeSessionAPI) GetRandomDevAddr(ctx context.Context, req *pb.GetRandomDevAddrRequest) (*pb.GetRandomDevAddrResponse, error) {
+	if err := a.validator.Validate(ctx, auth.ValidateAPIMethod("NodeSession.GetRandomDevAddr")); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
+	}
+
 	devAddr, err := storage.GetRandomDevAddr(a.ctx.RedisPool, a.ctx.NetID)
 	if err != nil {
 		return nil, err

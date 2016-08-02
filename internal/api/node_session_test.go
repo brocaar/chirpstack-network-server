@@ -26,7 +26,8 @@ func TestNodeSessionAPI(t *testing.T) {
 
 		lsCtx := loraserver.Context{DB: db, RedisPool: p, NetID: [3]byte{1, 2, 3}}
 		ctx := context.Background()
-		api := NewNodeSessionAPI(lsCtx)
+		validator := &TestValidator{}
+		api := NewNodeSessionAPI(lsCtx, validator)
 
 		Convey("Given an application and node are created (fk constraints)", func() {
 			app := models.Application{
@@ -59,10 +60,14 @@ func TestNodeSessionAPI(t *testing.T) {
 					},
 				})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 3)
 
 				Convey("Then it can be retrieved by DevAddr", func() {
 					resp, err := api.Get(ctx, &pb.GetNodeSessionRequest{DevAddr: "06020304"})
 					So(err, ShouldBeNil)
+					So(validator.ctx, ShouldResemble, ctx)
+					So(validator.validatorFuncs, ShouldHaveLength, 3)
 					So(resp, ShouldResemble, &pb.GetNodeSessionResponse{
 						DevAddr:     "06020304",
 						DevEUI:      node.DevEUI.String(),
@@ -86,6 +91,8 @@ func TestNodeSessionAPI(t *testing.T) {
 				Convey("Then it can be retrieved by DevEUI", func() {
 					resp, err := api.GetByDevEUI(ctx, &pb.GetNodeSessionByDevEUIRequest{DevEUI: node.DevEUI.String()})
 					So(err, ShouldBeNil)
+					So(validator.ctx, ShouldResemble, ctx)
+					So(validator.validatorFuncs, ShouldHaveLength, 3)
 					So(resp, ShouldResemble, &pb.GetNodeSessionResponse{
 						DevAddr:     "06020304",
 						DevEUI:      node.DevEUI.String(),
@@ -123,6 +130,8 @@ func TestNodeSessionAPI(t *testing.T) {
 						},
 					})
 					So(err, ShouldBeNil)
+					So(validator.ctx, ShouldResemble, ctx)
+					So(validator.validatorFuncs, ShouldHaveLength, 3)
 
 					Convey("Then the node-session has been updated", func() {
 						resp, err := api.Get(ctx, &pb.GetNodeSessionRequest{DevAddr: "06020304"})
@@ -151,11 +160,21 @@ func TestNodeSessionAPI(t *testing.T) {
 				Convey("When deleting the node-session", func() {
 					_, err := api.Delete(ctx, &pb.DeleteNodeSessionRequest{DevAddr: "06020304"})
 					So(err, ShouldBeNil)
+					So(validator.ctx, ShouldResemble, ctx)
+					So(validator.validatorFuncs, ShouldHaveLength, 3)
 
 					Convey("Then the node-session has been deleted", func() {
 						_, err := api.Get(ctx, &pb.GetNodeSessionRequest{DevAddr: "06020304"})
 						So(err, ShouldNotBeNil)
 					})
+				})
+
+				Convey("When calling GetRandomDevAddr", func() {
+					resp, err := api.GetRandomDevAddr(ctx, &pb.GetRandomDevAddrRequest{})
+					So(err, ShouldBeNil)
+					So(validator.ctx, ShouldResemble, ctx)
+					So(validator.validatorFuncs, ShouldHaveLength, 1)
+					So(resp.DevAddr, ShouldHaveLength, 8)
 				})
 			})
 		})
