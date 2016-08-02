@@ -31,7 +31,7 @@ func NewApplicationAPI(ctx loraserver.Context, validator auth.Validator) *Applic
 func (a *ApplicationAPI) Get(ctx context.Context, req *pb.GetApplicationRequest) (*pb.GetApplicationResponse, error) {
 	var eui lorawan.EUI64
 	if err := eui.UnmarshalText([]byte(req.AppEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -43,11 +43,11 @@ func (a *ApplicationAPI) Get(ctx context.Context, req *pb.GetApplicationRequest)
 
 	app, err := storage.GetApplication(a.ctx.DB, eui)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 	b, err := app.AppEUI.MarshalText()
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
 	return &pb.GetApplicationResponse{
 		AppEUI: string(b),
@@ -63,12 +63,12 @@ func (a *ApplicationAPI) List(ctx context.Context, req *pb.ListApplicationReques
 
 	apps, err := storage.GetApplications(a.ctx.DB, int(req.Limit), int(req.Offset))
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	count, err := storage.GetApplicationsCount(a.ctx.DB)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
 
 	var resp pb.ListApplicationResponse
@@ -76,7 +76,7 @@ func (a *ApplicationAPI) List(ctx context.Context, req *pb.ListApplicationReques
 	for _, app := range apps {
 		b, err := app.AppEUI.MarshalText()
 		if err != nil {
-			return nil, err
+			return nil, grpc.Errorf(codes.Internal, err.Error())
 		}
 		resp.Result = append(resp.Result, &pb.GetApplicationResponse{
 			AppEUI: string(b),
@@ -91,7 +91,7 @@ func (a *ApplicationAPI) List(ctx context.Context, req *pb.ListApplicationReques
 func (a *ApplicationAPI) Create(ctx context.Context, req *pb.CreateApplicationRequest) (*pb.CreateApplicationResponse, error) {
 	var eui lorawan.EUI64
 	if err := eui.UnmarshalText([]byte(req.AppEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -102,7 +102,7 @@ func (a *ApplicationAPI) Create(ctx context.Context, req *pb.CreateApplicationRe
 	}
 
 	if err := storage.CreateApplication(a.ctx.DB, models.Application{AppEUI: eui, Name: req.Name}); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	return &pb.CreateApplicationResponse{}, nil
@@ -112,7 +112,7 @@ func (a *ApplicationAPI) Create(ctx context.Context, req *pb.CreateApplicationRe
 func (a *ApplicationAPI) Update(ctx context.Context, req *pb.UpdateApplicationRequest) (*pb.UpdateApplicationResponse, error) {
 	var eui lorawan.EUI64
 	if err := eui.UnmarshalText([]byte(req.AppEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -123,7 +123,7 @@ func (a *ApplicationAPI) Update(ctx context.Context, req *pb.UpdateApplicationRe
 	}
 
 	if err := storage.UpdateApplication(a.ctx.DB, models.Application{AppEUI: eui, Name: req.Name}); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	return &pb.UpdateApplicationResponse{}, nil
@@ -133,7 +133,7 @@ func (a *ApplicationAPI) Update(ctx context.Context, req *pb.UpdateApplicationRe
 func (a *ApplicationAPI) Delete(ctx context.Context, req *pb.DeleteApplicationRequest) (*pb.DeleteApplicationResponse, error) {
 	var eui lorawan.EUI64
 	if err := eui.UnmarshalText([]byte(req.AppEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -144,7 +144,7 @@ func (a *ApplicationAPI) Delete(ctx context.Context, req *pb.DeleteApplicationRe
 	}
 
 	if err := storage.DeleteApplication(a.ctx.DB, eui); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	return &pb.DeleteApplicationResponse{}, nil

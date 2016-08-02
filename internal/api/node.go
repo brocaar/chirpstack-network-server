@@ -32,13 +32,13 @@ func (a *NodeAPI) Create(ctx context.Context, req *pb.CreateNodeRequest) (*pb.Cr
 	var appKey lorawan.AES128Key
 
 	if err := appEUI.UnmarshalText([]byte(req.AppEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 	if err := devEUI.UnmarshalText([]byte(req.DevEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 	if err := appKey.UnmarshalText([]byte(req.AppKey)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -62,7 +62,7 @@ func (a *NodeAPI) Create(ctx context.Context, req *pb.CreateNodeRequest) (*pb.Cr
 	}
 
 	if err := storage.CreateNode(a.ctx.DB, node); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	return &pb.CreateNodeResponse{}, nil
@@ -72,12 +72,12 @@ func (a *NodeAPI) Create(ctx context.Context, req *pb.CreateNodeRequest) (*pb.Cr
 func (a *NodeAPI) Get(ctx context.Context, req *pb.GetNodeRequest) (*pb.GetNodeResponse, error) {
 	var eui lorawan.EUI64
 	if err := eui.UnmarshalText([]byte(req.DevEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	node, err := storage.GetNode(a.ctx.DB, eui)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -90,15 +90,15 @@ func (a *NodeAPI) Get(ctx context.Context, req *pb.GetNodeRequest) (*pb.GetNodeR
 
 	devEUI, err := node.DevEUI.MarshalText()
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
 	appEUI, err := node.AppEUI.MarshalText()
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
 	appKey, err := node.AppKey.MarshalText()
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
 
 	resp := pb.GetNodeResponse{
@@ -126,7 +126,7 @@ func (a *NodeAPI) List(ctx context.Context, req *pb.ListNodeRequest) (*pb.ListNo
 
 	nodes, err := storage.GetNodes(a.ctx.DB, int(req.Limit), int(req.Offset))
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
 	count, err := storage.GetNodesCount(a.ctx.DB)
 	return a.returnList(count, nodes)
@@ -136,7 +136,7 @@ func (a *NodeAPI) List(ctx context.Context, req *pb.ListNodeRequest) (*pb.ListNo
 func (a *NodeAPI) ListByAppEUI(ctx context.Context, req *pb.ListNodeByAppEUIRequest) (*pb.ListNodeResponse, error) {
 	var eui lorawan.EUI64
 	if err := eui.UnmarshalText([]byte(req.AppEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -148,11 +148,11 @@ func (a *NodeAPI) ListByAppEUI(ctx context.Context, req *pb.ListNodeByAppEUIRequ
 
 	nodes, err := storage.GetNodesForAppEUI(a.ctx.DB, eui, int(req.Limit), int(req.Offset))
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 	count, err := storage.GetNodesForAppEUICount(a.ctx.DB, eui)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
 	return a.returnList(count, nodes)
 }
@@ -163,13 +163,13 @@ func (a *NodeAPI) Update(ctx context.Context, req *pb.UpdateNodeRequest) (*pb.Up
 	var appKey lorawan.AES128Key
 
 	if err := appEUI.UnmarshalText([]byte(req.AppEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 	if err := devEUI.UnmarshalText([]byte(req.DevEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 	if err := appKey.UnmarshalText([]byte(req.AppKey)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -182,7 +182,7 @@ func (a *NodeAPI) Update(ctx context.Context, req *pb.UpdateNodeRequest) (*pb.Up
 
 	node, err := storage.GetNode(a.ctx.DB, devEUI)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	node.AppEUI = appEUI
@@ -196,7 +196,7 @@ func (a *NodeAPI) Update(ctx context.Context, req *pb.UpdateNodeRequest) (*pb.Up
 	}
 
 	if err := storage.UpdateNode(a.ctx.DB, node); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	return &pb.UpdateNodeResponse{}, nil
@@ -206,14 +206,14 @@ func (a *NodeAPI) Update(ctx context.Context, req *pb.UpdateNodeRequest) (*pb.Up
 func (a *NodeAPI) Delete(ctx context.Context, req *pb.DeleteNodeRequest) (*pb.DeleteNodeResponse, error) {
 	var eui lorawan.EUI64
 	if err := eui.UnmarshalText([]byte(req.DevEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	// get the node so we can validate if the user has access to this
 	// application
 	node, err := storage.GetNode(a.ctx.DB, eui)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -225,7 +225,7 @@ func (a *NodeAPI) Delete(ctx context.Context, req *pb.DeleteNodeRequest) (*pb.De
 	}
 
 	if err := storage.DeleteNode(a.ctx.DB, eui); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	return &pb.DeleteNodeResponse{}, nil
@@ -235,14 +235,14 @@ func (a *NodeAPI) Delete(ctx context.Context, req *pb.DeleteNodeRequest) (*pb.De
 func (a *NodeAPI) FlushTXPayloadQueue(ctx context.Context, req *pb.FlushTXPayloadQueueRequest) (*pb.FlushTXPayloadQueueResponse, error) {
 	var eui lorawan.EUI64
 	if err := eui.UnmarshalText([]byte(req.DevEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	// get the node so we can validate if the user has access to this
 	// application
 	node, err := storage.GetNode(a.ctx.DB, eui)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -254,7 +254,7 @@ func (a *NodeAPI) FlushTXPayloadQueue(ctx context.Context, req *pb.FlushTXPayloa
 	}
 
 	if err := storage.FlushTXPayloadQueue(a.ctx.RedisPool, eui); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
 	return &pb.FlushTXPayloadQueueResponse{}, nil
 }
@@ -266,15 +266,15 @@ func (a *NodeAPI) returnList(count int, nodes []models.Node) (*pb.ListNodeRespon
 	for _, node := range nodes {
 		appEUI, err := node.AppEUI.MarshalText()
 		if err != nil {
-			return nil, err
+			return nil, grpc.Errorf(codes.Internal, err.Error())
 		}
 		devEUI, err := node.DevEUI.MarshalText()
 		if err != nil {
-			return nil, err
+			return nil, grpc.Errorf(codes.Internal, err.Error())
 		}
 		appKey, err := node.AppKey.MarshalText()
 		if err != nil {
-			return nil, err
+			return nil, grpc.Errorf(codes.Internal, err.Error())
 		}
 
 		item := pb.GetNodeResponse{

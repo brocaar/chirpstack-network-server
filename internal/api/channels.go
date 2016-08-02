@@ -37,7 +37,7 @@ func (a *ChannelListAPI) Create(ctx context.Context, req *pb.CreateChannelListRe
 	}
 	err := storage.CreateChannelList(a.ctx.DB, &cl)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	return &pb.CreateChannelListResponse{Id: cl.ID}, nil
@@ -55,7 +55,7 @@ func (a *ChannelListAPI) Update(ctx context.Context, req *pb.UpdateChannelListRe
 	}
 	err := storage.UpdateChannelList(a.ctx.DB, cl)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 	return &pb.UpdateChannelListResponse{}, nil
 }
@@ -68,7 +68,7 @@ func (a *ChannelListAPI) Get(ctx context.Context, req *pb.GetChannelListRequest)
 
 	cl, err := storage.GetChannelList(a.ctx.DB, req.Id)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 	return &pb.GetChannelListResponse{
 		Id:   cl.ID,
@@ -84,11 +84,11 @@ func (a *ChannelListAPI) List(ctx context.Context, req *pb.ListChannelListReques
 
 	lists, err := storage.GetChannelLists(a.ctx.DB, int(req.Limit), int(req.Offset))
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 	count, err := storage.GetChannelListsCount(a.ctx.DB)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
 
 	resp := pb.ListChannelListResponse{
@@ -111,7 +111,7 @@ func (a *ChannelListAPI) Delete(ctx context.Context, req *pb.DeleteChannelListRe
 
 	err := storage.DeleteChannelList(a.ctx.DB, req.Id)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 	return &pb.DeleteChannelListResponse{}, nil
 }
@@ -143,7 +143,7 @@ func (a *ChannelAPI) Create(ctx context.Context, req *pb.CreateChannelRequest) (
 	}
 	err := storage.CreateChannel(a.ctx.DB, &c)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 	return &pb.CreateChannelResponse{Id: c.ID}, nil
 }
@@ -156,7 +156,7 @@ func (a *ChannelAPI) Get(ctx context.Context, req *pb.GetChannelRequest) (*pb.Ge
 
 	c, err := storage.GetChannel(a.ctx.DB, req.Id)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 	return &pb.GetChannelResponse{
 		Id:            c.ID,
@@ -180,7 +180,7 @@ func (a *ChannelAPI) Update(ctx context.Context, req *pb.UpdateChannelRequest) (
 	}
 	err := storage.UpdateChannel(a.ctx.DB, c)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 	return &pb.UpdateChannelResponse{}, nil
 }
@@ -193,7 +193,7 @@ func (a *ChannelAPI) Delete(ctx context.Context, req *pb.DeleteChannelRequest) (
 
 	err := storage.DeleteChannel(a.ctx.DB, req.Id)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 	return &pb.DeleteChannelResponse{}, nil
 }
@@ -206,7 +206,7 @@ func (a *ChannelAPI) ListByChannelList(ctx context.Context, req *pb.ListChannels
 
 	channels, err := storage.GetChannelsForChannelList(a.ctx.DB, req.Id)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	var resp pb.ListChannelsByChannelListResponse

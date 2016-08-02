@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/hex"
-	"errors"
 	"fmt"
 
 	"google.golang.org/grpc"
@@ -39,19 +38,19 @@ func (a *NodeSessionAPI) Create(ctx context.Context, req *pb.CreateNodeSessionRe
 	var devAddr lorawan.DevAddr
 
 	if err := appEUI.UnmarshalText([]byte(req.AppEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 	if err := devEUI.UnmarshalText([]byte(req.DevEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 	if err := appSKey.UnmarshalText([]byte(req.AppSKey)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 	if err := nwkSKey.UnmarshalText([]byte(req.NwkSKey)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 	if err := devAddr.UnmarshalText([]byte(req.DevAddr)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -91,7 +90,7 @@ func (a *NodeSessionAPI) Create(ctx context.Context, req *pb.CreateNodeSessionRe
 	}
 
 	if err := storage.CreateNodeSession(a.ctx.RedisPool, ns); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
 
 	return &pb.CreateNodeSessionResponse{}, nil
@@ -100,19 +99,19 @@ func (a *NodeSessionAPI) Create(ctx context.Context, req *pb.CreateNodeSessionRe
 func (a *NodeSessionAPI) validateNodeSession(ns models.NodeSession) error {
 	// validate the NwkID
 	if ns.DevAddr.NwkID() != a.ctx.NetID.NwkID() {
-		return fmt.Errorf("DevAddr must contain NwkID %s", hex.EncodeToString([]byte{a.ctx.NetID.NwkID()}))
+		return grpc.Errorf(codes.InvalidArgument, "DevAddr must contain NwkID %s", hex.EncodeToString([]byte{a.ctx.NetID.NwkID()}))
 	}
 
 	// validate that the node exists
 	var node models.Node
 	var err error
 	if node, err = storage.GetNode(a.ctx.DB, ns.DevEUI); err != nil {
-		return err
+		return grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	// validate that the node belongs to the given AppEUI.
 	if ns.AppEUI != node.AppEUI {
-		return errors.New("DevEUI belongs to different AppEUI")
+		return grpc.Errorf(codes.InvalidArgument, "DevEUI belongs to different AppEUI")
 	}
 
 	return nil
@@ -122,12 +121,12 @@ func (a *NodeSessionAPI) validateNodeSession(ns models.NodeSession) error {
 func (a *NodeSessionAPI) Get(ctx context.Context, req *pb.GetNodeSessionRequest) (*pb.GetNodeSessionResponse, error) {
 	var devAddr lorawan.DevAddr
 	if err := devAddr.UnmarshalText([]byte(req.DevAddr)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	ns, err := storage.GetNodeSession(a.ctx.RedisPool, devAddr)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -165,12 +164,12 @@ func (a *NodeSessionAPI) nodeSessionToResponse(ns models.NodeSession) (*pb.GetNo
 func (a *NodeSessionAPI) GetByDevEUI(ctx context.Context, req *pb.GetNodeSessionByDevEUIRequest) (*pb.GetNodeSessionResponse, error) {
 	var eui lorawan.EUI64
 	if err := eui.UnmarshalText([]byte(req.DevEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	ns, err := storage.GetNodeSessionByDevEUI(a.ctx.RedisPool, eui)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -191,19 +190,19 @@ func (a *NodeSessionAPI) Update(ctx context.Context, req *pb.UpdateNodeSessionRe
 	var devAddr lorawan.DevAddr
 
 	if err := appEUI.UnmarshalText([]byte(req.AppEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 	if err := devEUI.UnmarshalText([]byte(req.DevEUI)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 	if err := appSKey.UnmarshalText([]byte(req.AppSKey)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 	if err := nwkSKey.UnmarshalText([]byte(req.NwkSKey)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 	if err := devAddr.UnmarshalText([]byte(req.DevAddr)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -243,7 +242,7 @@ func (a *NodeSessionAPI) Update(ctx context.Context, req *pb.UpdateNodeSessionRe
 	}
 
 	if err := storage.SaveNodeSession(a.ctx.RedisPool, ns); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	return &pb.UpdateNodeSessionResponse{}, nil
@@ -253,12 +252,12 @@ func (a *NodeSessionAPI) Update(ctx context.Context, req *pb.UpdateNodeSessionRe
 func (a *NodeSessionAPI) Delete(ctx context.Context, req *pb.DeleteNodeSessionRequest) (*pb.DeleteNodeSessionResponse, error) {
 	var devAddr lorawan.DevAddr
 	if err := devAddr.UnmarshalText([]byte(req.DevAddr)); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
 	ns, err := storage.GetNodeSession(a.ctx.RedisPool, devAddr)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	if err := a.validator.Validate(ctx,
@@ -270,7 +269,7 @@ func (a *NodeSessionAPI) Delete(ctx context.Context, req *pb.DeleteNodeSessionRe
 	}
 
 	if err := storage.DeleteNodeSession(a.ctx.RedisPool, devAddr); err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
 	return &pb.DeleteNodeSessionResponse{}, nil
@@ -284,7 +283,7 @@ func (a *NodeSessionAPI) GetRandomDevAddr(ctx context.Context, req *pb.GetRandom
 
 	devAddr, err := storage.GetRandomDevAddr(a.ctx.RedisPool, a.ctx.NetID)
 	if err != nil {
-		return nil, err
+		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
 
 	return &pb.GetRandomDevAddrResponse{
