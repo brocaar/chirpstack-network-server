@@ -21,25 +21,32 @@ func TestChannelListAndChannelAPI(t *testing.T) {
 
 		ctx := context.Background()
 		lsCtx := loraserver.Context{DB: db}
+		validator := &TestValidator{}
 
-		cAPI := NewChannelAPI(lsCtx)
-		clAPI := NewChannelListAPI(lsCtx)
+		cAPI := NewChannelAPI(lsCtx, validator)
+		clAPI := NewChannelListAPI(lsCtx, validator)
 
 		Convey("When creating a channel-list", func() {
 			resp, err := clAPI.Create(ctx, &pb.CreateChannelListRequest{Name: "test channel-list"})
 			So(err, ShouldBeNil)
+			So(validator.ctx, ShouldResemble, ctx)
+			So(validator.validatorFuncs, ShouldHaveLength, 1)
 
 			clID := resp.Id
 
 			Convey("Then the channel-list has been created", func() {
 				cl, err := clAPI.Get(ctx, &pb.GetChannelListRequest{Id: clID})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 1)
 				So(cl, ShouldResemble, &pb.GetChannelListResponse{Id: clID, Name: "test channel-list"})
 			})
 
 			Convey("When updating the channel-list", func() {
 				_, err := clAPI.Update(ctx, &pb.UpdateChannelListRequest{Id: clID, Name: "test channel-list changed"})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 1)
 
 				Convey("Then the channel-list has been updated", func() {
 					cl, err := clAPI.Get(ctx, &pb.GetChannelListRequest{Id: clID})
@@ -51,6 +58,8 @@ func TestChannelListAndChannelAPI(t *testing.T) {
 			Convey("Then listing the channel-lists returns 1 result", func() {
 				resp, err := clAPI.List(ctx, &pb.ListChannelListRequest{Limit: 10, Offset: 0})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 1)
 
 				So(resp.TotalCount, ShouldEqual, 1)
 				So(resp.Result, ShouldHaveLength, 1)
@@ -60,6 +69,8 @@ func TestChannelListAndChannelAPI(t *testing.T) {
 			Convey("When deleting the channel-list", func() {
 				_, err := clAPI.Delete(ctx, &pb.DeleteChannelListRequest{Id: clID})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 1)
 
 				Convey("Then the channel-list has been deleted", func() {
 					resp, err := clAPI.List(ctx, &pb.ListChannelListRequest{Limit: 10, Offset: 0})
@@ -76,11 +87,15 @@ func TestChannelListAndChannelAPI(t *testing.T) {
 					Frequency:     868700000,
 				})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 1)
 				cID := resp.Id
 
 				Convey("Then the channel has been created", func() {
 					resp, err := cAPI.Get(ctx, &pb.GetChannelRequest{Id: cID})
 					So(err, ShouldBeNil)
+					So(validator.ctx, ShouldResemble, ctx)
+					So(validator.validatorFuncs, ShouldHaveLength, 1)
 					So(resp, ShouldResemble, &pb.GetChannelResponse{
 						Id:            cID,
 						ChannelListID: clID,
@@ -96,10 +111,14 @@ func TestChannelListAndChannelAPI(t *testing.T) {
 							Frequency:     868700000,
 						})
 						So(err, ShouldBeNil)
+						So(validator.ctx, ShouldResemble, ctx)
+						So(validator.validatorFuncs, ShouldHaveLength, 1)
 
 						Convey("Then the channel has been updated", func() {
 							resp, err := cAPI.Get(ctx, &pb.GetChannelRequest{Id: cID})
 							So(err, ShouldBeNil)
+							So(validator.ctx, ShouldResemble, ctx)
+							So(validator.validatorFuncs, ShouldHaveLength, 1)
 							So(resp, ShouldResemble, &pb.GetChannelResponse{
 								Id:            cID,
 								ChannelListID: clID,
@@ -112,6 +131,8 @@ func TestChannelListAndChannelAPI(t *testing.T) {
 					Convey("When deleting the channel", func() {
 						_, err := cAPI.Delete(ctx, &pb.DeleteChannelRequest{Id: cID})
 						So(err, ShouldBeNil)
+						So(validator.ctx, ShouldResemble, ctx)
+						So(validator.validatorFuncs, ShouldHaveLength, 1)
 
 						Convey("Then the channel has been deleted", func() {
 							_, err := cAPI.Get(ctx, &pb.GetChannelRequest{Id: cID})
