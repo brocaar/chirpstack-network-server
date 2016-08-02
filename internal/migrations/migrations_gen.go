@@ -84,7 +84,7 @@ func _0001_initialSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "0001_initial.sql", size: 411, mode: os.FileMode(420), modTime: time.Unix(1457868859, 0)}
+	info := bindataFileInfo{name: "0001_initial.sql", size: 411, mode: os.FileMode(436), modTime: time.Unix(1466526328, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -104,7 +104,7 @@ func _0002_join_accept_paramsSql() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "0002_join_accept_params.sql", size: 845, mode: os.FileMode(420), modTime: time.Unix(1463414765, 0)}
+	info := bindataFileInfo{name: "0002_join_accept_params.sql", size: 845, mode: os.FileMode(436), modTime: time.Unix(1466526328, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }

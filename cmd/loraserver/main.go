@@ -13,11 +13,11 @@ import (
 	"syscall"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/codegangsta/cli"
 	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/rubenv/sql-migrate"
+	"github.com/urfave/cli"
 	"golang.org/x/net/context"
 
 	"github.com/brocaar/loraserver/internal/api"
