@@ -23,7 +23,7 @@ func GetGRPCServer(ctx context.Context, lsCtx loraserver.Context, validator auth
 	server := grpc.NewServer(opts...)
 
 	pb.RegisterApplicationServer(server, NewApplicationAPI(lsCtx, validator))
-	pb.RegisterNodeServer(server, NewNodeAPI(lsCtx))
+	pb.RegisterNodeServer(server, NewNodeAPI(lsCtx, validator))
 	pb.RegisterChannelListServer(server, NewChannelListAPI(lsCtx, validator))
 	pb.RegisterChannelServer(server, NewChannelAPI(lsCtx, validator))
 	pb.RegisterNodeSessionServer(server, NewNodeSessionAPI(lsCtx))

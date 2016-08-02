@@ -2,22 +2,27 @@ package api
 
 import (
 	pb "github.com/brocaar/loraserver/api"
+	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/loraserver"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 // NodeAPI exports the Node related functions.
 type NodeAPI struct {
-	ctx loraserver.Context
+	ctx       loraserver.Context
+	validator auth.Validator
 }
 
 // NewNodeAPI creates a new NodeAPI.
-func NewNodeAPI(ctx loraserver.Context) *NodeAPI {
+func NewNodeAPI(ctx loraserver.Context, validator auth.Validator) *NodeAPI {
 	return &NodeAPI{
-		ctx: ctx,
+		ctx:       ctx,
+		validator: validator,
 	}
 }
 
@@ -34,6 +39,14 @@ func (a *NodeAPI) Create(ctx context.Context, req *pb.CreateNodeRequest) (*pb.Cr
 	}
 	if err := appKey.UnmarshalText([]byte(req.AppKey)); err != nil {
 		return nil, err
+	}
+
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("Node.Create"),
+		auth.ValidateApplication(appEUI),
+		auth.ValidateNode(devEUI),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
 	}
 
 	node := models.Node{
@@ -67,6 +80,14 @@ func (a *NodeAPI) Get(ctx context.Context, req *pb.GetNodeRequest) (*pb.GetNodeR
 		return nil, err
 	}
 
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("Node.Get"),
+		auth.ValidateApplication(node.AppEUI),
+		auth.ValidateNode(node.DevEUI),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
+	}
+
 	devEUI, err := node.DevEUI.MarshalText()
 	if err != nil {
 		return nil, err
@@ -97,6 +118,12 @@ func (a *NodeAPI) Get(ctx context.Context, req *pb.GetNodeRequest) (*pb.GetNodeR
 
 // GetList returns a list of nodes (given a limit and offset).
 func (a *NodeAPI) List(ctx context.Context, req *pb.ListNodeRequest) (*pb.ListNodeResponse, error) {
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("Node.List"),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
+	}
+
 	nodes, err := storage.GetNodes(a.ctx.DB, int(req.Limit), int(req.Offset))
 	if err != nil {
 		return nil, err
@@ -110,6 +137,13 @@ func (a *NodeAPI) ListByAppEUI(ctx context.Context, req *pb.ListNodeByAppEUIRequ
 	var eui lorawan.EUI64
 	if err := eui.UnmarshalText([]byte(req.AppEUI)); err != nil {
 		return nil, err
+	}
+
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("Node.ListByAppEUI"),
+		auth.ValidateApplication(eui),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
 	}
 
 	nodes, err := storage.GetNodesForAppEUI(a.ctx.DB, eui, int(req.Limit), int(req.Offset))
@@ -136,6 +170,14 @@ func (a *NodeAPI) Update(ctx context.Context, req *pb.UpdateNodeRequest) (*pb.Up
 	}
 	if err := appKey.UnmarshalText([]byte(req.AppKey)); err != nil {
 		return nil, err
+	}
+
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("Node.Update"),
+		auth.ValidateApplication(appEUI),
+		auth.ValidateNode(devEUI),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
 	}
 
 	node, err := storage.GetNode(a.ctx.DB, devEUI)
@@ -167,6 +209,21 @@ func (a *NodeAPI) Delete(ctx context.Context, req *pb.DeleteNodeRequest) (*pb.De
 		return nil, err
 	}
 
+	// get the node so we can validate if the user has access to this
+	// application
+	node, err := storage.GetNode(a.ctx.DB, eui)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("Node.Delete"),
+		auth.ValidateApplication(node.AppEUI),
+		auth.ValidateNode(node.DevEUI),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
+	}
+
 	if err := storage.DeleteNode(a.ctx.DB, eui); err != nil {
 		return nil, err
 	}
@@ -180,6 +237,22 @@ func (a *NodeAPI) FlushTXPayloadQueue(ctx context.Context, req *pb.FlushTXPayloa
 	if err := eui.UnmarshalText([]byte(req.DevEUI)); err != nil {
 		return nil, err
 	}
+
+	// get the node so we can validate if the user has access to this
+	// application
+	node, err := storage.GetNode(a.ctx.DB, eui)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := a.validator.Validate(ctx,
+		auth.ValidateAPIMethod("Node.FlushTXPayloadQueue"),
+		auth.ValidateApplication(node.AppEUI),
+		auth.ValidateNode(node.DevEUI),
+	); err != nil {
+		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
+	}
+
 	if err := storage.FlushTXPayloadQueue(a.ctx.RedisPool, eui); err != nil {
 		return nil, err
 	}

@@ -25,7 +25,8 @@ func TestNodeAPI(t *testing.T) {
 
 		ctx := context.Background()
 		lsCtx := loraserver.Context{DB: db, RedisPool: p}
-		api := NewNodeAPI(lsCtx)
+		validator := &TestValidator{}
+		api := NewNodeAPI(lsCtx, validator)
 
 		app := models.Application{
 			AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -42,10 +43,14 @@ func TestNodeAPI(t *testing.T) {
 				Rx1DROffset: 3,
 			})
 			So(err, ShouldBeNil)
+			So(validator.ctx, ShouldResemble, ctx)
+			So(validator.validatorFuncs, ShouldHaveLength, 3)
 
 			Convey("The node has been created", func() {
 				node, err := api.Get(ctx, &pb.GetNodeRequest{DevEUI: "0807060504030201"})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 3)
 				So(node, ShouldResemble, &pb.GetNodeResponse{
 					DevEUI:      "0807060504030201",
 					AppEUI:      "0102030405060708",
@@ -60,6 +65,8 @@ func TestNodeAPI(t *testing.T) {
 					Limit: 10,
 				})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 1)
 				So(nodes.Result, ShouldHaveLength, 1)
 				So(nodes.TotalCount, ShouldEqual, 1)
 				So(nodes.Result[0], ShouldResemble, &pb.GetNodeResponse{
@@ -77,6 +84,8 @@ func TestNodeAPI(t *testing.T) {
 					AppEUI: "0102030405060708",
 				})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 2)
 				So(nodes.Result, ShouldHaveLength, 1)
 				So(nodes.TotalCount, ShouldEqual, 1)
 				So(nodes.Result[0], ShouldResemble, &pb.GetNodeResponse{
@@ -97,6 +106,8 @@ func TestNodeAPI(t *testing.T) {
 					Rx1DROffset: 1,
 				})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 3)
 
 				Convey("Then the node has been updated", func() {
 					node, err := api.Get(ctx, &pb.GetNodeRequest{DevEUI: "0807060504030201"})
@@ -114,6 +125,8 @@ func TestNodeAPI(t *testing.T) {
 			Convey("After deleting the node", func() {
 				_, err := api.Delete(ctx, &pb.DeleteNodeRequest{DevEUI: "0807060504030201"})
 				So(err, ShouldBeNil)
+				So(validator.ctx, ShouldResemble, ctx)
+				So(validator.validatorFuncs, ShouldHaveLength, 3)
 
 				Convey("Then listing the nodes returns zero nodes", func() {
 					nodes, err := api.List(ctx, &pb.ListNodeRequest{Limit: 10})
@@ -135,6 +148,8 @@ func TestNodeAPI(t *testing.T) {
 				Convey("When flushing the tx-payload queue", func() {
 					_, err := api.FlushTXPayloadQueue(ctx, &pb.FlushTXPayloadQueueRequest{DevEUI: "0807060504030201"})
 					So(err, ShouldBeNil)
+					So(validator.ctx, ShouldResemble, ctx)
+					So(validator.validatorFuncs, ShouldHaveLength, 3)
 
 					Convey("Then the queue is empty", func() {
 						count, err := storage.GetTXPayloadQueueSize(p, [8]byte{8, 7, 6, 5, 4, 3, 2, 1})

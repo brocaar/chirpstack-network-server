@@ -1,8 +1,6 @@
 package api
 
 import (
-	"fmt"
-
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -40,7 +38,6 @@ func (a *ApplicationAPI) Get(ctx context.Context, req *pb.GetApplicationRequest)
 		auth.ValidateAPIMethod("Application.Get"),
 		auth.ValidateApplication(eui),
 	); err != nil {
-		fmt.Println(err)
 		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
 	}
 
