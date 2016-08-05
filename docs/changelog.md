@@ -1,5 +1,10 @@
 # Changelog
 
+## In development
+
+* Implement (optional) JWT token authentication and authorization for the gRPC
+  and RESTful JSON API. See [api documentation](https://docs.loraserver.io/loraserver/api/).
+
 ## 0.9.2
 
 * Fix Swagger base path.
