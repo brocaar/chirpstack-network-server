@@ -1,0 +1,16 @@
+<ng-include src="'partials/navbar.html'"></ng-include>
+
+<div class="container">
+  <ol class="breadcrumb">
+    <li class="active">JWT token</li>
+  </ol>
+
+  <form>
+    <div class="form-group">
+     <input type="text" class="form-control" placeholder="Please enter your JWT API token" ng-model="token.token">
+    </div>
+    <div>
+     <button type="button" class="btn btn-primary" ng-click="updateToken(token)">Save changes</button>
+    </div>
+  </form>
+</div>

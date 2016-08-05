@@ -1,3 +1,7 @@
+var config = {
+	token: ""
+};
+
 var loraserver = angular.module('loraserver', [
     'ngRoute',
 
@@ -18,6 +22,20 @@ loraserver.directive('stringToNumber', function() {
   };
 });
 
+loraserver.factory('httpRequestInterceptor', function () {
+	return {
+		request: function(c) {
+			c.headers['Grpc-Metadata-Authorization'] = config.token;
+			console.log(c);
+			return c;
+		}
+	};
+});
+
+loraserver.config(['$httpProvider', function($httpProvider) {
+	$httpProvider.interceptors.push('httpRequestInterceptor');
+}]);
+
 loraserver.config(['$routeProvider',
     function($routeProvider) {
         $routeProvider.
@@ -37,6 +55,10 @@ loraserver.config(['$routeProvider',
                 templateUrl: 'partials/channel_list.html',
                 controller: 'ChannelListCtrl'
             }).
+			when('/token', {
+				templateUrl: 'partials/token.html',
+				controller: 'TokenCtrl'
+			}).
             otherwise({
                 redirectTo: '/applications'
             });
@@ -44,13 +66,29 @@ loraserver.config(['$routeProvider',
 
 var loraserverControllers = angular.module('loraserverControllers', []);
 
+// manage JWT token
+loraserverControllers.controller('TokenCtrl', ['$scope', '$http', '$routeParams', '$route', '$location',
+	function ($scope, $http, $routeParams, $route, $location) {
+		$scope.token = config;
+		$scope.updateToken = function(data) {
+			config.token = data.token;
+			$location.path("/");
+		};
+	}]);
+
 // manage applications
-loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$routeParams', '$route',
-    function ($scope, $http, $routeParams, $route) {
+loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$routeParams', '$route', '$location',
+    function ($scope, $http, $routeParams, $route, $location) {
         $scope.page = 'applications';
         $http.get('/api/v1/application/0/9999').success(function(data) {
                 $scope.apps = data.result;
-        });
+        }).error(function(data){
+			if (data.Code == 16) {
+				$location.path("/token");
+			} else {
+				alert(data.Error);
+			}
+		});
 
         $scope.createApplication = function(app) {
             if(app == null) {
@@ -71,7 +109,9 @@ loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$ro
                 $scope.app = data;
                 $('#editApplicationModal').modal().on('hidden.bs.modal', function() {
                     $route.reload();
-                });
+                }).error(function(data) {
+                    $scope.error = data.Error;
+				});
             });
         };
 
@@ -80,7 +120,7 @@ loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$ro
                 $('#editApplicationModal').modal('hide');
 			}).error(function(data) {
                 $scope.error = data.Error;
-            });
+			});
         };
 
         $scope.deleteApplication = function(app) {
@@ -95,8 +135,8 @@ loraserverControllers.controller('ApplicationListCtrl', ['$scope', '$http', '$ro
     }]);
 
 // manage nodes
-loraserverControllers.controller('ApplicationCtrl', ['$scope', '$http', '$routeParams', '$route',
-    function ($scope, $http, $routeParams, $route) {
+loraserverControllers.controller('ApplicationCtrl', ['$scope', '$http', '$routeParams', '$route', '$location',
+    function ($scope, $http, $routeParams, $route, $location) {
         $scope.page = 'applications';
 
         $http.get('/api/v1/application/' + $routeParams.application).success(function(data) {
@@ -109,7 +149,13 @@ loraserverControllers.controller('ApplicationCtrl', ['$scope', '$http', '$routeP
 
         $http.get('/api/v1/channelList/0/9999').success(function(data) {
             $scope.channelLists = data.result;
-        }).error(function(data) {alert(data.Error)});
+        }).error(function(data){
+			if (data.Code == 16) {
+				$location.path("/token");
+			} else {
+				alert(data.Error);
+			}
+		});
 
         $scope.createNode = function(node) {
             if (node == null) {
@@ -188,12 +234,19 @@ loraserverControllers.controller('ApplicationCtrl', ['$scope', '$http', '$routeP
     }]);
 
 // manage channel lists
-loraserverControllers.controller('ChannelListListCtrl', ['$scope', '$http', '$routeParams', '$route',
-    function ($scope, $http, $routeParams, $route) {
+loraserverControllers.controller('ChannelListListCtrl', ['$scope', '$http', '$routeParams', '$route', '$location',
+    function ($scope, $http, $routeParams, $route, $location) {
         $scope.page = 'channels';
         $http.get('/api/v1/channelList/0/9999').success(function(data) {
             $scope.channelLists = data.result;
-        }).error(function(data){alert(data.Error)});
+        }).error(function(data){
+			if (data.Code == 16) {
+				$location.path("/token");
+			} else {
+				alert(data.Error);
+			}
+		});
+
 
         $scope.createList = function(cl) {
             if (cl == null) {
@@ -236,15 +289,22 @@ loraserverControllers.controller('ChannelListListCtrl', ['$scope', '$http', '$ro
     }]);
 
 // manage channel list
-loraserverControllers.controller('ChannelListCtrl', ['$scope', '$http', '$routeParams', '$route',
-    function ($scope, $http, $routeParams, $route) {
+loraserverControllers.controller('ChannelListCtrl', ['$scope', '$http', '$routeParams', '$route', '$location',
+    function ($scope, $http, $routeParams, $route, $location) {
         $scope.page = 'channels';
         $http.get('/api/v1/channelList/' + $routeParams.list).success(function(data) {
             $scope.channelList = data;
         }).error(function(data){alert(data.Error)});
         $http.get('/api/v1/channel/channelList/' + $routeParams.list).success(function(data) {
             $scope.channels = data.result;
-        }).error(function(data){alert(data.Error)});
+        }).error(function(data){
+			if (data.Code == 16) {
+				$location.path("/token");
+			} else {
+				alert(data.Error);
+			}
+		});
+
 
         $scope.createChannel = function(c) {
             if (c == null) {
