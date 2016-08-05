@@ -15,7 +15,8 @@ RESTful JSON interface, so that you can use the API for web-applications
 
 ## gRPC interface
 
-The following example creates an application and node using the gRPC API:
+The following example in [Go](https://golang.org/) creates an application and
+node using the gRPC API:
 
 ```go
 package main
@@ -106,3 +107,14 @@ The API methods can be given as:
 * `["Node.Get"]`: listing each APIs method
 * `["Node.(Get|Delete)"]`: combining multiple methods for the same API
 * `["Node.*"]`: all methods of the Node API
+
+### Setting the authentication token
+
+For requests to the RESTful JSON interface, you need to set the JWT token
+using the `Grpc-Metadata-Authorization` header field. The token needs to
+be present for each request!
+
+When using [gRPC](http://grpc.io/), the JWT token needs to be stored in the
+`authorization` key of the request metadata. For example in Go, this can be
+done by the [grpc.WithPerRPCCredentials](https://godoc.org/google.golang.org/grpc#WithPerRPCCredentials)
+method.
