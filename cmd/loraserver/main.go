@@ -69,6 +69,56 @@ func run(c *cli.Context) error {
 		"docs":    "https://docs.loraserver.io/",
 	}).Info("starting LoRa Server")
 
+	lsCtx := mustGetContext(netID, c)
+
+	// auto-migrate the database
+	if c.Bool("db-automigrate") {
+		log.Info("applying database migrations")
+		m := &migrate.AssetMigrationSource{
+			Asset:    migrations.Asset,
+			AssetDir: migrations.AssetDir,
+			Dir:      "",
+		}
+		n, err := migrate.Exec(lsCtx.DB.DB, "postgres", m, migrate.Up)
+		if err != nil {
+			log.Fatalf("applying migrations failed: %s", err)
+		}
+		log.WithField("count", n).Info("migrations applied")
+	}
+
+	// start the loraserver
+	server := loraserver.NewServer(lsCtx)
+	if err := server.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	// setup the grpc api
+	mustStartGRPCServer(ctx, lsCtx, c)
+
+	// setup the http server
+	mustStartHTTPServer(ctx, lsCtx, c)
+
+	sigChan := make(chan os.Signal)
+	exitChan := make(chan struct{})
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	log.WithField("signal", <-sigChan).Info("signal received")
+	go func() {
+		log.Warning("stopping loraserver")
+		if err := server.Stop(); err != nil {
+			log.Fatal(err)
+		}
+		exitChan <- struct{}{}
+	}()
+	select {
+	case <-exitChan:
+	case s := <-sigChan:
+		log.WithField("signal", s).Info("signal received, stopping immediately")
+	}
+
+	return nil
+}
+
+func mustGetContext(netID lorawan.NetID, c *cli.Context) loraserver.Context {
 	// connect to the database
 	log.Info("connecting to postgresql")
 	db, err := storage.OpenDatabase(c.String("postgres-dsn"))
@@ -98,22 +148,7 @@ func run(c *cli.Context) error {
 		log.Fatalf("controller-backend setup failed: %s", err)
 	}
 
-	// auto-migrate the database
-	if c.Bool("db-automigrate") {
-		log.Info("applying database migrations")
-		m := &migrate.AssetMigrationSource{
-			Asset:    migrations.Asset,
-			AssetDir: migrations.AssetDir,
-			Dir:      "",
-		}
-		n, err := migrate.Exec(db.DB, "postgres", m, migrate.Up)
-		if err != nil {
-			log.Fatalf("applying migrations failed: %s", err)
-		}
-		log.WithField("count", n).Info("migrations applied")
-	}
-
-	lsCtx := loraserver.Context{
+	return loraserver.Context{
 		DB:          db,
 		RedisPool:   rp,
 		Gateway:     gw,
@@ -121,33 +156,29 @@ func run(c *cli.Context) error {
 		Controller:  ctrl,
 		NetID:       netID,
 	}
+}
 
-	// start the loraserver
-	server := loraserver.NewServer(lsCtx)
-	if err := server.Start(); err != nil {
-		log.Fatal(err)
+func mustStartGRPCServer(ctx context.Context, lsCtx loraserver.Context, c *cli.Context) {
+	var validator auth.Validator
+	if c.String("jwt-secret") != "" && c.String("jwt-algorithm") != "" {
+		validator = auth.NewJWTValidator(c.String("jwt-algorithm"), c.String("jwt-secret"))
+	} else {
+		log.Warning("api authentication and authorization is disabled (no jwt-algorithm or jwt-token set)")
+		validator = auth.NopValidator{}
 	}
 
-	// setup the grpc api
+	server := api.GetGRPCServer(ctx, lsCtx, validator)
+	list, err := net.Listen("tcp", c.String("grpc-bind"))
+	if err != nil {
+		log.Fatalf("error creating gRPC listener: %s", err)
+	}
+	log.WithField("bind", c.String("grpc-bind")).Info("starting gRPC server")
 	go func() {
-		var validator auth.Validator
-		if c.String("jwt-secret") != "" && c.String("jwt-algorithm") != "" {
-			validator = auth.NewJWTValidator(c.String("jwt-algorithm"), c.String("jwt-secret"))
-		} else {
-			log.Warning("api authentication and authorization is disabled (no jwt-algorithm or jwt-token set)")
-			validator = auth.NopValidator{}
-		}
-
-		server := api.GetGRPCServer(ctx, lsCtx, validator)
-		list, err := net.Listen("tcp", c.String("grpc-bind"))
-		if err != nil {
-			log.Fatalf("error creating gRPC listener: %s", err)
-		}
-		log.WithField("bind", c.String("grpc-bind")).Info("starting gRPC server")
 		log.Fatal(server.Serve(list))
 	}()
+}
 
-	// setup the http server
+func mustStartHTTPServer(ctx context.Context, lsCtx loraserver.Context, c *cli.Context) {
 	r := mux.NewRouter()
 
 	// setup json api
@@ -168,30 +199,10 @@ func run(c *cli.Context) error {
 		Prefix:    "",
 	}))
 
-	// start the http server
+	log.WithField("bind", c.String("http-bind")).Info("starting rest api / gui server")
 	go func() {
-		log.WithField("bind", c.String("http-bind")).Info("starting rest api / gui server")
 		log.Fatal(http.ListenAndServe(c.String("http-bind"), r))
 	}()
-
-	sigChan := make(chan os.Signal)
-	exitChan := make(chan struct{})
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-	log.WithField("signal", <-sigChan).Info("signal received")
-	go func() {
-		log.Warning("stopping loraserver")
-		if err := server.Stop(); err != nil {
-			log.Fatal(err)
-		}
-		exitChan <- struct{}{}
-	}()
-	select {
-	case <-exitChan:
-	case s := <-sigChan:
-		log.WithField("signal", s).Info("signal received, stopping immediately")
-	}
-
-	return nil
 }
 
 func main() {
