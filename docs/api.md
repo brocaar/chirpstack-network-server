@@ -118,3 +118,30 @@ When using [gRPC](http://grpc.io/), the JWT token needs to be stored in the
 `authorization` key of the request metadata. For example in Go, this can be
 done by the [grpc.WithPerRPCCredentials](https://godoc.org/google.golang.org/grpc#WithPerRPCCredentials)
 method.
+
+## Security / TLS
+
+By default, all API requests are performed over plaintext, meaning that
+everybody is able to eavedrop. Therefore it is recommended to enable TLS
+for both the gRPC and http server (web-interface and RESTful API). This can
+be done by using the `--grpc-tls-key`, `--grpc-tls-cert`, `--http-tls-key` and
+`--http-tls-cert` [configuration](configuration.md) flags. Note that you
+can use one certificate for both the gRPC as the http server.
+
+### Self-signed certificate
+
+A self-signed certificate can be generated with the following command:
+
+```bash
+openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 90 -nodes
+```
+
+### Let's Encrypt
+
+For generating a certificate with [Let's Encrypt](https://letsencrypt.org/),
+first follow the [getting started](https://letsencrypt.org/getting-started/)
+instructions. When the `letsencrypt` cli tool has been installed, execute:
+
+```bash
+letsencrypt certonly --standalone -d DOMAINNAME.HERE 
+```
