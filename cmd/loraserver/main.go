@@ -4,13 +4,19 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -160,14 +166,26 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) loraserver.Context {
 
 func mustStartGRPCServer(ctx context.Context, lsCtx loraserver.Context, c *cli.Context) {
 	var validator auth.Validator
+	grpcOpts := make([]grpc.ServerOption, 0)
+
 	if c.String("jwt-secret") != "" && c.String("jwt-algorithm") != "" {
 		validator = auth.NewJWTValidator(c.String("jwt-algorithm"), c.String("jwt-secret"))
 	} else {
-		log.Warning("api authentication and authorization is disabled (no jwt-algorithm or jwt-token set)")
+		log.Warning("api authentication and authorization is disabled (no jwt-algorithm or jwt-token are set)")
 		validator = auth.NopValidator{}
 	}
 
-	server := api.GetGRPCServer(ctx, lsCtx, validator)
+	if c.String("grpc-tls-key") != "" && c.String("grpc-tls-cert") != "" {
+		creds, err := credentials.NewServerTLSFromFile(c.String("grpc-tls-cert"), c.String("grpc-tls-key"))
+		if err != nil {
+			log.Fatalf("could not load gRPC tls file(s): %s", err)
+		}
+		grpcOpts = append(grpcOpts, grpc.Creds(creds))
+	} else {
+		log.Warning("tls is disabled for gRPC (no grpc-tls-key or grpc-tls-cert are set)")
+	}
+
+	server := api.GetGRPCServer(ctx, lsCtx, validator, grpcOpts)
 	list, err := net.Listen("tcp", c.String("grpc-bind"))
 	if err != nil {
 		log.Fatalf("error creating gRPC listener: %s", err)
@@ -179,10 +197,32 @@ func mustStartGRPCServer(ctx context.Context, lsCtx loraserver.Context, c *cli.C
 }
 
 func mustStartHTTPServer(ctx context.Context, lsCtx loraserver.Context, c *cli.Context) {
+	// gRPC dial options for the grpc-gateway
+	grpcOpts := make([]grpc.DialOption, 0)
+	if c.String("grpc-tls-key") != "" && c.String("grpc-tls-cert") != "" {
+		b, err := ioutil.ReadFile(c.String("grpc-tls-cert"))
+		if err != nil {
+			log.Fatalf("could not load gRPC tls cert: %s", err)
+		}
+		cp := x509.NewCertPool()
+		if !cp.AppendCertsFromPEM(b) {
+			log.Fatal("failed to append certificates")
+		}
+
+		grpcOpts = append(grpcOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+			// given the grpc-gateway is always connecting to localhost, does
+			// InsecureSkipVerify=true cause any security issues?
+			InsecureSkipVerify: true,
+			RootCAs:            cp,
+		})))
+	} else {
+		grpcOpts = append(grpcOpts, grpc.WithInsecure())
+	}
+
 	r := mux.NewRouter()
 
 	// setup json api
-	jsonHandler, err := api.GetJSONGateway(ctx, lsCtx, c.String("grpc-bind"))
+	jsonHandler, err := api.GetJSONGateway(ctx, lsCtx, c.String("grpc-bind"), grpcOpts)
 	if err != nil {
 		log.Fatalf("get json gateway error: %s", err)
 	}
@@ -201,7 +241,11 @@ func mustStartHTTPServer(ctx context.Context, lsCtx loraserver.Context, c *cli.C
 
 	log.WithField("bind", c.String("http-bind")).Info("starting rest api / gui server")
 	go func() {
-		log.Fatal(http.ListenAndServe(c.String("http-bind"), r))
+		if c.String("http-tls-cert") != "" && c.String("http-tls-key") != "" {
+			log.Fatal(http.ListenAndServeTLS(c.String("http-bind"), c.String("http-tls-cert"), c.String("http-tls-key"), r))
+		} else {
+			log.Fatal(http.ListenAndServe(c.String("http-bind"), r))
+		}
 	}()
 }
 
@@ -230,10 +274,30 @@ func main() {
 			EnvVar: "HTTP_BIND",
 		},
 		cli.StringFlag{
+			Name:   "http-tls-cert",
+			Usage:  "http server TLS certificate",
+			EnvVar: "HTTP_TLS_CERT",
+		},
+		cli.StringFlag{
+			Name:   "http-tls-key",
+			Usage:  "http server TLS key",
+			EnvVar: "HTTP_TLS_KEY",
+		},
+		cli.StringFlag{
 			Name:   "grpc-bind",
 			Usage:  "ip:port to bind the gRPC api server to",
 			Value:  "0.0.0.0:9000",
 			EnvVar: "GRPC_BIND",
+		},
+		cli.StringFlag{
+			Name:   "grpc-tls-cert",
+			Usage:  "gRPC server TLS certificate",
+			EnvVar: "GRPC_TLS_CERT",
+		},
+		cli.StringFlag{
+			Name:   "grpc-tls-key",
+			Usage:  "gRPC server TLS key",
+			EnvVar: "GRPC_TLS_KEY",
 		},
 		cli.StringFlag{
 			Name:   "postgres-dsn",

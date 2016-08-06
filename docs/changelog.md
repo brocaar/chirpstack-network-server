@@ -4,6 +4,7 @@
 
 * Implement (optional) JWT token authentication and authorization for the gRPC
   and RESTful JSON API. See [api documentation](https://docs.loraserver.io/loraserver/api/).
+* Implement (optional) TLS for gRPC and http server (web-interface and RESTful JSON interface)
 
 ## 0.9.2
 
