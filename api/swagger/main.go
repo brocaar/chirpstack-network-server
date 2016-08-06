@@ -33,7 +33,6 @@ func main() {
 	}
 	swagger := model{
 		Swagger:     "2.0",
-		Schemes:     []string{"http", "https"},
 		Consumes:    []string{"application/json"},
 		Produces:    []string{"application/json"},
 		Paths:       make(map[string]interface{}),
