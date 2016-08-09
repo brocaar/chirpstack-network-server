@@ -17,6 +17,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/grpclog"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -45,6 +46,18 @@ var bands = []string{
 	string(band.AU_915_928),
 	string(band.EU_863_870),
 	string(band.US_902_928),
+}
+
+func init() {
+	// this is basically disabling the gRPC logging. the reason is that the
+	// grpc-gateway handler is started at the same time as the gRPC handler
+	// as they are served on the same port (when tls is enabled).
+	// since the grpc-gateway tries to connect right away, this generates
+	// some initial connection errors (which are recovered) most times.
+	// TODO: is there a good way to handle this?
+	grpcLogger := log.New()
+	grpcLogger.Level = log.ErrorLevel
+	grpclog.SetLogger(grpcLogger)
 }
 
 func run(c *cli.Context) error {
@@ -99,10 +112,44 @@ func run(c *cli.Context) error {
 	}
 
 	// setup the grpc api
-	mustStartGRPCServer(ctx, lsCtx, c)
+	grpcHandler := mustGetGRPCHandler(ctx, lsCtx, c)
 
 	// setup the http server
-	mustStartHTTPServer(ctx, lsCtx, c)
+	httpHandler := mustGetHTTPHandler(ctx, lsCtx, c)
+
+	if c.String("http-tls-cert") != "" && c.String("http-tls-key") != "" {
+		// when tls is enabled, we combine the gRPC handler and http handler
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
+				grpcHandler.ServeHTTP(w, r)
+			} else {
+				httpHandler.ServeHTTP(w, r)
+			}
+		})
+		go func() {
+			log.WithField("bind", c.String("http-bind")).Info("starting REST + gRPC api server (with tls)")
+			log.Fatal(http.ListenAndServeTLS(c.String("http-bind"), c.String("http-tls-cert"), c.String("http-tls-key"), handler))
+		}()
+	} else {
+		// since the gRPC server uses http/2, which is only enabled by the http
+		// package when tls is enabled, we need to setup a separate server
+		log.Warning("tls is disabled, the gRPC server will run on a separate port (as specified by grpc-insecure-bind)")
+
+		list, err := net.Listen("tcp", c.String("grpc-insecure-bind"))
+		if err != nil {
+			log.Fatalf("create gRPC listener error: %s", err)
+		}
+		go func() {
+			log.WithField("bind", c.String("grpc-insecure-bind")).Info("starting gRPC api server (without tls)")
+			log.Fatal(grpcHandler.Serve(list))
+		}()
+
+		go func() {
+			log.WithField("bind", c.String("http-bind")).Info("starting REST api server (without tls)")
+			log.Fatal(http.ListenAndServe(c.String("http-bind"), httpHandler))
+		}()
+
+	}
 
 	sigChan := make(chan os.Signal)
 	exitChan := make(chan struct{})
@@ -164,7 +211,7 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) loraserver.Context {
 	}
 }
 
-func mustStartGRPCServer(ctx context.Context, lsCtx loraserver.Context, c *cli.Context) {
+func mustGetGRPCHandler(ctx context.Context, lsCtx loraserver.Context, c *cli.Context) *grpc.Server {
 	var validator auth.Validator
 	grpcOpts := make([]grpc.ServerOption, 0)
 
@@ -175,34 +222,18 @@ func mustStartGRPCServer(ctx context.Context, lsCtx loraserver.Context, c *cli.C
 		validator = auth.NopValidator{}
 	}
 
-	if c.String("grpc-tls-key") != "" && c.String("grpc-tls-cert") != "" {
-		creds, err := credentials.NewServerTLSFromFile(c.String("grpc-tls-cert"), c.String("grpc-tls-key"))
-		if err != nil {
-			log.Fatalf("could not load gRPC tls file(s): %s", err)
-		}
-		grpcOpts = append(grpcOpts, grpc.Creds(creds))
-	} else {
-		log.Warning("tls is disabled for gRPC (no grpc-tls-key or grpc-tls-cert are set)")
-	}
-
-	server := api.GetGRPCServer(ctx, lsCtx, validator, grpcOpts)
-	list, err := net.Listen("tcp", c.String("grpc-bind"))
-	if err != nil {
-		log.Fatalf("error creating gRPC listener: %s", err)
-	}
-	log.WithField("bind", c.String("grpc-bind")).Info("starting gRPC server")
-	go func() {
-		log.Fatal(server.Serve(list))
-	}()
+	return api.GetGRPCServer(ctx, lsCtx, validator, grpcOpts)
 }
 
-func mustStartHTTPServer(ctx context.Context, lsCtx loraserver.Context, c *cli.Context) {
+func mustGetHTTPHandler(ctx context.Context, lsCtx loraserver.Context, c *cli.Context) http.Handler {
 	// gRPC dial options for the grpc-gateway
+	var bind string
 	grpcOpts := make([]grpc.DialOption, 0)
-	if c.String("grpc-tls-key") != "" && c.String("grpc-tls-cert") != "" {
-		b, err := ioutil.ReadFile(c.String("grpc-tls-cert"))
+	if c.String("http-tls-key") != "" && c.String("http-tls-cert") != "" {
+		bind = c.String("http-bind")
+		b, err := ioutil.ReadFile(c.String("http-tls-cert"))
 		if err != nil {
-			log.Fatalf("could not load gRPC tls cert: %s", err)
+			log.Fatalf("could not load tls cert: %s", err)
 		}
 		cp := x509.NewCertPool()
 		if !cp.AppendCertsFromPEM(b) {
@@ -216,17 +247,18 @@ func mustStartHTTPServer(ctx context.Context, lsCtx loraserver.Context, c *cli.C
 			RootCAs:            cp,
 		})))
 	} else {
+		bind = c.String("grpc-insecure-bind")
 		grpcOpts = append(grpcOpts, grpc.WithInsecure())
 	}
 
 	r := mux.NewRouter()
 
 	// setup json api
-	jsonHandler, err := api.GetJSONGateway(ctx, lsCtx, c.String("grpc-bind"), grpcOpts)
+	jsonHandler, err := api.GetJSONGateway(ctx, lsCtx, bind, grpcOpts)
 	if err != nil {
 		log.Fatalf("get json gateway error: %s", err)
 	}
-	log.WithField("path", "/api/v1").Info("registering api handler and documentation endpoint")
+	log.WithField("path", "/api/v1").Info("registering REST api handler and documentation endpoint")
 	r.HandleFunc("/api/v1", api.SwaggerHandlerFunc).Methods("get")
 	r.PathPrefix("/api/v1/").Handler(jsonHandler)
 
@@ -239,14 +271,7 @@ func mustStartHTTPServer(ctx context.Context, lsCtx loraserver.Context, c *cli.C
 		Prefix:    "",
 	}))
 
-	log.WithField("bind", c.String("http-bind")).Info("starting rest api / gui server")
-	go func() {
-		if c.String("http-tls-cert") != "" && c.String("http-tls-key") != "" {
-			log.Fatal(http.ListenAndServeTLS(c.String("http-bind"), c.String("http-tls-cert"), c.String("http-tls-key"), r))
-		} else {
-			log.Fatal(http.ListenAndServe(c.String("http-bind"), r))
-		}
-	}()
+	return r
 }
 
 func main() {
@@ -269,7 +294,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "http-bind",
-			Usage:  "ip:port to bind the http api server to",
+			Usage:  "ip:port to bind the http server to (web-interface, RESTful api and when TLS is setup the gRPC api)",
 			Value:  "0.0.0.0:8000",
 			EnvVar: "HTTP_BIND",
 		},
@@ -284,20 +309,10 @@ func main() {
 			EnvVar: "HTTP_TLS_KEY",
 		},
 		cli.StringFlag{
-			Name:   "grpc-bind",
-			Usage:  "ip:port to bind the gRPC api server to",
+			Name:   "grpc-insecure-bind",
+			Usage:  "ip:port to bind the insecure gRPC api server to (only used when no http-tls-cert and http-tls-key are setup)",
 			Value:  "0.0.0.0:9000",
 			EnvVar: "GRPC_BIND",
-		},
-		cli.StringFlag{
-			Name:   "grpc-tls-cert",
-			Usage:  "gRPC server TLS certificate",
-			EnvVar: "GRPC_TLS_CERT",
-		},
-		cli.StringFlag{
-			Name:   "grpc-tls-key",
-			Usage:  "gRPC server TLS key",
-			EnvVar: "GRPC_TLS_KEY",
 		},
 		cli.StringFlag{
 			Name:   "postgres-dsn",

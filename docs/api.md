@@ -122,11 +122,12 @@ method.
 ## Security / TLS
 
 By default, all API requests are performed over plaintext, meaning that
-everybody is able to eavedrop. Therefore it is recommended to enable TLS
-for both the gRPC and http server (web-interface and RESTful API). This can
-be done by using the `--grpc-tls-key`, `--grpc-tls-cert`, `--http-tls-key` and
-`--http-tls-cert` [configuration](configuration.md) flags. Note that you
-can use one certificate for both the gRPC as the http server.
+everybody is able to eavedrop. Therefore it is recommended to enable TLS.
+As a side-effect, both the RESTful API and the gRPC will be served on the
+same port (this is because the Go http server only enables http/2 when TLS
+is enabled).
+Enabling TLS can be done by providing the `--http-tls-key` and
+`--http-tls-cert` [configuration](configuration.md) flags.
 
 ### Self-signed certificate
 

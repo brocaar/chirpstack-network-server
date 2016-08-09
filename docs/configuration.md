@@ -22,8 +22,9 @@ will show you all the available ISM bands available.
 
 #### --http-bind / HTTP_BIND
 
-This sets the ``IP:PORT`` on which the http server
-(web-interface and REST API) will bind.
+This sets the ``IP:PORT`` on which the http server will bind.
+It will serve the web-interface, REST and gRPC api if TLS is enabled. When
+TLS is disabled, the gRPC api will be served from a different port.
 
 #### --http-tls-cert / HTTP_TLS_CERT
 
@@ -33,18 +34,10 @@ Path to the TLS certificate for the http server.
 
 Path to the TLS key for the http server.
 
-#### --grpc-bind / GRPC_BIND
+#### --grpc-insecure-bind / GRPC_BIND
 
-This sets the ``IP:PORT`` on which the gRPC server
-will bind.
-
-#### --grpc-tls-cert / GRPC_TLS_CERT
-
-Path to the TLS certificate for the gRPC server.
-
-#### --grpc-tls-key / GRPC_TLS_KEY
-
-Path to the TLS key for the gRPC server.
+This sets the ``IP:PORT`` on which the insecure gRPC server will bind.
+Please note that this is only used when no TLS certificate and key are set.
 
 #### --postgres-dsn / POSTGRES_DSN
 
