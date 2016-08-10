@@ -90,7 +90,7 @@ An example claim illustrating the options that can be included in the token:
 {
 	"exp": 1257894000,             // the unix time when the token expires
 	"admin": false,                // admin users have access to all api methods and resources
-	"api": ["Node.Get"],           // list of api methods the user has access to
+	"apis": ["Node.Get"],          // list of api methods the user has access to
 	"apps": ["0102030405060708"],  // list of AppEUIs the user has access to
 	"nodes": ["*"]                 // list of DevEUIs the user has access to
 }

@@ -27,7 +27,7 @@ type Claims struct {
 	// One Application method: ["Application.Create"]
 	// Multiple Application methods: ["Application.(Create|Delete)"]
 	// All Application methods: ["Application.*"]
-	APIMethods []string `json:"api"`
+	APIMethods []string `json:"apis"`
 
 	// Applications defines the applications the user has access to.
 	// The following forms are allowed:

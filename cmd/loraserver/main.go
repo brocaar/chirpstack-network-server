@@ -213,7 +213,6 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) loraserver.Context {
 
 func mustGetGRPCHandler(ctx context.Context, lsCtx loraserver.Context, c *cli.Context) *grpc.Server {
 	var validator auth.Validator
-	grpcOpts := make([]grpc.ServerOption, 0)
 
 	if c.String("jwt-secret") != "" && c.String("jwt-algorithm") != "" {
 		validator = auth.NewJWTValidator(c.String("jwt-algorithm"), c.String("jwt-secret"))
@@ -222,13 +221,13 @@ func mustGetGRPCHandler(ctx context.Context, lsCtx loraserver.Context, c *cli.Co
 		validator = auth.NopValidator{}
 	}
 
-	return api.GetGRPCServer(ctx, lsCtx, validator, grpcOpts)
+	return api.GetGRPCServer(ctx, lsCtx, validator, []grpc.ServerOption{})
 }
 
 func mustGetHTTPHandler(ctx context.Context, lsCtx loraserver.Context, c *cli.Context) http.Handler {
 	// gRPC dial options for the grpc-gateway
 	var bind string
-	grpcOpts := make([]grpc.DialOption, 0)
+	var grpcOpts []grpc.DialOption
 	if c.String("http-tls-key") != "" && c.String("http-tls-cert") != "" {
 		bind = c.String("http-bind")
 		b, err := ioutil.ReadFile(c.String("http-tls-cert"))
