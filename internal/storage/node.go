@@ -89,7 +89,14 @@ func UpdateNode(db *sqlx.DB, n models.Node) error {
 }
 
 // DeleteNode deletes the Node matching the given DevEUI.
-func DeleteNode(db *sqlx.DB, devEUI lorawan.EUI64) error {
+func DeleteNode(db *sqlx.DB, p *redis.Pool, devEUI lorawan.EUI64) error {
+	ns, err := GetNodeSessionByDevEUI(p, devEUI)
+	if err == nil {
+		if err = DeleteNodeSession(p, ns.DevAddr); err != nil {
+			return err
+		}
+	}
+
 	res, err := db.Exec("delete from node where dev_eui = $1",
 		devEUI[:],
 	)

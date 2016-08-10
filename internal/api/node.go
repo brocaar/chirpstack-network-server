@@ -224,7 +224,7 @@ func (a *NodeAPI) Delete(ctx context.Context, req *pb.DeleteNodeRequest) (*pb.De
 		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
 	}
 
-	if err := storage.DeleteNode(a.ctx.DB, eui); err != nil {
+	if err := storage.DeleteNode(a.ctx.DB, a.ctx.RedisPool, eui); err != nil {
 		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 

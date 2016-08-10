@@ -255,7 +255,9 @@ func TestNodeMethods(t *testing.T) {
 	Convey("Given a clean database with application", t, func() {
 		db, err := OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
+		p := NewRedisPool(conf.RedisURL)
 		common.MustResetDB(db)
+		common.MustFlushRedis(p)
 
 		app := models.Application{
 			AppEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -322,7 +324,7 @@ func TestNodeMethods(t *testing.T) {
 			})
 
 			Convey("When deleting the node", func() {
-				So(DeleteNode(db, node.DevEUI), ShouldBeNil)
+				So(DeleteNode(db, p, node.DevEUI), ShouldBeNil)
 
 				Convey("Then get nodes count returns 0", func() {
 					count, err := GetNodesCount(db)

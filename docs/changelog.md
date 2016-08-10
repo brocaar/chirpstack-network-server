@@ -8,6 +8,7 @@
 * Serve the web-interface, RESTful interface and gRPC interface on the same port
   (defined by `--http-bind`). When TLS is disabled, the gRPC interface is
   served from a different port (defined by `--grpc-insecure-bind`).
+* Fix: delete node-session (if it exists) on node delete
 
 ## 0.9.2
 
