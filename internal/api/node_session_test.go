@@ -3,6 +3,9 @@ package api
 import (
 	"testing"
 
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
 	"golang.org/x/net/context"
 
 	pb "github.com/brocaar/loraserver/api"
@@ -110,6 +113,49 @@ func TestNodeSessionAPI(t *testing.T) {
 							0,
 							0,
 						},
+					})
+				})
+
+				Convey("When updating a node-session that belongs to a different DevEUI", func() {
+					_, err := api.Update(ctx, &pb.UpdateNodeSessionRequest{
+						DevAddr:     "06020304",
+						DevEUI:      "0101010101010101",
+						AppEUI:      node.AppEUI.String(),
+						AppSKey:     node.AppKey.String(),
+						NwkSKey:     node.AppKey.String(),
+						FCntUp:      20,
+						FCntDown:    22,
+						RxDelay:     10,
+						Rx1DROffset: 20,
+						CFList: []uint32{
+							868700000,
+							868800000,
+						},
+					})
+
+					Convey("Then an error is returned", func() {
+						So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "node-session belongs to a different DevEUI"))
+					})
+				})
+
+				Convey("When updating a node-session that belongs to a different AppEUI", func() {
+					_, err := api.Update(ctx, &pb.UpdateNodeSessionRequest{
+						DevAddr:     "06020304",
+						DevEUI:      node.DevEUI.String(),
+						AppEUI:      "0101010101010101",
+						AppSKey:     node.AppKey.String(),
+						NwkSKey:     node.AppKey.String(),
+						FCntUp:      20,
+						FCntDown:    22,
+						RxDelay:     10,
+						Rx1DROffset: 20,
+						CFList: []uint32{
+							868700000,
+							868800000,
+						},
+					})
+					Convey("Then an error is returned", func() {
+						So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "node-session belongs to a different AppEUI"))
 					})
 				})
 

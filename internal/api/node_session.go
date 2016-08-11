@@ -213,6 +213,19 @@ func (a *NodeSessionAPI) Update(ctx context.Context, req *pb.UpdateNodeSessionRe
 		return nil, grpc.Errorf(codes.Unauthenticated, "authentication failed: %s", err)
 	}
 
+	// get the existing node-session to validate if it belongs to the same
+	// DevEUI and AppEUI
+	ns, err := storage.GetNodeSession(a.ctx.RedisPool, devAddr)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
+	}
+	if ns.DevEUI != devEUI {
+		return nil, grpc.Errorf(codes.InvalidArgument, "node-session belongs to a different DevEUI")
+	}
+	if ns.AppEUI != appEUI {
+		return nil, grpc.Errorf(codes.InvalidArgument, "node-session belongs to a different AppEUI")
+	}
+
 	var cFList *lorawan.CFList
 	if len(req.CFList) > len(cFList) {
 		return nil, fmt.Errorf("max CFList channels is %d", len(cFList))
@@ -224,7 +237,7 @@ func (a *NodeSessionAPI) Update(ctx context.Context, req *pb.UpdateNodeSessionRe
 		}
 	}
 
-	ns := models.NodeSession{
+	ns = models.NodeSession{
 		DevAddr:     devAddr,
 		AppEUI:      appEUI,
 		DevEUI:      devEUI,

@@ -204,6 +204,7 @@ loraserverControllers.controller('ApplicationCtrl', ['$scope', '$http', '$routeP
                     $route.reload();
                 });
             }).error(function(data){
+				$scope.create = true;
                 $scope.ns = {
                     devEUI: node.devEUI,
                     appEUI: node.appEUI,
@@ -216,12 +217,20 @@ loraserverControllers.controller('ApplicationCtrl', ['$scope', '$http', '$routeP
 			});
         };
 
-        $scope.updateNodeSession = function(ns) {
-            $http.put('/api/v1/nodeSession/' + ns.devAddr, ns).success(function(data) {
-                $('#nodeSessionModal').modal('hide');
-            }).error(function(data) {
-                $scope.error = data.Error; 
-			});
+        $scope.updateNodeSession = function(ns, create) {
+			if (create) {
+        	    $http.post('/api/v1/nodeSession', ns).success(function(data) {
+         	       $('#nodeSessionModal').modal('hide');
+          	    }).error(function(data) {
+                   $scope.error = data.Error; 
+		     	});
+			} else {
+                $http.put('/api/v1/nodeSession/' + ns.devAddr, ns).success(function(data) {
+                   $('#nodeSessionModal').modal('hide');
+                }).error(function(data) {
+                   $scope.error = data.Error; 
+         	    });
+			}
         };
 
         $scope.getRandomDevAddr = function(ns) {

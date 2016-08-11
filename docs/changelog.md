@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.1
+
+* Fix overwriting existing node-session (owned by different DevEUI)
+  (thanks @iBrick)
+
 ## 0.10.0
 
 * Implement (optional) JWT token authentication and authorization for the gRPC
