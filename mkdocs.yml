@@ -15,7 +15,7 @@ pages:
   - changelog.md
 
 extra:
-  version: '0.10.0'
+  version: '0.10.1'
   github:
     download_release: true
 
