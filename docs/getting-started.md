@@ -58,7 +58,7 @@ To verify if the user and database have been setup correctly, try to connect
 to it:
 
 ```bash
-psql -h localhost -U loraserver -W loraserver
+psql -h localhost -U loraserver -W dbpassword
 ```
 
 ## Redis
@@ -194,7 +194,7 @@ See [Configuration](configuration.md) for details on each config option.
 ## Setting up applications and nodes
 
 Now that your LoRa Server instance is running, it is time to create
-your first application and node. Point your browser to 
+your first application and node. Point your browser to
 [http://localhost:8000/](http://localhost:8000/) for the web-interface.
 
 After you've setup your first node, you need to provision your node with its
