@@ -52,6 +52,19 @@ for the following actions:
 4. Click **Set Join Parameter**
 5. Click **Join Network**
 
+## MultiConnect® mDot™
+  Through a serial terminal, use the following commands:
+  ```
+  AT
+  AT+NJM=1
+  AT+NI=0,0807060504030201
+  AT+NK=0,01020304050607080910111213141516
+  AT&W
+
+  ATZ
+
+  AT+JOIN
+  ```
 !!! info "Your node not here?"
     Please help making this guide complete! Fork the [github.com/brocaar/loraserver](https://github.com/brocaar/loraserver)
     repository, update this page with the actions needed to setup your node
