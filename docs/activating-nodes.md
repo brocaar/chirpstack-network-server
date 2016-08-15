@@ -65,6 +65,13 @@ for the following actions:
 
   AT+JOIN
   ```
+
+  For mDot™ we can't modify DevEUI, it's a factory-programmed setting
+  use the following command to obtain it
+  ```
+  AT+DI?
+  ```
+
 !!! info "Your node not here?"
     Please help making this guide complete! Fork the [github.com/brocaar/loraserver](https://github.com/brocaar/loraserver)
     repository, update this page with the actions needed to setup your node
