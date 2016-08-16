@@ -371,12 +371,12 @@ func main() {
 		cli.StringFlag{
 			Name:   "controller-mqtt-username",
 			Usage:  "Network-controller backend MQTT username",
-			EnvVar: "APP_MQTT_USERNAME",
+			EnvVar: "CONTROLLER_MQTT_USERNAME",
 		},
 		cli.StringFlag{
 			Name:   "controller-mqtt-password",
 			Usage:  "Network-controller backend MQTT password",
-			EnvVar: "APP_MQTT_PASSWORD",
+			EnvVar: "CONTROLLER_MQTT_PASSWORD",
 		},
 		cli.StringFlag{
 			Name:   "jwt-secret",
