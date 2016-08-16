@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/brocaar/loraserver.svg?branch=master)](https://travis-ci.org/brocaar/loraserver)
 [![GoDoc](https://godoc.org/github.com/brocaar/loraserver?status.svg)](https://godoc.org/github.com/brocaar/loraserver)
+[![Gitter chat](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/loraserver/loraserver)
 
 *LoRa Server* is a LoRaWAN network-server. It is responsible for the
 communication with the LoRa gateway(s) and applications. Communication
