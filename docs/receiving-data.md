@@ -21,7 +21,8 @@ Topic for payloads received from your nodes. Example payload:
     "devEUI": "0202020202020202",  // device EUI
     "fPort": 5,                    // FPort
     "gatewayCount": 3,             // number of gateways receiving this payload
-	"rssi": -59,                   // signal strength
+    "rssi": -59,                   // signal strength
+    "time": "2016-05-01T10:50:54.973189Z", // when the message has been received
     "data": "..."                  // base64 encoded payload (decrypted)
 }
 ```
