@@ -41,6 +41,8 @@ func TestNodeAPI(t *testing.T) {
 				AppKey:      "01020304050607080102030405060708",
 				RxDelay:     1,
 				Rx1DROffset: 3,
+				RxWindow:    pb.RXWindow_RX2,
+				Rx2DR:       3,
 			})
 			So(err, ShouldBeNil)
 			So(validator.ctx, ShouldResemble, ctx)
@@ -57,6 +59,8 @@ func TestNodeAPI(t *testing.T) {
 					AppKey:      "01020304050607080102030405060708",
 					RxDelay:     1,
 					Rx1DROffset: 3,
+					RxWindow:    pb.RXWindow_RX2,
+					Rx2DR:       3,
 				})
 			})
 
@@ -75,6 +79,8 @@ func TestNodeAPI(t *testing.T) {
 					AppKey:      "01020304050607080102030405060708",
 					RxDelay:     1,
 					Rx1DROffset: 3,
+					RxWindow:    pb.RXWindow_RX2,
+					Rx2DR:       3,
 				})
 			})
 
@@ -94,6 +100,8 @@ func TestNodeAPI(t *testing.T) {
 					AppKey:      "01020304050607080102030405060708",
 					RxDelay:     1,
 					Rx1DROffset: 3,
+					RxWindow:    pb.RXWindow_RX2,
+					Rx2DR:       3,
 				})
 			})
 

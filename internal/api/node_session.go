@@ -83,6 +83,8 @@ func (a *NodeSessionAPI) Create(ctx context.Context, req *pb.CreateNodeSessionRe
 		RXDelay:     uint8(req.RxDelay),
 		RX1DROffset: uint8(req.Rx1DROffset),
 		CFList:      cFList,
+		RXWindow:    models.RXWindow(req.RxWindow),
+		RX2DR:       uint8(req.Rx2DR),
 	}
 
 	if err := a.validateNodeSession(ns); err != nil {
@@ -151,6 +153,8 @@ func (a *NodeSessionAPI) nodeSessionToResponse(ns models.NodeSession) (*pb.GetNo
 		FCntDown:    ns.FCntDown,
 		RxDelay:     uint32(ns.RXDelay),
 		Rx1DROffset: uint32(ns.RX1DROffset),
+		RxWindow:    pb.RXWindow(ns.RXWindow),
+		Rx2DR:       uint32(ns.RX2DR),
 	}
 
 	if ns.CFList != nil {
@@ -248,6 +252,8 @@ func (a *NodeSessionAPI) Update(ctx context.Context, req *pb.UpdateNodeSessionRe
 		RXDelay:     uint8(req.RxDelay),
 		RX1DROffset: uint8(req.Rx1DROffset),
 		CFList:      cFList,
+		RXWindow:    models.RXWindow(req.RxWindow),
+		RX2DR:       uint8(req.Rx2DR),
 	}
 
 	if err := a.validateNodeSession(ns); err != nil {

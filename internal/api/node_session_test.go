@@ -61,6 +61,8 @@ func TestNodeSessionAPI(t *testing.T) {
 					CFList: []uint32{
 						868700000,
 					},
+					RxWindow: pb.RXWindow_RX2,
+					Rx2DR:    3,
 				})
 				So(err, ShouldBeNil)
 				So(validator.ctx, ShouldResemble, ctx)
@@ -88,6 +90,8 @@ func TestNodeSessionAPI(t *testing.T) {
 							0,
 							0,
 						},
+						RxWindow: pb.RXWindow_RX2,
+						Rx2DR:    3,
 					})
 				})
 
@@ -113,6 +117,8 @@ func TestNodeSessionAPI(t *testing.T) {
 							0,
 							0,
 						},
+						RxWindow: pb.RXWindow_RX2,
+						Rx2DR:    3,
 					})
 				})
 

@@ -56,6 +56,8 @@ func (a *NodeAPI) Create(ctx context.Context, req *pb.CreateNodeRequest) (*pb.Cr
 
 		RXDelay:     uint8(req.RxDelay),
 		RX1DROffset: uint8(req.Rx1DROffset),
+		RXWindow:    models.RXWindow(req.RxWindow),
+		RX2DR:       uint8(req.Rx2DR),
 	}
 	if req.ChannelListID > 0 {
 		node.ChannelListID = &req.ChannelListID
@@ -107,6 +109,8 @@ func (a *NodeAPI) Get(ctx context.Context, req *pb.GetNodeRequest) (*pb.GetNodeR
 		AppKey:      string(appKey),
 		RxDelay:     uint32(node.RXDelay),
 		Rx1DROffset: uint32(node.RX1DROffset),
+		RxWindow:    pb.RXWindow(node.RXWindow),
+		Rx2DR:       uint32(node.RX2DR),
 	}
 
 	if node.ChannelListID != nil {
@@ -189,6 +193,8 @@ func (a *NodeAPI) Update(ctx context.Context, req *pb.UpdateNodeRequest) (*pb.Up
 	node.AppKey = appKey
 	node.RXDelay = uint8(req.RxDelay)
 	node.RX1DROffset = uint8(req.Rx1DROffset)
+	node.RXWindow = models.RXWindow(req.RxWindow)
+	node.RX2DR = uint8(req.Rx2DR)
 	if req.ChannelListID > 0 {
 		node.ChannelListID = &req.ChannelListID
 	} else {
@@ -283,6 +289,8 @@ func (a *NodeAPI) returnList(count int, nodes []models.Node) (*pb.ListNodeRespon
 			AppKey:      string(appKey),
 			RxDelay:     uint32(node.RXDelay),
 			Rx1DROffset: uint32(node.RX1DROffset),
+			RxWindow:    pb.RXWindow(node.RXWindow),
+			Rx2DR:       uint32(node.RX2DR),
 		}
 
 		if node.ChannelListID != nil {
