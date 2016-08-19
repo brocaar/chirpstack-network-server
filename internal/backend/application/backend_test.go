@@ -48,6 +48,7 @@ func TestBackend(t *testing.T) {
 
 					rxPacket := models.RXPayload{
 						DevEUI: devEUI,
+						Time:   time.Now().UTC(),
 					}
 					So(backend.SendRXPayload(appEUI, devEUI, rxPacket), ShouldBeNil)
 

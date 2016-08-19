@@ -144,6 +144,7 @@ func handleCollectedDataUpPackets(ctx Context, rxPackets RXPackets) error {
 
 			err = ctx.Application.SendRXPayload(ns.AppEUI, ns.DevEUI, models.RXPayload{
 				DevEUI:       ns.DevEUI,
+				Time:         rxPacket.RXInfo.Time,
 				GatewayCount: len(rxPackets),
 				FPort:        *macPL.FPort,
 				RSSI:         rxPacket.RXInfo.RSSI,
