@@ -1377,6 +1377,8 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 
 				RXDelay:     3,
 				RX1DROffset: 2,
+				RXWindow:    models.RX2,
+				RX2DR:       4,
 			}
 			So(storage.CreateNode(ctx.DB, node), ShouldBeNil)
 
@@ -1449,15 +1451,19 @@ func TestHandleJoinRequestPackets(t *testing.T) {
 
 						Convey("Then the DLSettings are set correctly", func() {
 							jaPL := phy.MACPayload.(*lorawan.JoinAcceptPayload)
-							So(jaPL.DLSettings.RX2DataRate, ShouldEqual, uint8(common.Band.RX2DataRate))
+							So(jaPL.DLSettings.RX2DataRate, ShouldEqual, 4)
 							So(jaPL.DLSettings.RX1DROffset, ShouldEqual, node.RX1DROffset)
 						})
 
 						Convey("Then a node-session was created", func() {
 							jaPL := phy.MACPayload.(*lorawan.JoinAcceptPayload)
 
-							_, err := storage.GetNodeSession(ctx.RedisPool, jaPL.DevAddr)
+							ns, err := storage.GetNodeSession(ctx.RedisPool, jaPL.DevAddr)
 							So(err, ShouldBeNil)
+
+							Convey("Then the node-session RXWindow is set to the node RXWindow setting", func() {
+								So(ns.RXWindow, ShouldEqual, node.RXWindow)
+							})
 						})
 
 						Convey("Then the dev-nonce was added to the used dev-nonces", func() {

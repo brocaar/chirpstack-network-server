@@ -124,6 +124,8 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 		RXDelay:     node.RXDelay,
 		RX1DROffset: node.RX1DROffset,
 		CFList:      cFList,
+		RXWindow:    node.RXWindow,
+		RX2DR:       node.RX2DR,
 	}
 	if err = storage.SaveNodeSession(ctx.RedisPool, ns); err != nil {
 		return fmt.Errorf("save node-session error: %s", err)
@@ -146,7 +148,7 @@ func handleCollectedJoinRequestPackets(ctx Context, rxPackets RXPackets) error {
 			DevAddr:  ns.DevAddr,
 			RXDelay:  ns.RXDelay,
 			DLSettings: lorawan.DLSettings{
-				RX2DataRate: uint8(common.Band.RX2DataRate),
+				RX2DataRate: uint8(ns.RX2DR),
 				RX1DROffset: ns.RX1DROffset,
 			},
 			CFList: cFList,
