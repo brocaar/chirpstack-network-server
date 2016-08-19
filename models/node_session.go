@@ -12,10 +12,10 @@ type NodeSession struct {
 	FCntUp   uint32            `json:"fCntUp"`
 	FCntDown uint32            `json:"fCntDown"`
 
-	RXWindow    uint8 `json:"rxWindow"`
-	RXDelay     uint8 `json:"rxDelay"`
-	RX1DROffset uint8 `json:"rx1DROffset"`
-	RX2DR       uint8 `json:"rx2DR"`
+	RXWindow    RXWindow `json:"rxWindow"`
+	RXDelay     uint8    `json:"rxDelay"`
+	RX1DROffset uint8    `json:"rx1DROffset"`
+	RX2DR       uint8    `json:"rx2DR"`
 
 	CFList *lorawan.CFList `json:"cFlist"`
 }
