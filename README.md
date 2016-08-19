@@ -24,6 +24,7 @@ Currently implemented:
 - activation by personalization (ABP)
 - over-the-air activation (OTAA)
 - sending / receiving of MAC commands
+- RX1 and RX2 receive window support (configurable)
 - web-interface
 - gRPC and RESTful JSON api (see [API](https://docs.loraserver.io/loraserver/api/))
 - ISM bands
