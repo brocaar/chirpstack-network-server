@@ -112,6 +112,8 @@ func TestNodeAPI(t *testing.T) {
 					AppKey:      "08070605040302010807060504030201",
 					RxDelay:     3,
 					Rx1DROffset: 1,
+					RxWindow:    pb.RXWindow_RX2,
+					Rx2DR:       4,
 				})
 				So(err, ShouldBeNil)
 				So(validator.ctx, ShouldResemble, ctx)
@@ -126,6 +128,8 @@ func TestNodeAPI(t *testing.T) {
 						AppKey:      "08070605040302010807060504030201",
 						RxDelay:     3,
 						Rx1DROffset: 1,
+						RxWindow:    pb.RXWindow_RX2,
+						Rx2DR:       4,
 					})
 				})
 			})

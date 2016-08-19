@@ -37,7 +37,12 @@ func GetJSONGateway(ctx context.Context, lsCtx loraserver.Context, grpcBind stri
 	}
 	apiEndpoint := fmt.Sprintf("localhost:%s", bindParts[1])
 
-	mux := runtime.NewServeMux()
+	mux := runtime.NewServeMux(
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+			EnumsAsInts:  false,
+			EmitDefaults: true,
+		}),
+	)
 
 	if err := pb.RegisterApplicationHandlerFromEndpoint(ctx, mux, apiEndpoint, grpcOpts); err != nil {
 		return nil, fmt.Errorf("register application handler error: %s", err)
