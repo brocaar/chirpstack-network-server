@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.0
+
+* Implement receive window (RX1 or RX2) and RX2 data-rate option in node and
+  node-session API (and web-interface).
+
 ## 0.10.1
 
 * Fix overwriting existing node-session (owned by different DevEUI)
