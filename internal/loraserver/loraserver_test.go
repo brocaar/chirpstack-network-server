@@ -15,6 +15,7 @@ import (
 
 type dataUpTestCase struct {
 	Name                         string              // name of the test
+	NodeSession                  models.NodeSession  // node-session
 	RXInfo                       models.RXInfo       // rx-info of the "received" packet
 	EncryptFRMPayloadKey         lorawan.AES128Key   // key to use for encrypting the uplink FRMPayload
 	DecryptExpectedFRMPayloadKey lorawan.AES128Key   // key to use for decrypting the downlink FRMPayload
@@ -76,7 +77,41 @@ func TestHandleDataUpScenarios(t *testing.T) {
 			FCntDown: 5,
 			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 		}
-		So(storage.CreateNodeSession(ctx.RedisPool, ns), ShouldBeNil)
+
+		nsDelay := models.NodeSession{
+			DevAddr:  [4]byte{1, 2, 3, 4},
+			DevEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppSKey:  [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+			NwkSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:   8,
+			FCntDown: 5,
+			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			RXDelay:  3,
+		}
+
+		nsRX2 := models.NodeSession{
+			DevAddr:  [4]byte{1, 2, 3, 4},
+			DevEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppSKey:  [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+			NwkSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:   8,
+			FCntDown: 5,
+			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			RXWindow: models.RX2,
+			RX2DR:    3,
+		}
+
+		nsRX2Delay := models.NodeSession{
+			DevAddr:  [4]byte{1, 2, 3, 4},
+			DevEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			AppSKey:  [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+			NwkSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:   8,
+			FCntDown: 5,
+			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			RXWindow: models.RX2,
+			RXDelay:  5,
+		}
 
 		rxInfo := models.RXInfo{
 			Frequency: common.Band.UplinkChannels[0].Frequency,
@@ -91,6 +126,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				// errors
 				{
 					Name:                    "the application backend returns an error",
+					NodeSession:             ns,
 					RXInfo:                  rxInfo,
 					EncryptFRMPayloadKey:    ns.AppSKey,
 					SetMICKey:               ns.NwkSKey,
@@ -119,6 +155,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                 "the frame-counter is invalid",
+					NodeSession:          ns,
 					RXInfo:               rxInfo,
 					EncryptFRMPayloadKey: ns.AppSKey,
 					SetMICKey:            ns.NwkSKey,
@@ -143,6 +180,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                 "the mic is invalid",
+					NodeSession:          ns,
 					RXInfo:               rxInfo,
 					EncryptFRMPayloadKey: ns.AppSKey,
 					SetMICKey:            ns.AppSKey,
@@ -168,6 +206,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				// basic flows
 				{
 					Name:                 "unconfirmed uplink data with payload",
+					NodeSession:          ns,
 					RXInfo:               rxInfo,
 					EncryptFRMPayloadKey: ns.AppSKey,
 					SetMICKey:            ns.NwkSKey,
@@ -198,6 +237,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                 "unconfirmed uplink data without payload (just a FPort)",
+					NodeSession:          ns,
 					RXInfo:               rxInfo,
 					EncryptFRMPayloadKey: ns.AppSKey,
 					SetMICKey:            ns.NwkSKey,
@@ -227,6 +267,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                 "confirmed uplink data with payload",
+					NodeSession:          ns,
 					RXInfo:               rxInfo,
 					EncryptFRMPayloadKey: ns.AppSKey,
 					SetMICKey:            ns.NwkSKey,
@@ -282,6 +323,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                 "confirmed uplink data without payload",
+					NodeSession:          ns,
 					RXInfo:               rxInfo,
 					EncryptFRMPayloadKey: ns.AppSKey,
 					SetMICKey:            ns.NwkSKey,
@@ -335,7 +377,173 @@ func TestHandleDataUpScenarios(t *testing.T) {
 					ExpectedFCntDown: 6,
 				},
 				{
+					Name:                 "confirmed uplink data without payload (with RXDelay=3)",
+					NodeSession:          nsDelay,
+					RXInfo:               rxInfo,
+					EncryptFRMPayloadKey: ns.AppSKey,
+					SetMICKey:            ns.NwkSKey,
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.ConfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 3000000,
+								Frequency: rxInfo.Frequency,
+								Power:     14,
+								DataRate:  rxInfo.DataRate,
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+										FCtrl: lorawan.FCtrl{
+											ACK: true,
+										},
+									},
+								},
+							},
+						},
+					},
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 6,
+				},
+				{
+					Name:                 "confirmed uplink data without payload (node-session has RXWindow=RX2)",
+					NodeSession:          nsRX2,
+					RXInfo:               rxInfo,
+					EncryptFRMPayloadKey: ns.AppSKey,
+					SetMICKey:            ns.NwkSKey,
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.ConfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 2000000,
+								Frequency: common.Band.RX2Frequency,
+								Power:     14,
+								DataRate:  common.Band.DataRates[nsRX2.RX2DR],
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+										FCtrl: lorawan.FCtrl{
+											ACK: true,
+										},
+									},
+								},
+							},
+						},
+					},
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 6,
+				},
+				{
+					Name:                 "confirmed uplink data without payload (node-session has RXWindow=RX2 and RXDelay=5)",
+					NodeSession:          nsRX2Delay,
+					RXInfo:               rxInfo,
+					EncryptFRMPayloadKey: ns.AppSKey,
+					SetMICKey:            ns.NwkSKey,
+
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.ConfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort: &fPortOne,
+						},
+					},
+
+					ExpectedControllerRXInfoPayloads: []models.RXInfoPayload{
+						{DevEUI: ns.DevEUI, FCnt: 10, RXInfo: []models.RXInfo{rxInfo}},
+					},
+					ExpectedApplicationRXPayloads: []models.RXPayload{
+						{DevEUI: ns.DevEUI, FPort: 1, GatewayCount: 1},
+					},
+					ExpectedGatewayTXPackets: []models.TXPacket{
+						{
+							TXInfo: models.TXInfo{
+								Timestamp: rxInfo.Timestamp + 6000000,
+								Frequency: common.Band.RX2Frequency,
+								Power:     14,
+								DataRate:  common.Band.DataRates[common.Band.RX2DataRate],
+							},
+							PHYPayload: lorawan.PHYPayload{
+								MHDR: lorawan.MHDR{
+									MType: lorawan.UnconfirmedDataDown,
+									Major: lorawan.LoRaWANR1,
+								},
+								MACPayload: &lorawan.MACPayload{
+									FHDR: lorawan.FHDR{
+										DevAddr: ns.DevAddr,
+										FCnt:    5,
+										FCtrl: lorawan.FCtrl{
+											ACK: true,
+										},
+									},
+								},
+							},
+						},
+					},
+					ExpectedFCntUp:   10,
+					ExpectedFCntDown: 6,
+				},
+				{
 					Name:                 "two uplink mac commands (FOpts)",
+					NodeSession:          ns,
 					RXInfo:               rxInfo,
 					EncryptFRMPayloadKey: ns.NwkSKey,
 					SetMICKey:            ns.NwkSKey,
@@ -369,6 +577,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                 "two uplink mac commands (FRMPayload)",
+					NodeSession:          ns,
 					RXInfo:               rxInfo,
 					EncryptFRMPayloadKey: ns.NwkSKey,
 					SetMICKey:            ns.NwkSKey,
@@ -412,6 +621,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 			tests := []dataUpTestCase{
 				{
 					Name:                 "unconfirmed uplink data + two downlink mac commands in queue (FOpts)",
+					NodeSession:          ns,
 					RXInfo:               rxInfo,
 					EncryptFRMPayloadKey: ns.AppSKey,
 					SetMICKey:            ns.NwkSKey,
@@ -472,6 +682,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                         "unconfirmed uplink data + two downlink mac commands in queue (FOpts) + unconfirmed tx-payload in queue",
+					NodeSession:                  ns,
 					RXInfo:                       rxInfo,
 					EncryptFRMPayloadKey:         ns.AppSKey,
 					DecryptExpectedFRMPayloadKey: ns.AppSKey,
@@ -540,6 +751,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                         "unconfirmed uplink data + two downlink mac commands in queue (FRMPayload)",
+					NodeSession:                  ns,
 					RXInfo:                       rxInfo,
 					EncryptFRMPayloadKey:         ns.AppSKey,
 					DecryptExpectedFRMPayloadKey: ns.NwkSKey,
@@ -602,6 +814,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                         "unconfirmed uplink data + two downlink mac commands in queue (FRMPayload) + unconfirmed tx-payload in queue",
+					NodeSession:                  ns,
 					RXInfo:                       rxInfo,
 					EncryptFRMPayloadKey:         ns.AppSKey,
 					DecryptExpectedFRMPayloadKey: ns.NwkSKey,
@@ -671,6 +884,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                 "unconfirmed uplink data + 18 bytes of MAC commands (FOpts) of which one is invalid",
+					NodeSession:          ns,
 					RXInfo:               rxInfo,
 					EncryptFRMPayloadKey: ns.AppSKey,
 					SetMICKey:            ns.NwkSKey,
@@ -757,6 +971,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 			tests := []dataUpTestCase{
 				{
 					Name:                         "unconfirmed uplink data + one unconfirmed downlink payload in queue",
+					NodeSession:                  ns,
 					RXInfo:                       rxInfo,
 					EncryptFRMPayloadKey:         ns.AppSKey,
 					DecryptExpectedFRMPayloadKey: ns.AppSKey,
@@ -817,6 +1032,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                         "unconfirmed uplink data + two unconfirmed downlink payloads in queue",
+					NodeSession:                  ns,
 					RXInfo:                       rxInfo,
 					EncryptFRMPayloadKey:         ns.AppSKey,
 					DecryptExpectedFRMPayloadKey: ns.AppSKey,
@@ -882,6 +1098,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                         "unconfirmed uplink data + one confirmed downlink payload in queue",
+					NodeSession:                  ns,
 					RXInfo:                       rxInfo,
 					EncryptFRMPayloadKey:         ns.AppSKey,
 					DecryptExpectedFRMPayloadKey: ns.AppSKey,
@@ -943,6 +1160,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                         "unconfirmed uplink data with ACK + one confirmed downlink payload in in-process queue",
+					NodeSession:                  ns,
 					RXInfo:                       rxInfo,
 					EncryptFRMPayloadKey:         ns.AppSKey,
 					DecryptExpectedFRMPayloadKey: ns.AppSKey,
@@ -981,6 +1199,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                         "unconfirmed uplink data + two unconfirmed downlink payload in queue of which the first exceeds the max payload size (for dr 0)",
+					NodeSession:                  ns,
 					RXInfo:                       rxInfo,
 					EncryptFRMPayloadKey:         ns.AppSKey,
 					DecryptExpectedFRMPayloadKey: ns.AppSKey,
@@ -1045,6 +1264,7 @@ func TestHandleDataUpScenarios(t *testing.T) {
 				},
 				{
 					Name:                         "unconfirmed uplink data + one unconfirmed downlink payload in queue (exactly max size for dr 0) + one mac command",
+					NodeSession:                  ns,
 					RXInfo:                       rxInfo,
 					EncryptFRMPayloadKey:         ns.AppSKey,
 					DecryptExpectedFRMPayloadKey: ns.AppSKey,
@@ -1263,6 +1483,8 @@ func runDataUpTests(ctx Context, devEUI lorawan.EUI64, devAddr lorawan.DevAddr, 
 	for i, test := range tests {
 		Convey(fmt.Sprintf("When testing: %s [%d]", test.Name, i), func() {
 			ctx.Application.(*testApplicationBackend).err = test.ApplicationBackendError
+
+			So(storage.CreateNodeSession(ctx.RedisPool, test.NodeSession), ShouldBeNil)
 
 			for _, pl := range test.TXPayloadQueue {
 				So(storage.AddTXPayloadToQueue(ctx.RedisPool, pl), ShouldBeNil)

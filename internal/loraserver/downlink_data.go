@@ -12,37 +12,51 @@ import (
 )
 
 type dataDownProperties struct {
-	rx1DR        int
-	rx1Frequency int
-	rxDelay      time.Duration
+	rxDR        int
+	rxFrequency int
+	rxDelay     time.Duration
 }
 
 func getDataDownProperties(rxInfo models.RXInfo, ns models.NodeSession) (dataDownProperties, error) {
-	var err error
 	var prop dataDownProperties
 
-	// get TX DR
-	uplinkDR, err := common.Band.GetDataRate(rxInfo.DataRate)
-	if err != nil {
-		return prop, err
-	}
+	if ns.RXWindow == models.RX1 {
+		// get TX DR
+		uplinkDR, err := common.Band.GetDataRate(rxInfo.DataRate)
+		if err != nil {
+			return prop, err
+		}
 
-	// get RX1 DR
-	prop.rx1DR, err = common.Band.GetRX1DataRateForOffset(uplinkDR, int(ns.RX1DROffset))
-	if err != nil {
-		return prop, err
-	}
+		// get RX1 DR
+		prop.rxDR, err = common.Band.GetRX1DataRateForOffset(uplinkDR, int(ns.RX1DROffset))
+		if err != nil {
+			return prop, err
+		}
 
-	// get RX1 frequency
-	prop.rx1Frequency, err = common.Band.GetRX1Frequency(rxInfo.Frequency)
-	if err != nil {
-		return prop, err
-	}
+		// get RX1 frequency
+		prop.rxFrequency, err = common.Band.GetRX1Frequency(rxInfo.Frequency)
+		if err != nil {
+			return prop, err
+		}
 
-	// get rx delay
-	prop.rxDelay = common.Band.ReceiveDelay1
-	if ns.RXDelay > 0 {
-		prop.rxDelay = time.Duration(ns.RXDelay) * time.Second
+		// get rx delay
+		prop.rxDelay = common.Band.ReceiveDelay1
+		if ns.RXDelay > 0 {
+			prop.rxDelay = time.Duration(ns.RXDelay) * time.Second
+		}
+	} else if ns.RXWindow == models.RX2 {
+		// get rx delay
+		prop.rxDelay = common.Band.ReceiveDelay1
+		if ns.RXDelay > 0 {
+			prop.rxDelay = time.Duration(ns.RXDelay) * time.Second
+		}
+		// rx2 is rx1 + 1 second
+		prop.rxDelay = prop.rxDelay + time.Second
+
+		prop.rxDR = int(ns.RX2DR)
+		prop.rxFrequency = common.Band.RX2Frequency
+	} else {
+		return prop, fmt.Errorf("unknown RXWindow option %d", ns.RXWindow)
 	}
 
 	return prop, nil
@@ -117,7 +131,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 			// of the MACPayload items with the same property, respecting the
 			// max FRMPayload size for the data-rate.
 			frmMACCommands = true
-			macPayloads = storage.FilterMACPayloads(allMACPayloads, true, common.Band.MaxPayloadSize[properties.rx1DR].N)
+			macPayloads = storage.FilterMACPayloads(allMACPayloads, true, common.Band.MaxPayloadSize[properties.rxDR].N)
 		} else {
 			// the first mac-command must be sent as FOpts, filter the rest of
 			// the MACPayload items with the same property, respecting the
@@ -132,7 +146,7 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 	var txPayload *models.TXPayload
 	if !frmMACCommands {
 		// check if there are payloads pending in the queue
-		txPayload, err = getNextValidTXPayloadForDRFromQueue(ctx, ns, properties.rx1DR)
+		txPayload, err = getNextValidTXPayloadForDRFromQueue(ctx, ns, properties.rxDR)
 		if err != nil {
 			return fmt.Errorf("get next valid tx-payload error: %s", err)
 		}
@@ -142,9 +156,9 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 			macByteCount += len(mac.MACCommand)
 		}
 
-		if txPayload != nil && len(txPayload.Data)+macByteCount > common.Band.MaxPayloadSize[properties.rx1DR].N {
+		if txPayload != nil && len(txPayload.Data)+macByteCount > common.Band.MaxPayloadSize[properties.rxDR].N {
 			log.WithFields(log.Fields{
-				"data_rate": properties.rx1DR,
+				"data_rate": properties.rxDR,
 				"dev_eui":   ns.DevEUI,
 				"reference": txPayload.Reference,
 			}).Info("scheduling tx-payload for next downlink, mac-commands + payload exceeds max size")
@@ -256,9 +270,9 @@ func handleDataDownReply(ctx Context, rxPacket models.RXPacket, ns models.NodeSe
 		TXInfo: models.TXInfo{
 			MAC:       rxPacket.RXInfo.MAC,
 			Timestamp: rxPacket.RXInfo.Timestamp + uint32(properties.rxDelay/time.Microsecond),
-			Frequency: properties.rx1Frequency,
+			Frequency: properties.rxFrequency,
 			Power:     common.Band.DefaultTXPower,
-			DataRate:  common.Band.DataRates[properties.rx1DR],
+			DataRate:  common.Band.DataRates[properties.rxDR],
 			CodeRate:  rxPacket.RXInfo.CodeRate,
 		},
 		PHYPayload: phy,
