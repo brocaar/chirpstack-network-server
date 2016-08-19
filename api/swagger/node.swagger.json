@@ -251,9 +251,16 @@
           "type": "integer",
           "format": "int64"
         },
+        "rx2DR": {
+          "type": "integer",
+          "format": "int64"
+        },
         "rxDelay": {
           "type": "integer",
           "format": "int64"
+        },
+        "rxWindow": {
+          "$ref": "#/definitions/apiRXWindow"
         }
       }
     },
@@ -322,9 +329,16 @@
           "type": "integer",
           "format": "int64"
         },
+        "rx2DR": {
+          "type": "integer",
+          "format": "int64"
+        },
         "rxDelay": {
           "type": "integer",
           "format": "int64"
+        },
+        "rxWindow": {
+          "$ref": "#/definitions/apiRXWindow"
         }
       }
     },
@@ -374,6 +388,14 @@
         }
       }
     },
+    "apiRXWindow": {
+      "type": "string",
+      "enum": [
+        "RX1",
+        "RX2"
+      ],
+      "default": "RX1"
+    },
     "apiUpdateNodeRequest": {
       "type": "object",
       "properties": {
@@ -400,9 +422,16 @@
           "type": "integer",
           "format": "int64"
         },
+        "rx2DR": {
+          "type": "integer",
+          "format": "int64"
+        },
         "rxDelay": {
           "type": "integer",
           "format": "int64"
+        },
+        "rxWindow": {
+          "$ref": "#/definitions/apiRXWindow"
         }
       }
     },

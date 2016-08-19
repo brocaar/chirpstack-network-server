@@ -216,9 +216,16 @@
           "type": "integer",
           "format": "int64"
         },
+        "rx2DR": {
+          "type": "integer",
+          "format": "int64"
+        },
         "rxDelay": {
           "type": "integer",
           "format": "int64"
+        },
+        "rxWindow": {
+          "$ref": "#/definitions/apiRXWindow"
         }
       }
     },
@@ -304,9 +311,16 @@
           "type": "integer",
           "format": "int64"
         },
+        "rx2DR": {
+          "type": "integer",
+          "format": "int64"
+        },
         "rxDelay": {
           "type": "integer",
           "format": "int64"
+        },
+        "rxWindow": {
+          "$ref": "#/definitions/apiRXWindow"
         }
       }
     },
@@ -322,6 +336,14 @@
           "title": "hex encoded DevAddr"
         }
       }
+    },
+    "apiRXWindow": {
+      "type": "string",
+      "enum": [
+        "RX1",
+        "RX2"
+      ],
+      "default": "RX1"
     },
     "apiUpdateNodeSessionRequest": {
       "type": "object",
@@ -370,9 +392,16 @@
           "type": "integer",
           "format": "int64"
         },
+        "rx2DR": {
+          "type": "integer",
+          "format": "int64"
+        },
         "rxDelay": {
           "type": "integer",
           "format": "int64"
+        },
+        "rxWindow": {
+          "$ref": "#/definitions/apiRXWindow"
         }
       }
     },

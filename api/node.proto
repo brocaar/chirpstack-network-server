@@ -4,6 +4,7 @@ package api;
 
 // for grpc-gateway
 import "google/api/annotations.proto";
+import "common.proto";
 
 // Node is the service managing the nodes.
 service Node {
@@ -69,6 +70,8 @@ message CreateNodeRequest {
 	uint32 rxDelay = 4;
 	uint32 rx1DROffset = 5;
 	int64 channelListID = 6;
+	RXWindow rxWindow = 7;
+	uint32 rx2DR = 8;
 }
 
 message CreateNodeResponse {}
@@ -88,6 +91,8 @@ message GetNodeResponse {
 	uint32 rxDelay = 4;
 	uint32 rx1DROffset = 5;
 	int64 channelListID = 6;
+	RXWindow rxWindow = 7;
+	uint32 rx2DR = 8;
 };
 
 message DeleteNodeRequest {
@@ -124,6 +129,8 @@ message UpdateNodeRequest {
 	uint32 rxDelay = 4;
 	uint32 rx1DROffset = 5;
 	int64 channelListID = 6;
+	RXWindow rxWindow = 7;
+	uint32 rx2DR = 8;
 }
 
 message UpdateNodeResponse {}

@@ -4,6 +4,7 @@ package api;
 
 // for grpc-gateway
 import "google/api/annotations.proto";
+import "common.proto";
 
 // NodeSession is the service managing node-sessions.
 service NodeSession {
@@ -68,6 +69,8 @@ message CreateNodeSessionRequest {
 	uint32 rxDelay = 8;
 	uint32 rx1DROffset = 9;
 	repeated uint32 cFList = 10;
+	RXWindow rxWindow = 11;
+	uint32 rx2DR = 12;
 }
 
 message CreateNodeSessionResponse {}
@@ -92,6 +95,8 @@ message GetNodeSessionResponse {
 	uint32 rxDelay = 8;
 	uint32 rx1DROffset = 9;
 	repeated uint32 cFList = 10;
+	RXWindow rxWindow = 11;
+	uint32 rx2DR = 12;
 }
 
 message GetNodeSessionByDevEUIRequest {
@@ -115,6 +120,8 @@ message UpdateNodeSessionRequest {
 	uint32 rxDelay = 8;
 	uint32 rx1DROffset = 9;
 	repeated uint32 cFList = 10;
+	RXWindow rxWindow = 11;
+	uint32 rx2DR = 12;
 }
 
 message UpdateNodeSessionResponse {}

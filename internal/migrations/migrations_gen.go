@@ -2,6 +2,7 @@
 // sources:
 // ../../migrations/0001_initial.sql
 // ../../migrations/0002_join_accept_params.sql
+// ../../migrations/0003_rx_window_and_rx2_dr.sql
 // DO NOT EDIT!
 
 package migrations
@@ -109,6 +110,26 @@ func _0002_join_accept_paramsSql() (*asset, error) {
 	return a, nil
 }
 
+var __0003_rx_window_and_rx2_drSql = []byte("\x1f\x8b\x08\x00\x00\x09\x6e\x88\x00\xff\x74\xcd\xc1\xaa\xc2\x40\x0c\x85\xe1\xf5\x9d\xa7\x38\xfb\xdb\x82\x74\xdb\xad\xaf\xe0\xba\x44\x13\x65\x20\x4d\x4a\xc8\x30\x3e\xbe\xba\x93\xaa\xdb\x73\x7e\xf8\xc6\x11\xff\x6b\xbd\x05\xa5\xe0\xb4\x15\xd2\x94\x40\xd2\x59\x05\xe6\x2c\xe5\x8f\x98\x71\x71\x6d\xab\x21\xee\x4b\xaf\xc6\xde\x51\x2d\xa7\xe7\x9f\xb0\xa6\x0a\x96\x2b\x35\x4d\x1c\x86\x5d\x3e\x2d\x1c\xbf\xda\xb9\x94\x77\xfb\xe8\xdd\xbe\xe8\x1c\xbe\x7d\xf0\xc3\x7e\x7f\x39\x73\x79\x04\x00\x00\xff\xff\xd0\x11\x0c\xf5\xcb\x00\x00\x00")
+
+func _0003_rx_window_and_rx2_drSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__0003_rx_window_and_rx2_drSql,
+		"0003_rx_window_and_rx2_dr.sql",
+	)
+}
+
+func _0003_rx_window_and_rx2_drSql() (*asset, error) {
+	bytes, err := _0003_rx_window_and_rx2_drSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "0003_rx_window_and_rx2_dr.sql", size: 203, mode: os.FileMode(420), modTime: time.Unix(1471606996, 0)}
+	a := &asset{bytes: bytes, info: info}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -163,6 +184,7 @@ func AssetNames() []string {
 var _bindata = map[string]func() (*asset, error){
 	"0001_initial.sql": _0001_initialSql,
 	"0002_join_accept_params.sql": _0002_join_accept_paramsSql,
+	"0003_rx_window_and_rx2_dr.sql": _0003_rx_window_and_rx2_drSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -207,6 +229,7 @@ type bintree struct {
 var _bintree = &bintree{nil, map[string]*bintree{
 	"0001_initial.sql": &bintree{_0001_initialSql, map[string]*bintree{}},
 	"0002_join_accept_params.sql": &bintree{_0002_join_accept_paramsSql, map[string]*bintree{}},
+	"0003_rx_window_and_rx2_dr.sql": &bintree{_0003_rx_window_and_rx2_drSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory
