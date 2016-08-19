@@ -80,7 +80,7 @@ func TestNodeSession(t *testing.T) {
 	})
 }
 
-func TestgetRandomDevAddr(t *testing.T) {
+func TestGetRandomDevAddr(t *testing.T) {
 	conf := common.GetTestConfig()
 
 	Convey("Given a Redis database and NetID 010203", t, func() {
