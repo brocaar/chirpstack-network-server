@@ -43,6 +43,30 @@ func (l DevNonceList) Value() (driver.Value, error) {
 	return b, nil
 }
 
+// RXWindow defines the RX window option.
+type RXWindow int8
+
+// Available RX window options.
+const (
+	RX1 = iota
+	RX2
+)
+
+// Scan implements the sql.Scanner interface.
+func (r *RXWindow) Scan(src interface{}) error {
+	i, ok := src.(int64)
+	if !ok {
+		return fmt.Errorf("expected int64, got: %T", src)
+	}
+	*r = RXWindow(i)
+	return nil
+}
+
+// Value implements the driver.Valuer interface.
+func (r RXWindow) Value() (driver.Value, error) {
+	return int64(r), nil
+}
+
 // Node contains the information of a node.
 type Node struct {
 	DevEUI        lorawan.EUI64     `db:"dev_eui" json:"devEUI"`
@@ -50,9 +74,11 @@ type Node struct {
 	AppKey        lorawan.AES128Key `db:"app_key" json:"appKey"`
 	UsedDevNonces DevNonceList      `db:"used_dev_nonces" json:"usedDevNonces"`
 
-	RXDelay       uint8  `db:"rx_delay" json:"rxDelay"`
-	RX1DROffset   uint8  `db:"rx1_dr_offset" json:"rx1DROffset"`
-	ChannelListID *int64 `db:"channel_list_id" json:"channelListID"`
+	RXWindow      RXWindow `db:"rx_window" json:"rxWindow"`
+	RXDelay       uint8    `db:"rx_delay" json:"rxDelay"`
+	RX1DROffset   uint8    `db:"rx1_dr_offset" json:"rx1DROffset"`
+	RX2DR         uint8    `db:"rx2_dr" json:"rx2DR"`
+	ChannelListID *int64   `db:"channel_list_id" json:"channelListID"`
 }
 
 // ValidateDevNonce returns if the given dev-nonce is valid.
