@@ -273,6 +273,8 @@ func TestNodeMethods(t *testing.T) {
 
 				RXDelay:     2,
 				RX1DROffset: 3,
+				RXWindow:    models.RX2,
+				RX2DR:       3,
 			}
 			So(CreateNode(db, node), ShouldBeNil)
 

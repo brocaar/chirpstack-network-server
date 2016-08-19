@@ -34,14 +34,18 @@ func CreateNode(db *sqlx.DB, n models.Node) error {
 			app_key,
 			rx_delay,
 			rx1_dr_offset,
+			rx_window,
+			rx2_dr,
 			channel_list_id
 		)
-		values ($1, $2, $3, $4, $5, $6)`,
+		values ($1, $2, $3, $4, $5, $6, $7, $8)`,
 		n.DevEUI[:],
 		n.AppEUI[:],
 		n.AppKey[:],
 		n.RXDelay,
 		n.RX1DROffset,
+		n.RXWindow,
+		n.RX2DR,
 		n.ChannelListID,
 	)
 	if err != nil {
@@ -64,7 +68,9 @@ func UpdateNode(db *sqlx.DB, n models.Node) error {
 			used_dev_nonces = $4,
 			rx_delay = $5,
 			rx1_dr_offset = $6,
-			channel_list_id = $7
+			rx_window = $7,
+			rx2_dr = $8,
+			channel_list_id = $9
 		where dev_eui = $1`,
 		n.DevEUI[:],
 		n.AppEUI[:],
@@ -72,6 +78,8 @@ func UpdateNode(db *sqlx.DB, n models.Node) error {
 		n.UsedDevNonces,
 		n.RXDelay,
 		n.RX1DROffset,
+		n.RXWindow,
+		n.RX2DR,
 		n.ChannelListID,
 	)
 	if err != nil {
