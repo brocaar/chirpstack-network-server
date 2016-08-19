@@ -50,8 +50,19 @@
             <p class="help-block">When left to 0, the default delay will be used.</p>
           </div>
           <div class="form-group">
+            <label for="rxWindow" class="control-label">RX window:</label>
+            <select class="form-control" name="rxWindow" id="rxWindow" ng-model="node.rxWindow">
+              <option value="RX1">RX1</option>
+              <option value="RX2">RX2</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label for="rx1DROffset" class="control-label">RX1 DR Offset:</label>
             <input type="number" class="form-control" id="rx1DROffset" ng-model="node.rx1DROffset">
+          </div>
+          <div class="form-group">
+            <label for="rx2DR" class="control-label">RX2 DR:</label>
+            <input type="number" class="form-control" id="rx2DR" ng-model="node.rx2DR">
           </div>
           <div class="form-group">
             <label for="channelList" class="control-label">Channel-list:</label>
@@ -97,8 +108,19 @@
             <p class="help-block">When left to 0, the default delay will be used.</p>
           </div>
           <div class="form-group">
+            <label for="rxWindow" class="control-label">RX window:</label>
+            <select class="form-control" name="rxWindow" id="rxWindow" ng-model="node.rxWindow">
+              <option value="RX1">RX1</option>
+              <option value="RX2">RX2</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label for="rx1DROffset" class="control-label">RX1 DR Offset:</label>
             <input type="number" class="form-control" id="rx1DROffset" ng-model="node.rx1DROffset">
+          </div>
+          <div class="form-group">
+            <label for="rx2DR" class="control-label">RX2 DR:</label>
+            <input type="number" class="form-control" id="rx2DR" ng-model="node.rx2DR">
           </div>
           <div class="form-group">
             <label for="channelList" class="control-label">Channel-list:</label>
@@ -157,8 +179,19 @@
             <p class="help-block">When left to 0, the default delay will be used.</p>
           </div>
           <div class="form-group">
+            <label for="rxWindow" class="control-label">RX window:</label>
+            <select class="form-control" name="rxWindow" id="rxWindow" ng-model="ns.rxWindow">
+              <option value="RX1">RX1</option>
+              <option value="RX2">RX2</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label for="rx1DROffset" class="control-label">RX1 DR Offset:</label>
             <input type="number" class="form-control" id="rx1DROffset" ng-model="ns.rx1DROffset">
+          </div>
+          <div class="form-group">
+            <label for="rx2DR" class="control-label">RX2 DR:</label>
+            <input type="number" class="form-control" id="rx2DR" ng-model="ns.rx2DR">
           </div>
           <div class="form-group">
             <label for="devEUI" class="control-label">DevEUI:</label>
