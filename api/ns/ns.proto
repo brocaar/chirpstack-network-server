@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package ns;
+
+// NetworkServer is the network-server service.
+service NetworkServer {
+    // CreateNodeSession creates the given node-session. The DevAddr must contain the same NwkID as the configured NetID. Node-sessions will expire automatically after the configured TTL.
+    rpc CreateNodeSession(CreateNodeSessionRequest) returns (CreateNodeSessionResponse) {}
+
+    // GetNodeSession returns the node-session matching the given DevEUI.
+    rpc GetNodeSession(GetNodeSessionRequest) returns (GetNodeSessionResponse) {}
+
+    // UpdateNodeSession updates the given node-session.
+    rpc UpdateNodeSession(UpdateNodeSessionRequest) returns (UpdateNodeSessionResponse) {}
+
+    // DeleteNodeSession deletes the node-session matching the given DevAddr.
+    rpc DeleteNodeSession(DeleteNodeSessionRequest) returns (DeleteNodeSessionResponse) {}
+
+    // GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
+    rpc GetRandomDevAddr(GetRandomDevAddrRequest) returns (GetRandomDevAddrResponse) {}
+
+    // GetNextFCntDown requests (and increments) the next FCnt for downlink data.
+    rpc GetNextFCntDown(GetNextFCntDownRequest) returns (GetNextFCntDownResponse) {}
+}
+
+enum RXWindow {
+    RX1 = 0;
+    RX2 = 1;
+}
+
+message CreateNodeSessionRequest {
+    bytes devAddr = 1;
+    bytes appEUI = 2;
+    bytes devEUI = 3;
+    bytes appSKey = 4;
+    bytes nwkSKey = 5;
+    uint32 fCntUp = 6;
+    uint32 fCntDown = 7;
+    uint32 rxDelay = 8;
+    uint32 rx1DROffset = 9;
+    repeated uint32 cFList = 10;
+    RXWindow rxWindow = 11;
+    uint32 rx2DR = 12;
+}
+
+message CreateNodeSessionResponse {}
+
+message GetNodeSessionRequest {
+    bytes devEUI = 1;
+}
+
+message GetNodeSessionResponse {
+    bytes devAddr = 1;
+    bytes appEUI = 2;
+    bytes devEUI = 3;
+    bytes appSKey = 4;
+    bytes nwkSKey = 5;
+    uint32 fCntUp = 6;
+    uint32 fCntDown = 7;
+    uint32 rxDelay = 8;
+    uint32 rx1DROffset = 9;
+    repeated uint32 cFList = 10;
+    RXWindow rxWindow = 11;
+    uint32 rx2DR = 12;
+}
+
+message UpdateNodeSessionRequest {
+    bytes devAddr = 1;
+    bytes appEUI = 2;
+    bytes devEUI = 3;
+    bytes appSKey = 4;
+    bytes nwkSKey = 5;
+    uint32 fCntUp = 6;
+    uint32 fCntDown = 7;
+    uint32 rxDelay = 8;
+    uint32 rx1DROffset = 9;
+    repeated uint32 cFList = 10;
+    RXWindow rxWindow = 11;
+    uint32 rx2DR = 12;
+}
+
+message UpdateNodeSessionResponse {}
+
+message DeleteNodeSessionRequest {
+    bytes devAddr = 1;
+}
+
+message DeleteNodeSessionResponse {}
+
+message GetRandomDevAddrRequest {}
+
+message GetRandomDevAddrResponse {
+    bytes devAddr = 1;
+}
+
+message GetNextFCntDownRequest {
+    bytes devEUI = 1;
+}
+
+message GetNextFCntDownResponse {
+    uint32 fCnt = 1;
+}
