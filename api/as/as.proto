@@ -6,6 +6,15 @@ package as;
 service ApplicationServer {
 	// JoinRequest requests the application server to validate the join-request and return an encrypted join-accept.
 	rpc JoinRequest(JoinRequestRequest) returns (JoinRequestResponse) {}
+
+    // PublishDataUp publishes data received from an end-device.
+    rpc PublishDataUp(PublishDataUpRequest) returns (PublishDataUpResponse) {}
+
+    // PublishDataDownACK publishes a data-down ack response.
+    rpc PublishDataDownACK(PublishDataDownACKRequest) returns (PublishDataDownACKResponse) {}
+
+    // PublishError publishes an error message.
+    rpc PublishError(PublishErrorRequest) returns (PublishErrorResponse) {}
 }
 
 enum RXWindow {
@@ -29,3 +38,26 @@ message JoinRequestResponse {
     RXWindow rxWindow = 8;
     uint32 rx2DR = 9;
 }
+
+message PublishDataUpRequest {
+    bytes devEUI = 1;
+    uint32 fCnt = 2;
+    bytes data = 3;
+}
+
+message PublishDataUpResponse {}
+
+message PublishDataDownACKRequest {
+    int64 reference = 1;
+    bytes devEUI = 2;
+}
+
+message PublishDataDownACKResponse {}
+
+message PublishErrorRequest {
+    int64 reference = 1;
+    bytes devEUI = 2;
+    string message = 3;
+}
+
+message PublishErrorResponse {}
