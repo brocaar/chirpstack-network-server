@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package as;
+
+// ApplicationServer is the server to be implemented by the application server.
+service ApplicationServer {
+	// JoinRequest requests the application server to validate the join-request and return an encrypted join-accept.
+	rpc JoinRequest(JoinRequestRequest) returns (JoinRequestResponse) {}
+}
+
+enum RXWindow {
+    RX1 = 0;
+    RX2 = 1;
+}
+
+message JoinRequestRequest {
+	bytes phyPayload = 1;
+	bytes devAddr = 2;
+}
+
+message JoinRequestResponse {
+	bytes phyPayload = 1;
+	bytes nwkSKey = 2;
+	bytes appEUI = 3;
+	bytes devEUI = 4;
+	uint32 rxDelay = 5;
+	uint32 rx1DROffset = 6;
+	repeated uint32 cFList = 7;
+    RXWindow rxWindow = 8;
+    uint32 rx2DR = 9;
+}
