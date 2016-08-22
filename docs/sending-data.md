@@ -5,6 +5,8 @@ will be enqueued by LoRa Server until the next receive window with the node.
 Note that max payload length restrictions apply, see the LoRaWAN specifications
 for details about the restrictions for your region.
 
+For testing, you can send payloads using `mosquitto_pub` (which is part of [Mosquitto](https://mosquitto.org)). E.g. use `mosquitto_pub -t "application/[AppEUI]/node/[DevEUI]/tx" -m "json payload here"`, or instead of the `-m` flag, use `-l` to let `mosquitto_pub` read from the stdin (each line will be published as a separate message).
+
 ## application/[AppEUI]/node/[DevEUI]/tx
 
 Example payload:
