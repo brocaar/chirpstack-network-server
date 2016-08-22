@@ -1,12 +1,10 @@
-package storage
+package common
 
 import (
 	"fmt"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-	// register postgresql driver
-	_ "github.com/lib/pq"
 )
 
 const (

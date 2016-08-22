@@ -1,6 +1,15 @@
-package models
+package session
 
 import "github.com/brocaar/lorawan"
+
+// RXWindow defines the RX window option.
+type RXWindow int8
+
+// Available RX window options.
+const (
+	RX1 = iota
+	RX2
+)
 
 // NodeSession contains the informatio of a node-session (an activated node).
 type NodeSession struct {
