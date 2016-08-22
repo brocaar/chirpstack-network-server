@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package nc;
+
+// NetworkController is the server to be implemeted by the network-controller.
+service NetworkController {
+    // PublishRXInfo publishes rx related meta-data.
+    rpc PublishRXInfo(PublishRXInfoRequest) returns (PublishRXInfoResponse) {}
+
+    // PublishDataUpMACCommand publishes a mac-command received by an end-device.
+    rpc PublishDataUpMACCommand(PublishDataUpMACCommandRequest) returns (PublishDataUpMACCommandResponse) {}
+}
+
+message DataRate {
+    string modulation = 1;
+    uint32 bandWidth = 2;
+    uint32 spreadFactor = 3;
+    uint32 bitrate = 4;
+}
+
+message RXInfo {
+    bytes mac = 1;
+    string time = 2;
+    int32 rssi = 3;
+    double loRaSNR = 4;
+}
+
+message TXInfo {
+    int64 frequency = 1;
+    DataRate dataRate = 2;
+    bool adr = 3;
+    string codeRate = 4;
+}
+
+message PublishRXInfoRequest {
+    bytes devEUI = 1;
+    TXInfo txInfo = 2;
+    RXInfo rxInfo = 3;
+}
+
+message PublishRXInfoResponse {}
+
+message PublishDataUpMACCommandRequest {
+    bytes devEUI = 1;
+    bool frmPayload = 2;
+    bytes data = 3;
+}
+
+message PublishDataUpMACCommandResponse {}
