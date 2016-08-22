@@ -1,4 +1,4 @@
-package storage
+package queue
 
 import (
 	"bytes"
@@ -10,7 +10,6 @@ import (
 	"github.com/garyburd/redigo/redis"
 
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
 )
 
@@ -20,7 +19,7 @@ const (
 )
 
 // AddTXPayloadToQueue adds the given TXPayload to the queue.
-func AddTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
+func AddTXPayloadToQueue(p *redis.Pool, payload TXPayload) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(payload); err != nil {
@@ -43,8 +42,8 @@ func AddTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
 	}
 
 	log.WithFields(log.Fields{
-		"dev_eui":   payload.DevEUI,
-		"reference": payload.Reference,
+		"dev_eui": payload.DevEUI,
+		"fcnt":    payload.FCnt,
 	}).Info("tx-payload added to queue")
 	return nil
 }
@@ -76,8 +75,8 @@ func GetTXPayloadQueueSize(p *redis.Pool, devEUI lorawan.EUI64) (int, error) {
 // After a successful transmission, don't forget to call
 // clearInProcessTXPayload.
 // errEmptyQueue is returned when the queue is empty / does not exist.
-func GetTXPayloadFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (models.TXPayload, error) {
-	var txPayload models.TXPayload
+func GetTXPayloadFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (TXPayload, error) {
+	var txPayload TXPayload
 	queueKey := fmt.Sprintf(nodeTXPayloadQueueTempl, devEUI)
 	inProcessKey := fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)
 	exp := int64(common.NodeTXPayloadQueueTTL) / int64(time.Millisecond)
@@ -116,8 +115,8 @@ func GetTXPayloadFromQueue(p *redis.Pool, devEUI lorawan.EUI64) (models.TXPayloa
 // ClearInProcessTXPayload clears the in-process TXPayload (to be called
 // after a successful transmission). It returns the TXPayload or nil when
 // nothing was cleared (it already expired).
-func ClearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPayload, error) {
-	var txPayload models.TXPayload
+func ClearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) (*TXPayload, error) {
+	var txPayload TXPayload
 	key := fmt.Sprintf(nodeTXPayloadInProcessTempl, devEUI)
 	c := p.Get()
 	defer c.Close()
@@ -135,8 +134,8 @@ func ClearInProcessTXPayload(p *redis.Pool, devEUI lorawan.EUI64) (*models.TXPay
 	}
 
 	log.WithFields(log.Fields{
-		"dev_eui":   devEUI,
-		"reference": txPayload.Reference,
+		"dev_eui": devEUI,
+		"fcnt":    txPayload.FCnt,
 	}).Info("in-process tx payload removed")
 	return &txPayload, nil
 }

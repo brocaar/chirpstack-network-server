@@ -1,11 +1,10 @@
-package storage
+package queue
 
 import (
 	"testing"
 	"time"
 
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/models"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -13,16 +12,16 @@ func TestTXPayloadQueue(t *testing.T) {
 	conf := common.GetTestConfig()
 
 	Convey("Given a clean Redis database", t, func() {
-		p := NewRedisPool(conf.RedisURL)
+		p := common.NewRedisPool(conf.RedisURL)
 		common.MustFlushRedis(p)
 
 		Convey("Given two TXPayload structs (a and b) for the same DevEUI", func() {
 			devEUI := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}
-			a := models.TXPayload{
+			a := TXPayload{
 				DevEUI: devEUI,
 				Data:   []byte("hello!"),
 			}
-			b := models.TXPayload{
+			b := TXPayload{
 				DevEUI: devEUI,
 				Data:   []byte("world"),
 			}
