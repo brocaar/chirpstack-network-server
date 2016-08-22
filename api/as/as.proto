@@ -23,20 +23,24 @@ enum RXWindow {
 }
 
 message DataRate {
-    uint32 spreadFactor = 1;
+    string modulation = 1;
     uint32 bandWidth = 2;
-    uint32 bitrate = 3;
-    string modulation = 4;
+    uint32 spreadFactor = 3;
+    uint32 bitrate = 4;
 }
 
 message RXInfo {
     bytes mac = 1;
     string time = 2;
-    int64 frequency = 3;
-    DataRate dataRate = 4;
-    string codeRate = 5;
-    int32 rssi = 6;
-    double loRaSNR = 7;
+    int32 rssi = 3;
+    double loRaSNR = 4;
+}
+
+message TXInfo {
+    int64 frequency = 1;
+    DataRate dataRate = 2;
+    bool adr = 3;
+    string codeRate = 4;
 }
 
 message JoinRequestRequest {
@@ -60,7 +64,8 @@ message PublishDataUpRequest {
     bytes devEUI = 1;
     uint32 fCnt = 2;
     bytes data = 3;
-    repeated RXInfo rxInfo = 4;
+    TXInfo txInfo = 4;
+    repeated RXInfo rxInfo = 5;
 }
 
 message PublishDataUpResponse {}
