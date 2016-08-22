@@ -3,13 +3,11 @@ package storage
 import (
 	"bytes"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
-	"github.com/jmoiron/sqlx"
 
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/models"
@@ -20,161 +18,6 @@ const (
 	nodeTXPayloadQueueTempl     = "node_tx_queue_%s"
 	nodeTXPayloadInProcessTempl = "node_tx_in_process_%s"
 )
-
-// CreateNode creates the given Node.
-func CreateNode(db *sqlx.DB, n models.Node) error {
-	if n.RXDelay > 15 {
-		return errors.New("max value of RXDelay is 15")
-	}
-
-	_, err := db.Exec(`
-		insert into node (
-			dev_eui,
-			app_eui,
-			app_key,
-			rx_delay,
-			rx1_dr_offset,
-			rx_window,
-			rx2_dr,
-			channel_list_id
-		)
-		values ($1, $2, $3, $4, $5, $6, $7, $8)`,
-		n.DevEUI[:],
-		n.AppEUI[:],
-		n.AppKey[:],
-		n.RXDelay,
-		n.RX1DROffset,
-		n.RXWindow,
-		n.RX2DR,
-		n.ChannelListID,
-	)
-	if err != nil {
-		return fmt.Errorf("create node %s error: %s", n.DevEUI, err)
-	}
-	log.WithField("dev_eui", n.DevEUI).Info("node created")
-	return nil
-}
-
-// UpdateNode updates the given Node.
-func UpdateNode(db *sqlx.DB, n models.Node) error {
-	if n.RXDelay > 15 {
-		return errors.New("max value of RXDelay is 15")
-	}
-
-	res, err := db.Exec(`
-		update node set
-			app_eui = $2,
-			app_key = $3,
-			used_dev_nonces = $4,
-			rx_delay = $5,
-			rx1_dr_offset = $6,
-			rx_window = $7,
-			rx2_dr = $8,
-			channel_list_id = $9
-		where dev_eui = $1`,
-		n.DevEUI[:],
-		n.AppEUI[:],
-		n.AppKey[:],
-		n.UsedDevNonces,
-		n.RXDelay,
-		n.RX1DROffset,
-		n.RXWindow,
-		n.RX2DR,
-		n.ChannelListID,
-	)
-	if err != nil {
-		return fmt.Errorf("update node %s error: %s", n.DevEUI, err)
-	}
-	ra, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if ra == 0 {
-		return fmt.Errorf("node %s does not exist", n.DevEUI)
-	}
-	log.WithField("dev_eui", n.DevEUI).Info("node updated")
-	return nil
-}
-
-// DeleteNode deletes the Node matching the given DevEUI.
-func DeleteNode(db *sqlx.DB, p *redis.Pool, devEUI lorawan.EUI64) error {
-	ns, err := GetNodeSessionByDevEUI(p, devEUI)
-	if err == nil {
-		if err = DeleteNodeSession(p, ns.DevAddr); err != nil {
-			return err
-		}
-	}
-
-	res, err := db.Exec("delete from node where dev_eui = $1",
-		devEUI[:],
-	)
-	if err != nil {
-		return fmt.Errorf("delete node %s error: %s", devEUI, err)
-	}
-	ra, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if ra == 0 {
-		return fmt.Errorf("node %s does not exist", devEUI)
-	}
-	log.WithField("dev_eui", devEUI).Info("node deleted")
-	return nil
-}
-
-// GetNode returns the Node for the given DevEUI.
-func GetNode(db *sqlx.DB, devEUI lorawan.EUI64) (models.Node, error) {
-	var node models.Node
-	err := db.Get(&node, "select * from node where dev_eui = $1", devEUI[:])
-	if err != nil {
-		return node, fmt.Errorf("get node %s error: %s", devEUI, err)
-	}
-	return node, nil
-}
-
-// GetNodesCount returns the total number of nodes.
-func GetNodesCount(db *sqlx.DB) (int, error) {
-	var count struct {
-		Count int
-	}
-	err := db.Get(&count, "select count(*) as count from node")
-	if err != nil {
-		return 0, fmt.Errorf("get nodes count error: %s", err)
-	}
-	return count.Count, nil
-}
-
-// GetNodesForAppEUICount returns the total number of nodes given an AppEUI.
-func GetNodesForAppEUICount(db *sqlx.DB, appEUI lorawan.EUI64) (int, error) {
-	var count struct {
-		Count int
-	}
-	err := db.Get(&count, "select count(*) as count from node where app_eui = $1", appEUI[:])
-	if err != nil {
-		return 0, fmt.Errorf("get nodes count for app_eui=%s error: %s", appEUI, err)
-	}
-	return count.Count, nil
-}
-
-// GetNodes returns a slice of nodes, sorted by DevEUI.
-func GetNodes(db *sqlx.DB, limit, offset int) ([]models.Node, error) {
-	var nodes []models.Node
-	err := db.Select(&nodes, "select * from node order by dev_eui limit $1 offset $2", limit, offset)
-	if err != nil {
-		return nodes, fmt.Errorf("get nodes error: %s", err)
-	}
-	return nodes, nil
-}
-
-// GetNodesForAppEUI returns a slice of nodes, sorted by DevEUI, for the given AppEUI.
-func GetNodesForAppEUI(db *sqlx.DB, appEUI lorawan.EUI64, limit, offset int) ([]models.Node, error) {
-	var nodes []models.Node
-	err := db.Select(&nodes, "select * from node where app_eui = $1 order by dev_eui limit $2 offset $3", appEUI[:], limit, offset)
-	if err != nil {
-		return nodes, fmt.Errorf("get nodes error: %s", err)
-	}
-	return nodes, nil
-}
 
 // AddTXPayloadToQueue adds the given TXPayload to the queue.
 func AddTXPayloadToQueue(p *redis.Pool, payload models.TXPayload) error {
@@ -316,34 +159,4 @@ func FlushTXPayloadQueue(p *redis.Pool, devEUI lorawan.EUI64) error {
 		"dev_eui": devEUI,
 	}).Info("tx-payload queue flushed")
 	return nil
-}
-
-// GetCFListForNode returns the CFList for the given node if the
-// used ISM band allows using a CFList.
-func GetCFListForNode(db *sqlx.DB, node models.Node) (*lorawan.CFList, error) {
-	if node.ChannelListID == nil {
-		return nil, nil
-	}
-
-	if !common.Band.ImplementsCFlist {
-		log.WithFields(log.Fields{
-			"dev_eui": node.DevEUI,
-			"app_eui": node.AppEUI,
-		}).Warning("node has channel-list, but CFList not allowed for selected band")
-		return nil, nil
-	}
-
-	channels, err := GetChannelsForChannelList(db, *node.ChannelListID)
-	if err != nil {
-		return nil, err
-	}
-
-	var cFList lorawan.CFList
-	for _, channel := range channels {
-		if len(cFList) <= channel.Channel-3 {
-			return nil, fmt.Errorf("invalid channel index for CFList: %d", channel.Channel)
-		}
-		cFList[channel.Channel-3] = uint32(channel.Frequency)
-	}
-	return &cFList, nil
 }
