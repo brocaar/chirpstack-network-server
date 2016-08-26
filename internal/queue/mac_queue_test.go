@@ -5,15 +5,16 @@ import (
 
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/test"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMACPayloadTXQueue(t *testing.T) {
-	conf := common.GetTestConfig()
+	conf := test.GetTestConfig()
 
 	Convey("Given a clean Redis database", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)
-		common.MustFlushRedis(p)
+		test.MustFlushRedis(p)
 
 		Convey("Given a node-session", func() {
 			ns := session.NodeSession{

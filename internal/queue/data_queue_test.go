@@ -5,15 +5,16 @@ import (
 	"time"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/test"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestTXPayloadQueue(t *testing.T) {
-	conf := common.GetTestConfig()
+	conf := test.GetTestConfig()
 
 	Convey("Given a clean Redis database", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)
-		common.MustFlushRedis(p)
+		test.MustFlushRedis(p)
 
 		Convey("Given two TXPayload structs (a and b) for the same DevEUI", func() {
 			devEUI := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}

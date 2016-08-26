@@ -5,7 +5,10 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/queue"
+	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/models"
 	"github.com/brocaar/lorawan"
@@ -17,10 +20,10 @@ type dataDownProperties struct {
 	rxDelay     time.Duration
 }
 
-func getDataDownProperties(rxInfo models.RXInfo, ns models.NodeSession) (dataDownProperties, error) {
+func getDataDownProperties(rxInfo gw.RXInfo, ns session.NodeSession) (dataDownProperties, error) {
 	var prop dataDownProperties
 
-	if ns.RXWindow == models.RX1 {
+	if ns.RXWindow == session.RX1 {
 		// get TX DR
 		uplinkDR, err := common.Band.GetDataRate(rxInfo.DataRate)
 		if err != nil {
@@ -44,7 +47,7 @@ func getDataDownProperties(rxInfo models.RXInfo, ns models.NodeSession) (dataDow
 		if ns.RXDelay > 0 {
 			prop.rxDelay = time.Duration(ns.RXDelay) * time.Second
 		}
-	} else if ns.RXWindow == models.RX2 {
+	} else if ns.RXWindow == session.RX2 {
 		// get rx delay
 		prop.rxDelay = common.Band.ReceiveDelay1
 		if ns.RXDelay > 0 {
@@ -65,7 +68,7 @@ func getDataDownProperties(rxInfo models.RXInfo, ns models.NodeSession) (dataDow
 // getNextValidTXPayloadForDRFromQueue returns the next valid TXPayload from the
 // queue for the given data-rate. When it exceeds the max size, the payload will
 // be discarded and a notification will be sent to the application.
-func getNextValidTXPayloadForDRFromQueue(ctx Context, ns models.NodeSession, dataRate int) (*models.TXPayload, error) {
+func getNextValidTXPayloadForDRFromQueue(ctx Context, ns session.NodeSession, dataRate int) (*queue.TXPayload, error) {
 	for {
 		txPayload, err := storage.GetTXPayloadFromQueue(ctx.RedisPool, ns.DevEUI)
 		if err != nil {

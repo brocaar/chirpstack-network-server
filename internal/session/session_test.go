@@ -6,16 +6,17 @@ import (
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetRandomDevAddr(t *testing.T) {
-	conf := common.GetTestConfig()
+	conf := test.GetTestConfig()
 
 	Convey("Given a Redis database and NetID 010203", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)
-		common.MustFlushRedis(p)
+		test.MustFlushRedis(p)
 		netID := lorawan.NetID{1, 2, 3}
 
 		Convey("When calling getRandomDevAddr many times, it should always return an unique DevAddr", func() {
@@ -38,11 +39,11 @@ func TestGetRandomDevAddr(t *testing.T) {
 }
 
 func TestNodeSession(t *testing.T) {
-	conf := common.GetTestConfig()
+	conf := test.GetTestConfig()
 
 	Convey("Given a clean Redis database", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)
-		common.MustFlushRedis(p)
+		test.MustFlushRedis(p)
 
 		Convey("Given a NodeSession", func() {
 			ns := NodeSession{
