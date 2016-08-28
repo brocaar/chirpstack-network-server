@@ -22,6 +22,11 @@ enum RXWindow {
     RX2 = 1;
 }
 
+enum ErrorType {
+	Generic = 0;
+	OTAA = 1;
+}
+
 message DataRate {
     string modulation = 1;
     uint32 bandWidth = 2;
@@ -46,18 +51,17 @@ message TXInfo {
 message JoinRequestRequest {
 	bytes phyPayload = 1;
 	bytes devAddr = 2;
+	bytes netID = 3;
 }
 
 message JoinRequestResponse {
 	bytes phyPayload = 1;
 	bytes nwkSKey = 2;
-	bytes appEUI = 3;
-	bytes devEUI = 4;
-	uint32 rxDelay = 5;
-	uint32 rx1DROffset = 6;
-	repeated uint32 cFList = 7;
-    RXWindow rxWindow = 8;
-    uint32 rx2DR = 9;
+	uint32 rxDelay = 3;
+	uint32 rx1DROffset = 4;
+	repeated uint32 cFList = 5;
+    RXWindow rxWindow = 6;
+    uint32 rx2DR = 7;
 }
 
 message PublishDataUpRequest {
@@ -71,16 +75,16 @@ message PublishDataUpRequest {
 message PublishDataUpResponse {}
 
 message PublishDataDownACKRequest {
-    int64 reference = 1;
-    bytes devEUI = 2;
+    bytes devEUI = 1;
+	uint32 fCnt = 2;
 }
 
 message PublishDataDownACKResponse {}
 
 message PublishErrorRequest {
-    int64 reference = 1;
-    bytes devEUI = 2;
-    string message = 3;
+    bytes devEUI = 1;
+	ErrorType type = 2;
+    string error = 3;
 }
 
 message PublishErrorResponse {}
