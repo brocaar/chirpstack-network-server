@@ -1,11 +1,11 @@
 package test
 
 import (
-	"context"
 	"os"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
+	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 
 	"github.com/brocaar/loraserver/api/as"
@@ -65,6 +65,13 @@ type TestGatewayBackend struct {
 	TXPacketChan chan gw.TXPacket
 }
 
+func NewTestGatewayBackend() *TestGatewayBackend {
+	return &TestGatewayBackend{
+		rxPacketChan: make(chan gw.RXPacket, 100),
+		TXPacketChan: make(chan gw.TXPacket, 100),
+	}
+}
+
 func (b *TestGatewayBackend) SendTXPacket(txPacket gw.TXPacket) error {
 	b.TXPacketChan <- txPacket
 	return nil
@@ -92,6 +99,15 @@ type TestApplicationClient struct {
 	PublishDataUpResponse      as.PublishDataUpResponse
 	PublishDataDownACKResponse as.PublishDataDownACKResponse
 	PublishErrorResponse       as.PublishErrorResponse
+}
+
+func NewTestApplicationClient() *TestApplicationClient {
+	return &TestApplicationClient{
+		JoinRequestChan:        make(chan as.JoinRequestRequest, 100),
+		PublishDataUpChan:      make(chan as.PublishDataUpRequest, 100),
+		PublishDataDownACKChan: make(chan as.PublishDataDownACKRequest, 100),
+		PublishErrorChan:       make(chan as.PublishErrorRequest, 100),
+	}
 }
 
 func (t *TestApplicationClient) JoinRequest(ctx context.Context, in *as.JoinRequestRequest, opts ...grpc.CallOption) (*as.JoinRequestResponse, error) {
@@ -132,6 +148,13 @@ type TestNetworkControllerClient struct {
 
 	PublishRXInfoResponse           nc.PublishRXInfoResponse
 	PublishDataUpMACCommandResponse nc.PublishDataUpMACCommandResponse
+}
+
+func NewTestNetworkControllerClient() *TestNetworkControllerClient {
+	return &TestNetworkControllerClient{
+		PublishRXInfoChan:           make(chan nc.PublishRXInfoRequest, 100),
+		PublishDataUpMACCommandChan: make(chan nc.PublishDataUpMACCommandRequest, 100),
+	}
 }
 
 func (t *TestNetworkControllerClient) PublishRXInfo(ctx context.Context, in *nc.PublishRXInfoRequest, opts ...grpc.CallOption) (*nc.PublishRXInfoResponse, error) {

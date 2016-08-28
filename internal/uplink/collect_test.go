@@ -1,50 +1,24 @@
-package loraserver
+package uplink
 
 import (
 	"fmt"
-	"sort"
 	"sync"
 	"testing"
 
+	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/models"
+	"github.com/brocaar/loraserver/internal/models"
+	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestRXPackets(t *testing.T) {
-	Convey("Given a slice of RXPacket with different RSSI values", t, func() {
-		rxPackets := RXPackets{
-			{RXInfo: models.RXInfo{RSSI: 1}},
-			{RXInfo: models.RXInfo{RSSI: 3}},
-			{RXInfo: models.RXInfo{RSSI: 7}},
-			{RXInfo: models.RXInfo{RSSI: 9}},
-			{RXInfo: models.RXInfo{RSSI: 6}},
-			{RXInfo: models.RXInfo{RSSI: 4}},
-		}
-
-		Convey("After sorting", func() {
-			sort.Sort(rxPackets)
-
-			Convey("Then the slice should be sorted, strongest signal first", func() {
-				for i, rssi := range []int{9, 7, 6, 4, 3, 1} {
-					So(rxPackets[i].RXInfo.RSSI, ShouldEqual, rssi)
-				}
-			})
-		})
-	})
-}
-
 func TestCollectAndCallOnce(t *testing.T) {
-	conf := common.GetTestConfig()
+	conf := test.GetTestConfig()
 
 	Convey("Given a Redis connection pool", t, func() {
-		p := storage.NewRedisPool(conf.RedisURL)
-		c := p.Get()
-		_, err := c.Do("FLUSHALL")
-		So(err, ShouldBeNil)
-		c.Close()
+		p := common.NewRedisPool(conf.RedisURL)
+		test.MustFlushRedis(p)
 
 		Convey("Given a single LoRaWAN packet", func() {
 			phy := lorawan.PHYPayload{
@@ -86,18 +60,18 @@ func TestCollectAndCallOnce(t *testing.T) {
 					var received int
 					var called int
 
-					cb := func(packets RXPackets) error {
+					cb := func(packets models.RXPackets) error {
 						called = called + 1
 						received = len(packets)
 						return nil
 					}
 
 					var wg sync.WaitGroup
-					for _, gw := range test.Gateways {
+					for _, g := range test.Gateways {
 						wg.Add(1)
-						packet := models.RXPacket{
-							RXInfo: models.RXInfo{
-								MAC: gw,
+						packet := gw.RXPacket{
+							RXInfo: gw.RXInfo{
+								MAC: g,
 							},
 							PHYPayload: phy,
 						}
