@@ -38,15 +38,14 @@ message CreateNodeSessionRequest {
     bytes devAddr = 1;
     bytes appEUI = 2;
     bytes devEUI = 3;
-    bytes appSKey = 4;
-    bytes nwkSKey = 5;
-    uint32 fCntUp = 6;
-    uint32 fCntDown = 7;
-    uint32 rxDelay = 8;
-    uint32 rx1DROffset = 9;
-    repeated uint32 cFList = 10;
-    RXWindow rxWindow = 11;
-    uint32 rx2DR = 12;
+    bytes nwkSKey = 4;
+    uint32 fCntUp = 5;
+    uint32 fCntDown = 6;
+    uint32 rxDelay = 7;
+    uint32 rx1DROffset = 8;
+    repeated uint32 cFList = 9;
+    RXWindow rxWindow = 10;
+    uint32 rx2DR = 11;
 }
 
 message CreateNodeSessionResponse {}
@@ -59,30 +58,28 @@ message GetNodeSessionResponse {
     bytes devAddr = 1;
     bytes appEUI = 2;
     bytes devEUI = 3;
-    bytes appSKey = 4;
-    bytes nwkSKey = 5;
-    uint32 fCntUp = 6;
-    uint32 fCntDown = 7;
-    uint32 rxDelay = 8;
-    uint32 rx1DROffset = 9;
-    repeated uint32 cFList = 10;
-    RXWindow rxWindow = 11;
-    uint32 rx2DR = 12;
+    bytes nwkSKey = 4;
+    uint32 fCntUp = 5;
+    uint32 fCntDown = 6;
+    uint32 rxDelay = 7;
+    uint32 rx1DROffset = 8;
+    repeated uint32 cFList = 9;
+    RXWindow rxWindow = 10;
+    uint32 rx2DR = 11;
 }
 
 message UpdateNodeSessionRequest {
     bytes devAddr = 1;
     bytes appEUI = 2;
     bytes devEUI = 3;
-    bytes appSKey = 4;
-    bytes nwkSKey = 5;
-    uint32 fCntUp = 6;
-    uint32 fCntDown = 7;
-    uint32 rxDelay = 8;
-    uint32 rx1DROffset = 9;
-    repeated uint32 cFList = 10;
-    RXWindow rxWindow = 11;
-    uint32 rx2DR = 12;
+    bytes nwkSKey = 4;
+    uint32 fCntUp = 5;
+    uint32 fCntDown = 6;
+    uint32 rxDelay = 7;
+    uint32 rx1DROffset = 8;
+    repeated uint32 cFList = 9;
+    RXWindow rxWindow = 10;
+    uint32 rx2DR = 11;
 }
 
 message UpdateNodeSessionResponse {}
