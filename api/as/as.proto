@@ -25,6 +25,9 @@ enum RXWindow {
 enum ErrorType {
 	Generic = 0;
 	OTAA = 1;
+	DATA_UP_FCNT = 2;
+	DATA_UP_MIC = 3;
+	DATA_DOWN_QUEUE = 4;
 }
 
 message DataRate {
