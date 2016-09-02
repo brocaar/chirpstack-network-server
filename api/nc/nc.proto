@@ -9,6 +9,9 @@ service NetworkController {
 
     // PublishDataUpMACCommand publishes a mac-command received by an end-device.
     rpc PublishDataUpMACCommand(PublishDataUpMACCommandRequest) returns (PublishDataUpMACCommandResponse) {}
+
+    // PublishError publishes an error message.
+    rpc PublishError(PublishErrorRequest) returns (PublishErrorResponse) {}
 }
 
 message DataRate {
@@ -35,7 +38,7 @@ message TXInfo {
 message PublishRXInfoRequest {
     bytes devEUI = 1;
     TXInfo txInfo = 2;
-    RXInfo rxInfo = 3;
+    repeated RXInfo rxInfo = 3;
 }
 
 message PublishRXInfoResponse {}
@@ -47,3 +50,10 @@ message PublishDataUpMACCommandRequest {
 }
 
 message PublishDataUpMACCommandResponse {}
+
+message PublishErrorRequest {
+    bytes devEUI = 1;
+    string error = 3;
+}
+
+message PublishErrorResponse {}
