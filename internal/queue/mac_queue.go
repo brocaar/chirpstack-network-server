@@ -3,6 +3,7 @@ package queue
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -44,8 +45,10 @@ func AddMACPayloadToTXQueue(p *redis.Pool, pl MACPayload) error {
 		return fmt.Errorf("add mac-payload to tx queue for node %s error: %s", pl.DevEUI, err)
 	}
 	log.WithFields(log.Fields{
-		"dev_eui":  pl.DevEUI,
-		"dev_addr": ns.DevAddr,
+		"dev_eui":    pl.DevEUI,
+		"dev_addr":   ns.DevAddr,
+		"frmpayload": pl.FRMPayload,
+		"command":    hex.EncodeToString(pl.Data),
 	}).Info("mac-payload added to tx queue")
 	return nil
 }
@@ -120,13 +123,13 @@ func DeleteMACPayloadFromTXQueue(p *redis.Pool, devAddr lorawan.DevAddr, pl MACP
 	}
 
 	if val == 0 {
-		return fmt.Errorf("mac-payload with reference '%s' is not in tx queue for devaddr %s", pl.Reference, devAddr)
+		return fmt.Errorf("mac-command %X not in tx queue for devaddr %s", pl.Data, devAddr)
 	}
 
 	log.WithFields(log.Fields{
-		"dev_eui":   pl.DevEUI,
-		"dev_addr":  devAddr,
-		"reference": pl.Reference,
+		"dev_eui":  pl.DevEUI,
+		"dev_addr": devAddr,
+		"command":  hex.EncodeToString(pl.Data),
 	}).Info("mac-payload removed from tx queue")
 	return nil
 }
