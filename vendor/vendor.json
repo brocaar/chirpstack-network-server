@@ -27,12 +27,6 @@
 			"revisionTime": "2016-07-26T01:14:03Z"
 		},
 		{
-			"checksumSHA1": "EsJksAKyY2+r3mY+rdNocSCe1wg=",
-			"path": "github.com/dgrijalva/jwt-go",
-			"revision": "63734eae1ef55eaac06fdc0f312615f2e321e273",
-			"revisionTime": "2016-07-29T16:48:51Z"
-		},
-		{
 			"checksumSHA1": "opuXLaxKgRhnpxjq0a0Fkj39PC0=",
 			"path": "github.com/eclipse/paho.mqtt.golang",
 			"revision": "45f9b18f4864c81d49c3ed01e5faec9eeb05de31",
@@ -63,20 +57,8 @@
 			"revisionTime": "2016-05-25T16:57:06Z"
 		},
 		{
-			"checksumSHA1": "NgOgDwqQnfQhahsECFCsSPEenE0=",
-			"path": "github.com/golang/protobuf/jsonpb",
-			"revision": "c3cefd437628a0b7d31b34fe44b3a7a540e98527",
-			"revisionTime": "2016-07-27T17:26:17Z"
-		},
-		{
 			"checksumSHA1": "5MVpi9U1WCrzZ1VMMn61Fc+trE0=",
 			"path": "github.com/golang/protobuf/proto",
-			"revision": "c3cefd437628a0b7d31b34fe44b3a7a540e98527",
-			"revisionTime": "2016-07-27T17:26:17Z"
-		},
-		{
-			"checksumSHA1": "juNiTc9bfhQYo4BkWc83sW4Z5gw=",
-			"path": "github.com/golang/protobuf/protoc-gen-go/descriptor",
 			"revision": "c3cefd437628a0b7d31b34fe44b3a7a540e98527",
 			"revisionTime": "2016-07-27T17:26:17Z"
 		},
@@ -93,30 +75,6 @@
 			"revisionTime": "2016-07-27T01:54:17Z"
 		},
 		{
-			"checksumSHA1": "0uWDQrsSzyQHYg5et19xtS+EWmY=",
-			"path": "github.com/grpc-ecosystem/grpc-gateway/runtime",
-			"revision": "5e0e028ba0a015710eaebf6e47af18812c9f2767",
-			"revisionTime": "2016-08-16T07:13:19Z"
-		},
-		{
-			"checksumSHA1": "GN9lH15GbtcX7xx70TjRYXi23Uk=",
-			"path": "github.com/grpc-ecosystem/grpc-gateway/runtime/internal",
-			"revision": "5e0e028ba0a015710eaebf6e47af18812c9f2767",
-			"revisionTime": "2016-08-16T07:13:19Z"
-		},
-		{
-			"checksumSHA1": "D+k9iBM97p4RvkjpogAJevV8hmw=",
-			"path": "github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api",
-			"revision": "5e0e028ba0a015710eaebf6e47af18812c9f2767",
-			"revisionTime": "2016-08-16T07:13:19Z"
-		},
-		{
-			"checksumSHA1": "vqiK5r5dntV7JNZ+ZsGlD0Samos=",
-			"path": "github.com/grpc-ecosystem/grpc-gateway/utilities",
-			"revision": "5e0e028ba0a015710eaebf6e47af18812c9f2767",
-			"revisionTime": "2016-08-16T07:13:19Z"
-		},
-		{
 			"checksumSHA1": "YEZ/qI/rjyPhyyjuGI0NysuKIfA=",
 			"path": "github.com/jacobsa/crypto/cmac",
 			"revision": "42daa9d04c68a12aca47231abd9fb7f8aac27ef7",
@@ -127,18 +85,6 @@
 			"path": "github.com/jacobsa/crypto/common",
 			"revision": "42daa9d04c68a12aca47231abd9fb7f8aac27ef7",
 			"revisionTime": "2016-04-10T22:58:39Z"
-		},
-		{
-			"checksumSHA1": "oxvSPYZbYMjGybO7er4ycq2627w=",
-			"path": "github.com/jmoiron/sqlx",
-			"revision": "bdae0c3219c3bdb92f3d7c70825018712787c933",
-			"revisionTime": "2016-06-15T15:18:03Z"
-		},
-		{
-			"checksumSHA1": "NJHTyLwheqVk7+syzj9UN7p1dKs=",
-			"path": "github.com/jmoiron/sqlx/reflectx",
-			"revision": "bdae0c3219c3bdb92f3d7c70825018712787c933",
-			"revisionTime": "2016-06-15T15:18:03Z"
 		},
 		{
 			"checksumSHA1": "tewA7jXVGCw1zb5mA0BDecWi4iQ=",
