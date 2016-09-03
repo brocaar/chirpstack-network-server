@@ -35,7 +35,7 @@ func validateAndCollectDataUpRXPacket(ctx common.Context, rxPacket gw.RXPacket) 
 	// validate and get the full int32 FCnt
 	fullFCnt, ok := session.ValidateAndGetFullFCntUp(ns, macPL.FHDR.FCnt)
 	if !ok {
-		ctx.Application.PublishError(context.Background(), &as.PublishErrorRequest{
+		ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
 			DevEUI: ns.DevEUI[:],
 			Type:   as.ErrorType_DATA_UP_FCNT,
 			Error:  fmt.Sprintf("invalid FCnt or too many dropped frames (server_fcnt: %d, packet_fcnt: %d)", ns.FCntUp, macPL.FHDR.FCnt),
@@ -56,7 +56,7 @@ func validateAndCollectDataUpRXPacket(ctx common.Context, rxPacket gw.RXPacket) 
 		return fmt.Errorf("validate MIC error: %s", err)
 	}
 	if !micOK {
-		ctx.Application.PublishError(context.Background(), &as.PublishErrorRequest{
+		ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
 			DevEUI: ns.DevEUI[:],
 			Type:   as.ErrorType_DATA_UP_MIC,
 			Error:  "invalid MIC",
@@ -190,7 +190,7 @@ func sendRXInfoPayload(ctx common.Context, devEUI lorawan.EUI64, rxPackets model
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPackets[0].PHYPayload.MACPayload)
 	}
 
-	rxInfoReq := nc.PublishRXInfoRequest{
+	rxInfoReq := nc.HandleRXInfoRequest{
 		DevEUI: devEUI[:],
 		TxInfo: &nc.TXInfo{
 			Frequency: int64(rxPackets[0].RXInfo.Frequency),
@@ -214,7 +214,7 @@ func sendRXInfoPayload(ctx common.Context, devEUI lorawan.EUI64, rxPackets model
 		})
 	}
 
-	_, err := ctx.Controller.PublishRXInfo(context.Background(), &rxInfoReq)
+	_, err := ctx.Controller.HandleRXInfo(context.Background(), &rxInfoReq)
 	if err != nil {
 		return fmt.Errorf("publish rxinfo to network-controller error: %s", err)
 	}
@@ -229,7 +229,7 @@ func publishDataUp(ctx common.Context, devEUI lorawan.EUI64, rxPackets models.RX
 		return fmt.Errorf("length of rx packets must be at least 1")
 	}
 
-	publishDataUpReq := as.PublishDataUpRequest{
+	publishDataUpReq := as.HandleDataUpRequest{
 		DevEUI: devEUI[:],
 		FCnt:   macPL.FHDR.FCnt,
 		TxInfo: &as.TXInfo{
@@ -267,7 +267,7 @@ func publishDataUp(ctx common.Context, devEUI lorawan.EUI64, rxPackets models.RX
 
 	}
 
-	if _, err := ctx.Application.PublishDataUp(context.Background(), &publishDataUpReq); err != nil {
+	if _, err := ctx.Application.HandleDataUp(context.Background(), &publishDataUpReq); err != nil {
 		return fmt.Errorf("publish data up to application-server error: %s", err)
 	}
 	return nil
@@ -286,7 +286,7 @@ func handleUplinkMACCommands(ctx common.Context, devEUI lorawan.EUI64, frmPayloa
 			return fmt.Errorf("binary marshal mac command error: %s", err)
 		}
 
-		_, err = ctx.Controller.PublishDataUpMACCommand(context.Background(), &nc.PublishDataUpMACCommandRequest{
+		_, err = ctx.Controller.HandleDataUpMACCommand(context.Background(), &nc.HandleDataUpMACCommandRequest{
 			DevEUI:     devEUI[:],
 			FrmPayload: frmPayload,
 			Data:       b,
@@ -300,7 +300,7 @@ func handleUplinkMACCommands(ctx common.Context, devEUI lorawan.EUI64, frmPayloa
 }
 
 func handleUplinkACK(ctx common.Context, ns *session.NodeSession) error {
-	_, err := ctx.Application.PublishDataDownACK(context.Background(), &as.PublishDataDownACKRequest{
+	_, err := ctx.Application.HandleDataDownACK(context.Background(), &as.HandleDataDownACKRequest{
 		DevEUI: ns.DevEUI[:],
 		FCnt:   ns.FCntDown,
 	})

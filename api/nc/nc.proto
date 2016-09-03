@@ -4,14 +4,14 @@ package nc;
 
 // NetworkController is the server to be implemeted by the network-controller.
 service NetworkController {
-    // PublishRXInfo publishes rx related meta-data.
-    rpc PublishRXInfo(PublishRXInfoRequest) returns (PublishRXInfoResponse) {}
+    // HandleRXInfo publishes rx related meta-data.
+    rpc HandleRXInfo(HandleRXInfoRequest) returns (HandleRXInfoResponse) {}
 
-    // PublishDataUpMACCommand publishes a mac-command received by an end-device.
-    rpc PublishDataUpMACCommand(PublishDataUpMACCommandRequest) returns (PublishDataUpMACCommandResponse) {}
+    // HandleDataUpMACCommand publishes a mac-command received by an end-device.
+    rpc HandleDataUpMACCommand(HandleDataUpMACCommandRequest) returns (HandleDataUpMACCommandResponse) {}
 
-    // PublishError publishes an error message.
-    rpc PublishError(PublishErrorRequest) returns (PublishErrorResponse) {}
+    // HandleError publishes an error message.
+    rpc HandleError(HandleErrorRequest) returns (HandleErrorResponse) {}
 }
 
 message DataRate {
@@ -35,25 +35,25 @@ message TXInfo {
     string codeRate = 4;
 }
 
-message PublishRXInfoRequest {
+message HandleRXInfoRequest {
     bytes devEUI = 1;
     TXInfo txInfo = 2;
     repeated RXInfo rxInfo = 3;
 }
 
-message PublishRXInfoResponse {}
+message HandleRXInfoResponse {}
 
-message PublishDataUpMACCommandRequest {
+message HandleDataUpMACCommandRequest {
     bytes devEUI = 1;
     bool frmPayload = 2;
     bytes data = 3;
 }
 
-message PublishDataUpMACCommandResponse {}
+message HandleDataUpMACCommandResponse {}
 
-message PublishErrorRequest {
+message HandleErrorRequest {
     bytes devEUI = 1;
     string error = 3;
 }
 
-message PublishErrorResponse {}
+message HandleErrorResponse {}

@@ -28,18 +28,18 @@ type uplinkTestCase struct {
 	PHYPayload           lorawan.PHYPayload  // (unencrypted) "received" PHYPayload
 	TXMACPayloadQueue    []queue.MACPayload  // downlink mac-command queue
 
-	ApplicationGetDataDown        as.GetDataDownResponse // application-server get data down response
-	ApplicationPublishDataUpError error                  // application-client publish data-up error
-	ApplicationGetDataDownError   error                  // application-server get data down error
+	ApplicationGetDataDown       as.GetDataDownResponse // application-server get data down response
+	ApplicationHandleDataUpError error                  // application-client publish data-up error
+	ApplicationGetDataDownError  error                  // application-server get data down error
 
-	ExpectedControllerPublishRXInfo            *nc.PublishRXInfoRequest            // expected network-controller publish rxinfo request
-	ExpectedControllerPublishDataUpMACCommands []nc.PublishDataUpMACCommandRequest // expected network-controller publish dataup mac-command requests
-	ExpectedControllerPublishErrors            []nc.PublishErrorRequest            // expected network-controller error requests
+	ExpectedControllerHandleRXInfo            *nc.HandleRXInfoRequest            // expected network-controller publish rxinfo request
+	ExpectedControllerHandleDataUpMACCommands []nc.HandleDataUpMACCommandRequest // expected network-controller publish dataup mac-command requests
+	ExpectedControllerHandleErrors            []nc.HandleErrorRequest            // expected network-controller error requests
 
-	ExpectedApplicationPublishDataUp      *as.PublishDataUpRequest      // expected application-server data up request
-	ExpectedApplicationPublishErrors      []as.PublishErrorRequest      // expected application-server error requests
-	ExpectedApplicationPublishDataDownACK *as.PublishDataDownACKRequest // expected application-server datadown ack request
-	ExpectedApplicationGetDataDown        *as.GetDataDownRequest        // expected application-server get data down request
+	ExpectedApplicationHandleDataUp      *as.HandleDataUpRequest      // expected application-server data up request
+	ExpectedApplicationHandleErrors      []as.HandleErrorRequest      // expected application-server error requests
+	ExpectedApplicationHandleDataDownACK *as.HandleDataDownACKRequest // expected application-server datadown ack request
+	ExpectedApplicationGetDataDown       *as.GetDataDownRequest       // expected application-server get data down request
 
 	ExpectedTXInfo              *gw.TXInfo          // expected tx-info (downlink)
 	ExpectedPHYPayload          *lorawan.PHYPayload // expected (plaintext) PHYPayload (downlink)
@@ -113,7 +113,7 @@ func TestUplinkScenarios(t *testing.T) {
 		var fPortZero uint8
 		var fPortOne uint8 = 1
 
-		expectedControllerPublishRXInfo := &nc.PublishRXInfoRequest{
+		expectedControllerHandleRXInfo := &nc.HandleRXInfoRequest{
 			DevEUI: ns.DevEUI[:],
 			TxInfo: &nc.TXInfo{
 				Frequency: int64(rxInfo.Frequency),
@@ -134,7 +134,7 @@ func TestUplinkScenarios(t *testing.T) {
 			},
 		}
 
-		expectedApplicationPushDataUp := &as.PublishDataUpRequest{
+		expectedApplicationPushDataUp := &as.HandleDataUpRequest{
 			DevEUI: ns.DevEUI[:],
 			FCnt:   10,
 			FPort:  1,
@@ -158,7 +158,7 @@ func TestUplinkScenarios(t *testing.T) {
 			},
 		}
 
-		expectedApplicationPushDataUpNoData := &as.PublishDataUpRequest{
+		expectedApplicationPushDataUpNoData := &as.HandleDataUpRequest{
 			DevEUI: ns.DevEUI[:],
 			FCnt:   10,
 			FPort:  1,
@@ -191,11 +191,11 @@ func TestUplinkScenarios(t *testing.T) {
 		Convey("Given a set of test-scenarios for error handling", func() {
 			tests := []uplinkTestCase{
 				{
-					Name:                          "the application backend returns an error",
-					NodeSession:                   ns,
-					RXInfo:                        rxInfo,
-					SetMICKey:                     ns.NwkSKey,
-					ApplicationPublishDataUpError: errors.New("BOOM!"),
+					Name:                         "the application backend returns an error",
+					NodeSession:                  ns,
+					RXInfo:                       rxInfo,
+					SetMICKey:                    ns.NwkSKey,
+					ApplicationHandleDataUpError: errors.New("BOOM!"),
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
 							MType: lorawan.UnconfirmedDataUp,
@@ -209,10 +209,10 @@ func TestUplinkScenarios(t *testing.T) {
 							FPort: &fPortOne,
 						},
 					},
-					ExpectedControllerPublishRXInfo: expectedControllerPublishRXInfo,
-					ExpectedFCntUp:                  8,
-					ExpectedFCntDown:                5,
-					ExpectedHandleRXPacketError:     errors.New("publish data up to application-server error: BOOM!"),
+					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
+					ExpectedFCntUp:                 8,
+					ExpectedFCntDown:               5,
+					ExpectedHandleRXPacketError:    errors.New("publish data up to application-server error: BOOM!"),
 				},
 				{
 					Name:        "the frame-counter is invalid",
@@ -235,7 +235,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:              8,
 					ExpectedFCntDown:            5,
 					ExpectedHandleRXPacketError: errors.New("invalid FCnt or too many dropped frames"),
-					ExpectedApplicationPublishErrors: []as.PublishErrorRequest{
+					ExpectedApplicationHandleErrors: []as.HandleErrorRequest{
 						{
 							DevEUI: ns.DevEUI[:],
 							Type:   as.ErrorType_DATA_UP_FCNT,
@@ -264,7 +264,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:              8,
 					ExpectedFCntDown:            5,
 					ExpectedHandleRXPacketError: errors.New("invalid MIC"),
-					ExpectedApplicationPublishErrors: []as.PublishErrorRequest{
+					ExpectedApplicationHandleErrors: []as.HandleErrorRequest{
 						{
 							DevEUI: ns.DevEUI[:],
 							Type:   as.ErrorType_DATA_UP_MIC,
@@ -298,11 +298,11 @@ func TestUplinkScenarios(t *testing.T) {
 							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUp,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
-					ExpectedFCntUp:                   10,
-					ExpectedFCntDown:                 5,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
+					ExpectedFCntUp:                  10,
+					ExpectedFCntDown:                5,
 				},
 				{
 					Name:        "unconfirmed uplink data without payload (just a FPort)",
@@ -322,11 +322,11 @@ func TestUplinkScenarios(t *testing.T) {
 							FPort: &fPortOne,
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUpNoData,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
-					ExpectedFCntUp:                   10,
-					ExpectedFCntDown:                 5,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
+					ExpectedFCntUp:                  10,
+					ExpectedFCntDown:                5,
 				},
 				{
 					Name:        "confirmed uplink data with payload",
@@ -347,9 +347,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUp,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
@@ -392,9 +392,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FPort: &fPortOne,
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUpNoData,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
@@ -437,9 +437,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FPort: &fPortOne,
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUpNoData,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
 						Timestamp: rxInfo.Timestamp + 3000000,
 						Frequency: rxInfo.Frequency,
@@ -482,8 +482,8 @@ func TestUplinkScenarios(t *testing.T) {
 							FPort: &fPortOne,
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUpNoData,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedApplicationGetDataDown: &as.GetDataDownRequest{
 						DevEUI:         ns.DevEUI[:],
 						FCnt:           5,
@@ -531,9 +531,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FPort: &fPortOne,
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUpNoData,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
 						Timestamp: rxInfo.Timestamp + 6000000,
 						Frequency: common.Band.RX2Frequency,
@@ -579,9 +579,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedApplicationGetDataDown:  expectedGetDataDown,
-					ExpectedControllerPublishRXInfo: expectedControllerPublishRXInfo,
-					ExpectedControllerPublishDataUpMACCommands: []nc.PublishDataUpMACCommandRequest{
+					ExpectedApplicationGetDataDown: expectedGetDataDown,
+					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
+					ExpectedControllerHandleDataUpMACCommands: []nc.HandleDataUpMACCommandRequest{
 						{DevEUI: ns.DevEUI[:], Data: []byte{2}},
 						{DevEUI: ns.DevEUI[:], Data: []byte{3, 1}},
 					},
@@ -611,9 +611,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedApplicationGetDataDown:  expectedGetDataDown,
-					ExpectedControllerPublishRXInfo: expectedControllerPublishRXInfo,
-					ExpectedControllerPublishDataUpMACCommands: []nc.PublishDataUpMACCommandRequest{
+					ExpectedApplicationGetDataDown: expectedGetDataDown,
+					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
+					ExpectedControllerHandleDataUpMACCommands: []nc.HandleDataUpMACCommandRequest{
 						{DevEUI: ns.DevEUI[:], FrmPayload: true, Data: []byte{2}},
 						{DevEUI: ns.DevEUI[:], FrmPayload: true, Data: []byte{3, 1}},
 					},
@@ -652,9 +652,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUp,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
@@ -707,9 +707,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUp,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
@@ -763,9 +763,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUp,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
@@ -819,9 +819,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUp,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
@@ -883,10 +883,10 @@ func TestUplinkScenarios(t *testing.T) {
 							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUp,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
-					ExpectedControllerPublishErrors: []nc.PublishErrorRequest{
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
+					ExpectedControllerHandleErrors: []nc.HandleErrorRequest{
 						{DevEUI: ns.DevEUI[:], Error: "unmarshal mac command error: lorawan: 1 byte of data is expected (command: 040F10)"},
 					},
 					ExpectedTXInfo: &gw.TXInfo{
@@ -955,9 +955,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FPort: &fPortOne,
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUpNoData,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
@@ -1006,9 +1006,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FPort: &fPortOne,
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUpNoData,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
@@ -1060,9 +1060,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FPort: &fPortOne,
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUpNoData,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
@@ -1110,11 +1110,11 @@ func TestUplinkScenarios(t *testing.T) {
 							FPort: &fPortOne,
 						},
 					},
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUpNoData,
-					ExpectedApplicationGetDataDown:   expectedGetDataDown,
-					ExpectedFCntUp:                   10,
-					ExpectedFCntDown:                 5, // payload has been discarded, nothing to transmit
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
+					ExpectedFCntUp:                  10,
+					ExpectedFCntDown:                5, // payload has been discarded, nothing to transmit
 				},
 				{
 					Name:        "unconfirmed uplink data + one unconfirmed downlink payload in queue (exactly max size for dr 0) + one mac command",
@@ -1142,8 +1142,8 @@ func TestUplinkScenarios(t *testing.T) {
 						},
 					},
 
-					ExpectedControllerPublishRXInfo:  expectedControllerPublishRXInfo,
-					ExpectedApplicationPublishDataUp: expectedApplicationPushDataUpNoData,
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
@@ -1187,7 +1187,7 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 	for i, t := range tests {
 		Convey(fmt.Sprintf("When testing: %s [%d]", t.Name, i), func() {
 			// set application-server mocks
-			ctx.Application.(*test.TestApplicationClient).PublishDataUpErr = t.ApplicationPublishDataUpError
+			ctx.Application.(*test.TestApplicationClient).HandleDataUpErr = t.ApplicationHandleDataUpError
 			ctx.Application.(*test.TestApplicationClient).GetDataDownResponse = t.ApplicationGetDataDown
 			ctx.Application.(*test.TestApplicationClient).GetDataDownErr = t.ApplicationGetDataDownError
 
@@ -1211,59 +1211,59 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 			So(uplink.HandleRXPacket(ctx, rxPacket), ShouldResemble, t.ExpectedHandleRXPacketError)
 
 			// network-controller validations
-			if t.ExpectedControllerPublishRXInfo != nil {
+			if t.ExpectedControllerHandleRXInfo != nil {
 				Convey("Then the expected rx-info is published to the network-controller", func() {
-					So(ctx.Controller.(*test.TestNetworkControllerClient).PublishRXInfoChan, ShouldHaveLength, 1)
-					pl := <-ctx.Controller.(*test.TestNetworkControllerClient).PublishRXInfoChan
-					So(&pl, ShouldResemble, t.ExpectedControllerPublishRXInfo)
+					So(ctx.Controller.(*test.TestNetworkControllerClient).HandleRXInfoChan, ShouldHaveLength, 1)
+					pl := <-ctx.Controller.(*test.TestNetworkControllerClient).HandleRXInfoChan
+					So(&pl, ShouldResemble, t.ExpectedControllerHandleRXInfo)
 				})
 			} else {
-				So(ctx.Controller.(*test.TestNetworkControllerClient).PublishRXInfoChan, ShouldHaveLength, 0)
+				So(ctx.Controller.(*test.TestNetworkControllerClient).HandleRXInfoChan, ShouldHaveLength, 0)
 			}
 
 			Convey("Then the expected error payloads are sent to the network-controller", func() {
-				So(ctx.Controller.(*test.TestNetworkControllerClient).PublishErrorChan, ShouldHaveLength, len(t.ExpectedControllerPublishErrors))
-				for _, expPL := range t.ExpectedControllerPublishErrors {
-					pl := <-ctx.Controller.(*test.TestNetworkControllerClient).PublishErrorChan
+				So(ctx.Controller.(*test.TestNetworkControllerClient).HandleErrorChan, ShouldHaveLength, len(t.ExpectedControllerHandleErrors))
+				for _, expPL := range t.ExpectedControllerHandleErrors {
+					pl := <-ctx.Controller.(*test.TestNetworkControllerClient).HandleErrorChan
 					So(pl, ShouldResemble, expPL)
 				}
 			})
 
 			Convey("Then the expected mac-commands are received by the network-controller", func() {
-				So(ctx.Controller.(*test.TestNetworkControllerClient).PublishDataUpMACCommandChan, ShouldHaveLength, len(t.ExpectedControllerPublishDataUpMACCommands))
-				for _, expPl := range t.ExpectedControllerPublishDataUpMACCommands {
-					pl := <-ctx.Controller.(*test.TestNetworkControllerClient).PublishDataUpMACCommandChan
+				So(ctx.Controller.(*test.TestNetworkControllerClient).HandleDataUpMACCommandChan, ShouldHaveLength, len(t.ExpectedControllerHandleDataUpMACCommands))
+				for _, expPl := range t.ExpectedControllerHandleDataUpMACCommands {
+					pl := <-ctx.Controller.(*test.TestNetworkControllerClient).HandleDataUpMACCommandChan
 					So(pl, ShouldResemble, expPl)
 				}
 			})
 
 			// application-server validations
-			if t.ExpectedApplicationPublishDataUp != nil {
+			if t.ExpectedApplicationHandleDataUp != nil {
 				Convey("Then the expected rx-payloads are received by the application-server", func() {
-					So(ctx.Application.(*test.TestApplicationClient).PublishDataUpChan, ShouldHaveLength, 1)
-					req := <-ctx.Application.(*test.TestApplicationClient).PublishDataUpChan
-					So(&req, ShouldResemble, t.ExpectedApplicationPublishDataUp)
+					So(ctx.Application.(*test.TestApplicationClient).HandleDataUpChan, ShouldHaveLength, 1)
+					req := <-ctx.Application.(*test.TestApplicationClient).HandleDataUpChan
+					So(&req, ShouldResemble, t.ExpectedApplicationHandleDataUp)
 				})
 			} else {
-				So(ctx.Application.(*test.TestApplicationClient).PublishDataUpChan, ShouldHaveLength, 0)
+				So(ctx.Application.(*test.TestApplicationClient).HandleDataUpChan, ShouldHaveLength, 0)
 			}
 
 			Convey("Then the expected error payloads are sent to the application-server", func() {
-				So(ctx.Application.(*test.TestApplicationClient).PublishErrorChan, ShouldHaveLength, len(t.ExpectedApplicationPublishErrors))
-				for _, expPL := range t.ExpectedApplicationPublishErrors {
-					pl := <-ctx.Application.(*test.TestApplicationClient).PublishErrorChan
+				So(ctx.Application.(*test.TestApplicationClient).HandleErrorChan, ShouldHaveLength, len(t.ExpectedApplicationHandleErrors))
+				for _, expPL := range t.ExpectedApplicationHandleErrors {
+					pl := <-ctx.Application.(*test.TestApplicationClient).HandleErrorChan
 					So(pl, ShouldResemble, expPL)
 				}
 			})
 
-			if t.ExpectedApplicationPublishDataDownACK != nil {
+			if t.ExpectedApplicationHandleDataDownACK != nil {
 				Convey("Then the expected downlink ACK was sent to the application-server", func() {
-					So(ctx.Application.(*test.TestApplicationClient).PublishDataDownACKChan, ShouldHaveLength, 1)
-					req := <-ctx.Application.(*test.TestApplicationClient).PublishDataDownACKChan
-					So(&req, ShouldResemble, t.ExpectedApplicationPublishDataDownACK)
+					So(ctx.Application.(*test.TestApplicationClient).HandleDataDownACKChan, ShouldHaveLength, 1)
+					req := <-ctx.Application.(*test.TestApplicationClient).HandleDataDownACKChan
+					So(&req, ShouldResemble, t.ExpectedApplicationHandleDataDownACK)
 				})
 			} else {
-				So(ctx.Application.(*test.TestApplicationClient).PublishDataDownACKChan, ShouldHaveLength, 0)
+				So(ctx.Application.(*test.TestApplicationClient).HandleDataDownACKChan, ShouldHaveLength, 0)
 			}
 
 			if t.ExpectedApplicationGetDataDown != nil {

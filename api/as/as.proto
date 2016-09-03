@@ -7,17 +7,17 @@ service ApplicationServer {
 	// JoinRequest requests the application server to validate the join-request and return an encrypted join-accept.
 	rpc JoinRequest(JoinRequestRequest) returns (JoinRequestResponse) {}
 
-    // PublishDataUp publishes data received from an end-device.
-    rpc PublishDataUp(PublishDataUpRequest) returns (PublishDataUpResponse) {}
+    // HandleDataUp publishes data received from an end-device.
+    rpc HandleDataUp(HandleDataUpRequest) returns (HandleDataUpResponse) {}
 
 	// GetDataDown gets data from the downlink queue.
 	rpc GetDataDown(GetDataDownRequest) returns (GetDataDownResponse) {}
 
-    // PublishDataDownACK publishes a data-down ack response.
-    rpc PublishDataDownACK(PublishDataDownACKRequest) returns (PublishDataDownACKResponse) {}
+    // HandleDataDownACK publishes a data-down ack response.
+    rpc HandleDataDownACK(HandleDataDownACKRequest) returns (HandleDataDownACKResponse) {}
 
-    // PublishError publishes an error message.
-    rpc PublishError(PublishErrorRequest) returns (PublishErrorResponse) {}
+    // HandleError publishes an error message.
+    rpc HandleError(HandleErrorRequest) returns (HandleErrorResponse) {}
 }
 
 enum RXWindow {
@@ -69,7 +69,7 @@ message JoinRequestResponse {
     uint32 rx2DR = 7;
 }
 
-message PublishDataUpRequest {
+message HandleDataUpRequest {
     bytes devEUI = 1;
     uint32 fCnt = 2;
 	uint32 fPort = 3;
@@ -91,19 +91,19 @@ message GetDataDownResponse {
 	bool moreData = 4;
 }
 
-message PublishDataUpResponse {}
+message HandleDataUpResponse {}
 
-message PublishDataDownACKRequest {
+message HandleDataDownACKRequest {
     bytes devEUI = 1;
 	uint32 fCnt = 2;
 }
 
-message PublishDataDownACKResponse {}
+message HandleDataDownACKResponse {}
 
-message PublishErrorRequest {
+message HandleErrorRequest {
     bytes devEUI = 1;
 	ErrorType type = 2;
     string error = 3;
 }
 
-message PublishErrorResponse {}
+message HandleErrorResponse {}

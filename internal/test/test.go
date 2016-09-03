@@ -89,29 +89,29 @@ func (b *TestGatewayBackend) Close() error {
 }
 
 type TestApplicationClient struct {
-	PublishDataUpErr       error
-	JoinRequestErr         error
-	GetDataDownErr         error
-	JoinRequestChan        chan as.JoinRequestRequest
-	PublishDataUpChan      chan as.PublishDataUpRequest
-	PublishDataDownACKChan chan as.PublishDataDownACKRequest
-	PublishErrorChan       chan as.PublishErrorRequest
-	GetDataDownChan        chan as.GetDataDownRequest
+	HandleDataUpErr       error
+	JoinRequestErr        error
+	GetDataDownErr        error
+	JoinRequestChan       chan as.JoinRequestRequest
+	HandleDataUpChan      chan as.HandleDataUpRequest
+	HandleDataDownACKChan chan as.HandleDataDownACKRequest
+	HandleErrorChan       chan as.HandleErrorRequest
+	GetDataDownChan       chan as.GetDataDownRequest
 
-	JoinRequestResponse        as.JoinRequestResponse
-	PublishDataUpResponse      as.PublishDataUpResponse
-	PublishDataDownACKResponse as.PublishDataDownACKResponse
-	PublishErrorResponse       as.PublishErrorResponse
-	GetDataDownResponse        as.GetDataDownResponse
+	JoinRequestResponse       as.JoinRequestResponse
+	HandleDataUpResponse      as.HandleDataUpResponse
+	HandleDataDownACKResponse as.HandleDataDownACKResponse
+	HandleErrorResponse       as.HandleErrorResponse
+	GetDataDownResponse       as.GetDataDownResponse
 }
 
 func NewTestApplicationClient() *TestApplicationClient {
 	return &TestApplicationClient{
-		JoinRequestChan:        make(chan as.JoinRequestRequest, 100),
-		PublishDataUpChan:      make(chan as.PublishDataUpRequest, 100),
-		PublishDataDownACKChan: make(chan as.PublishDataDownACKRequest, 100),
-		PublishErrorChan:       make(chan as.PublishErrorRequest, 100),
-		GetDataDownChan:        make(chan as.GetDataDownRequest, 100),
+		JoinRequestChan:       make(chan as.JoinRequestRequest, 100),
+		HandleDataUpChan:      make(chan as.HandleDataUpRequest, 100),
+		HandleDataDownACKChan: make(chan as.HandleDataDownACKRequest, 100),
+		HandleErrorChan:       make(chan as.HandleErrorRequest, 100),
+		GetDataDownChan:       make(chan as.GetDataDownRequest, 100),
 	}
 }
 
@@ -123,12 +123,12 @@ func (t *TestApplicationClient) JoinRequest(ctx context.Context, in *as.JoinRequ
 	return &t.JoinRequestResponse, nil
 }
 
-func (t *TestApplicationClient) PublishDataUp(ctx context.Context, in *as.PublishDataUpRequest, opts ...grpc.CallOption) (*as.PublishDataUpResponse, error) {
-	if t.PublishDataUpErr != nil {
-		return nil, t.PublishDataUpErr
+func (t *TestApplicationClient) HandleDataUp(ctx context.Context, in *as.HandleDataUpRequest, opts ...grpc.CallOption) (*as.HandleDataUpResponse, error) {
+	if t.HandleDataUpErr != nil {
+		return nil, t.HandleDataUpErr
 	}
-	t.PublishDataUpChan <- *in
-	return &t.PublishDataUpResponse, nil
+	t.HandleDataUpChan <- *in
+	return &t.HandleDataUpResponse, nil
 }
 
 func (t *TestApplicationClient) GetDataDown(ctx context.Context, in *as.GetDataDownRequest, opts ...grpc.CallOption) (*as.GetDataDownResponse, error) {
@@ -139,45 +139,45 @@ func (t *TestApplicationClient) GetDataDown(ctx context.Context, in *as.GetDataD
 	return &t.GetDataDownResponse, nil
 }
 
-func (t *TestApplicationClient) PublishDataDownACK(ctx context.Context, in *as.PublishDataDownACKRequest, opts ...grpc.CallOption) (*as.PublishDataDownACKResponse, error) {
-	t.PublishDataDownACKChan <- *in
-	return &t.PublishDataDownACKResponse, nil
+func (t *TestApplicationClient) HandleDataDownACK(ctx context.Context, in *as.HandleDataDownACKRequest, opts ...grpc.CallOption) (*as.HandleDataDownACKResponse, error) {
+	t.HandleDataDownACKChan <- *in
+	return &t.HandleDataDownACKResponse, nil
 }
 
-func (t *TestApplicationClient) PublishError(ctx context.Context, in *as.PublishErrorRequest, opts ...grpc.CallOption) (*as.PublishErrorResponse, error) {
-	t.PublishErrorChan <- *in
-	return &t.PublishErrorResponse, nil
+func (t *TestApplicationClient) HandleError(ctx context.Context, in *as.HandleErrorRequest, opts ...grpc.CallOption) (*as.HandleErrorResponse, error) {
+	t.HandleErrorChan <- *in
+	return &t.HandleErrorResponse, nil
 }
 
 type TestNetworkControllerClient struct {
-	PublishRXInfoChan           chan nc.PublishRXInfoRequest
-	PublishDataUpMACCommandChan chan nc.PublishDataUpMACCommandRequest
-	PublishErrorChan            chan nc.PublishErrorRequest
+	HandleRXInfoChan           chan nc.HandleRXInfoRequest
+	HandleDataUpMACCommandChan chan nc.HandleDataUpMACCommandRequest
+	HandleErrorChan            chan nc.HandleErrorRequest
 
-	PublishRXInfoResponse           nc.PublishRXInfoResponse
-	PublishDataUpMACCommandResponse nc.PublishDataUpMACCommandResponse
-	PublishErrorResponse            nc.PublishErrorResponse
+	HandleRXInfoResponse           nc.HandleRXInfoResponse
+	HandleDataUpMACCommandResponse nc.HandleDataUpMACCommandResponse
+	HandleErrorResponse            nc.HandleErrorResponse
 }
 
 func NewTestNetworkControllerClient() *TestNetworkControllerClient {
 	return &TestNetworkControllerClient{
-		PublishRXInfoChan:           make(chan nc.PublishRXInfoRequest, 100),
-		PublishDataUpMACCommandChan: make(chan nc.PublishDataUpMACCommandRequest, 100),
-		PublishErrorChan:            make(chan nc.PublishErrorRequest, 100),
+		HandleRXInfoChan:           make(chan nc.HandleRXInfoRequest, 100),
+		HandleDataUpMACCommandChan: make(chan nc.HandleDataUpMACCommandRequest, 100),
+		HandleErrorChan:            make(chan nc.HandleErrorRequest, 100),
 	}
 }
 
-func (t *TestNetworkControllerClient) PublishRXInfo(ctx context.Context, in *nc.PublishRXInfoRequest, opts ...grpc.CallOption) (*nc.PublishRXInfoResponse, error) {
-	t.PublishRXInfoChan <- *in
-	return &t.PublishRXInfoResponse, nil
+func (t *TestNetworkControllerClient) HandleRXInfo(ctx context.Context, in *nc.HandleRXInfoRequest, opts ...grpc.CallOption) (*nc.HandleRXInfoResponse, error) {
+	t.HandleRXInfoChan <- *in
+	return &t.HandleRXInfoResponse, nil
 }
 
-func (t *TestNetworkControllerClient) PublishDataUpMACCommand(ctx context.Context, in *nc.PublishDataUpMACCommandRequest, opts ...grpc.CallOption) (*nc.PublishDataUpMACCommandResponse, error) {
-	t.PublishDataUpMACCommandChan <- *in
-	return &t.PublishDataUpMACCommandResponse, nil
+func (t *TestNetworkControllerClient) HandleDataUpMACCommand(ctx context.Context, in *nc.HandleDataUpMACCommandRequest, opts ...grpc.CallOption) (*nc.HandleDataUpMACCommandResponse, error) {
+	t.HandleDataUpMACCommandChan <- *in
+	return &t.HandleDataUpMACCommandResponse, nil
 }
 
-func (t *TestNetworkControllerClient) PublishError(ctx context.Context, in *nc.PublishErrorRequest, opts ...grpc.CallOption) (*nc.PublishErrorResponse, error) {
-	t.PublishErrorChan <- *in
-	return &t.PublishErrorResponse, nil
+func (t *TestNetworkControllerClient) HandleError(ctx context.Context, in *nc.HandleErrorRequest, opts ...grpc.CallOption) (*nc.HandleErrorResponse, error) {
+	t.HandleErrorChan <- *in
+	return &t.HandleErrorResponse, nil
 }

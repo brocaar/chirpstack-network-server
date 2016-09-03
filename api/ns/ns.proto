@@ -19,12 +19,6 @@ service NetworkServer {
     // GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
     rpc GetRandomDevAddr(GetRandomDevAddrRequest) returns (GetRandomDevAddrResponse) {}
 
-    // GetNextFCntDown requests (and increments) the next FCnt for downlink data.
-    rpc GetNextFCntDown(GetNextFCntDownRequest) returns (GetNextFCntDownResponse) {}
-
-    // EnqueueDataDownPayload adds the downlink payload to the queue.
-    rpc EnqueueDataDownPayload(EnqueueDataDownPayloadRequest) returns (EnqueueDataDownPayloadResponse) {}
-
     // EnqueueDataDownMACCommand adds the downlink mac-command to the queue.
     rpc EnqueueDataDownMACCommand(EnqueueDataDownMACCommandRequest) returns (EnqueueDataDownMACCommandResponse) {}
 }
@@ -95,23 +89,6 @@ message GetRandomDevAddrRequest {}
 message GetRandomDevAddrResponse {
     bytes devAddr = 1;
 }
-
-message GetNextFCntDownRequest {
-    bytes devEUI = 1;
-}
-
-message GetNextFCntDownResponse {
-    uint32 fCnt = 1;
-}
-
-message EnqueueDataDownPayloadRequest {
-    bytes devEUI = 1;
-    bool confirmed = 2;
-    bytes data = 3;
-    uint32 cFnt = 4;
-}
-
-message EnqueueDataDownPayloadResponse {}
 
 message EnqueueDataDownMACCommandRequest {
     bytes devEUI = 1;
