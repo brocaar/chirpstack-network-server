@@ -10,6 +10,9 @@ service ApplicationServer {
     // PublishDataUp publishes data received from an end-device.
     rpc PublishDataUp(PublishDataUpRequest) returns (PublishDataUpResponse) {}
 
+	// GetDataDown gets data from the downlink queue.
+	rpc GetDataDown(GetDataDownRequest) returns (GetDataDownResponse) {}
+
     // PublishDataDownACK publishes a data-down ack response.
     rpc PublishDataDownACK(PublishDataDownACKRequest) returns (PublishDataDownACKResponse) {}
 
@@ -27,7 +30,6 @@ enum ErrorType {
 	OTAA = 1;
 	DATA_UP_FCNT = 2;
 	DATA_UP_MIC = 3;
-	DATA_DOWN_QUEUE = 4;
 }
 
 message DataRate {
@@ -70,9 +72,23 @@ message JoinRequestResponse {
 message PublishDataUpRequest {
     bytes devEUI = 1;
     uint32 fCnt = 2;
-    bytes data = 3;
-    TXInfo txInfo = 4;
-    repeated RXInfo rxInfo = 5;
+	uint32 fPort = 3;
+    bytes data = 4;
+    TXInfo txInfo = 5;
+    repeated RXInfo rxInfo = 6;
+}
+
+message GetDataDownRequest {
+	bytes devEUI = 1;
+	uint32 maxPayloadSize = 2;
+	uint32 fCnt = 3;
+}
+
+message GetDataDownResponse {
+	bytes data = 1;
+	bool confirmed = 2;
+	uint32 fPort = 3;
+	bool moreData = 4;
 }
 
 message PublishDataUpResponse {}
