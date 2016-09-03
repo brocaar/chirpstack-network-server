@@ -32,8 +32,7 @@ func HandleRXPacket(ctx common.Context, rxPacket gw.RXPacket) error {
 	case lorawan.JoinRequest:
 		return collectJoinRequestPacket(ctx, rxPacket)
 	case lorawan.UnconfirmedDataUp, lorawan.ConfirmedDataUp:
-		return nil
-		//		return validateAndCollectDataUpRXPacket(ctx, rxPacket)
+		return validateAndCollectDataUpRXPacket(ctx, rxPacket)
 	default:
 		return fmt.Errorf("unknown MType: %v", rxPacket.PHYPayload.MHDR.MType)
 	}

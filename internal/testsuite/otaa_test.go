@@ -168,7 +168,7 @@ func runOTAATests(ctx common.Context, tests []otaaTestCase) {
 	for i, t := range tests {
 		Convey(fmt.Sprintf("When testing: %s [%d]", t.Name, i), func() {
 			// set mocks
-			ctx.Application.(*test.TestApplicationClient).Err = t.ApplicationJoinRequestError
+			ctx.Application.(*test.TestApplicationClient).JoinRequestErr = t.ApplicationJoinRequestError
 			ctx.Application.(*test.TestApplicationClient).JoinRequestResponse = t.ApplicationJoinRequestResponse
 
 			So(uplink.HandleRXPacket(ctx, gw.RXPacket{

@@ -12,11 +12,11 @@ import (
 )
 
 func getJoinAcceptTXInfo(ctx common.Context, ns session.NodeSession, rxInfo gw.RXInfo) (gw.TXInfo, error) {
-	var txInfo gw.TXInfo
-
-	txInfo.MAC = rxInfo.MAC
-	txInfo.CodeRate = rxInfo.CodeRate
-	txInfo.Power = common.Band.DefaultTXPower
+	txInfo := gw.TXInfo{
+		MAC:      rxInfo.MAC,
+		CodeRate: rxInfo.CodeRate,
+		Power:    common.Band.DefaultTXPower,
+	}
 
 	if ns.RXWindow == session.RX1 {
 		txInfo.Timestamp = rxInfo.Timestamp + uint32(common.Band.JoinAcceptDelay1/time.Microsecond)
