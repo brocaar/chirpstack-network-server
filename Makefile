@@ -35,6 +35,9 @@ generate:
 	@go generate cmd/loraserver/main.go
 	@go generate models/notifications.go
 
+requirements:
+	@go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
+
 # shortcuts for development
 
 serve: build
