@@ -79,7 +79,7 @@ message UpdateNodeSessionRequest {
 message UpdateNodeSessionResponse {}
 
 message DeleteNodeSessionRequest {
-    bytes devAddr = 1;
+    bytes devEUI = 1;
 }
 
 message DeleteNodeSessionResponse {}
