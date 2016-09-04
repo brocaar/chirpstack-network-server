@@ -50,7 +50,7 @@ type uplinkTestCase struct {
 }
 
 func TestUplinkScenarios(t *testing.T) {
-	conf := test.GetTestConfig()
+	conf := test.GetConfig()
 
 	Convey("Given a clean state", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)
@@ -59,9 +59,9 @@ func TestUplinkScenarios(t *testing.T) {
 		ctx := common.Context{
 			NetID:       [3]byte{3, 2, 1},
 			RedisPool:   p,
-			Gateway:     test.NewTestGatewayBackend(),
-			Application: test.NewTestApplicationClient(),
-			Controller:  test.NewTestNetworkControllerClient(),
+			Gateway:     test.NewGatewayBackend(),
+			Application: test.NewApplicationClient(),
+			Controller:  test.NewNetworkControllerClient(),
 		}
 
 		rxInfo := gw.RXInfo{
@@ -195,7 +195,7 @@ func TestUplinkScenarios(t *testing.T) {
 					NodeSession:                  ns,
 					RXInfo:                       rxInfo,
 					SetMICKey:                    ns.NwkSKey,
-					ApplicationHandleDataUpError: errors.New("BOOM!"),
+					ApplicationHandleDataUpError: errors.New("BOOM"),
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
 							MType: lorawan.UnconfirmedDataUp,
@@ -212,7 +212,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedFCntUp:                 8,
 					ExpectedFCntDown:               5,
-					ExpectedHandleRXPacketError:    errors.New("publish data up to application-server error: BOOM!"),
+					ExpectedHandleRXPacketError:    errors.New("publish data up to application-server error: BOOM"),
 				},
 				{
 					Name:        "the frame-counter is invalid",
@@ -1187,9 +1187,9 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 	for i, t := range tests {
 		Convey(fmt.Sprintf("When testing: %s [%d]", t.Name, i), func() {
 			// set application-server mocks
-			ctx.Application.(*test.TestApplicationClient).HandleDataUpErr = t.ApplicationHandleDataUpError
-			ctx.Application.(*test.TestApplicationClient).GetDataDownResponse = t.ApplicationGetDataDown
-			ctx.Application.(*test.TestApplicationClient).GetDataDownErr = t.ApplicationGetDataDownError
+			ctx.Application.(*test.ApplicationClient).HandleDataUpErr = t.ApplicationHandleDataUpError
+			ctx.Application.(*test.ApplicationClient).GetDataDownResponse = t.ApplicationGetDataDown
+			ctx.Application.(*test.ApplicationClient).GetDataDownErr = t.ApplicationGetDataDownError
 
 			// populate session and queues
 			So(session.CreateNodeSession(ctx.RedisPool, t.NodeSession), ShouldBeNil)
@@ -1213,26 +1213,26 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 			// network-controller validations
 			if t.ExpectedControllerHandleRXInfo != nil {
 				Convey("Then the expected rx-info is published to the network-controller", func() {
-					So(ctx.Controller.(*test.TestNetworkControllerClient).HandleRXInfoChan, ShouldHaveLength, 1)
-					pl := <-ctx.Controller.(*test.TestNetworkControllerClient).HandleRXInfoChan
+					So(ctx.Controller.(*test.NetworkControllerClient).HandleRXInfoChan, ShouldHaveLength, 1)
+					pl := <-ctx.Controller.(*test.NetworkControllerClient).HandleRXInfoChan
 					So(&pl, ShouldResemble, t.ExpectedControllerHandleRXInfo)
 				})
 			} else {
-				So(ctx.Controller.(*test.TestNetworkControllerClient).HandleRXInfoChan, ShouldHaveLength, 0)
+				So(ctx.Controller.(*test.NetworkControllerClient).HandleRXInfoChan, ShouldHaveLength, 0)
 			}
 
 			Convey("Then the expected error payloads are sent to the network-controller", func() {
-				So(ctx.Controller.(*test.TestNetworkControllerClient).HandleErrorChan, ShouldHaveLength, len(t.ExpectedControllerHandleErrors))
+				So(ctx.Controller.(*test.NetworkControllerClient).HandleErrorChan, ShouldHaveLength, len(t.ExpectedControllerHandleErrors))
 				for _, expPL := range t.ExpectedControllerHandleErrors {
-					pl := <-ctx.Controller.(*test.TestNetworkControllerClient).HandleErrorChan
+					pl := <-ctx.Controller.(*test.NetworkControllerClient).HandleErrorChan
 					So(pl, ShouldResemble, expPL)
 				}
 			})
 
 			Convey("Then the expected mac-commands are received by the network-controller", func() {
-				So(ctx.Controller.(*test.TestNetworkControllerClient).HandleDataUpMACCommandChan, ShouldHaveLength, len(t.ExpectedControllerHandleDataUpMACCommands))
+				So(ctx.Controller.(*test.NetworkControllerClient).HandleDataUpMACCommandChan, ShouldHaveLength, len(t.ExpectedControllerHandleDataUpMACCommands))
 				for _, expPl := range t.ExpectedControllerHandleDataUpMACCommands {
-					pl := <-ctx.Controller.(*test.TestNetworkControllerClient).HandleDataUpMACCommandChan
+					pl := <-ctx.Controller.(*test.NetworkControllerClient).HandleDataUpMACCommandChan
 					So(pl, ShouldResemble, expPl)
 				}
 			})
@@ -1240,47 +1240,47 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 			// application-server validations
 			if t.ExpectedApplicationHandleDataUp != nil {
 				Convey("Then the expected rx-payloads are received by the application-server", func() {
-					So(ctx.Application.(*test.TestApplicationClient).HandleDataUpChan, ShouldHaveLength, 1)
-					req := <-ctx.Application.(*test.TestApplicationClient).HandleDataUpChan
+					So(ctx.Application.(*test.ApplicationClient).HandleDataUpChan, ShouldHaveLength, 1)
+					req := <-ctx.Application.(*test.ApplicationClient).HandleDataUpChan
 					So(&req, ShouldResemble, t.ExpectedApplicationHandleDataUp)
 				})
 			} else {
-				So(ctx.Application.(*test.TestApplicationClient).HandleDataUpChan, ShouldHaveLength, 0)
+				So(ctx.Application.(*test.ApplicationClient).HandleDataUpChan, ShouldHaveLength, 0)
 			}
 
 			Convey("Then the expected error payloads are sent to the application-server", func() {
-				So(ctx.Application.(*test.TestApplicationClient).HandleErrorChan, ShouldHaveLength, len(t.ExpectedApplicationHandleErrors))
+				So(ctx.Application.(*test.ApplicationClient).HandleErrorChan, ShouldHaveLength, len(t.ExpectedApplicationHandleErrors))
 				for _, expPL := range t.ExpectedApplicationHandleErrors {
-					pl := <-ctx.Application.(*test.TestApplicationClient).HandleErrorChan
+					pl := <-ctx.Application.(*test.ApplicationClient).HandleErrorChan
 					So(pl, ShouldResemble, expPL)
 				}
 			})
 
 			if t.ExpectedApplicationHandleDataDownACK != nil {
 				Convey("Then the expected downlink ACK was sent to the application-server", func() {
-					So(ctx.Application.(*test.TestApplicationClient).HandleDataDownACKChan, ShouldHaveLength, 1)
-					req := <-ctx.Application.(*test.TestApplicationClient).HandleDataDownACKChan
+					So(ctx.Application.(*test.ApplicationClient).HandleDataDownACKChan, ShouldHaveLength, 1)
+					req := <-ctx.Application.(*test.ApplicationClient).HandleDataDownACKChan
 					So(&req, ShouldResemble, t.ExpectedApplicationHandleDataDownACK)
 				})
 			} else {
-				So(ctx.Application.(*test.TestApplicationClient).HandleDataDownACKChan, ShouldHaveLength, 0)
+				So(ctx.Application.(*test.ApplicationClient).HandleDataDownACKChan, ShouldHaveLength, 0)
 			}
 
 			if t.ExpectedApplicationGetDataDown != nil {
 				Convey("Then the expected get data down request was made to the application-server", func() {
-					So(ctx.Application.(*test.TestApplicationClient).GetDataDownChan, ShouldHaveLength, 1)
-					req := <-ctx.Application.(*test.TestApplicationClient).GetDataDownChan
+					So(ctx.Application.(*test.ApplicationClient).GetDataDownChan, ShouldHaveLength, 1)
+					req := <-ctx.Application.(*test.ApplicationClient).GetDataDownChan
 					So(&req, ShouldResemble, t.ExpectedApplicationGetDataDown)
 				})
 			} else {
-				So(ctx.Application.(*test.TestApplicationClient).GetDataDownChan, ShouldHaveLength, 0)
+				So(ctx.Application.(*test.ApplicationClient).GetDataDownChan, ShouldHaveLength, 0)
 			}
 
 			// gateway validations
 			if t.ExpectedTXInfo != nil {
 				Convey("Then the expected downlink txinfo is used", func() {
-					So(ctx.Gateway.(*test.TestGatewayBackend).TXPacketChan, ShouldHaveLength, 1)
-					txPacket := <-ctx.Gateway.(*test.TestGatewayBackend).TXPacketChan
+					So(ctx.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
+					txPacket := <-ctx.Gateway.(*test.GatewayBackend).TXPacketChan
 					So(&txPacket.TXInfo, ShouldResemble, t.ExpectedTXInfo)
 
 					if t.ExpectedPHYPayload != nil {
@@ -1292,7 +1292,7 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 					}
 				})
 			} else {
-				So(ctx.Gateway.(*test.TestGatewayBackend).TXPacketChan, ShouldHaveLength, 0)
+				So(ctx.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 0)
 			}
 
 			// node session validations

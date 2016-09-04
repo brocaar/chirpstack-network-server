@@ -29,7 +29,7 @@ func (s *Server) Start() error {
 	go func() {
 		s.wg.Add(1)
 		defer s.wg.Done()
-		HandleRXPackets(s.wg, s.ctx)
+		HandleRXPackets(&s.wg, s.ctx)
 	}()
 	return nil
 }
@@ -47,7 +47,7 @@ func (s *Server) Stop() error {
 
 // HandleRXPackets consumes received packets by the gateway and handles them
 // in a separate go-routine. Errors are logged.
-func HandleRXPackets(wg sync.WaitGroup, ctx common.Context) {
+func HandleRXPackets(wg *sync.WaitGroup, ctx common.Context) {
 	for rxPacket := range ctx.Gateway.RXPacketChan() {
 		go func(rxPacket gw.RXPacket) {
 			wg.Add(1)

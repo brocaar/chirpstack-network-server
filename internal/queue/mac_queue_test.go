@@ -10,7 +10,7 @@ import (
 )
 
 func TestMACPayloadTXQueue(t *testing.T) {
-	conf := test.GetTestConfig()
+	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)

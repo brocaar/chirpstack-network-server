@@ -12,7 +12,7 @@ import (
 )
 
 func TestGetRandomDevAddr(t *testing.T) {
-	conf := test.GetTestConfig()
+	conf := test.GetConfig()
 
 	Convey("Given a Redis database and NetID 010203", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)
@@ -39,7 +39,7 @@ func TestGetRandomDevAddr(t *testing.T) {
 }
 
 func TestNodeSession(t *testing.T) {
-	conf := test.GetTestConfig()
+	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)

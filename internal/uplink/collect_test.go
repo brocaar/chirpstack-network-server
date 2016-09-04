@@ -14,7 +14,7 @@ import (
 )
 
 func TestCollectAndCallOnce(t *testing.T) {
-	conf := test.GetTestConfig()
+	conf := test.GetConfig()
 
 	Convey("Given a Redis connection pool", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)

@@ -29,7 +29,7 @@ type otaaTestCase struct {
 }
 
 func TestOTAAScenarios(t *testing.T) {
-	conf := test.GetTestConfig()
+	conf := test.GetConfig()
 
 	Convey("Given a clean state", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)
@@ -38,8 +38,8 @@ func TestOTAAScenarios(t *testing.T) {
 		ctx := common.Context{
 			NetID:       [3]byte{3, 2, 1},
 			RedisPool:   p,
-			Gateway:     test.NewTestGatewayBackend(),
-			Application: test.NewTestApplicationClient(),
+			Gateway:     test.NewGatewayBackend(),
+			Application: test.NewApplicationClient(),
 		}
 
 		appKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
@@ -94,8 +94,8 @@ func TestOTAAScenarios(t *testing.T) {
 					Name:                        "application-client returns an error",
 					RXInfo:                      rxInfo,
 					PHYPayload:                  jrPayload,
-					ApplicationJoinRequestError: errors.New("BOOM!"),
-					ExpectedError:               errors.New("application server join-request error: BOOM!"),
+					ApplicationJoinRequestError: errors.New("BOOM"),
+					ExpectedError:               errors.New("application server join-request error: BOOM"),
 				},
 				{
 					Name:       "join-accept using rx1",
@@ -168,8 +168,8 @@ func runOTAATests(ctx common.Context, tests []otaaTestCase) {
 	for i, t := range tests {
 		Convey(fmt.Sprintf("When testing: %s [%d]", t.Name, i), func() {
 			// set mocks
-			ctx.Application.(*test.TestApplicationClient).JoinRequestErr = t.ApplicationJoinRequestError
-			ctx.Application.(*test.TestApplicationClient).JoinRequestResponse = t.ApplicationJoinRequestResponse
+			ctx.Application.(*test.ApplicationClient).JoinRequestErr = t.ApplicationJoinRequestError
+			ctx.Application.(*test.ApplicationClient).JoinRequestResponse = t.ApplicationJoinRequestResponse
 
 			So(uplink.HandleRXPacket(ctx, gw.RXPacket{
 				RXInfo:     t.RXInfo,
@@ -181,8 +181,8 @@ func runOTAATests(ctx common.Context, tests []otaaTestCase) {
 			}
 
 			Convey("Then the expected join-request request was made to the application server", func() {
-				So(ctx.Application.(*test.TestApplicationClient).JoinRequestChan, ShouldHaveLength, 1)
-				req := <-ctx.Application.(*test.TestApplicationClient).JoinRequestChan
+				So(ctx.Application.(*test.ApplicationClient).JoinRequestChan, ShouldHaveLength, 1)
+				req := <-ctx.Application.(*test.ApplicationClient).JoinRequestChan
 
 				So(req.DevAddr, ShouldHaveLength, 4)
 				So(req.DevAddr, ShouldNotResemble, []byte{0, 0, 0, 0})
@@ -192,15 +192,15 @@ func runOTAATests(ctx common.Context, tests []otaaTestCase) {
 			})
 
 			Convey("Then the expected txinfo is used", func() {
-				So(ctx.Gateway.(*test.TestGatewayBackend).TXPacketChan, ShouldHaveLength, 1)
-				txPacket := <-ctx.Gateway.(*test.TestGatewayBackend).TXPacketChan
+				So(ctx.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
+				txPacket := <-ctx.Gateway.(*test.GatewayBackend).TXPacketChan
 
 				So(txPacket.TXInfo, ShouldResemble, t.ExpectedTXInfo)
 			})
 
 			Convey("Then the expected PHYPayload was sent", func() {
-				So(ctx.Gateway.(*test.TestGatewayBackend).TXPacketChan, ShouldHaveLength, 1)
-				txPacket := <-ctx.Gateway.(*test.TestGatewayBackend).TXPacketChan
+				So(ctx.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
+				txPacket := <-ctx.Gateway.(*test.GatewayBackend).TXPacketChan
 
 				So(txPacket.PHYPayload.DecryptJoinAcceptPayload(t.AppKey), ShouldBeNil)
 				So(txPacket.PHYPayload, ShouldResemble, t.ExpectedPHYPayload)

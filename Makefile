@@ -20,7 +20,7 @@ test:
 		golint $$pkg ; \
 	done
 	@go vet $(PKGS)
-	@go test -p 1 -cover -v $(PKGS)
+	@go test -p 1 -v $(PKGS)
 
 package: clean build
 	@echo "Creating package for $(GOOS) $(GOARCH)"

@@ -14,7 +14,7 @@ import (
 )
 
 func TestNetworkServerAPI(t *testing.T) {
-	conf := test.GetTestConfig()
+	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database + api instance", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)

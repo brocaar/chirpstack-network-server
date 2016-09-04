@@ -77,9 +77,8 @@ func CreateNodeSession(p *redis.Pool, s NodeSession) error {
 	if _, err := redis.String(c.Do("SET", fmt.Sprintf(nodeSessionKeyTempl, s.DevAddr), buf.Bytes(), "NX", "PX", exp)); err != nil {
 		if err == redis.ErrNil {
 			return fmt.Errorf("create node-session %s for node %s error: DevAddr already in use", s.DevAddr, s.DevEUI)
-		} else {
-			return fmt.Errorf("create node-session %s for node %s error: %s", s.DevAddr, s.DevEUI, err)
 		}
+		return fmt.Errorf("create node-session %s for node %s error: %s", s.DevAddr, s.DevEUI, err)
 	}
 	// DevEUI -> DevAddr pointer
 	if _, err := redis.String(c.Do("PSETEX", fmt.Sprintf(nodeSessionKeyTempl, s.DevEUI), exp, s.DevAddr.String())); err != nil {
