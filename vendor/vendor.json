@@ -39,12 +39,6 @@
 			"revisionTime": "2016-06-09T10:02:40Z"
 		},
 		{
-			"checksumSHA1": "5ftkjfUwI9A6xCQ1PwIAd5+qlo0=",
-			"path": "github.com/elazarl/go-bindata-assetfs",
-			"revision": "57eb5e1fc594ad4b0b1dbea7b286d299e0cb43c2",
-			"revisionTime": "2015-12-24T04:54:52Z"
-		},
-		{
 			"checksumSHA1": "2UmMbNHc8FBr98mJFN1k8ISOIHk=",
 			"path": "github.com/garyburd/redigo/internal",
 			"revision": "b8dc90050f24c1a73a52f107f3f575be67b21b7c",
@@ -63,18 +57,6 @@
 			"revisionTime": "2016-07-27T17:26:17Z"
 		},
 		{
-			"checksumSHA1": "iIUYZyoanCQQTUaWsu8b+iOSPt4=",
-			"path": "github.com/gorilla/context",
-			"revision": "aed02d124ae4a0e94fea4541c8effd05bf0c8296",
-			"revisionTime": "2016-05-25T20:33:19Z"
-		},
-		{
-			"checksumSHA1": "ntQtwxnIbkwPoh6uQYZ4j8PcaVk=",
-			"path": "github.com/gorilla/mux",
-			"revision": "a49d62f618e6dc4a7a7d1f0ad69744a158c21f23",
-			"revisionTime": "2016-07-27T01:54:17Z"
-		},
-		{
 			"checksumSHA1": "YEZ/qI/rjyPhyyjuGI0NysuKIfA=",
 			"path": "github.com/jacobsa/crypto/cmac",
 			"revision": "42daa9d04c68a12aca47231abd9fb7f8aac27ef7",
@@ -91,30 +73,6 @@
 			"path": "github.com/jtolds/gls",
 			"revision": "8ddce2a84170772b95dd5d576c48d517b22cac63",
 			"revisionTime": "2016-01-05T22:08:40Z"
-		},
-		{
-			"checksumSHA1": "QK3MNUdQwUBuznCHZcPijU/3DyI=",
-			"path": "github.com/lib/pq",
-			"revision": "4dd446efc17690bc53e154025146f73203b18309",
-			"revisionTime": "2016-06-23T22:06:37Z"
-		},
-		{
-			"checksumSHA1": "xppHi82MLqVx1eyQmbhTesAEjx8=",
-			"path": "github.com/lib/pq/oid",
-			"revision": "4dd446efc17690bc53e154025146f73203b18309",
-			"revisionTime": "2016-06-23T22:06:37Z"
-		},
-		{
-			"checksumSHA1": "Y1gIGoR8z/lDf2j+vcH1eKZGDSk=",
-			"path": "github.com/rubenv/sql-migrate",
-			"revision": "6f4757563362064790a6687a6b60f182062c8634",
-			"revisionTime": "2016-06-20T08:32:29Z"
-		},
-		{
-			"checksumSHA1": "aoSLe79p1m0Lznfed0X0SoYofNg=",
-			"path": "github.com/rubenv/sql-migrate/sqlparse",
-			"revision": "6f4757563362064790a6687a6b60f182062c8634",
-			"revisionTime": "2016-06-20T08:32:29Z"
 		},
 		{
 			"checksumSHA1": "6AYg4fjEvFuAVN3wHakGApjhZAM=",
@@ -247,12 +205,6 @@
 			"path": "google.golang.org/grpc/transport",
 			"revision": "711a24cde281460b847b211686c2e4e8f4671131",
 			"revisionTime": "2016-07-28T00:51:01Z"
-		},
-		{
-			"checksumSHA1": "xunNOgG8P6Xh4SM+LPQ1zMDXa8Q=",
-			"path": "gopkg.in/gorp.v1",
-			"revision": "c87af80f3cc5036b55b83d77171e156791085e2e",
-			"revisionTime": "2015-02-04T08:55:30Z"
 		}
 	],
 	"rootPath": "github.com/brocaar/loraserver"
