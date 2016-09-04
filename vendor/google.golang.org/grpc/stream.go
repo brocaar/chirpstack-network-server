@@ -37,6 +37,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"math"
 	"sync"
 	"time"
 
@@ -97,10 +98,16 @@ type ClientStream interface {
 // NewClientStream creates a new Stream for the client side. This is called
 // by generated code.
 func NewClientStream(ctx context.Context, desc *StreamDesc, cc *ClientConn, method string, opts ...CallOption) (ClientStream, error) {
+	if cc.dopts.streamInt != nil {
+		return cc.dopts.streamInt(ctx, desc, cc, method, newClientStream, opts...)
+	}
+	return newClientStream(ctx, desc, cc, method, opts...)
+}
+
+func newClientStream(ctx context.Context, desc *StreamDesc, cc *ClientConn, method string, opts ...CallOption) (_ ClientStream, err error) {
 	var (
 		t   transport.ClientTransport
 		s   *transport.Stream
-		err error
 		put func()
 	)
 	c := defaultCallInfo
@@ -117,27 +124,24 @@ func NewClientStream(ctx context.Context, desc *StreamDesc, cc *ClientConn, meth
 	if cc.dopts.cp != nil {
 		callHdr.SendCompress = cc.dopts.cp.Type()
 	}
-	cs := &clientStream{
-		opts:    opts,
-		c:       c,
-		desc:    desc,
-		codec:   cc.dopts.codec,
-		cp:      cc.dopts.cp,
-		dc:      cc.dopts.dc,
-		tracing: EnableTracing,
-	}
-	if cc.dopts.cp != nil {
-		callHdr.SendCompress = cc.dopts.cp.Type()
-		cs.cbuf = new(bytes.Buffer)
-	}
-	if cs.tracing {
-		cs.trInfo.tr = trace.New("grpc.Sent."+methodFamily(method), method)
-		cs.trInfo.firstLine.client = true
+	var trInfo traceInfo
+	if EnableTracing {
+		trInfo.tr = trace.New("grpc.Sent."+methodFamily(method), method)
+		trInfo.firstLine.client = true
 		if deadline, ok := ctx.Deadline(); ok {
-			cs.trInfo.firstLine.deadline = deadline.Sub(time.Now())
+			trInfo.firstLine.deadline = deadline.Sub(time.Now())
 		}
-		cs.trInfo.tr.LazyLog(&cs.trInfo.firstLine, false)
-		ctx = trace.NewContext(ctx, cs.trInfo.tr)
+		trInfo.tr.LazyLog(&trInfo.firstLine, false)
+		ctx = trace.NewContext(ctx, trInfo.tr)
+		defer func() {
+			if err != nil {
+				// Need to call tr.finish() if error is returned.
+				// Because tr will not be returned to caller.
+				trInfo.tr.LazyPrintf("RPC: [%v]", err)
+				trInfo.tr.SetError()
+				trInfo.tr.Finish()
+			}
+		}()
 	}
 	gopts := BalancerGetOptions{
 		BlockingWait: !c.failFast,
@@ -149,9 +153,9 @@ func NewClientStream(ctx context.Context, desc *StreamDesc, cc *ClientConn, meth
 			if _, ok := err.(*rpcError); ok {
 				return nil, err
 			}
-			if err == errConnClosing {
+			if err == errConnClosing || err == errConnUnavailable {
 				if c.failFast {
-					return nil, Errorf(codes.Unavailable, "%v", errConnClosing)
+					return nil, Errorf(codes.Unavailable, "%v", err)
 				}
 				continue
 			}
@@ -165,9 +169,8 @@ func NewClientStream(ctx context.Context, desc *StreamDesc, cc *ClientConn, meth
 				put()
 				put = nil
 			}
-			if _, ok := err.(transport.ConnectionError); ok {
+			if _, ok := err.(transport.ConnectionError); ok || err == transport.ErrStreamDrain {
 				if c.failFast {
-					cs.finish(err)
 					return nil, toRPCErr(err)
 				}
 				continue
@@ -176,10 +179,25 @@ func NewClientStream(ctx context.Context, desc *StreamDesc, cc *ClientConn, meth
 		}
 		break
 	}
-	cs.put = put
-	cs.t = t
-	cs.s = s
-	cs.p = &parser{r: s}
+	cs := &clientStream{
+		opts:  opts,
+		c:     c,
+		desc:  desc,
+		codec: cc.dopts.codec,
+		cp:    cc.dopts.cp,
+		dc:    cc.dopts.dc,
+
+		put: put,
+		t:   t,
+		s:   s,
+		p:   &parser{r: s},
+
+		tracing: EnableTracing,
+		trInfo:  trInfo,
+	}
+	if cc.dopts.cp != nil {
+		cs.cbuf = new(bytes.Buffer)
+	}
 	// Listen on ctx.Done() to detect cancellation and s.Done() to detect normal termination
 	// when there is no pending I/O operations on this stream.
 	go func() {
@@ -285,13 +303,13 @@ func (cs *clientStream) SendMsg(m interface{}) (err error) {
 		}
 	}()
 	if err != nil {
-		return transport.StreamErrorf(codes.Internal, "grpc: %v", err)
+		return Errorf(codes.Internal, "grpc: %v", err)
 	}
 	return cs.t.Write(cs.s, out, &transport.Options{Last: false})
 }
 
 func (cs *clientStream) RecvMsg(m interface{}) (err error) {
-	err = recv(cs.p, cs.codec, cs.s, cs.dc, m)
+	err = recv(cs.p, cs.codec, cs.s, cs.dc, m, math.MaxInt32)
 	defer func() {
 		// err != nil indicates the termination of the stream.
 		if err != nil {
@@ -310,7 +328,7 @@ func (cs *clientStream) RecvMsg(m interface{}) (err error) {
 			return
 		}
 		// Special handling for client streaming rpc.
-		err = recv(cs.p, cs.codec, cs.s, cs.dc, m)
+		err = recv(cs.p, cs.codec, cs.s, cs.dc, m, math.MaxInt32)
 		cs.closeTransportStream(err)
 		if err == nil {
 			return toRPCErr(errors.New("grpc: client streaming protocol violation: get <nil>, want <EOF>"))
@@ -411,6 +429,7 @@ type serverStream struct {
 	cp         Compressor
 	dc         Decompressor
 	cbuf       *bytes.Buffer
+	maxMsgSize int
 	statusCode codes.Code
 	statusDesc string
 	trInfo     *traceInfo
@@ -456,10 +475,13 @@ func (ss *serverStream) SendMsg(m interface{}) (err error) {
 		}
 	}()
 	if err != nil {
-		err = transport.StreamErrorf(codes.Internal, "grpc: %v", err)
+		err = Errorf(codes.Internal, "grpc: %v", err)
 		return err
 	}
-	return ss.t.Write(ss.s, out, &transport.Options{Last: false})
+	if err := ss.t.Write(ss.s, out, &transport.Options{Last: false}); err != nil {
+		return toRPCErr(err)
+	}
+	return nil
 }
 
 func (ss *serverStream) RecvMsg(m interface{}) (err error) {
@@ -477,5 +499,14 @@ func (ss *serverStream) RecvMsg(m interface{}) (err error) {
 			ss.mu.Unlock()
 		}
 	}()
-	return recv(ss.p, ss.codec, ss.s, ss.dc, m)
+	if err := recv(ss.p, ss.codec, ss.s, ss.dc, m, ss.maxMsgSize); err != nil {
+		if err == io.EOF {
+			return err
+		}
+		if err == io.ErrUnexpectedEOF {
+			err = Errorf(codes.Internal, io.ErrUnexpectedEOF.Error())
+		}
+		return toRPCErr(err)
+	}
+	return nil
 }

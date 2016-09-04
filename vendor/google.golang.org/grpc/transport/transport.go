@@ -44,7 +44,6 @@ import (
 	"io"
 	"net"
 	"sync"
-	"time"
 
 	"golang.org/x/net/context"
 	"golang.org/x/net/trace"
@@ -240,6 +239,8 @@ func (s *Stream) Header() (metadata.MD, error) {
 	select {
 	case <-s.ctx.Done():
 		return nil, ContextErr(s.ctx.Err())
+	case <-s.goAway:
+		return nil, ErrStreamDrain
 	case <-s.headerChan:
 		return s.header.Copy(), nil
 	}
@@ -354,19 +355,17 @@ type ConnectOptions struct {
 	// UserAgent is the application user agent.
 	UserAgent string
 	// Dialer specifies how to dial a network address.
-	Dialer func(string, time.Duration) (net.Conn, error)
+	Dialer func(context.Context, string) (net.Conn, error)
 	// PerRPCCredentials stores the PerRPCCredentials required to issue RPCs.
 	PerRPCCredentials []credentials.PerRPCCredentials
 	// TransportCredentials stores the Authenticator required to setup a client connection.
 	TransportCredentials credentials.TransportCredentials
-	// Timeout specifies the timeout for dialing a ClientTransport.
-	Timeout time.Duration
 }
 
 // NewClientTransport establishes the transport with the required ConnectOptions
 // and returns it to the caller.
-func NewClientTransport(target string, opts *ConnectOptions) (ClientTransport, error) {
-	return newHTTP2Client(target, opts)
+func NewClientTransport(ctx context.Context, target string, opts ConnectOptions) (ClientTransport, error) {
+	return newHTTP2Client(ctx, target, opts)
 }
 
 // Options provides additional hints and information for message
@@ -477,18 +476,20 @@ type ServerTransport interface {
 	Drain()
 }
 
-// StreamErrorf creates an StreamError with the specified error code and description.
-func StreamErrorf(c codes.Code, format string, a ...interface{}) StreamError {
+// streamErrorf creates an StreamError with the specified error code and description.
+func streamErrorf(c codes.Code, format string, a ...interface{}) StreamError {
 	return StreamError{
 		Code: c,
 		Desc: fmt.Sprintf(format, a...),
 	}
 }
 
-// ConnectionErrorf creates an ConnectionError with the specified error description.
-func ConnectionErrorf(format string, a ...interface{}) ConnectionError {
+// connectionErrorf creates an ConnectionError with the specified error description.
+func connectionErrorf(temp bool, e error, format string, a ...interface{}) ConnectionError {
 	return ConnectionError{
 		Desc: fmt.Sprintf(format, a...),
+		temp: temp,
+		err:  e,
 	}
 }
 
@@ -496,18 +497,35 @@ func ConnectionErrorf(format string, a ...interface{}) ConnectionError {
 // entire connection and the retry of all the active streams.
 type ConnectionError struct {
 	Desc string
+	temp bool
+	err  error
 }
 
 func (e ConnectionError) Error() string {
 	return fmt.Sprintf("connection error: desc = %q", e.Desc)
 }
 
+// Temporary indicates if this connection error is temporary or fatal.
+func (e ConnectionError) Temporary() bool {
+	return e.temp
+}
+
+// Origin returns the original error of this connection error.
+func (e ConnectionError) Origin() error {
+	// Never return nil error here.
+	// If the original error is nil, return itself.
+	if e.err == nil {
+		return e
+	}
+	return e.err
+}
+
 var (
 	// ErrConnClosing indicates that the transport is closing.
-	ErrConnClosing = ConnectionError{Desc: "transport is closing"}
+	ErrConnClosing = connectionErrorf(true, nil, "transport is closing")
 	// ErrStreamDrain indicates that the stream is rejected by the server because
 	// the server stops accepting new RPCs.
-	ErrStreamDrain = StreamErrorf(codes.Unavailable, "the server stops accepting new RPCs")
+	ErrStreamDrain = streamErrorf(codes.Unavailable, "the server stops accepting new RPCs")
 )
 
 // StreamError is an error that only affects one stream within a connection.
@@ -524,9 +542,9 @@ func (e StreamError) Error() string {
 func ContextErr(err error) StreamError {
 	switch err {
 	case context.DeadlineExceeded:
-		return StreamErrorf(codes.DeadlineExceeded, "%v", err)
+		return streamErrorf(codes.DeadlineExceeded, "%v", err)
 	case context.Canceled:
-		return StreamErrorf(codes.Canceled, "%v", err)
+		return streamErrorf(codes.Canceled, "%v", err)
 	}
 	panic(fmt.Sprintf("Unexpected error from context packet: %v", err))
 }

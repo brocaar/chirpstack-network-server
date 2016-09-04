@@ -36,6 +36,7 @@ package grpc
 import (
 	"bytes"
 	"io"
+	"math"
 	"time"
 
 	"golang.org/x/net/context"
@@ -51,13 +52,20 @@ import (
 func recvResponse(dopts dialOptions, t transport.ClientTransport, c *callInfo, stream *transport.Stream, reply interface{}) error {
 	// Try to acquire header metadata from the server if there is any.
 	var err error
+	defer func() {
+		if err != nil {
+			if _, ok := err.(transport.ConnectionError); !ok {
+				t.CloseStream(stream, err)
+			}
+		}
+	}()
 	c.headerMD, err = stream.Header()
 	if err != nil {
 		return err
 	}
 	p := &parser{r: stream}
 	for {
-		if err = recv(p, dopts.codec, stream, dopts.dc, reply); err != nil {
+		if err = recv(p, dopts.codec, stream, dopts.dc, reply, math.MaxInt32); err != nil {
 			if err == io.EOF {
 				break
 			}
@@ -76,6 +84,7 @@ func sendRequest(ctx context.Context, codec Codec, compressor Compressor, callHd
 	}
 	defer func() {
 		if err != nil {
+			// If err is connection error, t will be closed, no need to close stream here.
 			if _, ok := err.(transport.ConnectionError); !ok {
 				t.CloseStream(stream, err)
 			}
@@ -87,7 +96,7 @@ func sendRequest(ctx context.Context, codec Codec, compressor Compressor, callHd
 	}
 	outBuf, err := encode(codec, args, compressor, cbuf)
 	if err != nil {
-		return nil, transport.StreamErrorf(codes.Internal, "grpc: %v", err)
+		return nil, Errorf(codes.Internal, "grpc: %v", err)
 	}
 	err = t.Write(stream, outBuf, opts)
 	// t.NewStream(...) could lead to an early rejection of the RPC (e.g., the service/method
@@ -103,7 +112,14 @@ func sendRequest(ctx context.Context, codec Codec, compressor Compressor, callHd
 // Invoke sends the RPC request on the wire and returns after response is received.
 // Invoke is called by generated code. Also users can call Invoke directly when it
 // is really needed in their use cases.
-func Invoke(ctx context.Context, method string, args, reply interface{}, cc *ClientConn, opts ...CallOption) (err error) {
+func Invoke(ctx context.Context, method string, args, reply interface{}, cc *ClientConn, opts ...CallOption) error {
+	if cc.dopts.unaryInt != nil {
+		return cc.dopts.unaryInt(ctx, method, args, reply, cc, invoke, opts...)
+	}
+	return invoke(ctx, method, args, reply, cc, opts...)
+}
+
+func invoke(ctx context.Context, method string, args, reply interface{}, cc *ClientConn, opts ...CallOption) (err error) {
 	c := defaultCallInfo
 	for _, o := range opts {
 		if err := o.before(&c); err != nil {
@@ -161,9 +177,9 @@ func Invoke(ctx context.Context, method string, args, reply interface{}, cc *Cli
 			if _, ok := err.(*rpcError); ok {
 				return err
 			}
-			if err == errConnClosing {
+			if err == errConnClosing || err == errConnUnavailable {
 				if c.failFast {
-					return Errorf(codes.Unavailable, "%v", errConnClosing)
+					return Errorf(codes.Unavailable, "%v", err)
 				}
 				continue
 			}
@@ -190,20 +206,18 @@ func Invoke(ctx context.Context, method string, args, reply interface{}, cc *Cli
 			}
 			return toRPCErr(err)
 		}
-		// Receive the response
 		err = recvResponse(cc.dopts, t, &c, stream, reply)
 		if err != nil {
 			if put != nil {
 				put()
 				put = nil
 			}
-			if _, ok := err.(transport.ConnectionError); ok {
+			if _, ok := err.(transport.ConnectionError); ok || err == transport.ErrStreamDrain {
 				if c.failFast {
 					return toRPCErr(err)
 				}
 				continue
 			}
-			t.CloseStream(stream, err)
 			return toRPCErr(err)
 		}
 		if c.traceInfo.tr != nil {
