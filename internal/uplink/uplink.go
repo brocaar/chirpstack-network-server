@@ -11,6 +11,40 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// Server represents a server listening for uplink packets.
+type Server struct {
+	ctx common.Context
+	wg  sync.WaitGroup
+}
+
+// NewServer creates a new server.
+func NewServer(ctx common.Context) *Server {
+	return &Server{
+		ctx: ctx,
+	}
+}
+
+// Start starts the server.
+func (s *Server) Start() error {
+	go func() {
+		s.wg.Add(1)
+		defer s.wg.Done()
+		HandleRXPackets(s.wg, s.ctx)
+	}()
+	return nil
+}
+
+// Stop closes the gateway backend and waits for the server to complete the
+// pending packets.
+func (s *Server) Stop() error {
+	if err := s.ctx.Gateway.Close(); err != nil {
+		return fmt.Errorf("close gateway backend error: %s", err)
+	}
+	log.Info("waiting for pending actions to complete")
+	s.wg.Wait()
+	return nil
+}
+
 // HandleRXPackets consumes received packets by the gateway and handles them
 // in a separate go-routine. Errors are logged.
 func HandleRXPackets(wg sync.WaitGroup, ctx common.Context) {

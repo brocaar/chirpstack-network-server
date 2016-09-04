@@ -1,8 +1,7 @@
 package api
 
 import (
-	"context"
-
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
@@ -15,6 +14,13 @@ import (
 
 type NetworkServerAPI struct {
 	ctx common.Context
+}
+
+// NewNetworkServerAPI returns a new NetworkServerAPI.
+func NewNetworkServerAPI(ctx common.Context) *NetworkServerAPI {
+	return &NetworkServerAPI{
+		ctx: ctx,
+	}
 }
 
 // CreateNodeSession create a node-session.
