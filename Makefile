@@ -31,9 +31,9 @@ package: clean build
 
 generate:
 	@echo "Running go generate"
-	@go generate api/api.go
-	@go generate cmd/loraserver/main.go
-	@go generate models/notifications.go
+	@go generate api/as/as.go
+	@go generate api/nc/nc.go
+	@go generate api/ns/ns.go
 
 requirements:
 	@go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
