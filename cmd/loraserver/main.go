@@ -24,6 +24,7 @@ import (
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api"
+	"github.com/brocaar/loraserver/internal/backend/controller"
 	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/uplink"
@@ -69,7 +70,12 @@ func run(c *cli.Context) error {
 	lsCtx := mustGetContext(netID, c)
 
 	// start the api server
-	log.WithField("bind", c.String("bind")).Info("starting api server")
+	log.WithFields(log.Fields{
+		"bind":     c.String("bind"),
+		"ca-cert":  c.String("ca-cert"),
+		"tls-cert": c.String("tls-cert"),
+		"tls-key":  c.String("tls-key"),
+	}).Info("starting api server")
 	apiServer := mustGetAPIServer(lsCtx, c)
 	ln, err := net.Listen("tcp", c.String("bind"))
 	if err != nil {
@@ -115,6 +121,12 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) common.Context {
 	}
 
 	// setup application client
+	log.WithFields(log.Fields{
+		"server":   c.String("as-server"),
+		"ca-cert":  c.String("as-ca-cert"),
+		"tls-cert": c.String("as-tls-cert"),
+		"tls-key":  c.String("as-tls-key"),
+	}).Info("connecting to application-server")
 	var asDialOptions []grpc.DialOption
 	if c.String("as-tls-cert") != "" && c.String("as-tls-key") != "" {
 		asDialOptions = append(asDialOptions, grpc.WithTransportCredentials(
@@ -127,39 +139,51 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) common.Context {
 	if err != nil {
 		log.Fatalf("application-server dial error: %s", err)
 	}
+	asClient := as.NewApplicationServerClient(asConn)
 
-	// setup network-controller client
-	var ncDialOptions []grpc.DialOption
-	if c.String("nc-tls-cert") != "" && c.String("nc-tls-key") != "" {
-		ncDialOptions = append(ncDialOptions, grpc.WithTransportCredentials(
-			mustGetTransportCredentials(c.String("nc-tls-cert"), c.String("nc-tls-key"), c.String("nc-ca-cert"), false),
-		))
+	var ncClient nc.NetworkControllerClient
+	if c.String("nc-server") != "" {
+		// setup network-controller client
+		log.WithFields(log.Fields{
+			"server":   c.String("nc-server"),
+			"ca-cert":  c.String("nc-ca-cert"),
+			"tls-cert": c.String("nc-tls-cert"),
+			"tls-key":  c.String("nc-tls-key"),
+		}).Info("connecting to network-controller")
+		var ncDialOptions []grpc.DialOption
+		if c.String("nc-tls-cert") != "" && c.String("nc-tls-key") != "" {
+			ncDialOptions = append(ncDialOptions, grpc.WithTransportCredentials(
+				mustGetTransportCredentials(c.String("nc-tls-cert"), c.String("nc-tls-key"), c.String("nc-ca-cert"), false),
+			))
+		} else {
+			ncDialOptions = append(ncDialOptions, grpc.WithInsecure())
+		}
+		ncConn, err := grpc.Dial(c.String("nc-server"), ncDialOptions...)
+		if err != nil {
+			log.Fatalf("network-controller dial error: %s", err)
+		}
+		ncClient = nc.NewNetworkControllerClient(ncConn)
 	} else {
-		ncDialOptions = append(ncDialOptions, grpc.WithInsecure())
-	}
-	ncConn, err := grpc.Dial(c.String("nc-server"), ncDialOptions...)
-	if err != nil {
-		log.Fatalf("network-controller dial error: %s", err)
+		log.Info("no network-controller configured")
+		ncClient = &controller.NopNetworkControllerClient{}
 	}
 
 	return common.Context{
 		RedisPool:   rp,
 		Gateway:     gw,
-		Application: as.NewApplicationServerClient(asConn),
-		Controller:  nc.NewNetworkControllerClient(ncConn),
+		Application: asClient,
+		Controller:  ncClient,
 		NetID:       netID,
 	}
 }
 
 func mustGetAPIServer(ctx common.Context, c *cli.Context) *grpc.Server {
-	var nsServerOptions []grpc.ServerOption
+	var opts []grpc.ServerOption
 	if c.String("tls-cert") != "" && c.String("tls-key") != "" {
-		nsServerOptions = append(nsServerOptions, grpc.Creds(
-			mustGetTransportCredentials(c.String("tls-cert"), c.String("tls-key"), c.String("ca-cert"), true),
-		))
+		creds := mustGetTransportCredentials(c.String("tls-cert"), c.String("tls-key"), c.String("ca-cert"), false)
+		opts = append(opts, grpc.Creds(creds))
 	}
-
-	gs := grpc.NewServer(nsServerOptions...)
+	gs := grpc.NewServer(opts...)
 	nsAPI := api.NewNetworkServerAPI(ctx)
 	ns.RegisterNetworkServerServer(gs, nsAPI)
 
@@ -167,33 +191,37 @@ func mustGetAPIServer(ctx common.Context, c *cli.Context) *grpc.Server {
 }
 
 func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCert bool) credentials.TransportCredentials {
+	var caCertPool *x509.CertPool
 	cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
 	if err != nil {
-		log.Fatal("loading keypair error: %s", err)
+		log.WithFields(log.Fields{
+			"cert": tlsCert,
+			"key":  tlsKey,
+		}).Fatalf("load key-pair error: %s", err)
 	}
 
-	var caCertPool *x509.CertPool
-	var clientAuth tls.ClientAuthType
-
 	if caCert != "" {
-		rawCACert, err := ioutil.ReadFile(caCert)
+		rawCaCert, err := ioutil.ReadFile(caCert)
 		if err != nil {
-			log.Fatal("load ca cert error: %s", err)
+			log.WithField("ca", caCert).Fatalf("load ca cert error: %s")
 		}
 
 		caCertPool = x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(rawCACert)
+		caCertPool.AppendCertsFromPEM(rawCaCert)
 	}
 
 	if verifyClientCert {
-		clientAuth = tls.RequireAndVerifyClientCert
+		return credentials.NewTLS(&tls.Config{
+			Certificates: []tls.Certificate{cert},
+			RootCAs:      caCertPool,
+			ClientAuth:   tls.RequireAndVerifyClientCert,
+		})
+	} else {
+		return credentials.NewTLS(&tls.Config{
+			Certificates: []tls.Certificate{cert},
+			RootCAs:      caCertPool,
+		})
 	}
-
-	return credentials.NewTLS(&tls.Config{
-		Certificates: []tls.Certificate{cert},
-		RootCAs:      caCertPool,
-		ClientAuth:   clientAuth,
-	})
 }
 
 func main() {
@@ -216,17 +244,17 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "ca-cert",
-			Usage:  "ca certificate used by the api server",
+			Usage:  "ca certificate used by the api server (optional)",
 			EnvVar: "CA_CERT",
 		},
 		cli.StringFlag{
 			Name:   "tls-cert",
-			Usage:  "tls certificate used by the api server",
+			Usage:  "tls certificate used by the api server (optional)",
 			EnvVar: "TLS_CERT",
 		},
 		cli.StringFlag{
 			Name:   "tls-key",
-			Usage:  "tls key used by the api server",
+			Usage:  "tls key used by the api server (optional)",
 			EnvVar: "TLS_KEY",
 		},
 		cli.StringFlag{
@@ -259,44 +287,43 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "as-server",
-			Usage:  "hostname:port of the application-server api server",
+			Usage:  "hostname:port of the application-server api server (optional)",
 			Value:  "127.0.0.1:8001",
 			EnvVar: "AS_HOST",
 		},
 		cli.StringFlag{
 			Name:   "as-ca-cert",
-			Usage:  "ca certificate used by the application-server client",
+			Usage:  "ca certificate used by the application-server client (optional)",
 			EnvVar: "AS_CA_CERT",
 		},
 		cli.StringFlag{
 			Name:   "as-tls-cert",
-			Usage:  "tls certificate used by the application-server client",
+			Usage:  "tls certificate used by the application-server client (optional)",
 			EnvVar: "AS_TLS_CERT",
 		},
 		cli.StringFlag{
 			Name:   "as-tls-key",
-			Usage:  "tls key used by the application-server client",
+			Usage:  "tls key used by the application-server client (optional)",
 			EnvVar: "AS_TLS_KEY",
 		},
 		cli.StringFlag{
 			Name:   "nc-server",
-			Usage:  "hostname:port of the network-controller api server",
-			Value:  "127.0.0.1:8002",
+			Usage:  "hostname:port of the network-controller api server (optional)",
 			EnvVar: "AS_HOST",
 		},
 		cli.StringFlag{
 			Name:   "nc-ca-cert",
-			Usage:  "ca certificate used by the network-controller client",
+			Usage:  "ca certificate used by the network-controller client (optional)",
 			EnvVar: "NC_CA_CERT",
 		},
 		cli.StringFlag{
 			Name:   "nc-tls-cert",
-			Usage:  "tls certificate used by the network-controller client",
+			Usage:  "tls certificate used by the network-controller client (optional)",
 			EnvVar: "NC_TLS_CERT",
 		},
 		cli.StringFlag{
 			Name:   "nc-tls-key",
-			Usage:  "tls key used by the network-controller client",
+			Usage:  "tls key used by the network-controller client (optional)",
 			EnvVar: "NC_TLS_KEY",
 		},
 	}

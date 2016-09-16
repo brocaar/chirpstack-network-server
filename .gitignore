@@ -1,6 +1,9 @@
 # hidden files
 .*
 
+# certs
+certs/
+
 # binaries
 dist/
 build/
