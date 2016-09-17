@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	. "github.com/smartystreets/goconvey/convey"
 
@@ -114,6 +115,7 @@ func TestUplinkScenarios(t *testing.T) {
 		var fPortOne uint8 = 1
 
 		expectedControllerHandleRXInfo := &nc.HandleRXInfoRequest{
+			AppEUI: ns.AppEUI[:],
 			DevEUI: ns.DevEUI[:],
 			TxInfo: &nc.TXInfo{
 				Frequency: int64(rxInfo.Frequency),
@@ -127,7 +129,7 @@ func TestUplinkScenarios(t *testing.T) {
 			RxInfo: []*nc.RXInfo{
 				{
 					Mac:     rxInfo.MAC[:],
-					Time:    rxInfo.Time.String(),
+					Time:    rxInfo.Time.Format(time.RFC3339Nano),
 					Rssi:    int32(rxInfo.RSSI),
 					LoRaSNR: rxInfo.LoRaSNR,
 				},
@@ -135,6 +137,7 @@ func TestUplinkScenarios(t *testing.T) {
 		}
 
 		expectedApplicationPushDataUp := &as.HandleDataUpRequest{
+			AppEUI: ns.AppEUI[:],
 			DevEUI: ns.DevEUI[:],
 			FCnt:   10,
 			FPort:  1,
@@ -151,7 +154,7 @@ func TestUplinkScenarios(t *testing.T) {
 			RxInfo: []*as.RXInfo{
 				{
 					Mac:     rxInfo.MAC[:],
-					Time:    rxInfo.Time.String(),
+					Time:    rxInfo.Time.Format(time.RFC3339Nano),
 					Rssi:    int32(rxInfo.RSSI),
 					LoRaSNR: rxInfo.LoRaSNR,
 				},
@@ -159,6 +162,7 @@ func TestUplinkScenarios(t *testing.T) {
 		}
 
 		expectedApplicationPushDataUpNoData := &as.HandleDataUpRequest{
+			AppEUI: ns.AppEUI[:],
 			DevEUI: ns.DevEUI[:],
 			FCnt:   10,
 			FPort:  1,
@@ -175,7 +179,7 @@ func TestUplinkScenarios(t *testing.T) {
 			RxInfo: []*as.RXInfo{
 				{
 					Mac:     rxInfo.MAC[:],
-					Time:    rxInfo.Time.String(),
+					Time:    rxInfo.Time.Format(time.RFC3339Nano),
 					Rssi:    int32(rxInfo.RSSI),
 					LoRaSNR: rxInfo.LoRaSNR,
 				},
@@ -183,6 +187,7 @@ func TestUplinkScenarios(t *testing.T) {
 		}
 
 		expectedGetDataDown := &as.GetDataDownRequest{
+			AppEUI:         ns.AppEUI[:],
 			DevEUI:         ns.DevEUI[:],
 			MaxPayloadSize: 51,
 			FCnt:           5,
@@ -237,6 +242,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedHandleRXPacketError: errors.New("invalid FCnt or too many dropped frames"),
 					ExpectedApplicationHandleErrors: []as.HandleErrorRequest{
 						{
+							AppEUI: ns.AppEUI[:],
 							DevEUI: ns.DevEUI[:],
 							Type:   as.ErrorType_DATA_UP_FCNT,
 							Error:  "invalid FCnt or too many dropped frames (server_fcnt: 8, packet_fcnt: 7)",
@@ -266,6 +272,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedHandleRXPacketError: errors.New("invalid MIC"),
 					ExpectedApplicationHandleErrors: []as.HandleErrorRequest{
 						{
+							AppEUI: ns.AppEUI[:],
 							DevEUI: ns.DevEUI[:],
 							Type:   as.ErrorType_DATA_UP_MIC,
 							Error:  "invalid MIC",
@@ -277,6 +284,7 @@ func TestUplinkScenarios(t *testing.T) {
 			runUplinkTests(ctx, tests)
 		})
 
+		// TODO: add ACK test
 		Convey("Given a set of test-scenarios for basic flows (nothing in the queue)", func() {
 			tests := []uplinkTestCase{
 				{
@@ -485,6 +493,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedApplicationGetDataDown: &as.GetDataDownRequest{
+						AppEUI:         ns.AppEUI[:],
 						DevEUI:         ns.DevEUI[:],
 						FCnt:           5,
 						MaxPayloadSize: 115,
@@ -582,8 +591,8 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown: expectedGetDataDown,
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedControllerHandleDataUpMACCommands: []nc.HandleDataUpMACCommandRequest{
-						{DevEUI: ns.DevEUI[:], Data: []byte{2}},
-						{DevEUI: ns.DevEUI[:], Data: []byte{3, 1}},
+						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], Data: []byte{2}},
+						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], Data: []byte{3, 1}},
 					},
 					ExpectedFCntUp:   10,
 					ExpectedFCntDown: 5,
@@ -614,8 +623,8 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown: expectedGetDataDown,
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedControllerHandleDataUpMACCommands: []nc.HandleDataUpMACCommandRequest{
-						{DevEUI: ns.DevEUI[:], FrmPayload: true, Data: []byte{2}},
-						{DevEUI: ns.DevEUI[:], FrmPayload: true, Data: []byte{3, 1}},
+						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], FrmPayload: true, Data: []byte{2}},
+						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], FrmPayload: true, Data: []byte{3, 1}},
 					},
 					ExpectedFCntUp:   10,
 					ExpectedFCntDown: 5,
@@ -887,7 +896,11 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedControllerHandleErrors: []nc.HandleErrorRequest{
-						{DevEUI: ns.DevEUI[:], Error: "unmarshal mac command error: lorawan: 1 byte of data is expected (command: 040F10)"},
+						{
+							AppEUI: ns.AppEUI[:],
+							DevEUI: ns.DevEUI[:],
+							Error:  "unmarshal mac command error: lorawan: 1 byte of data is expected (command: 040F10)",
+						},
 					},
 					ExpectedTXInfo: &gw.TXInfo{
 						Timestamp: rxInfo.Timestamp + 1000000,

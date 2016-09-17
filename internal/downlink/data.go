@@ -76,6 +76,7 @@ func getDataDownTXInfoAndDR(ctx common.Context, ns session.NodeSession, rxInfo g
 // (if any). On error the error is logged.
 func getDataDownFromApplication(ctx common.Context, ns session.NodeSession, dr int) *as.GetDataDownResponse {
 	resp, err := ctx.Application.GetDataDown(context.Background(), &as.GetDataDownRequest{
+		AppEUI:         ns.AppEUI[:],
 		DevEUI:         ns.DevEUI[:],
 		MaxPayloadSize: uint32(common.Band.MaxPayloadSize[dr].N),
 		FCnt:           ns.FCntDown,
@@ -187,6 +188,7 @@ func SendDataDownResponse(ctx common.Context, ns session.NodeSession, rxPackets 
 				"command": hex.EncodeToString(pl.Data),
 			}).Warning(errStr)
 			ctx.Controller.HandleError(context.Background(), &nc.HandleErrorRequest{
+				AppEUI: ns.AppEUI[:],
 				DevEUI: ns.DevEUI[:],
 				Error:  errStr + fmt.Sprintf(" (command: %X)", pl.Data),
 			})

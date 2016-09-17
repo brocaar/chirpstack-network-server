@@ -37,22 +37,25 @@ message TXInfo {
 
 message HandleRXInfoRequest {
     bytes devEUI = 1;
-    TXInfo txInfo = 2;
-    repeated RXInfo rxInfo = 3;
+    bytes appEUI = 2;
+    TXInfo txInfo = 3;
+    repeated RXInfo rxInfo = 4;
 }
 
 message HandleRXInfoResponse {}
 
 message HandleDataUpMACCommandRequest {
     bytes devEUI = 1;
-    bool frmPayload = 2;
-    bytes data = 3;
+	bytes appEUI = 2;
+    bool frmPayload = 3;
+    bytes data = 4;
 }
 
 message HandleDataUpMACCommandResponse {}
 
 message HandleErrorRequest {
     bytes devEUI = 1;
+	bytes appEUI = 2;
     string error = 3;
 }
 

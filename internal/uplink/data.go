@@ -36,6 +36,7 @@ func validateAndCollectDataUpRXPacket(ctx common.Context, rxPacket gw.RXPacket) 
 	fullFCnt, ok := session.ValidateAndGetFullFCntUp(ns, macPL.FHDR.FCnt)
 	if !ok {
 		ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
+			AppEUI: ns.AppEUI[:],
 			DevEUI: ns.DevEUI[:],
 			Type:   as.ErrorType_DATA_UP_FCNT,
 			Error:  fmt.Sprintf("invalid FCnt or too many dropped frames (server_fcnt: %d, packet_fcnt: %d)", ns.FCntUp, macPL.FHDR.FCnt),
@@ -57,6 +58,7 @@ func validateAndCollectDataUpRXPacket(ctx common.Context, rxPacket gw.RXPacket) 
 	}
 	if !micOK {
 		ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
+			AppEUI: ns.AppEUI[:],
 			DevEUI: ns.DevEUI[:],
 			Type:   as.ErrorType_DATA_UP_MIC,
 			Error:  "invalid MIC",
@@ -107,7 +109,7 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPackets models.RXPackets
 	}).Info("packet(s) collected")
 
 	// send rx info notification to be used by the network-controller
-	if err = sendRXInfoPayload(ctx, ns.DevEUI, rxPackets); err != nil {
+	if err = sendRXInfoPayload(ctx, ns, rxPackets); err != nil {
 		log.WithFields(log.Fields{
 			"dev_eui": ns.DevEUI,
 		}).Errorf("send rx info to network-controller error: %s", err)
@@ -115,7 +117,7 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPackets models.RXPackets
 
 	// handle FOpts mac commands (if any)
 	if len(macPL.FHDR.FOpts) > 0 {
-		if err := handleUplinkMACCommands(ctx, ns.DevEUI, false, macPL.FHDR.FOpts); err != nil {
+		if err := handleUplinkMACCommands(ctx, ns, false, macPL.FHDR.FOpts); err != nil {
 			log.WithFields(log.Fields{
 				"dev_eui": ns.DevEUI,
 				"fopts":   macPL.FHDR.FOpts,
@@ -144,14 +146,14 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPackets models.RXPackets
 				}
 				commands = append(commands, *cmd)
 			}
-			if err := handleUplinkMACCommands(ctx, ns.DevEUI, true, commands); err != nil {
+			if err := handleUplinkMACCommands(ctx, ns, true, commands); err != nil {
 				log.WithFields(log.Fields{
 					"dev_eui":  ns.DevEUI,
 					"commands": commands,
 				}).Errorf("handle FRMPayload mac commands error: %s", err)
 			}
 		} else {
-			if err := publishDataUp(ctx, ns.DevEUI, rxPackets, *macPL); err != nil {
+			if err := publishDataUp(ctx, ns, rxPackets, *macPL); err != nil {
 				return err
 			}
 		}
@@ -180,7 +182,7 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPackets models.RXPackets
 }
 
 // sendRXInfoPayload sends the rx and tx meta-data to the network controller.
-func sendRXInfoPayload(ctx common.Context, devEUI lorawan.EUI64, rxPackets models.RXPackets) error {
+func sendRXInfoPayload(ctx common.Context, ns session.NodeSession, rxPackets models.RXPackets) error {
 	if len(rxPackets) == 0 {
 		return fmt.Errorf("length of rx packets must be at least 1")
 	}
@@ -191,7 +193,8 @@ func sendRXInfoPayload(ctx common.Context, devEUI lorawan.EUI64, rxPackets model
 	}
 
 	rxInfoReq := nc.HandleRXInfoRequest{
-		DevEUI: devEUI[:],
+		AppEUI: ns.AppEUI[:],
+		DevEUI: ns.DevEUI[:],
 		TxInfo: &nc.TXInfo{
 			Frequency: int64(rxPackets[0].RXInfo.Frequency),
 			Adr:       macPL.FHDR.FCtrl.ADR,
@@ -208,7 +211,7 @@ func sendRXInfoPayload(ctx common.Context, devEUI lorawan.EUI64, rxPackets model
 	for _, rxPacket := range rxPackets {
 		rxInfoReq.RxInfo = append(rxInfoReq.RxInfo, &nc.RXInfo{
 			Mac:     rxPacket.RXInfo.MAC[:],
-			Time:    rxPacket.RXInfo.Time.String(),
+			Time:    rxPacket.RXInfo.Time.Format(time.RFC3339Nano),
 			Rssi:    int32(rxPacket.RXInfo.RSSI),
 			LoRaSNR: rxPacket.RXInfo.LoRaSNR,
 		})
@@ -219,18 +222,19 @@ func sendRXInfoPayload(ctx common.Context, devEUI lorawan.EUI64, rxPackets model
 		return fmt.Errorf("publish rxinfo to network-controller error: %s", err)
 	}
 	log.WithFields(log.Fields{
-		"dev_eui": devEUI,
+		"dev_eui": ns.DevEUI,
 	}).Info("rx info sent to network-controller")
 	return nil
 }
 
-func publishDataUp(ctx common.Context, devEUI lorawan.EUI64, rxPackets models.RXPackets, macPL lorawan.MACPayload) error {
+func publishDataUp(ctx common.Context, ns session.NodeSession, rxPackets models.RXPackets, macPL lorawan.MACPayload) error {
 	if len(rxPackets) == 0 {
 		return fmt.Errorf("length of rx packets must be at least 1")
 	}
 
 	publishDataUpReq := as.HandleDataUpRequest{
-		DevEUI: devEUI[:],
+		AppEUI: ns.AppEUI[:],
+		DevEUI: ns.DevEUI[:],
 		FCnt:   macPL.FHDR.FCnt,
 		TxInfo: &as.TXInfo{
 			Frequency: int64(rxPackets[0].RXInfo.Frequency),
@@ -248,7 +252,7 @@ func publishDataUp(ctx common.Context, devEUI lorawan.EUI64, rxPackets models.RX
 	for _, rxPacket := range rxPackets {
 		publishDataUpReq.RxInfo = append(publishDataUpReq.RxInfo, &as.RXInfo{
 			Mac:     rxPacket.RXInfo.MAC[:],
-			Time:    rxPacket.RXInfo.Time.String(),
+			Time:    rxPacket.RXInfo.Time.Format(time.RFC3339Nano),
 			Rssi:    int32(rxPacket.RXInfo.RSSI),
 			LoRaSNR: rxPacket.RXInfo.LoRaSNR,
 		})
@@ -273,10 +277,10 @@ func publishDataUp(ctx common.Context, devEUI lorawan.EUI64, rxPackets models.RX
 	return nil
 }
 
-func handleUplinkMACCommands(ctx common.Context, devEUI lorawan.EUI64, frmPayload bool, commands []lorawan.MACCommand) error {
+func handleUplinkMACCommands(ctx common.Context, ns session.NodeSession, frmPayload bool, commands []lorawan.MACCommand) error {
 	for _, cmd := range commands {
 		logFields := log.Fields{
-			"dev_eui":     devEUI,
+			"dev_eui":     ns.DevEUI,
 			"cid":         cmd.CID,
 			"frm_payload": frmPayload,
 		}
@@ -287,7 +291,8 @@ func handleUplinkMACCommands(ctx common.Context, devEUI lorawan.EUI64, frmPayloa
 		}
 
 		_, err = ctx.Controller.HandleDataUpMACCommand(context.Background(), &nc.HandleDataUpMACCommandRequest{
-			DevEUI:     devEUI[:],
+			AppEUI:     ns.AppEUI[:],
+			DevEUI:     ns.DevEUI[:],
 			FrmPayload: frmPayload,
 			Data:       b,
 		})
@@ -301,6 +306,7 @@ func handleUplinkMACCommands(ctx common.Context, devEUI lorawan.EUI64, frmPayloa
 
 func handleUplinkACK(ctx common.Context, ns *session.NodeSession) error {
 	_, err := ctx.Application.HandleDataDownACK(context.Background(), &as.HandleDataDownACKRequest{
+		AppEUI: ns.AppEUI[:],
 		DevEUI: ns.DevEUI[:],
 		FCnt:   ns.FCntDown,
 	})

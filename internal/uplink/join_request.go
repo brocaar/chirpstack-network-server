@@ -74,6 +74,7 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPackets models.RXPa
 	if len(joinResp.CFList) > len(cFList) {
 		errStr := fmt.Sprintf("max CFlist size %d, got %d", len(cFList), len(joinResp.CFList))
 		ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
+			AppEUI: jrPL.AppEUI[:],
 			DevEUI: jrPL.DevEUI[:],
 			Type:   as.ErrorType_OTAA,
 			Error:  errStr,
@@ -88,6 +89,7 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPackets models.RXPa
 	if err = downlinkPHY.UnmarshalBinary(joinResp.PhyPayload); err != nil {
 		errStr := fmt.Sprintf("downlink PHYPayload unmarshal error: %s", err)
 		ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
+			AppEUI: jrPL.AppEUI[:],
 			DevEUI: jrPL.DevEUI[:],
 			Type:   as.ErrorType_OTAA,
 			Error:  errStr,

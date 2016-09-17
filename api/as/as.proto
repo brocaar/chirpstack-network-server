@@ -71,17 +71,19 @@ message JoinRequestResponse {
 
 message HandleDataUpRequest {
     bytes devEUI = 1;
-    uint32 fCnt = 2;
-	uint32 fPort = 3;
-    bytes data = 4;
-    TXInfo txInfo = 5;
-    repeated RXInfo rxInfo = 6;
+	bytes appEUI = 2;
+    uint32 fCnt = 3;
+	uint32 fPort = 4;
+    bytes data = 5;
+    TXInfo txInfo = 6;
+    repeated RXInfo rxInfo = 7;
 }
 
 message GetDataDownRequest {
 	bytes devEUI = 1;
-	uint32 maxPayloadSize = 2;
-	uint32 fCnt = 3;
+	bytes appEUI = 2;
+	uint32 maxPayloadSize = 3;
+	uint32 fCnt = 4;
 }
 
 message GetDataDownResponse {
@@ -95,15 +97,17 @@ message HandleDataUpResponse {}
 
 message HandleDataDownACKRequest {
     bytes devEUI = 1;
-	uint32 fCnt = 2;
+	bytes appEUI = 2;
+	uint32 fCnt = 3;
 }
 
 message HandleDataDownACKResponse {}
 
 message HandleErrorRequest {
     bytes devEUI = 1;
-	ErrorType type = 2;
-    string error = 3;
+	bytes appEUI = 2;
+	ErrorType type = 3;
+    string error = 4;
 }
 
 message HandleErrorResponse {}
