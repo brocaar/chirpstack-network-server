@@ -203,7 +203,7 @@ func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCer
 	if caCert != "" {
 		rawCaCert, err := ioutil.ReadFile(caCert)
 		if err != nil {
-			log.WithField("ca", caCert).Fatalf("load ca cert error: %s")
+			log.WithField("ca", caCert).Fatalf("load ca cert error: %s", err)
 		}
 
 		caCertPool = x509.NewCertPool()
