@@ -54,6 +54,7 @@ for the following actions:
 
 ## MultiConnect® mDot™
   Through a serial terminal, use the following commands:
+  
   ```
   AT
   AT+NJM=1
@@ -68,6 +69,7 @@ for the following actions:
 
   For mDot™ we can't modify DevEUI, it's a factory-programmed setting
   use the following command to obtain it
+  
   ```
   AT+DI?
   ```
