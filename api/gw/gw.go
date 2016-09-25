@@ -22,18 +22,18 @@ type RXPacketBytes struct {
 
 // RXInfo contains the RX information.
 type RXInfo struct {
-	MAC       lorawan.EUI64 `json:"mac"`       // MAC address of the gateway
-	Time      time.Time     `json:"time"`      // receive time
-	Timestamp uint32        `json:"timestamp"` // gateway internal receive timestamp with microsecond precision, will rollover every ~ 72 minutes
-	Frequency int           `json:"frequency"` // frequency in Hz
-	Channel   int           `json:"channel"`   // concentrator IF channel used for RX
-	RFChain   int           `json:"rfChain"`   // RF chain used for RX
-	CRCStatus int           `json:"crcStatus"` // 1 = OK, -1 = fail, 0 = no CRC
-	CodeRate  string        `json:"codeRate"`  // ECC code rate
-	RSSI      int           `json:"rssi"`      // RSSI in dBm
-	LoRaSNR   float64       `json:"loRaSNR"`   // LoRa signal-to-noise ratio in dB
-	Size      int           `json:"size"`      // packet payload size
-	DataRate  band.DataRate `json:"dataRate"`  // RX datarate (either LoRa or FSK)
+	MAC       lorawan.EUI64 `json:"mac"`            // MAC address of the gateway
+	Time      time.Time     `json:"time,omitempty"` // receive time
+	Timestamp uint32        `json:"timestamp"`      // gateway internal receive timestamp with microsecond precision, will rollover every ~ 72 minutes
+	Frequency int           `json:"frequency"`      // frequency in Hz
+	Channel   int           `json:"channel"`        // concentrator IF channel used for RX
+	RFChain   int           `json:"rfChain"`        // RF chain used for RX
+	CRCStatus int           `json:"crcStatus"`      // 1 = OK, -1 = fail, 0 = no CRC
+	CodeRate  string        `json:"codeRate"`       // ECC code rate
+	RSSI      int           `json:"rssi"`           // RSSI in dBm
+	LoRaSNR   float64       `json:"loRaSNR"`        // LoRa signal-to-noise ratio in dB
+	Size      int           `json:"size"`           // packet payload size
+	DataRate  band.DataRate `json:"dataRate"`       // RX datarate (either LoRa or FSK)
 }
 
 // TXPacket contains the PHYPayload which should be send to the
@@ -64,7 +64,7 @@ type TXInfo struct {
 // GatewayStatsPacket contains the information of a gateway.
 type GatewayStatsPacket struct {
 	MAC                 lorawan.EUI64          `json:"mac"`
-	Time                time.Time              `json:"time"`
+	Time                time.Time              `json:"time,omitempty"`
 	Latitude            float64                `json:"latitude"`
 	Longitude           float64                `json:"longitude"`
 	Altitude            float64                `json:"altitude"`
