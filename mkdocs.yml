@@ -6,17 +6,14 @@ include_next_prev: False
 pages:
   - index.md
   - getting-started.md
-  - activating-nodes.md
-  - receiving-data.md
-  - sending-data.md
   - network-controller.md
-  - api.md
+  - application-server.md
   - configuration.md
   - frequently-asked-questions.md
   - changelog.md
 
 extra:
-  version: '0.11.0'
+  version: '0.12.0'
   github:
     download_release: true
 

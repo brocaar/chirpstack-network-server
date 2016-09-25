@@ -1,12 +1,38 @@
 # Configuration
 
-All configuration is either done by command-line arguments or environment variables, or
-a mix of both. Execute ``./loraserver --help`` to see all available configuration
-options for your version.
+To list all configuration options, start `loraserver` with the `--help`
+flag. This will display:
 
-#### --net-id / NET_ID
+```
+GLOBAL OPTIONS:
+   --net-id value            network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203) [$NET_ID]
+   --band value              ism band configuration to use (options: AU_915_928, EU_863_870, US_902_928) [$BAND]
+   --ca-cert value           ca certificate used by the api server (optional) [$CA_CERT]
+   --tls-cert value          tls certificate used by the api server (optional) [$TLS_CERT]
+   --tls-key value           tls key used by the api server (optional) [$TLS_KEY]
+   --bind value              ip:port to bind the api server (default: "0.0.0.0:8000") [$BIND]
+   --redis-url value         redis url (default: "redis://localhost:6379") [$REDIS_URL]
+   --gw-mqtt-server value    mqtt broker server used by the gateway backend (default: "tcp://localhost:1883") [$GW_MQTT_SERVER]
+   --gw-mqtt-username value  mqtt username used by the gateway backend [$GW_MQTT_USERNAME]
+   --gw-mqtt-password value  mqtt password used by the gateway backend [$GW_MQTT_PASSWORD]
+   --as-server value         hostname:port of the application-server api server (optional) (default: "127.0.0.1:8001") [$AS_HOST]
+   --as-ca-cert value        ca certificate used by the application-server client (optional) [$AS_CA_CERT]
+   --as-tls-cert value       tls certificate used by the application-server client (optional) [$AS_TLS_CERT]
+   --as-tls-key value        tls key used by the application-server client (optional) [$AS_TLS_KEY]
+   --nc-server value         hostname:port of the network-controller api server (optional) [$AS_HOST]
+   --nc-ca-cert value        ca certificate used by the network-controller client (optional) [$NC_CA_CERT]
+   --nc-tls-cert value       tls certificate used by the network-controller client (optional) [$NC_TLS_CERT]
+   --nc-tls-key value        tls key used by the network-controller client (optional) [$NC_TLS_KEY]
+   --help, -h                show help
+   --version, -v             print the version
+```
 
-This sets the ``NetID`` of your LoRaWAN network. Taken from the LoRaWAN specifications:
+Both cli arguments and environment-variables can be used to pass configuration
+options.
+
+## NetID
+
+Taken from the LoRaWAN specifications:
 
 > The format of the NetID is as follows: The seven LSB of the NetID are called NwkID and
 > match the seven MSB of the short address of an end-device as described before.
@@ -15,80 +41,8 @@ This sets the ``NetID`` of your LoRaWAN network. Taken from the LoRaWAN specific
 
 The value needs to be [HEX](https://en.wikipedia.org/wiki/Hexadecimal) encoded, e.g. ``010203``.
 
-#### --band / BAND
+## Band
 
-This sets the ISM band specific configuration to use. Executing ``./loraserver --help``
-will show you all the available ISM bands available.
-
-#### --http-bind / HTTP_BIND
-
-This sets the ``IP:PORT`` on which the http server will bind.
-It will serve the web-interface, REST and gRPC api if TLS is enabled. When
-TLS is disabled, the gRPC api will be served from a different port.
-
-#### --http-tls-cert / HTTP_TLS_CERT
-
-Path to the TLS certificate for the http server.
-
-#### --http-tls-key / HTTP_TLS_KEY
-
-Path to the TLS key for the http server.
-
-#### --grpc-insecure-bind / GRPC_BIND
-
-This sets the ``IP:PORT`` on which the insecure gRPC server will bind.
-Please note that this is only used when no TLS certificate and key are set.
-
-#### --postgres-dsn / POSTGRES_DSN
-
-This sets the PostgreSQL data-source name.
-See [Connection String Parameters](https://godoc.org/github.com/lib/pq#hdr-Connection_String_Parameters)
-for all available options.
-
-#### --redis-url / REDIS_URL
-
-This sets the Redis URL, see [https://www.iana.org/assignments/uri-schemes/prov/redis](https://www.iana.org/assignments/uri-schemes/prov/redis) for all available options.
-
-#### --db-automigrate / DB_AUTOMIGRATE
-
-Given that you already created the PostgreSQL database, this will apply all
-(forward) database migrations. If you prefer to apply these migrations manually,
-see the [migrations](https://github.com/brocaar/loraserver/tree/master/migrations)
-folder in the source repository for the raw SQL.
-
-#### --gw-mqtt-server / GW_MQTT_SERVER
-
-This sets the MQTT server to connect the gateway backend to.
-
-#### --gw-mqtt-username / GW_MQTT_USERNAME
-
-This sets the MQTT username for the gateway backend.
-
-#### --gw-mqtt-password / GW_MQTT_PASSWORD
-
-This sets the MQTT password for the gateway backend.
-
-#### --app-mqtt-server / APP_MQTT_SERVER
-
-This sets the MQTT server to connect the application backend to.
-
-#### --app-mqtt-username / APP_MQTT_USERNAME
-
-This sets the MQTT username for the application backend.
-
-#### --app-mqtt-password / APP_MQTT_PASSWORD
-
-This sets the MQTT password for the application backend.
-
-#### --controller-mqtt-server / CONTROLLER_MQTT_SERVER
-
-This sets the MQTT server to connect the network-controller backend to.
-
-#### --controller-mqtt-username / CONTROLLER_MQTT_USERNAME
-
-This sets the MQTT username for the network-controller backend.
-
-#### --controller-mqtt-password / CONTROLLER_MQTT_PASSWORD
-
-This sets the MQTT password for the network-controller backend.
-
+It is important to start `loraserver` with the correct band, as this defines
+the frequencies used. Make sure these frequencies match the frequencies as
+configured in your gateways.

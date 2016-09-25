@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.12.0
+
+This release decouples the node "inventory" part from LoRa Server. This
+introduces some breaking (API) changes, but in the end this will make it easier
+to integrate LoRa Server into your own platform as you're not limited anymore
+by it's datastructure.
+
+### API
+
+Between all LoRa Server project components [gRPC](http://gprc.io) is used
+for communication. Optionally, this can be secured by (client) certificates.
+The RESTful JSON api and api methods to manage channels, applications and nodes
+has been removed from LoRa Server. The node-session api methodds are still
+part of LoRa Server, but are only exposed by gRPC.
+
+### Application-server
+
+An application-server component and [API](https://github.com/brocaar/loraserver/blob/master/api/as/as.proto)
+was introduced to be responsible for the "inventory" part. This component is
+called by LoRa Server when a node tries to join the network, when data is
+received and to retrieve data for downlink transmissions.
+
+The inventory part has been migrated to a new project called
+[LoRa App Server](http://docs.loraserver.io/lora-app-server/). See it's
+changelog for instructions how to migrate.
+
+### Configuration
+
+As components have been dropped and introduced, you'll probably need to update
+your LoRa Server configuration. 
+
+### Important
+
+Before upgrading, make sure you have a backup of all data in the PostgreSQL
+and Redis database!
+
 ## 0.11.0
 
 * Implement receive window (RX1 or RX2) and RX2 data-rate option in node and
@@ -81,7 +117,7 @@ it fixes a mac command related marshaling issue.
 
 ## 0.6.0
 
-* Implement various notifications to the application (see [receiving data](receiving-data.md)):
+* Implement various notifications to the application:
 	* Node join accept (``application/[AppEUI]/node/[DevEUI]/join``)
 	* Errors (e.g. max payload size exceeded) (``application/[AppEUI]/node/[DevEUI]/error``)
 	* ACK of confirmed data down (``application/[AppEUI]/node/[DevEUI]/ack``)

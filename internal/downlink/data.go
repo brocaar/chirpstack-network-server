@@ -89,7 +89,7 @@ func getDataDownFromApplication(ctx common.Context, ns session.NodeSession, dr i
 		return nil
 	}
 
-	if resp == nil || len(resp.Data) == 0 {
+	if resp == nil || resp.FPort == 0 {
 		return nil
 	}
 

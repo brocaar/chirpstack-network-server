@@ -2,17 +2,11 @@
 
 ## Does LoRa Server implement a queue for downlinks payloads?
 
-Yes, all downlink payloads are stored in a queue (using Redis). Unconfirmed
-downlink payloads are directly removed after sent. Confirmed downlink payloads
-are removed from the queue after an `ACK` has been received by the node. When
-there are multiple payloads, LoRa Server will set the `FRMPending` field to
-`true` indicating that there is more data.
+No, this component is now part of [LoRa App Server](http://docs.loraserver.io/lora-app-server/).
 
 ## Does LoRa Server support ADR?
 
-Yes and no, LoRa Server itself doesn't support adaptive data-rate. However,
-it exposes all the data so that you can implement your own network-controller.
-See [network-controller](network-controller.md) for more information.
+Not yet, but this is on the roadmap.
 
 ## Packets are not received / OTAA does not work
 

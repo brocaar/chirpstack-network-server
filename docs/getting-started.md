@@ -1,9 +1,8 @@
 # Getting started
 
-!!! info
-    This getting started document describes the steps needed to setup LoRa Server
-    and all its requirements on Ubuntu 16.04 LTS. When using an other Linux
-    distribution, you might need to adapt these steps slightly!
+This getting started document describes the steps needed to setup LoRa Server
+and all its requirements on Ubuntu 16.04 LTS. When using an other Linux
+distribution, you might need to adapt these steps.
 
 !!! warning
     This getting started guide does not cover setting up firewall rules! After
@@ -13,8 +12,8 @@
 ## MQTT broker
 
 LoRa Server makes use of MQTT for communication with the gateways (thought the
-[LoRa Gateway Bridge](http://docs.loraserver.io/lora-gateway-bridge/)),
-network-controller and applications. [Mosquitto](http://mosquitto.org/) is a
+[LoRa Gateway Bridge](http://docs.loraserver.io/lora-gateway-bridge/)).
+[Mosquitto](http://mosquitto.org/) is a
 popular open-source MQTT broker. Make sure you install a recent version of
 Mosquitto (the Mosquitto project provides repositories for various Linux
 distributions). Ubuntu 16.04 LTS already includes a recent version which can be
@@ -22,43 +21,6 @@ installed with:
 
 ```bash
 sudo apt-get install mosquitto
-```
-
-## PostgreSQL server
-
-LoRa Server stores all persistent data into a
-[PostgreSQL](http://www.postgresql.org/) database. To install PostgreSQL:
-
-```bash
-sudo apt-get install postgresql
-```
-
-### Creating a LoRa Server user and database
-
-Start the PostgreSQL promt as the `postgres` user:
-
-```bash
-sudo -u postgres psql
-```
-
-Within the the PostgreSQL promt, enter the following queries:
-
-```sql
--- create the loraserver user with password "dbpassword"
-create role loraserver with login password 'dbpassword';
-
--- create the loraserver database
-create database loraserver with owner loraserver;
-
--- exit the prompt
-\q
-```
-
-To verify if the user and database have been setup correctly, try to connect
-to it:
-
-```bash
-psql -h localhost -U loraserver -W loraserver
 ```
 
 ## Redis
@@ -78,6 +40,14 @@ which uses a [UDP protocol](https://github.com/Lora-net/packet_forwarder/blob/ma
 for communication, you need to setup the [LoRa Gateway Bridge](http://docs.loraserver.io/lora-gateway-bridge/)
 which abstracts this UDP protocol into JSON over MQTT. These installation steps
 are documented in the [LoRa Gateway Bridge documentation](http://docs.loraserver.io/lora-gateway-bridge/).
+
+## LoRa App Server
+
+As LoRa Server itself is only aware about node-sessions and doesn't know
+anything about the inventory, you need to run an application-server compatible
+with the [ApplicationServer api](https://github.com/brocaar/loraserver/blob/master/api/as/as.proto).
+Instructions to setup [LoRa App Server](https://github.com/brocaar/lora-app-server)
+are documented in [LoRa App Server documentation](http://docs.loraserver.io/lora-app-server/).
 
 ## Install LoRa Server
 
@@ -99,8 +69,9 @@ wget https://github.com/brocaar/loraserver/releases/download/VERSION/loraserver_
 # unpack
 tar zxf loraserver_VERSION_linux_amd64.tar.gz
 
-# move the binary to /usr/local/bin
-sudo mv loraserver /usr/local/bin
+# move the binary to /opt/loraserver/bin
+sudo mkdir -p /opt/loraserver/bin
+sudo mv loraserver /opt/loraserver/bin
 ```
 
 In order to start LoRa Server as a service, create the file
@@ -109,19 +80,19 @@ In order to start LoRa Server as a service, create the file
 ```
 [Unit]
 Description=loraserver
-After=network.target
+After=mosquitto.service
 
 [Service]
 User=loraserver
 Group=loraserver
-ExecStart=/usr/local/bin/loraserver
+ExecStart=/opt/loraserver/bin/loraserver
 Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-In order to configure LoRa Server, we create a directory named
+In order to configure LoRa Server, create a directory named
 `/etc/systemd/system/loraserver.service.d`:
 
 ```bash
@@ -134,9 +105,10 @@ Inside this directory, put a file named `loraserver.conf`:
 [Service]
 Environment="NET_ID=010203"
 Environment="BAND=EU_863_870"
-Environment="HTTP_BIND=0.0.0.0:8000"
-Environment="POSTGRES_DSN=postgres://loraserver:dbpassword@localhost/loraserver?sslmode=disable"
-Environment="DB_AUTOMIGRATE=True"
+Environment="BIND=127.0.0.1:8000"
+Environment="REDIS_URL=redis://localhost:6379"
+Environment="GW_MQTT_SERVER=tcp://localhost:1883"
+Environment="AS_SERVER=127.0.0.1:8001"
 ```
 
 ## Starting LoRa Server
@@ -190,13 +162,3 @@ that configuration variables can be passed as cli arguments and / or environment
 variables (which we did in the above example).
 
 See [Configuration](configuration.md) for details on each config option.
-
-## Setting up applications and nodes
-
-Now that your LoRa Server instance is running, it is time to create
-your first application and node. Point your browser to 
-[http://localhost:8000/](http://localhost:8000/) for the web-interface.
-
-After you've setup your first node, you need to provision your node with its
-AppEUI, DevEUI and AppKey. See [activating nodes](activating-nodes.md)
-for more details about this topic.

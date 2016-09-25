@@ -1,34 +1,48 @@
 # LoRa Server documentation
 
-LoRa Server is a LoRaWAN network-server. It is responsible for the
-communication with the LoRa gateway(s) and applications.
-Communication with the applications and gateways is done over MQTT.
-Configuration of applications and nodes can be done with the provided
-web-interface or REST or gRPC api.
+LoRa Server is an open-source LoRaWAN network-server. It is responsible for
+handling (and de-duplication) of uplink data received by the gateway(s)
+and the scheduling of downlink data transmissions.
 
-![Webinterface](img/webinterface.jpg)
+## Project components
+
+This project exists out of multiple components
+
+![architecture](https://www.gliffy.com/go/publish/image/11010339/L.png)
+
+* [lora-gateway-bridge](https://github.com/brocaar/lora-gateway-bridge) - converts
+  the [packet_forwarder protocol](https://github.com/Lora-net/packet_forwarder/blob/master/PROTOCOL.TXT)
+  to MQTT and back
+* [loraserver](https://github.com/brocaar/loraserver) - LoRaWAN network-server
+* [lora-app-server](https://github.com/brocaar/lora-app-server) - LoRaWAN
+  application-server
+* lora-controller (todo) - LoRaWAN network-controller
 
 ## Features
 
 Note: This project is under development.
 Please test and give feedback but know that things might break!
 
-Currently implemented:
+### Implemented:
 
+- Class-A
 - (unconfirmed) data up
 - (confirmed) data down
 - activation by personalization (ABP)
 - over-the-air activation (OTAA)
 - sending / receiving of MAC commands
 - RX1 and RX2 receive window support (configurable)
-- web-interface
-- gRPC and RESTful JSON api (see [API](api.md))
 - ISM bands
 	- EU 863-870
 	- US 902-928
 	- AU 915-928
 
-Help needed:
+### Roadmap:
+
+- ADR (adaptive data-rate)
+- Class B & C
+
+### Help needed:
 
 -  EU 433 ISM band testers ([issues/49](https://github.com/brocaar/loraserver/issues/49))
 -  CN 470-510 ISM band testers ([issues/42](https://github.com/brocaar/loraserver/issues/42))
