@@ -7,10 +7,17 @@ import (
 	"github.com/brocaar/lorawan/band"
 )
 
-// RXPacket contains the PHYPayload received from GatewayMAC.
+// RXPacket contains the PHYPayload received from the gateway.
 type RXPacket struct {
 	RXInfo     RXInfo             `json:"rxInfo"`
 	PHYPayload lorawan.PHYPayload `json:"phyPayload"`
+}
+
+// RXPacketBytes contains the PHYPayload as []byte received from the gateway.
+// The JSON output is compatible with RXPacket.
+type RXPacketBytes struct {
+	RXInfo     RXInfo `json:"rxInfo"`
+	PHYPayload []byte `json:"phyPayload"`
 }
 
 // RXInfo contains the RX information.
@@ -34,6 +41,13 @@ type RXInfo struct {
 type TXPacket struct {
 	TXInfo     TXInfo             `json:"txInfo"`
 	PHYPayload lorawan.PHYPayload `json:"phyPayload"`
+}
+
+// TXPacketBytes contains the PHYPayload as []byte which should be send to the
+// gateway. The JSON output is compatible with TXPacket.
+type TXPacketBytes struct {
+	TXInfo     TXInfo `json:"txInfo"`
+	PHYPayload []byte `json:"phyPayload"`
 }
 
 // TXInfo contains the information used for TX.
