@@ -59,6 +59,7 @@ type TXInfo struct {
 	Power       int           `json:"power"`       // TX power to use in dBm
 	DataRate    band.DataRate `json:"dataRate"`    // TX datarate (either LoRa or FSK)
 	CodeRate    string        `json:"codeRate"`    // ECC code rate
+	IPol        *bool         `json:"iPol"`        // when left nil, the gateway-bridge will use the default (true for LoRa modulation)
 }
 
 // GatewayStatsPacket contains the information of a gateway.
