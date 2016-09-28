@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.1
+
+* Fix multiple LoRa Server instances processing the same gateway payloads
+  (resulting in the gateway count multiplied by the number of LoRa Server
+  instances).
+
 ## 0.12.0
 
 This release decouples the node "inventory" part from LoRa Server. This

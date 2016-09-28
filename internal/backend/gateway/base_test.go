@@ -14,11 +14,13 @@ type config struct {
 	Server   string
 	Username string
 	Password string
+	RedisURL string
 }
 
 func getConfig() *config {
 	c := &config{
-		Server: "tcp://127.0.0.1:1883",
+		Server:   "tcp://127.0.0.1:1883",
+		RedisURL: "redis://localhost:6379",
 	}
 
 	if v := os.Getenv("TEST_MQTT_SERVER"); v != "" {
@@ -31,6 +33,10 @@ func getConfig() *config {
 
 	if v := os.Getenv("TEST_MQTT_PASSWORD"); v != "" {
 		c.Password = v
+	}
+
+	if v := os.Getenv("TEST_REDIS_URL"); v != "" {
+		c.RedisURL = v
 	}
 
 	return c

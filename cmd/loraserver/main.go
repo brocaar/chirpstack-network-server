@@ -115,7 +115,7 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) common.Context {
 	rp := common.NewRedisPool(c.String("redis-url"))
 
 	// setup gateway backend
-	gw, err := gateway.NewBackend(c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"))
+	gw, err := gateway.NewBackend(rp, c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"))
 	if err != nil {
 		log.Fatalf("gateway-backend setup failed: %s", err)
 	}
