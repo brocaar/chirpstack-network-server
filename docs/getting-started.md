@@ -135,23 +135,23 @@ journalctl -u loraserver -f -n 50
 The log should be something like:
 
 ```
-level=info msg="starting LoRa Server" band="EU_863_870" net_id=010203 version=0.8.0
-level=info msg="connecting to postgresql"
-level=info msg="setup redis connection pool"
-level=info msg="gateway/mqttpubsub: connecting to mqtt broker" server="tcp://localhost:1883"
-level=info msg="application/mqttpubsub: connecting to mqtt broker" server="tcp://localhost:1883"
-level=info msg="gateway/mqttpubsub: connected to mqtt server"
-level=info msg="gateway/mqttpubsub: subscribing to rx topic" topic="gateway/+/rx"
-level=info msg="application/mqttpubsub: connected to mqtt server"
-level=info msg="application/mqttpubsub: subscribing to tx topic" topic="application/+/node/+/tx"
-level=info msg="controller/mqttpubsub: connecting to mqtt broker" server="tcp://localhost:1883"
-level=info msg="applying database migrations"
-level=info msg="controller/mqttpubsub: connected to mqtt broker"
-level=info msg="controller/mqttpubsub: subscribing to tx topic" topic="application/+/node/+/mac/tx"
-level=info msg="migrations applied" count=0
-level=info msg="registering json-rpc handler" path="/rpc"
-level=info msg="registering gui handler" path="/"
-level=info msg="starting http server" bind="0.0.0.0:8000"
+INFO[0000] starting LoRa Server                          band=EU_863_870 docs=https://docs.loraserver.io/ net_id=010203 version=0.12.0
+INFO[0000] setup redis connection pool                   url=redis://localhost:6379
+INFO[0000] backend/gateway: connecting to mqtt broker    server=tcp://localhost:1883
+INFO[0000] connecting to application-server              ca-cert= server=127.0.0.1:8001 tls-cert= tls-key=
+INFO[0000] backend/gateway: connected to mqtt server
+INFO[0000] backend/gateway: subscribing to rx topic      topic=gateway/+/rx
+INFO[0000] no network-controller configured
+INFO[0000] starting api server                           bind=0.0.0.0:8000 ca-cert= tls-cert= tls-key=
+```
+
+When you get the following log-messages, it means that LoRa Server can't
+connect to the application-server.
+
+```
+INFO[0000] grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp 127.0.0.1:8001: getsockopt: connection refused"; Reconnecting to {"127.0.0.1:8001" <nil>}
+INFO[0001] grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp 127.0.0.1:8001: getsockopt: connection refused"; Reconnecting to {"127.0.0.1:8001" <nil>}
+INFO[0002] grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp 127.0.0.1:8001: getsockopt: connection refused"; Reconnecting to {"127.0.0.1:8001" <nil>}
 ```
 
 ## Configuration

@@ -19,6 +19,13 @@ logs as it might give more information why packets are being dropped by the
 gateway. The [LoRa Gateway Bridge FAQ](http://docs.loraserver.io/lora-gateway-bridge/frequently-asked-questions/)
 has more information about debugging the packet_forwarder.
 
+## transport: dial tcp 127.0.0.1:8001: getsockopt: connection refused
+
+When you see the error `dial tcp 127.0.0.1:8001: getsockopt: connection refused`
+in your logs, it means LoRa Server is unable to connect to the
+application-server. See also [LoRa App Server](https://docs.loraserver.io/lora-app-server/).
+
+
 ## I think I've found a bug
 
 Please share bugs by creating a GitHub [issue](https://github.com/brocaar/loraserver/issues).
