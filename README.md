@@ -37,9 +37,10 @@ Please test and give feedback but know that things might break!
 - sending / receiving of MAC commands
 - RX1 and RX2 receive window support (configurable)
 - ISM bands
-    - EU 863-870
-    - US 902-928
-    - AU 915-928
+	- AU 915-928
+	- CN 470-510
+	- EU 863-870
+	- US 902-928
 
 ### Roadmap:
 
@@ -49,7 +50,6 @@ Please test and give feedback but know that things might break!
 ### Help needed:
 
 -  EU 433 ISM band testers ([issues/49](https://github.com/brocaar/loraserver/issues/49))
--  CN 470-510 ISM band testers ([issues/42](https://github.com/brocaar/loraserver/issues/42))
 -  CN 779-787 ISM band testers ([issues/50](https://github.com/brocaar/loraserver/issues/50))
 
 ## Downloads

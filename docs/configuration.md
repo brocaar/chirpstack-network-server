@@ -6,7 +6,7 @@ flag. This will display:
 ```
 GLOBAL OPTIONS:
    --net-id value            network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203) [$NET_ID]
-   --band value              ism band configuration to use (options: AU_915_928, EU_863_870, US_902_928) [$BAND]
+   --band value              ism band configuration to use (options: AU_915_928, CN_470_510, EU_863_870, US_902_928) [$BAND]
    --ca-cert value           ca certificate used by the api server (optional) [$CA_CERT]
    --tls-cert value          tls certificate used by the api server (optional) [$TLS_CERT]
    --tls-key value           tls key used by the api server (optional) [$TLS_KEY]
