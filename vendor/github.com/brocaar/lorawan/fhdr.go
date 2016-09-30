@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 )
 
 // DevAddr represents the device address.
@@ -195,7 +196,8 @@ func (h *FHDR) UnmarshalBinary(uplink bool, data []byte) error {
 
 			mc := MACCommand{}
 			if err := mc.UnmarshalBinary(uplink, data[7+i:7+i+1+pLen]); err != nil {
-				return err
+				log.Printf("warning: unmarshal mac-command error (skipping remaining mac-command bytes): %s", err)
+				break
 			}
 			h.FOpts = append(h.FOpts, mc)
 

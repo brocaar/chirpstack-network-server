@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.2
+
+* Implement China 470-510 ISM band.
+
 ## 0.12.1
 
 * Fix multiple LoRa Server instances processing the same gateway payloads

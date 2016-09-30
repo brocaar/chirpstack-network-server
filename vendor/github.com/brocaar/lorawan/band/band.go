@@ -17,6 +17,7 @@ const (
 	AU_915_928 Name = "AU_915_928"
 	EU_863_870 Name = "EU_863_870"
 	US_902_928 Name = "US_902_928"
+	CN_470_510 Name = "CN_470_510"
 )
 
 // Modulation defines the modulation type.
@@ -195,6 +196,8 @@ func GetConfig(name Name) (Band, error) {
 		return newEU863Band()
 	case US_902_928:
 		return newUS902Band()
+	case CN_470_510:
+		return newCN470Band()
 	default:
 		return Band{}, fmt.Errorf("lorawan/band: band %s is undefined", name)
 	}

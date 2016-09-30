@@ -3,6 +3,7 @@ package lorawan
 import (
 	"errors"
 	"fmt"
+	"log"
 )
 
 // MACPayload represents the MAC payload. Use NewMACPayload for creating a new
@@ -64,7 +65,8 @@ func (p *MACPayload) decodeFRMPayloadToMACCommands(uplink bool) error {
 
 		mc := &MACCommand{}
 		if err := mc.UnmarshalBinary(uplink, dataPL.Bytes[i:i+1+pLen]); err != nil {
-			return err
+			log.Printf("warning: unmarshal mac-command error (skipping remaining mac-command bytes): %s", err)
+			break
 		}
 		p.FRMPayload = append(p.FRMPayload, mc)
 
