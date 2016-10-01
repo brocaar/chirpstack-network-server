@@ -4,82 +4,82 @@ package ns;
 
 // NetworkServer is the network-server service.
 service NetworkServer {
-    // CreateNodeSession creates the given node-session. The DevAddr must contain the same NwkID as the configured NetID. Node-sessions will expire automatically after the configured TTL.
-    rpc CreateNodeSession(CreateNodeSessionRequest) returns (CreateNodeSessionResponse) {}
+	// CreateNodeSession creates the given node-session. The DevAddr must contain the same NwkID as the configured NetID. Node-sessions will expire automatically after the configured TTL.
+	rpc CreateNodeSession(CreateNodeSessionRequest) returns (CreateNodeSessionResponse) {}
 
-    // GetNodeSession returns the node-session matching the given DevEUI.
-    rpc GetNodeSession(GetNodeSessionRequest) returns (GetNodeSessionResponse) {}
+	// GetNodeSession returns the node-session matching the given DevEUI.
+	rpc GetNodeSession(GetNodeSessionRequest) returns (GetNodeSessionResponse) {}
 
-    // UpdateNodeSession updates the given node-session.
-    rpc UpdateNodeSession(UpdateNodeSessionRequest) returns (UpdateNodeSessionResponse) {}
+	// UpdateNodeSession updates the given node-session.
+	rpc UpdateNodeSession(UpdateNodeSessionRequest) returns (UpdateNodeSessionResponse) {}
 
-    // DeleteNodeSession deletes the node-session matching the given DevAddr.
-    rpc DeleteNodeSession(DeleteNodeSessionRequest) returns (DeleteNodeSessionResponse) {}
+	// DeleteNodeSession deletes the node-session matching the given DevAddr.
+	rpc DeleteNodeSession(DeleteNodeSessionRequest) returns (DeleteNodeSessionResponse) {}
 
-    // GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
-    rpc GetRandomDevAddr(GetRandomDevAddrRequest) returns (GetRandomDevAddrResponse) {}
+	// GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
+	rpc GetRandomDevAddr(GetRandomDevAddrRequest) returns (GetRandomDevAddrResponse) {}
 
-    // EnqueueDataDownMACCommand adds the downlink mac-command to the queue.
-    rpc EnqueueDataDownMACCommand(EnqueueDataDownMACCommandRequest) returns (EnqueueDataDownMACCommandResponse) {}
+	// EnqueueDataDownMACCommand adds the downlink mac-command to the queue.
+	rpc EnqueueDataDownMACCommand(EnqueueDataDownMACCommandRequest) returns (EnqueueDataDownMACCommandResponse) {}
 }
 
 enum RXWindow {
-    RX1 = 0;
-    RX2 = 1;
+	RX1 = 0;
+	RX2 = 1;
 }
 
 message CreateNodeSessionRequest {
-    bytes devAddr = 1;
-    bytes appEUI = 2;
-    bytes devEUI = 3;
-    bytes nwkSKey = 4;
-    uint32 fCntUp = 5;
-    uint32 fCntDown = 6;
-    uint32 rxDelay = 7;
-    uint32 rx1DROffset = 8;
-    repeated uint32 cFList = 9;
-    RXWindow rxWindow = 10;
-    uint32 rx2DR = 11;
+	bytes devAddr = 1;
+	bytes appEUI = 2;
+	bytes devEUI = 3;
+	bytes nwkSKey = 4;
+	uint32 fCntUp = 5;
+	uint32 fCntDown = 6;
+	uint32 rxDelay = 7;
+	uint32 rx1DROffset = 8;
+	repeated uint32 cFList = 9;
+	RXWindow rxWindow = 10;
+	uint32 rx2DR = 11;
 }
 
 message CreateNodeSessionResponse {}
 
 message GetNodeSessionRequest {
-    bytes devEUI = 1;
+	bytes devEUI = 1;
 }
 
 message GetNodeSessionResponse {
-    bytes devAddr = 1;
-    bytes appEUI = 2;
-    bytes devEUI = 3;
-    bytes nwkSKey = 4;
-    uint32 fCntUp = 5;
-    uint32 fCntDown = 6;
-    uint32 rxDelay = 7;
-    uint32 rx1DROffset = 8;
-    repeated uint32 cFList = 9;
-    RXWindow rxWindow = 10;
-    uint32 rx2DR = 11;
+	bytes devAddr = 1;
+	bytes appEUI = 2;
+	bytes devEUI = 3;
+	bytes nwkSKey = 4;
+	uint32 fCntUp = 5;
+	uint32 fCntDown = 6;
+	uint32 rxDelay = 7;
+	uint32 rx1DROffset = 8;
+	repeated uint32 cFList = 9;
+	RXWindow rxWindow = 10;
+	uint32 rx2DR = 11;
 }
 
 message UpdateNodeSessionRequest {
-    bytes devAddr = 1;
-    bytes appEUI = 2;
-    bytes devEUI = 3;
-    bytes nwkSKey = 4;
-    uint32 fCntUp = 5;
-    uint32 fCntDown = 6;
-    uint32 rxDelay = 7;
-    uint32 rx1DROffset = 8;
-    repeated uint32 cFList = 9;
-    RXWindow rxWindow = 10;
-    uint32 rx2DR = 11;
+	bytes devAddr = 1;
+	bytes appEUI = 2;
+	bytes devEUI = 3;
+	bytes nwkSKey = 4;
+	uint32 fCntUp = 5;
+	uint32 fCntDown = 6;
+	uint32 rxDelay = 7;
+	uint32 rx1DROffset = 8;
+	repeated uint32 cFList = 9;
+	RXWindow rxWindow = 10;
+	uint32 rx2DR = 11;
 }
 
 message UpdateNodeSessionResponse {}
 
 message DeleteNodeSessionRequest {
-    bytes devEUI = 1;
+	bytes devEUI = 1;
 }
 
 message DeleteNodeSessionResponse {}
@@ -87,13 +87,13 @@ message DeleteNodeSessionResponse {}
 message GetRandomDevAddrRequest {}
 
 message GetRandomDevAddrResponse {
-    bytes devAddr = 1;
+	bytes devAddr = 1;
 }
 
 message EnqueueDataDownMACCommandRequest {
-    bytes devEUI = 1;
-    bool frmPayload = 2;
-    bytes data = 3;
+	bytes devEUI = 1;
+	bool frmPayload = 2;
+	bytes data = 3;
 }
 
 message EnqueueDataDownMACCommandResponse {}

@@ -4,59 +4,59 @@ package nc;
 
 // NetworkController is the server to be implemeted by the network-controller.
 service NetworkController {
-    // HandleRXInfo publishes rx related meta-data.
-    rpc HandleRXInfo(HandleRXInfoRequest) returns (HandleRXInfoResponse) {}
+	// HandleRXInfo publishes rx related meta-data.
+	rpc HandleRXInfo(HandleRXInfoRequest) returns (HandleRXInfoResponse) {}
 
-    // HandleDataUpMACCommand publishes a mac-command received by an end-device.
-    rpc HandleDataUpMACCommand(HandleDataUpMACCommandRequest) returns (HandleDataUpMACCommandResponse) {}
+	// HandleDataUpMACCommand publishes a mac-command received by an end-device.
+	rpc HandleDataUpMACCommand(HandleDataUpMACCommandRequest) returns (HandleDataUpMACCommandResponse) {}
 
-    // HandleError publishes an error message.
-    rpc HandleError(HandleErrorRequest) returns (HandleErrorResponse) {}
+	// HandleError publishes an error message.
+	rpc HandleError(HandleErrorRequest) returns (HandleErrorResponse) {}
 }
 
 message DataRate {
-    string modulation = 1;
-    uint32 bandWidth = 2;
-    uint32 spreadFactor = 3;
-    uint32 bitrate = 4;
+	string modulation = 1;
+	uint32 bandWidth = 2;
+	uint32 spreadFactor = 3;
+	uint32 bitrate = 4;
 }
 
 message RXInfo {
-    bytes mac = 1;
-    string time = 2;
-    int32 rssi = 3;
-    double loRaSNR = 4;
+	bytes mac = 1;
+	string time = 2;
+	int32 rssi = 3;
+	double loRaSNR = 4;
 }
 
 message TXInfo {
-    int64 frequency = 1;
-    DataRate dataRate = 2;
-    bool adr = 3;
-    string codeRate = 4;
+	int64 frequency = 1;
+	DataRate dataRate = 2;
+	bool adr = 3;
+	string codeRate = 4;
 }
 
 message HandleRXInfoRequest {
-    bytes devEUI = 1;
-    bytes appEUI = 2;
-    TXInfo txInfo = 3;
-    repeated RXInfo rxInfo = 4;
+	bytes devEUI = 1;
+	bytes appEUI = 2;
+	TXInfo txInfo = 3;
+	repeated RXInfo rxInfo = 4;
 }
 
 message HandleRXInfoResponse {}
 
 message HandleDataUpMACCommandRequest {
-    bytes devEUI = 1;
+	bytes devEUI = 1;
 	bytes appEUI = 2;
-    bool frmPayload = 3;
-    bytes data = 4;
+	bool frmPayload = 3;
+	bytes data = 4;
 }
 
 message HandleDataUpMACCommandResponse {}
 
 message HandleErrorRequest {
-    bytes devEUI = 1;
+	bytes devEUI = 1;
 	bytes appEUI = 2;
-    string error = 3;
+	string error = 3;
 }
 
 message HandleErrorResponse {}

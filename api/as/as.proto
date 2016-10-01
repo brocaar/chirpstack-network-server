@@ -7,22 +7,22 @@ service ApplicationServer {
 	// JoinRequest requests the application server to validate the join-request and return an encrypted join-accept.
 	rpc JoinRequest(JoinRequestRequest) returns (JoinRequestResponse) {}
 
-    // HandleDataUp publishes data received from an end-device.
-    rpc HandleDataUp(HandleDataUpRequest) returns (HandleDataUpResponse) {}
+	// HandleDataUp publishes data received from an end-device.
+	rpc HandleDataUp(HandleDataUpRequest) returns (HandleDataUpResponse) {}
 
 	// GetDataDown gets data from the downlink queue.
 	rpc GetDataDown(GetDataDownRequest) returns (GetDataDownResponse) {}
 
-    // HandleDataDownACK publishes a data-down ack response.
-    rpc HandleDataDownACK(HandleDataDownACKRequest) returns (HandleDataDownACKResponse) {}
+	// HandleDataDownACK publishes a data-down ack response.
+	rpc HandleDataDownACK(HandleDataDownACKRequest) returns (HandleDataDownACKResponse) {}
 
-    // HandleError publishes an error message.
-    rpc HandleError(HandleErrorRequest) returns (HandleErrorResponse) {}
+	// HandleError publishes an error message.
+	rpc HandleError(HandleErrorRequest) returns (HandleErrorResponse) {}
 }
 
 enum RXWindow {
-    RX1 = 0;
-    RX2 = 1;
+	RX1 = 0;
+	RX2 = 1;
 }
 
 enum ErrorType {
@@ -33,24 +33,24 @@ enum ErrorType {
 }
 
 message DataRate {
-    string modulation = 1;
-    uint32 bandWidth = 2;
-    uint32 spreadFactor = 3;
-    uint32 bitrate = 4;
+	string modulation = 1;
+	uint32 bandWidth = 2;
+	uint32 spreadFactor = 3;
+	uint32 bitrate = 4;
 }
 
 message RXInfo {
-    bytes mac = 1;
-    string time = 2;
-    int32 rssi = 3;
-    double loRaSNR = 4;
+	bytes mac = 1;
+	string time = 2;
+	int32 rssi = 3;
+	double loRaSNR = 4;
 }
 
 message TXInfo {
-    int64 frequency = 1;
-    DataRate dataRate = 2;
-    bool adr = 3;
-    string codeRate = 4;
+	int64 frequency = 1;
+	DataRate dataRate = 2;
+	bool adr = 3;
+	string codeRate = 4;
 }
 
 message JoinRequestRequest {
@@ -65,18 +65,18 @@ message JoinRequestResponse {
 	uint32 rxDelay = 3;
 	uint32 rx1DROffset = 4;
 	repeated uint32 cFList = 5;
-    RXWindow rxWindow = 6;
-    uint32 rx2DR = 7;
+	RXWindow rxWindow = 6;
+	uint32 rx2DR = 7;
 }
 
 message HandleDataUpRequest {
-    bytes devEUI = 1;
+	bytes devEUI = 1;
 	bytes appEUI = 2;
-    uint32 fCnt = 3;
+	uint32 fCnt = 3;
 	uint32 fPort = 4;
-    bytes data = 5;
-    TXInfo txInfo = 6;
-    repeated RXInfo rxInfo = 7;
+	bytes data = 5;
+	TXInfo txInfo = 6;
+	repeated RXInfo rxInfo = 7;
 }
 
 message GetDataDownRequest {
@@ -96,7 +96,7 @@ message GetDataDownResponse {
 message HandleDataUpResponse {}
 
 message HandleDataDownACKRequest {
-    bytes devEUI = 1;
+	bytes devEUI = 1;
 	bytes appEUI = 2;
 	uint32 fCnt = 3;
 }
@@ -104,10 +104,10 @@ message HandleDataDownACKRequest {
 message HandleDataDownACKResponse {}
 
 message HandleErrorRequest {
-    bytes devEUI = 1;
+	bytes devEUI = 1;
 	bytes appEUI = 2;
 	ErrorType type = 3;
-    string error = 4;
+	string error = 4;
 }
 
 message HandleErrorResponse {}
