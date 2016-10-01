@@ -75,20 +75,15 @@ func validateAndCollectDataUpRXPacket(ctx common.Context, rxPacket gw.RXPacket) 
 		}
 	}
 
-	return collectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPackets models.RXPackets) error {
-		return handleCollectedDataUpPackets(ctx, rxPackets)
+	return collectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
+		return handleCollectedDataUpPackets(ctx, rxPacket)
 	})
 }
 
-func handleCollectedDataUpPackets(ctx common.Context, rxPackets models.RXPackets) error {
-	if len(rxPackets) == 0 {
-		return errors.New("packet collector returned 0 packets")
-	}
-	rxPacket := rxPackets[0]
-
+func handleCollectedDataUpPackets(ctx common.Context, rxPacket models.RXPacket) error {
 	var macs []string
-	for _, p := range rxPackets {
-		macs = append(macs, p.RXInfo.MAC.String())
+	for _, p := range rxPacket.RXInfoSet {
+		macs = append(macs, p.MAC.String())
 	}
 
 	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
@@ -103,13 +98,13 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPackets models.RXPackets
 
 	log.WithFields(log.Fields{
 		"dev_eui":  ns.DevEUI,
-		"gw_count": len(rxPackets),
+		"gw_count": len(macs),
 		"gw_macs":  strings.Join(macs, ", "),
-		"mtype":    rxPackets[0].PHYPayload.MHDR.MType,
+		"mtype":    rxPacket.PHYPayload.MHDR.MType,
 	}).Info("packet(s) collected")
 
 	// send rx info notification to be used by the network-controller
-	if err = sendRXInfoPayload(ctx, ns, rxPackets); err != nil {
+	if err = sendRXInfoPayload(ctx, ns, rxPacket); err != nil {
 		log.WithFields(log.Fields{
 			"dev_eui": ns.DevEUI,
 		}).Errorf("send rx info to network-controller error: %s", err)
@@ -153,7 +148,7 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPackets models.RXPackets
 				}).Errorf("handle FRMPayload mac commands error: %s", err)
 			}
 		} else {
-			if err := publishDataUp(ctx, ns, rxPackets, *macPL); err != nil {
+			if err := publishDataUp(ctx, ns, rxPacket, *macPL); err != nil {
 				return err
 			}
 		}
@@ -174,7 +169,7 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPackets models.RXPackets
 
 	// handle downlink (ACK)
 	time.Sleep(CollectDataDownWait)
-	if err := downlink.SendDataDownResponse(ctx, ns, rxPackets); err != nil {
+	if err := downlink.SendDataDownResponse(ctx, ns, rxPacket); err != nil {
 		return fmt.Errorf("handling downlink data for node %s failed: %s", ns.DevEUI, err)
 	}
 
@@ -182,38 +177,34 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPackets models.RXPackets
 }
 
 // sendRXInfoPayload sends the rx and tx meta-data to the network controller.
-func sendRXInfoPayload(ctx common.Context, ns session.NodeSession, rxPackets models.RXPackets) error {
-	if len(rxPackets) == 0 {
-		return fmt.Errorf("length of rx packets must be at least 1")
-	}
-
-	macPL, ok := rxPackets[0].PHYPayload.MACPayload.(*lorawan.MACPayload)
+func sendRXInfoPayload(ctx common.Context, ns session.NodeSession, rxPacket models.RXPacket) error {
+	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPackets[0].PHYPayload.MACPayload)
+		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
 	}
 
 	rxInfoReq := nc.HandleRXInfoRequest{
 		AppEUI: ns.AppEUI[:],
 		DevEUI: ns.DevEUI[:],
 		TxInfo: &nc.TXInfo{
-			Frequency: int64(rxPackets[0].RXInfo.Frequency),
+			Frequency: int64(rxPacket.RXInfoSet[0].Frequency),
 			Adr:       macPL.FHDR.FCtrl.ADR,
-			CodeRate:  rxPackets[0].RXInfo.CodeRate,
+			CodeRate:  rxPacket.RXInfoSet[0].CodeRate,
 			DataRate: &nc.DataRate{
-				Modulation:   string(rxPackets[0].RXInfo.DataRate.Modulation),
-				BandWidth:    uint32(rxPackets[0].RXInfo.DataRate.Bandwidth),
-				SpreadFactor: uint32(rxPackets[0].RXInfo.DataRate.SpreadFactor),
-				Bitrate:      uint32(rxPackets[0].RXInfo.DataRate.BitRate),
+				Modulation:   string(rxPacket.RXInfoSet[0].DataRate.Modulation),
+				BandWidth:    uint32(rxPacket.RXInfoSet[0].DataRate.Bandwidth),
+				SpreadFactor: uint32(rxPacket.RXInfoSet[0].DataRate.SpreadFactor),
+				Bitrate:      uint32(rxPacket.RXInfoSet[0].DataRate.BitRate),
 			},
 		},
 	}
 
-	for _, rxPacket := range rxPackets {
+	for _, rxInfo := range rxPacket.RXInfoSet {
 		rxInfoReq.RxInfo = append(rxInfoReq.RxInfo, &nc.RXInfo{
-			Mac:     rxPacket.RXInfo.MAC[:],
-			Time:    rxPacket.RXInfo.Time.Format(time.RFC3339Nano),
-			Rssi:    int32(rxPacket.RXInfo.RSSI),
-			LoRaSNR: rxPacket.RXInfo.LoRaSNR,
+			Mac:     rxInfo.MAC[:],
+			Time:    rxInfo.Time.Format(time.RFC3339Nano),
+			Rssi:    int32(rxInfo.RSSI),
+			LoRaSNR: rxInfo.LoRaSNR,
 		})
 	}
 
@@ -227,34 +218,30 @@ func sendRXInfoPayload(ctx common.Context, ns session.NodeSession, rxPackets mod
 	return nil
 }
 
-func publishDataUp(ctx common.Context, ns session.NodeSession, rxPackets models.RXPackets, macPL lorawan.MACPayload) error {
-	if len(rxPackets) == 0 {
-		return fmt.Errorf("length of rx packets must be at least 1")
-	}
-
+func publishDataUp(ctx common.Context, ns session.NodeSession, rxPacket models.RXPacket, macPL lorawan.MACPayload) error {
 	publishDataUpReq := as.HandleDataUpRequest{
 		AppEUI: ns.AppEUI[:],
 		DevEUI: ns.DevEUI[:],
 		FCnt:   macPL.FHDR.FCnt,
 		TxInfo: &as.TXInfo{
-			Frequency: int64(rxPackets[0].RXInfo.Frequency),
+			Frequency: int64(rxPacket.RXInfoSet[0].Frequency),
 			Adr:       macPL.FHDR.FCtrl.ADR,
-			CodeRate:  rxPackets[0].RXInfo.CodeRate,
+			CodeRate:  rxPacket.RXInfoSet[0].CodeRate,
 			DataRate: &as.DataRate{
-				Modulation:   string(rxPackets[0].RXInfo.DataRate.Modulation),
-				BandWidth:    uint32(rxPackets[0].RXInfo.DataRate.Bandwidth),
-				SpreadFactor: uint32(rxPackets[0].RXInfo.DataRate.SpreadFactor),
-				Bitrate:      uint32(rxPackets[0].RXInfo.DataRate.BitRate),
+				Modulation:   string(rxPacket.RXInfoSet[0].DataRate.Modulation),
+				BandWidth:    uint32(rxPacket.RXInfoSet[0].DataRate.Bandwidth),
+				SpreadFactor: uint32(rxPacket.RXInfoSet[0].DataRate.SpreadFactor),
+				Bitrate:      uint32(rxPacket.RXInfoSet[0].DataRate.BitRate),
 			},
 		},
 	}
 
-	for _, rxPacket := range rxPackets {
+	for _, rxInfo := range rxPacket.RXInfoSet {
 		publishDataUpReq.RxInfo = append(publishDataUpReq.RxInfo, &as.RXInfo{
-			Mac:     rxPacket.RXInfo.MAC[:],
-			Time:    rxPacket.RXInfo.Time.Format(time.RFC3339Nano),
-			Rssi:    int32(rxPacket.RXInfo.RSSI),
-			LoRaSNR: rxPacket.RXInfo.LoRaSNR,
+			Mac:     rxInfo.MAC[:],
+			Time:    rxInfo.Time.Format(time.RFC3339Nano),
+			Rssi:    int32(rxInfo.RSSI),
+			LoRaSNR: rxInfo.LoRaSNR,
 		})
 	}
 

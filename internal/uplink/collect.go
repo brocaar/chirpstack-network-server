@@ -35,7 +35,7 @@ const (
 // It is safe to collect the same packet received by the same gateway twice.
 // Since the underlying storage type is a set, the result will always be a
 // unique set per gateway MAC and packet MIC.
-func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packets models.RXPackets) error) error {
+func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packet models.RXPacket) error) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(rxPacket); err != nil {
@@ -82,7 +82,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 	time.Sleep(CollectAndCallOnceWait)
 
 	// collect all packets from the set
-	rxPackets := make(models.RXPackets, 0)
+	var rxPacketWithRXInfoSet models.RXPacket
 	payloads, err := redis.ByteSlices(c.Do("SMEMBERS", key))
 	if err != nil {
 		return fmt.Errorf("get collect set members error: %s", err)
@@ -91,14 +91,18 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 		return errors.New("zero items in collect set")
 	}
 
-	for _, b := range payloads {
+	for i, b := range payloads {
 		var packet gw.RXPacket
 		if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&packet); err != nil {
 			return fmt.Errorf("decode rx packet error: %s", err)
 		}
-		rxPackets = append(rxPackets, packet)
+
+		if i == 0 {
+			rxPacketWithRXInfoSet.PHYPayload = packet.PHYPayload
+		}
+		rxPacketWithRXInfoSet.RXInfoSet = append(rxPacketWithRXInfoSet.RXInfoSet, packet.RXInfo)
 	}
 
-	sort.Sort(rxPackets)
-	return callback(rxPackets)
+	sort.Sort(rxPacketWithRXInfoSet.RXInfoSet)
+	return callback(rxPacketWithRXInfoSet)
 }

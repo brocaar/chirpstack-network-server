@@ -118,12 +118,7 @@ func getDataDownFromApplication(ctx common.Context, ns session.NodeSession, dr i
 // A downlink response happens when: there is data in the downlink queue,
 // there are MAC commmands to send and / or when the uplink packet was of
 // type ConfirmedDataUp, so an ACK response is needed.
-func SendDataDownResponse(ctx common.Context, ns session.NodeSession, rxPackets models.RXPackets) error {
-	if len(rxPackets) == 0 {
-		return fmt.Errorf("at least 1 RXPacket expected, got 0")
-	}
-	rxPacket := rxPackets[0]
-
+func SendDataDownResponse(ctx common.Context, ns session.NodeSession, rxPacket models.RXPacket) error {
 	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
@@ -133,7 +128,7 @@ func SendDataDownResponse(ctx common.Context, ns session.NodeSession, rxPackets 
 	var macPayloads []queue.MACPayload
 
 	// get data down tx properties
-	txInfo, dr, err := getDataDownTXInfoAndDR(ctx, ns, rxPacket.RXInfo)
+	txInfo, dr, err := getDataDownTXInfoAndDR(ctx, ns, rxPacket.RXInfoSet[0])
 	if err != nil {
 		return fmt.Errorf("get data down txinfo error: %s", err)
 	}

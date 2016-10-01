@@ -56,13 +56,13 @@ func TestCollectAndCallOnce(t *testing.T) {
 			}
 
 			for i, test := range testTable {
-				Convey(fmt.Sprintf("When running test %d, then %d packets are expected", i, test.Count), func() {
+				Convey(fmt.Sprintf("When running test %d, then %d items in the RXInfoSet are expected", i, test.Count), func() {
 					var received int
 					var called int
 
-					cb := func(packets models.RXPackets) error {
+					cb := func(packet models.RXPacket) error {
 						called = called + 1
-						received = len(packets)
+						received = len(packet.RXInfoSet)
 						return nil
 					}
 

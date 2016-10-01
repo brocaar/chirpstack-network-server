@@ -20,21 +20,16 @@ import (
 // collectJoinRequestPacket collects a single received RXPacket of type
 // join-request.
 func collectJoinRequestPacket(ctx common.Context, rxPacket gw.RXPacket) error {
-	return collectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPackets models.RXPackets) error {
-		return handleCollectedJoinRequestPackets(ctx, rxPackets)
+	return collectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
+		return handleCollectedJoinRequestPackets(ctx, rxPacket)
 	})
 }
 
 // handleCollectedJoinRequestPackets handles the received join-requests.
-func handleCollectedJoinRequestPackets(ctx common.Context, rxPackets models.RXPackets) error {
-	if len(rxPackets) == 0 {
-		return errors.New("packet collector returned 0 packets")
-	}
-	rxPacket := rxPackets[0]
-
+func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPacket) error {
 	var macs []string
-	for _, p := range rxPackets {
-		macs = append(macs, p.RXInfo.MAC.String())
+	for _, p := range rxPacket.RXInfoSet {
+		macs = append(macs, p.MAC.String())
 	}
 
 	// MACPayload must be of type *lorawan.JoinRequestPayload
@@ -50,12 +45,12 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPackets models.RXPa
 
 	log.WithFields(log.Fields{
 		"dev_eui":  jrPL.DevEUI,
-		"gw_count": len(rxPackets),
+		"gw_count": len(macs),
 		"gw_macs":  strings.Join(macs, ", "),
-		"mtype":    rxPackets[0].PHYPayload.MHDR.MType,
+		"mtype":    rxPacket.PHYPayload.MHDR.MType,
 	}).Info("packet(s) collected")
 
-	// get random (free) DevAddr
+	// get random DevAddr
 	devAddr, err := session.GetRandomDevAddr(ctx.RedisPool, ctx.NetID)
 	if err != nil {
 		return fmt.Errorf("get random DevAddr error: %s", err)
@@ -118,7 +113,7 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPackets models.RXPa
 		return fmt.Errorf("create node-session error: %s", err)
 	}
 
-	if err = downlink.SendJoinAcceptResponse(ctx, ns, rxPackets, downlinkPHY); err != nil {
+	if err = downlink.SendJoinAcceptResponse(ctx, ns, rxPacket, downlinkPHY); err != nil {
 		return fmt.Errorf("send join-accept response error: %s", err)
 	}
 

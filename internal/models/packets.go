@@ -1,24 +1,47 @@
 package models
 
-import "github.com/brocaar/loraserver/api/gw"
+import (
+	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/lorawan"
+)
 
-// RXPackets is a slice of RXPacket. It implements sort.Interface
-// to sort the slice of packets by signal strength so that the
-// packet received with the strongest signal will be at index 0
-// of RXPackets.
-type RXPackets []gw.RXPacket
+// maxSNRForSort defines the maximum SNR on which to sort. When both values
+// are exceeding this values, the sorting will continue on RSSI.
+const maxSNRForSort = 5.0
 
-// Len is part of sort.Interface.
-func (p RXPackets) Len() int {
-	return len(p)
+// RXPacket defines a received PHYPayload together with its rx metadata
+// (rx information from all the receiving gateways).
+type RXPacket struct {
+	PHYPayload lorawan.PHYPayload
+	RXInfoSet  RXInfoSet
 }
 
-// Swap is part of sort.Interface.
-func (p RXPackets) Swap(i, j int) {
-	p[i], p[j] = p[j], p[i]
+// RXInfoSet implements a sortable slice of RXInfo elements.
+// First it is sorted by LoRaSNR, within the sub-set where
+// LoRaSNR > maxSNRForSort, it will sort by RSSI.
+type RXInfoSet []gw.RXInfo
+
+// Len implements sort.Interface.
+func (s RXInfoSet) Len() int {
+	return len(s)
 }
 
-// Less is part of sort.Interface.
-func (p RXPackets) Less(i, j int) bool {
-	return p[i].RXInfo.RSSI > p[j].RXInfo.RSSI
+// Swap implements sort.Interface.
+func (s RXInfoSet) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+// Less implements sort.Interface.
+func (s RXInfoSet) Less(i, j int) bool {
+	// in case SNR is equal
+	if s[i].LoRaSNR == s[j].LoRaSNR {
+		return s[i].RSSI > s[j].RSSI
+	}
+
+	// in case the SNR > maxSNRForSort
+	if s[i].LoRaSNR > maxSNRForSort && s[j].LoRaSNR > maxSNRForSort {
+		return s[i].RSSI > s[j].RSSI
+	}
+
+	return s[i].LoRaSNR > s[j].LoRaSNR
 }

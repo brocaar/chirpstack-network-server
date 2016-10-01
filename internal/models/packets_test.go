@@ -5,28 +5,39 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
-
-	"github.com/brocaar/loraserver/api/gw"
 )
 
-func TestRXPackets(t *testing.T) {
-	Convey("Given a slice of RXPacket with different RSSI values", t, func() {
-		rxPackets := RXPackets{
-			{RXInfo: gw.RXInfo{RSSI: 1}},
-			{RXInfo: gw.RXInfo{RSSI: 3}},
-			{RXInfo: gw.RXInfo{RSSI: 7}},
-			{RXInfo: gw.RXInfo{RSSI: 9}},
-			{RXInfo: gw.RXInfo{RSSI: 6}},
-			{RXInfo: gw.RXInfo{RSSI: 4}},
+func TestRXInfoSet(t *testing.T) {
+	Convey("Given an unsorted RXInfoSet slice", t, func() {
+		rxInfoSet := RXInfoSet{
+			{LoRaSNR: 4, RSSI: 1},
+			{LoRaSNR: 0, RSSI: 10},
+			{LoRaSNR: 0, RSSI: 30},
+			{LoRaSNR: 0, RSSI: 20},
+			{LoRaSNR: 3, RSSI: 1},
+			{LoRaSNR: 3, RSSI: 3},
+			{LoRaSNR: 3, RSSI: 2},
+			{LoRaSNR: 6, RSSI: 5},
+			{LoRaSNR: 7, RSSI: 15},
+			{LoRaSNR: 8, RSSI: 10},
 		}
 
 		Convey("After sorting", func() {
-			sort.Sort(rxPackets)
+			sort.Sort(rxInfoSet)
 
-			Convey("Then the slice should be sorted, strongest signal first", func() {
-				for i, rssi := range []int{9, 7, 6, 4, 3, 1} {
-					So(rxPackets[i].RXInfo.RSSI, ShouldEqual, rssi)
-				}
+			Convey("Then the RXInfoSet is in the expected order", func() {
+				So(rxInfoSet, ShouldResemble, RXInfoSet{
+					{LoRaSNR: 7, RSSI: 15},
+					{LoRaSNR: 8, RSSI: 10},
+					{LoRaSNR: 6, RSSI: 5},
+					{LoRaSNR: 4, RSSI: 1},
+					{LoRaSNR: 3, RSSI: 3},
+					{LoRaSNR: 3, RSSI: 2},
+					{LoRaSNR: 3, RSSI: 1},
+					{LoRaSNR: 0, RSSI: 30},
+					{LoRaSNR: 0, RSSI: 20},
+					{LoRaSNR: 0, RSSI: 10},
+				})
 			})
 		})
 	})

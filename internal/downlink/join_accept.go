@@ -51,10 +51,8 @@ func getJoinAcceptTXInfo(ctx common.Context, ns session.NodeSession, rxInfo gw.R
 }
 
 // SendJoinAcceptResponse sends the join-accept response.
-func SendJoinAcceptResponse(ctx common.Context, ns session.NodeSession, rxPackets models.RXPackets, phy lorawan.PHYPayload) error {
-	rxPacket := rxPackets[0]
-
-	txInfo, err := getJoinAcceptTXInfo(ctx, ns, rxPacket.RXInfo)
+func SendJoinAcceptResponse(ctx common.Context, ns session.NodeSession, rxPacket models.RXPacket, phy lorawan.PHYPayload) error {
+	txInfo, err := getJoinAcceptTXInfo(ctx, ns, rxPacket.RXInfoSet[0])
 	if err != nil {
 		return fmt.Errorf("get join-accept txinfo error: %s", err)
 	}
