@@ -3,6 +3,7 @@
 ## 0.12.2
 
 * Implement China 470-510 ISM band.
+* Improve logic to decide which gateway to use for downlink transmission.
 
 ## 0.12.1
 
