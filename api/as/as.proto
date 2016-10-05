@@ -67,7 +67,7 @@ message JoinRequestResponse {
 	repeated uint32 cFList = 5;
 	RXWindow rxWindow = 6;
 	uint32 rx2DR = 7;
-	bool relaxFrameCount = 8;
+	bool relaxFCnt = 8;
 }
 
 message HandleDataUpRequest {
