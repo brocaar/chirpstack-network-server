@@ -32,6 +32,7 @@ func (n *NetworkServerAPI) CreateNodeSession(ctx context.Context, req *ns.Create
 		RX1DROffset: uint8(req.Rx1DROffset),
 		RXWindow:    session.RXWindow(req.RxWindow),
 		RX2DR:       uint8(req.Rx2DR),
+		RelaxFCnt:   req.RelaxFCnt,
 	}
 
 	if len(req.CFList) > 0 {
@@ -80,6 +81,7 @@ func (n *NetworkServerAPI) GetNodeSession(ctx context.Context, req *ns.GetNodeSe
 		Rx1DROffset: uint32(sess.RX1DROffset),
 		RxWindow:    ns.RXWindow(sess.RXWindow),
 		Rx2DR:       uint32(sess.RX2DR),
+		RelaxFCnt:   sess.RelaxFCnt,
 	}
 
 	if sess.CFList != nil {
@@ -117,6 +119,7 @@ func (n *NetworkServerAPI) UpdateNodeSession(ctx context.Context, req *ns.Update
 		RX1DROffset: uint8(req.Rx1DROffset),
 		RXWindow:    session.RXWindow(req.RxWindow),
 		RX2DR:       uint8(req.Rx2DR),
+		RelaxFCnt:   req.RelaxFCnt,
 	}
 
 	if len(req.CFList) > 0 {
