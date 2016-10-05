@@ -8,6 +8,7 @@ pages:
   - getting-started.md
   - network-controller.md
   - application-server.md
+  - api.md
   - configuration.md
   - frequently-asked-questions.md
   - changelog.md
