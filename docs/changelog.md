@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.3
+
+* Relax frame-counter option.
+
 ## 0.12.2
 
 * Implement China 470-510 ISM band.

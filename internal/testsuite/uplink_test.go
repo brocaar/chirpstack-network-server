@@ -79,6 +79,16 @@ func TestUplinkScenarios(t *testing.T) {
 			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 		}
 
+		nsRelaxFCnt := session.NodeSession{
+			DevAddr:   [4]byte{1, 2, 3, 4},
+			DevEUI:    [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:   [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:    8,
+			FCntDown:  5,
+			RelaxFCnt: true,
+			AppEUI:    [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+		}
+
 		nsDelay := session.NodeSession{
 			DevAddr:  [4]byte{1, 2, 3, 4},
 			DevEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -278,6 +288,99 @@ func TestUplinkScenarios(t *testing.T) {
 							Error:  "invalid MIC",
 						},
 					},
+				},
+			}
+
+			runUplinkTests(ctx, tests)
+		})
+
+		Convey("Given a set of test-scenarios for relaxt frame-counter mode", func() {
+			expectedApplicationPushDataUpNoData := &as.HandleDataUpRequest{
+				AppEUI: ns.AppEUI[:],
+				DevEUI: ns.DevEUI[:],
+				FCnt:   0,
+				FPort:  1,
+				Data:   nil,
+				TxInfo: &as.TXInfo{
+					Frequency: int64(rxInfo.Frequency),
+					DataRate: &as.DataRate{
+						Modulation:   string(rxInfo.DataRate.Modulation),
+						BandWidth:    uint32(rxInfo.DataRate.Bandwidth),
+						SpreadFactor: uint32(rxInfo.DataRate.SpreadFactor),
+						Bitrate:      uint32(rxInfo.DataRate.BitRate),
+					},
+				},
+				RxInfo: []*as.RXInfo{
+					{
+						Mac:     rxInfo.MAC[:],
+						Time:    rxInfo.Time.Format(time.RFC3339Nano),
+						Rssi:    int32(rxInfo.RSSI),
+						LoRaSNR: rxInfo.LoRaSNR,
+					},
+				},
+			}
+
+			expectedGetDataDown := &as.GetDataDownRequest{
+				AppEUI:         ns.AppEUI[:],
+				DevEUI:         ns.DevEUI[:],
+				MaxPayloadSize: 51,
+				FCnt:           0,
+			}
+
+			tests := []uplinkTestCase{
+				{
+					Name:        "the frame-counter is invalid but not 0",
+					NodeSession: nsRelaxFCnt,
+					RXInfo:      rxInfo,
+					SetMICKey:   ns.NwkSKey,
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    7,
+							},
+							FPort: &fPortOne,
+						},
+					},
+					ExpectedFCntUp:              8,
+					ExpectedFCntDown:            5,
+					ExpectedHandleRXPacketError: errors.New("invalid FCnt or too many dropped frames"),
+					ExpectedApplicationHandleErrors: []as.HandleErrorRequest{
+						{
+							AppEUI: ns.AppEUI[:],
+							DevEUI: ns.DevEUI[:],
+							Type:   as.ErrorType_DATA_UP_FCNT,
+							Error:  "invalid FCnt or too many dropped frames (server_fcnt: 8, packet_fcnt: 7)",
+						},
+					},
+				},
+				{
+					Name:        "the frame-counter is invalid and 0",
+					NodeSession: nsRelaxFCnt,
+					RXInfo:      rxInfo,
+					SetMICKey:   ns.NwkSKey,
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    0,
+							},
+							FPort: &fPortOne,
+						},
+					},
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
+					ExpectedFCntUp:                  0,
+					ExpectedFCntDown:                0,
 				},
 			}
 

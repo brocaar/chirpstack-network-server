@@ -32,25 +32,6 @@ func validateAndCollectDataUpRXPacket(ctx common.Context, rxPacket gw.RXPacket) 
 		return err
 	}
 
-	// validate and get the full int32 FCnt
-	fullFCnt, ok := session.ValidateAndGetFullFCntUp(ns, macPL.FHDR.FCnt)
-	if !ok {
-		ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
-			AppEUI: ns.AppEUI[:],
-			DevEUI: ns.DevEUI[:],
-			Type:   as.ErrorType_DATA_UP_FCNT,
-			Error:  fmt.Sprintf("invalid FCnt or too many dropped frames (server_fcnt: %d, packet_fcnt: %d)", ns.FCntUp, macPL.FHDR.FCnt),
-		})
-		log.WithFields(log.Fields{
-			"dev_addr":    macPL.FHDR.DevAddr,
-			"dev_eui":     ns.DevEUI,
-			"packet_fcnt": macPL.FHDR.FCnt,
-			"server_fcnt": ns.FCntUp,
-		}).Warning("invalid FCnt")
-		return errors.New("invalid FCnt or too many dropped frames")
-	}
-	macPL.FHDR.FCnt = fullFCnt
-
 	// validate MIC
 	micOK, err := rxPacket.PHYPayload.ValidateMIC(ns.NwkSKey)
 	if err != nil {
@@ -65,6 +46,40 @@ func validateAndCollectDataUpRXPacket(ctx common.Context, rxPacket gw.RXPacket) 
 		})
 		return errors.New("invalid MIC")
 	}
+
+	// validate and get the full int32 FCnt
+	fullFCnt, ok := session.ValidateAndGetFullFCntUp(ns, macPL.FHDR.FCnt)
+	if !ok {
+		if ns.RelaxFCnt && macPL.FHDR.FCnt == 0 {
+			fullFCnt = 0
+			ns.FCntUp = 0
+			ns.FCntDown = 0
+			if session.SaveNodeSession(ctx.RedisPool, ns); err != nil {
+				return err
+			}
+			log.WithFields(log.Fields{
+				"dev_addr":      macPL.FHDR.DevAddr,
+				"dev_eui":       ns.DevEUI,
+				"fcnt_up_was":   ns.FCntUp,
+				"fnct_down_was": ns.FCntDown,
+			}).Warning("frame counters reset")
+		} else {
+			ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
+				AppEUI: ns.AppEUI[:],
+				DevEUI: ns.DevEUI[:],
+				Type:   as.ErrorType_DATA_UP_FCNT,
+				Error:  fmt.Sprintf("invalid FCnt or too many dropped frames (server_fcnt: %d, packet_fcnt: %d)", ns.FCntUp, macPL.FHDR.FCnt),
+			})
+			log.WithFields(log.Fields{
+				"dev_addr":    macPL.FHDR.DevAddr,
+				"dev_eui":     ns.DevEUI,
+				"packet_fcnt": macPL.FHDR.FCnt,
+				"server_fcnt": ns.FCntUp,
+			}).Warning("invalid FCnt")
+			return errors.New("invalid FCnt or too many dropped frames")
+		}
+	}
+	macPL.FHDR.FCnt = fullFCnt
 
 	if macPL.FPort != nil {
 		if *macPL.FPort == 0 {

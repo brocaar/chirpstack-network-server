@@ -13,17 +13,18 @@ const (
 
 // NodeSession contains the informatio of a node-session (an activated node).
 type NodeSession struct {
-	DevAddr  lorawan.DevAddr   `json:"devAddr"`
-	AppEUI   lorawan.EUI64     `json:"appEUI"`
-	DevEUI   lorawan.EUI64     `json:"devEUI"`
-	NwkSKey  lorawan.AES128Key `json:"nwkSKey"`
-	FCntUp   uint32            `json:"fCntUp"`
-	FCntDown uint32            `json:"fCntDown"`
+	DevAddr   lorawan.DevAddr
+	AppEUI    lorawan.EUI64
+	DevEUI    lorawan.EUI64
+	NwkSKey   lorawan.AES128Key
+	FCntUp    uint32
+	FCntDown  uint32
+	RelaxFCnt bool
 
-	RXWindow    RXWindow `json:"rxWindow"`
-	RXDelay     uint8    `json:"rxDelay"`
-	RX1DROffset uint8    `json:"rx1DROffset"`
-	RX2DR       uint8    `json:"rx2DR"`
+	RXWindow    RXWindow
+	RXDelay     uint8
+	RX1DROffset uint8
+	RX2DR       uint8
 
-	CFList *lorawan.CFList `json:"cFlist"`
+	CFList *lorawan.CFList
 }

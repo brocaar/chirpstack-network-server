@@ -36,6 +36,7 @@ Please test and give feedback but know that things might break!
 - over-the-air activation (OTAA)
 - sending / receiving of MAC commands
 - RX1 and RX2 receive window support (configurable)
+- Relax frame-counter option
 - ISM bands
 	- AU 915-928
 	- CN 470-510
