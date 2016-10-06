@@ -65,6 +65,10 @@ See [https://github.com/brocaar/loraserver/releases](https://github.com/brocaar/
 for downloads. Source-code can be found at
 [https://github.com/brocaar/loraserver](https://github.com/brocaar/loraserver).
 
+## Sponsors
+
+[![acklio](docs/img/sponsors/acklio.png)](http://www.ackl.io/)
+
 ## License
 
 LoRa Server is distributed under the MIT license. See also
