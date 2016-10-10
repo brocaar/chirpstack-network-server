@@ -5,6 +5,7 @@ include_next_prev: False
 
 pages:
   - index.md
+  - features.md
   - getting-started.md
   - network-controller.md
   - application-server.md

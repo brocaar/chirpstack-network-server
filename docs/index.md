@@ -18,36 +18,6 @@ This project exists out of multiple components
   application-server
 * lora-controller (todo) - LoRaWAN network-controller
 
-## Features
-
-Note: This project is under development.
-Please test and give feedback but know that things might break!
-
-### Implemented:
-
-- Class-A
-- (unconfirmed) data up
-- (confirmed) data down
-- activation by personalization (ABP)
-- over-the-air activation (OTAA)
-- sending / receiving of MAC commands
-- RX1 and RX2 receive window support (configurable)
-- ISM bands
-	- AU 915-928
-	- CN 470-510
-	- EU 863-870
-	- US 902-928
-
-### Roadmap:
-
-- ADR (adaptive data-rate)
-- Class B & C
-
-### Help needed:
-
--  EU 433 ISM band testers ([issues/49](https://github.com/brocaar/loraserver/issues/49))
--  CN 779-787 ISM band testers ([issues/50](https://github.com/brocaar/loraserver/issues/50))
-
 ## Downloads
 
 Pre-compiled binaries are available for:

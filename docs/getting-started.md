@@ -1,7 +1,15 @@
 # Getting started
 
+A complete LoRa Server setup, requires the setup of the following components
+in place:
+
+
+* [LoRa Gateway Bridge](https://docs.loraserver.io/lora-gateway-bridge/)
+* [LoRa Server](https://docs.loraserver.io/loraserver/)
+* [LoRa App Server](https://docs.loraserver.io/lora-app-server/)
+
 This getting started document describes the steps needed to setup LoRa Server
-and all its requirements on Ubuntu 16.04 LTS. When using an other Linux
+component and its requirements on Ubuntu 16.04 LTS. When using an other Linux
 distribution, you might need to adapt these steps.
 
 !!! warning
@@ -32,22 +40,6 @@ To Install Redis:
 ```bash
 sudo apt-get install redis-server
 ```
-
-## LoRa Gateway Bridge
-
-As most LoRa gateways are using the [packet_forwarder](https://github.com/Lora-net/packet_forwarder)
-which uses a [UDP protocol](https://github.com/Lora-net/packet_forwarder/blob/master/PROTOCOL.TXT)
-for communication, you need to setup the [LoRa Gateway Bridge](http://docs.loraserver.io/lora-gateway-bridge/)
-which abstracts this UDP protocol into JSON over MQTT. These installation steps
-are documented in the [LoRa Gateway Bridge documentation](http://docs.loraserver.io/lora-gateway-bridge/).
-
-## LoRa App Server
-
-As LoRa Server itself is only aware about node-sessions and doesn't know
-anything about the inventory, you need to run an application-server compatible
-with the [ApplicationServer api](https://github.com/brocaar/loraserver/blob/master/api/as/as.proto).
-Instructions to setup [LoRa App Server](https://github.com/brocaar/lora-app-server)
-are documented in [LoRa App Server documentation](http://docs.loraserver.io/lora-app-server/).
 
 ## Install LoRa Server
 
