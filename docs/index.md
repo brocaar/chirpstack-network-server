@@ -30,6 +30,13 @@ See [https://github.com/brocaar/loraserver/releases](https://github.com/brocaar/
 for downloads. Source-code can be found at
 [https://github.com/brocaar/loraserver](https://github.com/brocaar/loraserver).
 
+## Building from source
+
+Building from souce requires a working [Go](https://golang.org/) environment
+with vendoring support. Alternatively, you could use the provided
+[docker-compose](https://docs.docker.com/compose/) environment for compiling
+the source.
+
 ## Sponsors
 
 [![acklio](img/sponsors/acklio.png)](http://www.ackl.io/)
