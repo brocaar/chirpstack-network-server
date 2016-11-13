@@ -266,24 +266,24 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "redis-url",
-			Usage:  "redis url",
+			Usage:  "redis url (e.g. redis://user:password@hostname:port/0)",
 			Value:  "redis://localhost:6379",
 			EnvVar: "REDIS_URL",
 		},
 		cli.StringFlag{
 			Name:   "gw-mqtt-server",
-			Usage:  "mqtt broker server used by the gateway backend",
+			Usage:  "mqtt broker server used by the gateway backend (e.g. scheme://host:port where scheme is tcp, ssl or ws)",
 			Value:  "tcp://localhost:1883",
 			EnvVar: "GW_MQTT_SERVER",
 		},
 		cli.StringFlag{
 			Name:   "gw-mqtt-username",
-			Usage:  "mqtt username used by the gateway backend",
+			Usage:  "mqtt username used by the gateway backend (optional)",
 			EnvVar: "GW_MQTT_USERNAME",
 		},
 		cli.StringFlag{
 			Name:   "gw-mqtt-password",
-			Usage:  "mqtt password used by the gateway backend",
+			Usage:  "mqtt password used by the gateway backend (optional)",
 			EnvVar: "GW_MQTT_PASSWORD",
 		},
 		cli.StringFlag{

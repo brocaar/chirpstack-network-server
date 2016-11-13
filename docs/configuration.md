@@ -11,10 +11,10 @@ GLOBAL OPTIONS:
    --tls-cert value          tls certificate used by the api server (optional) [$TLS_CERT]
    --tls-key value           tls key used by the api server (optional) [$TLS_KEY]
    --bind value              ip:port to bind the api server (default: "0.0.0.0:8000") [$BIND]
-   --redis-url value         redis url (default: "redis://localhost:6379") [$REDIS_URL]
-   --gw-mqtt-server value    mqtt broker server used by the gateway backend (default: "tcp://localhost:1883") [$GW_MQTT_SERVER]
-   --gw-mqtt-username value  mqtt username used by the gateway backend [$GW_MQTT_USERNAME]
-   --gw-mqtt-password value  mqtt password used by the gateway backend [$GW_MQTT_PASSWORD]
+   --redis-url value         redis url (e.g. redis://user:password@hostname:port/0) (default: "redis://localhost:6379") [$REDIS_URL]
+   --gw-mqtt-server value    mqtt broker server used by the gateway backend (e.g. scheme://host:port where scheme is tcp, ssl or ws) (default: "tcp://localhost:1883") [$GW_MQTT_SERVER]
+   --gw-mqtt-username value  mqtt username used by the gateway backend (optional) [$GW_MQTT_USERNAME]
+   --gw-mqtt-password value  mqtt password used by the gateway backend (optional) [$GW_MQTT_PASSWORD]
    --as-server value         hostname:port of the application-server api server (optional) (default: "127.0.0.1:8001") [$AS_HOST]
    --as-ca-cert value        ca certificate used by the application-server client (optional) [$AS_CA_CERT]
    --as-tls-cert value       tls certificate used by the application-server client (optional) [$AS_TLS_CERT]
@@ -46,3 +46,8 @@ The value needs to be [HEX](https://en.wikipedia.org/wiki/Hexadecimal) encoded, 
 It is important to start `loraserver` with the correct band, as this defines
 the frequencies used. Make sure these frequencies match the frequencies as
 configured in your gateways.
+
+## Redis connection string
+
+For more information about the Redis URL format, see:
+[https://www.iana.org/assignments/uri-schemes/prov/redis](https://www.iana.org/assignments/uri-schemes/prov/redis).
