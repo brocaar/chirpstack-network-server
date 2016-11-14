@@ -79,6 +79,15 @@ func TestUplinkScenarios(t *testing.T) {
 			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 		}
 
+		nsFCntRollOver := session.NodeSession{
+			DevAddr:  [4]byte{1, 2, 3, 4},
+			DevEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:   65535,
+			FCntDown: 5,
+			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+		}
+
 		nsRelaxFCnt := session.NodeSession{
 			DevAddr:   [4]byte{1, 2, 3, 4},
 			DevEUI:    [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -150,6 +159,31 @@ func TestUplinkScenarios(t *testing.T) {
 			AppEUI: ns.AppEUI[:],
 			DevEUI: ns.DevEUI[:],
 			FCnt:   10,
+			FPort:  1,
+			Data:   []byte{1, 2, 3, 4},
+			TxInfo: &as.TXInfo{
+				Frequency: int64(rxInfo.Frequency),
+				DataRate: &as.DataRate{
+					Modulation:   string(rxInfo.DataRate.Modulation),
+					BandWidth:    uint32(rxInfo.DataRate.Bandwidth),
+					SpreadFactor: uint32(rxInfo.DataRate.SpreadFactor),
+					Bitrate:      uint32(rxInfo.DataRate.BitRate),
+				},
+			},
+			RxInfo: []*as.RXInfo{
+				{
+					Mac:     rxInfo.MAC[:],
+					Time:    rxInfo.Time.Format(time.RFC3339Nano),
+					Rssi:    int32(rxInfo.RSSI),
+					LoRaSNR: rxInfo.LoRaSNR,
+				},
+			},
+		}
+
+		expectedApplicationPushDataUpFCntRollOver := &as.HandleDataUpRequest{
+			AppEUI: ns.AppEUI[:],
+			DevEUI: ns.DevEUI[:],
+			FCnt:   65536,
 			FPort:  1,
 			Data:   []byte{1, 2, 3, 4},
 			TxInfo: &as.TXInfo{
@@ -731,6 +765,31 @@ func TestUplinkScenarios(t *testing.T) {
 					},
 					ExpectedFCntUp:   10,
 					ExpectedFCntDown: 5,
+				},
+				{
+					Name:        "unconfirmed uplink with FCnt rollover",
+					NodeSession: nsFCntRollOver,
+					RXInfo:      rxInfo,
+					SetMICKey:   ns.NwkSKey,
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    65536,
+							},
+							FPort:      &fPortOne,
+							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+						},
+					},
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpFCntRollOver,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
+					ExpectedFCntUp:                  65536,
+					ExpectedFCntDown:                5,
 				},
 			}
 
@@ -1319,10 +1378,17 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 			}
 			So(t.PHYPayload.SetMIC(t.SetMICKey), ShouldBeNil)
 
+			// marshal and unmarshal the PHYPayload to make sure the FCnt gets
+			// truncated to to 16 bit
+			var phy lorawan.PHYPayload
+			b, err := t.PHYPayload.MarshalBinary()
+			So(err, ShouldBeNil)
+			So(phy.UnmarshalBinary(b), ShouldBeNil)
+
 			// create RXPacket and call HandleRXPacket
 			rxPacket := gw.RXPacket{
 				RXInfo:     t.RXInfo,
-				PHYPayload: t.PHYPayload,
+				PHYPayload: phy,
 			}
 			So(uplink.HandleRXPacket(ctx, rxPacket), ShouldResemble, t.ExpectedHandleRXPacketError)
 

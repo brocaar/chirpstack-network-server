@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.4
+
+* Fix regression that caused a FCnt roll-over to result in an invalid MIC
+  error. This was caused by validating the MIC before expanding the 16 bit
+  FCnt to the full 32 bit value. (thanks @andrepferreira)
+
 ## 0.12.3
 
 * Relax frame-counter option.

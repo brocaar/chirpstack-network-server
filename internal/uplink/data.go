@@ -32,21 +32,6 @@ func validateAndCollectDataUpRXPacket(ctx common.Context, rxPacket gw.RXPacket) 
 		return err
 	}
 
-	// validate MIC
-	micOK, err := rxPacket.PHYPayload.ValidateMIC(ns.NwkSKey)
-	if err != nil {
-		return fmt.Errorf("validate MIC error: %s", err)
-	}
-	if !micOK {
-		ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
-			AppEUI: ns.AppEUI[:],
-			DevEUI: ns.DevEUI[:],
-			Type:   as.ErrorType_DATA_UP_MIC,
-			Error:  "invalid MIC",
-		})
-		return errors.New("invalid MIC")
-	}
-
 	// validate and get the full int32 FCnt
 	fullFCnt, ok := session.ValidateAndGetFullFCntUp(ns, macPL.FHDR.FCnt)
 	if !ok {
@@ -81,6 +66,21 @@ func validateAndCollectDataUpRXPacket(ctx common.Context, rxPacket gw.RXPacket) 
 	}
 	macPL.FHDR.FCnt = fullFCnt
 
+	// validate MIC
+	micOK, err := rxPacket.PHYPayload.ValidateMIC(ns.NwkSKey)
+	if err != nil {
+		return fmt.Errorf("validate MIC error: %s", err)
+	}
+	if !micOK {
+		ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
+			AppEUI: ns.AppEUI[:],
+			DevEUI: ns.DevEUI[:],
+			Type:   as.ErrorType_DATA_UP_MIC,
+			Error:  "invalid MIC",
+		})
+		return errors.New("invalid MIC")
+	}
+
 	if macPL.FPort != nil {
 		if *macPL.FPort == 0 {
 			// decrypt FRMPayload with NwkSKey when FPort == 0
@@ -110,6 +110,10 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPacket models.RXPacket) 
 	if err != nil {
 		return err
 	}
+
+	// expand the FCnt, the value itself has already been validated during the
+	// collection, so there is no need to handle the ok value
+	macPL.FHDR.FCnt, _ = session.ValidateAndGetFullFCntUp(ns, macPL.FHDR.FCnt)
 
 	log.WithFields(log.Fields{
 		"dev_eui":  ns.DevEUI,
