@@ -42,10 +42,44 @@ for downloads. Source-code can be found at
 
 ## Building from source
 
-Building from souce requires a working [Go](https://golang.org/) environment
-with vendoring support. Alternatively, you could use the provided
-[docker-compose](https://docs.docker.com/compose/) environment for compiling
-the source.
+The easiest way to get started is by using the provided 
+[docker-compose](https://docs.docker.com/compose/) environment. To start a bash
+shell within the docker-compose environment, execute the following command from
+the root of this project:
+
+```bash
+docker-compose run --rm loraserver bash
+```
+
+A few example commands that you can run:
+
+```bash
+# run the tests
+make test
+
+# compile
+make build
+
+# cross-compile for Linux ARM
+GOOS=linux GOARCH=arm make build
+
+# cross-compile for Windows AMD64
+GOOS=windows BINEXT=.exe GOARCH=amd64 make build
+
+# build the .tar.gz file
+make package
+
+# build the .tar.gz file for Linux ARM
+GOOS=linux GOARCH=arm make build
+
+# build the .tar.gz file for Windows AMD64
+GOOS=windows BINEXT=.exe GOARCH=amd64 make build
+```
+
+Alternatively, you can run the same commands from any working
+[Go](https://golang.org/) environment. As all requirements are vendored,
+there is no need to `go get` these, but make sure vendoring is enabled for
+your Go environment or that you have Go 1.6+ installed.
 
 ## Sponsors
 
