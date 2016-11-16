@@ -1,0 +1,83 @@
+version: "2"
+
+services:
+
+  lora-app-server:
+    build: /go/src/github.com/brocaar/lora-app-server
+    command: /go/src/github.com/brocaar/lora-app-server/build/lora-app-server
+    volumes:
+      - /go/src/github.com/brocaar/lora-app-server:/go/src/github.com/brocaar/lora-app-server
+    ports:
+      - "8080/tcp:8080/tcp"
+    environment:
+      - MQTT_SERVER=tcp://mosquitto:1883
+      - POSTGRES_DSN=postgres://loraserver:loraserver@postgres/loraserver?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+      - NS_SERVER=loraserver:8000
+      - BIND=lora-app-server:8001
+    #   - HTTP_BIND=lora-app-server:8080
+      - HTTP_TLS_CERT=/go/src/github.com/brocaar/lora-app-server/build/http.pem
+      - HTTP_TLS_KEY=/go/src/github.com/brocaar/lora-app-server/build/http-key.pem
+      - TEST_POSTGRES_DSN=postgres://loraserver:loraserver@postgres_test/loraserver?sslmode=disable
+      - TEST_REDIS_URL=redis://redis_test:6379
+      - TEST_MQTT_SERVER=tcp://mosquitto:1883
+      - DB_AUTOMIGRATE=true
+    restart: always
+
+  lora-gateway-bridge:
+    build: /go/src/github.com/brocaar/lora-gateway-bridge
+    command: /go/src/github.com/brocaar/lora-gateway-bridge/build/lora-gateway-bridge
+    ports:
+      - "1700/udp:1700/udp"
+    volumes:
+      - /go/src/github.com/brocaar/lora-gateway-bridge:/go/src/github.com/brocaar/lora-gateway-bridge
+    environment:
+      - MQTT_SERVER=tcp://mosquitto:1883
+      - TEST_MQTT_SERVER=tcp://mosquitto:1883
+    restart: always
+
+  loraserver:
+    build: /go/src/github.com/brocaar/loraserver
+    command: /go/src/github.com/brocaar/loraserver/build/loraserver
+    volumes:
+      - /go/src/github.com/brocaar/loraserver:/go/src/github.com/brocaar/loraserver
+    environment:
+      - AS_HOST=lora-app-server:8001
+      - GW_MQTT_SERVER=tcp://mosquitto:1883
+      - POSTGRES_DSN=postgres://loraserver:loraserver@postgres/loraserver?sslmode=disable
+      - REDIS_URL=redis://redis:6379
+      - TEST_MQTT_SERVER=tcp://mosquitto:1883
+      - TEST_POSTGRES_DSN=postgres://loraserver:loraserver@postgres_test/loraserver?sslmode=disable
+      - TEST_REDIS_URL=redis://redis_test:6379
+      - DB_AUTOMIGRATE=true
+      - BAND=${BAND}
+      - NET_ID=${NET_ID}
+    restart: always
+
+  mosquitto:
+    image: ansi/mosquitto
+    restart: always
+
+  postgres:
+    image: postgres:9.5
+    environment:
+      - POSTGRES_PASSWORD=loraserver
+      - POSTGRES_USER=loraserver
+      - POSTGRES_DB=loraserver
+    restart: always
+
+  redis:
+    image: redis:3.0.7-alpine
+    restart: always
+
+  postgres_test:
+    image: postgres:9.5
+    environment:
+      - POSTGRES_PASSWORD=loraserver
+      - POSTGRES_USER=loraserver
+      - POSTGRES_DB=loraserver
+    restart: always
+
+  redis_test:
+    image: redis:3.0.7-alpine
+    restart: always

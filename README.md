@@ -42,7 +42,7 @@ for downloads. Source-code can be found at
 
 ## Building from source
 
-The easiest way to get started is by using the provided 
+The easiest way to get started is by using the provided
 [docker-compose](https://docs.docker.com/compose/) environment. To start a bash
 shell within the docker-compose environment, execute the following command from
 the root of this project:
@@ -80,6 +80,11 @@ Alternatively, you can run the same commands from any working
 [Go](https://golang.org/) environment. As all requirements are vendored,
 there is no need to `go get` these, but make sure vendoring is enabled for
 your Go environment or that you have Go 1.6+ installed.
+
+## Run VirtualBox machine with Vagrant
+
+Another option for the quick start is script in vagrant subdirectory.
+You got Ubuntu based virtual machine with Docker containers and all loraserver components built from source.
 
 ## Sponsors
 
