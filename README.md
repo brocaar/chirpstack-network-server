@@ -14,7 +14,7 @@ This project exists out of multiple components
 
 ![architecture](https://www.gliffy.com/go/publish/image/11010339/L.png)
 
-* [lora-gateway-bridge](https://docs.loraserver.io/brocaar/lora-gateway-bridge) - converts
+* [lora-gateway-bridge](https://docs.loraserver.io/lora-gateway-bridge) - converts
   the [packet_forwarder protocol](https://github.com/Lora-net/packet_forwarder/blob/master/PROTOCOL.TXT)
   to MQTT and back
 * [loraserver](https://docs.loraserver.io/loraserver/) - LoRaWAN network-server
