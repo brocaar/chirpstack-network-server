@@ -38,6 +38,24 @@ func TestGetRandomDevAddr(t *testing.T) {
 	})
 }
 
+func TestUplinkHistory(t *testing.T) {
+	Convey("Given an empty node-session", t, func() {
+		ns := NodeSession{}
+
+		Convey("When appending 30 items to the UplinkHistory", func() {
+			for i := uint32(0); i < 30; i++ {
+				ns.AppendUplinkHistory(UplinkHistory{FCnt: i})
+			}
+
+			Convey("Then only the last 20 items are preserved", func() {
+				So(ns.UplinkHistory, ShouldHaveLength, 20)
+				So(ns.UplinkHistory[19].FCnt, ShouldEqual, 29)
+				So(ns.UplinkHistory[0].FCnt, ShouldEqual, 10)
+			})
+		})
+	})
+}
+
 func TestNodeSession(t *testing.T) {
 	conf := test.GetConfig()
 
