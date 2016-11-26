@@ -39,8 +39,20 @@ type NodeSession struct {
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list
 // never exceeds 20 records. In case more records are present, only the most
-// recent ones will be preserved.
+// recent ones will be preserved. In case of a re-transmission, the record with
+// the best MaxSNR is stored.
 func (b *NodeSession) AppendUplinkHistory(up UplinkHistory) {
+	if count := len(b.UplinkHistory); count > 0 {
+		// in case of a re-transmission, keep the record with the best MaxSNR.
+		if b.UplinkHistory[count-1].FCnt == up.FCnt {
+			if b.UplinkHistory[count-1].MaxSNR < up.MaxSNR {
+				b.UplinkHistory = b.UplinkHistory[:count-1]
+			} else {
+				return
+			}
+		}
+	}
+
 	b.UplinkHistory = append(b.UplinkHistory, up)
 	if count := len(b.UplinkHistory); count > 20 {
 		b.UplinkHistory = b.UplinkHistory[count-20 : count]
