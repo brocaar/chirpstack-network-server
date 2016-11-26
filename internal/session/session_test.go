@@ -73,6 +73,26 @@ func TestUplinkHistory(t *testing.T) {
 				So(ns.UplinkHistory[0].MaxSNR, ShouldEqual, 6)
 			})
 		})
+
+		Convey("When appending 20 items, with two missing frames", func() {
+			for i := uint32(0); i < 20; i++ {
+				if i < 5 {
+					ns.AppendUplinkHistory(UplinkHistory{FCnt: i})
+					continue
+				}
+
+				if i < 10 {
+					ns.AppendUplinkHistory(UplinkHistory{FCnt: i + 1})
+					continue
+				}
+
+				ns.AppendUplinkHistory(UplinkHistory{FCnt: i + 2})
+			}
+
+			Convey("Then the packet-loss is 10%", func() {
+				So(ns.GetPacketLossPercentage(), ShouldEqual, 10)
+			})
+		})
 	})
 }
 

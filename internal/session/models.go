@@ -58,3 +58,21 @@ func (b *NodeSession) AppendUplinkHistory(up UplinkHistory) {
 		b.UplinkHistory = b.UplinkHistory[count-20 : count]
 	}
 }
+
+// GetPacketLossPercentage returns the percentage of packet-loss over the
+// records stored in UplinkHistory.
+func (b NodeSession) GetPacketLossPercentage() float64 {
+	var lostPackets uint32
+	var previousFCnt uint32
+
+	for i, uh := range b.UplinkHistory {
+		if i == 0 {
+			previousFCnt = uh.FCnt
+			continue
+		}
+		lostPackets += uh.FCnt - previousFCnt - 1 // there is always an expected difference of 1
+		previousFCnt = uh.FCnt
+	}
+
+	return float64(lostPackets) / float64(len(b.UplinkHistory)) * 100
+}
