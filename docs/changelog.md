@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.5
+
+**Security:**
+
+* This release fixes a `FCnt` related security issue. Instead of keeping the
+  uplink `FCnt` value in sync with the `FCnt` of the uplink transmission, it
+  is incremented (uplink `FCnt + 1`) after it has been processed by
+  LoRa Server.
+
 ## 0.12.4
 
 * Fix regression that caused a FCnt roll-over to result in an invalid MIC

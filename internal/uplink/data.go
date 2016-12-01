@@ -173,8 +173,8 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPacket models.RXPacket) 
 		}
 	}
 
-	// sync counter with that of the device
-	ns.FCntUp = macPL.FHDR.FCnt
+	// sync counter with that of the device + 1
+	ns.FCntUp = macPL.FHDR.FCnt + 1
 	if err := session.SaveNodeSession(ctx.RedisPool, ns); err != nil {
 		return err
 	}

@@ -81,9 +81,9 @@ func TestNodeSession(t *testing.T) {
 					FullFCnt   uint32
 					Valid      bool
 				}{
-					{0, 1, 1, true},                                                               // ideal case counter was incremented
-					{1, 1, 1, true},                                                               // re-transmission
-					{2, 1, 0, false},                                                              // old packet received
+					{0, 1, 1, true},                                                               // one packet was lost
+					{1, 1, 1, true},                                                               // ideal case, the FCnt has the expected value
+					{2, 1, 0, false},                                                              // old packet received or re-transmission
 					{0, common.Band.MaxFCntGap, 0, false},                                         // gap should be less than MaxFCntGap
 					{0, common.Band.MaxFCntGap - 1, common.Band.MaxFCntGap - 1, true},             // gap is exactly within the allowed MaxFCntGap
 					{65536, common.Band.MaxFCntGap - 1, common.Band.MaxFCntGap - 1 + 65536, true}, // roll-over happened, gap ix exactly within allowed MaxFCntGap

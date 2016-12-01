@@ -413,7 +413,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
-					ExpectedFCntUp:                  0,
+					ExpectedFCntUp:                  1,
 					ExpectedFCntDown:                0,
 				},
 			}
@@ -446,7 +446,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
-					ExpectedFCntUp:                  10,
+					ExpectedFCntUp:                  11,
 					ExpectedFCntDown:                5,
 				},
 				{
@@ -470,7 +470,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
-					ExpectedFCntUp:                  10,
+					ExpectedFCntUp:                  11,
 					ExpectedFCntDown:                5,
 				},
 				{
@@ -516,7 +516,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 6,
 				},
 				{
@@ -561,7 +561,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 6,
 				},
 				{
@@ -606,7 +606,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 6,
 				},
 				{
@@ -656,7 +656,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 6,
 				},
 				{
@@ -701,7 +701,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 6,
 				},
 				{
@@ -731,7 +731,7 @@ func TestUplinkScenarios(t *testing.T) {
 						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], Data: []byte{2}},
 						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], Data: []byte{3, 1}},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 5,
 				},
 				{
@@ -763,7 +763,7 @@ func TestUplinkScenarios(t *testing.T) {
 						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], FrmPayload: true, Data: []byte{2}},
 						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], FrmPayload: true, Data: []byte{3, 1}},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 5,
 				},
 				{
@@ -788,7 +788,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpFCntRollOver,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
-					ExpectedFCntUp:                  65536,
+					ExpectedFCntUp:                  65537,
 					ExpectedFCntDown:                5,
 				},
 			}
@@ -848,7 +848,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 6,
 				},
 				{
@@ -907,7 +907,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 6,
 				},
 				{
@@ -960,7 +960,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 6,
 				},
 				{
@@ -1022,7 +1022,7 @@ func TestUplinkScenarios(t *testing.T) {
 						{DevEUI: ns.DevEUI, FRMPayload: true, Data: []byte{6}},
 						{DevEUI: ns.DevEUI, FRMPayload: true, Data: []byte{8, 3}},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 6,
 				},
 				{
@@ -1096,7 +1096,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedTXMACPayloadQueue: []queue.MACPayload{
 						{DevEUI: ns.DevEUI, Data: []byte{2, 10, 6}},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 6,
 				},
 			}
@@ -1155,7 +1155,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 6,
 				},
 				{
@@ -1209,7 +1209,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 6,
 				},
 				{
@@ -1260,7 +1260,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   10,
+					ExpectedFCntUp:   11,
 					ExpectedFCntDown: 5, // will be incremented after the node ACKs the frame
 				},
 				{
@@ -1288,7 +1288,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
-					ExpectedFCntUp:                  10,
+					ExpectedFCntUp:                  11,
 					ExpectedFCntDown:                5, // payload has been discarded, nothing to transmit
 				},
 				{
@@ -1344,7 +1344,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:                 10,
+					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               6,
 					ExpectedApplicationGetDataDown: expectedGetDataDown,
 					ExpectedTXMACPayloadQueue: []queue.MACPayload{
