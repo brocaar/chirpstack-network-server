@@ -54,23 +54,13 @@ func TestUplinkHistory(t *testing.T) {
 			})
 		})
 
-		Convey("When a retransmission has a higher MaxSNR than the stored one", func() {
+		Convey("In case of adding the same FCnt twice", func() {
 			ns.AppendUplinkHistory(UplinkHistory{FCnt: 10, MaxSNR: 5})
 			ns.AppendUplinkHistory(UplinkHistory{FCnt: 10, MaxSNR: 6})
 
-			Convey("The retransmission is stored", func() {
+			Convey("Then the first record is kept", func() {
 				So(ns.UplinkHistory, ShouldHaveLength, 1)
-				So(ns.UplinkHistory[0].MaxSNR, ShouldEqual, 6)
-			})
-		})
-
-		Convey("When a retransmission has a lower MaxSNR than the stored one", func() {
-			ns.AppendUplinkHistory(UplinkHistory{FCnt: 10, MaxSNR: 6})
-			ns.AppendUplinkHistory(UplinkHistory{FCnt: 10, MaxSNR: 5})
-
-			Convey("The the stored transmission is not replaced", func() {
-				So(ns.UplinkHistory, ShouldHaveLength, 1)
-				So(ns.UplinkHistory[0].MaxSNR, ShouldEqual, 6)
+				So(ns.UplinkHistory[0].MaxSNR, ShouldEqual, 5)
 			})
 		})
 

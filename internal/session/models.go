@@ -43,13 +43,10 @@ type NodeSession struct {
 // the best MaxSNR is stored.
 func (b *NodeSession) AppendUplinkHistory(up UplinkHistory) {
 	if count := len(b.UplinkHistory); count > 0 {
-		// in case of a re-transmission, keep the record with the best MaxSNR.
+		// ignore re-transmissions we don't know the source of the
+		// re-transmission (it might be a replay-attack)
 		if b.UplinkHistory[count-1].FCnt == up.FCnt {
-			if b.UplinkHistory[count-1].MaxSNR < up.MaxSNR {
-				b.UplinkHistory = b.UplinkHistory[:count-1]
-			} else {
-				return
-			}
+			return
 		}
 	}
 
