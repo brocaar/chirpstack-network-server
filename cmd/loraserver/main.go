@@ -290,7 +290,7 @@ func main() {
 			Name:   "as-server",
 			Usage:  "hostname:port of the application-server api server (optional)",
 			Value:  "127.0.0.1:8001",
-			EnvVar: "AS_HOST",
+			EnvVar: "AS_SERVER",
 		},
 		cli.StringFlag{
 			Name:   "as-ca-cert",
@@ -310,7 +310,7 @@ func main() {
 		cli.StringFlag{
 			Name:   "nc-server",
 			Usage:  "hostname:port of the network-controller api server (optional)",
-			EnvVar: "AS_HOST",
+			EnvVar: "NC_SERVER",
 		},
 		cli.StringFlag{
 			Name:   "nc-ca-cert",
