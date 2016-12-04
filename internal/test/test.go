@@ -23,6 +23,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	common.BandName = band.EU_863_870
 }
 
 // Config contains the test configuration.

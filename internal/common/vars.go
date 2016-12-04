@@ -17,3 +17,6 @@ var NodeSessionTTL = time.Hour * 24 * 5
 
 // Band is the ISM band configuration to use
 var Band band.Band
+
+// BandName is the name of the used ISM band
+var BandName band.Name

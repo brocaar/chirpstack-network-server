@@ -60,6 +60,7 @@ func run(c *cli.Context) error {
 		log.Fatal(err)
 	}
 	common.Band = bandConfig
+	common.BandName = band.Name(c.String("band"))
 
 	log.WithFields(log.Fields{
 		"version": version,
