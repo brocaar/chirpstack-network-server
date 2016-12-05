@@ -2,7 +2,49 @@ package band
 
 import "time"
 
-func newAU915Band() (Band, error) {
+func newAU915Band(repeaterCompatible bool) (Band, error) {
+	var maxPayloadSize []MaxPayloadSize
+
+	if repeaterCompatible {
+		maxPayloadSize = []MaxPayloadSize{
+			{M: 19, N: 11},
+			{M: 61, N: 53},
+			{M: 134, N: 126},
+			{M: 250, N: 242},
+			{M: 250, N: 242},
+			{}, // Not defined
+			{}, // Not defined
+			{}, // Not defined
+			{M: 41, N: 33},
+			{M: 117, N: 109},
+			{M: 230, N: 222},
+			{M: 230, N: 222},
+			{M: 230, N: 222},
+			{M: 230, N: 222},
+			{}, // Not defined
+			{}, // Not defined
+		}
+	} else {
+		maxPayloadSize = []MaxPayloadSize{
+			{M: 19, N: 11},
+			{M: 61, N: 53},
+			{M: 134, N: 126},
+			{M: 250, N: 242},
+			{M: 250, N: 242},
+			{}, // Not defined
+			{}, // Not defined
+			{}, // Not defined
+			{M: 61, N: 53},
+			{M: 137, N: 129},
+			{M: 250, N: 242},
+			{M: 250, N: 242},
+			{M: 250, N: 242},
+			{M: 250, N: 242},
+			{}, // Not defined
+			{}, // Not defined
+		}
+	}
+
 	band := Band{
 		DefaultTXPower:   20,
 		ImplementsCFlist: false,
@@ -38,26 +80,9 @@ func newAU915Band() (Band, error) {
 			{}, // RFU
 		},
 
-		MaxPayloadSize: []MaxPayloadSize{
-			{M: 19, N: 11},
-			{M: 61, N: 53},
-			{M: 134, N: 126},
-			{M: 250, N: 242},
-			{M: 250, N: 242},
-			{}, // Not defined
-			{}, // Not defined
-			{}, // Not defined
-			{M: 41, N: 33},
-			{M: 117, N: 109},
-			{M: 230, N: 222},
-			{M: 230, N: 222},
-			{M: 230, N: 222},
-			{M: 230, N: 222},
-			{}, // Not defined
-			{}, // Not defined
-		},
+		MaxPayloadSize: maxPayloadSize,
 
-		RX1DataRate: [][]int{
+		rx1DataRate: [][]int{
 			{10, 9, 8, 8},
 			{11, 10, 9, 8},
 			{12, 11, 10, 9},

@@ -28,7 +28,7 @@ func getJoinAcceptTXInfo(ctx common.Context, ns session.NodeSession, rxInfo gw.R
 		}
 
 		// get RX1 DR
-		rx1DR, err := common.Band.GetRX1DataRateForOffset(uplinkDR, 0)
+		rx1DR, err := common.Band.GetRX1DataRate(uplinkDR, 0)
 		if err != nil {
 			return txInfo, err
 

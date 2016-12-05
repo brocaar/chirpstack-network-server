@@ -12,6 +12,7 @@ import (
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 )
 
@@ -19,7 +20,7 @@ func init() {
 	var err error
 	log.SetLevel(log.ErrorLevel)
 
-	common.Band, err = band.GetConfig(band.EU_863_870)
+	common.Band, err = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)
 	if err != nil {
 		panic(err)
 	}
@@ -33,13 +34,7 @@ type Config struct {
 
 // GetConfig returns the test configuration.
 func GetConfig() *Config {
-	var err error
 	log.SetLevel(log.ErrorLevel)
-
-	common.Band, err = band.GetConfig(band.EU_863_870)
-	if err != nil {
-		panic(err)
-	}
 
 	c := &Config{
 		RedisURL: "redis://localhost:6379",

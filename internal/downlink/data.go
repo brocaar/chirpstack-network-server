@@ -34,7 +34,7 @@ func getDataDownTXInfoAndDR(ctx common.Context, ns session.NodeSession, rxInfo g
 		}
 
 		// get rx1 dr
-		dr, err = common.Band.GetRX1DataRateForOffset(uplinkDR, int(ns.RX1DROffset))
+		dr, err = common.Band.GetRX1DataRate(uplinkDR, int(ns.RX1DROffset))
 		if err != nil {
 			return txInfo, dr, err
 		}

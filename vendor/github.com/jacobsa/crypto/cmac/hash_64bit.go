@@ -13,7 +13,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build amd64 arm64
+// +build amd64 arm64 ppc64 ppc64le s390x mips64 mips64le
+
+// This code assumes that it's safe to perform unaligned word-sized loads. This is safe on:
+//  - arm64 per http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.den0024a/ch05s01s02.html
+//  - Section "5.5.8 Alignment Interrupt" of PowerPC Operating Environment Architecture Book III Version 2.02 
+//    (the first PowerPC ISA version to include 64-bit), available from 
+//    http://www.ibm.com/developerworks/systems/library/es-archguide-v2.html does not permit fixed-point loads
+//    or stores to generate exceptions on unaligned access
+//  - IBM mainframe's have allowed unaligned accesses since the System/370 arrived in 1970
+//  - On mips unaligned accesses are fixed up by the kernel per https://www.linux-mips.org/wiki/Alignment
+//    so performance might be quite bad but it will work.
 
 package cmac
 

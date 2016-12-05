@@ -2,7 +2,33 @@ package band
 
 import "time"
 
-func newEU863Band() (Band, error) {
+func newEU863Band(repeaterCompatible bool) (Band, error) {
+	var maxPayloadSize []MaxPayloadSize
+
+	if repeaterCompatible {
+		maxPayloadSize = []MaxPayloadSize{
+			{M: 59, N: 51},
+			{M: 59, N: 51},
+			{M: 59, N: 51},
+			{M: 123, N: 115},
+			{M: 230, N: 222},
+			{M: 230, N: 222},
+			{M: 230, N: 222},
+			{M: 230, N: 222},
+		}
+	} else {
+		maxPayloadSize = []MaxPayloadSize{
+			{M: 59, N: 51},
+			{M: 59, N: 51},
+			{M: 59, N: 51},
+			{M: 123, N: 115},
+			{M: 250, N: 242},
+			{M: 250, N: 242},
+			{M: 250, N: 242},
+			{M: 250, N: 242},
+		}
+	}
+
 	return Band{
 		DefaultTXPower:   14,
 		ImplementsCFlist: true,
@@ -30,18 +56,9 @@ func newEU863Band() (Band, error) {
 			{Modulation: FSKModulation, BitRate: 50000},
 		},
 
-		MaxPayloadSize: []MaxPayloadSize{
-			{M: 59, N: 51},
-			{M: 59, N: 51},
-			{M: 59, N: 51},
-			{M: 123, N: 115},
-			{M: 230, N: 222},
-			{M: 230, N: 222},
-			{M: 230, N: 222},
-			{M: 230, N: 222},
-		},
+		MaxPayloadSize: maxPayloadSize,
 
-		RX1DataRate: [][]int{
+		rx1DataRate: [][]int{
 			{0, 0, 0, 0, 0, 0},
 			{1, 0, 0, 0, 0, 0},
 			{2, 1, 0, 0, 0, 0},

@@ -55,7 +55,7 @@ func run(c *cli.Context) error {
 	if c.String("band") == "" {
 		log.Fatalf("--band is undefined, valid options are: %s", strings.Join(bands, ", "))
 	}
-	bandConfig, err := band.GetConfig(band.Name(c.String("band")))
+	bandConfig, err := band.GetConfig(band.Name(c.String("band")), false, lorawan.DwellTimeNoLimit)
 	if err != nil {
 		log.Fatal(err)
 	}

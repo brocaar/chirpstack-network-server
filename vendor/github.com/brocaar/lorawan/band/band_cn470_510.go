@@ -57,7 +57,7 @@ func newCN470Band() (Band, error) {
 			{}, // not defined
 		},
 
-		RX1DataRate: [][]int{
+		rx1DataRate: [][]int{
 			{0, 0, 0, 0, 0, 0},
 			{1, 0, 0, 0, 0, 0},
 			{2, 1, 0, 0, 0, 0},
