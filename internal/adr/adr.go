@@ -194,18 +194,18 @@ func getIdealTXPowerAndDR(nStep int, txPower int, dr int) (int, int) {
 
 	if nStep > 0 {
 		if dr < 5 {
-			dr += 1
+			dr++
 		} else {
 			txPower -= 3
 		}
-		nStep -= 1
+		nStep--
 		if txPower <= getMinTXPower() {
 			return txPower, dr
 		}
 	} else {
 		if txPower < getMaxTXPower() {
 			txPower += 3
-			nStep += 1
+			nStep++
 		} else {
 			return txPower, dr
 		}
