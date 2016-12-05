@@ -68,6 +68,8 @@ message JoinRequestResponse {
 	RXWindow rxWindow = 6;
 	uint32 rx2DR = 7;
 	bool relaxFCnt = 8;
+	uint32 adrInterval = 9;
+	double installationMargin = 10;
 }
 
 message HandleDataUpRequest {

@@ -96,18 +96,20 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPac
 	copy(nwkSKey[:], joinResp.NwkSKey)
 
 	ns := session.NodeSession{
-		DevAddr:     devAddr,
-		AppEUI:      jrPL.AppEUI,
-		DevEUI:      jrPL.DevEUI,
-		NwkSKey:     nwkSKey,
-		FCntUp:      0,
-		FCntDown:    0,
-		RelaxFCnt:   joinResp.RelaxFCnt,
-		RXWindow:    session.RXWindow(joinResp.RxWindow),
-		RXDelay:     uint8(joinResp.RxDelay),
-		RX1DROffset: uint8(joinResp.Rx1DROffset),
-		RX2DR:       uint8(joinResp.Rx2DR),
-		CFList:      &cFList,
+		DevAddr:            devAddr,
+		AppEUI:             jrPL.AppEUI,
+		DevEUI:             jrPL.DevEUI,
+		NwkSKey:            nwkSKey,
+		FCntUp:             0,
+		FCntDown:           0,
+		RelaxFCnt:          joinResp.RelaxFCnt,
+		RXWindow:           session.RXWindow(joinResp.RxWindow),
+		RXDelay:            uint8(joinResp.RxDelay),
+		RX1DROffset:        uint8(joinResp.Rx1DROffset),
+		RX2DR:              uint8(joinResp.Rx2DR),
+		CFList:             &cFList,
+		ADRInterval:        joinResp.AdrInterval,
+		InstallationMargin: joinResp.InstallationMargin,
 	}
 
 	if err = session.CreateNodeSession(ctx.RedisPool, ns); err != nil {

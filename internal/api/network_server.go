@@ -26,13 +26,15 @@ func NewNetworkServerAPI(ctx common.Context) *NetworkServerAPI {
 // CreateNodeSession create a node-session.
 func (n *NetworkServerAPI) CreateNodeSession(ctx context.Context, req *ns.CreateNodeSessionRequest) (*ns.CreateNodeSessionResponse, error) {
 	sess := session.NodeSession{
-		FCntUp:      req.FCntUp,
-		FCntDown:    req.FCntDown,
-		RXDelay:     uint8(req.RxDelay),
-		RX1DROffset: uint8(req.Rx1DROffset),
-		RXWindow:    session.RXWindow(req.RxWindow),
-		RX2DR:       uint8(req.Rx2DR),
-		RelaxFCnt:   req.RelaxFCnt,
+		FCntUp:             req.FCntUp,
+		FCntDown:           req.FCntDown,
+		RXDelay:            uint8(req.RxDelay),
+		RX1DROffset:        uint8(req.Rx1DROffset),
+		RXWindow:           session.RXWindow(req.RxWindow),
+		RX2DR:              uint8(req.Rx2DR),
+		RelaxFCnt:          req.RelaxFCnt,
+		ADRInterval:        req.AdrInterval,
+		InstallationMargin: req.InstallationMargin,
 	}
 
 	if len(req.CFList) > 0 {
@@ -71,17 +73,21 @@ func (n *NetworkServerAPI) GetNodeSession(ctx context.Context, req *ns.GetNodeSe
 	}
 
 	resp := &ns.GetNodeSessionResponse{
-		DevAddr:     sess.DevAddr[:],
-		AppEUI:      sess.AppEUI[:],
-		DevEUI:      sess.DevEUI[:],
-		NwkSKey:     sess.NwkSKey[:],
-		FCntUp:      sess.FCntUp,
-		FCntDown:    sess.FCntDown,
-		RxDelay:     uint32(sess.RXDelay),
-		Rx1DROffset: uint32(sess.RX1DROffset),
-		RxWindow:    ns.RXWindow(sess.RXWindow),
-		Rx2DR:       uint32(sess.RX2DR),
-		RelaxFCnt:   sess.RelaxFCnt,
+		DevAddr:            sess.DevAddr[:],
+		AppEUI:             sess.AppEUI[:],
+		DevEUI:             sess.DevEUI[:],
+		NwkSKey:            sess.NwkSKey[:],
+		FCntUp:             sess.FCntUp,
+		FCntDown:           sess.FCntDown,
+		RxDelay:            uint32(sess.RXDelay),
+		Rx1DROffset:        uint32(sess.RX1DROffset),
+		RxWindow:           ns.RXWindow(sess.RXWindow),
+		Rx2DR:              uint32(sess.RX2DR),
+		RelaxFCnt:          sess.RelaxFCnt,
+		AdrInterval:        sess.ADRInterval,
+		InstallationMargin: sess.InstallationMargin,
+		NbTrans:            uint32(sess.NbTrans),
+		TxPower:            uint32(sess.TXPower),
 	}
 
 	if sess.CFList != nil {
@@ -113,13 +119,20 @@ func (n *NetworkServerAPI) UpdateNodeSession(ctx context.Context, req *ns.Update
 	}
 
 	newSess := session.NodeSession{
-		FCntUp:      req.FCntUp,
-		FCntDown:    req.FCntDown,
-		RXDelay:     uint8(req.RxDelay),
-		RX1DROffset: uint8(req.Rx1DROffset),
-		RXWindow:    session.RXWindow(req.RxWindow),
-		RX2DR:       uint8(req.Rx2DR),
-		RelaxFCnt:   req.RelaxFCnt,
+		FCntUp:             req.FCntUp,
+		FCntDown:           req.FCntDown,
+		RXDelay:            uint8(req.RxDelay),
+		RX1DROffset:        uint8(req.Rx1DROffset),
+		RXWindow:           session.RXWindow(req.RxWindow),
+		RX2DR:              uint8(req.Rx2DR),
+		RelaxFCnt:          req.RelaxFCnt,
+		ADRInterval:        req.AdrInterval,
+		InstallationMargin: req.InstallationMargin,
+
+		// these values can't be overwritten
+		NbTrans:       sess.NbTrans,
+		TXPower:       sess.TXPower,
+		UplinkHistory: sess.UplinkHistory,
 	}
 
 	if len(req.CFList) > 0 {

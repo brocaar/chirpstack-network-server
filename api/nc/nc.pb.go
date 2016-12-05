@@ -53,6 +53,34 @@ func (m *DataRate) String() string            { return proto.CompactTextString(m
 func (*DataRate) ProtoMessage()               {}
 func (*DataRate) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
+func (m *DataRate) GetModulation() string {
+	if m != nil {
+		return m.Modulation
+	}
+	return ""
+}
+
+func (m *DataRate) GetBandWidth() uint32 {
+	if m != nil {
+		return m.BandWidth
+	}
+	return 0
+}
+
+func (m *DataRate) GetSpreadFactor() uint32 {
+	if m != nil {
+		return m.SpreadFactor
+	}
+	return 0
+}
+
+func (m *DataRate) GetBitrate() uint32 {
+	if m != nil {
+		return m.Bitrate
+	}
+	return 0
+}
+
 type RXInfo struct {
 	Mac     []byte  `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
 	Time    string  `protobuf:"bytes,2,opt,name=time" json:"time,omitempty"`
@@ -64,6 +92,34 @@ func (m *RXInfo) Reset()                    { *m = RXInfo{} }
 func (m *RXInfo) String() string            { return proto.CompactTextString(m) }
 func (*RXInfo) ProtoMessage()               {}
 func (*RXInfo) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *RXInfo) GetMac() []byte {
+	if m != nil {
+		return m.Mac
+	}
+	return nil
+}
+
+func (m *RXInfo) GetTime() string {
+	if m != nil {
+		return m.Time
+	}
+	return ""
+}
+
+func (m *RXInfo) GetRssi() int32 {
+	if m != nil {
+		return m.Rssi
+	}
+	return 0
+}
+
+func (m *RXInfo) GetLoRaSNR() float64 {
+	if m != nil {
+		return m.LoRaSNR
+	}
+	return 0
+}
 
 type TXInfo struct {
 	Frequency int64     `protobuf:"varint,1,opt,name=frequency" json:"frequency,omitempty"`
@@ -77,11 +133,32 @@ func (m *TXInfo) String() string            { return proto.CompactTextString(m) 
 func (*TXInfo) ProtoMessage()               {}
 func (*TXInfo) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
 
+func (m *TXInfo) GetFrequency() int64 {
+	if m != nil {
+		return m.Frequency
+	}
+	return 0
+}
+
 func (m *TXInfo) GetDataRate() *DataRate {
 	if m != nil {
 		return m.DataRate
 	}
 	return nil
+}
+
+func (m *TXInfo) GetAdr() bool {
+	if m != nil {
+		return m.Adr
+	}
+	return false
+}
+
+func (m *TXInfo) GetCodeRate() string {
+	if m != nil {
+		return m.CodeRate
+	}
+	return ""
 }
 
 type HandleRXInfoRequest struct {
@@ -95,6 +172,20 @@ func (m *HandleRXInfoRequest) Reset()                    { *m = HandleRXInfoRequ
 func (m *HandleRXInfoRequest) String() string            { return proto.CompactTextString(m) }
 func (*HandleRXInfoRequest) ProtoMessage()               {}
 func (*HandleRXInfoRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *HandleRXInfoRequest) GetDevEUI() []byte {
+	if m != nil {
+		return m.DevEUI
+	}
+	return nil
+}
+
+func (m *HandleRXInfoRequest) GetAppEUI() []byte {
+	if m != nil {
+		return m.AppEUI
+	}
+	return nil
+}
 
 func (m *HandleRXInfoRequest) GetTxInfo() *TXInfo {
 	if m != nil {
@@ -130,6 +221,34 @@ func (m *HandleDataUpMACCommandRequest) String() string            { return prot
 func (*HandleDataUpMACCommandRequest) ProtoMessage()               {}
 func (*HandleDataUpMACCommandRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
 
+func (m *HandleDataUpMACCommandRequest) GetDevEUI() []byte {
+	if m != nil {
+		return m.DevEUI
+	}
+	return nil
+}
+
+func (m *HandleDataUpMACCommandRequest) GetAppEUI() []byte {
+	if m != nil {
+		return m.AppEUI
+	}
+	return nil
+}
+
+func (m *HandleDataUpMACCommandRequest) GetFrmPayload() bool {
+	if m != nil {
+		return m.FrmPayload
+	}
+	return false
+}
+
+func (m *HandleDataUpMACCommandRequest) GetData() []byte {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
 type HandleDataUpMACCommandResponse struct {
 }
 
@@ -148,6 +267,27 @@ func (m *HandleErrorRequest) Reset()                    { *m = HandleErrorReques
 func (m *HandleErrorRequest) String() string            { return proto.CompactTextString(m) }
 func (*HandleErrorRequest) ProtoMessage()               {}
 func (*HandleErrorRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
+
+func (m *HandleErrorRequest) GetDevEUI() []byte {
+	if m != nil {
+		return m.DevEUI
+	}
+	return nil
+}
+
+func (m *HandleErrorRequest) GetAppEUI() []byte {
+	if m != nil {
+		return m.AppEUI
+	}
+	return nil
+}
+
+func (m *HandleErrorRequest) GetError() string {
+	if m != nil {
+		return m.Error
+	}
+	return ""
+}
 
 type HandleErrorResponse struct {
 }
@@ -175,7 +315,7 @@ var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion3
+const _ = grpc.SupportPackageIsVersion4
 
 // Client API for NetworkController service
 
@@ -310,7 +450,7 @@ var _NetworkController_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: fileDescriptor0,
+	Metadata: "nc.proto",
 }
 
 func init() { proto.RegisterFile("nc.proto", fileDescriptor0) }

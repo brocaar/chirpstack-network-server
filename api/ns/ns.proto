@@ -41,6 +41,8 @@ message CreateNodeSessionRequest {
 	RXWindow rxWindow = 10;
 	uint32 rx2DR = 11;
 	bool relaxFCnt = 12;
+	uint32 adrInterval = 13;
+	double installationMargin = 14;
 }
 
 message CreateNodeSessionResponse {}
@@ -62,6 +64,11 @@ message GetNodeSessionResponse {
 	RXWindow rxWindow = 10;
 	uint32 rx2DR = 11;
 	bool relaxFCnt = 12;
+	uint32 adrInterval = 13;
+	double installationMargin = 14;
+	uint32 nbTrans = 15;
+	uint32 txPower = 16;
+
 }
 
 message UpdateNodeSessionRequest {
@@ -77,6 +84,8 @@ message UpdateNodeSessionRequest {
 	RXWindow rxWindow = 10;
 	uint32 rx2DR = 11;
 	bool relaxFCnt = 12;
+	uint32 adrInterval = 13;
+	double installationMargin = 14;
 }
 
 message UpdateNodeSessionResponse {}
