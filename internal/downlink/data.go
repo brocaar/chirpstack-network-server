@@ -207,6 +207,7 @@ func SendDataDownResponse(ctx common.Context, ns session.NodeSession, rxPacket m
 		FHDR: lorawan.FHDR{
 			DevAddr: ns.DevAddr,
 			FCtrl: lorawan.FCtrl{
+				ADR:      ns.ADRInterval != 0,
 				ACK:      rxPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp,                           // set ACK when uplink packet was of type ConfirmedDataUp
 				FPending: (txPayload != nil && txPayload.MoreData) || len(allMACPayloads) != len(macPayloads), // items in the queue or not all mac commands being sent
 			},
