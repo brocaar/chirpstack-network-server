@@ -13,8 +13,8 @@ import (
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/queue"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
 )
@@ -125,7 +125,7 @@ func SendDataDownResponse(ctx common.Context, ns session.NodeSession, rxPacket m
 	}
 
 	var frmMACCommands bool
-	var macPayloads []queue.MACPayload
+	var macPayloads []maccommand.QueueItem
 
 	// get data down tx properties
 	txInfo, dr, err := getDataDownTXInfoAndDR(ctx, ns, rxPacket.RXInfoSet[0])
@@ -137,7 +137,7 @@ func SendDataDownResponse(ctx common.Context, ns session.NodeSession, rxPacket m
 	txPayload := getDataDownFromApplication(ctx, ns, dr)
 
 	// read the mac payload queue
-	allMACPayloads, err := queue.ReadMACPayloadTXQueue(ctx.RedisPool, ns.DevAddr)
+	allMACPayloads, err := maccommand.ReadQueue(ctx.RedisPool, ns.DevAddr)
 	if err != nil {
 		return fmt.Errorf("read mac-payload tx queue error: %s", err)
 	}
@@ -151,13 +151,13 @@ func SendDataDownResponse(ctx common.Context, ns session.NodeSession, rxPacket m
 				maxFOptsLen = 15 // max FOpts len is 15
 			}
 
-			macPayloads = queue.FilterMACPayloads(allMACPayloads, false, maxFOptsLen)
+			macPayloads = maccommand.FilterItems(allMACPayloads, false, maxFOptsLen)
 		} else if allMACPayloads[0].FRMPayload {
 			// the first mac-commands must be sent as FRMPayload, filter the rest
 			// of the MACPayload items with the same property, respecting the
 			// max FRMPayload size for the data-rate.
 			frmMACCommands = true
-			macPayloads = queue.FilterMACPayloads(allMACPayloads, true, common.Band.MaxPayloadSize[dr].N)
+			macPayloads = maccommand.FilterItems(allMACPayloads, true, common.Band.MaxPayloadSize[dr].N)
 		} else {
 			// the first mac-command must be sent as FOpts, filter the rest of
 			// the MACPayload items with the same property, respecting the
@@ -166,7 +166,7 @@ func SendDataDownResponse(ctx common.Context, ns session.NodeSession, rxPacket m
 			if maxFOptsLen > 15 {
 				maxFOptsLen = 15 // max FOpts len is 15
 			}
-			macPayloads = queue.FilterMACPayloads(allMACPayloads, false, maxFOptsLen)
+			macPayloads = maccommand.FilterItems(allMACPayloads, false, maxFOptsLen)
 		}
 	}
 
@@ -274,7 +274,7 @@ func SendDataDownResponse(ctx common.Context, ns session.NodeSession, rxPacket m
 
 	// remove the transmitted mac commands from the queue
 	for _, pl := range macPayloads {
-		if err = queue.DeleteMACPayloadFromTXQueue(ctx.RedisPool, ns.DevAddr, pl); err != nil {
+		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevAddr, pl); err != nil {
 			return fmt.Errorf("delete mac-payload from tx queue error: %s", err)
 		}
 	}

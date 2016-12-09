@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/queue"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
@@ -180,7 +180,7 @@ func TestADR(t *testing.T) {
 					RXPacket                models.RXPacket
 					FullFCnt                uint32
 					ExpectedNodeSession     session.NodeSession
-					ExpectedMACPayloadQueue []queue.MACPayload
+					ExpectedMACPayloadQueue []maccommand.QueueItem
 					ExpectedError           error
 				}{
 					{
@@ -209,7 +209,7 @@ func TestADR(t *testing.T) {
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
 						},
-						ExpectedMACPayloadQueue: []queue.MACPayload{
+						ExpectedMACPayloadQueue: []maccommand.QueueItem{
 							{DevEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8}, Data: macCommandB},
 						},
 						ExpectedError: nil,
@@ -252,7 +252,7 @@ func TestADR(t *testing.T) {
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
 						},
-						ExpectedMACPayloadQueue: []queue.MACPayload{
+						ExpectedMACPayloadQueue: []maccommand.QueueItem{
 							{DevEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8}, Data: macCommandCFListB},
 						},
 						ExpectedError: nil,
@@ -298,7 +298,7 @@ func TestADR(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(tst.NodeSession, ShouldResemble, &tst.ExpectedNodeSession)
 
-						macPayloadQueue, err := queue.ReadMACPayloadTXQueue(p, tst.NodeSession.DevAddr)
+						macPayloadQueue, err := maccommand.ReadQueue(p, tst.NodeSession.DevAddr)
 						So(err, ShouldBeNil)
 						So(macPayloadQueue, ShouldResemble, tst.ExpectedMACPayloadQueue)
 					})

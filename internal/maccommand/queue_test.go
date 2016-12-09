@@ -1,4 +1,4 @@
-package queue
+package maccommand
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestMACPayloadTXQueue(t *testing.T) {
+func TestQueue(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {
@@ -23,31 +23,31 @@ func TestMACPayloadTXQueue(t *testing.T) {
 			}
 			So(session.CreateNodeSession(p, ns), ShouldBeNil)
 
-			Convey("When adding MACPayload a and b to the queue", func() {
-				a := MACPayload{
+			Convey("When adding mac-command a and b to the queue", func() {
+				a := QueueItem{
 					DevEUI: ns.DevEUI,
 					Data:   []byte{1},
 				}
-				b := MACPayload{
+				b := QueueItem{
 					DevEUI: ns.DevEUI,
 					Data:   []byte{2},
 				}
-				So(AddMACPayloadToTXQueue(p, a), ShouldBeNil)
-				So(AddMACPayloadToTXQueue(p, b), ShouldBeNil)
+				So(AddToQueue(p, a), ShouldBeNil)
+				So(AddToQueue(p, b), ShouldBeNil)
 
-				Convey("Then readMACPayloadTXQueue returns both MACPayload in the correct order", func() {
-					payloads, err := ReadMACPayloadTXQueue(p, ns.DevAddr)
+				Convey("Then reading the queue returns both mac-payloads in the correct order", func() {
+					payloads, err := ReadQueue(p, ns.DevAddr)
 					So(err, ShouldBeNil)
-					So(payloads, ShouldResemble, []MACPayload{a, b})
+					So(payloads, ShouldResemble, []QueueItem{a, b})
 				})
 
-				Convey("When deleting MACPayload a", func() {
-					So(DeleteMACPayloadFromTXQueue(p, ns.DevAddr, a), ShouldBeNil)
+				Convey("When deleting mac-command a", func() {
+					So(DeleteQueueItem(p, ns.DevAddr, a), ShouldBeNil)
 
-					Convey("Then only MACPayload b is in the queue", func() {
-						payloads, err := ReadMACPayloadTXQueue(p, ns.DevAddr)
+					Convey("Then only mac-command b is in the queue", func() {
+						payloads, err := ReadQueue(p, ns.DevAddr)
 						So(err, ShouldBeNil)
-						So(payloads, ShouldResemble, []MACPayload{b})
+						So(payloads, ShouldResemble, []QueueItem{b})
 					})
 				})
 			})
@@ -56,43 +56,43 @@ func TestMACPayloadTXQueue(t *testing.T) {
 	})
 }
 
-func TestFilterMACPayloads(t *testing.T) {
-	Convey("Given a set of MACPayload items", t, func() {
-		a := MACPayload{
+func TestFilterItems(t *testing.T) {
+	Convey("Given a set of mac-command items", t, func() {
+		a := QueueItem{
 			FRMPayload: false,
 			Data:       []byte{1, 2, 3, 4, 5},
 		}
-		b := MACPayload{
+		b := QueueItem{
 			FRMPayload: false,
 			Data:       []byte{9, 8, 7},
 		}
-		c := MACPayload{
+		c := QueueItem{
 			FRMPayload: true,
 			Data:       []byte{9, 8, 7, 6, 5, 4, 3, 2, 1},
 		}
-		d := MACPayload{
+		d := QueueItem{
 			FRMPayload: true,
 			Data:       []byte{1, 2, 3, 4, 5, 6, 7, 8, 9},
 		}
-		allPayloads := []MACPayload{a, b, c, d}
+		allPayloads := []QueueItem{a, b, c, d}
 
 		Convey("When filtering on 15 bytes and FRMPayload=false", func() {
-			payloads := FilterMACPayloads(allPayloads, false, 15)
+			payloads := FilterItems(allPayloads, false, 15)
 			Convey("Then the expected set is returned", func() {
-				So(payloads, ShouldResemble, []MACPayload{a, b})
+				So(payloads, ShouldResemble, []QueueItem{a, b})
 			})
 		})
 
 		Convey("When filtering on 15 bytes and FRMPayload=true", func() {
-			payloads := FilterMACPayloads(allPayloads, true, 15)
+			payloads := FilterItems(allPayloads, true, 15)
 			Convey("Then the expected set is returned", func() {
-				So(payloads, ShouldResemble, []MACPayload{c})
+				So(payloads, ShouldResemble, []QueueItem{c})
 			})
 		})
 
 		Convey("Whe filtering on 100 bytes and FRMPayload=true", func() {
-			payloads := FilterMACPayloads(allPayloads, true, 100)
-			So(payloads, ShouldResemble, []MACPayload{c, d})
+			payloads := FilterItems(allPayloads, true, 100)
+			So(payloads, ShouldResemble, []QueueItem{c, d})
 		})
 	})
 }

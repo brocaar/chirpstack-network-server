@@ -1,4 +1,4 @@
-package queue
+package maccommand
 
 import (
 	"bytes"
@@ -15,10 +15,10 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-// AddMACPayloadToTXQueue adds the given payload to the queue of MAC commands
+// AddToQueue adds the given payload to the queue of MAC commands
 // to send to the node. Note that the queue is bound to the node-session, since
 // all mac operations are reset after a re-join of the node.
-func AddMACPayloadToTXQueue(p *redis.Pool, pl MACPayload) error {
+func AddToQueue(p *redis.Pool, pl QueueItem) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(pl); err != nil {
@@ -57,10 +57,9 @@ const (
 	nodeSessionMACTXQueueTempl = "node_session_mac_tx_queue_%s"
 )
 
-// ReadMACPayloadTXQueue reads the full MACPayload tx queue for the given
-// device address.
-func ReadMACPayloadTXQueue(p *redis.Pool, devAddr lorawan.DevAddr) ([]MACPayload, error) {
-	var out []MACPayload
+// ReadQueue reads the full mac-payload queue for the given device address.
+func ReadQueue(p *redis.Pool, devAddr lorawan.DevAddr) ([]QueueItem, error) {
+	var out []QueueItem
 
 	c := p.Get()
 	defer c.Close()
@@ -77,7 +76,7 @@ func ReadMACPayloadTXQueue(p *redis.Pool, devAddr lorawan.DevAddr) ([]MACPayload
 			return nil, fmt.Errorf("expected []byte type, got %T", value)
 		}
 
-		var pl MACPayload
+		var pl QueueItem
 		err = gob.NewDecoder(bytes.NewReader(b)).Decode(&pl)
 		if err != nil {
 			return nil, fmt.Errorf("decode mac-payload for devaddr %s error: %s", devAddr, err)
@@ -87,10 +86,10 @@ func ReadMACPayloadTXQueue(p *redis.Pool, devAddr lorawan.DevAddr) ([]MACPayload
 	return out, nil
 }
 
-// FilterMACPayloads filters the given slice of MACPayload elements based
+// FilterItems filters the given slice of MACPayload elements based
 // on the given criteria (FRMPayload and max-bytes).
-func FilterMACPayloads(payloads []MACPayload, frmPayload bool, maxBytes int) []MACPayload {
-	var out []MACPayload
+func FilterItems(payloads []QueueItem, frmPayload bool, maxBytes int) []QueueItem {
+	var out []QueueItem
 	var byteCount int
 	for _, pl := range payloads {
 		if pl.FRMPayload == frmPayload {
@@ -104,9 +103,9 @@ func FilterMACPayloads(payloads []MACPayload, frmPayload bool, maxBytes int) []M
 	return out
 }
 
-// DeleteMACPayloadFromTXQueue deletes the given MACPayload from the tx queue
+// DeleteQueueItem deletes the given mac-command from the tx queue
 // of the given device address.
-func DeleteMACPayloadFromTXQueue(p *redis.Pool, devAddr lorawan.DevAddr, pl MACPayload) error {
+func DeleteQueueItem(p *redis.Pool, devAddr lorawan.DevAddr, pl QueueItem) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(pl); err != nil {

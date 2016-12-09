@@ -6,8 +6,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/queue"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -153,7 +153,7 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 		return fmt.Errorf("marshal mac command error: %s", err)
 	}
 
-	err = queue.AddMACPayloadToTXQueue(ctx.RedisPool, queue.MACPayload{
+	err = maccommand.AddToQueue(ctx.RedisPool, maccommand.QueueItem{
 		DevEUI: ns.DevEUI,
 		Data:   b,
 	})

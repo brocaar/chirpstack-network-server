@@ -12,8 +12,10 @@ import (
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
+	"github.com/brocaar/loraserver/internal/adr"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/downlink"
+	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
@@ -131,7 +133,7 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPacket models.RXPacket) 
 
 	// handle FOpts mac commands (if any)
 	if len(macPL.FHDR.FOpts) > 0 {
-		if err := handleUplinkMACCommands(ctx, ns, false, macPL.FHDR.FOpts); err != nil {
+		if err := handleUplinkMACCommands(ctx, &ns, false, macPL.FHDR.FOpts); err != nil {
 			log.WithFields(log.Fields{
 				"dev_eui": ns.DevEUI,
 				"fopts":   macPL.FHDR.FOpts,
@@ -160,7 +162,7 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPacket models.RXPacket) 
 				}
 				commands = append(commands, *cmd)
 			}
-			if err := handleUplinkMACCommands(ctx, ns, true, commands); err != nil {
+			if err := handleUplinkMACCommands(ctx, &ns, true, commands); err != nil {
 				log.WithFields(log.Fields{
 					"dev_eui":  ns.DevEUI,
 					"commands": commands,
@@ -283,7 +285,7 @@ func publishDataUp(ctx common.Context, ns session.NodeSession, rxPacket models.R
 	return nil
 }
 
-func handleUplinkMACCommands(ctx common.Context, ns session.NodeSession, frmPayload bool, commands []lorawan.MACCommand) error {
+func handleUplinkMACCommands(ctx common.Context, ns *session.NodeSession, frmPayload bool, commands []lorawan.MACCommand) error {
 	for _, cmd := range commands {
 		logFields := log.Fields{
 			"dev_eui":     ns.DevEUI,
@@ -291,21 +293,26 @@ func handleUplinkMACCommands(ctx common.Context, ns session.NodeSession, frmPayl
 			"frm_payload": frmPayload,
 		}
 
-		b, err := cmd.MarshalBinary()
-		if err != nil {
-			return fmt.Errorf("binary marshal mac command error: %s", err)
+		// proprietary MAC commands
+		if cmd.CID >= 0x80 {
+			b, err := cmd.MarshalBinary()
+			if err != nil {
+				return fmt.Errorf("binary marshal mac command error: %s", err)
+			}
+			_, err = ctx.Controller.HandleDataUpMACCommand(context.Background(), &nc.HandleDataUpMACCommandRequest{
+				AppEUI:     ns.AppEUI[:],
+				DevEUI:     ns.DevEUI[:],
+				FrmPayload: frmPayload,
+				Data:       b,
+			})
+			if err != nil {
+				log.WithFields(logFields).Errorf("send proprietary mac-command to network-controller error: %s", err)
+			} else {
+				log.WithFields(logFields).Info("proprietary mac-command sent to network-controller")
+			}
+		} else {
+			}
 		}
-
-		_, err = ctx.Controller.HandleDataUpMACCommand(context.Background(), &nc.HandleDataUpMACCommandRequest{
-			AppEUI:     ns.AppEUI[:],
-			DevEUI:     ns.DevEUI[:],
-			FrmPayload: frmPayload,
-			Data:       b,
-		})
-		if err != nil {
-			return fmt.Errorf("send mac-commnad to network-controller error: %s", err)
-		}
-		log.WithFields(logFields).Info("mac-command sent to network-controller")
 	}
 	return nil
 }

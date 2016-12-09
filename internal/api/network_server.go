@@ -7,7 +7,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/queue"
+	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
 )
@@ -191,12 +191,12 @@ func (n *NetworkServerAPI) GetRandomDevAddr(ctx context.Context, req *ns.GetRand
 
 // EnqueueDataDownMACCommand adds a data down MAC command to the queue.
 func (n *NetworkServerAPI) EnqueueDataDownMACCommand(ctx context.Context, req *ns.EnqueueDataDownMACCommandRequest) (*ns.EnqueueDataDownMACCommandResponse, error) {
-	macPL := queue.MACPayload{
+	macPL := maccommand.QueueItem{
 		FRMPayload: req.FrmPayload,
 		Data:       req.Data,
 	}
 	copy(macPL.DevEUI[:], req.DevEUI)
-	if err := queue.AddMACPayloadToTXQueue(n.ctx.RedisPool, macPL); err != nil {
+	if err := maccommand.AddToQueue(n.ctx.RedisPool, macPL); err != nil {
 		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 	return &ns.EnqueueDataDownMACCommandResponse{}, nil
