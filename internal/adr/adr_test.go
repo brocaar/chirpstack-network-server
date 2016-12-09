@@ -148,13 +148,30 @@ func TestADR(t *testing.T) {
 					CID: lorawan.LinkADRReq,
 					Payload: &lorawan.LinkADRReqPayload{
 						DataRate: 3,
-						TXPower:  1, // 14
+						TXPower:  1,                                // 14
+						ChMask:   lorawan.ChMask{true, true, true}, // ADR applies to first three standard channels
 						Redundancy: lorawan.Redundancy{
-							NbRep: 1,
+							ChMaskCntl: 0, // first block of 16 channels
+							NbRep:      1,
 						},
 					},
 				}
 				macCommandB, err := macCommand.MarshalBinary()
+				So(err, ShouldBeNil)
+
+				macCommandCFList := lorawan.MACCommand{
+					CID: lorawan.LinkADRReq,
+					Payload: &lorawan.LinkADRReqPayload{
+						DataRate: 3,
+						TXPower:  1, // 14
+						ChMask:   lorawan.ChMask{true, true, true, true, true, false, true},
+						Redundancy: lorawan.Redundancy{
+							ChMaskCntl: 0, // first block of 16 channels
+							NbRep:      1,
+						},
+					},
+				}
+				macCommandCFListB, err := macCommandCFList.MarshalBinary()
 				So(err, ShouldBeNil)
 
 				testTable := []struct {
@@ -167,7 +184,7 @@ func TestADR(t *testing.T) {
 					ExpectedError           error
 				}{
 					{
-						Name: "ADR increasing data-rate by one step",
+						Name: "ADR increasing data-rate by one step (no CFlist)",
 						NodeSession: &session.NodeSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -194,6 +211,49 @@ func TestADR(t *testing.T) {
 						},
 						ExpectedMACPayloadQueue: []queue.MACPayload{
 							{DevEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8}, Data: macCommandB},
+						},
+						ExpectedError: nil,
+					},
+					{
+						Name: "ADR increasing data-rate by one step (with CFlist)",
+						NodeSession: &session.NodeSession{
+							DevAddr:            [4]byte{1, 2, 3, 4},
+							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							ADRInterval:        1,
+							InstallationMargin: 5,
+							CFList: &lorawan.CFList{
+								868400000,
+								868500000,
+								0,
+								868600000,
+							},
+						},
+						RXPacket: models.RXPacket{
+							PHYPayload: phyPayloadADR,
+							RXInfoSet: models.RXInfoSet{
+								{DataRate: common.Band.DataRates[2], LoRaSNR: -7},
+							},
+						},
+						FullFCnt: 1,
+						ExpectedNodeSession: session.NodeSession{
+							DevAddr:            [4]byte{1, 2, 3, 4},
+							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							ADRInterval:        1,
+							InstallationMargin: 5,
+							CFList: &lorawan.CFList{
+								868400000,
+								868500000,
+								0,
+								868600000,
+							},
+							TXPower: 14,
+							NbTrans: 1,
+							UplinkHistory: []session.UplinkHistory{
+								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
+							},
+						},
+						ExpectedMACPayloadQueue: []queue.MACPayload{
+							{DevEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8}, Data: macCommandCFListB},
 						},
 						ExpectedError: nil,
 					},

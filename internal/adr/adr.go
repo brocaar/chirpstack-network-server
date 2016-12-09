@@ -83,7 +83,9 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 	}
 
 	if common.BandName != band.EU_863_870 {
-		log.Info("ADR support is only available for EU_863_870 band currently")
+		log.WithFields(log.Fields{
+			"dev_eui": ns.DevEUI,
+		}).Info("ADR support is only available for EU_863_870 band currently")
 		return nil
 	}
 
@@ -101,7 +103,10 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 	}
 
 	if currentDR > 5 {
-		log.WithField("dr", currentDR).Info("ADR is only supported up to DR5")
+		log.WithFields(log.Fields{
+			"dr":      currentDR,
+			"dev_eui": ns.DevEUI,
+		}).Info("ADR is only supported up to DR5")
 		return nil
 	}
 
@@ -119,13 +124,27 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 		return nil
 	}
 
+	var chMask lorawan.ChMask
+	for i := 0; i < len(common.Band.DownlinkChannels); i++ {
+		chMask[i] = true
+	}
+
+	for i := 0; ns.CFList != nil && i < len(ns.CFList); i++ {
+		if ns.CFList[i] == 0 {
+			continue
+		}
+		chMask[i+len(common.Band.DownlinkChannels)] = true
+	}
+
 	mac := lorawan.MACCommand{
 		CID: lorawan.LinkADRReq,
 		Payload: &lorawan.LinkADRReqPayload{
 			DataRate: uint8(idealDR),
 			TXPower:  uint8(idealTXPowerIndex),
+			ChMask:   chMask,
 			Redundancy: lorawan.Redundancy{
-				NbRep: uint8(idealNbRep),
+				ChMaskCntl: 0, // first block of 16 channels
+				NbRep:      uint8(idealNbRep),
 			},
 		},
 	}
@@ -146,6 +165,7 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 	ns.NbTrans = idealNbRep
 
 	log.WithFields(log.Fields{
+		"dev_eui":            ns.DevEUI,
 		"current_dr":         currentDR,
 		"current_tx_power":   currentTXPower,
 		"requested_dr":       idealDR,
