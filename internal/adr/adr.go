@@ -161,8 +161,10 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 		return fmt.Errorf("add mac-payload to tx-queue error: %s", err)
 	}
 
-	ns.TXPower = idealTXPower
-	ns.NbTrans = idealNbRep
+	err = maccommand.SetPending(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq, []lorawan.MACCommandPayload{mac.Payload})
+	if err != nil {
+		return fmt.Errorf("set mac-payload as pending error: %s", err)
+	}
 
 	log.WithFields(log.Fields{
 		"dev_eui":            ns.DevEUI,

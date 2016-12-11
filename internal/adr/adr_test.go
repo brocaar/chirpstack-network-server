@@ -180,6 +180,7 @@ func TestADR(t *testing.T) {
 					RXPacket                models.RXPacket
 					FullFCnt                uint32
 					ExpectedNodeSession     session.NodeSession
+					ExpectedMACPending      []lorawan.MACCommandPayload
 					ExpectedMACPayloadQueue []maccommand.QueueItem
 					ExpectedError           error
 				}{
@@ -203,14 +204,23 @@ func TestADR(t *testing.T) {
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
 							InstallationMargin: 5,
-							TXPower:            14,
-							NbTrans:            1,
 							UplinkHistory: []session.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
 						},
 						ExpectedMACPayloadQueue: []maccommand.QueueItem{
 							{DevEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8}, Data: macCommandB},
+						},
+						ExpectedMACPending: []lorawan.MACCommandPayload{
+							&lorawan.LinkADRReqPayload{
+								DataRate: 3,
+								TXPower:  1,
+								ChMask:   lorawan.ChMask{true, true, true},
+								Redundancy: lorawan.Redundancy{
+									ChMaskCntl: 0,
+									NbRep:      1,
+								},
+							},
 						},
 						ExpectedError: nil,
 					},
@@ -246,14 +256,23 @@ func TestADR(t *testing.T) {
 								0,
 								868600000,
 							},
-							TXPower: 14,
-							NbTrans: 1,
 							UplinkHistory: []session.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
 						},
 						ExpectedMACPayloadQueue: []maccommand.QueueItem{
 							{DevEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8}, Data: macCommandCFListB},
+						},
+						ExpectedMACPending: []lorawan.MACCommandPayload{
+							&lorawan.LinkADRReqPayload{
+								DataRate: 3,
+								TXPower:  1,
+								ChMask:   lorawan.ChMask{true, true, true, true, true, false, true},
+								Redundancy: lorawan.Redundancy{
+									ChMaskCntl: 0,
+									NbRep:      1,
+								},
+							},
 						},
 						ExpectedError: nil,
 					},
@@ -301,6 +320,10 @@ func TestADR(t *testing.T) {
 						macPayloadQueue, err := maccommand.ReadQueue(p, tst.NodeSession.DevAddr)
 						So(err, ShouldBeNil)
 						So(macPayloadQueue, ShouldResemble, tst.ExpectedMACPayloadQueue)
+
+						pending, err := maccommand.ReadPending(p, tst.NodeSession.DevEUI, lorawan.LinkADRReq)
+						So(err, ShouldBeNil)
+						So(pending, ShouldResemble, tst.ExpectedMACPending)
 					})
 				}
 			})
