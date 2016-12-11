@@ -78,8 +78,8 @@ const (
 	DwellTime400ms
 )
 
-// getMACPayloadAndSize returns a new MACCommandPayload instance and it's size.
-func getMACPayloadAndSize(uplink bool, c CID) (MACCommandPayload, int, error) {
+// GetMACPayloadAndSize returns a new MACCommandPayload instance and it's size.
+func GetMACPayloadAndSize(uplink bool, c CID) (MACCommandPayload, int, error) {
 	macPayloadMutex.RLock()
 	defer macPayloadMutex.RUnlock()
 
@@ -156,7 +156,7 @@ func (m *MACCommand) UnmarshalBinary(uplink bool, data []byte) error {
 	}
 
 	if len(data) > 1 {
-		p, _, err := getMACPayloadAndSize(uplink, m.CID)
+		p, _, err := GetMACPayloadAndSize(uplink, m.CID)
 		if err != nil {
 			return err
 		}

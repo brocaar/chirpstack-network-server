@@ -52,7 +52,7 @@ func (p *MACPayload) decodeFRMPayloadToMACCommands(uplink bool) error {
 	var pLen int
 	p.FRMPayload = make([]Payload, 0)
 	for i := 0; i < len(dataPL.Bytes); i++ {
-		if _, s, err := getMACPayloadAndSize(uplink, CID(dataPL.Bytes[i])); err != nil {
+		if _, s, err := GetMACPayloadAndSize(uplink, CID(dataPL.Bytes[i])); err != nil {
 			pLen = 0
 		} else {
 			pLen = s

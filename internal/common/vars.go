@@ -15,6 +15,9 @@ var NodeTXPayloadQueueTTL = time.Hour * 24 * 5
 // activity)
 var NodeSessionTTL = time.Hour * 24 * 5
 
+// MACPendingTTL defines the TTL of a pending mac-command.
+var MACPendingTTL = time.Hour * 24 * 5
+
 // Band is the ISM band configuration to use
 var Band band.Band
 

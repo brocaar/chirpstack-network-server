@@ -15,9 +15,15 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+const (
+	queueTempl   = "lora:ns:mac:queue:%s"
+	pendingTempl = "lora:ns:mac:pending:%s:%d"
+)
+
 // AddToQueue adds the given payload to the queue of MAC commands
 // to send to the node. Note that the queue is bound to the node-session, since
 // all mac operations are reset after a re-join of the node.
+// TODO: refactor so that identifier is the DevEUI.
 func AddToQueue(p *redis.Pool, pl QueueItem) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
@@ -34,7 +40,7 @@ func AddToQueue(p *redis.Pool, pl QueueItem) error {
 	}
 
 	exp := int64(common.NodeSessionTTL) / int64(time.Millisecond)
-	key := fmt.Sprintf(nodeSessionMACTXQueueTempl, ns.DevAddr)
+	key := fmt.Sprintf(queueTempl, ns.DevAddr)
 
 	c.Send("MULTI")
 	c.Send("RPUSH", key, buf.Bytes())
@@ -53,18 +59,15 @@ func AddToQueue(p *redis.Pool, pl QueueItem) error {
 	return nil
 }
 
-const (
-	nodeSessionMACTXQueueTempl = "node_session_mac_tx_queue_%s"
-)
-
 // ReadQueue reads the full mac-payload queue for the given device address.
+// TODO: refactor so that the identifier is the DevEUI.
 func ReadQueue(p *redis.Pool, devAddr lorawan.DevAddr) ([]QueueItem, error) {
 	var out []QueueItem
 
 	c := p.Get()
 	defer c.Close()
 
-	key := fmt.Sprintf(nodeSessionMACTXQueueTempl, devAddr)
+	key := fmt.Sprintf(queueTempl, devAddr)
 	values, err := redis.Values(c.Do("LRANGE", key, 0, -1))
 	if err != nil {
 		return nil, fmt.Errorf("get mac-payload from tx queue for devaddr %s error: %s", devAddr, err)
@@ -115,7 +118,7 @@ func DeleteQueueItem(p *redis.Pool, devAddr lorawan.DevAddr, pl QueueItem) error
 	c := p.Get()
 	defer c.Close()
 
-	key := fmt.Sprintf(nodeSessionMACTXQueueTempl, devAddr)
+	key := fmt.Sprintf(queueTempl, devAddr)
 	val, err := redis.Int(c.Do("LREM", key, 0, buf.Bytes()))
 	if err != nil {
 		return fmt.Errorf("delete mac-payload from tx queue for devaddr %s error: %s", devAddr, err)
@@ -131,4 +134,65 @@ func DeleteQueueItem(p *redis.Pool, devAddr lorawan.DevAddr, pl QueueItem) error
 		"command":  hex.EncodeToString(pl.Data),
 	}).Info("mac-payload removed from tx queue")
 	return nil
+}
+
+// SetPending sets one or multiple MACCommandPayload to the pending buffer.
+// It overwrites existing payloads for the given CID.
+func SetPending(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID, payloads []lorawan.MACCommandPayload) error {
+	c := p.Get()
+	defer c.Close()
+
+	key := fmt.Sprintf(pendingTempl, devEUI, cid)
+	exp := int64(common.MACPendingTTL) / int64(time.Millisecond)
+
+	c.Send("MULTI")
+	c.Send("DEL", key)
+	for _, pl := range payloads {
+		b, err := pl.MarshalBinary()
+		if err != nil {
+			return fmt.Errorf("marshal mac-payload error: %s", err)
+		}
+		c.Send("RPUSH", key, b)
+	}
+	c.Send("PEXPIRE", key, exp)
+
+	if _, err := c.Do("EXEC"); err != nil {
+		return fmt.Errorf("write mac-commands to pending error: %s", err)
+	}
+
+	return nil
+}
+
+// ReadPending returns the pending MACCommandPayload items for the given CID.
+// In case no items are pending, an empty slice is returned.
+func ReadPending(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID) ([]lorawan.MACCommandPayload, error) {
+	var out []lorawan.MACCommandPayload
+	c := p.Get()
+	defer c.Close()
+
+	key := fmt.Sprintf(pendingTempl, devEUI, cid)
+	values, err := redis.Values(c.Do("LRANGE", key, 0, -1))
+	if err != nil {
+		return nil, fmt.Errorf("get pending mac-commands for DevEUI %s and CID %d error: %s", devEUI, cid, err)
+	}
+
+	for _, value := range values {
+		b, ok := value.([]byte)
+		if !ok {
+			return nil, fmt.Errorf("expected []byte type, got %T", value)
+		}
+
+		pl, _, err := lorawan.GetMACPayloadAndSize(false, cid)
+		if err != nil {
+			return nil, fmt.Errorf("get mac-payload error: %s", err)
+		}
+
+		if err := pl.UnmarshalBinary(b); err != nil {
+			return nil, fmt.Errorf("unmarshal mac-payload error: %s", err)
+		}
+
+		out = append(out, pl)
+	}
+
+	return out, nil
 }
