@@ -54,6 +54,9 @@ func getDataDownTXInfoAndDR(ctx common.Context, ns session.NodeSession, rxInfo g
 	} else if ns.RXWindow == session.RX2 {
 		// rx2 dr
 		dr = int(ns.RX2DR)
+		if dr > len(common.Band.DataRates)-1 {
+			return txInfo, 0, fmt.Errorf("invalid rx2 dr: %d (max dr: %d)", dr, len(common.Band.DataRates)-1)
+		}
 		txInfo.DataRate = common.Band.DataRates[dr]
 
 		// rx2 frequency
