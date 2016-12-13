@@ -196,7 +196,8 @@ func SendDataDownResponse(ctx common.Context, ns session.NodeSession, rxPacket m
 	}
 
 	// uplink was unconfirmed and no downlink data in queue and no mac commands to send
-	if txPayload == nil && rxPacket.PHYPayload.MHDR.MType == lorawan.UnconfirmedDataUp && len(macCommands) == 0 {
+	// in case of a ADRACKReq we still need to respond
+	if txPayload == nil && rxPacket.PHYPayload.MHDR.MType == lorawan.UnconfirmedDataUp && len(macCommands) == 0 && !macPL.FHDR.FCtrl.ADRACKReq {
 		return nil
 	}
 

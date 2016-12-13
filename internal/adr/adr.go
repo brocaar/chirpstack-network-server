@@ -78,7 +78,7 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 
 	// if the node has ADR disabled or the uplink framecounter does not meet
 	// the configured ADR interval, there is nothing to do :-)
-	if !macPL.FHDR.FCtrl.ADR || fullFCnt%ns.ADRInterval > 0 {
+	if !macPL.FHDR.FCtrl.ADR || fullFCnt == 0 || fullFCnt%ns.ADRInterval > 0 {
 		return nil
 	}
 
@@ -167,12 +167,14 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 	}
 
 	log.WithFields(log.Fields{
-		"dev_eui":            ns.DevEUI,
-		"current_dr":         currentDR,
-		"current_tx_power":   currentTXPower,
-		"requested_dr":       idealDR,
-		"requested_tx_power": common.Band.TXPower[idealTXPowerIndex],
-	}).Info("adr is requesting a data-rate or tx-power change")
+		"dev_eui":      ns.DevEUI,
+		"dr":           currentDR,
+		"req_dr":       idealDR,
+		"tx_power":     currentTXPower,
+		"req_tx_power": common.Band.TXPower[idealTXPowerIndex],
+		"nb_trans":     ns.NbTrans,
+		"req_nb_trans": idealNbRep,
+	}).Info("adr request added to mac-command queue")
 
 	return nil
 }

@@ -175,6 +175,14 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPacket models.RXPacket) 
 		}
 	}
 
+	// handle ADR (should be executed before saving the node-session)
+	if err := adr.HandleADR(ctx, &ns, rxPacket, macPL.FHDR.FCnt); err != nil {
+		log.WithFields(log.Fields{
+			"dev_eui": ns.DevEUI,
+			"fcnt_up": macPL.FHDR.FCnt,
+		}).Warningf("handle adr error: %s", err)
+	}
+
 	// sync counter with that of the device + 1
 	ns.FCntUp = macPL.FHDR.FCnt + 1
 	if err := session.SaveNodeSession(ctx.RedisPool, ns); err != nil {
@@ -311,6 +319,8 @@ func handleUplinkMACCommands(ctx common.Context, ns *session.NodeSession, frmPay
 				log.WithFields(logFields).Info("proprietary mac-command sent to network-controller")
 			}
 		} else {
+			if err := maccommand.Handle(ctx, ns, cmd); err != nil {
+				log.WithFields(logFields).Errorf("handle mac-command error: %s", err)
 			}
 		}
 	}

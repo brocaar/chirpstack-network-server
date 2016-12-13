@@ -48,7 +48,10 @@ func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, pl lorawan.MA
 		ns.NbTrans = adrReq.Redundancy.NbRep
 
 		log.WithFields(log.Fields{
-			"dev_eui": ns.DevEUI,
+			"dev_eui":  ns.DevEUI,
+			"tx_power": ns.TXPower,
+			"dr":       adrReq.DataRate,
+			"nb_trans": adrReq.Redundancy.NbRep,
 		}).Info("adr request acknowledged")
 	} else {
 		log.WithFields(log.Fields{
