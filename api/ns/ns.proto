@@ -4,7 +4,9 @@ package ns;
 
 // NetworkServer is the network-server service.
 service NetworkServer {
-	// CreateNodeSession creates the given node-session. The DevAddr must contain the same NwkID as the configured NetID. Node-sessions will expire automatically after the configured TTL.
+	// CreateNodeSession creates the given node-session.
+	// The DevAddr must contain the same NwkID as the configured NetID.
+	// Node-sessions will expire automatically after the configured TTL.
 	rpc CreateNodeSession(CreateNodeSessionRequest) returns (CreateNodeSessionResponse) {}
 
 	// GetNodeSession returns the node-session matching the given DevEUI.
@@ -24,24 +26,57 @@ service NetworkServer {
 }
 
 enum RXWindow {
+	// Receive window 1
 	RX1 = 0;
+
+	// Receive window 2
 	RX2 = 1;
 }
 
 message CreateNodeSessionRequest {
+	// The address of the device (4 bytes).
 	bytes devAddr = 1;
+
+	// The application EUI (8 bytes).
 	bytes appEUI = 2;
+
+	// The device EUI (8 bytes).
 	bytes devEUI = 3;
+
+	// The network-session key (16 bytes).
 	bytes nwkSKey = 4;
+
+	// The next expected uplink frame-counter.
 	uint32 fCntUp = 5;
+
+	// The frame-counter used for the next downlink frame.
 	uint32 fCntDown = 6;
+
+	// the RX delay value (0 = 1 sec, 1 = 1 sec, 2 = 2 sec ...).
 	uint32 rxDelay = 7;
+
+	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
 	uint32 rx1DROffset = 8;
+
+	// The custom channel frequency list (this is not supported for every
+	// ISM band, see the LoRaWAN specs for more information).
 	repeated uint32 cFList = 9;
+
+	// The RX window to use for downlink transmissions.
 	RXWindow rxWindow = 10;
+
+	// The data-rate to use for RX2 transmissions.
 	uint32 rx2DR = 11;
+
+	// Use relax frame-counter mode for ABP devices (this is insecure!).
 	bool relaxFCnt = 12;
+
+	// The interval (based on frame-counter) on which to calculate the ideal
+	// data-rate and tx-power of the node and if needed, request an adaption.
 	uint32 adrInterval = 13;
+
+	// The installation margin to take into account when calculating the ideal
+	// data-rate and tx-power. The default recommended value is 5dB.
 	double installationMargin = 14;
 }
 
@@ -52,39 +87,104 @@ message GetNodeSessionRequest {
 }
 
 message GetNodeSessionResponse {
+	// The address of the device (4 bytes).
 	bytes devAddr = 1;
+
+	// The application EUI (8 bytes).
 	bytes appEUI = 2;
+
+	// The device EUI (8 bytes).
 	bytes devEUI = 3;
+
+	// The network-session key (16 bytes).
 	bytes nwkSKey = 4;
+
+	// The next expected uplink frame-counter.
 	uint32 fCntUp = 5;
+
+	// The frame-counter used for the next downlink frame.
 	uint32 fCntDown = 6;
+
+	// the RX delay value (0 = 1 sec, 1 = 1 sec, 2 = 2 sec ...).
 	uint32 rxDelay = 7;
+
+	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
 	uint32 rx1DROffset = 8;
+
+	// The custom channel frequency list (this is not supported for every
+	// ISM band, see the LoRaWAN specs for more information).
 	repeated uint32 cFList = 9;
+
+	// The RX window to use for downlink transmissions.
 	RXWindow rxWindow = 10;
+
+	// The data-rate to use for RX2 transmissions.
 	uint32 rx2DR = 11;
+
+	// Use relax frame-counter mode for ABP devices (this is insecure!).
 	bool relaxFCnt = 12;
+
+	// The interval (based on frame-counter) on which to calculate the ideal
+	// data-rate and tx-power of the node and if needed, request an adaption.
 	uint32 adrInterval = 13;
+
+	// The installation margin to take into account when calculating the ideal
+	// data-rate and tx-power. The default recommended value is 5dB.
 	double installationMargin = 14;
+
+	// The number of times the node should re-transmit an uplink frame.
+	// This is controlled by the ADR engine.
 	uint32 nbTrans = 15;
+
+	// The TX power of the node. This is controlled by the ADR engine.
 	uint32 txPower = 16;
 
 }
 
 message UpdateNodeSessionRequest {
+	// The address of the device (4 bytes).
 	bytes devAddr = 1;
+
+	// The application EUI (8 bytes).
 	bytes appEUI = 2;
+
+	// The device EUI (8 bytes).
 	bytes devEUI = 3;
+
+	// The network-session key (16 bytes).
 	bytes nwkSKey = 4;
+
+	// The next expected uplink frame-counter.
 	uint32 fCntUp = 5;
+
+	// The frame-counter used for the next downlink frame.
 	uint32 fCntDown = 6;
+
+	// the RX delay value (0 = 1 sec, 1 = 1 sec, 2 = 2 sec ...).
 	uint32 rxDelay = 7;
+
+	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
 	uint32 rx1DROffset = 8;
+
+	// The custom channel frequency list (this is not supported for every
+	// ISM band, see the LoRaWAN specs for more information).
 	repeated uint32 cFList = 9;
+
+	// The RX window to use for downlink transmissions.
 	RXWindow rxWindow = 10;
+
+	// The data-rate to use for RX2 transmissions.
 	uint32 rx2DR = 11;
+
+	// Use relax frame-counter mode for ABP devices (this is insecure!).
 	bool relaxFCnt = 12;
+
+	// The interval (based on frame-counter) on which to calculate the ideal
+	// data-rate and tx-power of the node and if needed, request an adaption.
 	uint32 adrInterval = 13;
+
+	// The installation margin to take into account when calculating the ideal
+	// data-rate and tx-power. The default recommended value is 5dB.
 	double installationMargin = 14;
 }
 

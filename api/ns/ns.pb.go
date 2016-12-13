@@ -47,7 +47,9 @@ const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 type RXWindow int32
 
 const (
+	// Receive window 1
 	RXWindow_RX1 RXWindow = 0
+	// Receive window 2
 	RXWindow_RX2 RXWindow = 1
 )
 
@@ -66,20 +68,37 @@ func (x RXWindow) String() string {
 func (RXWindow) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
 
 type CreateNodeSessionRequest struct {
-	DevAddr            []byte   `protobuf:"bytes,1,opt,name=devAddr,proto3" json:"devAddr,omitempty"`
-	AppEUI             []byte   `protobuf:"bytes,2,opt,name=appEUI,proto3" json:"appEUI,omitempty"`
-	DevEUI             []byte   `protobuf:"bytes,3,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
-	NwkSKey            []byte   `protobuf:"bytes,4,opt,name=nwkSKey,proto3" json:"nwkSKey,omitempty"`
-	FCntUp             uint32   `protobuf:"varint,5,opt,name=fCntUp" json:"fCntUp,omitempty"`
-	FCntDown           uint32   `protobuf:"varint,6,opt,name=fCntDown" json:"fCntDown,omitempty"`
-	RxDelay            uint32   `protobuf:"varint,7,opt,name=rxDelay" json:"rxDelay,omitempty"`
-	Rx1DROffset        uint32   `protobuf:"varint,8,opt,name=rx1DROffset" json:"rx1DROffset,omitempty"`
-	CFList             []uint32 `protobuf:"varint,9,rep,packed,name=cFList" json:"cFList,omitempty"`
-	RxWindow           RXWindow `protobuf:"varint,10,opt,name=rxWindow,enum=ns.RXWindow" json:"rxWindow,omitempty"`
-	Rx2DR              uint32   `protobuf:"varint,11,opt,name=rx2DR" json:"rx2DR,omitempty"`
-	RelaxFCnt          bool     `protobuf:"varint,12,opt,name=relaxFCnt" json:"relaxFCnt,omitempty"`
-	AdrInterval        uint32   `protobuf:"varint,13,opt,name=adrInterval" json:"adrInterval,omitempty"`
-	InstallationMargin float64  `protobuf:"fixed64,14,opt,name=installationMargin" json:"installationMargin,omitempty"`
+	// The address of the device (4 bytes).
+	DevAddr []byte `protobuf:"bytes,1,opt,name=devAddr,proto3" json:"devAddr,omitempty"`
+	// The application EUI (8 bytes).
+	AppEUI []byte `protobuf:"bytes,2,opt,name=appEUI,proto3" json:"appEUI,omitempty"`
+	// The device EUI (8 bytes).
+	DevEUI []byte `protobuf:"bytes,3,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	// The network-session key (16 bytes).
+	NwkSKey []byte `protobuf:"bytes,4,opt,name=nwkSKey,proto3" json:"nwkSKey,omitempty"`
+	// The next expected uplink frame-counter.
+	FCntUp uint32 `protobuf:"varint,5,opt,name=fCntUp" json:"fCntUp,omitempty"`
+	// The frame-counter used for the next downlink frame.
+	FCntDown uint32 `protobuf:"varint,6,opt,name=fCntDown" json:"fCntDown,omitempty"`
+	// the RX delay value (0 = 1 sec, 1 = 1 sec, 2 = 2 sec ...).
+	RxDelay uint32 `protobuf:"varint,7,opt,name=rxDelay" json:"rxDelay,omitempty"`
+	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
+	Rx1DROffset uint32 `protobuf:"varint,8,opt,name=rx1DROffset" json:"rx1DROffset,omitempty"`
+	// The custom channel frequency list (this is not supported for every
+	// ISM band, see the LoRaWAN specs for more information).
+	CFList []uint32 `protobuf:"varint,9,rep,packed,name=cFList" json:"cFList,omitempty"`
+	// The RX window to use for downlink transmissions.
+	RxWindow RXWindow `protobuf:"varint,10,opt,name=rxWindow,enum=ns.RXWindow" json:"rxWindow,omitempty"`
+	// The data-rate to use for RX2 transmissions.
+	Rx2DR uint32 `protobuf:"varint,11,opt,name=rx2DR" json:"rx2DR,omitempty"`
+	// Use relax frame-counter mode for ABP devices (this is insecure!).
+	RelaxFCnt bool `protobuf:"varint,12,opt,name=relaxFCnt" json:"relaxFCnt,omitempty"`
+	// The interval (based on frame-counter) on which to calculate the ideal
+	// data-rate and tx-power of the node and if needed, request an adaption.
+	AdrInterval uint32 `protobuf:"varint,13,opt,name=adrInterval" json:"adrInterval,omitempty"`
+	// The installation margin to take into account when calculating the ideal
+	// data-rate and tx-power. The default recommended value is 5dB.
+	InstallationMargin float64 `protobuf:"fixed64,14,opt,name=installationMargin" json:"installationMargin,omitempty"`
 }
 
 func (m *CreateNodeSessionRequest) Reset()                    { *m = CreateNodeSessionRequest{} }
@@ -210,22 +229,42 @@ func (m *GetNodeSessionRequest) GetDevEUI() []byte {
 }
 
 type GetNodeSessionResponse struct {
-	DevAddr            []byte   `protobuf:"bytes,1,opt,name=devAddr,proto3" json:"devAddr,omitempty"`
-	AppEUI             []byte   `protobuf:"bytes,2,opt,name=appEUI,proto3" json:"appEUI,omitempty"`
-	DevEUI             []byte   `protobuf:"bytes,3,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
-	NwkSKey            []byte   `protobuf:"bytes,4,opt,name=nwkSKey,proto3" json:"nwkSKey,omitempty"`
-	FCntUp             uint32   `protobuf:"varint,5,opt,name=fCntUp" json:"fCntUp,omitempty"`
-	FCntDown           uint32   `protobuf:"varint,6,opt,name=fCntDown" json:"fCntDown,omitempty"`
-	RxDelay            uint32   `protobuf:"varint,7,opt,name=rxDelay" json:"rxDelay,omitempty"`
-	Rx1DROffset        uint32   `protobuf:"varint,8,opt,name=rx1DROffset" json:"rx1DROffset,omitempty"`
-	CFList             []uint32 `protobuf:"varint,9,rep,packed,name=cFList" json:"cFList,omitempty"`
-	RxWindow           RXWindow `protobuf:"varint,10,opt,name=rxWindow,enum=ns.RXWindow" json:"rxWindow,omitempty"`
-	Rx2DR              uint32   `protobuf:"varint,11,opt,name=rx2DR" json:"rx2DR,omitempty"`
-	RelaxFCnt          bool     `protobuf:"varint,12,opt,name=relaxFCnt" json:"relaxFCnt,omitempty"`
-	AdrInterval        uint32   `protobuf:"varint,13,opt,name=adrInterval" json:"adrInterval,omitempty"`
-	InstallationMargin float64  `protobuf:"fixed64,14,opt,name=installationMargin" json:"installationMargin,omitempty"`
-	NbTrans            uint32   `protobuf:"varint,15,opt,name=nbTrans" json:"nbTrans,omitempty"`
-	TxPower            uint32   `protobuf:"varint,16,opt,name=txPower" json:"txPower,omitempty"`
+	// The address of the device (4 bytes).
+	DevAddr []byte `protobuf:"bytes,1,opt,name=devAddr,proto3" json:"devAddr,omitempty"`
+	// The application EUI (8 bytes).
+	AppEUI []byte `protobuf:"bytes,2,opt,name=appEUI,proto3" json:"appEUI,omitempty"`
+	// The device EUI (8 bytes).
+	DevEUI []byte `protobuf:"bytes,3,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	// The network-session key (16 bytes).
+	NwkSKey []byte `protobuf:"bytes,4,opt,name=nwkSKey,proto3" json:"nwkSKey,omitempty"`
+	// The next expected uplink frame-counter.
+	FCntUp uint32 `protobuf:"varint,5,opt,name=fCntUp" json:"fCntUp,omitempty"`
+	// The frame-counter used for the next downlink frame.
+	FCntDown uint32 `protobuf:"varint,6,opt,name=fCntDown" json:"fCntDown,omitempty"`
+	// the RX delay value (0 = 1 sec, 1 = 1 sec, 2 = 2 sec ...).
+	RxDelay uint32 `protobuf:"varint,7,opt,name=rxDelay" json:"rxDelay,omitempty"`
+	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
+	Rx1DROffset uint32 `protobuf:"varint,8,opt,name=rx1DROffset" json:"rx1DROffset,omitempty"`
+	// The custom channel frequency list (this is not supported for every
+	// ISM band, see the LoRaWAN specs for more information).
+	CFList []uint32 `protobuf:"varint,9,rep,packed,name=cFList" json:"cFList,omitempty"`
+	// The RX window to use for downlink transmissions.
+	RxWindow RXWindow `protobuf:"varint,10,opt,name=rxWindow,enum=ns.RXWindow" json:"rxWindow,omitempty"`
+	// The data-rate to use for RX2 transmissions.
+	Rx2DR uint32 `protobuf:"varint,11,opt,name=rx2DR" json:"rx2DR,omitempty"`
+	// Use relax frame-counter mode for ABP devices (this is insecure!).
+	RelaxFCnt bool `protobuf:"varint,12,opt,name=relaxFCnt" json:"relaxFCnt,omitempty"`
+	// The interval (based on frame-counter) on which to calculate the ideal
+	// data-rate and tx-power of the node and if needed, request an adaption.
+	AdrInterval uint32 `protobuf:"varint,13,opt,name=adrInterval" json:"adrInterval,omitempty"`
+	// The installation margin to take into account when calculating the ideal
+	// data-rate and tx-power. The default recommended value is 5dB.
+	InstallationMargin float64 `protobuf:"fixed64,14,opt,name=installationMargin" json:"installationMargin,omitempty"`
+	// The number of times the node should re-transmit an uplink frame.
+	// This is controlled by the ADR engine.
+	NbTrans uint32 `protobuf:"varint,15,opt,name=nbTrans" json:"nbTrans,omitempty"`
+	// The TX power of the node. This is controlled by the ADR engine.
+	TxPower uint32 `protobuf:"varint,16,opt,name=txPower" json:"txPower,omitempty"`
 }
 
 func (m *GetNodeSessionResponse) Reset()                    { *m = GetNodeSessionResponse{} }
@@ -346,20 +385,37 @@ func (m *GetNodeSessionResponse) GetTxPower() uint32 {
 }
 
 type UpdateNodeSessionRequest struct {
-	DevAddr            []byte   `protobuf:"bytes,1,opt,name=devAddr,proto3" json:"devAddr,omitempty"`
-	AppEUI             []byte   `protobuf:"bytes,2,opt,name=appEUI,proto3" json:"appEUI,omitempty"`
-	DevEUI             []byte   `protobuf:"bytes,3,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
-	NwkSKey            []byte   `protobuf:"bytes,4,opt,name=nwkSKey,proto3" json:"nwkSKey,omitempty"`
-	FCntUp             uint32   `protobuf:"varint,5,opt,name=fCntUp" json:"fCntUp,omitempty"`
-	FCntDown           uint32   `protobuf:"varint,6,opt,name=fCntDown" json:"fCntDown,omitempty"`
-	RxDelay            uint32   `protobuf:"varint,7,opt,name=rxDelay" json:"rxDelay,omitempty"`
-	Rx1DROffset        uint32   `protobuf:"varint,8,opt,name=rx1DROffset" json:"rx1DROffset,omitempty"`
-	CFList             []uint32 `protobuf:"varint,9,rep,packed,name=cFList" json:"cFList,omitempty"`
-	RxWindow           RXWindow `protobuf:"varint,10,opt,name=rxWindow,enum=ns.RXWindow" json:"rxWindow,omitempty"`
-	Rx2DR              uint32   `protobuf:"varint,11,opt,name=rx2DR" json:"rx2DR,omitempty"`
-	RelaxFCnt          bool     `protobuf:"varint,12,opt,name=relaxFCnt" json:"relaxFCnt,omitempty"`
-	AdrInterval        uint32   `protobuf:"varint,13,opt,name=adrInterval" json:"adrInterval,omitempty"`
-	InstallationMargin float64  `protobuf:"fixed64,14,opt,name=installationMargin" json:"installationMargin,omitempty"`
+	// The address of the device (4 bytes).
+	DevAddr []byte `protobuf:"bytes,1,opt,name=devAddr,proto3" json:"devAddr,omitempty"`
+	// The application EUI (8 bytes).
+	AppEUI []byte `protobuf:"bytes,2,opt,name=appEUI,proto3" json:"appEUI,omitempty"`
+	// The device EUI (8 bytes).
+	DevEUI []byte `protobuf:"bytes,3,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	// The network-session key (16 bytes).
+	NwkSKey []byte `protobuf:"bytes,4,opt,name=nwkSKey,proto3" json:"nwkSKey,omitempty"`
+	// The next expected uplink frame-counter.
+	FCntUp uint32 `protobuf:"varint,5,opt,name=fCntUp" json:"fCntUp,omitempty"`
+	// The frame-counter used for the next downlink frame.
+	FCntDown uint32 `protobuf:"varint,6,opt,name=fCntDown" json:"fCntDown,omitempty"`
+	// the RX delay value (0 = 1 sec, 1 = 1 sec, 2 = 2 sec ...).
+	RxDelay uint32 `protobuf:"varint,7,opt,name=rxDelay" json:"rxDelay,omitempty"`
+	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
+	Rx1DROffset uint32 `protobuf:"varint,8,opt,name=rx1DROffset" json:"rx1DROffset,omitempty"`
+	// The custom channel frequency list (this is not supported for every
+	// ISM band, see the LoRaWAN specs for more information).
+	CFList []uint32 `protobuf:"varint,9,rep,packed,name=cFList" json:"cFList,omitempty"`
+	// The RX window to use for downlink transmissions.
+	RxWindow RXWindow `protobuf:"varint,10,opt,name=rxWindow,enum=ns.RXWindow" json:"rxWindow,omitempty"`
+	// The data-rate to use for RX2 transmissions.
+	Rx2DR uint32 `protobuf:"varint,11,opt,name=rx2DR" json:"rx2DR,omitempty"`
+	// Use relax frame-counter mode for ABP devices (this is insecure!).
+	RelaxFCnt bool `protobuf:"varint,12,opt,name=relaxFCnt" json:"relaxFCnt,omitempty"`
+	// The interval (based on frame-counter) on which to calculate the ideal
+	// data-rate and tx-power of the node and if needed, request an adaption.
+	AdrInterval uint32 `protobuf:"varint,13,opt,name=adrInterval" json:"adrInterval,omitempty"`
+	// The installation margin to take into account when calculating the ideal
+	// data-rate and tx-power. The default recommended value is 5dB.
+	InstallationMargin float64 `protobuf:"fixed64,14,opt,name=installationMargin" json:"installationMargin,omitempty"`
 }
 
 func (m *UpdateNodeSessionRequest) Reset()                    { *m = UpdateNodeSessionRequest{} }
@@ -592,7 +648,9 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for NetworkServer service
 
 type NetworkServerClient interface {
-	// CreateNodeSession creates the given node-session. The DevAddr must contain the same NwkID as the configured NetID. Node-sessions will expire automatically after the configured TTL.
+	// CreateNodeSession creates the given node-session.
+	// The DevAddr must contain the same NwkID as the configured NetID.
+	// Node-sessions will expire automatically after the configured TTL.
 	CreateNodeSession(ctx context.Context, in *CreateNodeSessionRequest, opts ...grpc.CallOption) (*CreateNodeSessionResponse, error)
 	// GetNodeSession returns the node-session matching the given DevEUI.
 	GetNodeSession(ctx context.Context, in *GetNodeSessionRequest, opts ...grpc.CallOption) (*GetNodeSessionResponse, error)
@@ -671,7 +729,9 @@ func (c *networkServerClient) EnqueueDataDownMACCommand(ctx context.Context, in 
 // Server API for NetworkServer service
 
 type NetworkServerServer interface {
-	// CreateNodeSession creates the given node-session. The DevAddr must contain the same NwkID as the configured NetID. Node-sessions will expire automatically after the configured TTL.
+	// CreateNodeSession creates the given node-session.
+	// The DevAddr must contain the same NwkID as the configured NetID.
+	// Node-sessions will expire automatically after the configured TTL.
 	CreateNodeSession(context.Context, *CreateNodeSessionRequest) (*CreateNodeSessionResponse, error)
 	// GetNodeSession returns the node-session matching the given DevEUI.
 	GetNodeSession(context.Context, *GetNodeSessionRequest) (*GetNodeSessionResponse, error)

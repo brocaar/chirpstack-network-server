@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.13.0
+
+**Features:**
+
+* Adaptive data-rate support. See [features](features.md) for information about
+  ADR. Note:
+  
+	* [LoRa App Server](https://docs.loraserver.io/lora-app-server/) 0.2.0 or
+      higher is required
+	* ADR is currently only implemented for the EU 863-870 ISM band
+
+**Fixes:**
+
+* Validate RX2 data-rate (this was causing a panic)
+
 ## 0.12.5
 
 **Security:**

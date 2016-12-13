@@ -246,16 +246,29 @@ func (m *JoinRequestRequest) GetNetID() []byte {
 }
 
 type JoinRequestResponse struct {
-	PhyPayload         []byte   `protobuf:"bytes,1,opt,name=phyPayload,proto3" json:"phyPayload,omitempty"`
-	NwkSKey            []byte   `protobuf:"bytes,2,opt,name=nwkSKey,proto3" json:"nwkSKey,omitempty"`
-	RxDelay            uint32   `protobuf:"varint,3,opt,name=rxDelay" json:"rxDelay,omitempty"`
-	Rx1DROffset        uint32   `protobuf:"varint,4,opt,name=rx1DROffset" json:"rx1DROffset,omitempty"`
-	CFList             []uint32 `protobuf:"varint,5,rep,packed,name=cFList" json:"cFList,omitempty"`
-	RxWindow           RXWindow `protobuf:"varint,6,opt,name=rxWindow,enum=as.RXWindow" json:"rxWindow,omitempty"`
-	Rx2DR              uint32   `protobuf:"varint,7,opt,name=rx2DR" json:"rx2DR,omitempty"`
-	RelaxFCnt          bool     `protobuf:"varint,8,opt,name=relaxFCnt" json:"relaxFCnt,omitempty"`
-	AdrInterval        uint32   `protobuf:"varint,9,opt,name=adrInterval" json:"adrInterval,omitempty"`
-	InstallationMargin float64  `protobuf:"fixed64,10,opt,name=installationMargin" json:"installationMargin,omitempty"`
+	// The encrypted PHYPayload containing the join-accept.
+	PhyPayload []byte `protobuf:"bytes,1,opt,name=phyPayload,proto3" json:"phyPayload,omitempty"`
+	// The network-session key (16 bytes).
+	NwkSKey []byte `protobuf:"bytes,2,opt,name=nwkSKey,proto3" json:"nwkSKey,omitempty"`
+	// the RX delay value (0 = 1 sec, 1 = 1 sec, 2 = 2 sec ...).
+	RxDelay uint32 `protobuf:"varint,3,opt,name=rxDelay" json:"rxDelay,omitempty"`
+	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
+	Rx1DROffset uint32 `protobuf:"varint,4,opt,name=rx1DROffset" json:"rx1DROffset,omitempty"`
+	// The custom channel frequency list (this is not supported for every
+	// ISM band, see the LoRaWAN specs for more information).
+	CFList []uint32 `protobuf:"varint,5,rep,packed,name=cFList" json:"cFList,omitempty"`
+	// The RX window to use for downlink transmissions.
+	RxWindow RXWindow `protobuf:"varint,6,opt,name=rxWindow,enum=as.RXWindow" json:"rxWindow,omitempty"`
+	// The data-rate to use for RX2 transmissions.
+	Rx2DR uint32 `protobuf:"varint,7,opt,name=rx2DR" json:"rx2DR,omitempty"`
+	// The data-rate to use for RX2 transmissions.
+	RelaxFCnt bool `protobuf:"varint,8,opt,name=relaxFCnt" json:"relaxFCnt,omitempty"`
+	// The interval (based on frame-counter) on which to calculate the ideal
+	// data-rate and tx-power of the node and if needed, request an adaption.
+	AdrInterval uint32 `protobuf:"varint,9,opt,name=adrInterval" json:"adrInterval,omitempty"`
+	// The installation margin to take into account when calculating the ideal
+	// data-rate and tx-power. The default recommended value is 5dB.
+	InstallationMargin float64 `protobuf:"fixed64,10,opt,name=installationMargin" json:"installationMargin,omitempty"`
 }
 
 func (m *JoinRequestResponse) Reset()                    { *m = JoinRequestResponse{} }

@@ -60,15 +60,37 @@ message JoinRequestRequest {
 }
 
 message JoinRequestResponse {
+	// The encrypted PHYPayload containing the join-accept.
 	bytes phyPayload = 1;
+
+	// The network-session key (16 bytes).
 	bytes nwkSKey = 2;
+
+	// the RX delay value (0 = 1 sec, 1 = 1 sec, 2 = 2 sec ...).
 	uint32 rxDelay = 3;
+
+	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
 	uint32 rx1DROffset = 4;
+
+	// The custom channel frequency list (this is not supported for every
+	// ISM band, see the LoRaWAN specs for more information).
 	repeated uint32 cFList = 5;
+
+	// The RX window to use for downlink transmissions.
 	RXWindow rxWindow = 6;
+
+	// The data-rate to use for RX2 transmissions.
 	uint32 rx2DR = 7;
+
+	// The data-rate to use for RX2 transmissions.
 	bool relaxFCnt = 8;
+
+	// The interval (based on frame-counter) on which to calculate the ideal
+	// data-rate and tx-power of the node and if needed, request an adaption.
 	uint32 adrInterval = 9;
+
+	// The installation margin to take into account when calculating the ideal
+	// data-rate and tx-power. The default recommended value is 5dB.
 	double installationMargin = 10;
 }
 
