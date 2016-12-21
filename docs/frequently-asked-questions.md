@@ -6,7 +6,8 @@ No, this component is now part of [LoRa App Server](http://docs.loraserver.io/lo
 
 ## Does LoRa Server support ADR?
 
-Not yet, but this is on the roadmap.
+Yes, LoRa Server has experimental support for ADR.
+See [features](features.md) for more information.
 
 ## Packets are not received / OTAA does not work
 
