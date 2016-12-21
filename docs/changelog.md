@@ -10,6 +10,7 @@
 	* [LoRa App Server](https://docs.loraserver.io/lora-app-server/) 0.2.0 or
       higher is required
 	* ADR is currently only implemented for the EU 863-870 ISM band
+	* This is an experimental feature
 
 **Fixes:**
 

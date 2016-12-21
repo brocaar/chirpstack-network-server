@@ -35,7 +35,7 @@ call the [application server](https://docs.loraserver.io/lora-app-server/) with
 the received join-request and in case of a positive response, it will transmit
 the join-accept to the node.
 
-## Adaptive data-rate
+## Adaptive data-rate (experimental)
 
 LoRa Server has support for adaptive data-rate (ADR). In order to activate ADR,
 The node must have the ADR interval and installation margin configured. The
@@ -45,7 +45,7 @@ of the network (the default recommended value is 5dB). From the node-side it is
 required that the ADR flag is set for each uplink transmission.
 
 **Important:** ADR is only suitable for static devices, thus devices that do
-not move!
+not move! 
 
 ## Network-controller interface
 
