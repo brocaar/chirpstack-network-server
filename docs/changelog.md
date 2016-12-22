@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.13.1
+
+**Bugfixes:**
+
+* Fix crash when node has ADR enabled, but it is disabled in LoRa Server
+
 ## 0.13.0
 
 **Features:**

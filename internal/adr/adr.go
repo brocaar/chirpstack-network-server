@@ -78,7 +78,7 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 
 	// if the node has ADR disabled or the uplink framecounter does not meet
 	// the configured ADR interval, there is nothing to do :-)
-	if !macPL.FHDR.FCtrl.ADR || fullFCnt == 0 || fullFCnt%ns.ADRInterval > 0 {
+	if !macPL.FHDR.FCtrl.ADR || fullFCnt == 0 || ns.ADRInterval == 0 || fullFCnt%ns.ADRInterval > 0 {
 		return nil
 	}
 
