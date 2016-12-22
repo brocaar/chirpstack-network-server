@@ -1,15 +1,20 @@
 language: go
 sudo: required
+
 go:
   - 1.7.x
+
 before_install:
+  - sudo apt-add-repository -y ppa:mosquitto-dev/mosquitto-ppa
   - sudo apt-get -qq update
+  - sudo apt-get install -y mosquitto
+  - go get github.com/golang/lint/golint
 
 script:
-  - make run-compose-test
+  - make test
 
 services:
-  - docker
+  - redis-server
 
 before_deploy:
   - sudo apt-get install -y python-pip
