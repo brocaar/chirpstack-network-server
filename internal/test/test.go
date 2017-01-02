@@ -2,6 +2,7 @@ package test
 
 import (
 	"os"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
@@ -25,6 +26,8 @@ func init() {
 		panic(err)
 	}
 	common.BandName = band.EU_863_870
+	common.DeduplicationDelay = time.Millisecond
+	common.GetDownlinkDataDelay = time.Millisecond
 }
 
 // Config contains the test configuration.

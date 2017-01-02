@@ -23,3 +23,9 @@ var Band band.Band
 
 // BandName is the name of the used ISM band
 var BandName band.Name
+
+// DeduplicationDelay holds the time to wait for uplink de-duplication
+var DeduplicationDelay = time.Millisecond * 200
+
+// GetDownlinkDataDelay holds the delay between uplink delivery to the app server and getting the downlink data from the app server (if any)
+var GetDownlinkDataDelay = time.Millisecond * 100

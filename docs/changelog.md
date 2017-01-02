@@ -2,6 +2,14 @@
 
 ## 0.13.2
 
+**Features:**
+
+* De-duplication delay can be configured with `--deduplication-delay` or
+  `DEDUPLICATION_DELAY` environment variable (default 200ms)
+* Get downlink data delay (delay between uplink delivery and getting the
+  downlink data from the application server) can be configured with
+  `--get-downlink-data-delay`  or `GET_DOWNLINK_DATA_DELAY` environment variable
+
 **Bugfixes:**
 
 * Fix duplicated gateway MAC in application-server and network-controller API

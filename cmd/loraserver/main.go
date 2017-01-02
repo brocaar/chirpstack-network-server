@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
@@ -61,6 +62,8 @@ func run(c *cli.Context) error {
 	}
 	common.Band = bandConfig
 	common.BandName = band.Name(c.String("band"))
+	common.DeduplicationDelay = c.Duration("deduplication-delay")
+	common.GetDownlinkDataDelay = c.Duration("get-downlink-data-delay")
 
 	log.WithFields(log.Fields{
 		"version": version,
@@ -327,6 +330,18 @@ func main() {
 			Name:   "nc-tls-key",
 			Usage:  "tls key used by the network-controller client (optional)",
 			EnvVar: "NC_TLS_KEY",
+		},
+		cli.DurationFlag{
+			Name:   "deduplication-delay",
+			Usage:  "time to wait for uplink de-duplication",
+			EnvVar: "DEDUPLICATION_DELAY",
+			Value:  200 * time.Millisecond,
+		},
+		cli.DurationFlag{
+			Name:   "get-dowlink-data-delay",
+			Usage:  "delay between uplink delivery to the app server and getting the downlink data from the app server (if any)",
+			EnvVar: "GET_DOWNLINK_DATA_DELAY",
+			Value:  100 * time.Millisecond,
 		},
 	}
 	app.Run(os.Args)

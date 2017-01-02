@@ -10,15 +10,10 @@ import (
 	"time"
 
 	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/lorawan"
 	"github.com/garyburd/redigo/redis"
-)
-
-// Packet collection constants
-const (
-	CollectAndCallOnceWait = time.Millisecond * 100 // the time to wait for the same packet received by multiple gateways
-	CollectDataDownWait    = time.Millisecond * 100 // the time to wait on possible downlink payloads from the application
 )
 
 // Templates used for generating Redis keys
@@ -44,7 +39,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 	c := p.Get()
 	defer c.Close()
 
-	// store the packet in a set with CollectAndCallOnceWait expiration
+	// store the packet in a set with DeduplicationDelay expiration
 	// in case the packet is received by multiple gateways, the set will contain
 	// each packet.
 	// since we can't trust the MIC (in case of a join-request, it will be
@@ -58,16 +53,23 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 	key := fmt.Sprintf(CollectKeyTempl, mic)
 	lockKey := fmt.Sprintf(CollectLockKeyTempl, mic)
 
+	// this way we can set a really low DeduplicationDelay for testing, without
+	// the risk that the set already expired in redis on read
+	deduplicationTTL := common.DeduplicationDelay * 2
+	if deduplicationTTL < time.Millisecond*100 {
+		deduplicationTTL = time.Millisecond * 100
+	}
+
 	c.Send("MULTI")
 	c.Send("SADD", key, buf.Bytes())
-	c.Send("PEXPIRE", key, int64(CollectAndCallOnceWait*2)/int64(time.Millisecond))
+	c.Send("PEXPIRE", key, int64(deduplicationTTL)/int64(time.Millisecond))
 	_, err := c.Do("EXEC")
 	if err != nil {
 		return fmt.Errorf("add rx packet to collect set error: %s", err)
 	}
 
 	// acquire a lock on processing this packet
-	_, err = redis.String((c.Do("SET", lockKey, "lock", "PX", int64(CollectAndCallOnceWait*2)/int64(time.Millisecond), "NX")))
+	_, err = redis.String((c.Do("SET", lockKey, "lock", "PX", int64(common.DeduplicationDelay*2)/int64(time.Millisecond), "NX")))
 	if err != nil {
 		if err == redis.ErrNil {
 			// the packet processing is already locked by an other process
@@ -79,7 +81,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 
 	// wait the configured amount of time, more packets might be received
 	// from other gateways
-	time.Sleep(CollectAndCallOnceWait)
+	time.Sleep(common.DeduplicationDelay)
 
 	// collect all packets from the set
 	var rxPacketWithRXInfoSet models.RXPacket
