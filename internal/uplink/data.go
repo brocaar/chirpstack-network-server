@@ -229,8 +229,13 @@ func sendRXInfoPayload(ctx common.Context, ns session.NodeSession, rxPacket mode
 	}
 
 	for _, rxInfo := range rxPacket.RXInfoSet {
+		// make sure we have a copy of the MAC byte slice, else every RxInfo
+		// slice item will get the same Mac
+		mac := make([]byte, 8)
+		copy(mac, rxInfo.MAC[:])
+
 		rxInfoReq.RxInfo = append(rxInfoReq.RxInfo, &nc.RXInfo{
-			Mac:     rxInfo.MAC[:],
+			Mac:     mac,
 			Time:    rxInfo.Time.Format(time.RFC3339Nano),
 			Rssi:    int32(rxInfo.RSSI),
 			LoRaSNR: rxInfo.LoRaSNR,
@@ -266,8 +271,13 @@ func publishDataUp(ctx common.Context, ns session.NodeSession, rxPacket models.R
 	}
 
 	for _, rxInfo := range rxPacket.RXInfoSet {
+		// make sure we have a copy of the MAC byte slice, else every RxInfo
+		// slice item will get the same Mac
+		mac := make([]byte, 8)
+		copy(mac, rxInfo.MAC[:])
+
 		publishDataUpReq.RxInfo = append(publishDataUpReq.RxInfo, &as.RXInfo{
-			Mac:     rxInfo.MAC[:],
+			Mac:     mac,
 			Time:    rxInfo.Time.Format(time.RFC3339Nano),
 			Rssi:    int32(rxInfo.RSSI),
 			LoRaSNR: rxInfo.LoRaSNR,

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.2
+
+**Bugfixes:**
+
+* Fix duplicated gateway MAC in application-server and network-controller API
+  call
+
 ## 0.13.1
 
 **Bugfixes:**
