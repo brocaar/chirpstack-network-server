@@ -24,7 +24,7 @@ GLOBAL OPTIONS:
    --nc-tls-cert value          tls certificate used by the network-controller client (optional) [$NC_TLS_CERT]
    --nc-tls-key value           tls key used by the network-controller client (optional) [$NC_TLS_KEY]
    --deduplication-delay value  time to wait for uplink de-duplication (default: 200ms) [$DEDUPLICATION_DELAY]
-   --dowlink-data-delay value   delay between uplink delivery to the app server and getting the downlink data from the app server (if any) (default: 100ms) [$DOWNLINK_DATA_DELAY]
+   --downlink-data-delay value  delay between uplink delivery to the app server and getting the downlink data from the app server (if any) (default: 100ms) [$DOWNLINK_DATA_DELAY]
    --help, -h                   show help
    --version, -v                print the version
 ```

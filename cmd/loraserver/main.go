@@ -338,7 +338,7 @@ func main() {
 			Value:  200 * time.Millisecond,
 		},
 		cli.DurationFlag{
-			Name:   "get-dowlink-data-delay",
+			Name:   "get-downlink-data-delay",
 			Usage:  "delay between uplink delivery to the app server and getting the downlink data from the app server (if any)",
 			EnvVar: "GET_DOWNLINK_DATA_DELAY",
 			Value:  100 * time.Millisecond,
