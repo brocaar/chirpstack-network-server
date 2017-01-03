@@ -12,7 +12,6 @@ build:
 clean:
 	@echo "Cleaning up workspace"
 	@rm -rf build
-	@rm -rf dist/$(VERSION)
 
 test:
 	@echo "Running tests"
@@ -24,10 +23,13 @@ test:
 
 package: clean build
 	@echo "Creating package for $(GOOS) $(GOARCH)"
-	@mkdir -p dist/$(VERSION)
-	@cp build/* dist/$(VERSION)
-	@cd dist/$(VERSION) && tar -pczf ../loraserver_$(VERSION)_$(GOOS)_$(GOARCH).tar.gz .
-	@rm -rf dist/$(VERSION)
+	@mkdir -p dist/tar/$(VERSION)
+	@cp build/* dist/tar/$(VERSION)
+	@cd dist/tar/$(VERSION) && tar -pczf ../loraserver_$(VERSION)_$(GOOS)_$(GOARCH).tar.gz .
+	@rm -rf dist/tar/$(VERSION)
+
+package-deb:
+	@cd packaging && TARGET=deb ./package.sh
 
 generate:
 	@echo "Running go generate"

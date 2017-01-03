@@ -1,0 +1,15 @@
+[Unit]
+Description=LoRa Server
+Documentation=https://docs.loraserver.io
+Wants=network-online.target
+After=network-online.target redis.service mosquitto.service
+
+[Service]
+User=loraserver
+Group=loraserver
+EnvironmentFile=/etc/default/loraserver
+ExecStart=/usr/bin/loraserver
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
