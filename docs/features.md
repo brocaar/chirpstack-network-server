@@ -75,13 +75,13 @@ As different regions have have different regulations regarding the license-free
 bands, you have to specify the ISM band to operate on when starting LoRa Server.
 At this moment the following ISM bands have been implemented:
 
+- AS 923
 - AU 915-928
 - CN 470-510
+- CN 779-787
+- EU 433
 - EU 863-870
+- KR 920-923
+- RU 864-869
 - US 902-928
 
-For the following ISM bands help is needed to verify the correctness of the
-implementation:
-
--  EU 433 ISM band testers ([issues/49](https://github.com/brocaar/loraserver/issues/49))
--  CN 779-787 ISM band testers ([issues/50](https://github.com/brocaar/loraserver/issues/50))

@@ -39,9 +39,14 @@ func init() {
 
 var version string // set by the compiler
 var bands = []string{
+	string(band.AS_923),
 	string(band.AU_915_928),
 	string(band.CN_470_510),
+	string(band.CN_779_787),
+	string(band.EU_433),
 	string(band.EU_863_870),
+	string(band.KR_920_923),
+	string(band.RU_864_869),
 	string(band.US_902_928),
 }
 
@@ -56,7 +61,11 @@ func run(c *cli.Context) error {
 	if c.String("band") == "" {
 		log.Fatalf("--band is undefined, valid options are: %s", strings.Join(bands, ", "))
 	}
-	bandConfig, err := band.GetConfig(band.Name(c.String("band")), false, lorawan.DwellTimeNoLimit)
+	dwellTime := lorawan.DwellTimeNoLimit
+	if c.Bool("band-dwell-time-400ms") {
+		dwellTime = lorawan.DwellTime400ms
+	}
+	bandConfig, err := band.GetConfig(band.Name(c.String("band")), c.Bool("band-repeater-compatible"), dwellTime)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -246,6 +255,16 @@ func main() {
 			Name:   "band",
 			Usage:  fmt.Sprintf("ism band configuration to use (options: %s)", strings.Join(bands, ", ")),
 			EnvVar: "BAND",
+		},
+		cli.BoolFlag{
+			Name:   "band-dwell-time-400ms",
+			Usage:  "band configuration takes 400ms dwell-time into account",
+			EnvVar: "BAND_DWELL_TIME_400ms",
+		},
+		cli.BoolFlag{
+			Name:   "band-repeater-compatible",
+			Usage:  "band configuration takes repeater encapsulation layer into account",
+			EnvVar: "BAND_REPEATER_COMPATIBLE",
 		},
 		cli.StringFlag{
 			Name:   "ca-cert",

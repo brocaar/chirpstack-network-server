@@ -49,6 +49,21 @@ It is important to start `loraserver` with the correct band, as this defines
 the frequencies used. Make sure these frequencies match the frequencies as
 configured in your gateways.
 
+## Dwell time
+
+Some band configurations define the max payload size for both dwell-time
+limitation enabled as disabled (e.g. AS 923). In this case the
+`--band-dwell-time-400ms` flag must be set to enforce the max payload size
+given the dwell-time limitation. For band configuration where the dwell-time is
+always enforced, setting this flag is not required.
+
+## Repeater compatibility
+
+Most band configurations define the max payload size for both an optional
+repeater encapsulation layer as for setups where a repeater will never
+be used. The latter case increases the max payload size for some data-rates.
+In case a repeater might used, set the `--band-repeater-compatible` flag.
+
 ## Redis connection string
 
 For more information about the Redis URL format, see:

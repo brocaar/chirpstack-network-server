@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.3
+
+**Features:**
+
+* The following band configurations have been added:
+	* AS 923
+	* CN 779 - 787
+	* EU 433
+	* KR 920 - 923
+	* RU 864 - 869
+* Flags for repeater compatibility configuration and dwell-time limitation
+  (400ms) have been added (see [configuration](configuration.md))
+
 ## 0.13.2
 
 **Features:**
