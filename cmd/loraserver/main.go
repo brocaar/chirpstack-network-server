@@ -84,7 +84,7 @@ func run(c *cli.Context) error {
 	apiServer := mustGetAPIServer(lsCtx, c)
 	ln, err := net.Listen("tcp", c.String("bind"))
 	if err != nil {
-		log.Fatal("start api listener error: %s", err)
+		log.Fatalf("start api listener error: %s", err)
 	}
 	go apiServer.Serve(ln)
 
