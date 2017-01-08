@@ -1,6 +1,12 @@
 # hidden files
 .*
 
+# Vagrant
+Vagrantfile
+
+# logs
+*.log
+
 # certs
 certs/
 
