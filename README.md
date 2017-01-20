@@ -10,17 +10,14 @@ and the scheduling of downlink data transmissions.
 
 ## Project components
 
-This project exists out of multiple components
-
 ![architecture](https://www.gliffy.com/go/publish/image/11010339/L.png)
 
 * [lora-gateway-bridge](https://docs.loraserver.io/lora-gateway-bridge) - converts
   the [packet_forwarder protocol](https://github.com/Lora-net/packet_forwarder/blob/master/PROTOCOL.TXT)
-  to MQTT and back
+  to JSON over MQTT and back
 * [loraserver](https://docs.loraserver.io/loraserver/) - LoRaWAN network-server
 * [lora-app-server](https://docs.loraserver.io/lora-app-server/) - LoRaWAN
   application-server
-* lora-controller (todo) - LoRaWAN network-controller
 
 ## Documentation
 
@@ -30,15 +27,14 @@ documentation and implemented [features](https://docs.loraserver.io/loraserver/f
 
 ## Downloads
 
-Pre-compiled binaries are available for:
+* Pre-compiled binaries are available at the [releases](https://github.com/brocaar/loraserver/releases) page:
 
-* Linux (including ARM / Raspberry Pi)
-* OS X
-* Windows
+	* Linux (including ARM / Raspberry Pi)
+	* OS X
+	* Windows
 
-See [https://github.com/brocaar/loraserver/releases](https://github.com/brocaar/loraserver/releases)
-for downloads. Source-code can be found at
-[https://github.com/brocaar/loraserver](https://github.com/brocaar/loraserver).
+* Debian and Ubuntu packages are available at [https://repos.loraserver.io](https://repos.loraserver.io/).
+* Source-code can be found at [https://github.com/brocaar/loraserver](https://github.com/brocaar/loraserver).
 
 ## Building from source
 
@@ -70,20 +66,35 @@ GOOS=windows BINEXT=.exe GOARCH=amd64 make build
 make package
 
 # build the .tar.gz file for Linux ARM
-GOOS=linux GOARCH=arm make build
+GOOS=linux GOARCH=arm make package
 
 # build the .tar.gz file for Windows AMD64
-GOOS=windows BINEXT=.exe GOARCH=amd64 make build
+GOOS=windows BINEXT=.exe GOARCH=amd64 make package
 ```
 
 Alternatively, you can run the same commands from any working
 [Go](https://golang.org/) environment. As all requirements are vendored,
-there is no need to `go get` these, but make sure vendoring is enabled for
-your Go environment or that you have Go 1.6+ installed.
+there is no need to `go get` these. Make sure you have Go 1.7.x installed
+and that you clone this repository to
+`$GOPATH/src/github.com/brocaar/loraserver`.
+
+## Contributing
+
+There are a couple of ways to get involved:
+
+* Join the discussions and share your feedback at [https://gitter.io/loraserver/loraserver](https://gitter.io/loraserver/loraserver)
+* Report bugs or make feature-requests by opening an issue at [https://github.com/brocaar/loraserver/issues](https://github.com/brocaar/loraserver/issues)
+* Fix issues or improve documentation by creating pull-requests
+
+When you would like to add new features, please discuss the feature first
+by creating an issue describing your feature, how you're planning to implement
+it, what the usecase is etc...
 
 ## Sponsors
 
 [![acklio](docs/img/sponsors/acklio.png)](http://www.ackl.io/)
+
+Would you like to support this project too? Please [get in touch](mailto:info@brocaar.com)!
 
 ## License
 

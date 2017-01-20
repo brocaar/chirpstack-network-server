@@ -1,37 +1,72 @@
 # Getting started
 
-A complete LoRa Server setup, requires the setup of the following components
-in place:
+A complete LoRa Server setup, requires the setup of the following components:
 
 
 * [LoRa Gateway Bridge](https://docs.loraserver.io/lora-gateway-bridge/)
 * [LoRa Server](https://docs.loraserver.io/loraserver/)
 * [LoRa App Server](https://docs.loraserver.io/lora-app-server/)
 
+
 This getting started document describes the steps needed to setup LoRa Server
-component and its requirements on Ubuntu 16.04 LTS. When using an other Linux
-distribution, you might need to adapt these steps.
+using the provided Debian package repository. Please note that LoRa Server
+is not limited to Debian / Ubuntu only! General purpose binaries
+can be downloaded from the 
+[releases](https://github.com/brocaar/loraserver/releases) page.
+
+!!! info
+	An alternative way to setup all the components is by using the
+	[loraserver-setup](https://github.com/brocaar/loraserver-setup) Ansible
+	playbook. It automates the steps below and can also be used in combination
+	with [Vagrant](https://www.vagrantup.com/).
 
 !!! warning
     This getting started guide does not cover setting up firewall rules! After
     setting up LoRa Server and its requirements, don't forget to configure
     your firewall rules.
 
-## MQTT broker
+## Setting up LoRa Server
 
-LoRa Server makes use of MQTT for communication with the gateways (thought the
-[LoRa Gateway Bridge](http://docs.loraserver.io/lora-gateway-bridge/)).
-[Mosquitto](http://mosquitto.org/) is a
-popular open-source MQTT broker. Make sure you install a recent version of
-Mosquitto (the Mosquitto project provides repositories for various Linux
-distributions). Ubuntu 16.04 LTS already includes a recent version which can be
-installed with:
+These steps have been tested with:
+
+* Debian Jessie
+* Ubuntu Trusty (14.04)
+* Ubuntu Xenial (16.06)
+
+### LoRa Server Debian repository
+
+The LoRa Server project provides pre-compiled binaries packaged as Debian (.deb)
+packages. In order to activate this repository, execute the following
+commands:
+
+```bash
+source /etc/lsb-release
+sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1CE2AFD36DBCCA00
+sudo echo "deb https://repos.loraserver.io/${DISTRIB_ID,,} ${DISTRIB_CODENAME} testing" | sudo tee /etc/apt/sources.list.d/loraserver.list
+sudo apt-get update
+```
+
+### MQTT broker
+
+LoRa Server makes use of MQTT for communication with the gateways 
+[Mosquitto](http://mosquitto.org/) is a popular open-source MQTT
+server. Make sure you install a **recent** version of Mosquitto.
+
+For Ubuntu Trusty (14.04), execute the following command in order to add the
+Mosquitto Apt repository:
+
+```bash
+sudo apt-add-repository ppa:mosquitto-dev/mosquitto-ppa
+sudo apt-get update
+```
+
+In order to install Mosquitto, execute the following command:
 
 ```bash
 sudo apt-get install mosquitto
 ```
 
-## Redis
+### Redis
 
 LoRa Server stores all session-related and non-persistent data into a
 [Redis](http://redis.io/) datastore. Note that at least Redis 2.6.0 is required.
@@ -41,90 +76,60 @@ To Install Redis:
 sudo apt-get install redis-server
 ```
 
-## Install LoRa Server
+### Install LoRa Server
 
-Create a system user for loraserver:
-
-```bash
-sudo useradd -M -r -s /bin/false loraserver
-```
-
-Download and unpack a pre-compiled binary from the
-[releases](https://github.com/brocaar/loraserver/releases) page:
+In order to install LoRa Server, execute the following command:
 
 ```bash
-# replace VERSION with the latest version or the version you want to install
-
-# download
-wget https://github.com/brocaar/loraserver/releases/download/VERSION/loraserver_VERSION_linux_amd64.tar.gz
-
-# unpack
-tar zxf loraserver_VERSION_linux_amd64.tar.gz
-
-# move the binary to /opt/loraserver/bin
-sudo mkdir -p /opt/loraserver/bin
-sudo mv loraserver /opt/loraserver/bin
+sudo apt-get install loraserver
 ```
 
-In order to start LoRa Server as a service, create the file
-`/etc/systemd/system/loraserver.service` with as content:
+After installation, modify the configuration file which is located at
+`/etc/default/loraserver`.
 
-```
-[Unit]
-Description=loraserver
-After=mosquitto.service
+### Starting LoRa Server
 
-[Service]
-User=loraserver
-Group=loraserver
-ExecStart=/opt/loraserver/bin/loraserver
-Restart=on-failure
+How you need to (re)start and stop LoRa Server depends on if your
+distribution uses init.d or systemd.
 
-[Install]
-WantedBy=multi-user.target
-```
-
-In order to configure LoRa Server, create a directory named
-`/etc/systemd/system/loraserver.service.d`:
+#### init.d
 
 ```bash
-sudo mkdir /etc/systemd/system/loraserver.service.d
+sudo /etc/init.d/loraserver [start|stop|restart|status]
 ```
 
-Inside this directory, put a file named `loraserver.conf`:
-
-```
-[Service]
-Environment="NET_ID=010203"
-Environment="BAND=EU_863_870"
-Environment="BIND=127.0.0.1:8000"
-Environment="REDIS_URL=redis://localhost:6379"
-Environment="GW_MQTT_SERVER=tcp://localhost:1883"
-Environment="AS_SERVER=127.0.0.1:8001"
-```
-
-## Starting LoRa Server
-
-In order to (re)start and stop LoRa Server:
+#### systemd
 
 ```bash
-# start
-sudo systemctl start loraserver
-
-# restart
-sudo systemctl restart loraserver
-
-# stop
-sudo systemctl stop loraserver
+sudo systemctl [start|stop|restart|status] loraserver
 ```
 
-Verifiy that LoRa Server is up-and running by looking at its log-output:
+### LoRa Server log output
+
+Now you've setup LoRa Server, it is a good time to verify that LoRa Server
+is actually up-and-running. This can be done by looking at the LoRa Server
+log output.
+
+Like the previous step, which command you need to use for viewing the
+log output depends on if your distribution uses init.d or systemd.
+
+#### init.d
+
+All logs are written to `/var/log/loraserver/loraserver.log`.
+To view and follow this logfile:
+
+```bash
+tail -f /var/log/loraserver/loraserver.log
+```
+
+#### systemd
 
 ```bash
 journalctl -u loraserver -f -n 50
 ```
 
-The log should be something like:
+
+Example output:
 
 ```
 INFO[0000] starting LoRa Server                          band=EU_863_870 docs=https://docs.loraserver.io/ net_id=010203 version=0.12.0

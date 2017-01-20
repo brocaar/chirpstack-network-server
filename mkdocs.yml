@@ -7,7 +7,6 @@ pages:
   - index.md
   - features.md
   - getting-started.md
-  - network-controller.md
   - application-server.md
   - api.md
   - configuration.md
