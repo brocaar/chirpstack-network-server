@@ -15,10 +15,10 @@
 			"revisionTime": "2017-01-08T12:04:07Z"
 		},
 		{
-			"checksumSHA1": "NLZsG4N/a1xsd/RYWDCFlODUueA=",
+			"checksumSHA1": "SlDtchaAX7SV5nD/BFP4x6fnmVk=",
 			"path": "github.com/brocaar/lorawan/band",
-			"revision": "1aaab9f7c7c3e724eb37dddc46d11e6d1cd32aaa",
-			"revisionTime": "2017-01-08T12:04:07Z"
+			"revision": "f540ac8902cab0de979f72647c13a75d68c942a1",
+			"revisionTime": "2017-01-29T09:37:55Z"
 		},
 		{
 			"checksumSHA1": "DIhhLfId4jP1kWUBkcuSM3NMmZc=",

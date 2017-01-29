@@ -1,5 +1,11 @@
 # Changelog
 
+## Development
+
+**Changes:**
+
+* RU 864 - 869 band configuration has been updated (see [#113](https://github.com/brocaar/loraserver/issues/113))
+
 ## 0.13.3
 
 **Features:**

@@ -32,7 +32,7 @@ func newRU864Band(repeaterCompatible bool) (Band, error) {
 	return Band{
 		DefaultTXPower:   14,
 		ImplementsCFlist: true,
-		RX2Frequency:     869525000,
+		RX2Frequency:     869050000,
 		RX2DataRate:      0,
 
 		MaxFCntGap:       16384,
@@ -79,15 +79,15 @@ func newRU864Band(repeaterCompatible bool) (Band, error) {
 		},
 
 		UplinkChannels: []Channel{
-			{Frequency: 864100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
-			{Frequency: 864300000, DataRates: []int{0, 1, 2, 3, 4, 5}},
 			{Frequency: 864500000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			{Frequency: 864700000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			{Frequency: 864900000, DataRates: []int{0, 1, 2, 3, 4, 5}},
 		},
 
 		DownlinkChannels: []Channel{
-			{Frequency: 864100000, DataRates: []int{0, 1, 2, 3, 4, 5}},
-			{Frequency: 864300000, DataRates: []int{0, 1, 2, 3, 4, 5}},
 			{Frequency: 864500000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			{Frequency: 864700000, DataRates: []int{0, 1, 2, 3, 4, 5}},
+			{Frequency: 864900000, DataRates: []int{0, 1, 2, 3, 4, 5}},
 		},
 
 		getRX1ChannelFunc: func(txChannel int) int {
