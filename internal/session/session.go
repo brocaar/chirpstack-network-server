@@ -20,7 +20,6 @@ const (
 
 // GetRandomDevAddr returns a random free DevAddr. Note that the 7 MSB will be
 // set to the NwkID (based on the configured NetID).
-// TODO: handle collission with retry?
 func GetRandomDevAddr(p *redis.Pool, netID lorawan.NetID) (lorawan.DevAddr, error) {
 	var d lorawan.DevAddr
 	b := make([]byte, len(d))
@@ -31,17 +30,6 @@ func GetRandomDevAddr(p *redis.Pool, netID lorawan.NetID) (lorawan.DevAddr, erro
 	d[0] = d[0] & 1                    // zero out 7 msb
 	d[0] = d[0] ^ (netID.NwkID() << 1) // set 7 msb to NwkID
 
-	c := p.Get()
-	defer c.Close()
-
-	key := "node_session_" + d.String()
-	val, err := redis.Int(c.Do("EXISTS", key))
-	if err != nil {
-		return lorawan.DevAddr{}, fmt.Errorf("test DevAddr %s exist error: %s", d, err)
-	}
-	if val == 1 {
-		return lorawan.DevAddr{}, fmt.Errorf("DevAddr %s already exists", d)
-	}
 	return d, nil
 }
 
