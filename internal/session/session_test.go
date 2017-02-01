@@ -102,7 +102,7 @@ func TestNodeSession(t *testing.T) {
 			Convey("When getting a non-existing NodeSession", func() {
 				_, err := GetNodeSession(p, ns.DevAddr)
 				Convey("Then an error is returned", func() {
-					So(err, ShouldResemble, errors.New("get node-session for DevAddr 01020304 error: redigo: nil returned"))
+					So(err, ShouldResemble, errors.New("node-session for 01020304 does not exist"))
 				})
 			})
 

@@ -14,8 +14,10 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// TODO: implement migration tool to migrate from old to new data structure!
 const (
-	nodeSessionKeyTempl = "node_session_%s"
+	devAddrKeyTempl     = "lora:ns:devaddr:%s" // contains a set of DevEUIs using this DevAddr
+	nodeSessionKeyTempl = "lora:ns:session:%s" // contains the session of a DevEUI
 )
 
 // GetRandomDevAddr returns a random free DevAddr. Note that the 7 MSB will be
@@ -48,33 +50,10 @@ func ValidateAndGetFullFCntUp(n NodeSession, fCntUp uint32) (uint32, bool) {
 	return 0, false
 }
 
-// CreateNodeSession does the same as saveNodeSession except that it does not
-// overwrite an exisitng record.
+// CreateNodeSession does the same as SaveNodeSession.
+// TODO: remove this function as it is redundant
 func CreateNodeSession(p *redis.Pool, s NodeSession) error {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(s); err != nil {
-		return fmt.Errorf("encode node-session for node %s error: %s", s.DevEUI, err)
-	}
-
-	c := p.Get()
-	defer c.Close()
-
-	exp := int64(common.NodeSessionTTL) / int64(time.Millisecond)
-
-	if _, err := redis.String(c.Do("SET", fmt.Sprintf(nodeSessionKeyTempl, s.DevAddr), buf.Bytes(), "NX", "PX", exp)); err != nil {
-		if err == redis.ErrNil {
-			return fmt.Errorf("create node-session %s for node %s error: DevAddr already in use", s.DevAddr, s.DevEUI)
-		}
-		return fmt.Errorf("create node-session %s for node %s error: %s", s.DevAddr, s.DevEUI, err)
-	}
-	// DevEUI -> DevAddr pointer
-	if _, err := redis.String(c.Do("PSETEX", fmt.Sprintf(nodeSessionKeyTempl, s.DevEUI), exp, s.DevAddr.String())); err != nil {
-		return fmt.Errorf("create pointer node %s -> DevAddr %s error: %s", s.DevEUI, s.DevAddr, err)
-	}
-
-	log.WithField("dev_addr", s.DevAddr).Info("node-session created")
-	return nil
+	return SaveNodeSession(p, s)
 }
 
 // SaveNodeSession saves the node session. Note that the session will automatically
@@ -88,39 +67,46 @@ func SaveNodeSession(p *redis.Pool, s NodeSession) error {
 
 	c := p.Get()
 	defer c.Close()
-
 	exp := int64(common.NodeSessionTTL) / int64(time.Millisecond)
 
-	if _, err := redis.String(c.Do("PSETEX", fmt.Sprintf(nodeSessionKeyTempl, s.DevAddr), exp, buf.Bytes())); err != nil {
-		return fmt.Errorf("save node-session %s for node %s error: %s", s.DevAddr, s.DevEUI, err)
-	}
-	// DevEUI -> DevAddr pointer
-	if _, err := redis.String(c.Do("PSETEX", fmt.Sprintf(nodeSessionKeyTempl, s.DevEUI), exp, s.DevAddr.String())); err != nil {
-		return fmt.Errorf("create pointer node %s -> DevAddr %s error: %s", s.DevEUI, s.DevAddr, err)
+	c.Send("MULTI")
+	c.Send("PSETEX", fmt.Sprintf(nodeSessionKeyTempl, s.DevEUI), exp, buf.Bytes())
+	c.Send("SADD", fmt.Sprintf(devAddrKeyTempl, s.DevAddr), s.DevEUI[:])
+	c.Send("PEXPIRE", fmt.Sprintf(devAddrKeyTempl, s.DevAddr), exp)
+
+	if _, err := c.Do("EXEC"); err != nil {
+		return fmt.Errorf("save node %s error: %s", s.DevEUI, err)
 	}
 
-	log.WithField("dev_addr", s.DevAddr).Info("node-session saved")
+	log.WithFields(log.Fields{
+		"dev_eui":  s.DevEUI,
+		"dev_addr": s.DevAddr,
+	}).Info("node-session saved")
 	return nil
 }
 
 // GetNodeSession returns the NodeSession for the given DevAddr.
+// TODO: implement check in case multiple DevEUIs exist for the given DevAddr
 func GetNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (NodeSession, error) {
 	var ns NodeSession
 
 	c := p.Get()
 	defer c.Close()
 
-	val, err := redis.Bytes(c.Do("GET", fmt.Sprintf(nodeSessionKeyTempl, devAddr)))
+	// get DevEUI set for DevAddr
+	val, err := redis.ByteSlices(c.Do("SMEMBERS", fmt.Sprintf(devAddrKeyTempl, devAddr)))
 	if err != nil {
-		return ns, fmt.Errorf("get node-session for DevAddr %s error: %s", devAddr, err)
+		return ns, fmt.Errorf("get DevEUI set for DevAddr %s error: %s", devAddr, err)
 	}
 
-	err = gob.NewDecoder(bytes.NewReader(val)).Decode(&ns)
-	if err != nil {
-		return ns, fmt.Errorf("decode node-session %s error: %s", devAddr, err)
+	if len(val) == 0 {
+		return ns, fmt.Errorf("node-session for %s does not exist", devAddr)
 	}
 
-	return ns, nil
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], val[0])
+
+	return GetNodeSessionByDevEUI(p, devEUI)
 }
 
 // GetNodeSessionByDevEUI returns the NodeSession for the given DevEUI.
@@ -130,19 +116,14 @@ func GetNodeSessionByDevEUI(p *redis.Pool, devEUI lorawan.EUI64) (NodeSession, e
 	c := p.Get()
 	defer c.Close()
 
-	devAddr, err := redis.String(c.Do("GET", fmt.Sprintf(nodeSessionKeyTempl, devEUI)))
+	val, err := redis.Bytes(c.Do("GET", fmt.Sprintf(nodeSessionKeyTempl, devEUI)))
 	if err != nil {
-		return ns, fmt.Errorf("get node-session pointer for node %s error: %s", devEUI, err)
-	}
-
-	val, err := redis.Bytes(c.Do("GET", fmt.Sprintf(nodeSessionKeyTempl, devAddr)))
-	if err != nil {
-		return ns, fmt.Errorf("get node-session for DevAddr %s error: %s", devAddr, err)
+		return ns, fmt.Errorf("get node-session %s error: %s", devEUI, err)
 	}
 
 	err = gob.NewDecoder(bytes.NewReader(val)).Decode(&ns)
 	if err != nil {
-		return ns, fmt.Errorf("decode node-session %s error: %s", devAddr, err)
+		return ns, fmt.Errorf("decode node-session %s error: %s", devEUI, err)
 	}
 
 	return ns, nil
