@@ -26,7 +26,7 @@ func TestHandle(t *testing.T) {
 			ns := session.NodeSession{
 				DevEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			}
-			So(session.CreateNodeSession(p, ns), ShouldBeNil)
+			So(session.SaveNodeSession(p, ns), ShouldBeNil)
 
 			Convey("Testing LinkADRAns", func() {
 				linkADRReq := &lorawan.LinkADRReqPayload{

@@ -1643,7 +1643,7 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 			ctx.Application.(*test.ApplicationClient).GetDataDownErr = t.ApplicationGetDataDownError
 
 			// populate session and queues
-			So(session.CreateNodeSession(ctx.RedisPool, t.NodeSession), ShouldBeNil)
+			So(session.SaveNodeSession(ctx.RedisPool, t.NodeSession), ShouldBeNil)
 			for _, pl := range t.MACCommandQueue {
 				So(maccommand.AddToQueue(ctx.RedisPool, pl), ShouldBeNil)
 			}

@@ -306,7 +306,7 @@ func TestADR(t *testing.T) {
 
 				for i, tst := range testTable {
 					Convey(fmt.Sprintf("Test: %s [%d]", tst.Name, i), func() {
-						So(session.CreateNodeSession(p, *tst.NodeSession), ShouldBeNil)
+						So(session.SaveNodeSession(p, *tst.NodeSession), ShouldBeNil)
 
 						err := HandleADR(ctx, tst.NodeSession, tst.RXPacket, tst.FullFCnt)
 						if tst.ExpectedError != nil {

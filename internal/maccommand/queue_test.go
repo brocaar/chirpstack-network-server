@@ -22,7 +22,7 @@ func TestQueue(t *testing.T) {
 				DevAddr: [4]byte{1, 2, 3, 4},
 				DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			}
-			So(session.CreateNodeSession(p, ns), ShouldBeNil)
+			So(session.SaveNodeSession(p, ns), ShouldBeNil)
 
 			Convey("When adding mac-command a and b to the queue", func() {
 				a := QueueItem{

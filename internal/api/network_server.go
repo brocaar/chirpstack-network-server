@@ -59,7 +59,15 @@ func (n *NetworkServerAPI) CreateNodeSession(ctx context.Context, req *ns.Create
 	copy(sess.DevEUI[:], req.DevEUI)
 	copy(sess.NwkSKey[:], req.NwkSKey)
 
-	if err := session.CreateNodeSession(n.ctx.RedisPool, sess); err != nil {
+	exists, err := session.NodeSessionExists(n.ctx.RedisPool, sess.DevEUI)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, err.Error())
+	}
+	if exists {
+		return nil, grpc.Errorf(codes.AlreadyExists, err.Error())
+	}
+
+	if err := session.SaveNodeSession(n.ctx.RedisPool, sess); err != nil {
 		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 

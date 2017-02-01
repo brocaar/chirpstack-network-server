@@ -106,6 +106,15 @@ func TestNodeSession(t *testing.T) {
 				})
 			})
 
+			Convey("When checking if a non-existing NodeSession exists", func() {
+				exists, err := NodeSessionExists(p, ns.DevEUI)
+				So(err, ShouldBeNil)
+
+				Convey("Then false is returned", func() {
+					So(exists, ShouldBeFalse)
+				})
+			})
+
 			Convey("When saving the NodeSession", func() {
 				So(SaveNodeSession(p, ns), ShouldBeNil)
 
@@ -119,6 +128,15 @@ func TestNodeSession(t *testing.T) {
 					ns2, err := GetNodeSessionByDevEUI(p, ns.DevEUI)
 					So(err, ShouldBeNil)
 					So(ns2, ShouldResemble, ns)
+				})
+
+				Convey("When checking if a NodeSession exists", func() {
+					exists, err := NodeSessionExists(p, ns.DevEUI)
+					So(err, ShouldBeNil)
+
+					Convey("Then true is returned", func() {
+						So(exists, ShouldBeTrue)
+					})
 				})
 			})
 

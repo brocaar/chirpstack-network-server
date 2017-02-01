@@ -50,10 +50,19 @@ func ValidateAndGetFullFCntUp(n NodeSession, fCntUp uint32) (uint32, bool) {
 	return 0, false
 }
 
-// CreateNodeSession does the same as SaveNodeSession.
-// TODO: remove this function as it is redundant
-func CreateNodeSession(p *redis.Pool, s NodeSession) error {
-	return SaveNodeSession(p, s)
+// NodeSessionExists returns a bool indicating if a node session exist.
+func NodeSessionExists(p *redis.Pool, devEUI lorawan.EUI64) (bool, error) {
+	c := p.Get()
+	defer c.Close()
+
+	r, err := redis.Int(c.Do("EXISTS", fmt.Sprintf(nodeSessionKeyTempl, devEUI)))
+	if err != nil {
+		return false, fmt.Errorf("get node-session key exists error: %s", err)
+	}
+	if r == 1 {
+		return true, nil
+	}
+	return false, nil
 }
 
 // SaveNodeSession saves the node session. Note that the session will automatically
