@@ -10,7 +10,7 @@ and the scheduling of downlink data transmissions.
 
 ## Project components
 
-![architecture](https://www.gliffy.com/go/publish/image/11010339/L.png)
+![architecture](docs/img/architecture.png)
 
 * [lora-gateway-bridge](https://docs.loraserver.io/lora-gateway-bridge) - converts
   the [packet_forwarder protocol](https://github.com/Lora-net/packet_forwarder/blob/master/PROTOCOL.TXT)
