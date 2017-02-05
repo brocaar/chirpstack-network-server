@@ -56,8 +56,8 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 	// this way we can set a really low DeduplicationDelay for testing, without
 	// the risk that the set already expired in redis on read
 	deduplicationTTL := common.DeduplicationDelay * 2
-	if deduplicationTTL < time.Millisecond*100 {
-		deduplicationTTL = time.Millisecond * 100
+	if deduplicationTTL < time.Millisecond*200 {
+		deduplicationTTL = time.Millisecond * 200
 	}
 
 	c.Send("MULTI")

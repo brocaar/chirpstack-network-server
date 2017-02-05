@@ -129,7 +129,7 @@ func GetNodeSessionsForDevAddr(p *redis.Pool, devAddr lorawan.DevAddr) ([]NodeSe
 
 	devEUIs, err := redis.ByteSlices(c.Do("SMEMBERS", fmt.Sprintf(devAddrKeyTempl, devAddr)))
 	if err != nil {
-		return nil, fmt.Errorf("get DevEUI set for DevAddr %s error: %s", devAddr, err)
+		return nil, fmt.Errorf("get dev_eui set for dev_addr %s error: %s", devAddr, err)
 	}
 
 	for _, b := range devEUIs {
@@ -142,12 +142,76 @@ func GetNodeSessionsForDevAddr(p *redis.Pool, devAddr lorawan.DevAddr) ([]NodeSe
 			log.WithFields(log.Fields{
 				"dev_addr": devAddr,
 				"dev_eui":  devEUI,
-			}).Warning("get node-sessions for devaddr error: %s", err)
+			}).Warning("get node-sessions for dev_addr error: %s", err)
 		}
 		items = append(items, ns)
 	}
 
 	return items, nil
+}
+
+// GetNodeSessionForPHYPayload returns the node-session matching the given
+// PHYPayload. This will fetch all node-sessions associated with the used
+// DevAddr and based on FCnt and MIC decide which one to use.
+func GetNodeSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload) (NodeSession, error) {
+	// MACPayload must be of type *lorawan.MACPayload
+	macPL, ok := phy.MACPayload.(*lorawan.MACPayload)
+	if !ok {
+		return NodeSession{}, fmt.Errorf("expected *lorawan.MACPayload, got: %T", phy.MACPayload)
+	}
+	originalFCnt := macPL.FHDR.FCnt
+
+	sessions, err := GetNodeSessionsForDevAddr(p, macPL.FHDR.DevAddr)
+	if err != nil {
+		return NodeSession{}, err
+	}
+
+	for _, ns := range sessions {
+		// reset to the original FCnt
+		macPL.FHDR.FCnt = originalFCnt
+		// get full FCnt
+		fullFCnt, ok := ValidateAndGetFullFCntUp(ns, macPL.FHDR.FCnt)
+		if !ok {
+			// if RelaxFCnt is turned on, test the MIC against FCnt reset
+			if ns.RelaxFCnt && macPL.FHDR.FCnt == 0 {
+				fullFCnt = 0
+				ns.FCntUp = 0
+				ns.FCntDown = 0
+
+				// validate if the mic is valid given the FCnt reset
+				micOK, err := phy.ValidateMIC(ns.NwkSKey)
+				if err != nil {
+					return NodeSession{}, fmt.Errorf("validate mic error: %s", err)
+				}
+
+				if micOK {
+					// we need to update the NodeSession
+					if err := SaveNodeSession(p, ns); err != nil {
+						return NodeSession{}, err
+					}
+					log.WithFields(log.Fields{
+						"dev_addr": macPL.FHDR.DevAddr,
+						"dev_eui":  ns.DevEUI,
+					}).Warning("frame counters reset")
+					return ns, nil
+				}
+			}
+			// try the next node-session
+			continue
+		}
+
+		// the FCnt is valid, validate the MIC
+		macPL.FHDR.FCnt = fullFCnt
+		micOK, err := phy.ValidateMIC(ns.NwkSKey)
+		if err != nil {
+			return NodeSession{}, fmt.Errorf("validate mic error: %s", err)
+		}
+		if micOK {
+			return ns, nil
+		}
+	}
+
+	return NodeSession{}, fmt.Errorf("node-session does not exist or invalid fcnt or mic")
 }
 
 // GetNodeSessionByDevEUI returns the NodeSession for the given DevEUI.
