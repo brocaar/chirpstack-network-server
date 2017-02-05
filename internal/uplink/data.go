@@ -22,65 +22,15 @@ import (
 )
 
 func validateAndCollectDataUpRXPacket(ctx common.Context, rxPacket gw.RXPacket) error {
+	ns, err := session.GetNodeSessionForPHYPayload(ctx.RedisPool, rxPacket.PHYPayload)
+	if err != nil {
+		return fmt.Errorf("get node-session error: %s", err)
+	}
+
 	// MACPayload must be of type *lorawan.MACPayload
 	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
-	}
-
-	// get the session data
-	ns, err := session.GetNodeSession(ctx.RedisPool, macPL.FHDR.DevAddr)
-	if err != nil {
-		return err
-	}
-
-	// validate and get the full int32 FCnt
-	fullFCnt, ok := session.ValidateAndGetFullFCntUp(ns, macPL.FHDR.FCnt)
-	if !ok {
-		if ns.RelaxFCnt && macPL.FHDR.FCnt == 0 {
-			fullFCnt = 0
-			ns.FCntUp = 0
-			ns.FCntDown = 0
-			if session.SaveNodeSession(ctx.RedisPool, ns); err != nil {
-				return err
-			}
-			log.WithFields(log.Fields{
-				"dev_addr":      macPL.FHDR.DevAddr,
-				"dev_eui":       ns.DevEUI,
-				"fcnt_up_was":   ns.FCntUp,
-				"fnct_down_was": ns.FCntDown,
-			}).Warning("frame counters reset")
-		} else {
-			ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
-				AppEUI: ns.AppEUI[:],
-				DevEUI: ns.DevEUI[:],
-				Type:   as.ErrorType_DATA_UP_FCNT,
-				Error:  fmt.Sprintf("invalid FCnt or too many dropped frames (server_fcnt: %d, packet_fcnt: %d)", ns.FCntUp, macPL.FHDR.FCnt),
-			})
-			log.WithFields(log.Fields{
-				"dev_addr":    macPL.FHDR.DevAddr,
-				"dev_eui":     ns.DevEUI,
-				"packet_fcnt": macPL.FHDR.FCnt,
-				"server_fcnt": ns.FCntUp,
-			}).Warning("invalid FCnt")
-			return errors.New("invalid FCnt or too many dropped frames")
-		}
-	}
-	macPL.FHDR.FCnt = fullFCnt
-
-	// validate MIC
-	micOK, err := rxPacket.PHYPayload.ValidateMIC(ns.NwkSKey)
-	if err != nil {
-		return fmt.Errorf("validate MIC error: %s", err)
-	}
-	if !micOK {
-		ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
-			AppEUI: ns.AppEUI[:],
-			DevEUI: ns.DevEUI[:],
-			Type:   as.ErrorType_DATA_UP_MIC,
-			Error:  "invalid MIC",
-		})
-		return errors.New("invalid MIC")
 	}
 
 	if macPL.FPort != nil {

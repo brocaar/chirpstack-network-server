@@ -337,15 +337,7 @@ func TestUplinkScenarios(t *testing.T) {
 					},
 					ExpectedFCntUp:              8,
 					ExpectedFCntDown:            5,
-					ExpectedHandleRXPacketError: errors.New("invalid FCnt or too many dropped frames"),
-					ExpectedApplicationHandleErrors: []as.HandleErrorRequest{
-						{
-							AppEUI: ns.AppEUI[:],
-							DevEUI: ns.DevEUI[:],
-							Type:   as.ErrorType_DATA_UP_FCNT,
-							Error:  "invalid FCnt or too many dropped frames (server_fcnt: 8, packet_fcnt: 7)",
-						},
-					},
+					ExpectedHandleRXPacketError: errors.New("get node-session error: node-session does not exist or invalid fcnt or mic"),
 				},
 				{
 					Name:        "the mic is invalid",
@@ -367,15 +359,7 @@ func TestUplinkScenarios(t *testing.T) {
 					},
 					ExpectedFCntUp:              8,
 					ExpectedFCntDown:            5,
-					ExpectedHandleRXPacketError: errors.New("invalid MIC"),
-					ExpectedApplicationHandleErrors: []as.HandleErrorRequest{
-						{
-							AppEUI: ns.AppEUI[:],
-							DevEUI: ns.DevEUI[:],
-							Type:   as.ErrorType_DATA_UP_MIC,
-							Error:  "invalid MIC",
-						},
-					},
+					ExpectedHandleRXPacketError: errors.New("get node-session error: node-session does not exist or invalid fcnt or mic"),
 				},
 			}
 
@@ -436,15 +420,7 @@ func TestUplinkScenarios(t *testing.T) {
 					},
 					ExpectedFCntUp:              8,
 					ExpectedFCntDown:            5,
-					ExpectedHandleRXPacketError: errors.New("invalid FCnt or too many dropped frames"),
-					ExpectedApplicationHandleErrors: []as.HandleErrorRequest{
-						{
-							AppEUI: ns.AppEUI[:],
-							DevEUI: ns.DevEUI[:],
-							Type:   as.ErrorType_DATA_UP_FCNT,
-							Error:  "invalid FCnt or too many dropped frames (server_fcnt: 8, packet_fcnt: 7)",
-						},
-					},
+					ExpectedHandleRXPacketError: errors.New("get node-session error: node-session does not exist or invalid fcnt or mic"),
 				},
 				{
 					Name:        "the frame-counter is invalid and 0",
