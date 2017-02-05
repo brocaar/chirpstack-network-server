@@ -118,10 +118,11 @@ func TestNodeSession(t *testing.T) {
 			Convey("When saving the NodeSession", func() {
 				So(SaveNodeSession(p, ns), ShouldBeNil)
 
-				Convey("Then when getting the NodeSession, the same data is returned", func() {
-					ns2, err := GetNodeSession(p, ns.DevAddr)
+				Convey("Then when getting the NodeSessions for its DevAddr, it contains the NodeSession", func() {
+					sessions, err := GetNodeSessionsForDevAddr(p, ns.DevAddr)
 					So(err, ShouldBeNil)
-					So(ns2, ShouldResemble, ns)
+					So(sessions, ShouldHaveLength, 1)
+					So(sessions[0], ShouldResemble, ns)
 				})
 
 				Convey("Then the session can be retrieved by it's DevEUI", func() {
