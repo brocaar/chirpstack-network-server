@@ -82,6 +82,7 @@ it, what the usecase is etc...
 
 ## Sponsors
 
+[![CableLabs](img/sponsors/cablelabs.png)](https://www.cablelabs.com/)
 [![acklio](img/sponsors/acklio.png)](http://www.ackl.io/)
 
 Would you like to support this project too? Please [get in touch](mailto:info@brocaar.com)!
