@@ -62,6 +62,7 @@ func (b *Backend) Close() error {
 	if token := b.conn.Unsubscribe(rxTopic); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("backend/gateway: unsubscribe from %s error: %s", rxTopic, token.Error())
 	}
+	log.WithField("topic", statsTopic).Info("backend/gateway: unsubscribing from stats topic")
 	if token := b.conn.Unsubscribe(statsTopic); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("backend/gateway: unsubscribe from %s error: %s", statsTopic, token.Error())
 	}
