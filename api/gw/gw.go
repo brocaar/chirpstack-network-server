@@ -71,6 +71,7 @@ type GatewayStatsPacket struct {
 	Altitude            float64                `json:"altitude"`
 	RXPacketsReceived   int                    `json:"rxPacketsReceived"`
 	RXPacketsReceivedOK int                    `json:"rxPacketsReceivedOK"`
+	TXPacketsReceived   int                    `json:"txPacketsReceived"`
 	TXPacketsEmitted    int                    `json:"txPacketsEmitted"`
 	CustomData          map[string]interface{} `json:"customData"` // custom fields defined by alternative packet_forwarder versions (e.g. TTN sends platform, contactEmail, and description)
 }
