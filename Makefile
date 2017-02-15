@@ -33,6 +33,7 @@ package-deb:
 
 generate:
 	@echo "Running go generate"
+	@go generate cmd/loraserver/main.go
 	@go generate api/as/as.go
 	@go generate api/nc/nc.go
 	@go generate api/ns/ns.go

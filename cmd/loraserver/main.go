@@ -1,5 +1,4 @@
 //go:generate go-bindata -prefix ../../migrations/ -pkg migrations -o ../../internal/migrations/migrations_gen.go ../../migrations/
-//go:generate go-bindata -prefix ../../static/ -pkg static -o ../../internal/static/static_gen.go ../../static/...
 
 package main
 
@@ -17,6 +16,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	migrate "github.com/rubenv/sql-migrate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
@@ -29,6 +29,7 @@ import (
 	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/migration"
+	"github.com/brocaar/loraserver/internal/migrations"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -88,6 +89,21 @@ func run(c *cli.Context) error {
 	if err = migration.MigrateNodeSessionDevAddrDevEUI(lsCtx.RedisPool); err != nil {
 		log.Fatalf("node-session migration error: %s", err)
 	}
+	// migrate the database
+	if c.Bool("db-automigrate") {
+		log.Info("applying database migrations")
+		m := &migrate.AssetMigrationSource{
+			Asset:    migrations.Asset,
+			AssetDir: migrations.AssetDir,
+			Dir:      "",
+		}
+		migrate.SetTable("migration")
+		n, err := migrate.Exec(lsCtx.DB.DB, "postgres", m, migrate.Up)
+		if err != nil {
+			log.Fatalf("applying migrations failed: %s", err)
+		}
+		log.WithField("count", n).Info("migrations applied")
+	}
 
 	// start the api server
 	log.WithFields(log.Fields{
@@ -133,6 +149,13 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) common.Context {
 	// setup redis pool
 	log.WithField("url", c.String("redis-url")).Info("setup redis connection pool")
 	rp := common.NewRedisPool(c.String("redis-url"))
+
+	// setup PostgreSQL connection
+	log.Info("connecting to postgresql")
+	db, err := common.OpenDatabase(c.String("postgres-dsn"))
+	if err != nil {
+		log.Fatalf("database connection error: %s", err)
+	}
 
 	// setup gateway backend
 	gw, err := gateway.NewBackend(rp, c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"))
@@ -190,6 +213,7 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) common.Context {
 
 	return common.Context{
 		RedisPool:   rp,
+		DB:          db,
 		Gateway:     gw,
 		Application: asClient,
 		Controller:  ncClient,
@@ -314,6 +338,17 @@ func main() {
 			Name:   "gw-mqtt-password",
 			Usage:  "mqtt password used by the gateway backend (optional)",
 			EnvVar: "GW_MQTT_PASSWORD",
+		},
+		cli.StringFlag{
+			Name:   "postgres-dsn",
+			Usage:  "postgresql dsn (e.g.: postgres://user:password@hostname/database?sslmode=disable)",
+			Value:  "postgres://localhost/loraserver_ns?sslmode=disable",
+			EnvVar: "POSTGRES_DSN",
+		},
+		cli.BoolFlag{
+			Name:   "db-automigrate",
+			Usage:  "automatically apply database migrations",
+			EnvVar: "DB_AUTOMIGRATE",
 		},
 		cli.StringFlag{
 			Name:   "as-server",

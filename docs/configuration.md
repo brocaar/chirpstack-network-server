@@ -17,6 +17,8 @@ GLOBAL OPTIONS:
    --gw-mqtt-server value           mqtt broker server used by the gateway backend (e.g. scheme://host:port where scheme is tcp, ssl or ws) (default: "tcp://localhost:1883") [$GW_MQTT_SERVER]
    --gw-mqtt-username value         mqtt username used by the gateway backend (optional) [$GW_MQTT_USERNAME]
    --gw-mqtt-password value         mqtt password used by the gateway backend (optional) [$GW_MQTT_PASSWORD]
+   --postgres-dsn value             postgresql dsn (e.g.: postgres://user:password@hostname/database?sslmode=disable) (default: "postgres://localhost/loraserver_ns?sslmode=disable") [$POSTGRES_DSN]
+   --db-automigrate                 automatically apply database migrations [$DB_AUTOMIGRATE]
    --as-server value                hostname:port of the application-server api server (optional) (default: "127.0.0.1:8001") [$AS_SERVER]
    --as-ca-cert value               ca certificate used by the application-server client (optional) [$AS_CA_CERT]
    --as-tls-cert value              tls certificate used by the application-server client (optional) [$AS_TLS_CERT]
