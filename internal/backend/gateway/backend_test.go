@@ -31,14 +31,26 @@ func TestBackend(t *testing.T) {
 			defer backend.Close()
 			time.Sleep(time.Millisecond * 100) // give the backend some time to subscribe to the topic
 
-			Convey("Given the MQTT client is subscribed to gateway/+/tx", func() {
+			Convey("Given the MQTT client is subscribed to gateway/+/tx and gateway/+/stats", func() {
+				statsPacketChan := make(chan gw.GatewayStatsPacket)
 				txPacketChan := make(chan gw.TXPacket)
+
 				token := c.Subscribe("gateway/+/tx", 0, func(c mqtt.Client, msg mqtt.Message) {
 					var txPacket gw.TXPacket
 					if err := json.Unmarshal(msg.Payload(), &txPacket); err != nil {
 						t.Fatal(err)
 					}
 					txPacketChan <- txPacket
+				})
+				token.Wait()
+				So(token.Error(), ShouldBeNil)
+
+				token = c.Subscribe("gateway/+/stats", 0, func(c mqtt.Client, msg mqtt.Message) {
+					var statsPacket gw.GatewayStatsPacket
+					if err := json.Unmarshal(msg.Payload(), &statsPacket); err != nil {
+						t.Fatal(err)
+					}
+					statsPacketChan <- statsPacket
 				})
 				token.Wait()
 				So(token.Error(), ShouldBeNil)
@@ -66,6 +78,48 @@ func TestBackend(t *testing.T) {
 						})
 					})
 
+				})
+
+				Convey("Given a GatewayStatsPacket", func() {
+					statsPacket := gw.GatewayStatsPacket{
+						MAC:  lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+						Time: time.Time{}.UTC(),
+					}
+
+					Convey("When sending it once", func() {
+						b, err := json.Marshal(statsPacket)
+						So(err, ShouldBeNil)
+						token := c.Publish("gateway/0102030405060708/stats", 0, false, b)
+						token.Wait()
+						So(token.Error(), ShouldBeNil)
+
+						Convey("Then the same packet is consumed by the backend", func() {
+							packet := <-backend.StatsPacketChan()
+							So(packet, ShouldResemble, statsPacket)
+						})
+					})
+
+					Convey("When sending it twice with the same MAC", func() {
+						for i := 0; i < 2; i++ {
+							b, err := json.Marshal(statsPacket)
+							So(err, ShouldBeNil)
+							token := c.Publish("gateway/0102030405060708/stats", 0, false, b)
+							token.Wait()
+							So(token.Error(), ShouldBeNil)
+						}
+
+						Convey("Then it is received only once by the backend", func() {
+							<-backend.StatsPacketChan()
+
+							var received bool
+							select {
+							case <-backend.StatsPacketChan():
+								received = true
+							case <-time.After(time.Millisecond * 100):
+							}
+							So(received, ShouldBeFalse)
+						})
+					})
 				})
 
 				Convey("Given an RXPacket", func() {
