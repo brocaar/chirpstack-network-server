@@ -5,17 +5,27 @@ dist: trusty
 go:
   - 1.8.x
 
+services:
+  - redis-server
+  - postgresql
+
+addons:
+  postgresql: "9.5"
+
+env:
+  - TEST_POSTGRES_DSN=postgres://postgres@localhost/loraserver?sslmode=disable
+
 before_install:
   - sudo apt-add-repository -y ppa:mosquitto-dev/mosquitto-ppa
   - sudo apt-get -qq update
   - sudo apt-get install -y mosquitto
   - go get github.com/golang/lint/golint
 
+before_script:
+  - psql -c 'create database loraserver;' -U postgres
+
 script:
   - make test
-
-services:
-  - redis-server
 
 before_deploy:
   - rvm --default use system
