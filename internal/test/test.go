@@ -32,7 +32,8 @@ func init() {
 
 // Config contains the test configuration.
 type Config struct {
-	RedisURL string
+	RedisURL    string
+	PostgresDSN string
 }
 
 // GetConfig returns the test configuration.
@@ -40,11 +41,16 @@ func GetConfig() *Config {
 	log.SetLevel(log.ErrorLevel)
 
 	c := &Config{
-		RedisURL: "redis://localhost:6379",
+		RedisURL:    "redis://localhost:6379",
+		PostgresDSN: "postgres://localhost/loraserver_ns_test?sslmode=disable",
 	}
 
 	if v := os.Getenv("TEST_REDIS_URL"); v != "" {
 		c.RedisURL = v
+	}
+
+	if v := os.Getenv("TEST_POSTGRES_DSN"); v != "" {
+		c.PostgresDSN = v
 	}
 
 	return c
@@ -61,8 +67,9 @@ func MustFlushRedis(p *redis.Pool) {
 
 // GatewayBackend is a test gateway backend.
 type GatewayBackend struct {
-	rxPacketChan chan gw.RXPacket
-	TXPacketChan chan gw.TXPacket
+	rxPacketChan    chan gw.RXPacket
+	TXPacketChan    chan gw.TXPacket
+	statsPacketChan chan gw.GatewayStatsPacket
 }
 
 // NewGatewayBackend returns a new GatewayBackend.
@@ -82,6 +89,11 @@ func (b *GatewayBackend) SendTXPacket(txPacket gw.TXPacket) error {
 // RXPacketChan method.
 func (b *GatewayBackend) RXPacketChan() chan gw.RXPacket {
 	return b.rxPacketChan
+}
+
+// StatsPacketChan method.
+func (b *GatewayBackend) StatsPacketChan() chan gw.GatewayStatsPacket {
+	return b.statsPacketChan
 }
 
 // Close method.
