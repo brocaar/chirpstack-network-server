@@ -285,3 +285,8 @@ func SendDataDownResponse(ctx common.Context, ns session.NodeSession, rxPacket m
 
 	return nil
 }
+
+// SendDataDown sends data
+func SendDataDown(ctx common.Context, ns session.NodeSession) error {
+	panic("not implemented")
+}

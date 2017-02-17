@@ -23,6 +23,9 @@ service NetworkServer {
 
 	// EnqueueDataDownMACCommand adds the downlink mac-command to the queue.
 	rpc EnqueueDataDownMACCommand(EnqueueDataDownMACCommandRequest) returns (EnqueueDataDownMACCommandResponse) {}
+
+	// PushDataDown pushes the given downlink payload to the node (only works for Class-C nodes).
+	rpc PushDataDown(PushDataDownRequest) returns (PushDataDownResponse) {}
 }
 
 enum RXWindow {
@@ -209,3 +212,12 @@ message EnqueueDataDownMACCommandRequest {
 }
 
 message EnqueueDataDownMACCommandResponse {}
+
+message PushDataDownRequest {
+	bytes devEUI = 1;
+	bytes data = 2;
+	bool confirmed = 3;
+	uint32 fPort = 4;
+}
+
+message PushDataDownResponse {}

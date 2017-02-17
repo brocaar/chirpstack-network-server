@@ -7,6 +7,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
@@ -200,4 +201,22 @@ func (n *NetworkServerAPI) EnqueueDataDownMACCommand(ctx context.Context, req *n
 		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 	return &ns.EnqueueDataDownMACCommandResponse{}, nil
+}
+
+// PushDataDown pushes the given downlink payload to the node (only works for Class-C nodes).
+func (n *NetworkServerAPI) PushDataDown(ctx context.Context, req *ns.PushDataDownRequest) (*ns.PushDataDownResponse, error) {
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], req.DevEUI)
+
+	sess, err := session.GetNodeSessionByDevEUI(n.ctx.RedisPool, devEUI)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
+	}
+
+	err = downlink.SendDataDown(n.ctx, sess)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, err.Error())
+	}
+
+	return &ns.PushDataDownResponse{}, nil
 }
