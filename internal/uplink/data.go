@@ -198,7 +198,7 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPacket models.RXPacket) 
 
 	// handle downlink (ACK)
 	time.Sleep(common.GetDownlinkDataDelay)
-	if err := downlink.SendDataDownResponse(ctx, ns, rxPacket); err != nil {
+	if err := downlink.SendUplinkResponse(ctx, ns, rxPacket); err != nil {
 		return fmt.Errorf("handling downlink data for node %s failed: %s", ns.DevEUI, err)
 	}
 

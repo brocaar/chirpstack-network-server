@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"time"
 
@@ -18,6 +19,203 @@ import (
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
 )
+
+// DataDownFrameContext describes the context for a downlink frame.
+type DataDownFrameContext struct {
+	// ACK defines if ACK must be set to true (e.g. the frame acknowledges
+	// an uplink frame).
+	ACK bool
+
+	// FPort to use for transmission. This must be set to a value != 0 in case
+	// Data is not empty.
+	FPort uint8
+
+	// MACCommands contains the mac-commands to send (if any). Make sure the
+	// total size fits within the FRMPayload or FPort (depending on if
+	// EncryptMACCommands is set to true).
+	MACCommands []lorawan.MACCommand
+
+	// EncryptMACCommands defines if the mac-commands (if any) must be
+	// encrypted and put in the FRMPayload. Note that it is not possible to
+	// send encrypted mac-commands when FPort is set to a value != 0.
+	EncryptMACCommands bool
+
+	// Confirmed defines if the frame must be send as confirmed-data.
+	Confirmed bool
+
+	// MoreData defines if there is more data pending.
+	MoreData bool
+
+	// Data contains the bytes to send. Note that this requires FPort to be a
+	// value other than 0.
+	Data []byte
+}
+
+// Validate validates the correctness of DataDownFrameContext.
+func (ctx DataDownFrameContext) Validate() error {
+	if ctx.FPort == 0 && len(ctx.Data) > 0 {
+		return errors.New("FPort must be > 0 when sending data payload")
+	}
+
+	if ctx.FPort > 0 && ctx.EncryptMACCommands {
+		return errors.New("FPort must be 0 when EncryptMACCommands = true")
+	}
+
+	return nil
+}
+
+// SendDataDown sends the given data to the gateway for transmission.
+func SendDataDown(ctx common.Context, ns *session.NodeSession, txInfo gw.TXInfo, dataDown DataDownFrameContext) error {
+	if err := dataDown.Validate(); err != nil {
+		return fmt.Errorf("validation error: %s", err)
+	}
+
+	phy := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.UnconfirmedDataDown,
+			Major: lorawan.LoRaWANR1,
+		},
+	}
+	if dataDown.Confirmed {
+		phy.MHDR.MType = lorawan.ConfirmedDataDown
+	}
+
+	macPL := &lorawan.MACPayload{
+		FHDR: lorawan.FHDR{
+			DevAddr: ns.DevAddr,
+			FCtrl: lorawan.FCtrl{
+				ADR:      ns.ADRInterval != 0,
+				ACK:      dataDown.ACK,
+				FPending: dataDown.MoreData,
+			},
+			FCnt: ns.FCntDown,
+		},
+	}
+	phy.MACPayload = macPL
+
+	if len(dataDown.MACCommands) > 0 {
+		if dataDown.EncryptMACCommands {
+			var frmPayload []lorawan.Payload
+			for i := range dataDown.MACCommands {
+				frmPayload = append(frmPayload, &dataDown.MACCommands[i])
+			}
+			macPL.FPort = &dataDown.FPort
+			macPL.FRMPayload = frmPayload
+
+			// encrypt the FRMPayload with the NwkSKey
+			if err := phy.EncryptFRMPayload(ns.NwkSKey); err != nil {
+				return fmt.Errorf("encrypt FRMPayload error: %s", err)
+			}
+		} else {
+			macPL.FHDR.FOpts = dataDown.MACCommands
+		}
+	}
+
+	if dataDown.FPort > 0 {
+		macPL.FPort = &dataDown.FPort
+		macPL.FRMPayload = []lorawan.Payload{
+			&lorawan.DataPayload{Bytes: dataDown.Data},
+		}
+	}
+
+	if err := phy.SetMIC(ns.NwkSKey); err != nil {
+		return fmt.Errorf("set MIC error: %s", err)
+	}
+
+	// send the packet to the gateway
+	if err := ctx.Gateway.SendTXPacket(gw.TXPacket{
+		TXInfo:     txInfo,
+		PHYPayload: phy,
+	}); err != nil {
+		return fmt.Errorf("send tx packet to gateway error: %s", err)
+	}
+
+	// increment the FCntDown when Confirmed = false
+	if !dataDown.Confirmed {
+		ns.FCntDown++
+		if err := session.SaveNodeSession(ctx.RedisPool, *ns); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// SendUplinkResponse sends the data-down response to an uplink packet.
+// A downlink response happens when: there is data in the downlink queue,
+// there are MAC commmands to send and / or when the uplink packet was of
+// type ConfirmedDataUp, so an ACK response is needed.
+func SendUplinkResponse(ctx common.Context, ns session.NodeSession, rxPacket models.RXPacket) error {
+	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
+	if !ok {
+		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
+	}
+
+	// get data down tx properties
+	txInfo, dr, err := getDataDownTXInfoAndDR(ctx, ns, rxPacket.RXInfoSet[0])
+	if err != nil {
+		return fmt.Errorf("get data down txinfo error: %s", err)
+	}
+
+	allowEncryptedMACCommands := true
+	remainingPayloadSize := common.Band.MaxPayloadSize[dr].N
+
+	// get data down from application-server (if it has anything in its queue)
+	txPayload := getDataDownFromApplication(ctx, ns, dr)
+
+	// get mac-commands to fill the remaining payload bytes
+	if txPayload != nil {
+		remainingPayloadSize = remainingPayloadSize - len(txPayload.Data)
+		allowEncryptedMACCommands = false
+	}
+
+	// read mac-commands queue items
+	macQueueItems, encryptMACCommands, pendingMACCommands, err := getAndFilterMACQueueItems(ctx, ns, allowEncryptedMACCommands, remainingPayloadSize)
+	if err != nil {
+		return fmt.Errorf("get mac-commands error: %s", err)
+	}
+	macCommands := macQueueItemsToMACCommands(ctx, ns, macQueueItems)
+
+	ddCTX := DataDownFrameContext{
+		ACK:         rxPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp,
+		MACCommands: macCommands,
+	}
+
+	if txPayload != nil {
+		ddCTX.Confirmed = txPayload.Confirmed
+		ddCTX.MoreData = txPayload.MoreData
+		ddCTX.FPort = uint8(txPayload.FPort)
+		ddCTX.Data = txPayload.Data
+	}
+
+	if pendingMACCommands {
+		ddCTX.MoreData = true
+	}
+
+	if allowEncryptedMACCommands && encryptMACCommands {
+		ddCTX.EncryptMACCommands = true
+	}
+
+	// Uplink was unconfirmed and no downlink data in queue and no mac commands to send.
+	// Note: in case of a ADRACKReq we still need to respond.
+	if txPayload == nil && !ddCTX.ACK && len(ddCTX.MACCommands) == 0 && !macPL.FHDR.FCtrl.ADRACKReq {
+		return nil
+	}
+
+	// send the data to the node
+	if err := SendDataDown(ctx, &ns, txInfo, ddCTX); err != nil {
+		return fmt.Errorf("send data down error: %s", err)
+	}
+
+	// remove the transmitted mac commands from the queue
+	for _, qi := range macQueueItems {
+		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevAddr, qi); err != nil {
+			return fmt.Errorf("delete mac-command queue item from queue error: %s", err)
+		}
+	}
+
+	return nil
+}
 
 func getDataDownTXInfoAndDR(ctx common.Context, ns session.NodeSession, rxInfo gw.RXInfo) (gw.TXInfo, int, error) {
 	var dr int
@@ -117,176 +315,75 @@ func getDataDownFromApplication(ctx common.Context, ns session.NodeSession, dr i
 	return resp
 }
 
-// SendDataDownResponse sends the data-down response to an uplink packet.
-// A downlink response happens when: there is data in the downlink queue,
-// there are MAC commmands to send and / or when the uplink packet was of
-// type ConfirmedDataUp, so an ACK response is needed.
-func SendDataDownResponse(ctx common.Context, ns session.NodeSession, rxPacket models.RXPacket) error {
-	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
-	if !ok {
-		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
-	}
-
-	var frmMACCommands bool
-	var macPayloads []maccommand.QueueItem
-
-	// get data down tx properties
-	txInfo, dr, err := getDataDownTXInfoAndDR(ctx, ns, rxPacket.RXInfoSet[0])
-	if err != nil {
-		return fmt.Errorf("get data down txinfo error: %s", err)
-	}
-
-	// get data down from application-server (if it has anything in its queue)
-	txPayload := getDataDownFromApplication(ctx, ns, dr)
+// getAndFilterMACQueueItems returns the mac-commands to send, based on the constraints:
+// - allowEncrypted: when set to true, the FRMPayload may be used for
+//   (encrypted) mac-commands, else only FOpt mac-commands will be returned
+// - remainingPayloadSize: the number of bytes that are left for mac-commands
+// It returns:
+// - a slice of mac-command queue items
+// - if the mac-commands must be put into FRMPayload
+// - if there are remaining mac-commands in the queue
+func getAndFilterMACQueueItems(ctx common.Context, ns session.NodeSession, allowEncrypted bool, remainingPayloadSize int) ([]maccommand.QueueItem, bool, bool, error) {
+	var encrypted bool
 
 	// read the mac payload queue
-	allMACPayloads, err := maccommand.ReadQueue(ctx.RedisPool, ns.DevAddr)
+	queueItems, err := maccommand.ReadQueue(ctx.RedisPool, ns.DevAddr)
 	if err != nil {
-		return fmt.Errorf("read mac-payload tx queue error: %s", err)
+		return nil, false, false, fmt.Errorf("read mac-payload tx queue error: %s", err)
+	}
+	macCommandQueueSize := len(queueItems)
+
+	// nothing to do
+	if len(queueItems) == 0 {
+		return nil, false, false, nil
 	}
 
-	// get the mac commands from the queue (if any) and filter them so that the
-	// frmpayload + mac commands don't exceed the max macpayload size.
-	if len(allMACPayloads) > 0 {
-		if txPayload != nil {
-			maxFOptsLen := common.Band.MaxPayloadSize[dr].N - len(txPayload.Data)
-			if maxFOptsLen > 15 {
-				maxFOptsLen = 15 // max FOpts len is 15
-			}
-
-			macPayloads = maccommand.FilterItems(allMACPayloads, false, maxFOptsLen)
-		} else if allMACPayloads[0].FRMPayload {
-			// the first mac-commands must be sent as FRMPayload, filter the rest
-			// of the MACPayload items with the same property, respecting the
-			// max FRMPayload size for the data-rate.
-			frmMACCommands = true
-			macPayloads = maccommand.FilterItems(allMACPayloads, true, common.Band.MaxPayloadSize[dr].N)
-		} else {
-			// the first mac-command must be sent as FOpts, filter the rest of
-			// the MACPayload items with the same property, respecting the
-			// max FOpts size of 15.
-			maxFOptsLen := common.Band.MaxPayloadSize[dr].N
-			if maxFOptsLen > 15 {
-				maxFOptsLen = 15 // max FOpts len is 15
-			}
-			macPayloads = maccommand.FilterItems(allMACPayloads, false, maxFOptsLen)
+	// encrypted mac-commands are allowed and the first mac-command in the
+	// queue is marked to be encrypted
+	if allowEncrypted && queueItems[0].FRMPayload {
+		encrypted = true
+		queueItems = maccommand.FilterItems(queueItems, true, remainingPayloadSize)
+	} else {
+		maxFOptsLen := remainingPayloadSize
+		// the LoRaWAN specs define 15 to be the max FOpts size
+		if maxFOptsLen > 15 {
+			maxFOptsLen = 15
 		}
+		queueItems = maccommand.FilterItems(queueItems, false, maxFOptsLen)
 	}
 
-	// convert the MACPayload items into MACCommand items
-	var macCommands []lorawan.MACCommand
-	for _, pl := range macPayloads {
+	return queueItems, encrypted, len(queueItems) != macCommandQueueSize, nil
+}
+
+// macQueueItemsToMACCommands converts a slice of queue items into lorawan
+// mac-command format. When it can't unmarshal the queue item into
+// mac-command, a warning is logged and the network-controller backend
+// is notified.
+func macQueueItemsToMACCommands(ctx common.Context, ns session.NodeSession, items []maccommand.QueueItem) []lorawan.MACCommand {
+	var out []lorawan.MACCommand
+
+	for _, qi := range items {
 		var mac lorawan.MACCommand
-		if err := mac.UnmarshalBinary(false, pl.Data); err != nil {
+		if err := mac.UnmarshalBinary(false, qi.Data); err != nil {
 			// in case the mac commands can't be unmarshaled, the payload
 			// is ignored and an error sent to the network-controller
 			errStr := fmt.Sprintf("unmarshal mac command error: %s", err)
 			log.WithFields(log.Fields{
-				"dev_eui": ns.DevEUI,
-				"command": hex.EncodeToString(pl.Data),
+				"dev_eui":     ns.DevEUI,
+				"command_hex": hex.EncodeToString(qi.Data),
 			}).Warning(errStr)
-			ctx.Controller.HandleError(context.Background(), &nc.HandleErrorRequest{
+			_, err = ctx.Controller.HandleError(context.Background(), &nc.HandleErrorRequest{
 				AppEUI: ns.AppEUI[:],
 				DevEUI: ns.DevEUI[:],
-				Error:  errStr + fmt.Sprintf(" (command: %X)", pl.Data),
+				Error:  errStr + fmt.Sprintf(" (command: %X)", qi.Data),
 			})
+			if err != nil {
+				log.Errorf("call controller handle error method error: %s", err)
+			}
 			continue
 		}
-		macCommands = append(macCommands, mac)
+		out = append(out, mac)
 	}
 
-	// uplink was unconfirmed and no downlink data in queue and no mac commands to send
-	// in case of a ADRACKReq we still need to respond
-	if txPayload == nil && rxPacket.PHYPayload.MHDR.MType == lorawan.UnconfirmedDataUp && len(macCommands) == 0 && !macPL.FHDR.FCtrl.ADRACKReq {
-		return nil
-	}
-
-	phy := lorawan.PHYPayload{
-		MHDR: lorawan.MHDR{
-			MType: lorawan.UnconfirmedDataDown,
-			Major: lorawan.LoRaWANR1,
-		},
-	}
-	macPL = &lorawan.MACPayload{
-		FHDR: lorawan.FHDR{
-			DevAddr: ns.DevAddr,
-			FCtrl: lorawan.FCtrl{
-				ADR:      ns.ADRInterval != 0,
-				ACK:      rxPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp,                           // set ACK when uplink packet was of type ConfirmedDataUp
-				FPending: (txPayload != nil && txPayload.MoreData) || len(allMACPayloads) != len(macPayloads), // items in the queue or not all mac commands being sent
-			},
-			FCnt: ns.FCntDown,
-		},
-	}
-	phy.MACPayload = macPL
-
-	if len(macCommands) > 0 {
-		if frmMACCommands {
-			var fPort uint8 // 0
-			var frmPayload []lorawan.Payload
-			for i := range macCommands {
-				frmPayload = append(frmPayload, &macCommands[i])
-			}
-			macPL.FPort = &fPort
-			macPL.FRMPayload = frmPayload
-
-			// encrypt the FRMPayload with the NwkSKey
-			if err := phy.EncryptFRMPayload(ns.NwkSKey); err != nil {
-				return fmt.Errorf("encrypt FRMPayload error: %s", err)
-			}
-		} else {
-			macPL.FHDR.FOpts = macCommands
-		}
-	}
-
-	// add the payload to FRMPayload field
-	// note that txPayload is by definition nil when there are mac commands
-	// to send in the FRMPayload field.
-	if txPayload != nil {
-		if txPayload.Confirmed {
-			phy.MHDR.MType = lorawan.ConfirmedDataDown
-		}
-
-		fPort := uint8(txPayload.FPort)
-		macPL.FPort = &fPort
-		macPL.FRMPayload = []lorawan.Payload{
-			&lorawan.DataPayload{Bytes: txPayload.Data},
-		}
-	}
-
-	if err := phy.SetMIC(ns.NwkSKey); err != nil {
-		return fmt.Errorf("set MIC error: %s", err)
-	}
-
-	// send the TXPacket to the gateway
-	if err := ctx.Gateway.SendTXPacket(gw.TXPacket{
-		TXInfo:     txInfo,
-		PHYPayload: phy,
-	}); err != nil {
-		return fmt.Errorf("send tx packet to gateway error: %s", err)
-	}
-
-	// increment the FCntDown when MType != ConfirmedDataDown.
-	// In case of ConfirmedDataDown we increment on ACK (handled in uplink).
-	if phy.MHDR.MType != lorawan.ConfirmedDataDown {
-		// increment FCntDown
-		ns.FCntDown++
-		if err = session.SaveNodeSession(ctx.RedisPool, ns); err != nil {
-			return err
-		}
-	}
-
-	// remove the transmitted mac commands from the queue
-	for _, pl := range macPayloads {
-		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevAddr, pl); err != nil {
-			return fmt.Errorf("delete mac-payload from tx queue error: %s", err)
-		}
-	}
-
-	return nil
-}
-
-// SendDataDown sends data
-func SendDataDown(ctx common.Context, ns session.NodeSession) error {
-	panic("not implemented")
+	return out
 }
