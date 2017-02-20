@@ -26,8 +26,8 @@ func init() {
 		panic(err)
 	}
 	common.BandName = band.EU_863_870
-	common.DeduplicationDelay = time.Millisecond
-	common.GetDownlinkDataDelay = time.Millisecond
+	common.DeduplicationDelay = 5 * time.Millisecond
+	common.GetDownlinkDataDelay = 5 * time.Millisecond
 }
 
 // Config contains the test configuration.
