@@ -8,6 +8,7 @@ import (
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
@@ -204,6 +205,12 @@ func runOTAATests(ctx common.Context, tests []otaaTestCase) {
 
 				So(txPacket.PHYPayload.DecryptJoinAcceptPayload(t.AppKey), ShouldBeNil)
 				So(txPacket.PHYPayload, ShouldResemble, t.ExpectedPHYPayload)
+			})
+
+			Convey("Then the expected RXInfoSet has been added to the node-session", func() {
+				ns, err := session.GetNodeSessionByDevEUI(ctx.RedisPool, lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8})
+				So(err, ShouldBeNil)
+				So(ns.LastRXInfoSet, ShouldResemble, []gw.RXInfo{t.RXInfo})
 			})
 		})
 	}

@@ -183,8 +183,13 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPacket models.RXPacket) 
 		}).Warningf("handle adr error: %s", err)
 	}
 
+	// update the RXInfoSet
+	ns.LastRXInfoSet = rxPacket.RXInfoSet
+
 	// sync counter with that of the device + 1
 	ns.FCntUp = macPL.FHDR.FCnt + 1
+
+	// save node-session
 	if err := session.SaveNodeSession(ctx.RedisPool, ns); err != nil {
 		return err
 	}

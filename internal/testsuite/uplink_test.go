@@ -1778,6 +1778,14 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 				So(err, ShouldBeNil)
 				So(macQueue, ShouldResemble, t.ExpectedMACCommandQueue)
 			})
+
+			if t.ExpectedHandleRXPacketError == nil {
+				Convey("Then the expected RSInfoSet has been added to the node-session", func() {
+					ns, err := session.GetNodeSessionByDevEUI(ctx.RedisPool, t.NodeSession.DevEUI)
+					So(err, ShouldBeNil)
+					So(ns.LastRXInfoSet, ShouldResemble, []gw.RXInfo{t.RXInfo})
+				})
+			}
 		})
 	}
 }

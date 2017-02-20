@@ -1,6 +1,9 @@
 package session
 
-import "github.com/brocaar/lorawan"
+import (
+	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/lorawan"
+)
 
 // RXWindow defines the RX window option.
 type RXWindow int8
@@ -58,6 +61,7 @@ type NodeSession struct {
 
 	UplinkHistory []UplinkHistory // contains the last 20 transmissions
 	CFList        *lorawan.CFList
+	LastRXInfoSet []gw.RXInfo
 }
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list

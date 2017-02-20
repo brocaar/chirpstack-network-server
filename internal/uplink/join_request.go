@@ -110,6 +110,7 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPac
 		CFList:             &cFList,
 		ADRInterval:        joinResp.AdrInterval,
 		InstallationMargin: joinResp.InstallationMargin,
+		LastRXInfoSet:      rxPacket.RXInfoSet,
 	}
 
 	if err = session.CreateNodeSession(ctx.RedisPool, ns); err != nil {
