@@ -217,6 +217,10 @@ func (n *NetworkServerAPI) PushDataDown(ctx context.Context, req *ns.PushDataDow
 		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
+	if req.FCnt != sess.FCntDown {
+		return nil, grpc.Errorf(codes.InvalidArgument, "invalid FCnt (expected: %d)", sess.FCntDown)
+	}
+
 	if len(sess.LastRXInfoSet) == 0 {
 		return nil, grpc.Errorf(codes.FailedPrecondition, "no last RX-info set known")
 	}
