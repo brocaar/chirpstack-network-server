@@ -1,0 +1,231 @@
+package testsuite
+
+import (
+	"context"
+	"fmt"
+	"testing"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+
+	. "github.com/smartystreets/goconvey/convey"
+
+	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/api/ns"
+	"github.com/brocaar/loraserver/internal/api"
+	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/lorawan"
+)
+
+type classCTestCase struct {
+	Name                string                        // name of the test
+	PreFunc             func(ns *session.NodeSession) // function to call before running the test
+	NodeSession         session.NodeSession           // node-session in the storage
+	PushDataDownRequest ns.PushDataDownRequest        // class-c push data-down request
+
+	ExpectedPushDataDownError error // expected error returned
+	ExpectedFCntUp            uint32
+	ExpectedFCntDown          uint32
+	ExpectedTXInfo            *gw.TXInfo
+	ExpectedPHYPayload        *lorawan.PHYPayload
+}
+
+func TestClassCScenarios(t *testing.T) {
+	conf := test.GetConfig()
+
+	Convey("Given a clean state", t, func() {
+		p := common.NewRedisPool(conf.RedisURL)
+		test.MustFlushRedis(p)
+
+		ctx := common.Context{
+			RedisPool:   p,
+			Gateway:     test.NewGatewayBackend(),
+			Application: test.NewApplicationClient(),
+		}
+
+		api := api.NewNetworkServerAPI(ctx)
+
+		sess := session.NodeSession{
+			DevAddr:  lorawan.DevAddr{1, 2, 3, 4},
+			DevEUI:   lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+			AppEUI:   lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
+			NwkSKey:  lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:   8,
+			FCntDown: 5,
+			LastRXInfoSet: []gw.RXInfo{
+				{MAC: lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}},
+				{MAC: lorawan.EUI64{2, 1, 2, 1, 2, 1, 2, 1}},
+			},
+			RX2DR: 1,
+		}
+
+		txInfo := gw.TXInfo{
+			MAC:         lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2},
+			Immediately: true,
+			Frequency:   common.Band.RX2Frequency,
+			Power:       common.Band.DefaultTXPower,
+			DataRate:    common.Band.DataRates[sess.RX2DR],
+			CodeRate:    "4/5",
+		}
+
+		fPortTen := uint8(10)
+
+		Convey("Given a set of test-scenarios for Class-C", func() {
+			tests := []classCTestCase{
+				{
+					Name:        "unconfirmed data",
+					NodeSession: sess,
+					PushDataDownRequest: ns.PushDataDownRequest{
+						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
+						Data:      []byte{5, 4, 3, 2, 1},
+						Confirmed: false,
+						FPort:     10,
+					},
+
+					ExpectedFCntUp:   8,
+					ExpectedFCntDown: 6,
+					ExpectedTXInfo:   &txInfo,
+					ExpectedPHYPayload: &lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataDown,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: sess.DevAddr,
+								FCnt:    5,
+								FCtrl:   lorawan.FCtrl{},
+							},
+							FPort: &fPortTen,
+							FRMPayload: []lorawan.Payload{
+								&lorawan.DataPayload{Bytes: []byte{5, 4, 3, 2, 1}},
+							},
+						},
+					},
+				},
+				{
+					Name:        "confirmed data",
+					NodeSession: sess,
+					PushDataDownRequest: ns.PushDataDownRequest{
+						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
+						Data:      []byte{5, 4, 3, 2, 1},
+						Confirmed: true,
+						FPort:     10,
+					},
+
+					ExpectedFCntUp:   8,
+					ExpectedFCntDown: 5,
+					ExpectedTXInfo:   &txInfo,
+					ExpectedPHYPayload: &lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.ConfirmedDataDown,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: sess.DevAddr,
+								FCnt:    5,
+								FCtrl:   lorawan.FCtrl{},
+							},
+							FPort: &fPortTen,
+							FRMPayload: []lorawan.Payload{
+								&lorawan.DataPayload{Bytes: []byte{5, 4, 3, 2, 1}},
+							},
+						},
+					},
+				},
+				// errors
+				{
+					Name:        "maximum payload exceeded",
+					NodeSession: sess,
+					PushDataDownRequest: ns.PushDataDownRequest{
+						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
+						Data:      make([]byte, 300),
+						Confirmed: false,
+						FPort:     10,
+					},
+
+					ExpectedPushDataDownError: grpc.Errorf(codes.InvalidArgument, "maximum payload size exceeded (max: 51)"),
+					ExpectedFCntUp:            8,
+					ExpectedFCntDown:          5,
+				},
+				{
+					Name:        "invalid FPort",
+					NodeSession: sess,
+					PushDataDownRequest: ns.PushDataDownRequest{
+						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
+						Data:      []byte{1, 2, 3, 4, 5},
+						Confirmed: false,
+						FPort:     0,
+					},
+					ExpectedPushDataDownError: grpc.Errorf(codes.InvalidArgument, "validation error: FPort must be > 0 when sending data payload"),
+					ExpectedFCntUp:            8,
+					ExpectedFCntDown:          5,
+				},
+				{
+					Name:        "invalid DevEUI",
+					NodeSession: sess,
+					PushDataDownRequest: ns.PushDataDownRequest{
+						DevEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1, 1},
+						Data:      []byte{1, 2, 3, 4, 5},
+						Confirmed: false,
+						FPort:     10,
+					},
+					ExpectedPushDataDownError: grpc.Errorf(codes.Unknown, "get node-session pointer for node 0101010101010101 error: redigo: nil returned"),
+					ExpectedFCntUp:            8,
+					ExpectedFCntDown:          5,
+				},
+				{
+					Name:        "no last RXInfoSet available",
+					NodeSession: sess,
+					PreFunc: func(ns *session.NodeSession) {
+						ns.LastRXInfoSet = []gw.RXInfo{}
+					},
+					PushDataDownRequest: ns.PushDataDownRequest{
+						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
+						Data:      []byte{1, 2, 3, 4, 5},
+						Confirmed: false,
+						FPort:     10,
+					},
+					ExpectedPushDataDownError: grpc.Errorf(codes.FailedPrecondition, "no last RX-info set known"),
+					ExpectedFCntUp:            8,
+					ExpectedFCntDown:          5,
+				},
+			}
+
+			for i, t := range tests {
+				Convey(fmt.Sprintf("When testing: %s [%d]", t.Name, i), func() {
+					if t.PreFunc != nil {
+						t.PreFunc(&t.NodeSession)
+					}
+
+					// create node-session
+					So(session.CreateNodeSession(ctx.RedisPool, t.NodeSession), ShouldBeNil)
+
+					// push the data
+					_, err := api.PushDataDown(context.Background(), &t.PushDataDownRequest)
+					So(err, ShouldResemble, t.ExpectedPushDataDownError)
+
+					Convey("Then the frame-counters are as expected", func() {
+						sess, err := session.GetNodeSessionByDevEUI(ctx.RedisPool, t.NodeSession.DevEUI)
+						So(err, ShouldBeNil)
+						So(sess.FCntUp, ShouldEqual, t.ExpectedFCntUp)
+						So(sess.FCntDown, ShouldEqual, t.ExpectedFCntDown)
+					})
+
+					if t.ExpectedTXInfo != nil && t.ExpectedPHYPayload != nil {
+						Convey("Then the expected frame was sent", func() {
+							So(ctx.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
+							txPacket := <-ctx.Gateway.(*test.GatewayBackend).TXPacketChan
+							So(&txPacket.TXInfo, ShouldResemble, t.ExpectedTXInfo)
+						})
+					} else {
+						So(ctx.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 0)
+					}
+				})
+			}
+		})
+	})
+}

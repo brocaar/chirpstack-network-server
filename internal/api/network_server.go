@@ -5,12 +5,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
 )
+
+// defaultCodeRate defines the default code rate
+const defaultCodeRate = "4/5"
 
 type NetworkServerAPI struct {
 	ctx common.Context
@@ -204,5 +209,51 @@ func (n *NetworkServerAPI) EnqueueDataDownMACCommand(ctx context.Context, req *n
 
 // PushDataDown pushes the given downlink payload to the node (only works for Class-C nodes).
 func (n *NetworkServerAPI) PushDataDown(ctx context.Context, req *ns.PushDataDownRequest) (*ns.PushDataDownResponse, error) {
-	panic("not implemented")
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], req.DevEUI)
+
+	sess, err := session.GetNodeSessionByDevEUI(n.ctx.RedisPool, devEUI)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
+	}
+
+	if len(sess.LastRXInfoSet) == 0 {
+		return nil, grpc.Errorf(codes.FailedPrecondition, "no last RX-info set known")
+	}
+
+	dr := int(sess.RX2DR)
+	if dr > len(common.Band.DataRates)-1 {
+		return nil, grpc.Errorf(codes.Internal, "invalid dr: %d (max dr: %d)", dr, len(common.Band.DataRates)-1)
+	}
+
+	if len(req.Data) > common.Band.MaxPayloadSize[dr].N {
+		return nil, grpc.Errorf(codes.InvalidArgument, "maximum payload size exceeded (max: %d)", common.Band.MaxPayloadSize[dr].N)
+	}
+
+	txInfo := gw.TXInfo{
+		MAC:         sess.LastRXInfoSet[0].MAC,
+		Immediately: true,
+		Frequency:   int(common.Band.RX2Frequency),
+		Power:       common.Band.DefaultTXPower,
+		DataRate:    common.Band.DataRates[dr],
+		CodeRate:    "4/5",
+	}
+
+	ddCTX := downlink.DataDownFrameContext{
+		FPort:     uint8(req.FPort),
+		Data:      req.Data,
+		Confirmed: req.Confirmed,
+	}
+
+	if err := ddCTX.Validate(); err != nil {
+		return nil, grpc.Errorf(codes.InvalidArgument, "validation error: %s", err)
+	}
+
+	// TODO: add mac-commands
+
+	if err := downlink.SendDataDown(n.ctx, &sess, txInfo, ddCTX); err != nil {
+		return nil, grpc.Errorf(codes.Internal, err.Error())
+	}
+
+	return &ns.PushDataDownResponse{}, nil
 }

@@ -61,7 +61,7 @@ type NodeSession struct {
 
 	UplinkHistory []UplinkHistory // contains the last 20 transmissions
 	CFList        *lorawan.CFList
-	LastRXInfoSet []gw.RXInfo
+	LastRXInfoSet []gw.RXInfo // sorted set (best at index 0)
 }
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list
