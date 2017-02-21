@@ -1,6 +1,11 @@
 # Changelog
 
-## Development
+## 0.14.0
+
+**Features:**
+
+* Class C support. When a node is configured as Class-C device, downlink data
+  can be pushed to it using the `NetworkServer.PushDataDown` API method.
 
 **Changes:**
 
