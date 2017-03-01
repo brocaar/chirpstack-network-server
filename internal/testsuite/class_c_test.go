@@ -14,6 +14,7 @@ import (
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
@@ -24,12 +25,14 @@ type classCTestCase struct {
 	PreFunc             func(ns *session.NodeSession) // function to call before running the test
 	NodeSession         session.NodeSession           // node-session in the storage
 	PushDataDownRequest ns.PushDataDownRequest        // class-c push data-down request
+	MACCommandQueue     []maccommand.QueueItem        // downlink mac-command queue
 
 	ExpectedPushDataDownError error // expected error returned
 	ExpectedFCntUp            uint32
 	ExpectedFCntDown          uint32
 	ExpectedTXInfo            *gw.TXInfo
 	ExpectedPHYPayload        *lorawan.PHYPayload
+	ExpectedMACCommandQueue   []maccommand.QueueItem
 }
 
 func TestClassCScenarios(t *testing.T) {
@@ -138,6 +141,44 @@ func TestClassCScenarios(t *testing.T) {
 						},
 					},
 				},
+				{
+					Name:        "mac-commands in the queue",
+					NodeSession: sess,
+					MACCommandQueue: []maccommand.QueueItem{
+						{DevEUI: sess.DevEUI, Data: []byte{6}},
+						{DevEUI: sess.DevEUI, Data: []byte{8, 3}},
+					},
+					PushDataDownRequest: ns.PushDataDownRequest{
+						DevEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+						Data:   []byte{5, 4, 3, 2, 1},
+						FPort:  10,
+						FCnt:   5,
+					},
+					ExpectedFCntUp:   8,
+					ExpectedFCntDown: 6,
+					ExpectedTXInfo:   &txInfo,
+					ExpectedPHYPayload: &lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataDown,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: sess.DevAddr,
+								FCnt:    5,
+								FCtrl:   lorawan.FCtrl{},
+								FOpts: []lorawan.MACCommand{
+									{CID: lorawan.CID(6)},
+									{CID: lorawan.CID(8), Payload: &lorawan.RXTimingSetupReqPayload{Delay: 3}},
+								},
+							},
+							FPort: &fPortTen,
+							FRMPayload: []lorawan.Payload{
+								&lorawan.DataPayload{Bytes: []byte{5, 4, 3, 2, 1}},
+							},
+						},
+					},
+				},
 				// errors
 				{
 					Name:        "maximum payload exceeded",
@@ -150,7 +191,7 @@ func TestClassCScenarios(t *testing.T) {
 						FCnt:      5,
 					},
 
-					ExpectedPushDataDownError: grpc.Errorf(codes.InvalidArgument, "maximum payload size exceeded (max: 51)"),
+					ExpectedPushDataDownError: grpc.Errorf(codes.InvalidArgument, "maximum payload size exceeded"),
 					ExpectedFCntUp:            8,
 					ExpectedFCntDown:          5,
 				},
@@ -164,7 +205,7 @@ func TestClassCScenarios(t *testing.T) {
 						FPort:     0,
 						FCnt:      5,
 					},
-					ExpectedPushDataDownError: grpc.Errorf(codes.InvalidArgument, "validation error: FPort must be > 0 when sending data payload"),
+					ExpectedPushDataDownError: grpc.Errorf(codes.InvalidArgument, "FPort must not be 0"),
 					ExpectedFCntUp:            8,
 					ExpectedFCntDown:          5,
 				},
@@ -195,7 +236,7 @@ func TestClassCScenarios(t *testing.T) {
 						FPort:     10,
 						FCnt:      5,
 					},
-					ExpectedPushDataDownError: grpc.Errorf(codes.FailedPrecondition, "no last RX-info set known"),
+					ExpectedPushDataDownError: grpc.Errorf(codes.FailedPrecondition, "no last RX-Info set available"),
 					ExpectedFCntUp:            8,
 					ExpectedFCntDown:          5,
 				},
@@ -224,6 +265,11 @@ func TestClassCScenarios(t *testing.T) {
 					// create node-session
 					So(session.CreateNodeSession(ctx.RedisPool, t.NodeSession), ShouldBeNil)
 
+					// mac mac-command queue items
+					for _, qi := range t.MACCommandQueue {
+						So(maccommand.AddToQueue(ctx.RedisPool, qi), ShouldBeNil)
+					}
+
 					// push the data
 					_, err := api.PushDataDown(context.Background(), &t.PushDataDownRequest)
 					So(err, ShouldResemble, t.ExpectedPushDataDownError)
@@ -244,6 +290,12 @@ func TestClassCScenarios(t *testing.T) {
 					} else {
 						So(ctx.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 0)
 					}
+
+					Convey("Then the mac-command queue contains the expected items", func() {
+						items, err := maccommand.ReadQueue(ctx.RedisPool, t.NodeSession.DevAddr)
+						So(err, ShouldBeNil)
+						So(items, ShouldResemble, t.ExpectedMACCommandQueue)
+					})
 				})
 			}
 		})

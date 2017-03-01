@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
@@ -54,11 +54,11 @@ type DataDownFrameContext struct {
 // Validate validates the correctness of DataDownFrameContext.
 func (ctx DataDownFrameContext) Validate() error {
 	if ctx.FPort == 0 && len(ctx.Data) > 0 {
-		return errors.New("FPort must be > 0 when sending data payload")
+		return ErrFPortMustNotBeZero
 	}
 
 	if ctx.FPort > 0 && ctx.EncryptMACCommands {
-		return errors.New("FPort must be 0 when EncryptMACCommands = true")
+		return ErrFPortMustBeZero
 	}
 
 	return nil
@@ -67,7 +67,7 @@ func (ctx DataDownFrameContext) Validate() error {
 // SendDataDown sends the given data to the gateway for transmission.
 func SendDataDown(ctx common.Context, ns *session.NodeSession, txInfo gw.TXInfo, dataDown DataDownFrameContext) error {
 	if err := dataDown.Validate(); err != nil {
-		return fmt.Errorf("validation error: %s", err)
+		return errors.Wrap(err, "validation error")
 	}
 
 	phy := lorawan.PHYPayload{
@@ -104,7 +104,7 @@ func SendDataDown(ctx common.Context, ns *session.NodeSession, txInfo gw.TXInfo,
 
 			// encrypt the FRMPayload with the NwkSKey
 			if err := phy.EncryptFRMPayload(ns.NwkSKey); err != nil {
-				return fmt.Errorf("encrypt FRMPayload error: %s", err)
+				return errors.Wrap(err, "encrypt FRMPayload error")
 			}
 		} else {
 			macPL.FHDR.FOpts = dataDown.MACCommands
@@ -119,7 +119,7 @@ func SendDataDown(ctx common.Context, ns *session.NodeSession, txInfo gw.TXInfo,
 	}
 
 	if err := phy.SetMIC(ns.NwkSKey); err != nil {
-		return fmt.Errorf("set MIC error: %s", err)
+		return errors.Wrap(err, "set MIC error")
 	}
 
 	// send the packet to the gateway
@@ -127,14 +127,67 @@ func SendDataDown(ctx common.Context, ns *session.NodeSession, txInfo gw.TXInfo,
 		TXInfo:     txInfo,
 		PHYPayload: phy,
 	}); err != nil {
-		return fmt.Errorf("send tx packet to gateway error: %s", err)
+		return errors.Wrap(err, "send tx packet to gateway error")
 	}
 
 	// increment the FCntDown when Confirmed = false
 	if !dataDown.Confirmed {
 		ns.FCntDown++
 		if err := session.SaveNodeSession(ctx.RedisPool, *ns); err != nil {
-			return err
+			return errors.Wrap(err, "save node-session error")
+		}
+	}
+
+	return nil
+}
+
+// HandlePushDataDown handles requests to push data to a given node.
+func HandlePushDataDown(ctx common.Context, ns session.NodeSession, confirmed bool, fPort uint8, data []byte) error {
+	if len(ns.LastRXInfoSet) == 0 {
+		return ErrNoLastRXInfoSet
+	}
+
+	dr := int(ns.RX2DR)
+	if dr > len(common.Band.DataRates)-1 {
+		return errors.Wrapf(ErrInvalidDataRate, "dr: %d (max dr: %d)", dr, len(common.Band.DataRates)-1)
+	}
+
+	remainingPayloadSize := common.Band.MaxPayloadSize[dr].N
+	if len(data) > remainingPayloadSize {
+		return errors.Wrapf(ErrMaxPayloadSizeExceeded, "(max: %d)", remainingPayloadSize)
+	}
+	remainingPayloadSize = remainingPayloadSize - len(data)
+
+	macQueueItems, _, _, err := getAndFilterMACQueueItems(ctx, ns, false, remainingPayloadSize)
+	if err != nil {
+		return errors.Wrap(err, "get mac-commands error")
+	}
+	macCommands := macQueueItemsToMACCommands(ctx, ns, macQueueItems)
+
+	txInfo := gw.TXInfo{
+		MAC:         ns.LastRXInfoSet[0].MAC,
+		Immediately: true,
+		Frequency:   int(common.Band.RX2Frequency),
+		Power:       common.Band.DefaultTXPower,
+		DataRate:    common.Band.DataRates[dr],
+		CodeRate:    "4/5",
+	}
+
+	ddCTX := DataDownFrameContext{
+		FPort:       fPort,
+		Data:        data,
+		Confirmed:   confirmed,
+		MACCommands: macCommands,
+	}
+
+	if err := SendDataDown(ctx, &ns, txInfo, ddCTX); err != nil {
+		return errors.Wrap(err, "send data down error")
+	}
+
+	// remove the transmitted mac commands from the queue
+	for _, qi := range macQueueItems {
+		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevAddr, qi); err != nil {
+			return errors.Wrap(err, "delete mac-command queue item error")
 		}
 	}
 

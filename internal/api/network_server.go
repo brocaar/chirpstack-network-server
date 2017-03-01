@@ -5,7 +5,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/downlink"
@@ -214,49 +213,16 @@ func (n *NetworkServerAPI) PushDataDown(ctx context.Context, req *ns.PushDataDow
 
 	sess, err := session.GetNodeSessionByDevEUI(n.ctx.RedisPool, devEUI)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Unknown, err.Error())
+		return nil, errToRPCError(err)
 	}
 
 	if req.FCnt != sess.FCntDown {
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid FCnt (expected: %d)", sess.FCntDown)
 	}
 
-	if len(sess.LastRXInfoSet) == 0 {
-		return nil, grpc.Errorf(codes.FailedPrecondition, "no last RX-info set known")
-	}
-
-	dr := int(sess.RX2DR)
-	if dr > len(common.Band.DataRates)-1 {
-		return nil, grpc.Errorf(codes.Internal, "invalid dr: %d (max dr: %d)", dr, len(common.Band.DataRates)-1)
-	}
-
-	if len(req.Data) > common.Band.MaxPayloadSize[dr].N {
-		return nil, grpc.Errorf(codes.InvalidArgument, "maximum payload size exceeded (max: %d)", common.Band.MaxPayloadSize[dr].N)
-	}
-
-	txInfo := gw.TXInfo{
-		MAC:         sess.LastRXInfoSet[0].MAC,
-		Immediately: true,
-		Frequency:   int(common.Band.RX2Frequency),
-		Power:       common.Band.DefaultTXPower,
-		DataRate:    common.Band.DataRates[dr],
-		CodeRate:    "4/5",
-	}
-
-	ddCTX := downlink.DataDownFrameContext{
-		FPort:     uint8(req.FPort),
-		Data:      req.Data,
-		Confirmed: req.Confirmed,
-	}
-
-	if err := ddCTX.Validate(); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "validation error: %s", err)
-	}
-
-	// TODO: add mac-commands
-
-	if err := downlink.SendDataDown(n.ctx, &sess, txInfo, ddCTX); err != nil {
-		return nil, grpc.Errorf(codes.Internal, err.Error())
+	err = downlink.HandlePushDataDown(n.ctx, sess, req.Confirmed, uint8(req.FPort), req.Data)
+	if err != nil {
+		return nil, errToRPCError(err)
 	}
 
 	return &ns.PushDataDownResponse{}, nil

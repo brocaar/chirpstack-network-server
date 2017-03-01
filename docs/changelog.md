@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.1
+
+**Bugfixes:**
+
+* Add mac-commands (if any) to LoRaWAN frame for Class-C transmissions.
+
 ## 0.14.0
 
 **Features:**
