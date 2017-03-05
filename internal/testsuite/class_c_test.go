@@ -219,7 +219,7 @@ func TestClassCScenarios(t *testing.T) {
 						FPort:     10,
 						FCnt:      5,
 					},
-					ExpectedPushDataDownError: grpc.Errorf(codes.Unknown, "get node-session pointer for node 0101010101010101 error: redigo: nil returned"),
+					ExpectedPushDataDownError: grpc.Errorf(codes.Unknown, "get node-session 0101010101010101 error: redigo: nil returned"),
 					ExpectedFCntUp:            8,
 					ExpectedFCntDown:          5,
 				},
@@ -263,7 +263,7 @@ func TestClassCScenarios(t *testing.T) {
 					}
 
 					// create node-session
-					So(session.CreateNodeSession(ctx.RedisPool, t.NodeSession), ShouldBeNil)
+					So(session.SaveNodeSession(ctx.RedisPool, t.NodeSession), ShouldBeNil)
 
 					// mac mac-command queue items
 					for _, qi := range t.MACCommandQueue {
