@@ -100,9 +100,9 @@ func TestNodeSession(t *testing.T) {
 			}
 
 			Convey("When getting a non-existing NodeSession", func() {
-				_, err := GetNodeSession(p, ns.DevAddr)
+				_, err := GetNodeSession(p, ns.DevEUI)
 				Convey("Then an error is returned", func() {
-					So(err, ShouldResemble, errors.New("node-session for 01020304 does not exist"))
+					So(err, ShouldResemble, errors.New("get node-session 0102030405060708 error: redigo: nil returned"))
 				})
 			})
 
@@ -126,7 +126,7 @@ func TestNodeSession(t *testing.T) {
 				})
 
 				Convey("Then the session can be retrieved by it's DevEUI", func() {
-					ns2, err := GetNodeSessionByDevEUI(p, ns.DevEUI)
+					ns2, err := GetNodeSession(p, ns.DevEUI)
 					So(err, ShouldBeNil)
 					So(ns2, ShouldResemble, ns)
 				})
@@ -285,7 +285,7 @@ func TestGetNodeSessionForPHYPayload(t *testing.T) {
 
 					// "refresh" the ns, to test if the FCnt has been updated
 					// in case of a frame counter reset
-					ns, err = GetNodeSessionByDevEUI(p, ns.DevEUI)
+					ns, err = GetNodeSession(p, ns.DevEUI)
 					So(err, ShouldBeNil)
 
 					So(ns.DevEUI, ShouldResemble, test.ExpectedDevEUI)

@@ -83,7 +83,7 @@ func (n *NetworkServerAPI) GetNodeSession(ctx context.Context, req *ns.GetNodeSe
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	sess, err := session.GetNodeSessionByDevEUI(n.ctx.RedisPool, devEUI)
+	sess, err := session.GetNodeSession(n.ctx.RedisPool, devEUI)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
@@ -122,7 +122,7 @@ func (n *NetworkServerAPI) UpdateNodeSession(ctx context.Context, req *ns.Update
 	copy(devEUI[:], req.DevEUI)
 	copy(appEUI[:], req.AppEUI)
 
-	sess, err := session.GetNodeSession(n.ctx.RedisPool, devAddr)
+	sess, err := session.GetNodeSession(n.ctx.RedisPool, devEUI)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
@@ -181,7 +181,7 @@ func (n *NetworkServerAPI) DeleteNodeSession(ctx context.Context, req *ns.Delete
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	sess, err := session.GetNodeSessionByDevEUI(n.ctx.RedisPool, devEUI)
+	sess, err := session.GetNodeSession(n.ctx.RedisPool, devEUI)
 	if err != nil {
 		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
@@ -223,7 +223,7 @@ func (n *NetworkServerAPI) PushDataDown(ctx context.Context, req *ns.PushDataDow
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	sess, err := session.GetNodeSessionByDevEUI(n.ctx.RedisPool, devEUI)
+	sess, err := session.GetNodeSession(n.ctx.RedisPool, devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}

@@ -208,7 +208,7 @@ func runOTAATests(ctx common.Context, tests []otaaTestCase) {
 			})
 
 			Convey("Then the expected RXInfoSet has been added to the node-session", func() {
-				ns, err := session.GetNodeSessionByDevEUI(ctx.RedisPool, lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8})
+				ns, err := session.GetNodeSession(ctx.RedisPool, lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8})
 				So(err, ShouldBeNil)
 				So(ns.LastRXInfoSet, ShouldResemble, []gw.RXInfo{t.RXInfo})
 			})

@@ -43,6 +43,7 @@ func validateAndCollectDataUpRXPacket(ctx common.Context, rxPacket gw.RXPacket) 
 	}
 
 	return collectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
+		rxPacket.DevEUI = ns.DevEUI
 		return handleCollectedDataUpPackets(ctx, rxPacket)
 	})
 }
@@ -58,7 +59,7 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPacket models.RXPacket) 
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
 	}
 
-	ns, err := session.GetNodeSession(ctx.RedisPool, macPL.FHDR.DevAddr)
+	ns, err := session.GetNodeSession(ctx.RedisPool, rxPacket.DevEUI)
 	if err != nil {
 		return err
 	}

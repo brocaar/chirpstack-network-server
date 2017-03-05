@@ -94,30 +94,6 @@ func SaveNodeSession(p *redis.Pool, s NodeSession) error {
 	return nil
 }
 
-// GetNodeSession returns the NodeSession for the given DevAddr.
-// TODO: remove this method
-func GetNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) (NodeSession, error) {
-	var ns NodeSession
-
-	c := p.Get()
-	defer c.Close()
-
-	// get DevEUI set for DevAddr
-	val, err := redis.ByteSlices(c.Do("SMEMBERS", fmt.Sprintf(devAddrKeyTempl, devAddr)))
-	if err != nil {
-		return ns, fmt.Errorf("get DevEUI set for DevAddr %s error: %s", devAddr, err)
-	}
-
-	if len(val) == 0 {
-		return ns, fmt.Errorf("node-session for %s does not exist", devAddr)
-	}
-
-	var devEUI lorawan.EUI64
-	copy(devEUI[:], val[0])
-
-	return GetNodeSessionByDevEUI(p, devEUI)
-}
-
 // GetNodeSessionsForDevAddr returns a slice of NodeSession items using the
 // given DevAddr. When no NodeSession is using the given DevAddr, this returns
 // an empty slice without error.
@@ -136,7 +112,7 @@ func GetNodeSessionsForDevAddr(p *redis.Pool, devAddr lorawan.DevAddr) ([]NodeSe
 		var devEUI lorawan.EUI64
 		copy(devEUI[:], b)
 
-		ns, err := GetNodeSessionByDevEUI(p, devEUI)
+		ns, err := GetNodeSession(p, devEUI)
 		if err != nil {
 			// TODO: in case not found, remove the DevEUI from the list
 			log.WithFields(log.Fields{
@@ -214,8 +190,8 @@ func GetNodeSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload) (NodeSes
 	return NodeSession{}, fmt.Errorf("node-session does not exist or invalid fcnt or mic")
 }
 
-// GetNodeSessionByDevEUI returns the NodeSession for the given DevEUI.
-func GetNodeSessionByDevEUI(p *redis.Pool, devEUI lorawan.EUI64) (NodeSession, error) {
+// GetNodeSession returns the NodeSession for the given DevEUI.
+func GetNodeSession(p *redis.Pool, devEUI lorawan.EUI64) (NodeSession, error) {
 	var ns NodeSession
 
 	c := p.Get()

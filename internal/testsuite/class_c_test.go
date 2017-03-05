@@ -275,7 +275,7 @@ func TestClassCScenarios(t *testing.T) {
 					So(err, ShouldResemble, t.ExpectedPushDataDownError)
 
 					Convey("Then the frame-counters are as expected", func() {
-						sess, err := session.GetNodeSessionByDevEUI(ctx.RedisPool, t.NodeSession.DevEUI)
+						sess, err := session.GetNodeSession(ctx.RedisPool, t.NodeSession.DevEUI)
 						So(err, ShouldBeNil)
 						So(sess.FCntUp, ShouldEqual, t.ExpectedFCntUp)
 						So(sess.FCntDown, ShouldEqual, t.ExpectedFCntDown)

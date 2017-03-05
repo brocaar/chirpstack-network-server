@@ -12,6 +12,7 @@ const maxSNRForSort = 5.0
 // RXPacket defines a received PHYPayload together with its rx metadata
 // (rx information from all the receiving gateways).
 type RXPacket struct {
+	DevEUI     lorawan.EUI64
 	PHYPayload lorawan.PHYPayload
 	RXInfoSet  RXInfoSet
 }

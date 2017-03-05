@@ -1734,7 +1734,7 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 
 			// node session validations
 			Convey("Then the frame-counters are as expected", func() {
-				ns, err := session.GetNodeSessionByDevEUI(ctx.RedisPool, t.NodeSession.DevEUI)
+				ns, err := session.GetNodeSession(ctx.RedisPool, t.NodeSession.DevEUI)
 				So(err, ShouldBeNil)
 				So(ns.FCntDown, ShouldEqual, t.ExpectedFCntDown)
 				So(ns.FCntUp, ShouldEqual, t.ExpectedFCntUp)
@@ -1742,7 +1742,7 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 
 			// ADR variables validations
 			Convey("Then the TXPower and NbTrans are as expected", func() {
-				ns, err := session.GetNodeSessionByDevEUI(ctx.RedisPool, t.NodeSession.DevEUI)
+				ns, err := session.GetNodeSession(ctx.RedisPool, t.NodeSession.DevEUI)
 				So(err, ShouldBeNil)
 				So(ns.TXPower, ShouldEqual, t.ExpectedTXPower)
 				So(ns.NbTrans, ShouldEqual, t.ExpectedNbTrans)
@@ -1757,7 +1757,7 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 
 			if t.ExpectedHandleRXPacketError == nil {
 				Convey("Then the expected RSInfoSet has been added to the node-session", func() {
-					ns, err := session.GetNodeSessionByDevEUI(ctx.RedisPool, t.NodeSession.DevEUI)
+					ns, err := session.GetNodeSession(ctx.RedisPool, t.NodeSession.DevEUI)
 					So(err, ShouldBeNil)
 					So(ns.LastRXInfoSet, ShouldResemble, []gw.RXInfo{t.RXInfo})
 				})
