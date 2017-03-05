@@ -1750,7 +1750,7 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 
 			// queue validations
 			Convey("Then the mac-command queue is as expected", func() {
-				macQueue, err := maccommand.ReadQueue(ctx.RedisPool, t.NodeSession.DevAddr)
+				macQueue, err := maccommand.ReadQueue(ctx.RedisPool, t.NodeSession.DevEUI)
 				So(err, ShouldBeNil)
 				So(macQueue, ShouldResemble, t.ExpectedMACCommandQueue)
 			})

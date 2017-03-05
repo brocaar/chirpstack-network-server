@@ -12,6 +12,7 @@ import (
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/downlink"
+	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
@@ -114,7 +115,11 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPac
 	}
 
 	if err = session.SaveNodeSession(ctx.RedisPool, ns); err != nil {
-		return fmt.Errorf("create node-session error: %s", err)
+		return fmt.Errorf("save node-session error: %s", err)
+	}
+
+	if err = maccommand.FlushQueue(ctx.RedisPool, ns.DevEUI); err != nil {
+		return fmt.Errorf("flush mac-command queue error: %s", err)
 	}
 
 	if err = downlink.SendJoinAcceptResponse(ctx, ns, rxPacket, downlinkPHY); err != nil {

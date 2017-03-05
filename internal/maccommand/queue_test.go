@@ -37,16 +37,16 @@ func TestQueue(t *testing.T) {
 				So(AddToQueue(p, b), ShouldBeNil)
 
 				Convey("Then reading the queue returns both mac-payloads in the correct order", func() {
-					payloads, err := ReadQueue(p, ns.DevAddr)
+					payloads, err := ReadQueue(p, ns.DevEUI)
 					So(err, ShouldBeNil)
 					So(payloads, ShouldResemble, []QueueItem{a, b})
 				})
 
 				Convey("When deleting mac-command a", func() {
-					So(DeleteQueueItem(p, ns.DevAddr, a), ShouldBeNil)
+					So(DeleteQueueItem(p, ns.DevEUI, a), ShouldBeNil)
 
 					Convey("Then only mac-command b is in the queue", func() {
-						payloads, err := ReadQueue(p, ns.DevAddr)
+						payloads, err := ReadQueue(p, ns.DevEUI)
 						So(err, ShouldBeNil)
 						So(payloads, ShouldResemble, []QueueItem{b})
 					})

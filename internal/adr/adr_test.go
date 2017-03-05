@@ -317,7 +317,7 @@ func TestADR(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(tst.NodeSession, ShouldResemble, &tst.ExpectedNodeSession)
 
-						macPayloadQueue, err := maccommand.ReadQueue(p, tst.NodeSession.DevAddr)
+						macPayloadQueue, err := maccommand.ReadQueue(p, tst.NodeSession.DevEUI)
 						So(err, ShouldBeNil)
 						So(macPayloadQueue, ShouldResemble, tst.ExpectedMACPayloadQueue)
 

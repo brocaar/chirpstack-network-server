@@ -186,7 +186,7 @@ func HandlePushDataDown(ctx common.Context, ns session.NodeSession, confirmed bo
 
 	// remove the transmitted mac commands from the queue
 	for _, qi := range macQueueItems {
-		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevAddr, qi); err != nil {
+		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevEUI, qi); err != nil {
 			return errors.Wrap(err, "delete mac-command queue item error")
 		}
 	}
@@ -262,7 +262,7 @@ func SendUplinkResponse(ctx common.Context, ns session.NodeSession, rxPacket mod
 
 	// remove the transmitted mac commands from the queue
 	for _, qi := range macQueueItems {
-		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevAddr, qi); err != nil {
+		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevEUI, qi); err != nil {
 			return fmt.Errorf("delete mac-command queue item from queue error: %s", err)
 		}
 	}
@@ -380,7 +380,7 @@ func getAndFilterMACQueueItems(ctx common.Context, ns session.NodeSession, allow
 	var encrypted bool
 
 	// read the mac payload queue
-	queueItems, err := maccommand.ReadQueue(ctx.RedisPool, ns.DevAddr)
+	queueItems, err := maccommand.ReadQueue(ctx.RedisPool, ns.DevEUI)
 	if err != nil {
 		return nil, false, false, fmt.Errorf("read mac-payload tx queue error: %s", err)
 	}

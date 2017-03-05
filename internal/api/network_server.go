@@ -71,6 +71,10 @@ func (n *NetworkServerAPI) CreateNodeSession(ctx context.Context, req *ns.Create
 		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 
+	if err := maccommand.FlushQueue(n.ctx.RedisPool, sess.DevEUI); err != nil {
+		return nil, grpc.Errorf(codes.Unknown, err.Error())
+	}
+
 	return &ns.CreateNodeSessionResponse{}, nil
 }
 
