@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.15.0
+
+**Features:**
+
+* Node-sessions are now stored by `DevEUI`. Before the node-sessions were stored
+  by `DevAddr`. In case a single `DevAddr` is used by multiple nodes, the
+  `NwkSKey` is used for retrieving the corresponding node-session.
+
+*Note:* Data will be automatically migrated into the new format. As this process
+is not reversible it is recommended to make a backup of the Redis database before
+upgrading.
+
 ## 0.14.1
 
 **Bugfixes:**
