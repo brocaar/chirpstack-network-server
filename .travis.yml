@@ -28,6 +28,8 @@ script:
   - make test
 
 before_deploy:
+  - make statics
+
   - rvm --default use system
   - sudo apt-get install -y python-pip ruby ruby-dev
   - sudo pip install -r requirements.txt

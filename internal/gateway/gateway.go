@@ -36,15 +36,13 @@ func (l *GPSPoint) Scan(src interface{}) error {
 
 // Gateway represents a single gateway.
 type Gateway struct {
-	MAC                 lorawan.EUI64 `db:"mac"`
-	CratedAt            time.Time     `db:"created_at"`
-	UpdatedAt           time.Time     `db:"updated_at"`
-	Location            GPSPoint      `db:"location"`
-	Altitude            int           `db:"altitude"`
-	RXPacketsReceived   int64         `db:"rx_packets_received"`
-	RXPacketsReceivedOK int64         `db:"rx_packets_received_ok"`
-	TXPacketsReceived   int64         `db:"tx_packets_received"`
-	TXPacketsEmitted    int64         `db:"tx_packets_emitted"`
+	MAC         lorawan.EUI64 `db:"mac"`
+	CreatedAt   time.Time     `db:"created_at"`
+	UpdatedAt   time.Time     `db:"updated_at"`
+	FirstSeenAt *time.Time    `db:"first_seen_at"`
+	LastSeenAt  *time.Time    `db:"last_seen_at"`
+	Location    GPSPoint      `db:"location"`
+	Altitude    *int          `db:"altitude"`
 }
 
 // CreateGateway creates the given gateway.
@@ -55,26 +53,22 @@ func CreateGateway(db *sqlx.DB, gw *Gateway) error {
 			mac,
 			created_at,
 			updated_at,
+			first_seen_at,
+			last_seen_at,
 			location,
-			altitude,
-			rx_packets_received,
-			rx_packets_received_ok,
-			tx_packets_received,
-			tx_packets_emitted
-		) values ($1, $2, $2, $3, $4, $5, $6, $7, $8)`,
+			altitude
+		) values ($1, $2, $2, $3, $4, $5, $6)`,
 		gw.MAC[:],
 		now,
+		gw.FirstSeenAt,
+		gw.LastSeenAt,
 		gw.Location,
 		gw.Altitude,
-		gw.RXPacketsReceived,
-		gw.RXPacketsReceivedOK,
-		gw.TXPacketsReceived,
-		gw.TXPacketsEmitted,
 	)
 	if err != nil {
 		return fmt.Errorf("create gateway error: %s", err)
 	}
-	gw.CratedAt = now
+	gw.CreatedAt = now
 	gw.UpdatedAt = now
 	log.WithField("mac", gw.MAC).Info("gateway created")
 	return nil
@@ -96,21 +90,17 @@ func UpdateGateway(db *sqlx.DB, gw *Gateway) error {
 	res, err := db.Exec(`
 		update gateway set
 			updated_at = $2,
-			location = $3,
-			altitude = $4,
-			rx_packets_received = $5,
-			rx_packets_received_ok = $6,
-			tx_packets_received = $7,
-			tx_packets_emitted = $8
+			first_seen_at = $3,
+			last_seen_at = $4,
+			location = $5,
+			altitude = $6
 		where mac = $1`,
 		gw.MAC[:],
 		now,
+		gw.FirstSeenAt,
+		gw.LastSeenAt,
 		gw.Location,
 		gw.Altitude,
-		gw.RXPacketsReceived,
-		gw.RXPacketsReceivedOK,
-		gw.TXPacketsReceived,
-		gw.TXPacketsEmitted,
 	)
 	if err != nil {
 		return fmt.Errorf("update gateway error: %s", err)
