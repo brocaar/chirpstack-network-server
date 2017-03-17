@@ -1,4 +1,4 @@
-.PHONY: build clean test package serve update-vendor
+.PHONY: build clean test package serve update-vendor api statics
 PKGS := $(shell go list ./... | grep -v /vendor/ |grep -v /api | grep -v /migrations | grep -v /static)
 VERSION := $(shell git describe --always)
 GOOS ?= linux
@@ -13,7 +13,7 @@ clean:
 	@echo "Cleaning up workspace"
 	@rm -rf build
 
-test:
+test: statics
 	@echo "Running tests"
 	@for pkg in $(PKGS) ; do \
 		golint $$pkg ; \
@@ -31,11 +31,15 @@ package: clean build
 package-deb:
 	@cd packaging && TARGET=deb ./package.sh
 
-generate:
-	@echo "Running go generate"
+api:
+	@echo "Generating API code from .proto files"
 	@go generate api/as/as.go
 	@go generate api/nc/nc.go
 	@go generate api/ns/ns.go
+
+statics:
+	@echo "Generating static files"
+	@go generate cmd/loraserver/main.go
 
 requirements:
 	@go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
