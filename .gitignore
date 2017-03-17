@@ -10,6 +10,7 @@ Vagrantfile
 # certs
 certs/
 
-# binaries
+# builds
 dist/
 build/
+internal/migrations/

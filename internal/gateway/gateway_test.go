@@ -26,46 +26,46 @@ func TestGatewayFunctions(t *testing.T) {
 					Latitude:  1.23456789,
 					Longitude: 4.56789012,
 				},
-				Altitude:            100,
-				RXPacketsReceived:   100,
-				RXPacketsReceivedOK: 80,
-				TXPacketsReceived:   200,
-				TXPacketsEmitted:    180,
 			}
 			So(CreateGateway(db, &gw), ShouldBeNil)
 
 			// some precicion will get lost when writing to the db
 			// truncate it to ms precision for comparison
-			gw.CratedAt = gw.CratedAt.UTC().Truncate(time.Millisecond)
+			gw.CreatedAt = gw.CreatedAt.UTC().Truncate(time.Millisecond)
 			gw.UpdatedAt = gw.UpdatedAt.UTC().Truncate(time.Millisecond)
 
 			Convey("Then it can be retrieved", func() {
 				gw2, err := GetGateway(db, gw.MAC)
 				So(err, ShouldBeNil)
 
-				gw2.CratedAt = gw2.CratedAt.UTC().Truncate(time.Millisecond)
+				gw2.CreatedAt = gw2.CreatedAt.UTC().Truncate(time.Millisecond)
 				gw2.UpdatedAt = gw2.UpdatedAt.UTC().Truncate(time.Millisecond)
 
 				So(gw2, ShouldResemble, gw)
 			})
 
 			Convey("Then it can be updated", func() {
-				gw.Location.Latitude = 1.987654321
-				gw.Location.Longitude = 2.987654321
-				gw.Altitude++
-				gw.RXPacketsReceived++
-				gw.RXPacketsReceivedOK++
-				gw.TXPacketsReceived++
-				gw.TXPacketsEmitted++
+				now := time.Now().UTC().Truncate(time.Millisecond)
+				altitude := 100
+
+				gw.FirstSeenAt = &now
+				gw.LastSeenAt = &now
+				gw.Location.Latitude = 1.23456780
+				gw.Location.Longitude = 5.56789012
+				gw.Altitude = &altitude
 
 				So(UpdateGateway(db, &gw), ShouldBeNil)
-				gw.UpdatedAt = gw.UpdatedAt.UTC().Truncate(time.Millisecond)
 
 				gw2, err := GetGateway(db, gw.MAC)
 				So(err, ShouldBeNil)
-				gw2.CratedAt = gw2.CratedAt.UTC().Truncate(time.Millisecond)
-				gw2.UpdatedAt = gw2.UpdatedAt.UTC().Truncate(time.Millisecond)
-				So(gw2, ShouldResemble, gw)
+
+				So(gw2.MAC, ShouldEqual, gw.MAC)
+				So(gw2.CreatedAt.UTC().Truncate(time.Millisecond), ShouldResemble, gw.CreatedAt.UTC())
+				So(gw2.UpdatedAt.UTC().Truncate(time.Millisecond), ShouldResemble, gw.UpdatedAt.UTC().Truncate(time.Millisecond))
+				So(gw2.FirstSeenAt.UTC().Truncate(time.Millisecond), ShouldResemble, gw.FirstSeenAt.UTC().Truncate(time.Millisecond))
+				So(gw2.LastSeenAt.UTC().Truncate(time.Millisecond), ShouldResemble, gw.LastSeenAt.UTC().Truncate(time.Millisecond))
+				So(gw2.Location, ShouldResemble, gw.Location)
+				So(gw2.Altitude, ShouldResemble, gw.Altitude)
 			})
 
 			Convey("Then the gateway count is 1", func() {
@@ -79,7 +79,7 @@ func TestGatewayFunctions(t *testing.T) {
 				So(err, ShouldBeNil)
 				So(gws, ShouldHaveLength, 1)
 
-				gws[0].CratedAt = gws[0].CratedAt.UTC().Truncate(time.Millisecond)
+				gws[0].CreatedAt = gws[0].CreatedAt.UTC().Truncate(time.Millisecond)
 				gws[0].UpdatedAt = gws[0].UpdatedAt.UTC().Truncate(time.Millisecond)
 				So(gws[0], ShouldResemble, gw)
 			})
