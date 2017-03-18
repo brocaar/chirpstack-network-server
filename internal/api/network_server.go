@@ -64,7 +64,7 @@ func (n *NetworkServerAPI) CreateNodeSession(ctx context.Context, req *ns.Create
 		return nil, grpc.Errorf(codes.Internal, err.Error())
 	}
 	if exists {
-		return nil, grpc.Errorf(codes.AlreadyExists, err.Error())
+		return nil, grpc.Errorf(codes.AlreadyExists, "node-session already exists")
 	}
 
 	if err := session.SaveNodeSession(n.ctx.RedisPool, sess); err != nil {
@@ -181,12 +181,7 @@ func (n *NetworkServerAPI) DeleteNodeSession(ctx context.Context, req *ns.Delete
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	sess, err := session.GetNodeSession(n.ctx.RedisPool, devEUI)
-	if err != nil {
-		return nil, grpc.Errorf(codes.Unknown, err.Error())
-	}
-
-	if err := session.DeleteNodeSession(n.ctx.RedisPool, sess.DevAddr); err != nil {
+	if err := session.DeleteNodeSession(n.ctx.RedisPool, devEUI); err != nil {
 		return nil, grpc.Errorf(codes.Unknown, err.Error())
 	}
 

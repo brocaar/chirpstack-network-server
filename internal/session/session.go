@@ -210,18 +210,18 @@ func GetNodeSession(p *redis.Pool, devEUI lorawan.EUI64) (NodeSession, error) {
 	return ns, nil
 }
 
-// DeleteNodeSession deletes the NodeSession matching the given DevAddr.
-func DeleteNodeSession(p *redis.Pool, devAddr lorawan.DevAddr) error {
+// DeleteNodeSession deletes the NodeSession matching the given DevEUI.
+func DeleteNodeSession(p *redis.Pool, devEUI lorawan.EUI64) error {
 	c := p.Get()
 	defer c.Close()
 
-	val, err := redis.Int(c.Do("DEL", fmt.Sprintf(nodeSessionKeyTempl, devAddr)))
+	val, err := redis.Int(c.Do("DEL", fmt.Sprintf(nodeSessionKeyTempl, devEUI)))
 	if err != nil {
-		return fmt.Errorf("delete node-session %s error: %s", devAddr, err)
+		return fmt.Errorf("delete node-session %s error: %s", devEUI, err)
 	}
 	if val == 0 {
-		return fmt.Errorf("node-session %s does not exist", devAddr)
+		return fmt.Errorf("node-session %s does not exist", devEUI)
 	}
-	log.WithField("dev_addr", devAddr).Info("node-session deleted")
+	log.WithField("dev_eui", devEUI).Info("node-session deleted")
 	return nil
 }

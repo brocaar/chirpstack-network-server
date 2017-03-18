@@ -139,6 +139,16 @@ func TestNodeSession(t *testing.T) {
 						So(exists, ShouldBeTrue)
 					})
 				})
+
+				Convey("When deleting a NodeSession", func() {
+					So(DeleteNodeSession(p, ns.DevEUI), ShouldBeNil)
+
+					Convey("Then the node-session has been removed", func() {
+						exists, err := NodeSessionExists(p, ns.DevEUI)
+						So(err, ShouldBeNil)
+						So(exists, ShouldBeFalse)
+					})
+				})
 			})
 
 			Convey("When calling validateAndGetFullFCntUp", func() {
