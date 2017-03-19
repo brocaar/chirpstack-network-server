@@ -20,7 +20,7 @@ Todo.
 
 LoRa Server has full support for Class-C devices. It will remember the last
 rx parameters (of each gateway that received the uplink), so that the
-nearest gateway can be used for the Class-C uplink. An uplink can be scheduled
+nearest gateway can be used for the Class-C downlink. A downlink can be scheduled
 by using the `NetworkServer.PushDataDown` API method.
 
 ## Confirmed data up / down
