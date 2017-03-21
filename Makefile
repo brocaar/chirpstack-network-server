@@ -42,8 +42,12 @@ statics:
 	@go generate cmd/loraserver/main.go
 
 requirements:
-	@go get -u github.com/golang/protobuf/{proto,protoc-gen-go}
+	@go get -u github.com/golang/lint/golint
+	@go get -u github.com/golang/protobuf/protoc-gen-go
+	@go get -u github.com/golang/protobuf/proto
 	@go get -u github.com/kardianos/govendor
+	@go get -u github.com/elazarl/go-bindata-assetfs/...
+	@go get -u github.com/jteeuwen/go-bindata/...
 
 # shortcuts for development
 

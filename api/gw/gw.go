@@ -66,9 +66,9 @@ type TXInfo struct {
 type GatewayStatsPacket struct {
 	MAC                 lorawan.EUI64          `json:"mac"`
 	Time                time.Time              `json:"time,omitempty"`
-	Latitude            float64                `json:"latitude"`
-	Longitude           float64                `json:"longitude"`
-	Altitude            float64                `json:"altitude"`
+	Latitude            *float64               `json:"latitude"`
+	Longitude           *float64               `json:"longitude"`
+	Altitude            *float64               `json:"altitude"`
 	RXPacketsReceived   int                    `json:"rxPacketsReceived"`
 	RXPacketsReceivedOK int                    `json:"rxPacketsReceivedOK"`
 	TXPacketsReceived   int                    `json:"txPacketsReceived"`

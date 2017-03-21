@@ -19,7 +19,7 @@ before_install:
   - sudo apt-add-repository -y ppa:mosquitto-dev/mosquitto-ppa
   - sudo apt-get -qq update
   - sudo apt-get install -y mosquitto
-  - go get github.com/golang/lint/golint
+  - make requirements
 
 before_script:
   - psql -c 'create database loraserver;' -U postgres
