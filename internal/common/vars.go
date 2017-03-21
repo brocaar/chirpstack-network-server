@@ -6,8 +6,6 @@ import (
 	"github.com/brocaar/lorawan/band"
 )
 
-// TODO: move these vars to Context?
-
 // NodeTXPayloadQueueTTL defines the TTL of the node TXPayload queue
 var NodeTXPayloadQueueTTL = time.Hour * 24 * 5
 
@@ -29,3 +27,10 @@ var DeduplicationDelay = time.Millisecond * 200
 
 // GetDownlinkDataDelay holds the delay between uplink delivery to the app server and getting the downlink data from the app server (if any)
 var GetDownlinkDataDelay = time.Millisecond * 100
+
+// TimeLocation holds the timezone location
+var TimeLocation = time.Local
+
+// CreateGatewayOnStats defines if non-existing gateways should be created
+// automatically when receiving stats.
+var CreateGatewayOnStats = false
