@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -8,6 +10,7 @@ import (
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/downlink"
+	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
@@ -238,4 +241,185 @@ func (n *NetworkServerAPI) PushDataDown(ctx context.Context, req *ns.PushDataDow
 	}
 
 	return &ns.PushDataDownResponse{}, nil
+}
+
+// CreateGateway creates the given gateway.
+func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGatewayRequest) (*ns.CreateGatewayResponse, error) {
+	var mac lorawan.EUI64
+	copy(mac[:], req.Mac)
+
+	var location *gateway.GPSPoint
+	var altitude *float64
+
+	if req.Latitude != 0 && req.Longitude != 0 {
+		location = &gateway.GPSPoint{
+			Latitude:  req.Latitude,
+			Longitude: req.Longitude,
+		}
+	}
+
+	if req.Altitude != 0 {
+		altitude = &req.Altitude
+	}
+
+	gw := gateway.Gateway{
+		MAC:         mac,
+		Description: req.Description,
+		Location:    location,
+		Altitude:    altitude,
+	}
+	err := gateway.CreateGateway(n.ctx.DB, &gw)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.CreateGatewayResponse{}, nil
+}
+
+// GetGateway returns data for a particular gateway.
+func (n *NetworkServerAPI) GetGateway(ctx context.Context, req *ns.GetGatewayRequest) (*ns.GetGatewayResponse, error) {
+	var mac lorawan.EUI64
+	copy(mac[:], req.Mac)
+
+	gw, err := gateway.GetGateway(n.ctx.DB, mac)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return gwToResp(gw), nil
+}
+
+// UpdateGateway updates an existing gateway.
+func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGatewayRequest) (*ns.UpdateGatewayResponse, error) {
+	var mac lorawan.EUI64
+	copy(mac[:], req.Mac)
+
+	gw, err := gateway.GetGateway(n.ctx.DB, mac)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	var location *gateway.GPSPoint
+	var altitude *float64
+
+	if req.Latitude != 0 && req.Longitude != 0 {
+		location = &gateway.GPSPoint{
+			Latitude:  req.Latitude,
+			Longitude: req.Longitude,
+		}
+	}
+
+	if req.Altitude != 0 {
+		altitude = &req.Altitude
+	}
+
+	gw.Description = req.Description
+	gw.Location = location
+	gw.Altitude = altitude
+
+	err = gateway.UpdateGateway(n.ctx.DB, &gw)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.UpdateGatewayResponse{}, nil
+}
+
+// ListGateways returns the existing gateways.
+func (n *NetworkServerAPI) ListGateways(ctx context.Context, req *ns.ListGatewayRequest) (*ns.ListGatewayResponse, error) {
+	count, err := gateway.GetGatewayCount(n.ctx.DB)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	gws, err := gateway.GetGateways(n.ctx.DB, int(req.Limit), int(req.Offset))
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	resp := ns.ListGatewayResponse{
+		TotalCount: int32(count),
+	}
+
+	for _, gw := range gws {
+		resp.Result = append(resp.Result, gwToResp(gw))
+	}
+
+	return &resp, nil
+}
+
+// DeleteGateway deletes a gateway.
+func (n *NetworkServerAPI) DeleteGateway(ctx context.Context, req *ns.DeleteGatewayRequest) (*ns.DeleteGatewayResponse, error) {
+	var mac lorawan.EUI64
+	copy(mac[:], req.Mac)
+
+	err := gateway.DeleteGateway(n.ctx.DB, mac)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.DeleteGatewayResponse{}, nil
+}
+
+// GetGatewayStats returns stats of an existing gateway.
+func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatewayStatsRequest) (*ns.GetGatewayStatsResponse, error) {
+	var mac lorawan.EUI64
+	copy(mac[:], req.Mac)
+
+	start, err := time.Parse(time.RFC3339Nano, req.StartTimestamp)
+	if err != nil {
+		return nil, grpc.Errorf(codes.InvalidArgument, "parse start timestamp: %s", err)
+	}
+
+	end, err := time.Parse(time.RFC3339Nano, req.EndTimestamp)
+	if err != nil {
+		return nil, grpc.Errorf(codes.InvalidArgument, "parse end timestamp: %s", err)
+	}
+
+	stats, err := gateway.GetGatewayStats(n.ctx.DB, mac, string(req.Interval), start, end)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	var resp ns.GetGatewayStatsResponse
+
+	for _, stat := range stats {
+		resp.Result = append(resp.Result, &ns.GatewayStats{
+			StartTimestamp:      stat.Timestamp.Format(time.RFC3339Nano),
+			RxPacketsReceived:   int32(stat.RXPacketsReceived),
+			RxPacketsReceivedOK: int32(stat.RXPacketsReceivedOK),
+			TxPacketsReceived:   int32(stat.TXPacketsReceived),
+			TxPacketsEmitted:    int32(stat.TXPacketsEmitted),
+		})
+	}
+
+	return &resp, nil
+}
+
+func gwToResp(gw gateway.Gateway) *ns.GetGatewayResponse {
+	resp := ns.GetGatewayResponse{
+		Mac:         gw.MAC[:],
+		Description: gw.Description,
+		CreatedAt:   gw.CreatedAt.Format(time.RFC3339Nano),
+		UpdatedAt:   gw.UpdatedAt.Format(time.RFC3339Nano),
+	}
+
+	if gw.FirstSeenAt != nil {
+		resp.FirstSeenAt = gw.FirstSeenAt.Format(time.RFC3339Nano)
+	}
+
+	if gw.LastSeenAt != nil {
+		resp.LastSeenAt = gw.LastSeenAt.Format(time.RFC3339Nano)
+	}
+
+	if gw.Location != nil {
+		resp.Latitude = gw.Location.Latitude
+		resp.Longitude = gw.Location.Longitude
+	}
+
+	if gw.Altitude != nil {
+		resp.Altitude = *gw.Altitude
+	}
+
+	return &resp
 }

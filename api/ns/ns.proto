@@ -26,6 +26,24 @@ service NetworkServer {
 
 	// PushDataDown pushes the given downlink payload to the node (only works for Class-C nodes).
 	rpc PushDataDown(PushDataDownRequest) returns (PushDataDownResponse) {}
+
+	// CreateGateway creates the given gateway.
+	rpc CreateGateway(CreateGatewayRequest) returns (CreateGatewayResponse) {}
+
+	// GetGateway returns data for a particular gateway.
+	rpc GetGateway(GetGatewayRequest) returns (GetGatewayResponse) {}
+
+	// UpdateGateway updates an existing gateway.
+	rpc UpdateGateway(UpdateGatewayRequest) returns (UpdateGatewayResponse) {}
+
+	// ListGateways returns the existing gateways.
+	rpc ListGateways(ListGatewayRequest) returns (ListGatewayResponse) {}
+
+	// DeleteGateway deletes a gateway.
+	rpc DeleteGateway(DeleteGatewayRequest) returns (DeleteGatewayResponse) {}
+
+	// GetGatewayStats returns stats of an existing gateway.
+	rpc GetGatewayStats(GetGatewayStatsRequest) returns (GetGatewayStatsResponse) {}
 }
 
 enum RXWindow {
@@ -232,3 +250,144 @@ message PushDataDownRequest {
 }
 
 message PushDataDownResponse {}
+
+message CreateGatewayRequest {
+	// MAC address of the gateway.
+	bytes mac = 1;
+
+	// Description for the gateway.
+	string description = 2;
+
+	// Latitude of the gateway.
+	double latitude = 3;
+
+	// Longitude of the gateway.
+	double longitude = 4;
+
+	// Altitude of the gateway.
+	double altitude = 5;
+}
+
+message CreateGatewayResponse {}
+
+message GetGatewayRequest {
+	// MAC address of the gateway.
+	bytes mac = 1;
+}
+
+message GetGatewayResponse {
+	// MAC address of the gateway.
+	bytes mac = 1;
+
+	// Description for the gateway.
+	string description = 2;
+
+	// Latitude of the gateway.
+	double latitude = 3;
+
+	// Longitude of the gateway.
+	double longitude = 4;
+
+	// Altitude of the gateway.
+	double altitude = 5;
+
+	// The timestamp when the gateway was created.
+	string createdAt = 6;
+
+	// The timestamp when the gateway was last updated.
+	string updatedAt = 7;
+
+	// The timestamp when the gateway was first seen.
+	string firstSeenAt = 8;
+
+	// The timestamp when the gateway was last seen.
+	string lastSeenAt = 9;
+}
+
+message UpdateGatewayRequest {
+	// MAC address of the gateway.
+	bytes mac = 1;
+
+	// Description for the gateway.
+	string description = 2;
+
+	// Latitude of the gateway.
+	double latitude = 3;
+
+	// Longitude of the gateway.
+	double longitude = 4;
+
+	// Altitude of the gateway.
+	double altitude = 5;
+}
+
+message UpdateGatewayResponse {}
+
+message ListGatewayRequest {
+	// Max number of gateways to return in the result-set.
+	int32 limit = 1;
+
+	// Offset in the result-set (for pagination).
+	int32 offset = 2;
+}
+
+message ListGatewayResponse {
+	// Total number of gateways.
+	int32 totalCount = 1;
+
+	// Result-set.
+	repeated GetGatewayResponse result = 2;
+}
+
+message DeleteGatewayRequest {
+	// MAC address of the gateway.
+	bytes mac = 1;
+}
+
+message DeleteGatewayResponse {}
+
+enum AggregationInterval {
+	SECOND = 0;
+	MINUTE = 1;
+	HOUR = 2;
+	DAY = 3;
+	WEEK = 4;
+	MONTH = 5;
+	QUARTER = 6;
+	YEAR = 7;
+}
+
+message GatewayStats {
+	// Timestamp of the (aggregated) measurement.
+	string startTimestamp = 1;
+
+	// Packets received by the gateway.
+	int32 rxPacketsReceived = 2;
+
+	// Packets received by the gateway that passed the CRC check.
+	int32 rxPacketsReceivedOK = 3;
+
+	// Packets received by the gateway for transmission.
+	int32 txPacketsReceived = 4;
+
+	// Packets transmitted by the gateway.
+	int32 txPacketsEmitted = 5;
+}
+
+message GetGatewayStatsRequest {
+	// MAC address of the gateway.
+	bytes mac = 1;
+
+	// Aggregation interval.
+	AggregationInterval interval = 2;
+
+	// Timestamp to start from.
+	string startTimestamp = 3;
+
+	// Timestamp until to get from.
+	string endTimestamp = 4;
+}
+
+message GetGatewayStatsResponse {
+	repeated GatewayStats result = 1;
+}
