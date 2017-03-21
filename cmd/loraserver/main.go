@@ -28,9 +28,10 @@ import (
 	"github.com/brocaar/loraserver/internal/backend/controller"
 	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/common"
+	// TODO: merge backend/gateway into internal/gateway?
+	gw "github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/migration"
 	"github.com/brocaar/loraserver/internal/migrations"
-	"github.com/brocaar/loraserver/internal/stats"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -72,10 +73,24 @@ func run(c *cli.Context) error {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// get the gw stats aggregation intervals
+	gw.MustSetStatsAggregationIntervals(c.StringSlice("gw-stats-aggregation-intervals"))
+
+	// get the timezone
+	if c.String("timezone") != "" {
+		l, err := time.LoadLocation(c.String("timezone"))
+		if err != nil {
+			log.Fatalf("load timezone location error: %s", err)
+		}
+		common.TimeLocation = l
+	}
+
 	common.Band = bandConfig
 	common.BandName = band.Name(c.String("band"))
 	common.DeduplicationDelay = c.Duration("deduplication-delay")
 	common.GetDownlinkDataDelay = c.Duration("get-downlink-data-delay")
+	common.CreateGatewayOnStats = c.Bool("gw-create-on-stats")
 
 	log.WithFields(log.Fields{
 		"version": version,
@@ -126,8 +141,8 @@ func run(c *cli.Context) error {
 		log.Fatal(err)
 	}
 	// start the stats server
-	statsServer := stats.NewServer(lsCtx)
-	if err := statsServer.Start(); err != nil {
+	gwStats := gw.NewStatsHandler(lsCtx)
+	if err := gwStats.Start(); err != nil {
 		log.Fatal(err)
 	}
 
@@ -140,7 +155,7 @@ func run(c *cli.Context) error {
 		if err := server.Stop(); err != nil {
 			log.Fatal(err)
 		}
-		if err := statsServer.Stop(); err != nil {
+		if err := gwStats.Stop(); err != nil {
 			log.Fatal(err)
 		}
 		exitChan <- struct{}{}
@@ -411,6 +426,22 @@ func main() {
 			Usage:  "delay between uplink delivery to the app server and getting the downlink data from the app server (if any)",
 			EnvVar: "GET_DOWNLINK_DATA_DELAY",
 			Value:  100 * time.Millisecond,
+		},
+		cli.StringSliceFlag{
+			Name:   "gw-stats-aggregation-intervals",
+			Usage:  "aggregation intervals to use for aggregating the gateway stats (valid options: second, minute, hour, day, week, month, quarter, year)",
+			EnvVar: "GW_STATS_AGGREGATION_INTERVALS",
+			Value:  &cli.StringSlice{"minute", "hour", "day"},
+		},
+		cli.StringFlag{
+			Name:   "timezone",
+			Usage:  "timezone to use when aggregating data (e.g. 'Europe/Amsterdam') (optional, by default the local timezone is used)",
+			EnvVar: "TIMEZONE",
+		},
+		cli.BoolFlag{
+			Name:   "gw-create-on-stats",
+			Usage:  "create non-existing gateways on receiving of stats",
+			EnvVar: "GW_CREATE_ON_STATS",
 		},
 	}
 	app.Run(os.Args)

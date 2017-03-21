@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/brocaar/loraserver/internal/downlink"
+	"github.com/brocaar/loraserver/internal/gateway"
 )
 
 var errToCode = map[error]codes.Code{
@@ -14,6 +15,10 @@ var errToCode = map[error]codes.Code{
 	downlink.ErrNoLastRXInfoSet:        codes.FailedPrecondition,
 	downlink.ErrInvalidDataRate:        codes.Internal,
 	downlink.ErrMaxPayloadSizeExceeded: codes.InvalidArgument,
+
+	gateway.ErrDoesNotExist:               codes.NotFound,
+	gateway.ErrAlreadyExists:              codes.AlreadyExists,
+	gateway.ErrInvalidAggregationInterval: codes.InvalidArgument,
 }
 
 func errToRPCError(err error) error {
