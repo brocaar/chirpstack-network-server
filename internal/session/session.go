@@ -9,6 +9,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
+	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/lorawan"
@@ -26,7 +27,7 @@ func GetRandomDevAddr(p *redis.Pool, netID lorawan.NetID) (lorawan.DevAddr, erro
 	var d lorawan.DevAddr
 	b := make([]byte, len(d))
 	if _, err := rand.Read(b); err != nil {
-		return d, fmt.Errorf("could not read from random reader: %s", err)
+		return d, errors.Wrap(err, "read random bytes error")
 	}
 	copy(d[:], b)
 	d[0] = d[0] & 1                    // zero out 7 msb
@@ -57,7 +58,7 @@ func NodeSessionExists(p *redis.Pool, devEUI lorawan.EUI64) (bool, error) {
 
 	r, err := redis.Int(c.Do("EXISTS", fmt.Sprintf(nodeSessionKeyTempl, devEUI)))
 	if err != nil {
-		return false, fmt.Errorf("get node-session key exists error: %s", err)
+		return false, errors.Wrap(err, "get exists error")
 	}
 	if r == 1 {
 		return true, nil
@@ -71,7 +72,7 @@ func SaveNodeSession(p *redis.Pool, s NodeSession) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	if err := enc.Encode(s); err != nil {
-		return fmt.Errorf("encode node-session for node %s error: %s", s.DevEUI, err)
+		return errors.Wrap(err, "gob encode error")
 	}
 
 	c := p.Get()
@@ -84,7 +85,7 @@ func SaveNodeSession(p *redis.Pool, s NodeSession) error {
 	c.Send("PEXPIRE", fmt.Sprintf(devAddrKeyTempl, s.DevAddr), exp)
 
 	if _, err := c.Do("EXEC"); err != nil {
-		return fmt.Errorf("save node %s error: %s", s.DevEUI, err)
+		return errors.Wrap(err, "exec error")
 	}
 
 	log.WithFields(log.Fields{
@@ -105,7 +106,10 @@ func GetNodeSessionsForDevAddr(p *redis.Pool, devAddr lorawan.DevAddr) ([]NodeSe
 
 	devEUIs, err := redis.ByteSlices(c.Do("SMEMBERS", fmt.Sprintf(devAddrKeyTempl, devAddr)))
 	if err != nil {
-		return nil, fmt.Errorf("get dev_eui set for dev_addr %s error: %s", devAddr, err)
+		if err == redis.ErrNil {
+			return items, nil
+		}
+		return nil, errors.Wrap(err, "get members error")
 	}
 
 	for _, b := range devEUIs {
@@ -157,7 +161,7 @@ func GetNodeSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload) (NodeSes
 				// validate if the mic is valid given the FCnt reset
 				micOK, err := phy.ValidateMIC(ns.NwkSKey)
 				if err != nil {
-					return NodeSession{}, fmt.Errorf("validate mic error: %s", err)
+					return NodeSession{}, errors.Wrap(err, "validate mic error")
 				}
 
 				if micOK {
@@ -180,14 +184,14 @@ func GetNodeSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload) (NodeSes
 		macPL.FHDR.FCnt = fullFCnt
 		micOK, err := phy.ValidateMIC(ns.NwkSKey)
 		if err != nil {
-			return NodeSession{}, fmt.Errorf("validate mic error: %s", err)
+			return NodeSession{}, errors.Wrap(err, "validate mic error")
 		}
 		if micOK {
 			return ns, nil
 		}
 	}
 
-	return NodeSession{}, fmt.Errorf("node-session does not exist or invalid fcnt or mic")
+	return NodeSession{}, ErrDoesNotExistOrFCntOrMICInvalid
 }
 
 // GetNodeSession returns the NodeSession for the given DevEUI.
@@ -199,12 +203,15 @@ func GetNodeSession(p *redis.Pool, devEUI lorawan.EUI64) (NodeSession, error) {
 
 	val, err := redis.Bytes(c.Do("GET", fmt.Sprintf(nodeSessionKeyTempl, devEUI)))
 	if err != nil {
-		return ns, fmt.Errorf("get node-session %s error: %s", devEUI, err)
+		if err == redis.ErrNil {
+			return ns, ErrDoesNotExist
+		}
+		return ns, errors.Wrap(err, "get error")
 	}
 
 	err = gob.NewDecoder(bytes.NewReader(val)).Decode(&ns)
 	if err != nil {
-		return ns, fmt.Errorf("decode node-session %s error: %s", devEUI, err)
+		return ns, errors.Wrap(err, "gob decode error")
 	}
 
 	return ns, nil
@@ -217,10 +224,10 @@ func DeleteNodeSession(p *redis.Pool, devEUI lorawan.EUI64) error {
 
 	val, err := redis.Int(c.Do("DEL", fmt.Sprintf(nodeSessionKeyTempl, devEUI)))
 	if err != nil {
-		return fmt.Errorf("delete node-session %s error: %s", devEUI, err)
+		return errors.Wrap(err, "delete error")
 	}
 	if val == 0 {
-		return fmt.Errorf("node-session %s does not exist", devEUI)
+		return ErrDoesNotExist
 	}
 	log.WithField("dev_eui", devEUI).Info("node-session deleted")
 	return nil

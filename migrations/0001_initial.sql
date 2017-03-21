@@ -1,6 +1,7 @@
 -- +migrate Up
 create table gateway (
 	mac bytea primary key,
+	name varchar(100) unique not null,
 	description text not null,
 	created_at timestamp with time zone not null,
 	updated_at timestamp with time zone not null,
@@ -10,6 +11,7 @@ create table gateway (
 	altitude double precision
 );
 
+create index idx_gateway_name on gateway (name);
 create index idx_gateway_created_at on gateway (created_at);
 create index idx_gateway_updated_at on gateway (updated_at);
 create index idx_gateway_first_seen_at on gateway (first_seen_at);
@@ -39,6 +41,7 @@ drop index idx_gateway_stat_timestamp;
 drop index idx_gateway_stat_mac;
 drop table gateway_stat;
 
+drop index idx_gateway_name;
 drop index idx_gateway_created_at;
 drop index idx_gateway_updated_at;
 drop index idx_gateway_first_seen_at;

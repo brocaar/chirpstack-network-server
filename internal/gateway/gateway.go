@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,6 +19,8 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/lorawan"
 )
+
+var gatewayNameRegexp = regexp.MustCompile(`^[\w-]+$`)
 
 // statsAggregationIntervals contains a slice of aggregation intervals.
 var statsAggregationIntervals []string
@@ -107,6 +110,7 @@ func (s *StatsHandler) Stop() error {
 // Gateway represents a single gateway.
 type Gateway struct {
 	MAC         lorawan.EUI64 `db:"mac"`
+	Name        string        `db:"name"`
 	Description string        `db:"description"`
 	CreatedAt   time.Time     `db:"created_at"`
 	UpdatedAt   time.Time     `db:"updated_at"`
@@ -114,6 +118,14 @@ type Gateway struct {
 	LastSeenAt  *time.Time    `db:"last_seen_at"`
 	Location    *GPSPoint     `db:"location"`
 	Altitude    *float64      `db:"altitude"`
+}
+
+// Validate validates the data of the gateway.
+func (g Gateway) Validate() error {
+	if !gatewayNameRegexp.MatchString(g.Name) {
+		return ErrInvalidName
+	}
+	return nil
 }
 
 // Stats represents a single gateway stats record.
@@ -130,10 +142,15 @@ type Stats struct {
 
 // CreateGateway creates the given gateway.
 func CreateGateway(db *sqlx.DB, gw *Gateway) error {
+	if err := gw.Validate(); err != nil {
+		return errors.Wrap(err, "validate error")
+	}
+
 	now := time.Now()
 	_, err := db.Exec(`
 		insert into gateway (
 			mac,
+			name,
 			description,
 			created_at,
 			updated_at,
@@ -141,8 +158,9 @@ func CreateGateway(db *sqlx.DB, gw *Gateway) error {
 			last_seen_at,
 			location,
 			altitude
-		) values ($1, $2, $3, $3, $4, $5, $6, $7)`,
+		) values ($1, $2, $3, $4, $4, $5, $6, $7, $8)`,
 		gw.MAC[:],
+		gw.Name,
 		gw.Description,
 		now,
 		gw.FirstSeenAt,
@@ -184,17 +202,23 @@ func GetGateway(db *sqlx.DB, mac lorawan.EUI64) (Gateway, error) {
 
 // UpdateGateway updates the given gateway.
 func UpdateGateway(db *sqlx.DB, gw *Gateway) error {
+	if err := gw.Validate(); err != nil {
+		return errors.Wrap(err, "validate error")
+	}
+
 	now := time.Now()
 	res, err := db.Exec(`
 		update gateway set
-			description = $2,
-			updated_at = $3,
-			first_seen_at = $4,
-			last_seen_at = $5,
-			location = $6,
-			altitude = $7
+			name = $2,
+			description = $3,
+			updated_at = $4,
+			first_seen_at = $5,
+			last_seen_at = $6,
+			location = $7,
+			altitude = $8
 		where mac = $1`,
 		gw.MAC[:],
+		gw.Name,
 		gw.Description,
 		now,
 		gw.FirstSeenAt,
@@ -333,6 +357,7 @@ func handleStatsPacket(db *sqlx.DB, stats gw.GatewayStatsPacket) error {
 
 			gw = Gateway{
 				MAC:         stats.MAC,
+				Name:        stats.MAC.String(),
 				FirstSeenAt: &now,
 				LastSeenAt:  &now,
 				Location:    location,

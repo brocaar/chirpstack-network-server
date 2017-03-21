@@ -1,5 +1,4 @@
 //go:generate go-bindata -prefix ../../migrations/ -pkg migrations -o ../../internal/migrations/migrations_gen.go ../../migrations/
-//go:generate go-bindata -prefix ../../static/ -pkg static -o ../../internal/static/static_gen.go ../../static/...
 
 package main
 
@@ -17,6 +16,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	migrate "github.com/rubenv/sql-migrate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
@@ -28,6 +28,7 @@ import (
 	"github.com/brocaar/loraserver/internal/backend/controller"
 	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/migrations"
 	// TODO: merge backend/gateway into internal/gateway?
 	gw "github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/migration"
@@ -105,6 +106,21 @@ func run(c *cli.Context) error {
 		log.Fatalf("node-session migration error: %s", err)
 	}
 
+	// migrate the database
+	if c.Bool("db-automigrate") {
+		log.Info("applying database migrations")
+		m := &migrate.AssetMigrationSource{
+			Asset:    migrations.Asset,
+			AssetDir: migrations.AssetDir,
+			Dir:      "",
+		}
+		n, err := migrate.Exec(lsCtx.DB.DB, "postgres", m, migrate.Up)
+		if err != nil {
+			log.Fatalf("applying migrations failed: %s", err)
+		}
+		log.WithField("count", n).Info("migrations applied")
+	}
+
 	// start the api server
 	log.WithFields(log.Fields{
 		"bind":     c.String("bind"),
@@ -157,6 +173,13 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) common.Context {
 	// setup redis pool
 	log.WithField("url", c.String("redis-url")).Info("setup redis connection pool")
 	rp := common.NewRedisPool(c.String("redis-url"))
+
+	// setup PostgreSQL connection
+	log.Info("connecting to postgresql")
+	db, err := common.OpenDatabase(c.String("postgres-dsn"))
+	if err != nil {
+		log.Fatalf("database connection error: %s", err)
+	}
 
 	// setup gateway backend
 	gw, err := gateway.NewBackend(rp, c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"))
@@ -214,6 +237,7 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) common.Context {
 
 	return common.Context{
 		RedisPool:   rp,
+		DB:          db,
 		Gateway:     gw,
 		Application: asClient,
 		Controller:  ncClient,
@@ -322,6 +346,17 @@ func main() {
 			Usage:  "redis url (e.g. redis://user:password@hostname:port/0)",
 			Value:  "redis://localhost:6379",
 			EnvVar: "REDIS_URL",
+		},
+		cli.StringFlag{
+			Name:   "postgres-dsn",
+			Usage:  "postgresql dsn (e.g.: postgres://user:password@hostname/database?sslmode=disable)",
+			Value:  "postgres://localhost/loraserver_ns?sslmode=disable",
+			EnvVar: "POSTGRES_DSN",
+		},
+		cli.BoolFlag{
+			Name:   "db-automigrate",
+			Usage:  "automatically apply database migrations",
+			EnvVar: "DB_AUTOMIGRATE",
 		},
 		cli.StringFlag{
 			Name:   "gw-mqtt-server",

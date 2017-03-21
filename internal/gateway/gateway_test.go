@@ -67,7 +67,8 @@ func TestGatewayStatsAggregation(t *testing.T) {
 
 		Convey("Given a gateway in the database", func() {
 			gw := Gateway{
-				MAC: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				MAC:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Name: "test-gateway",
 			}
 			So(CreateGateway(db, &gw), ShouldBeNil)
 
@@ -127,7 +128,8 @@ func TestGatewayFunctions(t *testing.T) {
 
 		Convey("When creating a gateway", func() {
 			gw := Gateway{
-				MAC: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+				Name: "test-gateway",
+				MAC:  lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 				Location: &GPSPoint{
 					Latitude:  1.23456789,
 					Longitude: 4.56789012,

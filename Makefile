@@ -1,5 +1,5 @@
 .PHONY: build clean test package serve update-vendor api statics
-PKGS := $(shell go list ./... | grep -v /vendor/ |grep -v /api | grep -v /migrations | grep -v /static)
+PKGS := $(shell go list ./... | grep -v /vendor/ | grep -v loraserver/api | grep -v /migrations | grep -v /static)
 VERSION := $(shell git describe --always)
 GOOS ?= linux
 GOARCH ?= amd64
