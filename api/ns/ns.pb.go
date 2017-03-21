@@ -23,6 +23,19 @@ It has these top-level messages:
 	EnqueueDataDownMACCommandResponse
 	PushDataDownRequest
 	PushDataDownResponse
+	CreateGatewayRequest
+	CreateGatewayResponse
+	GetGatewayRequest
+	GetGatewayResponse
+	UpdateGatewayRequest
+	UpdateGatewayResponse
+	ListGatewayRequest
+	ListGatewayResponse
+	DeleteGatewayRequest
+	DeleteGatewayResponse
+	GatewayStats
+	GetGatewayStatsRequest
+	GetGatewayStatsResponse
 */
 package ns
 
@@ -68,6 +81,45 @@ func (x RXWindow) String() string {
 	return proto.EnumName(RXWindow_name, int32(x))
 }
 func (RXWindow) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+type AggregationInterval int32
+
+const (
+	AggregationInterval_SECOND  AggregationInterval = 0
+	AggregationInterval_MINUTE  AggregationInterval = 1
+	AggregationInterval_HOUR    AggregationInterval = 2
+	AggregationInterval_DAY     AggregationInterval = 3
+	AggregationInterval_WEEK    AggregationInterval = 4
+	AggregationInterval_MONTH   AggregationInterval = 5
+	AggregationInterval_QUARTER AggregationInterval = 6
+	AggregationInterval_YEAR    AggregationInterval = 7
+)
+
+var AggregationInterval_name = map[int32]string{
+	0: "SECOND",
+	1: "MINUTE",
+	2: "HOUR",
+	3: "DAY",
+	4: "WEEK",
+	5: "MONTH",
+	6: "QUARTER",
+	7: "YEAR",
+}
+var AggregationInterval_value = map[string]int32{
+	"SECOND":  0,
+	"MINUTE":  1,
+	"HOUR":    2,
+	"DAY":     3,
+	"WEEK":    4,
+	"MONTH":   5,
+	"QUARTER": 6,
+	"YEAR":    7,
+}
+
+func (x AggregationInterval) String() string {
+	return proto.EnumName(AggregationInterval_name, int32(x))
+}
+func (AggregationInterval) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
 
 type CreateNodeSessionRequest struct {
 	// The address of the device (4 bytes).
@@ -685,6 +737,451 @@ func (m *PushDataDownResponse) String() string            { return proto.Compact
 func (*PushDataDownResponse) ProtoMessage()               {}
 func (*PushDataDownResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{13} }
 
+type CreateGatewayRequest struct {
+	// MAC address of the gateway.
+	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	// Name of the gateway.
+	Name string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	// Description for the gateway.
+	Description string `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
+	// Latitude of the gateway.
+	Latitude float64 `protobuf:"fixed64,4,opt,name=latitude" json:"latitude,omitempty"`
+	// Longitude of the gateway.
+	Longitude float64 `protobuf:"fixed64,5,opt,name=longitude" json:"longitude,omitempty"`
+	// Altitude of the gateway.
+	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude" json:"altitude,omitempty"`
+}
+
+func (m *CreateGatewayRequest) Reset()                    { *m = CreateGatewayRequest{} }
+func (m *CreateGatewayRequest) String() string            { return proto.CompactTextString(m) }
+func (*CreateGatewayRequest) ProtoMessage()               {}
+func (*CreateGatewayRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{14} }
+
+func (m *CreateGatewayRequest) GetMac() []byte {
+	if m != nil {
+		return m.Mac
+	}
+	return nil
+}
+
+func (m *CreateGatewayRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *CreateGatewayRequest) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
+func (m *CreateGatewayRequest) GetLatitude() float64 {
+	if m != nil {
+		return m.Latitude
+	}
+	return 0
+}
+
+func (m *CreateGatewayRequest) GetLongitude() float64 {
+	if m != nil {
+		return m.Longitude
+	}
+	return 0
+}
+
+func (m *CreateGatewayRequest) GetAltitude() float64 {
+	if m != nil {
+		return m.Altitude
+	}
+	return 0
+}
+
+type CreateGatewayResponse struct {
+}
+
+func (m *CreateGatewayResponse) Reset()                    { *m = CreateGatewayResponse{} }
+func (m *CreateGatewayResponse) String() string            { return proto.CompactTextString(m) }
+func (*CreateGatewayResponse) ProtoMessage()               {}
+func (*CreateGatewayResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{15} }
+
+type GetGatewayRequest struct {
+	// MAC address of the gateway.
+	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+}
+
+func (m *GetGatewayRequest) Reset()                    { *m = GetGatewayRequest{} }
+func (m *GetGatewayRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetGatewayRequest) ProtoMessage()               {}
+func (*GetGatewayRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{16} }
+
+func (m *GetGatewayRequest) GetMac() []byte {
+	if m != nil {
+		return m.Mac
+	}
+	return nil
+}
+
+type GetGatewayResponse struct {
+	// MAC address of the gateway.
+	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	// Name of the gateway.
+	Name string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	// Description for the gateway.
+	Description string `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
+	// Latitude of the gateway.
+	Latitude float64 `protobuf:"fixed64,4,opt,name=latitude" json:"latitude,omitempty"`
+	// Longitude of the gateway.
+	Longitude float64 `protobuf:"fixed64,5,opt,name=longitude" json:"longitude,omitempty"`
+	// Altitude of the gateway.
+	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude" json:"altitude,omitempty"`
+	// The timestamp when the gateway was created.
+	CreatedAt string `protobuf:"bytes,7,opt,name=createdAt" json:"createdAt,omitempty"`
+	// The timestamp when the gateway was last updated.
+	UpdatedAt string `protobuf:"bytes,8,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	// The timestamp when the gateway was first seen.
+	FirstSeenAt string `protobuf:"bytes,9,opt,name=firstSeenAt" json:"firstSeenAt,omitempty"`
+	// The timestamp when the gateway was last seen.
+	LastSeenAt string `protobuf:"bytes,10,opt,name=lastSeenAt" json:"lastSeenAt,omitempty"`
+}
+
+func (m *GetGatewayResponse) Reset()                    { *m = GetGatewayResponse{} }
+func (m *GetGatewayResponse) String() string            { return proto.CompactTextString(m) }
+func (*GetGatewayResponse) ProtoMessage()               {}
+func (*GetGatewayResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{17} }
+
+func (m *GetGatewayResponse) GetMac() []byte {
+	if m != nil {
+		return m.Mac
+	}
+	return nil
+}
+
+func (m *GetGatewayResponse) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *GetGatewayResponse) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
+func (m *GetGatewayResponse) GetLatitude() float64 {
+	if m != nil {
+		return m.Latitude
+	}
+	return 0
+}
+
+func (m *GetGatewayResponse) GetLongitude() float64 {
+	if m != nil {
+		return m.Longitude
+	}
+	return 0
+}
+
+func (m *GetGatewayResponse) GetAltitude() float64 {
+	if m != nil {
+		return m.Altitude
+	}
+	return 0
+}
+
+func (m *GetGatewayResponse) GetCreatedAt() string {
+	if m != nil {
+		return m.CreatedAt
+	}
+	return ""
+}
+
+func (m *GetGatewayResponse) GetUpdatedAt() string {
+	if m != nil {
+		return m.UpdatedAt
+	}
+	return ""
+}
+
+func (m *GetGatewayResponse) GetFirstSeenAt() string {
+	if m != nil {
+		return m.FirstSeenAt
+	}
+	return ""
+}
+
+func (m *GetGatewayResponse) GetLastSeenAt() string {
+	if m != nil {
+		return m.LastSeenAt
+	}
+	return ""
+}
+
+type UpdateGatewayRequest struct {
+	// MAC address of the gateway.
+	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	// Name of the gateway.
+	Name string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	// Description for the gateway.
+	Description string `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
+	// Latitude of the gateway.
+	Latitude float64 `protobuf:"fixed64,4,opt,name=latitude" json:"latitude,omitempty"`
+	// Longitude of the gateway.
+	Longitude float64 `protobuf:"fixed64,5,opt,name=longitude" json:"longitude,omitempty"`
+	// Altitude of the gateway.
+	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude" json:"altitude,omitempty"`
+}
+
+func (m *UpdateGatewayRequest) Reset()                    { *m = UpdateGatewayRequest{} }
+func (m *UpdateGatewayRequest) String() string            { return proto.CompactTextString(m) }
+func (*UpdateGatewayRequest) ProtoMessage()               {}
+func (*UpdateGatewayRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{18} }
+
+func (m *UpdateGatewayRequest) GetMac() []byte {
+	if m != nil {
+		return m.Mac
+	}
+	return nil
+}
+
+func (m *UpdateGatewayRequest) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *UpdateGatewayRequest) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
+func (m *UpdateGatewayRequest) GetLatitude() float64 {
+	if m != nil {
+		return m.Latitude
+	}
+	return 0
+}
+
+func (m *UpdateGatewayRequest) GetLongitude() float64 {
+	if m != nil {
+		return m.Longitude
+	}
+	return 0
+}
+
+func (m *UpdateGatewayRequest) GetAltitude() float64 {
+	if m != nil {
+		return m.Altitude
+	}
+	return 0
+}
+
+type UpdateGatewayResponse struct {
+}
+
+func (m *UpdateGatewayResponse) Reset()                    { *m = UpdateGatewayResponse{} }
+func (m *UpdateGatewayResponse) String() string            { return proto.CompactTextString(m) }
+func (*UpdateGatewayResponse) ProtoMessage()               {}
+func (*UpdateGatewayResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{19} }
+
+type ListGatewayRequest struct {
+	// Max number of gateways to return in the result-set.
+	Limit int32 `protobuf:"varint,1,opt,name=limit" json:"limit,omitempty"`
+	// Offset in the result-set (for pagination).
+	Offset int32 `protobuf:"varint,2,opt,name=offset" json:"offset,omitempty"`
+}
+
+func (m *ListGatewayRequest) Reset()                    { *m = ListGatewayRequest{} }
+func (m *ListGatewayRequest) String() string            { return proto.CompactTextString(m) }
+func (*ListGatewayRequest) ProtoMessage()               {}
+func (*ListGatewayRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{20} }
+
+func (m *ListGatewayRequest) GetLimit() int32 {
+	if m != nil {
+		return m.Limit
+	}
+	return 0
+}
+
+func (m *ListGatewayRequest) GetOffset() int32 {
+	if m != nil {
+		return m.Offset
+	}
+	return 0
+}
+
+type ListGatewayResponse struct {
+	// Total number of gateways.
+	TotalCount int32 `protobuf:"varint,1,opt,name=totalCount" json:"totalCount,omitempty"`
+	// Result-set.
+	Result []*GetGatewayResponse `protobuf:"bytes,2,rep,name=result" json:"result,omitempty"`
+}
+
+func (m *ListGatewayResponse) Reset()                    { *m = ListGatewayResponse{} }
+func (m *ListGatewayResponse) String() string            { return proto.CompactTextString(m) }
+func (*ListGatewayResponse) ProtoMessage()               {}
+func (*ListGatewayResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{21} }
+
+func (m *ListGatewayResponse) GetTotalCount() int32 {
+	if m != nil {
+		return m.TotalCount
+	}
+	return 0
+}
+
+func (m *ListGatewayResponse) GetResult() []*GetGatewayResponse {
+	if m != nil {
+		return m.Result
+	}
+	return nil
+}
+
+type DeleteGatewayRequest struct {
+	// MAC address of the gateway.
+	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+}
+
+func (m *DeleteGatewayRequest) Reset()                    { *m = DeleteGatewayRequest{} }
+func (m *DeleteGatewayRequest) String() string            { return proto.CompactTextString(m) }
+func (*DeleteGatewayRequest) ProtoMessage()               {}
+func (*DeleteGatewayRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{22} }
+
+func (m *DeleteGatewayRequest) GetMac() []byte {
+	if m != nil {
+		return m.Mac
+	}
+	return nil
+}
+
+type DeleteGatewayResponse struct {
+}
+
+func (m *DeleteGatewayResponse) Reset()                    { *m = DeleteGatewayResponse{} }
+func (m *DeleteGatewayResponse) String() string            { return proto.CompactTextString(m) }
+func (*DeleteGatewayResponse) ProtoMessage()               {}
+func (*DeleteGatewayResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{23} }
+
+type GatewayStats struct {
+	// Timestamp of the (aggregated) measurement.
+	Timestamp string `protobuf:"bytes,1,opt,name=timestamp" json:"timestamp,omitempty"`
+	// Packets received by the gateway.
+	RxPacketsReceived int32 `protobuf:"varint,2,opt,name=rxPacketsReceived" json:"rxPacketsReceived,omitempty"`
+	// Packets received by the gateway that passed the CRC check.
+	RxPacketsReceivedOK int32 `protobuf:"varint,3,opt,name=rxPacketsReceivedOK" json:"rxPacketsReceivedOK,omitempty"`
+	// Packets received by the gateway for transmission.
+	TxPacketsReceived int32 `protobuf:"varint,4,opt,name=txPacketsReceived" json:"txPacketsReceived,omitempty"`
+	// Packets transmitted by the gateway.
+	TxPacketsEmitted int32 `protobuf:"varint,5,opt,name=txPacketsEmitted" json:"txPacketsEmitted,omitempty"`
+}
+
+func (m *GatewayStats) Reset()                    { *m = GatewayStats{} }
+func (m *GatewayStats) String() string            { return proto.CompactTextString(m) }
+func (*GatewayStats) ProtoMessage()               {}
+func (*GatewayStats) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{24} }
+
+func (m *GatewayStats) GetTimestamp() string {
+	if m != nil {
+		return m.Timestamp
+	}
+	return ""
+}
+
+func (m *GatewayStats) GetRxPacketsReceived() int32 {
+	if m != nil {
+		return m.RxPacketsReceived
+	}
+	return 0
+}
+
+func (m *GatewayStats) GetRxPacketsReceivedOK() int32 {
+	if m != nil {
+		return m.RxPacketsReceivedOK
+	}
+	return 0
+}
+
+func (m *GatewayStats) GetTxPacketsReceived() int32 {
+	if m != nil {
+		return m.TxPacketsReceived
+	}
+	return 0
+}
+
+func (m *GatewayStats) GetTxPacketsEmitted() int32 {
+	if m != nil {
+		return m.TxPacketsEmitted
+	}
+	return 0
+}
+
+type GetGatewayStatsRequest struct {
+	// MAC address of the gateway.
+	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	// Aggregation interval.
+	Interval AggregationInterval `protobuf:"varint,2,opt,name=interval,enum=ns.AggregationInterval" json:"interval,omitempty"`
+	// Timestamp to start from.
+	StartTimestamp string `protobuf:"bytes,3,opt,name=startTimestamp" json:"startTimestamp,omitempty"`
+	// Timestamp until to get from.
+	EndTimestamp string `protobuf:"bytes,4,opt,name=endTimestamp" json:"endTimestamp,omitempty"`
+}
+
+func (m *GetGatewayStatsRequest) Reset()                    { *m = GetGatewayStatsRequest{} }
+func (m *GetGatewayStatsRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetGatewayStatsRequest) ProtoMessage()               {}
+func (*GetGatewayStatsRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{25} }
+
+func (m *GetGatewayStatsRequest) GetMac() []byte {
+	if m != nil {
+		return m.Mac
+	}
+	return nil
+}
+
+func (m *GetGatewayStatsRequest) GetInterval() AggregationInterval {
+	if m != nil {
+		return m.Interval
+	}
+	return AggregationInterval_SECOND
+}
+
+func (m *GetGatewayStatsRequest) GetStartTimestamp() string {
+	if m != nil {
+		return m.StartTimestamp
+	}
+	return ""
+}
+
+func (m *GetGatewayStatsRequest) GetEndTimestamp() string {
+	if m != nil {
+		return m.EndTimestamp
+	}
+	return ""
+}
+
+type GetGatewayStatsResponse struct {
+	Result []*GatewayStats `protobuf:"bytes,1,rep,name=result" json:"result,omitempty"`
+}
+
+func (m *GetGatewayStatsResponse) Reset()                    { *m = GetGatewayStatsResponse{} }
+func (m *GetGatewayStatsResponse) String() string            { return proto.CompactTextString(m) }
+func (*GetGatewayStatsResponse) ProtoMessage()               {}
+func (*GetGatewayStatsResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{26} }
+
+func (m *GetGatewayStatsResponse) GetResult() []*GatewayStats {
+	if m != nil {
+		return m.Result
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*CreateNodeSessionRequest)(nil), "ns.CreateNodeSessionRequest")
 	proto.RegisterType((*CreateNodeSessionResponse)(nil), "ns.CreateNodeSessionResponse")
@@ -700,7 +1197,21 @@ func init() {
 	proto.RegisterType((*EnqueueDataDownMACCommandResponse)(nil), "ns.EnqueueDataDownMACCommandResponse")
 	proto.RegisterType((*PushDataDownRequest)(nil), "ns.PushDataDownRequest")
 	proto.RegisterType((*PushDataDownResponse)(nil), "ns.PushDataDownResponse")
+	proto.RegisterType((*CreateGatewayRequest)(nil), "ns.CreateGatewayRequest")
+	proto.RegisterType((*CreateGatewayResponse)(nil), "ns.CreateGatewayResponse")
+	proto.RegisterType((*GetGatewayRequest)(nil), "ns.GetGatewayRequest")
+	proto.RegisterType((*GetGatewayResponse)(nil), "ns.GetGatewayResponse")
+	proto.RegisterType((*UpdateGatewayRequest)(nil), "ns.UpdateGatewayRequest")
+	proto.RegisterType((*UpdateGatewayResponse)(nil), "ns.UpdateGatewayResponse")
+	proto.RegisterType((*ListGatewayRequest)(nil), "ns.ListGatewayRequest")
+	proto.RegisterType((*ListGatewayResponse)(nil), "ns.ListGatewayResponse")
+	proto.RegisterType((*DeleteGatewayRequest)(nil), "ns.DeleteGatewayRequest")
+	proto.RegisterType((*DeleteGatewayResponse)(nil), "ns.DeleteGatewayResponse")
+	proto.RegisterType((*GatewayStats)(nil), "ns.GatewayStats")
+	proto.RegisterType((*GetGatewayStatsRequest)(nil), "ns.GetGatewayStatsRequest")
+	proto.RegisterType((*GetGatewayStatsResponse)(nil), "ns.GetGatewayStatsResponse")
 	proto.RegisterEnum("ns.RXWindow", RXWindow_name, RXWindow_value)
+	proto.RegisterEnum("ns.AggregationInterval", AggregationInterval_name, AggregationInterval_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -730,6 +1241,18 @@ type NetworkServerClient interface {
 	EnqueueDataDownMACCommand(ctx context.Context, in *EnqueueDataDownMACCommandRequest, opts ...grpc.CallOption) (*EnqueueDataDownMACCommandResponse, error)
 	// PushDataDown pushes the given downlink payload to the node (only works for Class-C nodes).
 	PushDataDown(ctx context.Context, in *PushDataDownRequest, opts ...grpc.CallOption) (*PushDataDownResponse, error)
+	// CreateGateway creates the given gateway.
+	CreateGateway(ctx context.Context, in *CreateGatewayRequest, opts ...grpc.CallOption) (*CreateGatewayResponse, error)
+	// GetGateway returns data for a particular gateway.
+	GetGateway(ctx context.Context, in *GetGatewayRequest, opts ...grpc.CallOption) (*GetGatewayResponse, error)
+	// UpdateGateway updates an existing gateway.
+	UpdateGateway(ctx context.Context, in *UpdateGatewayRequest, opts ...grpc.CallOption) (*UpdateGatewayResponse, error)
+	// ListGateways returns the existing gateways.
+	ListGateways(ctx context.Context, in *ListGatewayRequest, opts ...grpc.CallOption) (*ListGatewayResponse, error)
+	// DeleteGateway deletes a gateway.
+	DeleteGateway(ctx context.Context, in *DeleteGatewayRequest, opts ...grpc.CallOption) (*DeleteGatewayResponse, error)
+	// GetGatewayStats returns stats of an existing gateway.
+	GetGatewayStats(ctx context.Context, in *GetGatewayStatsRequest, opts ...grpc.CallOption) (*GetGatewayStatsResponse, error)
 }
 
 type networkServerClient struct {
@@ -803,6 +1326,60 @@ func (c *networkServerClient) PushDataDown(ctx context.Context, in *PushDataDown
 	return out, nil
 }
 
+func (c *networkServerClient) CreateGateway(ctx context.Context, in *CreateGatewayRequest, opts ...grpc.CallOption) (*CreateGatewayResponse, error) {
+	out := new(CreateGatewayResponse)
+	err := grpc.Invoke(ctx, "/ns.NetworkServer/CreateGateway", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServerClient) GetGateway(ctx context.Context, in *GetGatewayRequest, opts ...grpc.CallOption) (*GetGatewayResponse, error) {
+	out := new(GetGatewayResponse)
+	err := grpc.Invoke(ctx, "/ns.NetworkServer/GetGateway", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServerClient) UpdateGateway(ctx context.Context, in *UpdateGatewayRequest, opts ...grpc.CallOption) (*UpdateGatewayResponse, error) {
+	out := new(UpdateGatewayResponse)
+	err := grpc.Invoke(ctx, "/ns.NetworkServer/UpdateGateway", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServerClient) ListGateways(ctx context.Context, in *ListGatewayRequest, opts ...grpc.CallOption) (*ListGatewayResponse, error) {
+	out := new(ListGatewayResponse)
+	err := grpc.Invoke(ctx, "/ns.NetworkServer/ListGateways", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServerClient) DeleteGateway(ctx context.Context, in *DeleteGatewayRequest, opts ...grpc.CallOption) (*DeleteGatewayResponse, error) {
+	out := new(DeleteGatewayResponse)
+	err := grpc.Invoke(ctx, "/ns.NetworkServer/DeleteGateway", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *networkServerClient) GetGatewayStats(ctx context.Context, in *GetGatewayStatsRequest, opts ...grpc.CallOption) (*GetGatewayStatsResponse, error) {
+	out := new(GetGatewayStatsResponse)
+	err := grpc.Invoke(ctx, "/ns.NetworkServer/GetGatewayStats", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for NetworkServer service
 
 type NetworkServerServer interface {
@@ -822,6 +1399,18 @@ type NetworkServerServer interface {
 	EnqueueDataDownMACCommand(context.Context, *EnqueueDataDownMACCommandRequest) (*EnqueueDataDownMACCommandResponse, error)
 	// PushDataDown pushes the given downlink payload to the node (only works for Class-C nodes).
 	PushDataDown(context.Context, *PushDataDownRequest) (*PushDataDownResponse, error)
+	// CreateGateway creates the given gateway.
+	CreateGateway(context.Context, *CreateGatewayRequest) (*CreateGatewayResponse, error)
+	// GetGateway returns data for a particular gateway.
+	GetGateway(context.Context, *GetGatewayRequest) (*GetGatewayResponse, error)
+	// UpdateGateway updates an existing gateway.
+	UpdateGateway(context.Context, *UpdateGatewayRequest) (*UpdateGatewayResponse, error)
+	// ListGateways returns the existing gateways.
+	ListGateways(context.Context, *ListGatewayRequest) (*ListGatewayResponse, error)
+	// DeleteGateway deletes a gateway.
+	DeleteGateway(context.Context, *DeleteGatewayRequest) (*DeleteGatewayResponse, error)
+	// GetGatewayStats returns stats of an existing gateway.
+	GetGatewayStats(context.Context, *GetGatewayStatsRequest) (*GetGatewayStatsResponse, error)
 }
 
 func RegisterNetworkServerServer(s *grpc.Server, srv NetworkServerServer) {
@@ -954,6 +1543,114 @@ func _NetworkServer_PushDataDown_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NetworkServer_CreateGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateGatewayRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServerServer).CreateGateway(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ns.NetworkServer/CreateGateway",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServerServer).CreateGateway(ctx, req.(*CreateGatewayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkServer_GetGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGatewayRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServerServer).GetGateway(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ns.NetworkServer/GetGateway",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServerServer).GetGateway(ctx, req.(*GetGatewayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkServer_UpdateGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateGatewayRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServerServer).UpdateGateway(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ns.NetworkServer/UpdateGateway",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServerServer).UpdateGateway(ctx, req.(*UpdateGatewayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkServer_ListGateways_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGatewayRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServerServer).ListGateways(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ns.NetworkServer/ListGateways",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServerServer).ListGateways(ctx, req.(*ListGatewayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkServer_DeleteGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteGatewayRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServerServer).DeleteGateway(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ns.NetworkServer/DeleteGateway",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServerServer).DeleteGateway(ctx, req.(*DeleteGatewayRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NetworkServer_GetGatewayStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetGatewayStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NetworkServerServer).GetGatewayStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ns.NetworkServer/GetGatewayStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NetworkServerServer).GetGatewayStats(ctx, req.(*GetGatewayStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _NetworkServer_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ns.NetworkServer",
 	HandlerType: (*NetworkServerServer)(nil),
@@ -986,6 +1683,30 @@ var _NetworkServer_serviceDesc = grpc.ServiceDesc{
 			MethodName: "PushDataDown",
 			Handler:    _NetworkServer_PushDataDown_Handler,
 		},
+		{
+			MethodName: "CreateGateway",
+			Handler:    _NetworkServer_CreateGateway_Handler,
+		},
+		{
+			MethodName: "GetGateway",
+			Handler:    _NetworkServer_GetGateway_Handler,
+		},
+		{
+			MethodName: "UpdateGateway",
+			Handler:    _NetworkServer_UpdateGateway_Handler,
+		},
+		{
+			MethodName: "ListGateways",
+			Handler:    _NetworkServer_ListGateways_Handler,
+		},
+		{
+			MethodName: "DeleteGateway",
+			Handler:    _NetworkServer_DeleteGateway_Handler,
+		},
+		{
+			MethodName: "GetGatewayStats",
+			Handler:    _NetworkServer_GetGatewayStats_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "ns.proto",
@@ -994,50 +1715,86 @@ var _NetworkServer_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("ns.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 706 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0xec, 0x56, 0xdd, 0x52, 0xd3, 0x40,
-	0x14, 0x26, 0x94, 0x9f, 0x70, 0x68, 0xb1, 0xac, 0x08, 0xdb, 0x52, 0x9d, 0x18, 0x75, 0xa6, 0xe3,
-	0x45, 0x1d, 0xaa, 0x2f, 0xc0, 0xb4, 0xc0, 0x30, 0x0a, 0x74, 0x16, 0x19, 0xb9, 0x5d, 0xc8, 0x56,
-	0x23, 0xe9, 0x6e, 0xd9, 0x6c, 0x7f, 0x78, 0x04, 0x5f, 0xc8, 0x67, 0xf1, 0x11, 0x7c, 0x0c, 0x67,
-	0x77, 0xd3, 0x1f, 0x68, 0x62, 0x6f, 0x75, 0x86, 0xbb, 0xfd, 0xce, 0xd7, 0xf3, 0x9d, 0x93, 0x9c,
-	0xef, 0x64, 0x0b, 0x2e, 0x8f, 0x6b, 0x5d, 0x29, 0x94, 0x40, 0x8b, 0x3c, 0xf6, 0x7f, 0xe6, 0x00,
-	0x37, 0x24, 0xa3, 0x8a, 0x9d, 0x8a, 0x80, 0x9d, 0xb3, 0x38, 0x0e, 0x05, 0x27, 0xec, 0xb6, 0xc7,
-	0x62, 0x85, 0x30, 0xac, 0x06, 0xac, 0xbf, 0x1f, 0x04, 0x12, 0x3b, 0x9e, 0x53, 0xcd, 0x93, 0x11,
-	0x44, 0xdb, 0xb0, 0x42, 0xbb, 0xdd, 0x83, 0x8b, 0x63, 0xbc, 0x68, 0x88, 0x04, 0xe9, 0x78, 0xc0,
-	0xfa, 0x3a, 0x9e, 0xb3, 0x71, 0x8b, 0xb4, 0x12, 0x1f, 0xdc, 0x9c, 0x7f, 0x64, 0x77, 0x78, 0xc9,
-	0x2a, 0x25, 0x50, 0x67, 0xb4, 0x1b, 0x5c, 0x5d, 0x74, 0xf1, 0xb2, 0xe7, 0x54, 0x0b, 0x24, 0x41,
-	0xa8, 0x0c, 0xae, 0x3e, 0x35, 0xc5, 0x80, 0xe3, 0x15, 0xc3, 0x8c, 0xb1, 0x56, 0x93, 0xc3, 0x26,
-	0x8b, 0xe8, 0x1d, 0x5e, 0x35, 0xd4, 0x08, 0x22, 0x0f, 0xd6, 0xe5, 0x70, 0xaf, 0x49, 0xce, 0xda,
-	0xed, 0x98, 0x29, 0xec, 0x1a, 0x76, 0x3a, 0xa4, 0xeb, 0x5d, 0x1f, 0x7e, 0x0a, 0x63, 0x85, 0xd7,
-	0xbc, 0x9c, 0xae, 0x67, 0x11, 0xaa, 0x82, 0x2b, 0x87, 0x5f, 0x42, 0x1e, 0x88, 0x01, 0x06, 0xcf,
-	0xa9, 0x6e, 0xd4, 0xf3, 0x35, 0x1e, 0xd7, 0xc8, 0xa5, 0x8d, 0x91, 0x31, 0x8b, 0xb6, 0x60, 0x59,
-	0x0e, 0xeb, 0x4d, 0x82, 0xd7, 0x8d, 0xba, 0x05, 0xa8, 0x02, 0x6b, 0x92, 0x45, 0x74, 0x78, 0xd8,
-	0xe0, 0x0a, 0xe7, 0x3d, 0xa7, 0xea, 0x92, 0x49, 0x40, 0xf7, 0x45, 0x03, 0x79, 0xcc, 0x15, 0x93,
-	0x7d, 0x1a, 0xe1, 0x82, 0xed, 0x6b, 0x2a, 0x84, 0x6a, 0x80, 0x42, 0x1e, 0x2b, 0x1a, 0x45, 0x54,
-	0x85, 0x82, 0x9f, 0x50, 0xf9, 0x35, 0xe4, 0x78, 0xc3, 0x73, 0xaa, 0x0e, 0x49, 0x61, 0xfc, 0x5d,
-	0x28, 0xa5, 0xcc, 0x2d, 0xee, 0x0a, 0x1e, 0x33, 0xff, 0x1d, 0x3c, 0x3b, 0x62, 0x2a, 0x65, 0xa2,
-	0x93, 0xf9, 0x38, 0xd3, 0xf3, 0xf1, 0x7f, 0xe7, 0x60, 0xfb, 0x61, 0x86, 0xd5, 0x7a, 0x34, 0xc1,
-	0xbf, 0x6b, 0x02, 0xf3, 0x46, 0xaf, 0x3e, 0x4b, 0xca, 0x63, 0xfc, 0xc4, 0xbe, 0x83, 0x04, 0x6a,
-	0x46, 0x0d, 0x5b, 0x62, 0xc0, 0x24, 0x2e, 0x5a, 0x26, 0x81, 0x66, 0xe3, 0x2f, 0xba, 0xc1, 0xe3,
-	0xc6, 0xff, 0x87, 0x1b, 0x9f, 0x32, 0xb7, 0x64, 0xe3, 0xeb, 0x80, 0x9b, 0x2c, 0x62, 0xa9, 0x43,
-	0xcd, 0x5a, 0xfa, 0x5d, 0x28, 0xa5, 0xe4, 0x24, 0x82, 0x25, 0xd8, 0x39, 0x62, 0x8a, 0x50, 0x1e,
-	0x88, 0x4e, 0xd3, 0x7a, 0x20, 0xd1, 0xf3, 0x3f, 0x00, 0x9e, 0xa5, 0xe6, 0x7d, 0x2d, 0x7c, 0x0e,
-	0xde, 0x01, 0xbf, 0xed, 0xb1, 0x1e, 0x6b, 0x52, 0x45, 0xf5, 0x54, 0x4f, 0xf6, 0x1b, 0x0d, 0xd1,
-	0xe9, 0x50, 0x1e, 0xcc, 0xe9, 0x14, 0xbd, 0x00, 0x68, 0xcb, 0x4e, 0x8b, 0xde, 0x45, 0x82, 0x06,
-	0xc6, 0x80, 0x2e, 0x99, 0x8a, 0x20, 0x04, 0x4b, 0x01, 0x55, 0x34, 0xb1, 0xa0, 0x39, 0xfb, 0xaf,
-	0xe0, 0xe5, 0x5f, 0xea, 0x25, 0x4f, 0xf9, 0xc3, 0x81, 0xa7, 0xad, 0x5e, 0xfc, 0x6d, 0xf4, 0x93,
-	0x79, 0x8d, 0x8c, 0x0a, 0x2d, 0x4e, 0x0a, 0x69, 0x1f, 0x5c, 0x0b, 0xde, 0x0e, 0x65, 0x87, 0x05,
-	0xa6, 0x03, 0x97, 0x4c, 0x02, 0xda, 0x3b, 0xed, 0x96, 0x90, 0xca, 0x6c, 0x41, 0x81, 0x58, 0xa0,
-	0x75, 0xb4, 0xb7, 0x93, 0x0d, 0x30, 0x67, 0x7f, 0x1b, 0xb6, 0xee, 0xb7, 0x62, 0x7b, 0x7c, 0x5b,
-	0x01, 0x77, 0xe4, 0x49, 0xb4, 0x0a, 0x39, 0x72, 0xb9, 0x57, 0x5c, 0xb0, 0x87, 0x7a, 0xd1, 0xa9,
-	0xff, 0x5a, 0x82, 0xc2, 0x29, 0x53, 0x03, 0x21, 0x6f, 0xce, 0x99, 0xec, 0x33, 0x89, 0x08, 0x6c,
-	0xce, 0xdc, 0x0c, 0xa8, 0xa2, 0xad, 0x9d, 0x75, 0xd1, 0x97, 0x9f, 0x67, 0xb0, 0xc9, 0x5b, 0x5a,
-	0x40, 0xc7, 0xb0, 0x71, 0xff, 0x7a, 0x40, 0x25, 0x9d, 0x92, 0x7a, 0xc9, 0x94, 0xcb, 0x69, 0xd4,
-	0x58, 0x8a, 0xc0, 0xe6, 0x8c, 0x8d, 0x6d, 0x7b, 0x59, 0x5f, 0x25, 0xdb, 0x5e, 0xb6, 0xf7, 0x8d,
-	0xe6, 0x8c, 0x93, 0xad, 0x66, 0xd6, 0x52, 0x58, 0xcd, 0x6c, 0xfb, 0x2f, 0xa0, 0x33, 0x28, 0x3e,
-	0x74, 0x39, 0xda, 0x4d, 0x9e, 0x2c, 0x6d, 0x2d, 0xca, 0x95, 0x74, 0x72, 0x2c, 0xf8, 0x1d, 0x4a,
-	0x99, 0x86, 0x44, 0xaf, 0x75, 0xf2, 0xbc, 0xfd, 0x28, 0xbf, 0x99, 0xf3, 0xab, 0x71, 0xad, 0x06,
-	0xe4, 0xa7, 0xbd, 0x84, 0x76, 0x74, 0x62, 0x8a, 0xd1, 0xcb, 0x78, 0x96, 0x18, 0x89, 0x5c, 0xad,
-	0x98, 0xbf, 0x89, 0xef, 0xff, 0x04, 0x00, 0x00, 0xff, 0xff, 0xc8, 0x25, 0x9b, 0x8b, 0x32, 0x0a,
-	0x00, 0x00,
+	// 1291 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xec, 0x58, 0x4b, 0x73, 0xdb, 0x36,
+	0x10, 0x36, 0x25, 0x4b, 0xa6, 0xd6, 0xb2, 0x43, 0xc3, 0x2f, 0x5a, 0x76, 0x33, 0x2a, 0xdb, 0x74,
+	0x34, 0x99, 0x8e, 0xdb, 0x38, 0xbd, 0xf6, 0xa0, 0x4a, 0x8a, 0xe3, 0x49, 0xfc, 0x28, 0x6c, 0x4f,
+	0x92, 0x23, 0x62, 0x42, 0x2e, 0x6b, 0x0a, 0x54, 0x40, 0xc8, 0x92, 0x6f, 0xbd, 0xf6, 0xb7, 0xf4,
+	0xd2, 0x43, 0xa7, 0x3f, 0xa9, 0xd3, 0x9f, 0xd1, 0xc1, 0x43, 0x14, 0x25, 0x52, 0xd5, 0x35, 0x99,
+	0xc9, 0x0d, 0xbb, 0x0b, 0x7c, 0xd8, 0x25, 0xbe, 0x7d, 0x48, 0x60, 0xb3, 0xf8, 0xb0, 0xcf, 0x23,
+	0x11, 0xa1, 0x02, 0x8b, 0xbd, 0xbf, 0x8b, 0xe0, 0xb6, 0x38, 0x25, 0x82, 0x9e, 0x45, 0x3e, 0xbd,
+	0xa4, 0x71, 0x1c, 0x44, 0x0c, 0xd3, 0x0f, 0x03, 0x1a, 0x0b, 0xe4, 0xc2, 0x8a, 0x4f, 0xef, 0x9b,
+	0xbe, 0xcf, 0x5d, 0xab, 0x6e, 0x35, 0xaa, 0x78, 0x2c, 0xa2, 0x1d, 0x28, 0x93, 0x7e, 0xbf, 0x73,
+	0x7d, 0xe2, 0x16, 0x94, 0xc1, 0x48, 0x52, 0xef, 0xd3, 0x7b, 0xa9, 0x2f, 0x6a, 0xbd, 0x96, 0x24,
+	0x12, 0x1b, 0xde, 0x5d, 0xbe, 0xa2, 0x0f, 0xee, 0xb2, 0x46, 0x32, 0xa2, 0x3c, 0xd1, 0x6d, 0x31,
+	0x71, 0xdd, 0x77, 0x4b, 0x75, 0xab, 0xb1, 0x86, 0x8d, 0x84, 0x6a, 0x60, 0xcb, 0x55, 0x3b, 0x1a,
+	0x32, 0xb7, 0xac, 0x2c, 0x89, 0x2c, 0xd1, 0xf8, 0xa8, 0x4d, 0x43, 0xf2, 0xe0, 0xae, 0x28, 0xd3,
+	0x58, 0x44, 0x75, 0x58, 0xe5, 0xa3, 0x67, 0x6d, 0x7c, 0xde, 0xed, 0xc6, 0x54, 0xb8, 0xb6, 0xb2,
+	0xa6, 0x55, 0xf2, 0xbe, 0x9b, 0x17, 0xaf, 0x83, 0x58, 0xb8, 0x95, 0x7a, 0x51, 0xde, 0xa7, 0x25,
+	0xd4, 0x00, 0x9b, 0x8f, 0xde, 0x04, 0xcc, 0x8f, 0x86, 0x2e, 0xd4, 0xad, 0xc6, 0xfa, 0x51, 0xf5,
+	0x90, 0xc5, 0x87, 0xf8, 0xad, 0xd6, 0xe1, 0xc4, 0x8a, 0xb6, 0xa0, 0xc4, 0x47, 0x47, 0x6d, 0xec,
+	0xae, 0x2a, 0x74, 0x2d, 0xa0, 0x03, 0xa8, 0x70, 0x1a, 0x92, 0xd1, 0x8b, 0x16, 0x13, 0x6e, 0xb5,
+	0x6e, 0x35, 0x6c, 0x3c, 0x51, 0x48, 0xbf, 0x88, 0xcf, 0x4f, 0x98, 0xa0, 0xfc, 0x9e, 0x84, 0xee,
+	0x9a, 0xf6, 0x2b, 0xa5, 0x42, 0x87, 0x80, 0x02, 0x16, 0x0b, 0x12, 0x86, 0x44, 0x04, 0x11, 0x3b,
+	0x25, 0xfc, 0x36, 0x60, 0xee, 0x7a, 0xdd, 0x6a, 0x58, 0x38, 0xc7, 0xe2, 0xed, 0xc3, 0x5e, 0xce,
+	0xbb, 0xc5, 0xfd, 0x88, 0xc5, 0xd4, 0xfb, 0x0e, 0xb6, 0x8f, 0xa9, 0xc8, 0x79, 0xd1, 0xc9, 0xfb,
+	0x58, 0xe9, 0xf7, 0xf1, 0xfe, 0x2d, 0xc2, 0xce, 0xec, 0x09, 0x8d, 0xf5, 0x99, 0x04, 0x1f, 0x2f,
+	0x09, 0xd4, 0x17, 0x7d, 0x7f, 0xc5, 0x09, 0x8b, 0xdd, 0x47, 0xfa, 0x1b, 0x18, 0x51, 0x5a, 0xc4,
+	0xe8, 0x22, 0x1a, 0x52, 0xee, 0x3a, 0xda, 0x62, 0x44, 0x95, 0xf1, 0xd7, 0x7d, 0xff, 0x73, 0xc6,
+	0x7f, 0x82, 0x19, 0x9f, 0xf3, 0x6e, 0x26, 0xe3, 0x8f, 0xc0, 0x6d, 0xd3, 0x90, 0xe6, 0x3e, 0xea,
+	0xbc, 0xa4, 0xdf, 0x87, 0xbd, 0x9c, 0x33, 0x06, 0x70, 0x0f, 0x76, 0x8f, 0xa9, 0xc0, 0x84, 0xf9,
+	0x51, 0xaf, 0xad, 0x39, 0x60, 0xf0, 0xbc, 0x1f, 0xc0, 0xcd, 0x9a, 0x16, 0x55, 0x0b, 0x8f, 0x41,
+	0xbd, 0xc3, 0x3e, 0x0c, 0xe8, 0x80, 0xb6, 0x89, 0x20, 0xf2, 0x55, 0x4f, 0x9b, 0xad, 0x56, 0xd4,
+	0xeb, 0x11, 0xe6, 0x2f, 0xf0, 0x14, 0x3d, 0x06, 0xe8, 0xf2, 0xde, 0x05, 0x79, 0x08, 0x23, 0xe2,
+	0x2b, 0x02, 0xda, 0x38, 0xa5, 0x41, 0x08, 0x96, 0x7d, 0x22, 0x88, 0xa1, 0xa0, 0x5a, 0x7b, 0x5f,
+	0xc1, 0x97, 0xff, 0x73, 0x9f, 0x89, 0xf2, 0x77, 0x0b, 0x36, 0x2f, 0x06, 0xf1, 0x2f, 0xe3, 0x2d,
+	0x8b, 0x1c, 0x19, 0x5f, 0x54, 0x98, 0x5c, 0x24, 0x79, 0x70, 0x13, 0xb1, 0x6e, 0xc0, 0x7b, 0xd4,
+	0x57, 0x1e, 0xd8, 0x78, 0xa2, 0x90, 0xdc, 0xe9, 0x5e, 0x44, 0x5c, 0xa8, 0x2c, 0x58, 0xc3, 0x5a,
+	0x90, 0x38, 0x92, 0xdb, 0x26, 0x03, 0xd4, 0xda, 0xdb, 0x81, 0xad, 0x69, 0x57, 0x8c, 0x8f, 0x7f,
+	0x59, 0xb0, 0xa5, 0x4b, 0xfd, 0x31, 0x11, 0x74, 0x48, 0x1e, 0xc6, 0x4e, 0x3a, 0x50, 0xec, 0x91,
+	0x1b, 0xe3, 0xa1, 0x5c, 0x4a, 0x58, 0x46, 0x7a, 0x54, 0xb9, 0x57, 0xc1, 0x6a, 0x2d, 0x89, 0xe8,
+	0xd3, 0xf8, 0x86, 0x07, 0x7d, 0xc9, 0x25, 0xe5, 0x60, 0x05, 0xa7, 0x55, 0x32, 0xf1, 0x24, 0xd1,
+	0xc4, 0xc0, 0xa7, 0xca, 0x4b, 0x0b, 0x27, 0xb2, 0x0c, 0x2e, 0x8c, 0xd8, 0xad, 0x36, 0x96, 0x94,
+	0x71, 0xa2, 0x90, 0x27, 0x49, 0x68, 0x4e, 0x96, 0xf5, 0xc9, 0xb1, 0xec, 0xed, 0xc2, 0xf6, 0x8c,
+	0xd7, 0x26, 0x9e, 0x27, 0xb0, 0x71, 0x4c, 0xc5, 0xa2, 0x58, 0xbc, 0x3f, 0x0b, 0x80, 0xd2, 0xfb,
+	0x0c, 0xc1, 0x3e, 0xea, 0xa0, 0x15, 0x17, 0x54, 0xd0, 0x7e, 0x53, 0xa8, 0x4a, 0x55, 0xc1, 0x13,
+	0x85, 0xb4, 0x0e, 0x54, 0x06, 0x4b, 0xab, 0xad, 0xad, 0x89, 0x42, 0xfa, 0xdc, 0x0d, 0x78, 0x2c,
+	0x2e, 0x29, 0x65, 0x4d, 0x59, 0xac, 0x94, 0xcf, 0x29, 0x95, 0x4c, 0x83, 0x90, 0x24, 0x1b, 0x40,
+	0x6d, 0x48, 0x69, 0x14, 0x53, 0x74, 0x89, 0xf8, 0xd4, 0x98, 0x32, 0xe3, 0xb5, 0x61, 0xca, 0x4f,
+	0x80, 0x64, 0xa5, 0x9e, 0x09, 0x66, 0x0b, 0x4a, 0x61, 0xd0, 0x0b, 0x84, 0x0a, 0xa7, 0x84, 0xb5,
+	0x20, 0x33, 0x36, 0xd2, 0x2d, 0xa0, 0xa0, 0xd4, 0x46, 0xf2, 0x28, 0x6c, 0x4e, 0x61, 0x18, 0x1a,
+	0x3d, 0x06, 0x10, 0x91, 0x20, 0x61, 0x2b, 0x1a, 0xb0, 0x31, 0x52, 0x4a, 0x83, 0x0e, 0xa1, 0xcc,
+	0x69, 0x3c, 0x08, 0x25, 0x5c, 0xb1, 0xb1, 0x7a, 0xb4, 0x23, 0x5b, 0x43, 0x96, 0x8e, 0xd8, 0xec,
+	0xf2, 0x1a, 0xb0, 0xa5, 0x6b, 0xe9, 0x42, 0x5e, 0xef, 0xc2, 0xf6, 0xcc, 0x4e, 0x13, 0xed, 0x3f,
+	0x16, 0x54, 0x8d, 0xee, 0x52, 0x10, 0x11, 0xcb, 0x2f, 0x2a, 0x82, 0x1e, 0x8d, 0x05, 0xe9, 0xf5,
+	0x15, 0x42, 0x05, 0x4f, 0x14, 0xe8, 0x5b, 0xd8, 0xe0, 0xa3, 0x0b, 0x72, 0x73, 0x47, 0x45, 0x8c,
+	0xe9, 0x0d, 0x0d, 0xee, 0xa9, 0x6f, 0x62, 0xcf, 0x1a, 0xd0, 0xf7, 0xb0, 0x99, 0x51, 0x9e, 0xbf,
+	0x52, 0x6f, 0x5c, 0xc2, 0x79, 0x26, 0x89, 0x2f, 0x32, 0xf8, 0xcb, 0x1a, 0x3f, 0x63, 0x40, 0x4f,
+	0xc1, 0x49, 0x94, 0x9d, 0x5e, 0x20, 0x04, 0xf5, 0x15, 0x09, 0x4a, 0x38, 0xa3, 0xf7, 0xfe, 0xb0,
+	0xd4, 0xb0, 0x99, 0x8e, 0x75, 0x3e, 0x51, 0x9f, 0x83, 0x1d, 0x8c, 0x9b, 0x68, 0x41, 0x75, 0xe9,
+	0x5d, 0xf9, 0x14, 0xcd, 0xdb, 0x5b, 0x4e, 0x6f, 0x55, 0x7b, 0x1c, 0x37, 0x54, 0x9c, 0x6c, 0x44,
+	0xdf, 0xc0, 0x7a, 0x2c, 0x08, 0x17, 0x57, 0xc9, 0xe7, 0xd3, 0x64, 0x9e, 0xd1, 0x22, 0x0f, 0xaa,
+	0x94, 0xf9, 0x93, 0x5d, 0xcb, 0x6a, 0xd7, 0x94, 0xce, 0x6b, 0xa9, 0x46, 0x38, 0xed, 0xac, 0x21,
+	0x51, 0x23, 0x21, 0x89, 0xa5, 0x48, 0xe2, 0x28, 0x92, 0xa4, 0x77, 0x1a, 0xfb, 0xd3, 0x03, 0xb0,
+	0xc7, 0x73, 0x05, 0x5a, 0x81, 0x22, 0x7e, 0xfb, 0xcc, 0x59, 0xd2, 0x8b, 0x23, 0xc7, 0x7a, 0x1a,
+	0xc2, 0x66, 0x4e, 0x3c, 0x08, 0xa0, 0x7c, 0xd9, 0x69, 0x9d, 0x9f, 0xb5, 0x9d, 0x25, 0xb9, 0x3e,
+	0x3d, 0x39, 0xbb, 0xbe, 0xea, 0x38, 0x16, 0xb2, 0x61, 0xf9, 0xe5, 0xf9, 0x35, 0x76, 0x0a, 0x12,
+	0xa1, 0xdd, 0x7c, 0xe7, 0x14, 0xa5, 0xea, 0x4d, 0xa7, 0xf3, 0xca, 0x59, 0x46, 0x15, 0x28, 0x9d,
+	0x9e, 0x9f, 0x5d, 0xbd, 0x74, 0x4a, 0x68, 0x15, 0x56, 0x7e, 0xbe, 0x6e, 0xe2, 0xab, 0x0e, 0x76,
+	0xca, 0x72, 0xc7, 0xbb, 0x4e, 0x13, 0x3b, 0x2b, 0x47, 0xbf, 0xd9, 0xb0, 0x76, 0x46, 0xc5, 0x30,
+	0xe2, 0x77, 0x97, 0x94, 0xdf, 0x53, 0x8e, 0x30, 0x6c, 0x64, 0x7e, 0x4b, 0xa0, 0x03, 0x19, 0xcc,
+	0xbc, 0x9f, 0x86, 0xb5, 0x2f, 0xe6, 0x58, 0x0d, 0x97, 0x97, 0xd0, 0x09, 0xac, 0x4f, 0xff, 0xa0,
+	0x40, 0x7b, 0x26, 0x85, 0x72, 0xd0, 0x6a, 0x79, 0xa6, 0x04, 0x0a, 0xc3, 0x46, 0x66, 0xf0, 0xd1,
+	0xee, 0xcd, 0x9b, 0x63, 0xb5, 0x7b, 0xf3, 0xa7, 0x25, 0x85, 0x99, 0x99, 0x7d, 0x34, 0xe6, 0xbc,
+	0x31, 0x4a, 0x63, 0xce, 0x1f, 0x98, 0x96, 0xd0, 0x39, 0x38, 0xb3, 0x73, 0x11, 0xda, 0x37, 0x91,
+	0xe5, 0x0d, 0x52, 0xb5, 0x83, 0x7c, 0x63, 0x02, 0xf8, 0x2b, 0xec, 0xcd, 0x1d, 0x61, 0xd0, 0xd7,
+	0xf2, 0xf0, 0xa2, 0x89, 0xaa, 0xf6, 0x64, 0xc1, 0xae, 0xe4, 0xae, 0x16, 0x54, 0xd3, 0xd3, 0x07,
+	0x52, 0x59, 0x96, 0x33, 0x1a, 0xd5, 0xdc, 0xac, 0x21, 0x01, 0x79, 0x01, 0x6b, 0x53, 0x3d, 0x1f,
+	0xb9, 0x13, 0x9a, 0x4c, 0x17, 0xc6, 0xda, 0x5e, 0x8e, 0x25, 0xc1, 0xf9, 0x11, 0x60, 0x92, 0x73,
+	0x68, 0x7b, 0xb6, 0xf6, 0x6a, 0x84, 0x39, 0x25, 0x59, 0xbb, 0x31, 0xd5, 0x50, 0xb4, 0x1b, 0x79,
+	0x9d, 0x51, 0xbb, 0x91, 0xdf, 0x7d, 0x96, 0x50, 0x13, 0xaa, 0xa9, 0xde, 0x11, 0x23, 0x75, 0x63,
+	0xb6, 0x23, 0xd5, 0x76, 0x33, 0xfa, 0xb4, 0x2b, 0x53, 0xd5, 0x5e, 0xbb, 0x92, 0xd7, 0x2a, 0xb4,
+	0x2b, 0xf9, 0xad, 0x61, 0x09, 0xbd, 0x86, 0x47, 0x33, 0x55, 0x08, 0xd5, 0xa6, 0xe3, 0x4f, 0xd7,
+	0xd1, 0xda, 0x7e, 0xae, 0x6d, 0x8c, 0xf6, 0xbe, 0xac, 0xfe, 0x00, 0x7a, 0xfe, 0x5f, 0x00, 0x00,
+	0x00, 0xff, 0xff, 0xbc, 0x8a, 0xa5, 0x93, 0x0c, 0x12, 0x00, 0x00,
 }

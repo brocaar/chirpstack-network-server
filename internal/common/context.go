@@ -2,6 +2,7 @@ package common
 
 import (
 	"github.com/garyburd/redigo/redis"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/nc"
@@ -13,6 +14,7 @@ import (
 // (backends, db connections etc..)
 type Context struct {
 	RedisPool   *redis.Pool
+	DB          *sqlx.DB
 	Gateway     backend.Gateway
 	NetID       lorawan.NetID
 	Application as.ApplicationServerClient
