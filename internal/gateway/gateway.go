@@ -279,6 +279,31 @@ func GetGateways(db *sqlx.DB, limit, offset int) ([]Gateway, error) {
 	return gws, nil
 }
 
+// GetGatewaysForMACs returns a map of gateways given a slice of MACs.
+func GetGatewaysForMACs(db *sqlx.DB, macs []lorawan.EUI64) (map[lorawan.EUI64]Gateway, error) {
+	out := make(map[lorawan.EUI64]Gateway)
+	var macsB [][]byte
+	for i := range macs {
+		macsB = append(macsB, macs[i][:])
+	}
+
+	var gws []Gateway
+	err := db.Select(&gws, "select * from gateway where mac = any($1)", pq.Array(macsB))
+	if err != nil {
+		return nil, errors.Wrap(err, "select error")
+	}
+
+	if len(gws) != len(macs) {
+		return nil, fmt.Errorf("expected %d gateways, got %d", len(macs), len(out))
+	}
+
+	for i := range gws {
+		out[gws[i].MAC] = gws[i]
+	}
+
+	return out, nil
+}
+
 // GetGatewayStats returns the stats for the given gateway.
 func GetGatewayStats(db *sqlx.DB, mac lorawan.EUI64, interval string, start, end time.Time) ([]Stats, error) {
 	var valid bool
