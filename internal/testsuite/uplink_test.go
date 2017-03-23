@@ -12,6 +12,7 @@ import (
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/loraserver/internal/test"
@@ -70,20 +71,40 @@ func init() {
 
 func TestUplinkScenarios(t *testing.T) {
 	conf := test.GetConfig()
+	db, err := common.OpenDatabase(conf.PostgresDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	Convey("Given a clean state", t, func() {
+	Convey("Given a clean database", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)
 		test.MustFlushRedis(p)
+		test.MustResetDB(db)
 
 		ctx := common.Context{
 			NetID:       [3]byte{3, 2, 1},
 			RedisPool:   p,
+			DB:          db,
 			Gateway:     test.NewGatewayBackend(),
 			Application: test.NewApplicationClient(),
 			Controller:  test.NewNetworkControllerClient(),
 		}
 
+		altitude := float64(10.5)
+
+		gw1 := gateway.Gateway{
+			MAC:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Name: "test-gateway",
+			Location: &gateway.GPSPoint{
+				Latitude:  1.1234,
+				Longitude: 1.1235,
+			},
+			Altitude: &altitude,
+		}
+		So(gateway.CreateGateway(db, &gw1), ShouldBeNil)
+
 		rxInfo := gw.RXInfo{
+			MAC:       [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			Frequency: common.Band.UplinkChannels[0].Frequency,
 			DataRate:  common.Band.DataRates[common.Band.UplinkChannels[0].DataRates[0]],
 			LoRaSNR:   7,
@@ -225,10 +246,13 @@ func TestUplinkScenarios(t *testing.T) {
 			},
 			RxInfo: []*as.RXInfo{
 				{
-					Mac:     rxInfo.MAC[:],
-					Time:    rxInfo.Time.Format(time.RFC3339Nano),
-					Rssi:    int32(rxInfo.RSSI),
-					LoRaSNR: rxInfo.LoRaSNR,
+					Mac:       rxInfo.MAC[:],
+					Time:      rxInfo.Time.Format(time.RFC3339Nano),
+					Rssi:      int32(rxInfo.RSSI),
+					LoRaSNR:   rxInfo.LoRaSNR,
+					Altitude:  *gw1.Altitude,
+					Latitude:  gw1.Location.Latitude,
+					Longitude: gw1.Location.Longitude,
 				},
 			},
 		}
@@ -250,10 +274,13 @@ func TestUplinkScenarios(t *testing.T) {
 			},
 			RxInfo: []*as.RXInfo{
 				{
-					Mac:     rxInfo.MAC[:],
-					Time:    rxInfo.Time.Format(time.RFC3339Nano),
-					Rssi:    int32(rxInfo.RSSI),
-					LoRaSNR: rxInfo.LoRaSNR,
+					Mac:       rxInfo.MAC[:],
+					Time:      rxInfo.Time.Format(time.RFC3339Nano),
+					Rssi:      int32(rxInfo.RSSI),
+					LoRaSNR:   rxInfo.LoRaSNR,
+					Altitude:  *gw1.Altitude,
+					Latitude:  gw1.Location.Latitude,
+					Longitude: gw1.Location.Longitude,
 				},
 			},
 		}
@@ -275,10 +302,13 @@ func TestUplinkScenarios(t *testing.T) {
 			},
 			RxInfo: []*as.RXInfo{
 				{
-					Mac:     rxInfo.MAC[:],
-					Time:    rxInfo.Time.Format(time.RFC3339Nano),
-					Rssi:    int32(rxInfo.RSSI),
-					LoRaSNR: rxInfo.LoRaSNR,
+					Mac:       rxInfo.MAC[:],
+					Time:      rxInfo.Time.Format(time.RFC3339Nano),
+					Rssi:      int32(rxInfo.RSSI),
+					LoRaSNR:   rxInfo.LoRaSNR,
+					Altitude:  *gw1.Altitude,
+					Latitude:  gw1.Location.Latitude,
+					Longitude: gw1.Location.Longitude,
 				},
 			},
 		}
@@ -384,10 +414,13 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 				RxInfo: []*as.RXInfo{
 					{
-						Mac:     rxInfo.MAC[:],
-						Time:    rxInfo.Time.Format(time.RFC3339Nano),
-						Rssi:    int32(rxInfo.RSSI),
-						LoRaSNR: rxInfo.LoRaSNR,
+						Mac:       rxInfo.MAC[:],
+						Time:      rxInfo.Time.Format(time.RFC3339Nano),
+						Rssi:      int32(rxInfo.RSSI),
+						LoRaSNR:   rxInfo.LoRaSNR,
+						Altitude:  *gw1.Altitude,
+						Latitude:  gw1.Location.Latitude,
+						Longitude: gw1.Location.Longitude,
 					},
 				},
 			}
@@ -526,6 +559,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
@@ -571,6 +605,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
@@ -616,6 +651,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 3000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
@@ -666,6 +702,7 @@ func TestUplinkScenarios(t *testing.T) {
 						MaxPayloadSize: 115,
 					},
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 2000000,
 						Frequency: common.Band.RX2Frequency,
 						Power:     14,
@@ -711,6 +748,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 6000000,
 						Frequency: common.Band.RX2Frequency,
 						Power:     14,
@@ -857,6 +895,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
@@ -912,6 +951,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
@@ -968,6 +1008,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
@@ -1024,6 +1065,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
@@ -1095,6 +1137,7 @@ func TestUplinkScenarios(t *testing.T) {
 						},
 					},
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
@@ -1164,6 +1207,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
@@ -1215,6 +1259,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
@@ -1269,6 +1314,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
@@ -1350,6 +1396,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
@@ -1413,6 +1460,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
@@ -1582,6 +1630,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
 						Timestamp: rxInfo.Timestamp + 1000000,
 						Frequency: rxInfo.Frequency,
 						Power:     14,

@@ -14,10 +14,13 @@ import (
 
 func TestGatewayStatsAggregation(t *testing.T) {
 	conf := test.GetConfig()
+	db, err := common.OpenDatabase(conf.PostgresDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	Convey("Given a clean database", t, func() {
 		common.CreateGatewayOnStats = false
-		db, err := common.OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		test.MustResetDB(db)
 
@@ -150,6 +153,12 @@ func TestGatewayFunctions(t *testing.T) {
 				gw2.UpdatedAt = gw2.UpdatedAt.UTC().Truncate(time.Millisecond)
 
 				So(gw2, ShouldResemble, gw)
+
+				gws, err := GetGatewaysForMACs(db, []lorawan.EUI64{gw.MAC})
+				So(err, ShouldBeNil)
+				gw3, ok := gws[gw.MAC]
+				So(ok, ShouldBeTrue)
+				So(gw3.MAC, ShouldResemble, gw.MAC)
 			})
 
 			Convey("Then it can be updated", func() {
