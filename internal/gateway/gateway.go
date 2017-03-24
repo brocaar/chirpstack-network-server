@@ -288,7 +288,7 @@ func GetGatewaysForMACs(db *sqlx.DB, macs []lorawan.EUI64) (map[lorawan.EUI64]Ga
 	}
 
 	var gws []Gateway
-	err := db.Select(&gws, "select * from gateway where mac = any($1)", pq.Array(macsB))
+	err := db.Select(&gws, "select * from gateway where mac = any($1)", pq.ByteaArray(macsB))
 	if err != nil {
 		return nil, errors.Wrap(err, "select error")
 	}
@@ -401,8 +401,12 @@ func handleStatsPacket(db *sqlx.DB, stats gw.GatewayStatsPacket) error {
 			gw.FirstSeenAt = &now
 		}
 		gw.LastSeenAt = &now
-		gw.Location = location
-		gw.Altitude = altitude
+		if location != nil {
+			gw.Location = location
+		}
+		if altitude != nil {
+			gw.Altitude = altitude
+		}
 
 		if err = UpdateGateway(db, &gw); err != nil {
 			return errors.Wrap(err, "update gateway error")

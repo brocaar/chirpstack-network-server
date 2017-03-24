@@ -132,7 +132,7 @@ func TestGatewayFunctions(t *testing.T) {
 		Convey("When creating a gateway", func() {
 			gw := Gateway{
 				Name: "test-gateway",
-				MAC:  lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+				MAC:  lorawan.EUI64{29, 238, 8, 208, 182, 145, 209, 73},
 				Location: &GPSPoint{
 					Latitude:  1.23456789,
 					Longitude: 4.56789012,
