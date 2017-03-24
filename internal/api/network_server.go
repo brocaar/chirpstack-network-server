@@ -264,6 +264,7 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 
 	gw := gateway.Gateway{
 		MAC:         mac,
+		Name: 		 req.Name,
 		Description: req.Description,
 		Location:    location,
 		Altitude:    altitude,
@@ -313,6 +314,7 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 		altitude = &req.Altitude
 	}
 
+	gw.Name = req.Name
 	gw.Description = req.Description
 	gw.Location = location
 	gw.Altitude = altitude
@@ -376,7 +378,7 @@ func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatew
 		return nil, grpc.Errorf(codes.InvalidArgument, "parse end timestamp: %s", err)
 	}
 
-	stats, err := gateway.GetGatewayStats(n.ctx.DB, mac, string(req.Interval), start, end)
+	stats, err := gateway.GetGatewayStats(n.ctx.DB, mac, ns.AggregationInterval_name[ int32( req.Interval ) ], start, end)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -399,6 +401,7 @@ func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatew
 func gwToResp(gw gateway.Gateway) *ns.GetGatewayResponse {
 	resp := ns.GetGatewayResponse{
 		Mac:         gw.MAC[:],
+		Name: 		 gw.Name,
 		Description: gw.Description,
 		CreatedAt:   gw.CreatedAt.Format(time.RFC3339Nano),
 		UpdatedAt:   gw.UpdatedAt.Format(time.RFC3339Nano),

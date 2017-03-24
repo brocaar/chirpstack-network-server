@@ -255,17 +255,20 @@ message CreateGatewayRequest {
 	// MAC address of the gateway.
 	bytes mac = 1;
 
+	// Name for the gateway.
+	string name = 2;
+
 	// Description for the gateway.
-	string description = 2;
+	string description = 3;
 
 	// Latitude of the gateway.
-	double latitude = 3;
+	double latitude = 4;
 
 	// Longitude of the gateway.
-	double longitude = 4;
+	double longitude = 5;
 
 	// Altitude of the gateway.
-	double altitude = 5;
+	double altitude = 6;
 }
 
 message CreateGatewayResponse {}
@@ -280,45 +283,51 @@ message GetGatewayResponse {
 	bytes mac = 1;
 
 	// Description for the gateway.
-	string description = 2;
+	string name = 2;
+
+	// Description for the gateway.
+	string description = 3;
 
 	// Latitude of the gateway.
-	double latitude = 3;
+	double latitude = 4;
 
 	// Longitude of the gateway.
-	double longitude = 4;
+	double longitude = 5;
 
 	// Altitude of the gateway.
-	double altitude = 5;
+	double altitude = 6;
 
 	// The timestamp when the gateway was created.
-	string createdAt = 6;
+	string createdAt = 7;
 
 	// The timestamp when the gateway was last updated.
-	string updatedAt = 7;
+	string updatedAt = 8;
 
 	// The timestamp when the gateway was first seen.
-	string firstSeenAt = 8;
+	string firstSeenAt = 9;
 
 	// The timestamp when the gateway was last seen.
-	string lastSeenAt = 9;
+	string lastSeenAt = 10;
 }
 
 message UpdateGatewayRequest {
 	// MAC address of the gateway.
 	bytes mac = 1;
 
+	// Name for the gateway.
+	string name = 2;
+
 	// Description for the gateway.
-	string description = 2;
+	string description = 3;
 
 	// Latitude of the gateway.
-	double latitude = 3;
+	double latitude = 4;
 
 	// Longitude of the gateway.
-	double longitude = 4;
+	double longitude = 5;
 
 	// Altitude of the gateway.
-	double altitude = 5;
+	double altitude = 6;
 }
 
 message UpdateGatewayResponse {}

@@ -107,6 +107,7 @@ func (s *StatsHandler) Stop() error {
 // Gateway represents a single gateway.
 type Gateway struct {
 	MAC         lorawan.EUI64 `db:"mac"`
+	Name 		string        `db:"name"`
 	Description string        `db:"description"`
 	CreatedAt   time.Time     `db:"created_at"`
 	UpdatedAt   time.Time     `db:"updated_at"`
@@ -134,6 +135,7 @@ func CreateGateway(db *sqlx.DB, gw *Gateway) error {
 	_, err := db.Exec(`
 		insert into gateway (
 			mac,
+			name,
 			description,
 			created_at,
 			updated_at,
@@ -141,9 +143,11 @@ func CreateGateway(db *sqlx.DB, gw *Gateway) error {
 			last_seen_at,
 			location,
 			altitude
-		) values ($1, $2, $3, $3, $4, $5, $6, $7)`,
+		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 		gw.MAC[:],
+		gw.Name,
 		gw.Description,
+		now,
 		now,
 		gw.FirstSeenAt,
 		gw.LastSeenAt,
@@ -187,14 +191,16 @@ func UpdateGateway(db *sqlx.DB, gw *Gateway) error {
 	now := time.Now()
 	res, err := db.Exec(`
 		update gateway set
-			description = $2,
-			updated_at = $3,
-			first_seen_at = $4,
-			last_seen_at = $5,
-			location = $6,
-			altitude = $7
+			name = $2,
+			description = $3,
+			updated_at = $4,
+			first_seen_at = $5,
+			last_seen_at = $6,
+			location = $7,
+			altitude = $8
 		where mac = $1`,
 		gw.MAC[:],
+		gw.Name,
 		gw.Description,
 		now,
 		gw.FirstSeenAt,

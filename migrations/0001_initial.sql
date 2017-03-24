@@ -1,6 +1,7 @@
 -- +migrate Up
 create table gateway (
 	mac bytea primary key,
+	name text not null,
 	description text not null,
 	created_at timestamp with time zone not null,
 	updated_at timestamp with time zone not null,

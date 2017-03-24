@@ -30,7 +30,6 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	// TODO: merge backend/gateway into internal/gateway?
 	gw "github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/loraserver/internal/migration"
 	"github.com/brocaar/loraserver/internal/migrations"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
@@ -102,7 +101,7 @@ func run(c *cli.Context) error {
 	lsCtx := mustGetContext(netID, c)
 
 	// migrate old node-session keys to new layout
-	if err = migration.MigrateNodeSessionDevAddrDevEUI(lsCtx.RedisPool); err != nil {
+	if err = migrations.MigrateNodeSessionDevAddrDevEUI(lsCtx.RedisPool); err != nil {
 		log.Fatalf("node-session migration error: %s", err)
 	}
 	// migrate the database
