@@ -253,6 +253,8 @@ func publishDataUp(ctx common.Context, ns session.NodeSession, rxPacket models.R
 		}
 
 		if gw, ok := gws[rxInfo.MAC]; ok {
+			asRxInfo.Name = gw.Name
+
 			if gw.Location != nil {
 				asRxInfo.Latitude = gw.Location.Latitude
 				asRxInfo.Longitude = gw.Location.Longitude

@@ -247,6 +247,7 @@ func TestUplinkScenarios(t *testing.T) {
 			RxInfo: []*as.RXInfo{
 				{
 					Mac:       rxInfo.MAC[:],
+					Name:      gw1.Name,
 					Time:      rxInfo.Time.Format(time.RFC3339Nano),
 					Rssi:      int32(rxInfo.RSSI),
 					LoRaSNR:   rxInfo.LoRaSNR,
@@ -275,6 +276,7 @@ func TestUplinkScenarios(t *testing.T) {
 			RxInfo: []*as.RXInfo{
 				{
 					Mac:       rxInfo.MAC[:],
+					Name:      gw1.Name,
 					Time:      rxInfo.Time.Format(time.RFC3339Nano),
 					Rssi:      int32(rxInfo.RSSI),
 					LoRaSNR:   rxInfo.LoRaSNR,
@@ -303,6 +305,7 @@ func TestUplinkScenarios(t *testing.T) {
 			RxInfo: []*as.RXInfo{
 				{
 					Mac:       rxInfo.MAC[:],
+					Name:      gw1.Name,
 					Time:      rxInfo.Time.Format(time.RFC3339Nano),
 					Rssi:      int32(rxInfo.RSSI),
 					LoRaSNR:   rxInfo.LoRaSNR,
@@ -415,6 +418,7 @@ func TestUplinkScenarios(t *testing.T) {
 				RxInfo: []*as.RXInfo{
 					{
 						Mac:       rxInfo.MAC[:],
+						Name:      gw1.Name,
 						Time:      rxInfo.Time.Format(time.RFC3339Nano),
 						Rssi:      int32(rxInfo.RSSI),
 						LoRaSNR:   rxInfo.LoRaSNR,
