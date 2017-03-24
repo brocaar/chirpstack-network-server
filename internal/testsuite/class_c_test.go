@@ -219,7 +219,7 @@ func TestClassCScenarios(t *testing.T) {
 						FPort:     10,
 						FCnt:      5,
 					},
-					ExpectedPushDataDownError: grpc.Errorf(codes.Unknown, "get node-session 0101010101010101 error: redigo: nil returned"),
+					ExpectedPushDataDownError: grpc.Errorf(codes.NotFound, session.ErrDoesNotExist.Error()),
 					ExpectedFCntUp:            8,
 					ExpectedFCntDown:          5,
 				},

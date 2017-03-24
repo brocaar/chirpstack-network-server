@@ -15,6 +15,7 @@ import (
 	"github.com/brocaar/loraserver/internal/adr"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/downlink"
+	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/session"
@@ -226,18 +227,45 @@ func publishDataUp(ctx common.Context, ns session.NodeSession, rxPacket models.R
 		},
 	}
 
+	var macs []lorawan.EUI64
+	for i := range rxPacket.RXInfoSet {
+		macs = append(macs, rxPacket.RXInfoSet[i].MAC)
+	}
+
+	// get gateway info
+	gws, err := gateway.GetGatewaysForMACs(ctx.DB, macs)
+	if err != nil {
+		log.WithField("macs", macs).Warningf("get gateways for macs error: %s", err)
+		gws = make(map[lorawan.EUI64]gateway.Gateway)
+	}
+
 	for _, rxInfo := range rxPacket.RXInfoSet {
 		// make sure we have a copy of the MAC byte slice, else every RxInfo
 		// slice item will get the same Mac
 		mac := make([]byte, 8)
 		copy(mac, rxInfo.MAC[:])
 
-		publishDataUpReq.RxInfo = append(publishDataUpReq.RxInfo, &as.RXInfo{
+		asRxInfo := as.RXInfo{
 			Mac:     mac,
 			Time:    rxInfo.Time.Format(time.RFC3339Nano),
 			Rssi:    int32(rxInfo.RSSI),
 			LoRaSNR: rxInfo.LoRaSNR,
-		})
+		}
+
+		if gw, ok := gws[rxInfo.MAC]; ok {
+			asRxInfo.Name = gw.Name
+
+			if gw.Location != nil {
+				asRxInfo.Latitude = gw.Location.Latitude
+				asRxInfo.Longitude = gw.Location.Longitude
+			}
+
+			if gw.Altitude != nil {
+				asRxInfo.Altitude = *gw.Altitude
+			}
+		}
+
+		publishDataUpReq.RxInfo = append(publishDataUpReq.RxInfo, &asRxInfo)
 	}
 
 	if macPL.FPort != nil {

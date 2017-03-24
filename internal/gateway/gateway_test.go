@@ -14,10 +14,13 @@ import (
 
 func TestGatewayStatsAggregation(t *testing.T) {
 	conf := test.GetConfig()
+	db, err := common.OpenDatabase(conf.PostgresDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	Convey("Given a clean database", t, func() {
 		common.CreateGatewayOnStats = false
-		db, err := common.OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		test.MustResetDB(db)
 
@@ -67,7 +70,8 @@ func TestGatewayStatsAggregation(t *testing.T) {
 
 		Convey("Given a gateway in the database", func() {
 			gw := Gateway{
-				MAC: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				MAC:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				Name: "test-gateway",
 			}
 			So(CreateGateway(db, &gw), ShouldBeNil)
 
@@ -127,7 +131,8 @@ func TestGatewayFunctions(t *testing.T) {
 
 		Convey("When creating a gateway", func() {
 			gw := Gateway{
-				MAC: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+				Name: "test-gateway",
+				MAC:  lorawan.EUI64{29, 238, 8, 208, 182, 145, 209, 73},
 				Location: &GPSPoint{
 					Latitude:  1.23456789,
 					Longitude: 4.56789012,
@@ -148,6 +153,12 @@ func TestGatewayFunctions(t *testing.T) {
 				gw2.UpdatedAt = gw2.UpdatedAt.UTC().Truncate(time.Millisecond)
 
 				So(gw2, ShouldResemble, gw)
+
+				gws, err := GetGatewaysForMACs(db, []lorawan.EUI64{gw.MAC})
+				So(err, ShouldBeNil)
+				gw3, ok := gws[gw.MAC]
+				So(ok, ShouldBeTrue)
+				So(gw3.MAC, ShouldResemble, gw.MAC)
 			})
 
 			Convey("Then it can be updated", func() {

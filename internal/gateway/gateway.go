@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,6 +19,8 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/lorawan"
 )
+
+var gatewayNameRegexp = regexp.MustCompile(`^[\w-]+$`)
 
 // statsAggregationIntervals contains a slice of aggregation intervals.
 var statsAggregationIntervals []string
@@ -107,7 +110,7 @@ func (s *StatsHandler) Stop() error {
 // Gateway represents a single gateway.
 type Gateway struct {
 	MAC         lorawan.EUI64 `db:"mac"`
-	Name 		string        `db:"name"`
+	Name        string        `db:"name"`
 	Description string        `db:"description"`
 	CreatedAt   time.Time     `db:"created_at"`
 	UpdatedAt   time.Time     `db:"updated_at"`
@@ -115,6 +118,14 @@ type Gateway struct {
 	LastSeenAt  *time.Time    `db:"last_seen_at"`
 	Location    *GPSPoint     `db:"location"`
 	Altitude    *float64      `db:"altitude"`
+}
+
+// Validate validates the data of the gateway.
+func (g Gateway) Validate() error {
+	if !gatewayNameRegexp.MatchString(g.Name) {
+		return ErrInvalidName
+	}
+	return nil
 }
 
 // Stats represents a single gateway stats record.
@@ -131,6 +142,10 @@ type Stats struct {
 
 // CreateGateway creates the given gateway.
 func CreateGateway(db *sqlx.DB, gw *Gateway) error {
+	if err := gw.Validate(); err != nil {
+		return errors.Wrap(err, "validate error")
+	}
+
 	now := time.Now()
 	_, err := db.Exec(`
 		insert into gateway (
@@ -143,11 +158,10 @@ func CreateGateway(db *sqlx.DB, gw *Gateway) error {
 			last_seen_at,
 			location,
 			altitude
-		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		) values ($1, $2, $3, $4, $4, $5, $6, $7, $8)`,
 		gw.MAC[:],
 		gw.Name,
 		gw.Description,
-		now,
 		now,
 		gw.FirstSeenAt,
 		gw.LastSeenAt,
@@ -188,6 +202,10 @@ func GetGateway(db *sqlx.DB, mac lorawan.EUI64) (Gateway, error) {
 
 // UpdateGateway updates the given gateway.
 func UpdateGateway(db *sqlx.DB, gw *Gateway) error {
+	if err := gw.Validate(); err != nil {
+		return errors.Wrap(err, "validate error")
+	}
+
 	now := time.Now()
 	res, err := db.Exec(`
 		update gateway set
@@ -259,6 +277,31 @@ func GetGateways(db *sqlx.DB, limit, offset int) ([]Gateway, error) {
 		return nil, errors.Wrap(err, "select error")
 	}
 	return gws, nil
+}
+
+// GetGatewaysForMACs returns a map of gateways given a slice of MACs.
+func GetGatewaysForMACs(db *sqlx.DB, macs []lorawan.EUI64) (map[lorawan.EUI64]Gateway, error) {
+	out := make(map[lorawan.EUI64]Gateway)
+	var macsB [][]byte
+	for i := range macs {
+		macsB = append(macsB, macs[i][:])
+	}
+
+	var gws []Gateway
+	err := db.Select(&gws, "select * from gateway where mac = any($1)", pq.ByteaArray(macsB))
+	if err != nil {
+		return nil, errors.Wrap(err, "select error")
+	}
+
+	if len(gws) != len(macs) {
+		return nil, fmt.Errorf("expected %d gateways, got %d", len(macs), len(out))
+	}
+
+	for i := range gws {
+		out[gws[i].MAC] = gws[i]
+	}
+
+	return out, nil
 }
 
 // GetGatewayStats returns the stats for the given gateway.
@@ -339,6 +382,7 @@ func handleStatsPacket(db *sqlx.DB, stats gw.GatewayStatsPacket) error {
 
 			gw = Gateway{
 				MAC:         stats.MAC,
+				Name:        stats.MAC.String(),
 				FirstSeenAt: &now,
 				LastSeenAt:  &now,
 				Location:    location,
@@ -357,8 +401,12 @@ func handleStatsPacket(db *sqlx.DB, stats gw.GatewayStatsPacket) error {
 			gw.FirstSeenAt = &now
 		}
 		gw.LastSeenAt = &now
-		gw.Location = location
-		gw.Altitude = altitude
+		if location != nil {
+			gw.Location = location
+		}
+		if altitude != nil {
+			gw.Altitude = altitude
+		}
 
 		if err = UpdateGateway(db, &gw); err != nil {
 			return errors.Wrap(err, "update gateway error")

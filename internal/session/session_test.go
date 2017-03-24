@@ -102,7 +102,7 @@ func TestNodeSession(t *testing.T) {
 			Convey("When getting a non-existing NodeSession", func() {
 				_, err := GetNodeSession(p, ns.DevEUI)
 				Convey("Then an error is returned", func() {
-					So(err, ShouldResemble, errors.New("get node-session 0102030405060708 error: redigo: nil returned"))
+					So(err, ShouldResemble, ErrDoesNotExist)
 				})
 			})
 
@@ -137,6 +137,16 @@ func TestNodeSession(t *testing.T) {
 
 					Convey("Then true is returned", func() {
 						So(exists, ShouldBeTrue)
+					})
+				})
+
+				Convey("When deleting a NodeSession", func() {
+					So(DeleteNodeSession(p, ns.DevEUI), ShouldBeNil)
+
+					Convey("Then the node-session has been removed", func() {
+						exists, err := NodeSessionExists(p, ns.DevEUI)
+						So(err, ShouldBeNil)
+						So(exists, ShouldBeFalse)
 					})
 				})
 			})

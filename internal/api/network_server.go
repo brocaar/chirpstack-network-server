@@ -19,6 +19,7 @@ import (
 // defaultCodeRate defines the default code rate
 const defaultCodeRate = "4/5"
 
+// NetworkServerAPI defines the nework-server API.
 type NetworkServerAPI struct {
 	ctx common.Context
 }
@@ -64,18 +65,18 @@ func (n *NetworkServerAPI) CreateNodeSession(ctx context.Context, req *ns.Create
 
 	exists, err := session.NodeSessionExists(n.ctx.RedisPool, sess.DevEUI)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Internal, err.Error())
+		return nil, errToRPCError(err)
 	}
 	if exists {
-		return nil, grpc.Errorf(codes.AlreadyExists, err.Error())
+		return nil, grpc.Errorf(codes.AlreadyExists, "node-session already exists")
 	}
 
 	if err := session.SaveNodeSession(n.ctx.RedisPool, sess); err != nil {
-		return nil, grpc.Errorf(codes.Unknown, err.Error())
+		return nil, errToRPCError(err)
 	}
 
 	if err := maccommand.FlushQueue(n.ctx.RedisPool, sess.DevEUI); err != nil {
-		return nil, grpc.Errorf(codes.Unknown, err.Error())
+		return nil, errToRPCError(err)
 	}
 
 	return &ns.CreateNodeSessionResponse{}, nil
@@ -88,7 +89,7 @@ func (n *NetworkServerAPI) GetNodeSession(ctx context.Context, req *ns.GetNodeSe
 
 	sess, err := session.GetNodeSession(n.ctx.RedisPool, devEUI)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Unknown, err.Error())
+		return nil, errToRPCError(err)
 	}
 
 	resp := &ns.GetNodeSessionResponse{
@@ -127,12 +128,9 @@ func (n *NetworkServerAPI) UpdateNodeSession(ctx context.Context, req *ns.Update
 
 	sess, err := session.GetNodeSession(n.ctx.RedisPool, devEUI)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Unknown, err.Error())
+		return nil, errToRPCError(err)
 	}
 
-	if sess.DevEUI != devEUI {
-		return nil, grpc.Errorf(codes.InvalidArgument, "node-session belongs to a different DevEUI")
-	}
 	if sess.AppEUI != appEUI {
 		return nil, grpc.Errorf(codes.InvalidArgument, "node-session belongs to a different AppEUI")
 	}
@@ -173,7 +171,7 @@ func (n *NetworkServerAPI) UpdateNodeSession(ctx context.Context, req *ns.Update
 	copy(newSess.NwkSKey[:], req.NwkSKey)
 
 	if err := session.SaveNodeSession(n.ctx.RedisPool, newSess); err != nil {
-		return nil, grpc.Errorf(codes.Unknown, err.Error())
+		return nil, errToRPCError(err)
 	}
 
 	return &ns.UpdateNodeSessionResponse{}, nil
@@ -184,13 +182,8 @@ func (n *NetworkServerAPI) DeleteNodeSession(ctx context.Context, req *ns.Delete
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	sess, err := session.GetNodeSession(n.ctx.RedisPool, devEUI)
-	if err != nil {
-		return nil, grpc.Errorf(codes.Unknown, err.Error())
-	}
-
-	if err := session.DeleteNodeSession(n.ctx.RedisPool, sess.DevAddr); err != nil {
-		return nil, grpc.Errorf(codes.Unknown, err.Error())
+	if err := session.DeleteNodeSession(n.ctx.RedisPool, devEUI); err != nil {
+		return nil, errToRPCError(err)
 	}
 
 	return &ns.DeleteNodeSessionResponse{}, nil
@@ -200,7 +193,7 @@ func (n *NetworkServerAPI) DeleteNodeSession(ctx context.Context, req *ns.Delete
 func (n *NetworkServerAPI) GetRandomDevAddr(ctx context.Context, req *ns.GetRandomDevAddrRequest) (*ns.GetRandomDevAddrResponse, error) {
 	devAddr, err := session.GetRandomDevAddr(n.ctx.RedisPool, n.ctx.NetID)
 	if err != nil {
-		return nil, grpc.Errorf(codes.Unknown, err.Error())
+		return nil, errToRPCError(err)
 	}
 
 	return &ns.GetRandomDevAddrResponse{
@@ -216,7 +209,7 @@ func (n *NetworkServerAPI) EnqueueDataDownMACCommand(ctx context.Context, req *n
 	}
 	copy(macPL.DevEUI[:], req.DevEUI)
 	if err := maccommand.AddToQueue(n.ctx.RedisPool, macPL); err != nil {
-		return nil, grpc.Errorf(codes.Unknown, err.Error())
+		return nil, errToRPCError(err)
 	}
 	return &ns.EnqueueDataDownMACCommandResponse{}, nil
 }
@@ -264,7 +257,7 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 
 	gw := gateway.Gateway{
 		MAC:         mac,
-		Name: 		 req.Name,
+		Name:        req.Name,
 		Description: req.Description,
 		Location:    location,
 		Altitude:    altitude,
@@ -387,7 +380,7 @@ func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatew
 
 	for _, stat := range stats {
 		resp.Result = append(resp.Result, &ns.GatewayStats{
-			StartTimestamp:      stat.Timestamp.Format(time.RFC3339Nano),
+			Timestamp:           stat.Timestamp.Format(time.RFC3339Nano),
 			RxPacketsReceived:   int32(stat.RXPacketsReceived),
 			RxPacketsReceivedOK: int32(stat.RXPacketsReceivedOK),
 			TxPacketsReceived:   int32(stat.TXPacketsReceived),
@@ -401,7 +394,7 @@ func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatew
 func gwToResp(gw gateway.Gateway) *ns.GetGatewayResponse {
 	resp := ns.GetGatewayResponse{
 		Mac:         gw.MAC[:],
-		Name: 		 gw.Name,
+		Name:        gw.Name,
 		Description: gw.Description,
 		CreatedAt:   gw.CreatedAt.Format(time.RFC3339Nano),
 		UpdatedAt:   gw.UpdatedAt.Format(time.RFC3339Nano),

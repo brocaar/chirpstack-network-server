@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.15.1
+
+**Bugfixes:**
+
+* Fix error handling for creating a node-session that already exists
+* Fix delete node-session regression introduced in 0.15.0
+
 ## 0.15.0
 
 **Features:**

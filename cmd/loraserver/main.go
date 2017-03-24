@@ -28,9 +28,9 @@ import (
 	"github.com/brocaar/loraserver/internal/backend/controller"
 	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/migrations"
 	// TODO: merge backend/gateway into internal/gateway?
 	gw "github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/loraserver/internal/migrations"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -113,6 +113,21 @@ func run(c *cli.Context) error {
 			Dir:      "",
 		}
 		migrate.SetTable("migration")
+		n, err := migrate.Exec(lsCtx.DB.DB, "postgres", m, migrate.Up)
+		if err != nil {
+			log.Fatalf("applying migrations failed: %s", err)
+		}
+		log.WithField("count", n).Info("migrations applied")
+	}
+
+	// migrate the database
+	if c.Bool("db-automigrate") {
+		log.Info("applying database migrations")
+		m := &migrate.AssetMigrationSource{
+			Asset:    migrations.Asset,
+			AssetDir: migrations.AssetDir,
+			Dir:      "",
+		}
 		n, err := migrate.Exec(lsCtx.DB.DB, "postgres", m, migrate.Up)
 		if err != nil {
 			log.Fatalf("applying migrations failed: %s", err)
@@ -345,6 +360,17 @@ func main() {
 			Usage:  "redis url (e.g. redis://user:password@hostname:port/0)",
 			Value:  "redis://localhost:6379",
 			EnvVar: "REDIS_URL",
+		},
+		cli.StringFlag{
+			Name:   "postgres-dsn",
+			Usage:  "postgresql dsn (e.g.: postgres://user:password@hostname/database?sslmode=disable)",
+			Value:  "postgres://localhost/loraserver_ns?sslmode=disable",
+			EnvVar: "POSTGRES_DSN",
+		},
+		cli.BoolFlag{
+			Name:   "db-automigrate",
+			Usage:  "automatically apply database migrations",
+			EnvVar: "DB_AUTOMIGRATE",
 		},
 		cli.StringFlag{
 			Name:   "gw-mqtt-server",

@@ -44,6 +44,10 @@ message RXInfo {
 	string time = 2;
 	int32 rssi = 3;
 	double loRaSNR = 4;
+	string name = 5;
+	double latitude = 6;
+	double longitude = 7;
+	double altitude = 8;
 }
 
 message TXInfo {

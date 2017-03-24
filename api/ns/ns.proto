@@ -255,7 +255,7 @@ message CreateGatewayRequest {
 	// MAC address of the gateway.
 	bytes mac = 1;
 
-	// Name for the gateway.
+	// Name of the gateway.
 	string name = 2;
 
 	// Description for the gateway.
@@ -282,7 +282,7 @@ message GetGatewayResponse {
 	// MAC address of the gateway.
 	bytes mac = 1;
 
-	// Description for the gateway.
+	// Name of the gateway.
 	string name = 2;
 
 	// Description for the gateway.
@@ -314,7 +314,7 @@ message UpdateGatewayRequest {
 	// MAC address of the gateway.
 	bytes mac = 1;
 
-	// Name for the gateway.
+	// Name of the gateway.
 	string name = 2;
 
 	// Description for the gateway.
@@ -368,7 +368,7 @@ enum AggregationInterval {
 
 message GatewayStats {
 	// Timestamp of the (aggregated) measurement.
-	string startTimestamp = 1;
+	string timestamp = 1;
 
 	// Packets received by the gateway.
 	int32 rxPacketsReceived = 2;
