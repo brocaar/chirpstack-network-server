@@ -8,13 +8,14 @@ pages:
   - features.md
   - getting-started.md
   - application-server.md
+  - gateway-management.md
   - api.md
   - configuration.md
   - frequently-asked-questions.md
   - changelog.md
 
 extra:
-  version: '0.15.1'
+  version: '0.16.0'
   github:
     download_release: true
 

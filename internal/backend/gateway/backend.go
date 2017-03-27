@@ -45,8 +45,13 @@ func NewBackend(p *redis.Pool, server, username, password string) (backend.Gatew
 
 	log.WithField("server", server).Info("backend/gateway: connecting to mqtt broker")
 	b.conn = mqtt.NewClient(opts)
-	if token := b.conn.Connect(); token.Wait() && token.Error() != nil {
-		return nil, fmt.Errorf("backend/gateway: connecting to broker failed: %s", token.Error())
+	for {
+		if token := b.conn.Connect(); token.Wait() && token.Error() != nil {
+			log.Errorf("backend/gateway: connecting to mqtt broker failed, will retry in 2s: %s", token.Error())
+			time.Sleep(2 * time.Second)
+		} else {
+			break
+		}
 	}
 
 	return &b, nil

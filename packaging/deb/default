@@ -19,6 +19,12 @@ BIND=0.0.0.0:8000
 # redis url (e.g. redis://user:password@hostname:port/0) (default: "redis://localhost:6379")
 REDIS_URL=redis://localhost:6379
 
+# postgresql dsn (e.g.: postgres://user:password@hostname/database?sslmode=disable)
+POSTGRES_DSN=postgres://localhost/loraserver_ns?sslmode=disable
+
+# automatically apply database migrations
+DB_AUTOMIGRATE=true
+
 # mqtt broker server used by the gateway backend (e.g. scheme://host:port where scheme is tcp, ssl or ws) (default: "tcp://localhost:1883")
 GW_MQTT_SERVER=tcp://localhost:1883
 
@@ -63,3 +69,12 @@ DEDUPLICATION_DELAY=200ms
 
 # delay between uplink delivery to the app server and getting the downlink data from the app server (if any) (default: 100ms)
 GET_DOWNLINK_DATA_DELAY=100ms
+
+# timezone to use when aggregating data (e.g. 'Europe/Amsterdam') (optional, by default the local timezone is used)
+# TIMEZONE=Europe/Amsterdam
+
+# create non-existing gateways on receiving of stats
+GW_CREATE_ON_STATS=true
+
+# aggregation intervals to use for aggregating the gateway stats (valid options: second, minute, hour, day, week, month, quarter, year)
+# GW_STATS_AGGREGATION_INTERVALS=minute,hour,day

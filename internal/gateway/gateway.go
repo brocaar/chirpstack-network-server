@@ -130,7 +130,6 @@ func (g Gateway) Validate() error {
 
 // Stats represents a single gateway stats record.
 type Stats struct {
-	ID                  int64         `db:"id"`
 	MAC                 lorawan.EUI64 `db:"mac"`
 	Timestamp           time.Time     `db:"timestamp"`
 	Interval            string        `db:"interval"`
@@ -305,6 +304,7 @@ func GetGatewaysForMACs(db *sqlx.DB, macs []lorawan.EUI64) (map[lorawan.EUI64]Ga
 }
 
 // GetGatewayStats returns the stats for the given gateway.
+// Note that the stats will return a record for each interval.
 func GetGatewayStats(db *sqlx.DB, mac lorawan.EUI64, interval string, start, end time.Time) ([]Stats, error) {
 	var valid bool
 	interval = strings.ToUpper(interval)
@@ -324,19 +324,37 @@ func GetGatewayStats(db *sqlx.DB, mac lorawan.EUI64, interval string, start, end
 
 	err := db.Select(&stats, `
 		select
-			*
-		from gateway_stat
-		where
-			mac = $1
-			and interval = $2
-			and "timestamp" >= cast(date_trunc($2, $3 at time zone $4) as timestamp) at time zone $4
-			and "timestamp" < $5
-		order by "timestamp"`,
+			$1::bytea as mac,
+			$2 as interval,
+			s.timestamp,
+			$2 as "interval",
+			coalesce(gs.rx_packets_received, 0) as rx_packets_received,
+			coalesce(gs.rx_packets_received_ok, 0) as rx_packets_received_ok,
+			coalesce(gs.tx_packets_received, 0) as tx_packets_received,
+			coalesce(gs.tx_packets_emitted, 0) as tx_packets_emitted
+		from (
+			select
+				*
+			from gateway_stat
+			where
+				mac = $1
+				and interval = $2
+				and "timestamp" >= cast(date_trunc($2, $3 at time zone $4) as timestamp) at time zone $4
+				and "timestamp" < $5) gs
+		right join (
+			select generate_series(
+				cast(date_trunc($2, $3 at time zone $4) as timestamp) at time zone $4,
+				$5,
+				$6) as "timestamp"
+			) s
+			on gs.timestamp = s.timestamp
+		order by s.timestamp`,
 		mac[:],
 		interval,
 		start,
 		zone,
 		end,
+		fmt.Sprintf("1 %s", interval),
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "select error")
