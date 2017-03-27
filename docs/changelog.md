@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.16.0
+
+**Note:** LoRa Server now requires a PostgreSQL (9.5+) database to persist the
+gateway data. See [getting started](getting-started.md) for more information.
+
+**Features:**
+
+* Gateway management and gateway stats:
+	* API methods have been added to manage gateways (including GPS location).
+	* GPS location of receiving gateways is added to uplink frames published
+	  to the application-server.
+	* Gateway stats (rx / tx) are aggregated on intervals specified in
+	  `--gw-stats-aggregation-intervals`` (make sure to set the correct
+	  `--timezone`!).
+	* When `--gw-create-on-stats` is set, then gateways will be automatically
+	  created when receiving gateway stats.
+* LoRa Server will retry to connect to the MQTT broker when it isn't available
+  (yet) on startup, instead of failing.
+
 ## 0.15.1
 
 **Bugfixes:**

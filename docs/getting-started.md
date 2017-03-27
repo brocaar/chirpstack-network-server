@@ -76,6 +76,49 @@ To Install Redis:
 sudo apt-get install redis-server
 ```
 
+### PostgreSQL server
+
+LoRa Server persists the gateway data into a
+[PostgreSQL](https://www.postgresql.org) database. Note that PostgreSQL 9.5+
+is required.
+
+Ubuntu 16.04 LTS includes PostgreSQL 9.5, in any other case please refer
+to the [PostgreSQL download](https://www.postgresql.org/download/) page for
+information on how to install PostgreSQL 9.5+ for your distribution.
+
+```bash
+# Ubuntu 16.04 LTS
+sudo apt-get install postgresql-9.5
+```
+
+#### Creating a user and database
+
+Start the PostgreSQL prompt as the `postgres` user:
+
+```bash
+sudo -u postgres psql
+```
+
+Inside this prompt, execute the following queries:
+
+```sql
+-- create the loraserver_ns user
+create role loraserver_ns with login password "dbpassword";
+
+-- create the loraserver_ns database
+create database loraserver_ns with owner loraserver_ns;
+
+-- exist
+\q
+```
+
+To verify if the user and database have been setup correctly, try to connect
+to it:
+
+```bash
+psql -h localhost -U loraserver_ns -W loraserver_ns
+```
+
 ### Install LoRa Server
 
 In order to install LoRa Server, execute the following command:
@@ -86,6 +129,12 @@ sudo apt-get install loraserver
 
 After installation, modify the configuration file which is located at
 `/etc/default/loraserver`.
+
+Settings you probably want to change:
+
+* `POSTGRES_DSN`
+* `BAND`
+* `NET_ID`
 
 ### Starting LoRa Server
 
