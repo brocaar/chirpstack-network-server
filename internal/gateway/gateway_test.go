@@ -85,15 +85,15 @@ func TestGatewayStatsAggregation(t *testing.T) {
 				Convey("Then the stats can be retrieved on second level", func() {
 					stats, err := GetGatewayStats(db, gw.MAC, "SECOND", start, start.Add(3*time.Second))
 					So(err, ShouldBeNil)
-					So(stats, ShouldHaveLength, 3)
+					So(stats, ShouldHaveLength, 4)
 					for i := range stats {
-						stats[i].ID = 0
 						stats[i].Timestamp = stats[i].Timestamp.In(time.UTC)
 					}
 					So(stats, ShouldResemble, []Stats{
 						{MAC: gw.MAC, Timestamp: start, Interval: "SECOND", RXPacketsReceived: 11, RXPacketsReceivedOK: 9, TXPacketsReceived: 13, TXPacketsEmitted: 10},
 						{MAC: gw.MAC, Timestamp: start.Add(time.Second), Interval: "SECOND", RXPacketsReceived: 11, RXPacketsReceivedOK: 9, TXPacketsReceived: 13, TXPacketsEmitted: 10},
 						{MAC: gw.MAC, Timestamp: start.Add(2 * time.Second), Interval: "SECOND", RXPacketsReceived: 11, RXPacketsReceivedOK: 9, TXPacketsReceived: 13, TXPacketsEmitted: 10},
+						{MAC: gw.MAC, Timestamp: start.Add(3 * time.Second), Interval: "SECOND", RXPacketsReceived: 0, RXPacketsReceivedOK: 0, TXPacketsReceived: 0, TXPacketsEmitted: 0},
 					})
 				})
 
@@ -102,7 +102,6 @@ func TestGatewayStatsAggregation(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(stats, ShouldHaveLength, 1)
 					for i := range stats {
-						stats[i].ID = 0
 						stats[i].Timestamp = stats[i].Timestamp.In(time.UTC)
 					}
 					So(stats, ShouldResemble, []Stats{
