@@ -50,6 +50,13 @@ required that the ADR flag is set for each uplink transmission.
 **Important:** ADR is only suitable for static devices, thus devices that do
 not move! 
 
+## Gateway management and stats
+
+Gateways can be created either automatically when LoRa Server receives
+statistics from the gateways or by using the API. Gateway statistics will be
+aggregated on the given intervals and are exposed through the 
+[api](api.md) API. See also [gateway management](gateway-management.md).
+
 ## Network-controller interface
 
 Although a network-controller component is still to be implemented, it is
