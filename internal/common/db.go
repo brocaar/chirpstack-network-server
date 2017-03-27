@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	// register postgresql driver
@@ -44,8 +45,13 @@ func OpenDatabase(dsn string) (*sqlx.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("database connection error: %s", err)
 	}
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("ping database error: %s", err)
+	for {
+		if err := db.Ping(); err != nil {
+			log.Errorf("ping database error, will retry in 2s: %s", err)
+			time.Sleep(2 * time.Second)
+		} else {
+			break
+		}
 	}
 	return db, nil
 }
