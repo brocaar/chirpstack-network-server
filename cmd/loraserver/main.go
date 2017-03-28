@@ -75,7 +75,7 @@ func run(c *cli.Context) error {
 	}
 
 	// get the gw stats aggregation intervals
-	gw.MustSetStatsAggregationIntervals(c.StringSlice("gw-stats-aggregation-intervals"))
+	gw.MustSetStatsAggregationIntervals(strings.Split(c.String("gw-stats-aggregation-intervals"), ","))
 
 	// get the timezone
 	if c.String("timezone") != "" {
@@ -427,11 +427,11 @@ func main() {
 			EnvVar: "GET_DOWNLINK_DATA_DELAY",
 			Value:  100 * time.Millisecond,
 		},
-		cli.StringSliceFlag{
+		cli.StringFlag{
 			Name:   "gw-stats-aggregation-intervals",
 			Usage:  "aggregation intervals to use for aggregating the gateway stats (valid options: second, minute, hour, day, week, month, quarter, year)",
 			EnvVar: "GW_STATS_AGGREGATION_INTERVALS",
-			Value:  &cli.StringSlice{"minute", "hour", "day"},
+			Value:  "minute,hour,day",
 		},
 		cli.StringFlag{
 			Name:   "timezone",
