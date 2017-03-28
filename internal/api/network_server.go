@@ -371,7 +371,7 @@ func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatew
 		return nil, grpc.Errorf(codes.InvalidArgument, "parse end timestamp: %s", err)
 	}
 
-	stats, err := gateway.GetGatewayStats(n.ctx.DB, mac, req.Interval.String(), start, end)
+	stats, err := gateway.GetGatewayStats(n.ctx.DB, mac, ns.AggregationInterval_name[ int32( req.Interval ) ], start, end)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}

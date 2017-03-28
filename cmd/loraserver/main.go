@@ -31,7 +31,6 @@ import (
 	"github.com/brocaar/loraserver/internal/migrations"
 	// TODO: merge backend/gateway into internal/gateway?
 	gw "github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/loraserver/internal/migration"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -102,8 +101,23 @@ func run(c *cli.Context) error {
 	lsCtx := mustGetContext(netID, c)
 
 	// migrate old node-session keys to new layout
-	if err = migration.MigrateNodeSessionDevAddrDevEUI(lsCtx.RedisPool); err != nil {
+	if err = migrations.MigrateNodeSessionDevAddrDevEUI(lsCtx.RedisPool); err != nil {
 		log.Fatalf("node-session migration error: %s", err)
+	}
+	// migrate the database
+	if c.Bool("db-automigrate") {
+		log.Info("applying database migrations")
+		m := &migrate.AssetMigrationSource{
+			Asset:    migrations.Asset,
+			AssetDir: migrations.AssetDir,
+			Dir:      "",
+		}
+		migrate.SetTable("migration")
+		n, err := migrate.Exec(lsCtx.DB.DB, "postgres", m, migrate.Up)
+		if err != nil {
+			log.Fatalf("applying migrations failed: %s", err)
+		}
+		log.WithField("count", n).Info("migrations applied")
 	}
 
 	// migrate the database
@@ -373,6 +387,17 @@ func main() {
 			Name:   "gw-mqtt-password",
 			Usage:  "mqtt password used by the gateway backend (optional)",
 			EnvVar: "GW_MQTT_PASSWORD",
+		},
+		cli.StringFlag{
+			Name:   "postgres-dsn",
+			Usage:  "postgresql dsn (e.g.: postgres://user:password@hostname/database?sslmode=disable)",
+			Value:  "postgres://localhost/loraserver_ns?sslmode=disable",
+			EnvVar: "POSTGRES_DSN",
+		},
+		cli.BoolFlag{
+			Name:   "db-automigrate",
+			Usage:  "automatically apply database migrations",
+			EnvVar: "DB_AUTOMIGRATE",
 		},
 		cli.StringFlag{
 			Name:   "as-server",
