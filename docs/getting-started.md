@@ -85,7 +85,7 @@ LoRa Server persists the gateway data into a
 is required. To install the latest PostgreSQL:
 
 ```bash
-get --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 
 # replace {DIST_VERSION} by the distribution version (jessie, trusty or xenial)
 sudo echo "deb http://apt.postgresql.org/pub/repos/apt/ {DIST_VERSION}-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
