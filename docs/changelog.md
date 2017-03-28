@@ -12,7 +12,7 @@ gateway data. See [getting started](getting-started.md) for more information.
 	* GPS location of receiving gateways is added to uplink frames published
 	  to the application-server.
 	* Gateway stats (rx / tx) are aggregated on intervals specified in
-	  `--gw-stats-aggregation-intervals`` (make sure to set the correct
+	  `--gw-stats-aggregation-intervals` (make sure to set the correct
 	  `--timezone`!).
 	* When `--gw-create-on-stats` is set, then gateways will be automatically
 	  created when receiving gateway stats.
