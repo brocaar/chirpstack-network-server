@@ -40,9 +40,11 @@ packages. In order to activate this repository, execute the following
 commands:
 
 ```bash
-source /etc/lsb-release
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1CE2AFD36DBCCA00
-sudo echo "deb https://repos.loraserver.io/${DISTRIB_ID,,} ${DISTRIB_CODENAME} testing" | sudo tee /etc/apt/sources.list.d/loraserver.list
+
+# replace {DISTRIBUTION} by the distribution (debian or ubuntu)
+# replace {DIST_VERSION} by the distribution version (jessie, trusty or xenial)
+sudo echo "deb https://repos.loraserver.io/{DISTRIBUTION} {DIST_VERSION} testing" | sudo tee /etc/apt/sources.list.d/loraserver.list
 sudo apt-get update
 ```
 
@@ -80,15 +82,16 @@ sudo apt-get install redis-server
 
 LoRa Server persists the gateway data into a
 [PostgreSQL](https://www.postgresql.org) database. Note that PostgreSQL 9.5+
-is required.
-
-Ubuntu 16.04 LTS includes PostgreSQL 9.5, in any other case please refer
-to the [PostgreSQL download](https://www.postgresql.org/download/) page for
-information on how to install PostgreSQL 9.5+ for your distribution.
+is required. To install the latest PostgreSQL:
 
 ```bash
-# Ubuntu 16.04 LTS
-sudo apt-get install postgresql-9.5
+get --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+# replace {DIST_VERSION} by the distribution version (jessie, trusty or xenial)
+sudo echo "deb http://apt.postgresql.org/pub/repos/apt/ {DIST_VERSION}-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+sudo apt-get update
+
+sudo apt-get install postgresql-9.6
 ```
 
 #### Creating a user and database
@@ -108,7 +111,7 @@ create role loraserver_ns with login password "dbpassword";
 -- create the loraserver_ns database
 create database loraserver_ns with owner loraserver_ns;
 
--- exist
+-- exit
 \q
 ```
 
