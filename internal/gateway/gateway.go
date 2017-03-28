@@ -335,7 +335,7 @@ func GetGatewayStats(db *sqlx.DB, mac lorawan.EUI64, interval string, start, end
 		from (
 			select
 				*
-			from gateway_stat
+			from gateway_stats
 			where
 				mac = $1
 				and interval = $2
@@ -453,7 +453,7 @@ func aggregateGatewayStats(db *sqlx.DB, stats Stats) error {
 	zone, _ := stats.Timestamp.In(common.TimeLocation).Zone()
 
 	_, err := db.Exec(`
-		insert into gateway_stat (
+		insert into gateway_stats (
 			mac,
 			"timestamp",
 			"interval",
@@ -472,10 +472,10 @@ func aggregateGatewayStats(db *sqlx.DB, stats Stats) error {
 		)
 		on conflict (mac, "timestamp", "interval")
 			do update set
-				rx_packets_received = gateway_stat.rx_packets_received + $5,
-				rx_packets_received_ok = gateway_stat.rx_packets_received_ok + $6,
-				tx_packets_received = gateway_stat.tx_packets_received + $7,
-				tx_packets_emitted = gateway_stat.tx_packets_emitted + $8`,
+				rx_packets_received = gateway_stats.rx_packets_received + $5,
+				rx_packets_received_ok = gateway_stats.rx_packets_received_ok + $6,
+				tx_packets_received = gateway_stats.tx_packets_received + $7,
+				tx_packets_emitted = gateway_stats.tx_packets_emitted + $8`,
 		stats.MAC[:],
 		stats.Interval,
 		stats.Timestamp,

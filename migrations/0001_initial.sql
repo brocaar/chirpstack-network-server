@@ -18,7 +18,7 @@ create index idx_gateway_first_seen_at on gateway (first_seen_at);
 create index idx_gateway_last_seen_at on gateway (last_seen_at);
 
 
-create table gateway_stat (
+create table gateway_stats (
 	id bigserial primary key,
 	mac bytea not null references gateway on delete cascade,
 	"timestamp" timestamp with time zone not null,
@@ -31,15 +31,15 @@ create table gateway_stat (
 	unique (mac, "timestamp", "interval")
 );
 
-create index idx_gateway_stat_mac on gateway_stat (mac);
-create index idx_gateway_stat_timestamp on gateway_stat ("timestamp");
-create index idx_gateway_stat_interval on gateway_stat ("interval");
+create index idx_gateway_stats_mac on gateway_stats (mac);
+create index idx_gateway_stats_timestamp on gateway_stats ("timestamp");
+create index idx_gateway_stats_interval on gateway_stats ("interval");
 
 -- +migrate Down
-drop index idx_gateway_stat_interval;
-drop index idx_gateway_stat_timestamp;
-drop index idx_gateway_stat_mac;
-drop table gateway_stat;
+drop index idx_gateway_stats_interval;
+drop index idx_gateway_stats_timestamp;
+drop index idx_gateway_stats_mac;
+drop table gateway_stats;
 
 drop index idx_gateway_name;
 drop index idx_gateway_created_at;

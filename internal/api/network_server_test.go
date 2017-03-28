@@ -248,7 +248,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				Convey("Given some stats for this gateway", func() {
 					now := time.Now().UTC()
 					_, err := db.Exec(`
-						insert into gateway_stat (
+						insert into gateway_stats (
 							mac,
 							"timestamp",
 							"interval",
