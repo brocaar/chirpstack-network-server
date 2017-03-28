@@ -71,4 +71,4 @@ GET_DOWNLINK_DATA_DELAY=100ms
 GW_CREATE_ON_STATS=true
 
 # aggregation intervals to use for aggregating the gateway stats (valid options: second, minute, hour, day, week, month, quarter, year)
-# GW_STATS_AGGREGATION_INTERVALS=minute,hour,day
+GW_STATS_AGGREGATION_INTERVALS=minute,hour,day
