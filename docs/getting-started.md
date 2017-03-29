@@ -106,7 +106,7 @@ Inside this prompt, execute the following queries:
 
 ```sql
 -- create the loraserver_ns user
-create role loraserver_ns with login password "dbpassword";
+create role loraserver_ns with login password 'dbpassword';
 
 -- create the loraserver_ns database
 create database loraserver_ns with owner loraserver_ns;
