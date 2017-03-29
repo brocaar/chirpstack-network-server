@@ -31,7 +31,7 @@ These steps have been tested with:
 
 * Debian Jessie
 * Ubuntu Trusty (14.04)
-* Ubuntu Xenial (16.06)
+* Ubuntu Xenial (16.04)
 
 ### LoRa Server Debian repository
 
