@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.16.1
+
+**Bugfixes:**
+
+* Fix getting gateway stats when start timestamp is in an other timezone than
+  end timestamp (eg. in case of Europe/Amsterdam when changing from CET to
+  CEST).
+
 ## 0.16.0
 
 **Note:** LoRa Server now requires a PostgreSQL (9.5+) database to persist the

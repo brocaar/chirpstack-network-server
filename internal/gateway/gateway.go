@@ -308,21 +308,34 @@ func GetGatewaysForMACs(db *sqlx.DB, macs []lorawan.EUI64) (map[lorawan.EUI64]Ga
 func GetGatewayStats(db *sqlx.DB, mac lorawan.EUI64, interval string, start, end time.Time) ([]Stats, error) {
 	var valid bool
 	interval = strings.ToUpper(interval)
-	zone, _ := start.In(common.TimeLocation).Zone()
 
+	// validate aggregation interval
 	for _, i := range statsAggregationIntervals {
 		if i == interval {
 			valid = true
 		}
 	}
-
 	if !valid {
 		return nil, ErrInvalidAggregationInterval
 	}
 
-	var stats []Stats
+	tx, err := db.Beginx()
+	if err != nil {
+		return nil, errors.Wrap(err, "begin transaction error")
+	}
+	defer tx.Rollback()
 
-	err := db.Select(&stats, `
+	// set the database timezone for this transaction
+	if common.TimeLocation != time.Local {
+		// when TimeLocation == time.Local, it would have 'Local' as name
+		_, err = tx.Exec(fmt.Sprintf("set local time zone '%s'", common.TimeLocation.String()))
+		if err != nil {
+			return nil, errors.Wrap(err, "set timezone error")
+		}
+	}
+
+	var stats []Stats
+	err = tx.Select(&stats, `
 		select
 			$1::bytea as mac,
 			$2 as interval,
@@ -339,20 +352,19 @@ func GetGatewayStats(db *sqlx.DB, mac lorawan.EUI64, interval string, start, end
 			where
 				mac = $1
 				and interval = $2
-				and "timestamp" >= cast(date_trunc($2, $3 at time zone $4) as timestamp) at time zone $4
-				and "timestamp" < $5) gs
+				and "timestamp" >= cast(date_trunc($2, $3::timestamptz) as timestamp with time zone)
+				and "timestamp" < $4) gs
 		right join (
 			select generate_series(
-				cast(date_trunc($2, $3 at time zone $4) as timestamp) at time zone $4,
-				$5,
-				$6) as "timestamp"
+				cast(date_trunc($2, $3) as timestamp with time zone),
+				$4,
+				$5) as "timestamp"
 			) s
 			on gs.timestamp = s.timestamp
 		order by s.timestamp`,
 		mac[:],
 		interval,
 		start,
-		zone,
 		end,
 		fmt.Sprintf("1 %s", interval),
 	)
@@ -431,9 +443,29 @@ func handleStatsPacket(db *sqlx.DB, stats gw.GatewayStatsPacket) error {
 		}
 	}
 
+	comitted := false
+	tx, err := db.Beginx()
+	if err != nil {
+		return errors.Wrap(err, "begin transaction error")
+	}
+	defer func() {
+		if !comitted {
+			tx.Rollback()
+		}
+	}()
+
+	// set the database timezone for this transaction
+	if common.TimeLocation != time.Local {
+		// when TimeLocation == time.Local, it would have 'Local' as name
+		_, err = tx.Exec(fmt.Sprintf("set local time zone '%s'", common.TimeLocation.String()))
+		if err != nil {
+			return errors.Wrap(err, "set timezone error")
+		}
+	}
+
 	// store the stats
 	for _, aggr := range statsAggregationIntervals {
-		if err := aggregateGatewayStats(db, Stats{
+		if err := aggregateGatewayStats(tx, Stats{
 			MAC:                 stats.MAC,
 			Timestamp:           stats.Time,
 			Interval:            aggr,
@@ -446,12 +478,14 @@ func handleStatsPacket(db *sqlx.DB, stats gw.GatewayStatsPacket) error {
 		}
 	}
 
+	if err := tx.Commit(); err != nil {
+		return errors.Wrap(err, "commit error")
+	}
+	comitted = true
 	return nil
 }
 
-func aggregateGatewayStats(db *sqlx.DB, stats Stats) error {
-	zone, _ := stats.Timestamp.In(common.TimeLocation).Zone()
-
+func aggregateGatewayStats(db sqlx.Execer, stats Stats) error {
 	_, err := db.Exec(`
 		insert into gateway_stats (
 			mac,
@@ -463,23 +497,22 @@ func aggregateGatewayStats(db *sqlx.DB, stats Stats) error {
 			tx_packets_emitted
 		) values (
 			$1,
-			cast(date_trunc($2, $3 at time zone $4) as timestamp) at time zone $4,
+			cast(date_trunc($2, $3::timestamptz) as timestamp with time zone),
 			$2,
+			$4,
 			$5,
 			$6,
-			$7,
-			$8
+			$7
 		)
 		on conflict (mac, "timestamp", "interval")
 			do update set
-				rx_packets_received = gateway_stats.rx_packets_received + $5,
-				rx_packets_received_ok = gateway_stats.rx_packets_received_ok + $6,
-				tx_packets_received = gateway_stats.tx_packets_received + $7,
-				tx_packets_emitted = gateway_stats.tx_packets_emitted + $8`,
+				rx_packets_received = gateway_stats.rx_packets_received + $4,
+				rx_packets_received_ok = gateway_stats.rx_packets_received_ok + $5,
+				tx_packets_received = gateway_stats.tx_packets_received + $6,
+				tx_packets_emitted = gateway_stats.tx_packets_emitted + $7`,
 		stats.MAC[:],
 		stats.Interval,
 		stats.Timestamp,
-		zone,
 		stats.RXPacketsReceived,
 		stats.RXPacketsReceivedOK,
 		stats.TXPacketsReceived,

@@ -31,6 +31,12 @@ func init() {
 	common.BandName = band.EU_863_870
 	common.DeduplicationDelay = 5 * time.Millisecond
 	common.GetDownlinkDataDelay = 5 * time.Millisecond
+
+	loc, err := time.LoadLocation("Europe/Amsterdam")
+	if err != nil {
+		panic(err)
+	}
+	common.TimeLocation = loc
 }
 
 // Config contains the test configuration.
