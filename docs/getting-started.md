@@ -133,11 +133,14 @@ sudo apt-get install loraserver
 After installation, modify the configuration file which is located at
 `/etc/default/loraserver`.
 
-Settings you probably want to change:
+Settings you probably want to set / change:
 
 * `POSTGRES_DSN`
 * `BAND`
 * `NET_ID`
+* `DB_AUTOMIGRATE`
+* `TIMEZONE`
+* `GW_CREATE_ON_STATS`
 
 ### Starting LoRa Server
 
