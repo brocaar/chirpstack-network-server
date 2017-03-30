@@ -30,7 +30,7 @@ GLOBAL OPTIONS:
    --deduplication-delay value             time to wait for uplink de-duplication (default: 200ms) [$DEDUPLICATION_DELAY]
    --get-downlink-data-delay value         delay between uplink delivery to the app server and getting the downlink data from the app server (if any) (default: 100ms) [$GET_DOWNLINK_DATA_DELAY]
    --gw-stats-aggregation-intervals value  aggregation intervals to use for aggregating the gateway stats (valid options: second, minute, hour, day, week, month, quarter, year) (default: "minute", "hour", "day") [$GW_STATS_AGGREGATION_INTERVALS]
-   --timezone value                        timezone to use when aggregating data (e.g. 'Europe/Amsterdam') (optional, by default the local timezone is used) [$TIMEZONE]
+   --timezone value                        timezone to use when aggregating data (e.g. 'Europe/Amsterdam') (optional, by default the db timezone is used) [$TIMEZONE]
    --gw-create-on-stats                    create non-existing gateways on receiving of stats [$GW_CREATE_ON_STATS]
    --help, -h                              show help
    --version, -v                           print the version
@@ -103,3 +103,12 @@ Valid values for sslmode are:
 * verify-ca - Always SSL (verify that the certificate presented by the server was signed by a trusted CA)
 * verify-full - Always SSL (verify that the certification presented by the server was signed by a trusted CA and the server host name matches the one in the certificate)
 
+## Gateway statistics
+
+Gateway statistics are aggregated on the intervals configured by
+the `--gw-stats-aggregation-intervals` config flag. Note that LoRa App Server
+expects at least `minute`, `day` and `hour` in order to show the graphs.
+
+In order to make sure that aggregation is working correctly, please make sure
+to set the correct timezone using the `--timezone` flag. If this flag is not
+set, it will fallback on the timezone of your database.

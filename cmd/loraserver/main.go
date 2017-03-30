@@ -435,7 +435,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "timezone",
-			Usage:  "timezone to use when aggregating data (e.g. 'Europe/Amsterdam') (optional, by default the local timezone is used)",
+			Usage:  "timezone to use when aggregating data (e.g. 'Europe/Amsterdam') (optional, by default the db timezone is used)",
 			EnvVar: "TIMEZONE",
 		},
 		cli.BoolFlag{
