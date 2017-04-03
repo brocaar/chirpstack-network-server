@@ -58,9 +58,17 @@ message TXInfo {
 }
 
 message JoinRequestRequest {
+	// PHYPayload of the join-request.
 	bytes phyPayload = 1;
+
+	// DevAddr assigned by the network-server.
 	bytes devAddr = 2;
+
+	// NetID assigned by the network-server.
 	bytes netID = 3;
+
+	// Custom channels to add to the join-accept response.
+	repeated uint32 cFList = 4;
 }
 
 message JoinRequestResponse {
@@ -75,10 +83,6 @@ message JoinRequestResponse {
 
 	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
 	uint32 rx1DROffset = 4;
-
-	// The custom channel frequency list (this is not supported for every
-	// ISM band, see the LoRaWAN specs for more information).
-	repeated uint32 cFList = 5;
 
 	// The RX window to use for downlink transmissions.
 	RXWindow rxWindow = 6;

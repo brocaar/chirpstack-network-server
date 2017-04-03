@@ -73,6 +73,11 @@ func run(c *cli.Context) error {
 	if err != nil {
 		log.Fatal(err)
 	}
+	for _, f := range c.IntSlice("extra-frequencies") {
+		if err := bandConfig.AddChannel(f); err != nil {
+			log.Fatalf("add channel error: %s", err)
+		}
+	}
 
 	// get the gw stats aggregation intervals
 	gw.MustSetStatsAggregationIntervals(strings.Split(c.String("gw-stats-aggregation-intervals"), ","))
@@ -442,6 +447,11 @@ func main() {
 			Name:   "gw-create-on-stats",
 			Usage:  "create non-existing gateways on receiving of stats",
 			EnvVar: "GW_CREATE_ON_STATS",
+		},
+		cli.IntSliceFlag{
+			Name:   "extra-frequencies",
+			Usage:  "extra frequencies to use for ISM bands that implement the CFList",
+			EnvVar: "EXTRA_FREQUENCIES",
 		},
 	}
 	app.Run(os.Args)

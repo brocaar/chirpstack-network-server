@@ -12,6 +12,7 @@ import (
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -22,11 +23,13 @@ type otaaTestCase struct {
 	ApplicationJoinRequestResponse as.JoinRequestResponse // application-client join-request response
 	ApplicationJoinRequestError    error                  // application-client join-request error
 	AppKey                         lorawan.AES128Key      // app-key (used to decrypt the expected PHYPayload)
+	ExtraChannels                  []int                  // extra channels for CFList
 
 	ExpectedError                         error                 // expected error
 	ExpectedApplicationJoinRequestRequest as.JoinRequestRequest // expected join-request request
 	ExpectedTXInfo                        gw.TXInfo             // expected tx-info
 	ExpectedPHYPayload                    lorawan.PHYPayload    // expected (plaintext) PHYPayload
+	ExpectedNodeSession                   session.NodeSession   // expected node-session
 }
 
 func TestOTAAScenarios(t *testing.T) {
@@ -107,7 +110,6 @@ func TestOTAAScenarios(t *testing.T) {
 						NwkSKey:     []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 						RxDelay:     uint32(jaPayload.RXDelay),
 						Rx1DROffset: uint32(jaPayload.DLSettings.RX1DROffset),
-						CFList:      jaPayload.CFList[:],
 						RxWindow:    as.RXWindow_RX1,
 						Rx2DR:       uint32(jaPayload.DLSettings.RX2DataRate),
 					},
@@ -127,6 +129,59 @@ func TestOTAAScenarios(t *testing.T) {
 						CodeRate:  rxInfo.CodeRate,
 					},
 					ExpectedPHYPayload: jaPHY,
+					ExpectedNodeSession: session.NodeSession{
+						AppEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+						DevEUI:          [8]byte{2, 2, 3, 4, 5, 6, 7, 8},
+						NwkSKey:         [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						RXWindow:        session.RX1,
+						RXDelay:         jaPayload.RXDelay,
+						RX1DROffset:     jaPayload.DLSettings.RX1DROffset,
+						RX2DR:           jaPayload.DLSettings.RX2DataRate,
+						EnabledChannels: []int{0, 1, 2},
+						LastRXInfoSet:   []gw.RXInfo{rxInfo},
+					},
+				},
+				{
+					Name:          "join-accept using rx1 and CFList",
+					RXInfo:        rxInfo,
+					PHYPayload:    jrPayload,
+					ExtraChannels: []int{868400000, 868500000, 868600000},
+					ApplicationJoinRequestResponse: as.JoinRequestResponse{
+						PhyPayload:  jaBytes,
+						NwkSKey:     []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						RxDelay:     uint32(jaPayload.RXDelay),
+						Rx1DROffset: uint32(jaPayload.DLSettings.RX1DROffset),
+						RxWindow:    as.RXWindow_RX1,
+						Rx2DR:       uint32(jaPayload.DLSettings.RX2DataRate),
+					},
+					AppKey: appKey,
+
+					ExpectedApplicationJoinRequestRequest: as.JoinRequestRequest{
+						PhyPayload: jrBytes,
+						NetID:      []byte{3, 2, 1},
+						DevAddr:    []byte{0, 0, 0, 0},
+						CFList:     []uint32{868400000, 868500000, 868600000, 0, 0},
+					},
+					ExpectedTXInfo: gw.TXInfo{
+						MAC:       rxInfo.MAC,
+						Timestamp: rxInfo.Timestamp + 5000000,
+						Frequency: rxInfo.Frequency,
+						Power:     14,
+						DataRate:  rxInfo.DataRate,
+						CodeRate:  rxInfo.CodeRate,
+					},
+					ExpectedPHYPayload: jaPHY,
+					ExpectedNodeSession: session.NodeSession{
+						AppEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+						DevEUI:          [8]byte{2, 2, 3, 4, 5, 6, 7, 8},
+						NwkSKey:         [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						RXWindow:        session.RX1,
+						RXDelay:         jaPayload.RXDelay,
+						RX1DROffset:     jaPayload.DLSettings.RX1DROffset,
+						RX2DR:           jaPayload.DLSettings.RX2DataRate,
+						EnabledChannels: []int{0, 1, 2, 3, 4, 5},
+						LastRXInfoSet:   []gw.RXInfo{rxInfo},
+					},
 				},
 				{
 					Name:       "join-accept using rx2",
@@ -137,7 +192,6 @@ func TestOTAAScenarios(t *testing.T) {
 						NwkSKey:     []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 						RxDelay:     uint32(jaPayload.RXDelay),
 						Rx1DROffset: uint32(jaPayload.DLSettings.RX1DROffset),
-						CFList:      jaPayload.CFList[:],
 						RxWindow:    as.RXWindow_RX2,
 						Rx2DR:       uint32(jaPayload.DLSettings.RX2DataRate),
 					},
@@ -157,6 +211,17 @@ func TestOTAAScenarios(t *testing.T) {
 						CodeRate:  rxInfo.CodeRate,
 					},
 					ExpectedPHYPayload: jaPHY,
+					ExpectedNodeSession: session.NodeSession{
+						AppEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+						DevEUI:          [8]byte{2, 2, 3, 4, 5, 6, 7, 8},
+						NwkSKey:         [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						RXWindow:        session.RX2,
+						RXDelay:         jaPayload.RXDelay,
+						RX1DROffset:     jaPayload.DLSettings.RX1DROffset,
+						RX2DR:           jaPayload.DLSettings.RX2DataRate,
+						EnabledChannels: []int{0, 1, 2},
+						LastRXInfoSet:   []gw.RXInfo{rxInfo},
+					},
 				},
 			}
 
@@ -167,7 +232,19 @@ func TestOTAAScenarios(t *testing.T) {
 
 func runOTAATests(ctx common.Context, tests []otaaTestCase) {
 	for i, t := range tests {
+
 		Convey(fmt.Sprintf("When testing: %s [%d]", t.Name, i), func() {
+			// reset band
+			var err error
+			common.Band, err = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)
+			if err != nil {
+				So(err, ShouldBeNil)
+			}
+
+			for _, f := range t.ExtraChannels {
+				So(common.Band.AddChannel(f), ShouldBeNil)
+			}
+
 			// set mocks
 			ctx.Application.(*test.ApplicationClient).JoinRequestErr = t.ApplicationJoinRequestError
 			ctx.Application.(*test.ApplicationClient).JoinRequestResponse = t.ApplicationJoinRequestResponse
@@ -207,10 +284,12 @@ func runOTAATests(ctx common.Context, tests []otaaTestCase) {
 				So(txPacket.PHYPayload, ShouldResemble, t.ExpectedPHYPayload)
 			})
 
-			Convey("Then the expected RXInfoSet has been added to the node-session", func() {
+			Convey("Then the expected node-session was created", func() {
 				ns, err := session.GetNodeSession(ctx.RedisPool, lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8})
 				So(err, ShouldBeNil)
-				So(ns.LastRXInfoSet, ShouldResemble, []gw.RXInfo{t.RXInfo})
+				So(ns.DevAddr, ShouldNotEqual, lorawan.DevAddr{0, 0, 0, 0})
+				ns.DevAddr = lorawan.DevAddr{}
+				So(ns, ShouldResemble, t.ExpectedNodeSession)
 			})
 		})
 	}

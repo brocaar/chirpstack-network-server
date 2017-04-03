@@ -59,9 +59,9 @@ type NodeSession struct {
 	// This value is controlled by the ADR engine.
 	NbTrans uint8
 
-	UplinkHistory []UplinkHistory // contains the last 20 transmissions
-	CFList        *lorawan.CFList
-	LastRXInfoSet []gw.RXInfo // sorted set (best at index 0)
+	EnabledChannels []int           // channels that are activated on the node
+	UplinkHistory   []UplinkHistory // contains the last 20 transmissions
+	LastRXInfoSet   []gw.RXInfo     // sorted set (best at index 0)
 }
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list

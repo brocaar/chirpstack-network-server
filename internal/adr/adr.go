@@ -1,6 +1,7 @@
 package adr
 
 import (
+	"errors"
 	"fmt"
 
 	log "github.com/Sirupsen/logrus"
@@ -125,15 +126,13 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 	}
 
 	var chMask lorawan.ChMask
-	for i := 0; i < len(common.Band.DownlinkChannels); i++ {
-		chMask[i] = true
-	}
-
-	for i := 0; ns.CFList != nil && i < len(ns.CFList); i++ {
-		if ns.CFList[i] == 0 {
-			continue
+	for _, c := range ns.EnabledChannels {
+		if c > 15 {
+			// TODO: implement handling ADR on multiple channel blocks.
+			// This should not affect the current ADR implementation.
+			return errors.New("handling adr over multiple channel blocks is not yet supported")
 		}
-		chMask[i+len(common.Band.DownlinkChannels)] = true
+		chMask[c] = true
 	}
 
 	mac := lorawan.MACCommand{

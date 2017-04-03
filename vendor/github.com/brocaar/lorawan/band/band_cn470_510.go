@@ -93,7 +93,7 @@ func newCN470Band() (Band, error) {
 		},
 
 		getRX1FrequencyFunc: func(b *Band, txFrequency int) (int, error) {
-			uplinkChan, err := b.GetChannel(txFrequency, nil)
+			uplinkChan, err := b.GetUplinkChannelNumber(txFrequency)
 			if err != nil {
 				return 0, err
 			}

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.17.0
+
+**Features:**
+
+* Add `--extra-frequencies` / `EXTRA_FREQUENCIES` config option to configure
+  additional channels (in case supported by the selected ISM band).
+
 ## 0.16.1
 
 **Bugfixes:**

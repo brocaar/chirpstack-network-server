@@ -45,19 +45,6 @@ func (n *NetworkServerAPI) CreateNodeSession(ctx context.Context, req *ns.Create
 		InstallationMargin: req.InstallationMargin,
 	}
 
-	if len(req.CFList) > 0 {
-		var cFList lorawan.CFList
-		if len(req.CFList) > len(cFList) {
-			return nil, grpc.Errorf(codes.InvalidArgument, "max length for CFList is %d", len(cFList))
-		}
-
-		for i, f := range req.CFList {
-			cFList[i] = f
-		}
-
-		sess.CFList = &cFList
-	}
-
 	copy(sess.DevAddr[:], req.DevAddr)
 	copy(sess.AppEUI[:], req.AppEUI)
 	copy(sess.DevEUI[:], req.DevEUI)
@@ -110,10 +97,6 @@ func (n *NetworkServerAPI) GetNodeSession(ctx context.Context, req *ns.GetNodeSe
 		TxPower:            uint32(sess.TXPower),
 	}
 
-	if sess.CFList != nil {
-		resp.CFList = sess.CFList[:]
-	}
-
 	return resp, nil
 }
 
@@ -150,19 +133,6 @@ func (n *NetworkServerAPI) UpdateNodeSession(ctx context.Context, req *ns.Update
 		NbTrans:       sess.NbTrans,
 		TXPower:       sess.TXPower,
 		UplinkHistory: sess.UplinkHistory,
-	}
-
-	if len(req.CFList) > 0 {
-		var cFList lorawan.CFList
-		if len(req.CFList) > len(cFList) {
-			return nil, grpc.Errorf(codes.InvalidArgument, "max length for CFList is %d", len(cFList))
-		}
-
-		for i, f := range req.CFList {
-			cFList[i] = f
-		}
-
-		newSess.CFList = &cFList
 	}
 
 	copy(newSess.DevAddr[:], req.DevAddr)

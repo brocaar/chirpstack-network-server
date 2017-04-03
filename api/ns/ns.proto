@@ -79,10 +79,6 @@ message CreateNodeSessionRequest {
 	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
 	uint32 rx1DROffset = 8;
 
-	// The custom channel frequency list (this is not supported for every
-	// ISM band, see the LoRaWAN specs for more information).
-	repeated uint32 cFList = 9;
-
 	// The RX window to use for downlink transmissions.
 	RXWindow rxWindow = 10;
 
@@ -131,10 +127,6 @@ message GetNodeSessionResponse {
 
 	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
 	uint32 rx1DROffset = 8;
-
-	// The custom channel frequency list (this is not supported for every
-	// ISM band, see the LoRaWAN specs for more information).
-	repeated uint32 cFList = 9;
 
 	// The RX window to use for downlink transmissions.
 	RXWindow rxWindow = 10;
@@ -186,10 +178,6 @@ message UpdateNodeSessionRequest {
 
 	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
 	uint32 rx1DROffset = 8;
-
-	// The custom channel frequency list (this is not supported for every
-	// ISM band, see the LoRaWAN specs for more information).
-	repeated uint32 cFList = 9;
 
 	// The RX window to use for downlink transmissions.
 	RXWindow rxWindow = 10;

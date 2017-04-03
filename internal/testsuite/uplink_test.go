@@ -111,63 +111,69 @@ func TestUplinkScenarios(t *testing.T) {
 		}
 
 		ns := session.NodeSession{
-			DevAddr:  [4]byte{1, 2, 3, 4},
-			DevEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:   8,
-			FCntDown: 5,
-			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			DevAddr:         [4]byte{1, 2, 3, 4},
+			DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:          8,
+			FCntDown:        5,
+			AppEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			EnabledChannels: []int{0, 1, 2},
 		}
 
 		nsFCntRollOver := session.NodeSession{
-			DevAddr:  [4]byte{1, 2, 3, 4},
-			DevEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:   65535,
-			FCntDown: 5,
-			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			DevAddr:         [4]byte{1, 2, 3, 4},
+			DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:          65535,
+			FCntDown:        5,
+			AppEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			EnabledChannels: []int{0, 1, 2},
 		}
 
 		nsRelaxFCnt := session.NodeSession{
-			DevAddr:   [4]byte{1, 2, 3, 4},
-			DevEUI:    [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:   [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:    8,
-			FCntDown:  5,
-			RelaxFCnt: true,
-			AppEUI:    [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			DevAddr:         [4]byte{1, 2, 3, 4},
+			DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:          8,
+			FCntDown:        5,
+			RelaxFCnt:       true,
+			AppEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			EnabledChannels: []int{0, 1, 2},
 		}
 
 		nsDelay := session.NodeSession{
-			DevAddr:  [4]byte{1, 2, 3, 4},
-			DevEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:   8,
-			FCntDown: 5,
-			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
-			RXDelay:  3,
+			DevAddr:         [4]byte{1, 2, 3, 4},
+			DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:          8,
+			FCntDown:        5,
+			AppEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			RXDelay:         3,
+			EnabledChannels: []int{0, 1, 2},
 		}
 
 		nsRX2 := session.NodeSession{
-			DevAddr:  [4]byte{1, 2, 3, 4},
-			DevEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:   8,
-			FCntDown: 5,
-			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
-			RXWindow: session.RX2,
-			RX2DR:    3,
+			DevAddr:         [4]byte{1, 2, 3, 4},
+			DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:          8,
+			FCntDown:        5,
+			AppEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			RXWindow:        session.RX2,
+			RX2DR:           3,
+			EnabledChannels: []int{0, 1, 2},
 		}
 
 		nsRX2Delay := session.NodeSession{
-			DevAddr:  [4]byte{1, 2, 3, 4},
-			DevEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:  [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:   8,
-			FCntDown: 5,
-			AppEUI:   [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
-			RXWindow: session.RX2,
-			RXDelay:  5,
+			DevAddr:         [4]byte{1, 2, 3, 4},
+			DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:          8,
+			FCntDown:        5,
+			AppEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			RXWindow:        session.RX2,
+			RXDelay:         5,
+			EnabledChannels: []int{0, 1, 2},
 		}
 
 		nsADREnabled := session.NodeSession{
@@ -179,6 +185,7 @@ func TestUplinkScenarios(t *testing.T) {
 			AppEUI:             [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
 			ADRInterval:        10,
 			InstallationMargin: 5,
+			EnabledChannels:    []int{0, 1, 2},
 		}
 
 		var fPortZero uint8

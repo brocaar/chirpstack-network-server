@@ -50,11 +50,8 @@ func TestNetworkServerAPI(t *testing.T) {
 				FCntDown:    11,
 				RxDelay:     1,
 				Rx1DROffset: 2,
-				CFList: []uint32{
-					868700000,
-				},
-				RxWindow: ns.RXWindow_RX2,
-				Rx2DR:    3,
+				RxWindow:    ns.RXWindow_RX2,
+				Rx2DR:       3,
 			})
 			So(err, ShouldBeNil)
 
@@ -72,15 +69,8 @@ func TestNetworkServerAPI(t *testing.T) {
 					FCntDown:    11,
 					RxDelay:     1,
 					Rx1DROffset: 2,
-					CFList: []uint32{
-						868700000,
-						0,
-						0,
-						0,
-						0,
-					},
-					RxWindow: ns.RXWindow_RX2,
-					Rx2DR:    3,
+					RxWindow:    ns.RXWindow_RX2,
+					Rx2DR:       3,
 				})
 			})
 
@@ -94,10 +84,6 @@ func TestNetworkServerAPI(t *testing.T) {
 					FCntDown:    22,
 					RxDelay:     10,
 					Rx1DROffset: 20,
-					CFList: []uint32{
-						868700000,
-						868800000,
-					},
 				})
 				Convey("Then an error is returned", func() {
 					So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "node-session belongs to a different AppEUI"))
@@ -114,10 +100,6 @@ func TestNetworkServerAPI(t *testing.T) {
 					FCntDown:    22,
 					RxDelay:     10,
 					Rx1DROffset: 20,
-					CFList: []uint32{
-						868700000,
-						868800000,
-					},
 				})
 				So(err, ShouldBeNil)
 
@@ -135,13 +117,6 @@ func TestNetworkServerAPI(t *testing.T) {
 						FCntDown:    22,
 						RxDelay:     10,
 						Rx1DROffset: 20,
-						CFList: []uint32{
-							868700000,
-							868800000,
-							0,
-							0,
-							0,
-						},
 					})
 				})
 			})

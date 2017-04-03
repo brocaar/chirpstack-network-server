@@ -57,28 +57,21 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPac
 		return fmt.Errorf("get random DevAddr error: %s", err)
 	}
 
+	cFList := common.Band.GetCFList()
+	var cFListSlice []uint32
+	if cFList != nil {
+		for _, f := range cFList {
+			cFListSlice = append(cFListSlice, f)
+		}
+	}
 	joinResp, err := ctx.Application.JoinRequest(context.Background(), &as.JoinRequestRequest{
 		PhyPayload: b,
 		DevAddr:    devAddr[:],
 		NetID:      ctx.NetID[:],
+		CFList:     cFListSlice,
 	})
 	if err != nil {
 		return fmt.Errorf("application server join-request error: %s", err)
-	}
-
-	var cFList lorawan.CFList
-	if len(joinResp.CFList) > len(cFList) {
-		errStr := fmt.Sprintf("max CFlist size %d, got %d", len(cFList), len(joinResp.CFList))
-		ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
-			AppEUI: jrPL.AppEUI[:],
-			DevEUI: jrPL.DevEUI[:],
-			Type:   as.ErrorType_OTAA,
-			Error:  errStr,
-		})
-		return errors.New(errStr)
-	}
-	for i, cf := range joinResp.CFList {
-		cFList[i] = cf
 	}
 
 	var downlinkPHY lorawan.PHYPayload
@@ -108,7 +101,7 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPac
 		RXDelay:            uint8(joinResp.RxDelay),
 		RX1DROffset:        uint8(joinResp.Rx1DROffset),
 		RX2DR:              uint8(joinResp.Rx2DR),
-		CFList:             &cFList,
+		EnabledChannels:    common.Band.GetEnabledUplinkChannels(),
 		ADRInterval:        joinResp.AdrInterval,
 		InstallationMargin: joinResp.InstallationMargin,
 		LastRXInfoSet:      rxPacket.RXInfoSet,

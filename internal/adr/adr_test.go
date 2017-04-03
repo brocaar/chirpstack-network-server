@@ -191,6 +191,7 @@ func TestADR(t *testing.T) {
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
 							InstallationMargin: 5,
+							EnabledChannels:    []int{0, 1, 2},
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
@@ -207,6 +208,7 @@ func TestADR(t *testing.T) {
 							UplinkHistory: []session.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
+							EnabledChannels: []int{0, 1, 2},
 						},
 						ExpectedMACPayloadQueue: []maccommand.QueueItem{
 							{DevEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8}, Data: macCommandB},
@@ -225,18 +227,13 @@ func TestADR(t *testing.T) {
 						ExpectedError: nil,
 					},
 					{
-						Name: "ADR increasing data-rate by one step (with CFlist)",
+						Name: "ADR increasing data-rate by one step (extra channels added)",
 						NodeSession: &session.NodeSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
 							InstallationMargin: 5,
-							CFList: &lorawan.CFList{
-								868400000,
-								868500000,
-								0,
-								868600000,
-							},
+							EnabledChannels:    []int{0, 1, 2, 3, 4, 6},
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
@@ -250,12 +247,7 @@ func TestADR(t *testing.T) {
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
 							InstallationMargin: 5,
-							CFList: &lorawan.CFList{
-								868400000,
-								868500000,
-								0,
-								868600000,
-							},
+							EnabledChannels:    []int{0, 1, 2, 3, 4, 6},
 							UplinkHistory: []session.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
