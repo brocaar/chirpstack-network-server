@@ -104,6 +104,8 @@ func run(c *cli.Context) error {
 		"docs":    "https://docs.loraserver.io/",
 	}).Info("starting LoRa Server")
 
+	mustEnableUplinkChannels(c)
+
 	lsCtx := mustGetContext(netID, c)
 
 	// migrate old node-session keys to new layout
@@ -297,6 +299,39 @@ func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCer
 	})
 }
 
+func mustEnableUplinkChannels(c *cli.Context) {
+	if c.String("enable-uplink-channels") == "" {
+		return
+	}
+
+	log.Info("disabling all channels")
+	for _, c := range common.Band.GetEnabledUplinkChannels() {
+		if err := common.Band.DisableUplinkChannel(c); err != nil {
+			log.Fatalf("disable uplink channel error: %s", err)
+		}
+	}
+
+	blocks := strings.Split(c.String("enable-uplink-channels"), ",")
+	for _, block := range blocks {
+		block = strings.Trim(block, " ")
+		var start, end int
+		if _, err := fmt.Sscanf(block, "%d-%d", &start, &end); err != nil {
+			log.Fatalf("parse channel range error: %s", err)
+		}
+
+		log.WithFields(log.Fields{
+			"first_channel": start,
+			"last_channel":  end,
+		}).Info("enabling channel block")
+
+		for ; start <= end; start++ {
+			if err := common.Band.EnableUplinkChannel(start); err != nil {
+				log.Fatalf("enable uplink channel error: %s", err)
+			}
+		}
+	}
+}
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "loraserver"
@@ -452,6 +487,11 @@ func main() {
 			Name:   "extra-frequencies",
 			Usage:  "extra frequencies to use for ISM bands that implement the CFList",
 			EnvVar: "EXTRA_FREQUENCIES",
+		},
+		cli.StringFlag{
+			Name:   "enable-uplink-channels",
+			Usage:  "enable only a given sub-set of channels (e.g. '0-7,8-15')",
+			EnvVar: "ENABLE_UPLINK_CHANNELS",
 		},
 	}
 	app.Run(os.Args)
