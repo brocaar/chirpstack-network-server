@@ -31,16 +31,19 @@ func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, pl lorawan.MA
 		return fmt.Errorf("expected *lorawan.LinkADRAnsPayload, got %T", pl)
 	}
 
-	pending, err := ReadPending(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
+	block, err := ReadPending(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
 	if err != nil {
 		return fmt.Errorf("read pending mac-commands error: %s", err)
 	}
-	if len(pending) == 0 {
+	if block == nil || len(block.MACCommands) == 0 {
 		return errors.New("no pending adr requests found")
 	}
-	adrReq, ok := pending[0].(*lorawan.LinkADRReqPayload)
+
+	// as we're sending the same txpower and nbrep for each channel we
+	// just take the first item from the slice and use its values
+	adrReq, ok := block.MACCommands[0].Payload.(*lorawan.LinkADRReqPayload)
 	if !ok {
-		return fmt.Errorf("expected *lorawan.LinkADRReqPayload, got %T", pending[0])
+		return fmt.Errorf("expected *lorawan.LinkADRReqPayload, got %T", block.MACCommands[0].Payload)
 	}
 
 	if adrAns.ChannelMaskACK && adrAns.DataRateACK && adrAns.PowerACK {

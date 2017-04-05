@@ -25,30 +25,40 @@ func TestQueue(t *testing.T) {
 			So(session.SaveNodeSession(p, ns), ShouldBeNil)
 
 			Convey("When adding mac-command a and b to the queue", func() {
-				a := QueueItem{
-					DevEUI: ns.DevEUI,
-					Data:   []byte{1},
+				a := Block{
+					CID: lorawan.LinkADRReq,
+					MACCommands: []lorawan.MACCommand{
+						{
+							CID:     lorawan.LinkADRReq,
+							Payload: &lorawan.LinkADRReqPayload{DataRate: 1},
+						},
+					},
 				}
-				b := QueueItem{
-					DevEUI: ns.DevEUI,
-					Data:   []byte{2},
+				b := Block{
+					CID: lorawan.RXParamSetupReq,
+					MACCommands: []lorawan.MACCommand{
+						{
+							CID:     lorawan.RXParamSetupReq,
+							Payload: &lorawan.RX2SetupReqPayload{Frequency: 868100000},
+						},
+					},
 				}
-				So(AddToQueue(p, a), ShouldBeNil)
-				So(AddToQueue(p, b), ShouldBeNil)
+				So(AddToQueue(p, ns.DevEUI, a), ShouldBeNil)
+				So(AddToQueue(p, ns.DevEUI, b), ShouldBeNil)
 
-				Convey("Then reading the queue returns both mac-payloads in the correct order", func() {
-					payloads, err := ReadQueue(p, ns.DevEUI)
+				Convey("Then reading the queue returns both mac-command blocks in the correct order", func() {
+					blocks, err := ReadQueue(p, ns.DevEUI)
 					So(err, ShouldBeNil)
-					So(payloads, ShouldResemble, []QueueItem{a, b})
+					So(blocks, ShouldResemble, []Block{a, b})
 				})
 
 				Convey("When deleting mac-command a", func() {
 					So(DeleteQueueItem(p, ns.DevEUI, a), ShouldBeNil)
 
 					Convey("Then only mac-command b is in the queue", func() {
-						payloads, err := ReadQueue(p, ns.DevEUI)
+						blocks, err := ReadQueue(p, ns.DevEUI)
 						So(err, ShouldBeNil)
-						So(payloads, ShouldResemble, []QueueItem{b})
+						So(blocks, ShouldResemble, []Block{b})
 					})
 				})
 			})
@@ -65,42 +75,53 @@ func TestPending(t *testing.T) {
 		test.MustFlushRedis(p)
 
 		Convey("When setting two mac-commands as pending", func() {
-			commands := []lorawan.MACCommandPayload{
-				&lorawan.LinkADRReqPayload{DataRate: 1, TXPower: 2},
-				&lorawan.LinkADRReqPayload{DataRate: 3, TXPower: 4},
+			devEUI := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}
+			a := Block{
+				CID: lorawan.LinkADRReq,
+				MACCommands: []lorawan.MACCommand{
+					{
+						CID:     lorawan.LinkADRReq,
+						Payload: &lorawan.LinkADRReqPayload{DataRate: 1},
+					},
+				},
+			}
+			b := Block{
+				CID: lorawan.LinkADRReq,
+				MACCommands: []lorawan.MACCommand{
+					{
+						CID:     lorawan.LinkADRReq,
+						Payload: &lorawan.LinkADRReqPayload{DataRate: 2},
+					},
+				},
 			}
 
-			devEUI := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}
-			So(SetPending(p, devEUI, lorawan.LinkADRReq, commands), ShouldBeNil)
+			So(SetPending(p, devEUI, a), ShouldBeNil)
 
-			Convey("Then ReadPending returns the same mac-commands", func() {
-				out, err := ReadPending(p, devEUI, lorawan.LinkADRReq)
+			Convey("Then ReadPending returns the same block", func() {
+				block, err := ReadPending(p, devEUI, lorawan.LinkADRReq)
 				So(err, ShouldBeNil)
-				So(out, ShouldResemble, commands)
+				So(block, ShouldResemble, &a)
 			})
 
-			Convey("Then ReadPending for a different CID returns 0 items", func() {
-				out, err := ReadPending(p, devEUI, lorawan.DutyCycleReq)
+			Convey("Then ReadPending for a different CID returns nil", func() {
+				block, err := ReadPending(p, devEUI, lorawan.DutyCycleReq)
 				So(err, ShouldBeNil)
-				So(out, ShouldHaveLength, 0)
+				So(block, ShouldBeNil)
 			})
 
 			Convey("Then ReadPending for a different DevEUI returns 0 items", func() {
-				out, err := ReadPending(p, [8]byte{8, 7, 6, 5, 4, 3, 2, 1}, lorawan.LinkADRReq)
+				block, err := ReadPending(p, [8]byte{8, 7, 6, 5, 4, 3, 2, 1}, lorawan.LinkADRReq)
 				So(err, ShouldBeNil)
-				So(out, ShouldHaveLength, 0)
+				So(block, ShouldBeNil)
 			})
 
 			Convey("When overwriting the mac-commands for the same CID", func() {
-				commands := []lorawan.MACCommandPayload{
-					&lorawan.LinkADRReqPayload{DataRate: 5, TXPower: 6},
-				}
-				So(SetPending(p, devEUI, lorawan.LinkADRReq, commands), ShouldBeNil)
+				So(SetPending(p, devEUI, b), ShouldBeNil)
 
 				Convey("Then only the new mac-commands are returned", func() {
-					out, err := ReadPending(p, devEUI, lorawan.LinkADRReq)
+					block, err := ReadPending(p, devEUI, lorawan.LinkADRReq)
 					So(err, ShouldBeNil)
-					So(out, ShouldResemble, commands)
+					So(block, ShouldResemble, &b)
 				})
 			})
 		})
@@ -109,41 +130,81 @@ func TestPending(t *testing.T) {
 
 func TestFilterItems(t *testing.T) {
 	Convey("Given a set of mac-command items", t, func() {
-		a := QueueItem{
-			FRMPayload: false,
-			Data:       []byte{1, 2, 3, 4, 5},
+		// 5 bytes
+		a := Block{
+			CID: lorawan.LinkADRReq,
+			MACCommands: []lorawan.MACCommand{
+				{
+					CID:     lorawan.LinkADRReq,
+					Payload: &lorawan.LinkADRReqPayload{DataRate: 1},
+				},
+			},
 		}
-		b := QueueItem{
-			FRMPayload: false,
-			Data:       []byte{9, 8, 7},
+		// 2 bytes
+		b := Block{
+			CID: lorawan.DutyCycleReq,
+			MACCommands: []lorawan.MACCommand{
+				{
+					CID:     lorawan.DutyCycleReq,
+					Payload: &lorawan.DutyCycleReqPayload{MaxDCCycle: 1},
+				},
+			},
 		}
-		c := QueueItem{
+		// 5 bytes
+		c := Block{
+			CID: lorawan.RXParamSetupReq,
+			MACCommands: []lorawan.MACCommand{
+				{
+					CID:     lorawan.RXParamSetupReq,
+					Payload: &lorawan.RX2SetupReqPayload{Frequency: 868100000},
+				},
+			},
+		}
+		// 1 byte
+		d := Block{
 			FRMPayload: true,
-			Data:       []byte{9, 8, 7, 6, 5, 4, 3, 2, 1},
+			CID:        lorawan.DevStatusReq,
+			MACCommands: []lorawan.MACCommand{
+				{
+					CID: lorawan.DevStatusReq,
+				},
+			},
 		}
-		d := QueueItem{
-			FRMPayload: true,
-			Data:       []byte{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		// 6 bytes
+		e := Block{
+			CID: lorawan.NewChannelReq,
+			MACCommands: []lorawan.MACCommand{
+				{
+					CID:     lorawan.NewChannelReq,
+					Payload: &lorawan.NewChannelReqPayload{ChIndex: 3, Freq: 868900000, MinDR: 0, MaxDR: 5},
+				},
+			},
 		}
-		allPayloads := []QueueItem{a, b, c, d}
+
+		allBlocks := []Block{a, b, c, d, e}
 
 		Convey("When filtering on 15 bytes and FRMPayload=false", func() {
-			payloads := FilterItems(allPayloads, false, 15)
+			blocks, err := FilterItems(allBlocks, false, 15)
+			So(err, ShouldBeNil)
 			Convey("Then the expected set is returned", func() {
-				So(payloads, ShouldResemble, []QueueItem{a, b})
+				So(blocks, ShouldResemble, []Block{a, b, c})
 			})
 		})
 
 		Convey("When filtering on 15 bytes and FRMPayload=true", func() {
-			payloads := FilterItems(allPayloads, true, 15)
+			blocks, err := FilterItems(allBlocks, true, 15)
+			So(err, ShouldBeNil)
 			Convey("Then the expected set is returned", func() {
-				So(payloads, ShouldResemble, []QueueItem{c})
+				So(blocks, ShouldResemble, []Block{d})
 			})
 		})
 
 		Convey("Whe filtering on 100 bytes and FRMPayload=true", func() {
-			payloads := FilterItems(allPayloads, true, 100)
-			So(payloads, ShouldResemble, []QueueItem{c, d})
+			blocks, err := FilterItems(allBlocks, false, 100)
+			So(err, ShouldBeNil)
+			Convey("Then the expected set is returned", func() {
+				So(blocks, ShouldResemble, []Block{a, b, c, e})
+			})
 		})
 	})
 }

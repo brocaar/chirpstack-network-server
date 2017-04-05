@@ -29,10 +29,13 @@ func TestHandle(t *testing.T) {
 			So(session.SaveNodeSession(p, ns), ShouldBeNil)
 
 			Convey("Testing LinkADRAns", func() {
-				linkADRReq := &lorawan.LinkADRReqPayload{
-					TXPower: 3,
-					Redundancy: lorawan.Redundancy{
-						NbRep: 2,
+				linkADRReqMAC := lorawan.MACCommand{
+					CID: lorawan.LinkADRReq,
+					Payload: &lorawan.LinkADRReqPayload{
+						TXPower: 3,
+						Redundancy: lorawan.Redundancy{
+							NbRep: 2,
+						},
 					},
 				}
 				linkADRAnsPL := &lorawan.LinkADRAnsPayload{
@@ -46,7 +49,12 @@ func TestHandle(t *testing.T) {
 				}
 
 				Convey("Given a pending linkADRReq and positive ack", func() {
-					So(SetPending(p, ns.DevEUI, lorawan.LinkADRReq, []lorawan.MACCommandPayload{linkADRReq}), ShouldBeNil)
+					So(SetPending(p, ns.DevEUI, Block{
+						CID: linkADRAns.CID,
+						MACCommands: []lorawan.MACCommand{
+							linkADRReqMAC,
+						},
+					}), ShouldBeNil)
 					So(Handle(ctx, &ns, linkADRAns), ShouldBeNil)
 
 					Convey("Then the node-session TXPower and NbTrans are updated correctly", func() {
@@ -57,7 +65,12 @@ func TestHandle(t *testing.T) {
 
 				Convey("Given a pending linkADRReq and negative ack", func() {
 					linkADRAnsPL.ChannelMaskACK = false
-					So(SetPending(p, ns.DevEUI, lorawan.LinkADRReq, []lorawan.MACCommandPayload{linkADRReq}), ShouldBeNil)
+					So(SetPending(p, ns.DevEUI, Block{
+						CID: linkADRAns.CID,
+						MACCommands: []lorawan.MACCommand{
+							linkADRReqMAC,
+						},
+					}), ShouldBeNil)
 					So(Handle(ctx, &ns, linkADRAns), ShouldBeNil)
 
 					Convey("Then the node-session TXPower and NbTrans are not updated", func() {

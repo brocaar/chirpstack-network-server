@@ -173,12 +173,21 @@ func (n *NetworkServerAPI) GetRandomDevAddr(ctx context.Context, req *ns.GetRand
 
 // EnqueueDataDownMACCommand adds a data down MAC command to the queue.
 func (n *NetworkServerAPI) EnqueueDataDownMACCommand(ctx context.Context, req *ns.EnqueueDataDownMACCommandRequest) (*ns.EnqueueDataDownMACCommandResponse, error) {
-	macPL := maccommand.QueueItem{
-		FRMPayload: req.FrmPayload,
-		Data:       req.Data,
+	var mac lorawan.MACCommand
+	var devEUI lorawan.EUI64
+
+	copy(devEUI[:], req.DevEUI)
+
+	if err := mac.UnmarshalBinary(false, req.Data); err != nil {
+		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
-	copy(macPL.DevEUI[:], req.DevEUI)
-	if err := maccommand.AddToQueue(n.ctx.RedisPool, macPL); err != nil {
+
+	block := maccommand.Block{
+		CID:         mac.CID,
+		MACCommands: []lorawan.MACCommand{mac},
+	}
+
+	if err := maccommand.AddToQueue(n.ctx.RedisPool, devEUI, block); err != nil {
 		return nil, errToRPCError(err)
 	}
 	return &ns.EnqueueDataDownMACCommandResponse{}, nil

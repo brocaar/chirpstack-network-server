@@ -1,10 +1,10 @@
 package adr
 
 import (
-	"errors"
 	"fmt"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/maccommand"
@@ -135,34 +135,33 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 		chMask[c] = true
 	}
 
-	mac := lorawan.MACCommand{
+	block := maccommand.Block{
 		CID: lorawan.LinkADRReq,
-		Payload: &lorawan.LinkADRReqPayload{
-			DataRate: uint8(idealDR),
-			TXPower:  uint8(idealTXPowerIndex),
-			ChMask:   chMask,
-			Redundancy: lorawan.Redundancy{
-				ChMaskCntl: 0, // first block of 16 channels
-				NbRep:      uint8(idealNbRep),
+		MACCommands: []lorawan.MACCommand{
+			{
+				CID: lorawan.LinkADRReq,
+				Payload: &lorawan.LinkADRReqPayload{
+					DataRate: uint8(idealDR),
+					TXPower:  uint8(idealTXPowerIndex),
+					ChMask:   chMask,
+					Redundancy: lorawan.Redundancy{
+						ChMaskCntl: 0, // first block of 16 channels
+						NbRep:      uint8(idealNbRep),
+					},
+				},
 			},
 		},
 	}
-	b, err := mac.MarshalBinary()
+
+	err = maccommand.AddToQueue(ctx.RedisPool, ns.DevEUI, block)
 	if err != nil {
-		return fmt.Errorf("marshal mac command error: %s", err)
+		return errors.Wrap(err, "add mac-command block to queue error")
 	}
 
-	err = maccommand.AddToQueue(ctx.RedisPool, maccommand.QueueItem{
-		DevEUI: ns.DevEUI,
-		Data:   b,
-	})
+	err = maccommand.SetPending(ctx.RedisPool, ns.DevEUI, block)
 	if err != nil {
-		return fmt.Errorf("add mac-payload to tx-queue error: %s", err)
-	}
-
-	err = maccommand.SetPending(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq, []lorawan.MACCommandPayload{mac.Payload})
-	if err != nil {
-		return fmt.Errorf("set mac-payload as pending error: %s", err)
+		// TODO: set pending on transmission?
+		return errors.Wrap(err, "set mac-command block to pending error")
 	}
 
 	log.WithFields(log.Fields{
@@ -194,6 +193,7 @@ func getMinTXPower() int {
 	for _, p := range common.Band.TXPower {
 		// make sure we never use 0 and disable the device
 		if p > 0 {
+
 			minTX = p
 		}
 	}

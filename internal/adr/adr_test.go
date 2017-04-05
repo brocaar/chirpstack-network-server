@@ -144,35 +144,41 @@ func TestADR(t *testing.T) {
 					},
 				}
 
-				macCommand := lorawan.MACCommand{
+				macBlock := maccommand.Block{
 					CID: lorawan.LinkADRReq,
-					Payload: &lorawan.LinkADRReqPayload{
-						DataRate: 3,
-						TXPower:  1,                                // 14
-						ChMask:   lorawan.ChMask{true, true, true}, // ADR applies to first three standard channels
-						Redundancy: lorawan.Redundancy{
-							ChMaskCntl: 0, // first block of 16 channels
-							NbRep:      1,
+					MACCommands: []lorawan.MACCommand{
+						{
+							CID: lorawan.LinkADRReq,
+							Payload: &lorawan.LinkADRReqPayload{
+								DataRate: 3,
+								TXPower:  1,                                // 14
+								ChMask:   lorawan.ChMask{true, true, true}, // ADR applies to first three standard channels
+								Redundancy: lorawan.Redundancy{
+									ChMaskCntl: 0, // first block of 16 channels
+									NbRep:      1,
+								},
+							},
 						},
 					},
 				}
-				macCommandB, err := macCommand.MarshalBinary()
-				So(err, ShouldBeNil)
 
-				macCommandCFList := lorawan.MACCommand{
+				macCFListBlock := maccommand.Block{
 					CID: lorawan.LinkADRReq,
-					Payload: &lorawan.LinkADRReqPayload{
-						DataRate: 3,
-						TXPower:  1, // 14
-						ChMask:   lorawan.ChMask{true, true, true, true, true, false, true},
-						Redundancy: lorawan.Redundancy{
-							ChMaskCntl: 0, // first block of 16 channels
-							NbRep:      1,
+					MACCommands: []lorawan.MACCommand{
+						{
+							CID: lorawan.LinkADRReq,
+							Payload: &lorawan.LinkADRReqPayload{
+								DataRate: 3,
+								TXPower:  1, // 14
+								ChMask:   lorawan.ChMask{true, true, true, true, true, false, true},
+								Redundancy: lorawan.Redundancy{
+									ChMaskCntl: 0, // first block of 16 channels
+									NbRep:      1,
+								},
+							},
 						},
 					},
 				}
-				macCommandCFListB, err := macCommandCFList.MarshalBinary()
-				So(err, ShouldBeNil)
 
 				testTable := []struct {
 					Name                    string
@@ -180,8 +186,8 @@ func TestADR(t *testing.T) {
 					RXPacket                models.RXPacket
 					FullFCnt                uint32
 					ExpectedNodeSession     session.NodeSession
-					ExpectedMACPending      []lorawan.MACCommandPayload
-					ExpectedMACPayloadQueue []maccommand.QueueItem
+					ExpectedMACPending      *maccommand.Block
+					ExpectedMACPayloadQueue []maccommand.Block
 					ExpectedError           error
 				}{
 					{
@@ -210,21 +216,11 @@ func TestADR(t *testing.T) {
 							},
 							EnabledChannels: []int{0, 1, 2},
 						},
-						ExpectedMACPayloadQueue: []maccommand.QueueItem{
-							{DevEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8}, Data: macCommandB},
+						ExpectedMACPayloadQueue: []maccommand.Block{
+							macBlock,
 						},
-						ExpectedMACPending: []lorawan.MACCommandPayload{
-							&lorawan.LinkADRReqPayload{
-								DataRate: 3,
-								TXPower:  1,
-								ChMask:   lorawan.ChMask{true, true, true},
-								Redundancy: lorawan.Redundancy{
-									ChMaskCntl: 0,
-									NbRep:      1,
-								},
-							},
-						},
-						ExpectedError: nil,
+						ExpectedMACPending: &macBlock,
+						ExpectedError:      nil,
 					},
 					{
 						Name: "ADR increasing data-rate by one step (extra channels added)",
@@ -252,21 +248,11 @@ func TestADR(t *testing.T) {
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
 						},
-						ExpectedMACPayloadQueue: []maccommand.QueueItem{
-							{DevEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8}, Data: macCommandCFListB},
+						ExpectedMACPayloadQueue: []maccommand.Block{
+							macCFListBlock,
 						},
-						ExpectedMACPending: []lorawan.MACCommandPayload{
-							&lorawan.LinkADRReqPayload{
-								DataRate: 3,
-								TXPower:  1,
-								ChMask:   lorawan.ChMask{true, true, true, true, true, false, true},
-								Redundancy: lorawan.Redundancy{
-									ChMaskCntl: 0,
-									NbRep:      1,
-								},
-							},
-						},
-						ExpectedError: nil,
+						ExpectedMACPending: &macCFListBlock,
+						ExpectedError:      nil,
 					},
 					{
 						Name: "data-rate can be increased, but no ADR flag set",

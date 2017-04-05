@@ -3,12 +3,12 @@ package maccommand
 import (
 	"bytes"
 	"encoding/gob"
-	"encoding/hex"
 	"fmt"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
+	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/lorawan"
@@ -21,38 +21,39 @@ const (
 
 // AddToQueue adds the given payload to the queue of MAC commands
 // to send to the node.
-func AddToQueue(p *redis.Pool, pl QueueItem) error {
+// AddToQueue adds the given MAC command block to the queue.
+func AddToQueue(p *redis.Pool, devEUI lorawan.EUI64, block Block) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(pl); err != nil {
-		return fmt.Errorf("gob encode tx mac-payload for node %s error: %s", pl.DevEUI, err)
+	if err := enc.Encode(block); err != nil {
+		return errors.Wrap(err, "gob encode error")
 	}
 
 	c := p.Get()
 	defer c.Close()
 
-	exp := int64(common.NodeSessionTTL) / int64(time.Millisecond)
-	key := fmt.Sprintf(queueTempl, pl.DevEUI)
+	exp := int64(common.MACQueueTTL) / int64(time.Millisecond)
+	key := fmt.Sprintf(queueTempl, devEUI)
 
 	c.Send("MULTI")
 	c.Send("RPUSH", key, buf.Bytes())
 	c.Send("PEXPIRE", key, exp)
 	_, err := c.Do("EXEC")
-
 	if err != nil {
-		return fmt.Errorf("add mac-payload to tx queue for node %s error: %s", pl.DevEUI, err)
+		return errors.Wrap(err, "add mac-command block to queue error")
 	}
+
 	log.WithFields(log.Fields{
-		"dev_eui":    pl.DevEUI,
-		"frmpayload": pl.FRMPayload,
-		"command":    hex.EncodeToString(pl.Data),
-	}).Info("mac-payload added to tx queue")
+		"dev_eui":    devEUI,
+		"frmpayload": block.FRMPayload,
+		"cid":        block.CID,
+	}).Info("mac-command block added to queue")
 	return nil
 }
 
-// ReadQueue reads the full mac-payload queue for the given devEUI.
-func ReadQueue(p *redis.Pool, devEUI lorawan.EUI64) ([]QueueItem, error) {
-	var out []QueueItem
+// ReadQueue returns all mac command blocks
+func ReadQueue(p *redis.Pool, devEUI lorawan.EUI64) ([]Block, error) {
+	var out []Block
 
 	c := p.Get()
 	defer c.Close()
@@ -60,7 +61,7 @@ func ReadQueue(p *redis.Pool, devEUI lorawan.EUI64) ([]QueueItem, error) {
 	key := fmt.Sprintf(queueTempl, devEUI)
 	values, err := redis.Values(c.Do("LRANGE", key, 0, -1))
 	if err != nil {
-		return nil, fmt.Errorf("get mac-payload from tx queue for deveui %s error: %s", devEUI, err)
+		return nil, errors.Wrap(err, "read mac-command queue error")
 	}
 
 	for _, value := range values {
@@ -69,12 +70,12 @@ func ReadQueue(p *redis.Pool, devEUI lorawan.EUI64) ([]QueueItem, error) {
 			return nil, fmt.Errorf("expected []byte type, got %T", value)
 		}
 
-		var pl QueueItem
-		err = gob.NewDecoder(bytes.NewReader(b)).Decode(&pl)
+		var block Block
+		err = gob.NewDecoder(bytes.NewReader(b)).Decode(&block)
 		if err != nil {
-			return nil, fmt.Errorf("decode mac-payload for deveui %s error: %s", devEUI, err)
+			return nil, errors.Wrap(err, "decode mac-command block error")
 		}
-		out = append(out, pl)
+		out = append(out, block)
 	}
 	return out, nil
 }
@@ -87,35 +88,38 @@ func FlushQueue(p *redis.Pool, devEUI lorawan.EUI64) error {
 	key := fmt.Sprintf(queueTempl, devEUI)
 	_, err := redis.Int(c.Do("DEL", key))
 	if err != nil {
-		return fmt.Errorf("flush queue error: %s", err)
+		return errors.Wrap(err, "flush queue error")
 	}
 	return nil
 }
 
-// FilterItems filters the given slice of MACPayload elements based
+// FilterItems filters the given slice of MACCommandBlock elements based
 // on the given criteria (FRMPayload and max-bytes).
-func FilterItems(payloads []QueueItem, frmPayload bool, maxBytes int) []QueueItem {
-	var out []QueueItem
-	var byteCount int
-	for _, pl := range payloads {
-		if pl.FRMPayload == frmPayload {
-			byteCount += len(pl.Data)
-			if byteCount > maxBytes {
-				return out
+func FilterItems(blocks []Block, frmPayload bool, maxBytes int) ([]Block, error) {
+	var out []Block
+	var count int
+	for _, b := range blocks {
+		if b.FRMPayload == frmPayload {
+			c, err := b.Size()
+			if err != nil {
+				return nil, errors.Wrap(err, "get size error")
 			}
-			out = append(out, pl)
+			count += c
+			if count > maxBytes {
+				return out, nil
+			}
+			out = append(out, b)
 		}
 	}
-	return out
+	return out, nil
 }
 
-// DeleteQueueItem deletes the given mac-command from the tx queue
-// of the given device address.
-func DeleteQueueItem(p *redis.Pool, devEUI lorawan.EUI64, pl QueueItem) error {
+// DeleteQueueItem deletes the given mac-command block from the queue.
+func DeleteQueueItem(p *redis.Pool, devEUI lorawan.EUI64, block Block) error {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(pl); err != nil {
-		return fmt.Errorf("gob encode tx mac-payload for node %s error: %s", pl.DevEUI, err)
+	if err := enc.Encode(block); err != nil {
+		return errors.Wrap(err, "gob encode mac-command block error")
 	}
 
 	c := p.Get()
@@ -124,77 +128,64 @@ func DeleteQueueItem(p *redis.Pool, devEUI lorawan.EUI64, pl QueueItem) error {
 	key := fmt.Sprintf(queueTempl, devEUI)
 	val, err := redis.Int(c.Do("LREM", key, 0, buf.Bytes()))
 	if err != nil {
-		return fmt.Errorf("delete mac-payload from tx queue for deveui %s error: %s", devEUI, err)
+		return errors.Wrap(err, "delete mac-command block from queue error")
 	}
 
 	if val == 0 {
-		return fmt.Errorf("mac-command %X not in tx queue for deveui %s", pl.Data, devEUI)
+		return ErrDoesNotExist
 	}
 
 	log.WithFields(log.Fields{
-		"dev_eui": pl.DevEUI,
-		"command": hex.EncodeToString(pl.Data),
-	}).Info("mac-payload removed from tx queue")
+		"dev_eui": devEUI,
+		"cid":     block.CID,
+	}).Info("mac-payload block removed from queue")
 	return nil
 }
 
-// SetPending sets one or multiple MACCommandPayload to the pending buffer.
-// It overwrites existing payloads for the given CID.
-func SetPending(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID, payloads []lorawan.MACCommandPayload) error {
+// SetPending sets a MACCommandBlock to the pending buffer.
+// In case an other MACCommandBlock with the same CID has been set to pending,
+// it will be overwritten.
+func SetPending(p *redis.Pool, devEUI lorawan.EUI64, block Block) error {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(block); err != nil {
+		return errors.Wrap(err, "gob encode mac-command block error")
+	}
+
 	c := p.Get()
 	defer c.Close()
 
-	key := fmt.Sprintf(pendingTempl, devEUI, cid)
-	exp := int64(common.MACPendingTTL) / int64(time.Millisecond)
+	key := fmt.Sprintf(pendingTempl, devEUI, block.CID)
+	exp := int64(common.MACQueueTTL) / int64(time.Millisecond)
 
-	c.Send("MULTI")
-	c.Send("DEL", key)
-	for _, pl := range payloads {
-		b, err := pl.MarshalBinary()
-		if err != nil {
-			return fmt.Errorf("marshal mac-payload error: %s", err)
-		}
-		c.Send("RPUSH", key, b)
-	}
-	c.Send("PEXPIRE", key, exp)
-
-	if _, err := c.Do("EXEC"); err != nil {
-		return fmt.Errorf("write mac-commands to pending error: %s", err)
-	}
-
-	return nil
-}
-
-// ReadPending returns the pending MACCommandPayload items for the given CID.
-// In case no items are pending, an empty slice is returned.
-func ReadPending(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID) ([]lorawan.MACCommandPayload, error) {
-	var out []lorawan.MACCommandPayload
-	c := p.Get()
-	defer c.Close()
-
-	key := fmt.Sprintf(pendingTempl, devEUI, cid)
-	values, err := redis.Values(c.Do("LRANGE", key, 0, -1))
+	_, err := c.Do("PSETEX", key, exp, buf.Bytes())
 	if err != nil {
-		return nil, fmt.Errorf("get pending mac-commands for DevEUI %s and CID %d error: %s", devEUI, cid, err)
+		return errors.Wrap(err, "write mac-command blocks to pending queue error")
 	}
 
-	for _, value := range values {
-		b, ok := value.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("expected []byte type, got %T", value)
-		}
+	return nil
+}
 
-		pl, _, err := lorawan.GetMACPayloadAndSize(false, cid)
-		if err != nil {
-			return nil, fmt.Errorf("get mac-payload error: %s", err)
-		}
+// ReadPending returns the pending MACCommandBlock for the given CID.
+// In case no items are pending, nil is returned.
+func ReadPending(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID) (*Block, error) {
+	var block Block
 
-		if err := pl.UnmarshalBinary(b); err != nil {
-			return nil, fmt.Errorf("unmarshal mac-payload error: %s", err)
-		}
+	c := p.Get()
+	defer c.Close()
 
-		out = append(out, pl)
+	key := fmt.Sprintf(pendingTempl, devEUI, cid)
+	val, err := redis.Bytes(c.Do("GET", key))
+	if err != nil {
+		if err == redis.ErrNil {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "get mac-command block error")
 	}
 
-	return out, nil
+	if err := gob.NewDecoder(bytes.NewReader(val)).Decode(&block); err != nil {
+		return nil, errors.Wrap(err, "decode mac-command block error")
+	}
+
+	return &block, nil
 }

@@ -3,7 +3,6 @@ package downlink
 import (
 	"context"
 	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
@@ -158,11 +156,17 @@ func HandlePushDataDown(ctx common.Context, ns session.NodeSession, confirmed bo
 	}
 	remainingPayloadSize = remainingPayloadSize - len(data)
 
-	macQueueItems, _, _, err := getAndFilterMACQueueItems(ctx, ns, false, remainingPayloadSize)
+	blocks, _, _, err := getAndFilterMACQueueItems(ctx, ns, false, remainingPayloadSize)
 	if err != nil {
-		return errors.Wrap(err, "get mac-commands error")
+		return errors.Wrap(err, "get mac-command blocks error")
 	}
-	macCommands := macQueueItemsToMACCommands(ctx, ns, macQueueItems)
+
+	var macCommands []lorawan.MACCommand
+	for bi := range blocks {
+		for mi := range blocks[bi].MACCommands {
+			macCommands = append(macCommands, blocks[bi].MACCommands[mi])
+		}
+	}
 
 	txInfo := gw.TXInfo{
 		MAC:         ns.LastRXInfoSet[0].MAC,
@@ -185,9 +189,9 @@ func HandlePushDataDown(ctx common.Context, ns session.NodeSession, confirmed bo
 	}
 
 	// remove the transmitted mac commands from the queue
-	for _, qi := range macQueueItems {
-		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevEUI, qi); err != nil {
-			return errors.Wrap(err, "delete mac-command queue item error")
+	for _, block := range blocks {
+		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevEUI, block); err != nil {
+			return errors.Wrap(err, "delete mac-command block from queue error")
 		}
 	}
 
@@ -223,11 +227,17 @@ func SendUplinkResponse(ctx common.Context, ns session.NodeSession, rxPacket mod
 	}
 
 	// read mac-commands queue items
-	macQueueItems, encryptMACCommands, pendingMACCommands, err := getAndFilterMACQueueItems(ctx, ns, allowEncryptedMACCommands, remainingPayloadSize)
+	macBlocks, encryptMACCommands, pendingMACCommands, err := getAndFilterMACQueueItems(ctx, ns, allowEncryptedMACCommands, remainingPayloadSize)
 	if err != nil {
 		return fmt.Errorf("get mac-commands error: %s", err)
 	}
-	macCommands := macQueueItemsToMACCommands(ctx, ns, macQueueItems)
+
+	var macCommands []lorawan.MACCommand
+	for bi := range macBlocks {
+		for mi := range macBlocks[bi].MACCommands {
+			macCommands = append(macCommands, macBlocks[bi].MACCommands[mi])
+		}
+	}
 
 	ddCTX := DataDownFrameContext{
 		ACK:         rxPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp,
@@ -261,9 +271,9 @@ func SendUplinkResponse(ctx common.Context, ns session.NodeSession, rxPacket mod
 	}
 
 	// remove the transmitted mac commands from the queue
-	for _, qi := range macQueueItems {
-		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevEUI, qi); err != nil {
-			return fmt.Errorf("delete mac-command queue item from queue error: %s", err)
+	for _, block := range macBlocks {
+		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevEUI, block); err != nil {
+			return errors.Wrap(err, "delete mac-command block from queue error")
 		}
 	}
 
@@ -376,67 +386,40 @@ func getDataDownFromApplication(ctx common.Context, ns session.NodeSession, dr i
 // - a slice of mac-command queue items
 // - if the mac-commands must be put into FRMPayload
 // - if there are remaining mac-commands in the queue
-func getAndFilterMACQueueItems(ctx common.Context, ns session.NodeSession, allowEncrypted bool, remainingPayloadSize int) ([]maccommand.QueueItem, bool, bool, error) {
+func getAndFilterMACQueueItems(ctx common.Context, ns session.NodeSession, allowEncrypted bool, remainingPayloadSize int) ([]maccommand.Block, bool, bool, error) {
 	var encrypted bool
+	var blocks []maccommand.Block
 
 	// read the mac payload queue
-	queueItems, err := maccommand.ReadQueue(ctx.RedisPool, ns.DevEUI)
+	allBlocks, err := maccommand.ReadQueue(ctx.RedisPool, ns.DevEUI)
 	if err != nil {
-		return nil, false, false, fmt.Errorf("read mac-payload tx queue error: %s", err)
+		return nil, false, false, errors.Wrap(err, "read mac-command queue error")
 	}
-	macCommandQueueSize := len(queueItems)
 
 	// nothing to do
-	if len(queueItems) == 0 {
+	if len(allBlocks) == 0 {
 		return nil, false, false, nil
 	}
 
 	// encrypted mac-commands are allowed and the first mac-command in the
 	// queue is marked to be encrypted
-	if allowEncrypted && queueItems[0].FRMPayload {
+	if allowEncrypted && allBlocks[0].FRMPayload {
 		encrypted = true
-		queueItems = maccommand.FilterItems(queueItems, true, remainingPayloadSize)
+		blocks, err = maccommand.FilterItems(allBlocks, true, remainingPayloadSize)
+		if err != nil {
+			return nil, false, false, errors.Wrap(err, "filter mac-command blocks error")
+		}
 	} else {
 		maxFOptsLen := remainingPayloadSize
 		// the LoRaWAN specs define 15 to be the max FOpts size
 		if maxFOptsLen > 15 {
 			maxFOptsLen = 15
 		}
-		queueItems = maccommand.FilterItems(queueItems, false, maxFOptsLen)
-	}
-
-	return queueItems, encrypted, len(queueItems) != macCommandQueueSize, nil
-}
-
-// macQueueItemsToMACCommands converts a slice of queue items into lorawan
-// mac-command format. When it can't unmarshal the queue item into
-// mac-command, a warning is logged and the network-controller backend
-// is notified.
-func macQueueItemsToMACCommands(ctx common.Context, ns session.NodeSession, items []maccommand.QueueItem) []lorawan.MACCommand {
-	var out []lorawan.MACCommand
-
-	for _, qi := range items {
-		var mac lorawan.MACCommand
-		if err := mac.UnmarshalBinary(false, qi.Data); err != nil {
-			// in case the mac commands can't be unmarshaled, the payload
-			// is ignored and an error sent to the network-controller
-			errStr := fmt.Sprintf("unmarshal mac command error: %s", err)
-			log.WithFields(log.Fields{
-				"dev_eui":     ns.DevEUI,
-				"command_hex": hex.EncodeToString(qi.Data),
-			}).Warning(errStr)
-			_, err = ctx.Controller.HandleError(context.Background(), &nc.HandleErrorRequest{
-				AppEUI: ns.AppEUI[:],
-				DevEUI: ns.DevEUI[:],
-				Error:  errStr + fmt.Sprintf(" (command: %X)", qi.Data),
-			})
-			if err != nil {
-				log.Errorf("call controller handle error method error: %s", err)
-			}
-			continue
+		blocks, err = maccommand.FilterItems(allBlocks, false, maxFOptsLen)
+		if err != nil {
+			return nil, false, false, errors.Wrap(err, "filter mac-command blocks error")
 		}
-		out = append(out, mac)
 	}
 
-	return out
+	return blocks, encrypted, len(allBlocks) != len(blocks), nil
 }

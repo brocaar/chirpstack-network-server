@@ -25,14 +25,14 @@ type classCTestCase struct {
 	PreFunc             func(ns *session.NodeSession) // function to call before running the test
 	NodeSession         session.NodeSession           // node-session in the storage
 	PushDataDownRequest ns.PushDataDownRequest        // class-c push data-down request
-	MACCommandQueue     []maccommand.QueueItem        // downlink mac-command queue
+	MACCommandQueue     []maccommand.Block            // downlink mac-command queue
 
 	ExpectedPushDataDownError error // expected error returned
 	ExpectedFCntUp            uint32
 	ExpectedFCntDown          uint32
 	ExpectedTXInfo            *gw.TXInfo
 	ExpectedPHYPayload        *lorawan.PHYPayload
-	ExpectedMACCommandQueue   []maccommand.QueueItem
+	ExpectedMACCommandQueue   []maccommand.Block
 }
 
 func TestClassCScenarios(t *testing.T) {
@@ -144,9 +144,19 @@ func TestClassCScenarios(t *testing.T) {
 				{
 					Name:        "mac-commands in the queue",
 					NodeSession: sess,
-					MACCommandQueue: []maccommand.QueueItem{
-						{DevEUI: sess.DevEUI, Data: []byte{6}},
-						{DevEUI: sess.DevEUI, Data: []byte{8, 3}},
+					MACCommandQueue: []maccommand.Block{
+						{
+							CID: lorawan.DevStatusReq,
+						},
+						{
+							CID: lorawan.RXTimingSetupReq,
+							MACCommands: []lorawan.MACCommand{
+								{
+									CID:     lorawan.RXTimingSetupAns,
+									Payload: &lorawan.RXTimingSetupReqPayload{Delay: 3},
+								},
+							},
+						},
 					},
 					PushDataDownRequest: ns.PushDataDownRequest{
 						DevEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -267,7 +277,7 @@ func TestClassCScenarios(t *testing.T) {
 
 					// mac mac-command queue items
 					for _, qi := range t.MACCommandQueue {
-						So(maccommand.AddToQueue(ctx.RedisPool, qi), ShouldBeNil)
+						So(maccommand.AddToQueue(ctx.RedisPool, t.NodeSession.DevEUI, qi), ShouldBeNil)
 					}
 
 					// push the data
