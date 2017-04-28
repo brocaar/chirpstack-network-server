@@ -101,7 +101,7 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPac
 		RXDelay:            uint8(joinResp.RxDelay),
 		RX1DROffset:        uint8(joinResp.Rx1DROffset),
 		RX2DR:              uint8(joinResp.Rx2DR),
-		EnabledChannels:    common.Band.GetEnabledUplinkChannels(),
+		EnabledChannels:    common.Band.GetUplinkChannels(),
 		ADRInterval:        joinResp.AdrInterval,
 		InstallationMargin: joinResp.InstallationMargin,
 		LastRXInfoSet:      rxPacket.RXInfoSet,

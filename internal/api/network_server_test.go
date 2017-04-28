@@ -11,6 +11,7 @@ import (
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/gateway"
+	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/loraserver/internal/test"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -72,6 +73,12 @@ func TestNetworkServerAPI(t *testing.T) {
 					RxWindow:    ns.RXWindow_RX2,
 					Rx2DR:       3,
 				})
+
+				Convey("Then the enabled channels are set on the node-session", func() {
+					ns, err := session.GetNodeSession(lsCtx.RedisPool, devEUI)
+					So(err, ShouldBeNil)
+					So(ns.EnabledChannels, ShouldResemble, common.Band.GetUplinkChannels())
+				})
 			})
 
 			Convey("When updating a node-session that belongs to a different AppEUI", func() {
@@ -118,6 +125,12 @@ func TestNetworkServerAPI(t *testing.T) {
 						RxDelay:     10,
 						Rx1DROffset: 20,
 					})
+				})
+
+				Convey("Then the internal fields are still set", func() {
+					ns, err := session.GetNodeSession(lsCtx.RedisPool, devEUI)
+					So(err, ShouldBeNil)
+					So(ns.EnabledChannels, ShouldResemble, common.Band.GetUplinkChannels())
 				})
 			})
 

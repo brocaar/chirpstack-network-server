@@ -43,6 +43,7 @@ func (n *NetworkServerAPI) CreateNodeSession(ctx context.Context, req *ns.Create
 		RelaxFCnt:          req.RelaxFCnt,
 		ADRInterval:        req.AdrInterval,
 		InstallationMargin: req.InstallationMargin,
+		EnabledChannels:    common.Band.GetUplinkChannels(),
 	}
 
 	copy(sess.DevAddr[:], req.DevAddr)
@@ -130,9 +131,10 @@ func (n *NetworkServerAPI) UpdateNodeSession(ctx context.Context, req *ns.Update
 		InstallationMargin: req.InstallationMargin,
 
 		// these values can't be overwritten
-		NbTrans:       sess.NbTrans,
-		TXPower:       sess.TXPower,
-		UplinkHistory: sess.UplinkHistory,
+		NbTrans:         sess.NbTrans,
+		TXPower:         sess.TXPower,
+		UplinkHistory:   sess.UplinkHistory,
+		EnabledChannels: sess.EnabledChannels,
 	}
 
 	copy(newSess.DevAddr[:], req.DevAddr)
