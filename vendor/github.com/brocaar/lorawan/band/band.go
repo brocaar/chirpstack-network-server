@@ -144,6 +144,11 @@ type Band struct {
 	// The smallest result is then returned.
 	// In case this function is left blank, only the "naive" algorithm is used.
 	getLinkADRReqPayloadsForEnabledChannelsFunc func(band *Band, nodeChannels []int) []lorawan.LinkADRReqPayload
+
+	// getEnabledChannelsForLinkADRReqPayloadsFunc implements a band-specific
+	// function (taking ChMaskCntl values with band-specific meaning into
+	// account).
+	getEnabledChannelsForLinkADRReqPayloadsFunc func(band *Band, nodeChannels []int, pls []lorawan.LinkADRReqPayload) ([]int, error)
 }
 
 // GetRX1Channel returns the channel to use for RX1 given the channel used
@@ -343,6 +348,9 @@ func (b *Band) GetLinkADRReqPayloadsForEnabledChannels(nodeChannels []int) []lor
 		}
 	}
 
+	// some bands contain band specific logic regarding turning on / off
+	// channels that might require less commands (using band specific
+	// ChMaskCntl values)
 	if b.getLinkADRReqPayloadsForEnabledChannelsFunc != nil {
 		payloadsB := b.getLinkADRReqPayloadsForEnabledChannelsFunc(b, nodeChannels)
 		if len(payloadsB) < len(payloads) {
@@ -351,6 +359,48 @@ func (b *Band) GetLinkADRReqPayloadsForEnabledChannels(nodeChannels []int) []lor
 	}
 
 	return payloads
+}
+
+// GetEnabledChannelsForLinkADRReqPaylaods returns the enabled after which the
+// given LinkADRReqPayloads have been applied to the given node channels.
+func (b *Band) GetEnabledChannelsForLinkADRReqPayloads(nodeChannels []int, pls []lorawan.LinkADRReqPayload) ([]int, error) {
+	// for some bands some the ChMaskCntl values have special meanings
+	if b.getEnabledChannelsForLinkADRReqPayloadsFunc != nil {
+		return b.getEnabledChannelsForLinkADRReqPayloadsFunc(b, nodeChannels, pls)
+	}
+
+	chMask := make([]bool, len(b.UplinkChannels))
+	for _, c := range nodeChannels {
+		// make sure that we don't exceed the chMask length. in case we exceed
+		// we ignore the channel as it might have been removed from the network
+		if c < len(chMask) {
+			chMask[c] = true
+		}
+	}
+
+	for _, pl := range pls {
+		for i, enabled := range pl.ChMask {
+			if int(pl.Redundancy.ChMaskCntl*16)+i >= len(chMask) && !enabled {
+				continue
+			}
+
+			if int(pl.Redundancy.ChMaskCntl*16)+i >= len(chMask) {
+				return nil, ErrChannelDoesNotExist
+			}
+
+			chMask[int(pl.Redundancy.ChMaskCntl*16)+i] = enabled
+		}
+	}
+
+	// turn the chMask into a slice of enabled channel numbers
+	var out []int
+	for i, enabled := range chMask {
+		if enabled {
+			out = append(out, i)
+		}
+	}
+
+	return out, nil
 }
 
 // intSliceDiff returns all items of x that are not in y and all items of

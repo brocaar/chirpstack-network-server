@@ -171,6 +171,55 @@ func newAU915Band(repeaterCompatible bool) (Band, error) {
 
 			return out
 		},
+
+		getEnabledChannelsForLinkADRReqPayloadsFunc: func(b *Band, nodeChannels []int, pls []lorawan.LinkADRReqPayload) ([]int, error) {
+			chMask := make([]bool, len(b.UplinkChannels))
+			for _, c := range nodeChannels {
+				// make sure that we don't exceed the chMask length. in case we exceed
+				// we ignore the channel as it might have been removed from the network
+				if c < len(chMask) {
+					chMask[c] = true
+				}
+			}
+
+			for _, pl := range pls {
+				if pl.Redundancy.ChMaskCntl == 6 || pl.Redundancy.ChMaskCntl == 7 {
+					for i := 0; i < 64; i++ {
+						if pl.Redundancy.ChMaskCntl == 6 {
+							chMask[i] = true
+						} else {
+							chMask[i] = false
+						}
+					}
+
+					for i, cm := range pl.ChMask[0:8] {
+						chMask[64+i] = cm
+					}
+				} else {
+					for i, enabled := range pl.ChMask {
+						if int(pl.Redundancy.ChMaskCntl*16)+i >= len(chMask) && !enabled {
+							continue
+						}
+
+						if int(pl.Redundancy.ChMaskCntl*16)+i >= len(chMask) {
+							return nil, ErrChannelDoesNotExist
+						}
+
+						chMask[int(pl.Redundancy.ChMaskCntl*16)+i] = enabled
+					}
+				}
+			}
+
+			// turn the chMask into a slice of enabled channel numbers
+			var out []int
+			for i, enabled := range chMask {
+				if enabled {
+					out = append(out, i)
+				}
+			}
+
+			return out, nil
+		},
 	}
 
 	// initialize uplink channel 0 - 63
