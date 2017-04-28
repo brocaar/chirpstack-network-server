@@ -5,6 +5,7 @@ package band
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/brocaar/lorawan"
@@ -134,6 +135,15 @@ type Band struct {
 	// getRX1DataRateFunc implements a function which returns the RX1 data-rate
 	// given the uplink data-rate and data-rate offset.
 	getRX1DataRateFunc func(band *Band, uplinkDR, rx1DROffset int) (int, error)
+
+	// getLinkADRReqPayloadsForEnabledChannelsFunc implements a band-specific
+	// function which returns the LinkADRReqPayload items needed to activate
+	// the used channels on the node.
+	// In case this is set GetLinkADRReqPayloadsForEnabledChannels will
+	// use both the "naive" algorithm and the algorithm used in this function.
+	// The smallest result is then returned.
+	// In case this function is left blank, only the "naive" algorithm is used.
+	getLinkADRReqPayloadsForEnabledChannelsFunc func(band *Band, nodeChannels []int) []lorawan.LinkADRReqPayload
 }
 
 // GetRX1Channel returns the channel to use for RX1 given the channel used
@@ -249,6 +259,15 @@ func (b *Band) EnableUplinkChannel(i int) error {
 	return nil
 }
 
+// GetUplinkChannels returns all available uplink channels.
+func (b *Band) GetUplinkChannels() []int {
+	var out []int
+	for i := range b.UplinkChannels {
+		out = append(out, i)
+	}
+	return out
+}
+
 // GetEnabledUplinkChannels returns the enabled uplink channels.
 func (b *Band) GetEnabledUplinkChannels() []int {
 	var out []int
@@ -269,6 +288,112 @@ func (b *Band) GetDisabledUplinkChannels() []int {
 		}
 	}
 	return out
+}
+
+// GetLinkADRReqPayloadsForEnabledChannels returns the LinkADRReqPayloads to
+// reconfigure the node to the current active channels. Note that in case of
+// activation, user-defined channels (e.g. CFList) will be ignored as it
+// is unknown if the node is aware about these extra frequencies.
+func (b *Band) GetLinkADRReqPayloadsForEnabledChannels(nodeChannels []int) []lorawan.LinkADRReqPayload {
+	enabledChannels := b.GetEnabledUplinkChannels()
+	var enabledChannelsNoCFList []int
+
+	for _, c := range enabledChannels {
+		if !b.UplinkChannels[c].userConfigured {
+			enabledChannelsNoCFList = append(enabledChannelsNoCFList, c)
+		}
+	}
+
+	diff := intSliceDiff(nodeChannels, enabledChannels)
+
+	// nothing to do
+	if len(diff) == 0 || len(intSliceDiff(nodeChannels, enabledChannelsNoCFList)) == 0 {
+		return nil
+	}
+
+	// make sure we're dealing with a sorted slice
+	sort.Ints(diff)
+
+	var payloads []lorawan.LinkADRReqPayload
+	chMaskCntl := -1
+
+	// loop over the channel blocks that contain different channels
+	// note that each payload holds 16 channels and that the chMaskCntl
+	// defines the block
+	for _, c := range diff {
+		if c/16 != chMaskCntl {
+			chMaskCntl = c / 16
+			pl := lorawan.LinkADRReqPayload{
+				Redundancy: lorawan.Redundancy{
+					ChMaskCntl: uint8(chMaskCntl),
+				},
+			}
+
+			// set enabled channels in this block to active
+			// note that we don't enable user defined channels (CFList) as
+			// we have no knowledge if the nodes has been provisioned with
+			// these frequencies
+			for _, ec := range enabledChannels {
+				if (!b.UplinkChannels[ec].userConfigured || channelIsActive(nodeChannels, ec)) && ec >= chMaskCntl*16 && ec < (chMaskCntl+1)*16 {
+					pl.ChMask[ec%16] = true
+				}
+			}
+
+			payloads = append(payloads, pl)
+		}
+	}
+
+	if b.getLinkADRReqPayloadsForEnabledChannelsFunc != nil {
+		payloadsB := b.getLinkADRReqPayloadsForEnabledChannelsFunc(b, nodeChannels)
+		if len(payloadsB) < len(payloads) {
+			return payloadsB
+		}
+	}
+
+	return payloads
+}
+
+// intSliceDiff returns all items of x that are not in y and all items of
+// y that are not in x.
+func intSliceDiff(x, y []int) []int {
+	var out []int
+
+	for _, cX := range x {
+		found := false
+		for _, cY := range y {
+			if cX == cY {
+				found = true
+				break
+			}
+		}
+		if !found {
+			out = append(out, cX)
+		}
+	}
+
+	for _, cY := range y {
+		found := false
+		for _, cX := range x {
+			if cY == cX {
+				found = true
+				break
+			}
+		}
+		if !found {
+			out = append(out, cY)
+		}
+	}
+
+	return out
+}
+
+func channelIsActive(channels []int, i int) bool {
+	for _, c := range channels {
+		if i == c {
+			return true
+		}
+	}
+	return false
 }
 
 // GetConfig returns the band configuration for the given band.

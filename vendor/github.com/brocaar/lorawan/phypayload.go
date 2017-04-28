@@ -96,8 +96,7 @@ func (h *MHDR) UnmarshalBinary(data []byte) error {
 	return nil
 }
 
-// PHYPayload represents the physical payload. Use NewPhyPayload for creating
-// a new PHYPayload.
+// PHYPayload represents the physical payload.
 type PHYPayload struct {
 	MHDR       MHDR
 	MACPayload Payload

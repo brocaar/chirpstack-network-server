@@ -1,5 +1,7 @@
 package band
 
+import "github.com/brocaar/lorawan"
+import "sort"
 import "time"
 
 func newUS902Band(repeaterCompatible bool) (Band, error) {
@@ -133,6 +135,47 @@ func newUS902Band(repeaterCompatible bool) (Band, error) {
 
 			rx1Chan := b.GetRX1Channel(uplinkChan)
 			return b.DownlinkChannels[rx1Chan].Frequency, nil
+		},
+
+		getLinkADRReqPayloadsForEnabledChannelsFunc: func(b *Band, nodeChannels []int) []lorawan.LinkADRReqPayload {
+			enabledChannels := b.GetEnabledUplinkChannels()
+			sort.Ints(enabledChannels)
+
+			out := []lorawan.LinkADRReqPayload{
+				{Redundancy: lorawan.Redundancy{ChMaskCntl: 7}}, // All 125 kHz OFF ChMask applies to channels 64 to 71
+			}
+
+			chMaskCntl := -1
+
+			for _, c := range enabledChannels {
+				// use the ChMask of the first LinkADRReqPayload, besides
+				// turning off all 125 kHz this payload contains the ChMask
+				// for the last block of channels.
+				if c >= 64 {
+					out[0].ChMask[c%16] = true
+					continue
+				}
+
+				if c/16 != chMaskCntl {
+					chMaskCntl = c / 16
+					pl := lorawan.LinkADRReqPayload{
+						Redundancy: lorawan.Redundancy{
+							ChMaskCntl: uint8(chMaskCntl),
+						},
+					}
+
+					// set the channel mask for this block
+					for _, ec := range enabledChannels {
+						if ec >= chMaskCntl*16 && ec < (chMaskCntl+1)*16 {
+							pl.ChMask[ec%16] = true
+						}
+					}
+
+					out = append(out, pl)
+				}
+			}
+
+			return out
 		},
 	}
 
