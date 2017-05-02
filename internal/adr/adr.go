@@ -135,13 +135,18 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 	}
 
 	var chMask lorawan.ChMask
+	chMaskCntl := -1
 	for _, c := range ns.EnabledChannels {
-		if c > 15 {
-			// TODO: implement handling ADR on multiple channel blocks.
-			// This should not affect the current ADR implementation.
-			return errors.New("handling adr over multiple channel blocks is not yet supported")
+		if chMaskCntl != c/16 {
+			if chMaskCntl == -1 {
+				// set the chMaskCntl
+				chMaskCntl = c / 16
+			} else {
+				// break the loop as we only need to send one block of channels
+				break
+			}
 		}
-		chMask[c] = true
+		chMask[c%16] = true
 	}
 
 	block := maccommand.Block{
@@ -154,7 +159,7 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 					TXPower:  uint8(idealTXPowerIndex),
 					ChMask:   chMask,
 					Redundancy: lorawan.Redundancy{
-						ChMaskCntl: 0, // first block of 16 channels
+						ChMaskCntl: uint8(chMaskCntl),
 						NbRep:      uint8(idealNbRep),
 					},
 				},
