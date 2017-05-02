@@ -185,6 +185,7 @@ func TestADR(t *testing.T) {
 					NodeSession             *session.NodeSession
 					RXPacket                models.RXPacket
 					FullFCnt                uint32
+					MACPending              *maccommand.Block
 					ExpectedNodeSession     session.NodeSession
 					ExpectedMACPending      *maccommand.Block
 					ExpectedMACPayloadQueue []maccommand.Block
@@ -221,6 +222,44 @@ func TestADR(t *testing.T) {
 						},
 						ExpectedMACPending: &macBlock,
 						ExpectedError:      nil,
+					},
+					{
+						Name: "ADR increasing data-rate by one step (no CFlist), but mac-command block pending",
+						NodeSession: &session.NodeSession{
+							DevAddr:            [4]byte{1, 2, 3, 4},
+							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							ADRInterval:        1,
+							InstallationMargin: 5,
+							EnabledChannels:    []int{0, 1, 2},
+						},
+						RXPacket: models.RXPacket{
+							PHYPayload: phyPayloadADR,
+							RXInfoSet: models.RXInfoSet{
+								{DataRate: common.Band.DataRates[2], LoRaSNR: -7},
+							},
+						},
+						FullFCnt: 1,
+						MACPending: &maccommand.Block{
+							CID: lorawan.LinkADRReq,
+							MACCommands: maccommand.MACCommands{
+								lorawan.MACCommand{
+									CID:     lorawan.LinkADRReq,
+									Payload: &lorawan.LinkADRReqPayload{},
+								},
+							},
+						},
+						ExpectedNodeSession: session.NodeSession{
+							DevAddr:            [4]byte{1, 2, 3, 4},
+							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							ADRInterval:        1,
+							InstallationMargin: 5,
+							UplinkHistory: []session.UplinkHistory{
+								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
+							},
+							EnabledChannels: []int{0, 1, 2},
+						},
+						ExpectedMACPayloadQueue: nil,
+						ExpectedError:           nil,
 					},
 					{
 						Name: "ADR increasing data-rate by one step (extra channels added)",
@@ -286,6 +325,10 @@ func TestADR(t *testing.T) {
 					Convey(fmt.Sprintf("Test: %s [%d]", tst.Name, i), func() {
 						So(session.SaveNodeSession(p, *tst.NodeSession), ShouldBeNil)
 
+						if tst.MACPending != nil {
+							So(maccommand.SetPending(p, tst.NodeSession.DevEUI, *tst.MACPending), ShouldBeNil)
+						}
+
 						err := HandleADR(ctx, tst.NodeSession, tst.RXPacket, tst.FullFCnt)
 						if tst.ExpectedError != nil {
 							So(err, ShouldResemble, tst.ExpectedError)
@@ -299,9 +342,11 @@ func TestADR(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(macPayloadQueue, ShouldResemble, tst.ExpectedMACPayloadQueue)
 
-						pending, err := maccommand.ReadPending(p, tst.NodeSession.DevEUI, lorawan.LinkADRReq)
-						So(err, ShouldBeNil)
-						So(pending, ShouldResemble, tst.ExpectedMACPending)
+						if tst.MACPending == nil {
+							pending, err := maccommand.ReadPending(p, tst.NodeSession.DevEUI, lorawan.LinkADRReq)
+							So(err, ShouldBeNil)
+							So(pending, ShouldResemble, tst.ExpectedMACPending)
+						}
 					})
 				}
 			})

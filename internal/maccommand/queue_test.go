@@ -103,6 +103,14 @@ func TestPending(t *testing.T) {
 				So(block, ShouldResemble, &a)
 			})
 
+			Convey("Then the pending block can be removed", func() {
+				So(DeletePending(p, devEUI, lorawan.LinkADRReq), ShouldBeNil)
+
+				pending, err := ReadPending(p, devEUI, lorawan.LinkADRReq)
+				So(err, ShouldBeNil)
+				So(pending, ShouldBeNil)
+			})
+
 			Convey("Then ReadPending for a different CID returns nil", func() {
 				block, err := ReadPending(p, devEUI, lorawan.DutyCycleReq)
 				So(err, ShouldBeNil)

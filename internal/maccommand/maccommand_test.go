@@ -1,13 +1,13 @@
 package maccommand
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -24,7 +24,8 @@ func TestHandle(t *testing.T) {
 
 		Convey("Given a node-session", func() {
 			ns := session.NodeSession{
-				DevEUI: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				EnabledChannels: []int{0, 1},
 			}
 			So(session.SaveNodeSession(p, ns), ShouldBeNil)
 
@@ -32,6 +33,7 @@ func TestHandle(t *testing.T) {
 				linkADRReqMAC := lorawan.MACCommand{
 					CID: lorawan.LinkADRReq,
 					Payload: &lorawan.LinkADRReqPayload{
+						ChMask:  lorawan.ChMask{true, true, true},
 						TXPower: 3,
 						Redundancy: lorawan.Redundancy{
 							NbRep: 2,
@@ -61,6 +63,10 @@ func TestHandle(t *testing.T) {
 						So(ns.TXPower, ShouldEqual, common.Band.TXPower[3])
 						So(ns.NbTrans, ShouldEqual, 2)
 					})
+
+					Convey("Then the enabled channels on the node are updated", func() {
+						So(ns.EnabledChannels, ShouldResemble, []int{0, 1, 2})
+					})
 				})
 
 				Convey("Given a pending linkADRReq and negative ack", func() {
@@ -77,12 +83,16 @@ func TestHandle(t *testing.T) {
 						So(ns.TXPower, ShouldEqual, 0)
 						So(ns.NbTrans, ShouldEqual, 0)
 					})
+
+					Convey("Then the enabled channels on the node are not updated", func() {
+						So(ns.EnabledChannels, ShouldResemble, []int{0, 1})
+					})
 				})
 
 				Convey("Given no pending linkADRReq and positive ack", func() {
 					err := Handle(ctx, &ns, linkADRAns)
 					Convey("Then an error is returned", func() {
-						So(err, ShouldResemble, errors.New("no pending adr requests found"))
+						So(errors.Cause(err), ShouldResemble, ErrDoesNotExist)
 					})
 				})
 			})

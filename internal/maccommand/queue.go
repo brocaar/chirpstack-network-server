@@ -138,7 +138,7 @@ func DeleteQueueItem(p *redis.Pool, devEUI lorawan.EUI64, block Block) error {
 	log.WithFields(log.Fields{
 		"dev_eui": devEUI,
 		"cid":     block.CID,
-	}).Info("mac-payload block removed from queue")
+	}).Info("mac-command block removed from queue")
 	return nil
 }
 
@@ -162,6 +162,13 @@ func SetPending(p *redis.Pool, devEUI lorawan.EUI64, block Block) error {
 	if err != nil {
 		return errors.Wrap(err, "write mac-command blocks to pending queue error")
 	}
+
+	log.WithFields(log.Fields{
+		"dev_eui":     devEUI,
+		"cid":         block.CID,
+		"frm_payload": block.FRMPayload,
+		"commands":    len(block.MACCommands),
+	}).Info("pending mac-command block set")
 
 	return nil
 }
@@ -188,4 +195,24 @@ func ReadPending(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID) (*Block, 
 	}
 
 	return &block, nil
+}
+
+// DeletePending removes the pending MACCommandBlock for the given CID.
+func DeletePending(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID) error {
+	c := p.Get()
+	defer c.Close()
+
+	key := fmt.Sprintf(pendingTempl, devEUI, cid)
+	val, err := redis.Int(c.Do("DEL", key))
+	if err != nil {
+		return errors.Wrap(err, "delete mac-command block from pending error")
+	}
+	if val == 0 {
+		return ErrDoesNotExist
+	}
+	log.WithFields(log.Fields{
+		"dev_eui": devEUI,
+		"cid":     cid,
+	}).Info("mac-command block removed from pending")
+	return nil
 }

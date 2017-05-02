@@ -13,6 +13,7 @@ import (
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/adr"
+	"github.com/brocaar/loraserver/internal/channels"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/gateway"
@@ -125,6 +126,13 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPacket models.RXPacket) 
 				return err
 			}
 		}
+	}
+
+	// handle channel configuration
+	if err := channels.HandleChannelReconfigure(ctx, ns, rxPacket); err != nil {
+		log.WithFields(log.Fields{
+			"dev_eui": ns.DevEUI,
+		}).Warningf("handle channel reconfigure error: %s", err)
 	}
 
 	// handle ADR (should be executed before saving the node-session)

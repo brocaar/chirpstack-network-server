@@ -125,6 +125,15 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 		return nil
 	}
 
+	// we're still waiting for an ack from the node
+	pending, err := maccommand.ReadPending(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
+	if err != nil {
+		return errors.Wrap(err, "read pending error")
+	}
+	if pending != nil {
+		return nil
+	}
+
 	var chMask lorawan.ChMask
 	for _, c := range ns.EnabledChannels {
 		if c > 15 {
@@ -160,7 +169,6 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 
 	err = maccommand.SetPending(ctx.RedisPool, ns.DevEUI, block)
 	if err != nil {
-		// TODO: set pending on transmission?
 		return errors.Wrap(err, "set mac-command block to pending error")
 	}
 
