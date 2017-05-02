@@ -72,3 +72,9 @@ GW_CREATE_ON_STATS=true
 
 # aggregation intervals to use for aggregating the gateway stats (valid options: second, minute, hour, day, week, month, quarter, year)
 GW_STATS_AGGREGATION_INTERVALS=minute,hour,day
+
+# extra frequencies to use for ISM bands that implement the CFList
+# EXTRA_FREQUENCIES=867100000,867300000,867500000,867700000
+
+# enable only a given sub-set of channels (e.g. '0-7,8-15')
+# ENABLE_UPLINK_CHANNELS=0-7

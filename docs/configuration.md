@@ -33,6 +33,7 @@ GLOBAL OPTIONS:
    --timezone value                        timezone to use when aggregating data (e.g. 'Europe/Amsterdam') (optional, by default the db timezone is used) [$TIMEZONE]
    --gw-create-on-stats                    create non-existing gateways on receiving of stats [$GW_CREATE_ON_STATS]
    --extra-frequencies value               extra frequencies to use for ISM bands that implement the CFList [$EXTRA_FREQUENCIES]
+   --enable-uplink-channels value          enable only a given sub-set of channels (e.g. '0-7,8-15') [$ENABLE_UPLINK_CHANNELS]
    --help, -h                              show help
    --version, -v                           print the version
 ```

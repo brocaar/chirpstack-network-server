@@ -6,6 +6,8 @@
 
 * Add `--extra-frequencies` / `EXTRA_FREQUENCIES` config option to configure
   additional channels (in case supported by the selected ISM band).
+* Add `--enable-uplink-channels` / `ENABLE_UPLINK_CHANNELS` config option to
+  configure the uplink channels active on the network.
 
 ## 0.16.1
 
