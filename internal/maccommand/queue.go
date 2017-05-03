@@ -114,6 +114,25 @@ func FilterItems(blocks []Block, frmPayload bool, maxBytes int) ([]Block, error)
 	return out, nil
 }
 
+// DeleteQueueItemByCID deletes the mac-commands matching the given CID from
+// the queue.
+func DeleteQueueItemByCID(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID) error {
+	queue, err := ReadQueue(p, devEUI)
+	if err != nil {
+		return errors.Wrap(err, "read queue error")
+	}
+
+	for _, block := range queue {
+		if block.CID == cid {
+			if err = DeleteQueueItem(p, devEUI, block); err != nil {
+				return errors.Wrap(err, "delete queue item error")
+			}
+		}
+	}
+
+	return nil
+}
+
 // DeleteQueueItem deletes the given mac-command block from the queue.
 func DeleteQueueItem(p *redis.Pool, devEUI lorawan.EUI64, block Block) error {
 	var buf bytes.Buffer

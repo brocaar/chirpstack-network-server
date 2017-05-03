@@ -47,25 +47,6 @@ func TestHandleChannelReconfigure(t *testing.T) {
 				ExpectedPending: nil,
 			},
 			{
-				Name: "channels to reconfigure, but has pending",
-				NodeSession: session.NodeSession{
-					TXPower:         14,
-					NbTrans:         2,
-					EnabledChannels: []int{0, 1}, // this is not realistic but good enough for testing
-				},
-				Pending: &maccommand.Block{
-					CID: lorawan.LinkADRReq,
-					MACCommands: maccommand.MACCommands{
-						lorawan.MACCommand{
-							CID:     lorawan.LinkADRReq,
-							Payload: &lorawan.LinkADRReqPayload{},
-						},
-					},
-				},
-				ExpectedQueue:   nil,
-				ExpectedPending: nil,
-			},
-			{
 				Name: "channels to reconfigure",
 				NodeSession: session.NodeSession{
 					TXPower:         14,

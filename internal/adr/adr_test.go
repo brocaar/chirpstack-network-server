@@ -243,8 +243,10 @@ func TestADR(t *testing.T) {
 							CID: lorawan.LinkADRReq,
 							MACCommands: maccommand.MACCommands{
 								lorawan.MACCommand{
-									CID:     lorawan.LinkADRReq,
-									Payload: &lorawan.LinkADRReqPayload{},
+									CID: lorawan.LinkADRReq,
+									Payload: &lorawan.LinkADRReqPayload{
+										ChMask: lorawan.ChMask{true, false, true, false, true, false},
+									},
 								},
 							},
 						},
@@ -258,8 +260,43 @@ func TestADR(t *testing.T) {
 							},
 							EnabledChannels: []int{0, 1, 2},
 						},
-						ExpectedMACPayloadQueue: nil,
-						ExpectedError:           nil,
+						ExpectedMACPayloadQueue: []maccommand.Block{
+							{
+								CID: lorawan.LinkADRReq,
+								MACCommands: maccommand.MACCommands{
+									lorawan.MACCommand{
+										CID: lorawan.LinkADRReq,
+										Payload: &lorawan.LinkADRReqPayload{
+											DataRate: 3,
+											TXPower:  1,
+											ChMask:   lorawan.ChMask{true, false, true, false, true, false},
+											Redundancy: lorawan.Redundancy{
+												ChMaskCntl: 0,
+												NbRep:      1,
+											},
+										},
+									},
+								},
+							},
+						},
+						ExpectedMACPending: &maccommand.Block{
+							CID: lorawan.LinkADRReq,
+							MACCommands: maccommand.MACCommands{
+								lorawan.MACCommand{
+									CID: lorawan.LinkADRReq,
+									Payload: &lorawan.LinkADRReqPayload{
+										DataRate: 3,
+										TXPower:  1,
+										ChMask:   lorawan.ChMask{true, false, true, false, true, false},
+										Redundancy: lorawan.Redundancy{
+											ChMaskCntl: 0,
+											NbRep:      1,
+										},
+									},
+								},
+							},
+						},
+						ExpectedError: nil,
 					},
 					{
 						Name: "ADR increasing data-rate by one step (extra channels added)",

@@ -52,6 +52,16 @@ func TestQueue(t *testing.T) {
 					So(blocks, ShouldResemble, []Block{a, b})
 				})
 
+				Convey("When deleting mac-command a by its CID", func() {
+					So(DeleteQueueItemByCID(p, ns.DevEUI, lorawan.LinkADRReq), ShouldBeNil)
+
+					Convey("Then only mac-command b is in the queue", func() {
+						blocks, err := ReadQueue(p, ns.DevEUI)
+						So(err, ShouldBeNil)
+						So(blocks, ShouldResemble, []Block{b})
+					})
+				})
+
 				Convey("When deleting mac-command a", func() {
 					So(DeleteQueueItem(p, ns.DevEUI, a), ShouldBeNil)
 

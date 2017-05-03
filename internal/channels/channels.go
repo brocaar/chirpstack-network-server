@@ -21,15 +21,6 @@ func HandleChannelReconfigure(ctx common.Context, ns session.NodeSession, rxPack
 		return nil
 	}
 
-	// we're still waiting for an ack from the node
-	pending, err := maccommand.ReadPending(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
-	if err != nil {
-		return errors.Wrap(err, "read pending error")
-	}
-	if pending != nil {
-		return nil
-	}
-
 	// set the current tx-power, data-rate and nbrep on the last payload
 	currentDR, err := common.Band.GetDataRate(rxPacket.RXInfoSet[0].DataRate)
 	if err != nil {
@@ -58,6 +49,10 @@ func HandleChannelReconfigure(ctx common.Context, ns session.NodeSession, rxPack
 			CID:     lorawan.LinkADRReq,
 			Payload: &payloads[i],
 		})
+	}
+
+	if err = maccommand.DeleteQueueItemByCID(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq); err != nil {
+		return errors.Wrap(err, "delete queue item by cid error")
 	}
 
 	if err = maccommand.AddToQueue(ctx.RedisPool, ns.DevEUI, block); err != nil {

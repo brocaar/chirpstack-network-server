@@ -129,6 +129,7 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPacket models.RXPacket) 
 	}
 
 	// handle channel configuration
+	// note that this must come before ADR!
 	if err := channels.HandleChannelReconfigure(ctx, ns, rxPacket); err != nil {
 		log.WithFields(log.Fields{
 			"dev_eui": ns.DevEUI,

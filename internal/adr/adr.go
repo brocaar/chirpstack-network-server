@@ -125,54 +125,74 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 		return nil
 	}
 
-	// we're still waiting for an ack from the node
-	pending, err := maccommand.ReadPending(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
+	var block *maccommand.Block
+
+	// see if there are any LinkADRReq commands pending
+	block, err = maccommand.ReadPending(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
 	if err != nil {
 		return errors.Wrap(err, "read pending error")
 	}
-	if pending != nil {
-		return nil
-	}
 
-	var chMask lorawan.ChMask
-	chMaskCntl := -1
-	for _, c := range ns.EnabledChannels {
-		if chMaskCntl != c/16 {
-			if chMaskCntl == -1 {
-				// set the chMaskCntl
-				chMaskCntl = c / 16
-			} else {
-				// break the loop as we only need to send one block of channels
-				break
+	if block == nil || len(block.MACCommands) == 0 {
+		// nothing is pending
+		var chMask lorawan.ChMask
+		chMaskCntl := -1
+		for _, c := range ns.EnabledChannels {
+			if chMaskCntl != c/16 {
+				if chMaskCntl == -1 {
+					// set the chMaskCntl
+					chMaskCntl = c / 16
+				} else {
+					// break the loop as we only need to send one block of channels
+					break
+				}
 			}
+			chMask[c%16] = true
 		}
-		chMask[c%16] = true
-	}
 
-	block := maccommand.Block{
-		CID: lorawan.LinkADRReq,
-		MACCommands: []lorawan.MACCommand{
-			{
-				CID: lorawan.LinkADRReq,
-				Payload: &lorawan.LinkADRReqPayload{
-					DataRate: uint8(idealDR),
-					TXPower:  uint8(idealTXPowerIndex),
-					ChMask:   chMask,
-					Redundancy: lorawan.Redundancy{
-						ChMaskCntl: uint8(chMaskCntl),
-						NbRep:      uint8(idealNbRep),
+		block = &maccommand.Block{
+			CID: lorawan.LinkADRReq,
+			MACCommands: []lorawan.MACCommand{
+				{
+					CID: lorawan.LinkADRReq,
+					Payload: &lorawan.LinkADRReqPayload{
+						DataRate: uint8(idealDR),
+						TXPower:  uint8(idealTXPowerIndex),
+						ChMask:   chMask,
+						Redundancy: lorawan.Redundancy{
+							ChMaskCntl: uint8(chMaskCntl),
+							NbRep:      uint8(idealNbRep),
+						},
 					},
 				},
 			},
-		},
+		}
+	} else {
+		// there is a pending block of commands, add the adr parameters
+		// to the last mac-command (as in case there are multiple commands
+		// the node will use the dr, tx power and nb-rep from the last command
+		lastMAC := block.MACCommands[len(block.MACCommands)-1]
+		lastMACPl, ok := lastMAC.Payload.(*lorawan.LinkADRReqPayload)
+		if !ok {
+			return fmt.Errorf("expected *lorawan.LinkADRReqPayload, got %T", lastMAC.Payload)
+		}
+
+		lastMACPl.DataRate = uint8(idealDR)
+		lastMACPl.TXPower = uint8(idealTXPowerIndex)
+		lastMACPl.Redundancy.NbRep = uint8(idealNbRep)
 	}
 
-	err = maccommand.AddToQueue(ctx.RedisPool, ns.DevEUI, block)
+	err = maccommand.DeleteQueueItemByCID(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
+	if err != nil {
+		return errors.Wrap(err, "delete queue item by cid error")
+	}
+
+	err = maccommand.AddToQueue(ctx.RedisPool, ns.DevEUI, *block)
 	if err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
 	}
 
-	err = maccommand.SetPending(ctx.RedisPool, ns.DevEUI, block)
+	err = maccommand.SetPending(ctx.RedisPool, ns.DevEUI, *block)
 	if err != nil {
 		return errors.Wrap(err, "set mac-command block to pending error")
 	}
