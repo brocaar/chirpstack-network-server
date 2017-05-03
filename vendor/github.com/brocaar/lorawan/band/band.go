@@ -301,18 +301,18 @@ func (b *Band) GetDisabledUplinkChannels() []int {
 // is unknown if the node is aware about these extra frequencies.
 func (b *Band) GetLinkADRReqPayloadsForEnabledChannels(nodeChannels []int) []lorawan.LinkADRReqPayload {
 	enabledChannels := b.GetEnabledUplinkChannels()
-	var enabledChannelsNoCFList []int
 
-	for _, c := range enabledChannels {
-		if !b.UplinkChannels[c].userConfigured {
-			enabledChannelsNoCFList = append(enabledChannelsNoCFList, c)
+	diff := intSliceDiff(nodeChannels, enabledChannels)
+	var filteredDiff []int
+
+	for _, c := range diff {
+		if channelIsActive(nodeChannels, c) || !b.UplinkChannels[c].userConfigured {
+			filteredDiff = append(filteredDiff, c)
 		}
 	}
 
-	diff := intSliceDiff(nodeChannels, enabledChannels)
-
 	// nothing to do
-	if len(diff) == 0 || len(intSliceDiff(nodeChannels, enabledChannelsNoCFList)) == 0 {
+	if len(diff) == 0 || len(filteredDiff) == 0 {
 		return nil
 	}
 
