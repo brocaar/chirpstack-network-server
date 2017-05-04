@@ -11,7 +11,6 @@ import (
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
 )
 
 var pktLossRateTable = [][3]uint8{
@@ -19,34 +18,6 @@ var pktLossRateTable = [][3]uint8{
 	{1, 2, 3},
 	{2, 3, 3},
 	{3, 3, 3},
-}
-
-// TODO: move this to lorawan/band package in the future?
-var requiredSNRTable = []float64{
-	-20,
-	-17.5,
-	-15,
-	-12.5,
-	-10,
-	-7.5,
-}
-
-func getNbRep(currentNbRep uint8, pktLossRate float64) uint8 {
-	if currentNbRep < 1 {
-		currentNbRep = 1
-	}
-	if currentNbRep > 3 {
-		currentNbRep = 3
-	}
-
-	if pktLossRate < 5 {
-		return pktLossRateTable[0][currentNbRep-1]
-	} else if pktLossRate < 10 {
-		return pktLossRateTable[1][currentNbRep-1]
-	} else if pktLossRate < 30 {
-		return pktLossRateTable[2][currentNbRep-1]
-	}
-	return pktLossRateTable[3][currentNbRep-1]
 }
 
 // HandleADR handles ADR in case requested by the node and configured
@@ -83,13 +54,6 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 		return nil
 	}
 
-	if common.BandName != band.EU_863_870 {
-		log.WithFields(log.Fields{
-			"dev_eui": ns.DevEUI,
-		}).Info("ADR support is only available for EU_863_870 band currently")
-		return nil
-	}
-
 	// get the max SNR from the UplinkHistory
 	var snrM float64
 	for i, uh := range ns.UplinkHistory {
@@ -103,15 +67,20 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 		return fmt.Errorf("get data-rate error: %s", err)
 	}
 
-	if currentDR > 5 {
+	if currentDR > getMaxAllowedDR() {
 		log.WithFields(log.Fields{
 			"dr":      currentDR,
 			"dev_eui": ns.DevEUI,
-		}).Info("ADR is only supported up to DR5")
+		}).Infof("ADR is only supported up to DR%d", getMaxAllowedDR())
 		return nil
 	}
 
-	snrMargin := snrM - requiredSNRTable[currentDR] - ns.InstallationMargin
+	requiredSNR, err := getRequiredSNRForSF(rxPacket.RXInfoSet[0].DataRate.SpreadFactor)
+	if err != nil {
+		return err
+	}
+
+	snrMargin := snrM - requiredSNR - ns.InstallationMargin
 	nStep := int(snrMargin / 3)
 
 	currentTXPower := getCurrentTXPower(ns)
@@ -210,6 +179,24 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 	return nil
 }
 
+func getNbRep(currentNbRep uint8, pktLossRate float64) uint8 {
+	if currentNbRep < 1 {
+		currentNbRep = 1
+	}
+	if currentNbRep > 3 {
+		currentNbRep = 3
+	}
+
+	if pktLossRate < 5 {
+		return pktLossRateTable[0][currentNbRep-1]
+	} else if pktLossRate < 10 {
+		return pktLossRateTable[1][currentNbRep-1]
+	} else if pktLossRate < 30 {
+		return pktLossRateTable[2][currentNbRep-1]
+	}
+	return pktLossRateTable[3][currentNbRep-1]
+}
+
 func getCurrentTXPower(ns *session.NodeSession) int {
 	if ns.TXPower > 0 {
 		return ns.TXPower
@@ -249,7 +236,7 @@ func getIdealTXPowerAndDR(nStep int, txPower int, dr int) (int, int) {
 	}
 
 	if nStep > 0 {
-		if dr < 5 {
+		if dr < getMaxAllowedDR() {
 			dr++
 		} else {
 			txPower -= 3
@@ -268,4 +255,23 @@ func getIdealTXPowerAndDR(nStep int, txPower int, dr int) (int, int) {
 	}
 
 	return getIdealTXPowerAndDR(nStep, txPower, dr)
+}
+
+func getRequiredSNRForSF(sf int) (float64, error) {
+	snr, ok := common.SpreadFactorToRequiredSNRTable[sf]
+	if !ok {
+		return 0, fmt.Errorf("sf to required snr for does not exsists (sf: %d)", sf)
+	}
+	return snr, nil
+}
+
+func getMaxAllowedDR() int {
+	var maxDR int
+	for _, c := range common.Band.GetEnabledUplinkChannels() {
+		channel := common.Band.UplinkChannels[c]
+		if len(channel.DataRates) > 1 && channel.DataRates[len(channel.DataRates)-1] > maxDR {
+			maxDR = channel.DataRates[len(channel.DataRates)-1]
+		}
+	}
+	return maxDR
 }
