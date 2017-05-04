@@ -4,9 +4,11 @@ import (
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -28,6 +30,41 @@ func TestHandle(t *testing.T) {
 				EnabledChannels: []int{0, 1},
 			}
 			So(session.SaveNodeSession(p, ns), ShouldBeNil)
+
+			Convey("Test LinkCheckReq", func() {
+				linkCheckReq := lorawan.MACCommand{
+					CID: lorawan.LinkCheckReq,
+				}
+
+				rxInfoSet := models.RXInfoSet{
+					{
+						LoRaSNR: 5,
+						DataRate: band.DataRate{
+							SpreadFactor: 10,
+						},
+					},
+				}
+
+				So(Handle(ctx, &ns, linkCheckReq, rxInfoSet), ShouldBeNil)
+
+				Convey("Then the expected response was added to the mac-command queue", func() {
+					items, err := ReadQueue(ctx.RedisPool, ns.DevEUI)
+					So(err, ShouldBeNil)
+					So(items, ShouldHaveLength, 1)
+					So(items[0], ShouldResemble, Block{
+						CID: lorawan.LinkCheckAns,
+						MACCommands: MACCommands{
+							{
+								CID: lorawan.LinkCheckAns,
+								Payload: &lorawan.LinkCheckAnsPayload{
+									GwCnt:  1,
+									Margin: 20, // 5 - -15 (see SpreadFactorToRequiredSNRTable)
+								},
+							},
+						},
+					})
+				})
+			})
 
 			Convey("Testing LinkADRAns", func() {
 				linkADRReqMAC := lorawan.MACCommand{
