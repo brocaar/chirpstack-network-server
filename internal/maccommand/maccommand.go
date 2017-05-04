@@ -7,12 +7,13 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
 )
 
 // Handle handles a MACCommand sent by a node.
-func Handle(ctx common.Context, ns *session.NodeSession, cmd lorawan.MACCommand) error {
+func Handle(ctx common.Context, ns *session.NodeSession, cmd lorawan.MACCommand, rxInfoSet models.RXInfoSet) error {
 	var err error
 	switch cmd.CID {
 	case lorawan.LinkADRAns:

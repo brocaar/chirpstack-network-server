@@ -86,7 +86,7 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPacket models.RXPacket) 
 
 	// handle FOpts mac commands (if any)
 	if len(macPL.FHDR.FOpts) > 0 {
-		if err := handleUplinkMACCommands(ctx, &ns, false, macPL.FHDR.FOpts); err != nil {
+		if err := handleUplinkMACCommands(ctx, &ns, false, macPL.FHDR.FOpts, rxPacket.RXInfoSet); err != nil {
 			log.WithFields(log.Fields{
 				"dev_eui": ns.DevEUI,
 				"fopts":   macPL.FHDR.FOpts,
@@ -115,7 +115,7 @@ func handleCollectedDataUpPackets(ctx common.Context, rxPacket models.RXPacket) 
 				}
 				commands = append(commands, *cmd)
 			}
-			if err := handleUplinkMACCommands(ctx, &ns, true, commands); err != nil {
+			if err := handleUplinkMACCommands(ctx, &ns, true, commands, rxPacket.RXInfoSet); err != nil {
 				log.WithFields(log.Fields{
 					"dev_eui":  ns.DevEUI,
 					"commands": commands,
@@ -296,7 +296,7 @@ func publishDataUp(ctx common.Context, ns session.NodeSession, rxPacket models.R
 	return nil
 }
 
-func handleUplinkMACCommands(ctx common.Context, ns *session.NodeSession, frmPayload bool, commands []lorawan.MACCommand) error {
+func handleUplinkMACCommands(ctx common.Context, ns *session.NodeSession, frmPayload bool, commands []lorawan.MACCommand, rxInfoSet models.RXInfoSet) error {
 	for _, cmd := range commands {
 		logFields := log.Fields{
 			"dev_eui":     ns.DevEUI,
@@ -322,7 +322,7 @@ func handleUplinkMACCommands(ctx common.Context, ns *session.NodeSession, frmPay
 				log.WithFields(logFields).Info("proprietary mac-command sent to network-controller")
 			}
 		} else {
-			if err := maccommand.Handle(ctx, ns, cmd); err != nil {
+			if err := maccommand.Handle(ctx, ns, cmd, rxInfoSet); err != nil {
 				log.WithFields(logFields).Errorf("handle mac-command error: %s", err)
 			}
 		}

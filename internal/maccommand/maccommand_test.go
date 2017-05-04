@@ -57,7 +57,7 @@ func TestHandle(t *testing.T) {
 							linkADRReqMAC,
 						},
 					}), ShouldBeNil)
-					So(Handle(ctx, &ns, linkADRAns), ShouldBeNil)
+					So(Handle(ctx, &ns, linkADRAns, nil), ShouldBeNil)
 
 					Convey("Then the node-session TXPower and NbTrans are updated correctly", func() {
 						So(ns.TXPower, ShouldEqual, common.Band.TXPower[3])
@@ -77,7 +77,7 @@ func TestHandle(t *testing.T) {
 							linkADRReqMAC,
 						},
 					}), ShouldBeNil)
-					So(Handle(ctx, &ns, linkADRAns), ShouldBeNil)
+					So(Handle(ctx, &ns, linkADRAns, nil), ShouldBeNil)
 
 					Convey("Then the node-session TXPower and NbTrans are not updated", func() {
 						So(ns.TXPower, ShouldEqual, 0)
@@ -90,7 +90,7 @@ func TestHandle(t *testing.T) {
 				})
 
 				Convey("Given no pending linkADRReq and positive ack", func() {
-					err := Handle(ctx, &ns, linkADRAns)
+					err := Handle(ctx, &ns, linkADRAns, nil)
 					Convey("Then an error is returned", func() {
 						So(errors.Cause(err), ShouldResemble, ErrDoesNotExist)
 					})
