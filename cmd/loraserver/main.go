@@ -316,7 +316,10 @@ func mustEnableUplinkChannels(c *cli.Context) {
 		block = strings.Trim(block, " ")
 		var start, end int
 		if _, err := fmt.Sscanf(block, "%d-%d", &start, &end); err != nil {
-			log.Fatalf("parse channel range error: %s", err)
+			if _, err := fmt.Sscanf(block, "%d", &start); err != nil {
+				log.Fatalf("parse channel range error: %s", err)
+			}
+			end = start
 		}
 
 		log.WithFields(log.Fields{
