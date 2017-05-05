@@ -52,6 +52,7 @@ type uplinkTestCase struct {
 	ExpectedMACCommandQueue     []maccommand.Block  // expected downlink mac-command queue
 	ExpectedTXPower             int                 // expected tx-power set by ADR
 	ExpectedNbTrans             uint8               // expected nb trans set by ADR
+	ExpectedEnabledChannels     []int               // expected channels enabled on the node
 }
 
 func init() {
@@ -181,6 +182,28 @@ func TestUplinkScenarios(t *testing.T) {
 			ADRInterval:        10,
 			InstallationMargin: 5,
 			EnabledChannels:    []int{0, 1, 2},
+		}
+
+		nsExtraChannels := session.NodeSession{
+			DevAddr:         [4]byte{1, 2, 3, 4},
+			DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:          8,
+			FCntDown:        5,
+			AppEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			EnabledChannels: []int{0, 1, 2, 3, 4, 5, 6, 7},
+		}
+
+		nsExtraChannelsADR := session.NodeSession{
+			DevAddr:            [4]byte{1, 2, 3, 4},
+			DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:             10,
+			FCntDown:           5,
+			AppEUI:             [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			ADRInterval:        10,
+			InstallationMargin: 5,
+			EnabledChannels:    []int{0, 1, 2, 3, 4, 5, 6, 7},
 		}
 
 		var fPortZero uint8
@@ -351,6 +374,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:                 8,
 					ExpectedFCntDown:               5,
 					ExpectedHandleRXPacketError:    errors.New("publish data up to application-server error: BOOM"),
+					ExpectedEnabledChannels:        []int{0, 1, 2},
 				},
 				{
 					Name:        "the frame-counter is invalid",
@@ -373,6 +397,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:              8,
 					ExpectedFCntDown:            5,
 					ExpectedHandleRXPacketError: errors.New("get node-session error: node-session does not exist or invalid fcnt or mic"),
+					ExpectedEnabledChannels:     []int{0, 1, 2},
 				},
 				{
 					Name:        "the mic is invalid",
@@ -395,6 +420,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:              8,
 					ExpectedFCntDown:            5,
 					ExpectedHandleRXPacketError: errors.New("get node-session error: node-session does not exist or invalid fcnt or mic"),
+					ExpectedEnabledChannels:     []int{0, 1, 2},
 				},
 			}
 
@@ -460,6 +486,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:              8,
 					ExpectedFCntDown:            5,
 					ExpectedHandleRXPacketError: errors.New("get node-session error: node-session does not exist or invalid fcnt or mic"),
+					ExpectedEnabledChannels:     []int{0, 1, 2},
 				},
 				{
 					Name:        "the frame-counter is invalid and 0",
@@ -484,6 +511,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedFCntUp:                  1,
 					ExpectedFCntDown:                0,
+					ExpectedEnabledChannels:         []int{0, 1, 2},
 				},
 			}
 
@@ -517,6 +545,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedFCntUp:                  11,
 					ExpectedFCntDown:                5,
+					ExpectedEnabledChannels:         []int{0, 1, 2},
 				},
 				{
 					Name:        "unconfirmed uplink data without payload (just a FPort)",
@@ -541,6 +570,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedFCntUp:                  11,
 					ExpectedFCntDown:                5,
+					ExpectedEnabledChannels:         []int{0, 1, 2},
 				},
 				{
 					Name:        "confirmed uplink data with payload",
@@ -586,8 +616,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 6,
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        6,
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:        "confirmed uplink data without payload",
@@ -632,8 +663,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 6,
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        6,
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:        "confirmed uplink data without payload (with RXDelay=3)",
@@ -678,8 +710,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 6,
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        6,
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:        "confirmed uplink data without payload (node-session has RXWindow=RX2)",
@@ -729,8 +762,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 6,
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        6,
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:        "confirmed uplink data without payload (node-session has RXWindow=RX2 and RXDelay=5)",
@@ -775,8 +809,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 6,
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        6,
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:        "two uplink mac commands (FOpts)",
@@ -805,8 +840,9 @@ func TestUplinkScenarios(t *testing.T) {
 						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], Data: []byte{128, 1, 2, 3}},
 						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], Data: []byte{129, 4, 5}},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 5,
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        5,
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:                 "two uplink mac commands (FRMPayload)",
@@ -837,8 +873,9 @@ func TestUplinkScenarios(t *testing.T) {
 						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], FrmPayload: true, Data: []byte{128, 1, 2, 3}},
 						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], FrmPayload: true, Data: []byte{129, 4, 5}},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 5,
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        5,
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:        "unconfirmed uplink with FCnt rollover",
@@ -864,6 +901,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedFCntUp:                  65537,
 					ExpectedFCntDown:                5,
+					ExpectedEnabledChannels:         []int{0, 1, 2},
 				},
 			}
 
@@ -938,8 +976,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 6,
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        6,
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:        "unconfirmed uplink data + two downlink mac commands in queue (FOpts) + unconfirmed data down",
@@ -1014,8 +1053,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 6,
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        6,
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:                 "unconfirmed uplink data + two downlink mac commands in queue (FRMPayload)",
@@ -1086,8 +1126,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 6,
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        6,
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:        "unconfirmed uplink data + two downlink mac commands in queue (FRMPayload) + unconfirmed tx-payload in queue",
@@ -1183,8 +1224,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 6,
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        6,
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 			}
 
@@ -1243,8 +1285,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 6,
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        6,
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:        "unconfirmed uplink data + two unconfirmed downlink payloads in queue",
@@ -1298,8 +1341,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 6,
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        6,
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:        "unconfirmed uplink data + one confirmed downlink payload in queue",
@@ -1350,8 +1394,9 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
-					ExpectedFCntUp:   11,
-					ExpectedFCntDown: 5, // will be incremented after the node ACKs the frame
+					ExpectedFCntUp:          11,
+					ExpectedFCntDown:        5, // will be incremented after the node ACKs the frame
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:        "unconfirmed uplink data + downlink payload which exceeds the max payload size (for dr 0)",
@@ -1380,6 +1425,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedFCntUp:                  11,
 					ExpectedFCntDown:                5, // payload has been discarded, nothing to transmit
+					ExpectedEnabledChannels:         []int{0, 1, 2},
 				},
 				{
 					Name:        "unconfirmed uplink data + one unconfirmed downlink payload in queue (exactly max size for dr 0) + one mac command",
@@ -1455,6 +1501,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 			}
 
@@ -1523,6 +1570,7 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
+					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{
 					Name:        "adr interval matches, but node does not support adr",
@@ -1548,6 +1596,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown: expectedGetDataDown,
 					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               5,
+					ExpectedEnabledChannels:        []int{0, 1, 2},
 				},
 				{
 					Name:        "acknowledgement of pending adr request",
@@ -1594,6 +1643,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntDown:               5,
 					ExpectedTXPower:                8,
 					ExpectedNbTrans:                1,
+					ExpectedEnabledChannels:        []int{0, 1, 2},
 				},
 				{
 					Name:        "negative acknowledgement of pending adr request",
@@ -1638,6 +1688,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown: expectedGetDataDown,
 					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               5,
+					ExpectedEnabledChannels:        []int{0, 1, 2},
 				},
 				{
 					Name:        "adr ack requested",
@@ -1685,6 +1736,243 @@ func TestUplinkScenarios(t *testing.T) {
 							},
 						},
 					},
+					ExpectedEnabledChannels: []int{0, 1, 2},
+				},
+				{
+					Name:        "channel re-configuration triggered",
+					NodeSession: nsExtraChannels,
+					RXInfo:      rxInfo,
+					SetMICKey:   ns.NwkSKey,
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+						},
+					},
+					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
+					ExpectedApplicationGetDataDown: expectedGetDataDown,
+					ExpectedFCntUp:                 11,
+					ExpectedFCntDown:               6,
+					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
+						Timestamp: rxInfo.Timestamp + 1000000,
+						Frequency: rxInfo.Frequency,
+						Power:     14,
+						DataRate:  rxInfo.DataRate,
+					},
+					ExpectedPHYPayload: &lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataDown,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    5,
+								FOpts: []lorawan.MACCommand{
+									{
+										CID: lorawan.LinkADRReq,
+										Payload: &lorawan.LinkADRReqPayload{
+											TXPower: 1,
+											ChMask:  lorawan.ChMask{true, true, true},
+										},
+									},
+								},
+							},
+						},
+					},
+					ExpectedEnabledChannels: []int{0, 1, 2, 3, 4, 5, 6, 7},
+				},
+				{
+					Name:        "new channel re-configuration ack-ed",
+					NodeSession: nsExtraChannels,
+					RXInfo:      rxInfo,
+					SetMICKey:   ns.NwkSKey,
+					MACCommandPending: []maccommand.Block{
+						{
+							CID: lorawan.LinkADRReq,
+							MACCommands: maccommand.MACCommands{
+								{
+									CID: lorawan.LinkADRReq,
+									Payload: &lorawan.LinkADRReqPayload{
+										TXPower: 1,
+										ChMask:  lorawan.ChMask{true, true, true},
+									},
+								},
+							},
+						},
+					},
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+								FOpts: []lorawan.MACCommand{
+									{
+										CID: lorawan.LinkADRAns,
+										Payload: &lorawan.LinkADRAnsPayload{
+											ChannelMaskACK: true,
+											DataRateACK:    true,
+											PowerACK:       true,
+										},
+									},
+								},
+							},
+						},
+					},
+					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
+					ExpectedApplicationGetDataDown: expectedGetDataDown,
+					ExpectedFCntUp:                 11,
+					ExpectedFCntDown:               5,
+					ExpectedTXPower:                14,
+					ExpectedEnabledChannels:        []int{0, 1, 2},
+				},
+				{
+					Name:        "new channel re-configuration not ack-ed",
+					NodeSession: nsExtraChannels,
+					RXInfo:      rxInfo,
+					SetMICKey:   ns.NwkSKey,
+					MACCommandPending: []maccommand.Block{
+						{
+							CID: lorawan.LinkADRReq,
+							MACCommands: maccommand.MACCommands{
+								{
+									CID: lorawan.LinkADRReq,
+									Payload: &lorawan.LinkADRReqPayload{
+										TXPower: 1,
+										ChMask:  lorawan.ChMask{true, true, true},
+									},
+								},
+							},
+						},
+					},
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+								FOpts: []lorawan.MACCommand{
+									{
+										CID: lorawan.LinkADRAns,
+										Payload: &lorawan.LinkADRAnsPayload{
+											ChannelMaskACK: false,
+											DataRateACK:    true,
+											PowerACK:       true,
+										},
+									},
+								},
+							},
+						},
+					},
+					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
+					ExpectedApplicationGetDataDown: expectedGetDataDown,
+					ExpectedFCntUp:                 11,
+					ExpectedFCntDown:               6,
+					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
+						Timestamp: rxInfo.Timestamp + 1000000,
+						Frequency: rxInfo.Frequency,
+						Power:     14,
+						DataRate:  rxInfo.DataRate,
+					},
+					ExpectedPHYPayload: &lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataDown,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    5,
+								FOpts: []lorawan.MACCommand{
+									{
+										CID: lorawan.LinkADRReq,
+										Payload: &lorawan.LinkADRReqPayload{
+											TXPower: 1,
+											ChMask:  lorawan.ChMask{true, true, true},
+										},
+									},
+								},
+							},
+						},
+					},
+					ExpectedEnabledChannels: []int{0, 1, 2, 3, 4, 5, 6, 7},
+				},
+				{
+					Name:        "channel re-configuration and adr triggered",
+					NodeSession: nsExtraChannelsADR,
+					RXInfo:      rxInfo,
+					SetMICKey:   ns.NwkSKey,
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+								FCtrl: lorawan.FCtrl{
+									ADR: true,
+								},
+							},
+						},
+					},
+					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfoADR,
+					ExpectedApplicationGetDataDown: expectedGetDataDown,
+					ExpectedFCntUp:                 11,
+					ExpectedFCntDown:               6,
+					ExpectedTXInfo: &gw.TXInfo{
+						MAC:       rxInfo.MAC,
+						Timestamp: rxInfo.Timestamp + 1000000,
+						Frequency: rxInfo.Frequency,
+						Power:     14,
+						DataRate:  rxInfo.DataRate,
+					},
+					ExpectedPHYPayload: &lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataDown,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    5,
+								FCtrl: lorawan.FCtrl{
+									ADR: true,
+								},
+								FOpts: []lorawan.MACCommand{
+									{
+										CID: lorawan.LinkADRReq,
+										Payload: &lorawan.LinkADRReqPayload{
+											DataRate: 5,
+											TXPower:  3,
+											ChMask:   [16]bool{true, true, true},
+											Redundancy: lorawan.Redundancy{
+												ChMaskCntl: 0,
+												NbRep:      1,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					ExpectedEnabledChannels: []int{0, 1, 2, 3, 4, 5, 6, 7},
 				},
 			}
 
@@ -1824,11 +2112,12 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 			})
 
 			// ADR variables validations
-			Convey("Then the TXPower and NbTrans are as expected", func() {
+			Convey("Then the Channels, TXPower and NbTrans are as expected", func() {
 				ns, err := session.GetNodeSession(ctx.RedisPool, t.NodeSession.DevEUI)
 				So(err, ShouldBeNil)
 				So(ns.TXPower, ShouldEqual, t.ExpectedTXPower)
 				So(ns.NbTrans, ShouldEqual, t.ExpectedNbTrans)
+				So(ns.EnabledChannels, ShouldResemble, t.ExpectedEnabledChannels)
 			})
 
 			// queue validations
