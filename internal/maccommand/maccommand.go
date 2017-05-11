@@ -13,33 +13,53 @@ import (
 )
 
 // Handle handles a MACCommand sent by a node.
-func Handle(ctx common.Context, ns *session.NodeSession, cmd lorawan.MACCommand, rxInfoSet models.RXInfoSet) error {
+func Handle(ctx common.Context, ns *session.NodeSession, block Block, rxInfoSet models.RXInfoSet) error {
 	var err error
-	switch cmd.CID {
+	switch block.CID {
 	case lorawan.LinkADRAns:
-		err = handleLinkADRAns(ctx, ns, cmd.Payload)
+		err = handleLinkADRAns(ctx, ns, block)
 	case lorawan.LinkCheckReq:
 		err = handleLinkCheckReq(ctx, ns, rxInfoSet)
 	default:
-		err = fmt.Errorf("undefined CID %d", cmd.CID)
+		err = fmt.Errorf("undefined CID %d", block.CID)
 
 	}
 	return err
 }
 
 // handleLinkADRAns handles the ack of an ADR request
-func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, pl lorawan.MACCommandPayload) error {
-	adrAns, ok := pl.(*lorawan.LinkADRAnsPayload)
-	if !ok {
-		return fmt.Errorf("expected *lorawan.LinkADRAnsPayload, got %T", pl)
+func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, block Block) error {
+	if len(block.MACCommands) == 0 {
+		return errors.New("at least 1 mac-command expected, got none")
 	}
 
-	block, err := ReadPending(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
+	channelMaskACK := true
+	dataRateACK := true
+	powerACK := true
+
+	for i := range block.MACCommands {
+		pl, ok := block.MACCommands[i].Payload.(*lorawan.LinkADRAnsPayload)
+		if !ok {
+			return fmt.Errorf("expected *lorawan.LinkADRAnsPayload, got %T", pl)
+		}
+
+		if !pl.ChannelMaskACK {
+			channelMaskACK = false
+		}
+		if !pl.DataRateACK {
+			dataRateACK = false
+		}
+		if !pl.PowerACK {
+			powerACK = false
+		}
+	}
+
+	pendingBlock, err := ReadPending(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
 	if err != nil {
 		return fmt.Errorf("read pending mac-commands error: %s", err)
 	}
 
-	if block == nil || len(block.MACCommands) == 0 {
+	if pendingBlock == nil || len(pendingBlock.MACCommands) == 0 {
 		return ErrDoesNotExist
 	}
 
@@ -48,15 +68,15 @@ func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, pl lorawan.MA
 	}
 
 	var linkADRPayloads []lorawan.LinkADRReqPayload
-	for i := range block.MACCommands {
-		linkADRPayloads = append(linkADRPayloads, *block.MACCommands[i].Payload.(*lorawan.LinkADRReqPayload))
+	for i := range pendingBlock.MACCommands {
+		linkADRPayloads = append(linkADRPayloads, *pendingBlock.MACCommands[i].Payload.(*lorawan.LinkADRReqPayload))
 	}
 
 	// as we're sending the same txpower and nbrep for each channel we
 	// take the last one
 	adrReq := linkADRPayloads[len(linkADRPayloads)-1]
 
-	if adrAns.ChannelMaskACK && adrAns.DataRateACK && adrAns.PowerACK {
+	if channelMaskACK && dataRateACK && powerACK {
 		chans, err := common.Band.GetEnabledChannelsForLinkADRReqPayloads(ns.EnabledChannels, linkADRPayloads)
 		if err != nil {
 			return errors.Wrap(err, "get enalbed channels for link_adr_req payloads error")
@@ -76,9 +96,9 @@ func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, pl lorawan.MA
 	} else {
 		log.WithFields(log.Fields{
 			"dev_eui":          ns.DevEUI,
-			"channel_mask_ack": adrAns.ChannelMaskACK,
-			"data_rate_ack":    adrAns.DataRateACK,
-			"power_ack":        adrAns.PowerACK,
+			"channel_mask_ack": channelMaskACK,
+			"data_rate_ack":    dataRateACK,
+			"power_ack":        powerACK,
 		}).Warning("link_adr request not acknowledged")
 	}
 

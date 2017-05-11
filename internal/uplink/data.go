@@ -297,6 +297,8 @@ func publishDataUp(ctx common.Context, ns session.NodeSession, rxPacket models.R
 }
 
 func handleUplinkMACCommands(ctx common.Context, ns *session.NodeSession, frmPayload bool, commands []lorawan.MACCommand, rxInfoSet models.RXInfoSet) error {
+	blocks := make(map[lorawan.CID]maccommand.Block)
+
 	for _, cmd := range commands {
 		logFields := log.Fields{
 			"dev_eui":     ns.DevEUI,
@@ -305,6 +307,7 @@ func handleUplinkMACCommands(ctx common.Context, ns *session.NodeSession, frmPay
 		}
 
 		// proprietary MAC commands
+		// TODO: refactor / remove / implement proprietary mac-commands properly
 		if cmd.CID >= 0x80 {
 			b, err := cmd.MarshalBinary()
 			if err != nil {
@@ -322,11 +325,29 @@ func handleUplinkMACCommands(ctx common.Context, ns *session.NodeSession, frmPay
 				log.WithFields(logFields).Info("proprietary mac-command sent to network-controller")
 			}
 		} else {
-			if err := maccommand.Handle(ctx, ns, cmd, rxInfoSet); err != nil {
-				log.WithFields(logFields).Errorf("handle mac-command error: %s", err)
+			block, ok := blocks[cmd.CID]
+			if !ok {
+				block = maccommand.Block{
+					CID: cmd.CID,
+				}
 			}
+
+			block.MACCommands = append(block.MACCommands, cmd)
+			blocks[cmd.CID] = block
+
 		}
 	}
+
+	for cid, block := range blocks {
+		if err := maccommand.Handle(ctx, ns, block, rxInfoSet); err != nil {
+			log.WithFields(log.Fields{
+				"dev_eui":     ns.DevEUI,
+				"cid":         cid,
+				"frm_payload": frmPayload,
+			}).Errorf("handle mac-command block error: %s", err)
+		}
+	}
+
 	return nil
 }
 

@@ -32,8 +32,13 @@ func TestHandle(t *testing.T) {
 			So(session.SaveNodeSession(p, ns), ShouldBeNil)
 
 			Convey("Test LinkCheckReq", func() {
-				linkCheckReq := lorawan.MACCommand{
+				block := Block{
 					CID: lorawan.LinkCheckReq,
+					MACCommands: MACCommands{
+						lorawan.MACCommand{
+							CID: lorawan.LinkCheckReq,
+						},
+					},
 				}
 
 				rxInfoSet := models.RXInfoSet{
@@ -45,7 +50,7 @@ func TestHandle(t *testing.T) {
 					},
 				}
 
-				So(Handle(ctx, &ns, linkCheckReq, rxInfoSet), ShouldBeNil)
+				So(Handle(ctx, &ns, block, rxInfoSet), ShouldBeNil)
 
 				Convey("Then the expected response was added to the mac-command queue", func() {
 					items, err := ReadQueue(ctx.RedisPool, ns.DevEUI)
@@ -82,9 +87,15 @@ func TestHandle(t *testing.T) {
 					DataRateACK:    true,
 					PowerACK:       true,
 				}
-				linkADRAns := lorawan.MACCommand{
-					CID:     lorawan.LinkADRAns,
-					Payload: linkADRAnsPL,
+
+				linkADRAns := Block{
+					CID: lorawan.LinkADRAns,
+					MACCommands: MACCommands{
+						lorawan.MACCommand{
+							CID:     lorawan.LinkADRAns,
+							Payload: linkADRAnsPL,
+						},
+					},
 				}
 
 				Convey("Given a pending linkADRReq and positive ack", func() {
@@ -109,7 +120,7 @@ func TestHandle(t *testing.T) {
 				Convey("Given a pending linkADRReq and negative ack", func() {
 					linkADRAnsPL.ChannelMaskACK = false
 					So(SetPending(p, ns.DevEUI, Block{
-						CID: linkADRAns.CID,
+						CID: lorawan.LinkADRReq,
 						MACCommands: []lorawan.MACCommand{
 							linkADRReqMAC,
 						},
