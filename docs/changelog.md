@@ -8,6 +8,7 @@
   additional channels (in case supported by the selected ISM band).
 * Add `--enable-uplink-channels` / `ENABLE_UPLINK_CHANNELS` config option to
   configure the uplink channels active on the network.
+* Make adaptive data-rate (ADR) available to every ISM band.
 
 ## 0.16.1
 
