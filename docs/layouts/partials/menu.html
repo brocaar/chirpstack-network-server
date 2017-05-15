@@ -1,0 +1,29 @@
+<aside>
+  <div id="sidebar" class="nav-collapse">
+    <ul class="sidebar-menu">
+      {{ $currentPage := . }}
+      {{ range .Site.Menus.main }}
+        {{ if .HasChildren }}
+          <li class="sub-menu{{if $currentPage.HasMenuCurrent "main" . }} active{{end}}">
+            <a>
+              {{ .Pre }}
+              <span>{{ .Name }}</span>
+            </a>
+            <ul class="sub">
+              {{ range .Children }}
+                <li{{if $currentPage.IsMenuCurrent "main" . }} class="active"{{end}}><a href="{{.URL}}"> {{ .Name }} </a> </li>
+              {{ end }}
+            </ul>
+          </li>
+        {{ else }}
+          <li>
+            <a href="{{.URL}}">
+              {{ .Pre }}
+              <span>{{ .Name }}</span>
+            </a>
+          </li>
+        {{ end }}
+      {{ end }}
+    </ul>
+  </div>
+</aside>
