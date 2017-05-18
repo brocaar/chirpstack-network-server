@@ -76,5 +76,8 @@ GW_STATS_AGGREGATION_INTERVALS=minute,hour,day
 # extra frequencies to use for ISM bands that implement the CFList
 # EXTRA_FREQUENCIES=867100000,867300000,867500000,867700000
 
-# enable only a given sub-set of channels (e.g. '0-7,8-15')
-# ENABLE_UPLINK_CHANNELS=0-7
+# enable only a given sub-set of channels (e.g. '0-7,64')
+# ENABLE_UPLINK_CHANNELS=0-7,64
+
+# the ttl after which a node-session expires after no activity (default 31 days)
+NODE_SESSION_TTL=744h0m0s
