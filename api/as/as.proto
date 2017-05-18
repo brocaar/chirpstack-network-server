@@ -91,7 +91,7 @@ message JoinRequestResponse {
 	uint32 rx2DR = 7;
 
 	// The data-rate to use for RX2 transmissions.
-	bool relaxFCnt = 8;
+	bool disableFCntCheck = 8;
 
 	// The interval (based on frame-counter) on which to calculate the ideal
 	// data-rate and tx-power of the node and if needed, request an adaption.

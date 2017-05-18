@@ -96,7 +96,7 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPac
 		NwkSKey:            nwkSKey,
 		FCntUp:             0,
 		FCntDown:           0,
-		RelaxFCnt:          joinResp.RelaxFCnt,
+		RelaxFCnt:          joinResp.DisableFCntCheck,
 		RXWindow:           session.RXWindow(joinResp.RxWindow),
 		RXDelay:            uint8(joinResp.RxDelay),
 		RX1DROffset:        uint8(joinResp.Rx1DROffset),

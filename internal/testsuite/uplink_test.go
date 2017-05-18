@@ -464,6 +464,42 @@ func TestUplinkScenarios(t *testing.T) {
 				FCnt:           0,
 			}
 
+			expectedApplicationPushDataUpNoData7 := &as.HandleDataUpRequest{
+				AppEUI: ns.AppEUI[:],
+				DevEUI: ns.DevEUI[:],
+				FCnt:   7,
+				FPort:  1,
+				Data:   nil,
+				TxInfo: &as.TXInfo{
+					Frequency: int64(rxInfo.Frequency),
+					DataRate: &as.DataRate{
+						Modulation:   string(rxInfo.DataRate.Modulation),
+						BandWidth:    uint32(rxInfo.DataRate.Bandwidth),
+						SpreadFactor: uint32(rxInfo.DataRate.SpreadFactor),
+						Bitrate:      uint32(rxInfo.DataRate.BitRate),
+					},
+				},
+				RxInfo: []*as.RXInfo{
+					{
+						Mac:       rxInfo.MAC[:],
+						Name:      gw1.Name,
+						Time:      rxInfo.Time.Format(time.RFC3339Nano),
+						Rssi:      int32(rxInfo.RSSI),
+						LoRaSNR:   rxInfo.LoRaSNR,
+						Altitude:  *gw1.Altitude,
+						Latitude:  gw1.Location.Latitude,
+						Longitude: gw1.Location.Longitude,
+					},
+				},
+			}
+
+			expectedGetDataDown7 := &as.GetDataDownRequest{
+				AppEUI:         ns.AppEUI[:],
+				DevEUI:         ns.DevEUI[:],
+				MaxPayloadSize: 51,
+				FCnt:           0,
+			}
+
 			tests := []uplinkTestCase{
 				{
 					Name:        "the frame-counter is invalid but not 0",
@@ -483,10 +519,12 @@ func TestUplinkScenarios(t *testing.T) {
 							FPort: &fPortOne,
 						},
 					},
-					ExpectedFCntUp:              8,
-					ExpectedFCntDown:            5,
-					ExpectedHandleRXPacketError: errors.New("get node-session error: node-session does not exist or invalid fcnt or mic"),
-					ExpectedEnabledChannels:     []int{0, 1, 2},
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData7,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown7,
+					ExpectedFCntUp:                  8,
+					ExpectedFCntDown:                0,
+					ExpectedEnabledChannels:         []int{0, 1, 2},
 				},
 				{
 					Name:        "the frame-counter is invalid and 0",

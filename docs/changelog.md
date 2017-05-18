@@ -7,7 +7,9 @@
 * TTL of node-sessions in Redis is now configurable through
   `--node-session-ttl` / `NODE_SESSION_TTL` config flag.
   This makes it possible to configure the time after which a node-session
-  expires after no activity.
+  expires after no activity ([#100](https://github.com/brocaar/loraserver/issues/100)).
+* Relax frame-counter mode has been changed to disable frame-counter check mode
+  to deal with different devices ([#133](https://github.com/brocaar/loraserver/issues/133)).
 
 ## 0.17.0
 

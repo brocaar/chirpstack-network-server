@@ -152,10 +152,12 @@ func GetNodeSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload) (NodeSes
 		// get full FCnt
 		fullFCnt, ok := ValidateAndGetFullFCntUp(ns, macPL.FHDR.FCnt)
 		if !ok {
-			// if RelaxFCnt is turned on, test the MIC against FCnt reset
-			if ns.RelaxFCnt && macPL.FHDR.FCnt == 0 {
-				fullFCnt = 0
-				ns.FCntUp = 0
+			// if RelaxFCnt is turned on, just trust the uplink FCnt
+			// this is insecure, but has been requested by many people for
+			// debugging purposes
+			if ns.RelaxFCnt {
+				fullFCnt = macPL.FHDR.FCnt
+				ns.FCntUp = macPL.FHDR.FCnt
 				ns.FCntDown = 0
 
 				// validate if the mic is valid given the FCnt reset
