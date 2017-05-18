@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.17.1
+
+**Features:**
+
+* TTL of node-sessions in Redis is now configurable through
+  `--node-session-ttl` / `NODE_SESSION_TTL` config flag.
+  This makes it possible to configure the time after which a node-session
+  expires after no activity.
+
 ## 0.17.0
 
 **Features:**

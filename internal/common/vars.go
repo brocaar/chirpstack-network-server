@@ -6,15 +6,9 @@ import (
 	"github.com/brocaar/lorawan/band"
 )
 
-// NodeTXPayloadQueueTTL defines the TTL of the node TXPayload queue
-var NodeTXPayloadQueueTTL = time.Hour * 24 * 5
-
 // NodeSessionTTL defines the TTL of a node session (will be renewed on each
 // activity)
-var NodeSessionTTL = time.Hour * 24 * 5
-
-// MACQueueTTL defines the TTL of the MAC command queue.
-var MACQueueTTL = time.Hour * 24 * 5
+var NodeSessionTTL = time.Hour * 24 * 31
 
 // Band is the ISM band configuration to use
 var Band band.Band

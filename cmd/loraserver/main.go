@@ -96,6 +96,7 @@ func run(c *cli.Context) error {
 	common.DeduplicationDelay = c.Duration("deduplication-delay")
 	common.GetDownlinkDataDelay = c.Duration("get-downlink-data-delay")
 	common.CreateGatewayOnStats = c.Bool("gw-create-on-stats")
+	common.NodeSessionTTL = c.Duration("node-session-ttl")
 
 	log.WithFields(log.Fields{
 		"version": version,
@@ -495,6 +496,12 @@ func main() {
 			Name:   "enable-uplink-channels",
 			Usage:  "enable only a given sub-set of channels (e.g. '0-7,8-15')",
 			EnvVar: "ENABLE_UPLINK_CHANNELS",
+		},
+		cli.DurationFlag{
+			Name:   "node-session-ttl",
+			Usage:  "the ttl after which a node-session expires after no activity",
+			EnvVar: "NODE_SESSION_TTL",
+			Value:  time.Hour * 24 * 31,
 		},
 	}
 	app.Run(os.Args)

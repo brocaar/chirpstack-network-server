@@ -4,7 +4,6 @@ To list all configuration options, start `loraserver` with the `--help`
 flag. This will display:
 
 ```
-GLOBAL OPTIONS:
    --net-id value                          network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203) [$NET_ID]
    --band value                            ism band configuration to use (options: AS_923, AU_915_928, CN_470_510, CN_779_787, EU_433, EU_863_870, KR_920_923, RU_864_869, US_902_928) [$BAND]
    --band-dwell-time-400ms                 band configuration takes 400ms dwell-time into account [$BAND_DWELL_TIME_400ms]
@@ -34,6 +33,7 @@ GLOBAL OPTIONS:
    --gw-create-on-stats                    create non-existing gateways on receiving of stats [$GW_CREATE_ON_STATS]
    --extra-frequencies value               extra frequencies to use for ISM bands that implement the CFList [$EXTRA_FREQUENCIES]
    --enable-uplink-channels value          enable only a given sub-set of channels (e.g. '0-7,8-15') [$ENABLE_UPLINK_CHANNELS]
+   --node-session-ttl value                the ttl after which a node-session expires after no activity (default: 744h0m0s) [$NODE_SESSION_TTL]
    --help, -h                              show help
    --version, -v                           print the version
 ```
