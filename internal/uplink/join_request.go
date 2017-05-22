@@ -74,6 +74,11 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPac
 		return fmt.Errorf("application server join-request error: %s", err)
 	}
 
+	// log the uplink frame
+	// note we log it at this place to make sure the join-request has been
+	// authenticated by the application-server
+	logUplink(ctx.DB, jrPL.DevEUI, rxPacket)
+
 	var downlinkPHY lorawan.PHYPayload
 	if err = downlinkPHY.UnmarshalBinary(joinResp.PhyPayload); err != nil {
 		errStr := fmt.Sprintf("downlink PHYPayload unmarshal error: %s", err)

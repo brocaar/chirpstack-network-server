@@ -46,6 +46,7 @@ func validateAndCollectDataUpRXPacket(ctx common.Context, rxPacket gw.RXPacket) 
 
 	return collectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
 		rxPacket.DevEUI = ns.DevEUI
+		logUplink(ctx.DB, ns.DevEUI, rxPacket)
 		return handleCollectedDataUpPackets(ctx, rxPacket)
 	})
 }

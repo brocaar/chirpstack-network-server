@@ -37,8 +37,13 @@ type classCTestCase struct {
 
 func TestClassCScenarios(t *testing.T) {
 	conf := test.GetConfig()
+	db, err := common.OpenDatabase(conf.PostgresDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	Convey("Given a clean state", t, func() {
+		test.MustResetDB(db)
 		p := common.NewRedisPool(conf.RedisURL)
 		test.MustFlushRedis(p)
 
@@ -46,6 +51,7 @@ func TestClassCScenarios(t *testing.T) {
 			RedisPool:   p,
 			Gateway:     test.NewGatewayBackend(),
 			Application: test.NewApplicationClient(),
+			DB:          db,
 		}
 
 		api := api.NewNetworkServerAPI(ctx)

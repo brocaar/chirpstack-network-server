@@ -3,10 +3,12 @@ package downlink
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/api/as"
@@ -14,6 +16,7 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
+	"github.com/brocaar/loraserver/internal/node"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
 )
@@ -119,6 +122,8 @@ func SendDataDown(ctx common.Context, ns *session.NodeSession, txInfo gw.TXInfo,
 	if err := phy.SetMIC(ns.NwkSKey); err != nil {
 		return errors.Wrap(err, "set MIC error")
 	}
+
+	logDownlink(ctx.DB, ns.DevEUI, phy, txInfo)
 
 	// send the packet to the gateway
 	if err := ctx.Gateway.SendTXPacket(gw.TXPacket{
@@ -422,4 +427,31 @@ func getAndFilterMACQueueItems(ctx common.Context, ns session.NodeSession, allow
 	}
 
 	return blocks, encrypted, len(allBlocks) != len(blocks), nil
+}
+
+func logDownlink(db *sqlx.DB, devEUI lorawan.EUI64, phy lorawan.PHYPayload, txInfo gw.TXInfo) {
+	if !common.LogNodeFrames {
+		return
+	}
+
+	phyB, err := phy.MarshalBinary()
+	if err != nil {
+		log.Errorf("marshal phypayload to binary error: %s", err)
+		return
+	}
+
+	txB, err := json.Marshal(txInfo)
+	if err != nil {
+		log.Errorf("marshal tx-info to json error: %s", err)
+	}
+
+	fl := node.FrameLog{
+		DevEUI:     devEUI,
+		TXInfo:     &txB,
+		PHYPayload: phyB,
+	}
+	err = node.CreateFrameLog(db, &fl)
+	if err != nil {
+		log.Errorf("create frame-log error: %s", err)
+	}
 }

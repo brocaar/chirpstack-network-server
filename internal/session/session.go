@@ -15,7 +15,6 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-// TODO: implement migration tool to migrate from old to new data structure!
 const (
 	devAddrKeyTempl     = "lora:ns:devaddr:%s" // contains a set of DevEUIs using this DevAddr
 	nodeSessionKeyTempl = "lora:ns:session:%s" // contains the session of a DevEUI

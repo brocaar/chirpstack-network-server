@@ -34,8 +34,13 @@ type otaaTestCase struct {
 
 func TestOTAAScenarios(t *testing.T) {
 	conf := test.GetConfig()
+	db, err := common.OpenDatabase(conf.PostgresDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	Convey("Given a clean state", t, func() {
+		test.MustResetDB(db)
 		p := common.NewRedisPool(conf.RedisURL)
 		test.MustFlushRedis(p)
 
@@ -44,6 +49,7 @@ func TestOTAAScenarios(t *testing.T) {
 			RedisPool:   p,
 			Gateway:     test.NewGatewayBackend(),
 			Application: test.NewApplicationClient(),
+			DB:          db,
 		}
 
 		appKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}

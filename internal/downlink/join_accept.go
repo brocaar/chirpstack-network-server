@@ -57,6 +57,8 @@ func SendJoinAcceptResponse(ctx common.Context, ns session.NodeSession, rxPacket
 		return fmt.Errorf("get join-accept txinfo error: %s", err)
 	}
 
+	logDownlink(ctx.DB, ns.DevEUI, phy, txInfo)
+
 	if err = ctx.Gateway.SendTXPacket(gw.TXPacket{
 		TXInfo:     txInfo,
 		PHYPayload: phy,

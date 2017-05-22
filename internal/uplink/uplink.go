@@ -1,13 +1,17 @@
 package uplink
 
 import (
+	"encoding/json"
 	"fmt"
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/models"
+	"github.com/brocaar/loraserver/internal/node"
 	"github.com/brocaar/lorawan"
 )
 
@@ -69,5 +73,33 @@ func HandleRXPacket(ctx common.Context, rxPacket gw.RXPacket) error {
 		return validateAndCollectDataUpRXPacket(ctx, rxPacket)
 	default:
 		return fmt.Errorf("unknown MType: %v", rxPacket.PHYPayload.MHDR.MType)
+	}
+}
+
+func logUplink(db *sqlx.DB, devEUI lorawan.EUI64, rxPacket models.RXPacket) {
+	if !common.LogNodeFrames {
+		return
+	}
+
+	phyB, err := rxPacket.PHYPayload.MarshalBinary()
+	if err != nil {
+		log.Errorf("marshal phypayload to binary error: %s", err)
+		return
+	}
+
+	rxB, err := json.Marshal(rxPacket.RXInfoSet)
+	if err != nil {
+		log.Errorf("marshal rx-info set to json error: %s", err)
+		return
+	}
+
+	fl := node.FrameLog{
+		DevEUI:     devEUI,
+		RXInfoSet:  &rxB,
+		PHYPayload: phyB,
+	}
+	err = node.CreateFrameLog(db, &fl)
+	if err != nil {
+		log.Errorf("create frame-log error: %s", err)
 	}
 }

@@ -97,6 +97,7 @@ func run(c *cli.Context) error {
 	common.GetDownlinkDataDelay = c.Duration("get-downlink-data-delay")
 	common.CreateGatewayOnStats = c.Bool("gw-create-on-stats")
 	common.NodeSessionTTL = c.Duration("node-session-ttl")
+	common.LogNodeFrames = c.Bool("log-node-frames")
 
 	log.WithFields(log.Fields{
 		"version": version,
@@ -502,6 +503,11 @@ func main() {
 			Usage:  "the ttl after which a node-session expires after no activity",
 			EnvVar: "NODE_SESSION_TTL",
 			Value:  time.Hour * 24 * 31,
+		},
+		cli.BoolFlag{
+			Name:   "log-node-frames",
+			Usage:  "log uplink and downlink frames to the database",
+			EnvVar: "LOG_NODE_FRAMES",
 		},
 	}
 	app.Run(os.Args)
