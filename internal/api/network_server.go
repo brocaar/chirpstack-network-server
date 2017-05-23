@@ -1,17 +1,20 @@
 package api
 
 import (
+	"encoding/json"
 	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
+	"github.com/brocaar/loraserver/internal/node"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
 )
@@ -367,6 +370,86 @@ func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatew
 			TxPacketsReceived:   int32(stat.TXPacketsReceived),
 			TxPacketsEmitted:    int32(stat.TXPacketsEmitted),
 		})
+	}
+
+	return &resp, nil
+}
+
+// GetFrameLogsForDevEUI returns the uplink / downlink frame logs for the given DevEUI.
+func (n *NetworkServerAPI) GetFrameLogsForDevEUI(ctx context.Context, req *ns.GetFrameLogsForDevEUIRequest) (*ns.GetFrameLogsResponse, error) {
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], req.DevEUI)
+
+	count, err := node.GetFrameLogCountForDevEUI(n.ctx.DB, devEUI)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	logs, err := node.GetFrameLogsForDevEUI(n.ctx.DB, devEUI, int(req.Limit), int(req.Offset))
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	resp := ns.GetFrameLogsResponse{
+		TotalCount: int32(count),
+	}
+
+	for i := range logs {
+		fl := ns.FrameLog{
+			CreatedAt:  logs[i].CreatedAt.Format(time.RFC3339Nano),
+			PhyPayload: logs[i].PHYPayload,
+		}
+
+		if txInfoJSON := logs[i].TXInfo; txInfoJSON != nil {
+			var txInfo gw.TXInfo
+			if err := json.Unmarshal(*txInfoJSON, &txInfo); err != nil {
+				return nil, errToRPCError(err)
+			}
+
+			fl.TxInfo = &ns.TXInfo{
+				CodeRate:    txInfo.CodeRate,
+				Frequency:   int64(txInfo.Frequency),
+				Immediately: txInfo.Immediately,
+				Mac:         txInfo.MAC[:],
+				Power:       int32(txInfo.Power),
+				Timestamp:   txInfo.Timestamp,
+				DataRate: &ns.DataRate{
+					Modulation:   string(txInfo.DataRate.Modulation),
+					BandWidth:    uint32(txInfo.DataRate.Bandwidth),
+					SpreadFactor: uint32(txInfo.DataRate.SpreadFactor),
+					Bitrate:      uint32(txInfo.DataRate.BitRate),
+				},
+			}
+		}
+
+		if rxInfoSetJSON := logs[i].RXInfoSet; rxInfoSetJSON != nil {
+			var rxInfoSet []gw.RXInfo
+			if err := json.Unmarshal(*rxInfoSetJSON, &rxInfoSet); err != nil {
+				return nil, errToRPCError(err)
+			}
+
+			for i := range rxInfoSet {
+				rxInfo := ns.RXInfo{
+					Channel:   int32(rxInfoSet[i].Channel),
+					CodeRate:  rxInfoSet[i].CodeRate,
+					Frequency: int64(rxInfoSet[i].Frequency),
+					LoRaSNR:   rxInfoSet[i].LoRaSNR,
+					Rssi:      int32(rxInfoSet[i].RSSI),
+					Time:      rxInfoSet[i].Time.Format(time.RFC3339Nano),
+					Timestamp: rxInfoSet[i].Timestamp,
+					DataRate: &ns.DataRate{
+						Modulation:   string(rxInfoSet[i].DataRate.Modulation),
+						BandWidth:    uint32(rxInfoSet[i].DataRate.Bandwidth),
+						SpreadFactor: uint32(rxInfoSet[i].DataRate.SpreadFactor),
+						Bitrate:      uint32(rxInfoSet[i].DataRate.BitRate),
+					},
+					Mac: rxInfoSet[i].MAC[:],
+				}
+				fl.RxInfoSet = append(fl.RxInfoSet, &rxInfo)
+			}
+		}
+
+		resp.Result = append(resp.Result, &fl)
 	}
 
 	return &resp, nil

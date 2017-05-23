@@ -2,17 +2,22 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/gateway"
+	"github.com/brocaar/loraserver/internal/node"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -271,6 +276,124 @@ func TestNetworkServerAPI(t *testing.T) {
 						So(resp.Result[0].RxPacketsReceivedOK, ShouldEqual, 5)
 						So(resp.Result[0].TxPacketsReceived, ShouldEqual, 11)
 						So(resp.Result[0].TxPacketsEmitted, ShouldEqual, 10)
+					})
+				})
+
+				Convey("Given 20 logs for two different DevEUIs", func() {
+					now := time.Now()
+					rxInfoSet := []gw.RXInfo{
+						{
+							MAC:       lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+							Time:      now,
+							Timestamp: 1234,
+							Frequency: 868100000,
+							Channel:   1,
+							RFChain:   1,
+							CRCStatus: 1,
+							CodeRate:  "4/5",
+							RSSI:      110,
+							LoRaSNR:   5.5,
+							Size:      10,
+							DataRate: band.DataRate{
+								Modulation:   band.LoRaModulation,
+								SpreadFactor: 12,
+								Bandwidth:    125,
+							},
+						},
+					}
+					txInfo := gw.TXInfo{
+						MAC:         lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+						Immediately: true,
+						Timestamp:   12345,
+						Frequency:   868100000,
+						Power:       14,
+						CodeRate:    "4/5",
+						DataRate: band.DataRate{
+							Modulation:   band.LoRaModulation,
+							SpreadFactor: 12,
+							Bandwidth:    125,
+						},
+					}
+					devEUI1 := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
+					devEUI2 := lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1}
+					phy := lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: lorawan.DevAddr{1, 2, 3, 4},
+								FCnt:    1,
+							},
+						},
+					}
+
+					rxBytes, err := json.Marshal(rxInfoSet)
+					So(err, ShouldBeNil)
+					txBytes, err := json.Marshal(txInfo)
+					So(err, ShouldBeNil)
+					phyBytes, err := phy.MarshalBinary()
+					So(err, ShouldBeNil)
+
+					for i := 0; i < 10; i++ {
+						frameLog := node.FrameLog{
+							DevEUI:     devEUI1,
+							RXInfoSet:  &rxBytes,
+							TXInfo:     &txBytes,
+							PHYPayload: phyBytes,
+						}
+						So(node.CreateFrameLog(db, &frameLog), ShouldBeNil)
+
+						frameLog.DevEUI = devEUI2
+						frameLog.TXInfo = nil
+						So(node.CreateFrameLog(db, &frameLog), ShouldBeNil)
+					}
+
+					Convey("Then GetFrameLogsForDevEUI returns the expected result", func() {
+						resp, err := api.GetFrameLogsForDevEUI(ctx, &ns.GetFrameLogsForDevEUIRequest{
+							DevEUI: devEUI1[:],
+							Limit:  1,
+							Offset: 0,
+						})
+						So(err, ShouldBeNil)
+						So(resp.TotalCount, ShouldEqual, 10)
+						So(resp.Result, ShouldHaveLength, 1)
+						So(resp.Result[0].CreatedAt, ShouldNotEqual, "")
+						resp.Result[0].CreatedAt = ""
+						So(resp.Result[0], ShouldResemble, &ns.FrameLog{
+							PhyPayload: phyBytes,
+							TxInfo: &ns.TXInfo{
+								CodeRate:    "4/5",
+								Frequency:   868100000,
+								Immediately: true,
+								Mac:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
+								Power:       14,
+								Timestamp:   12345,
+								DataRate: &ns.DataRate{
+									Modulation:   "LORA",
+									BandWidth:    125,
+									SpreadFactor: 12,
+								},
+							},
+							RxInfoSet: []*ns.RXInfo{
+								{
+									Channel:   1,
+									CodeRate:  "4/5",
+									Frequency: 868100000,
+									LoRaSNR:   5.5,
+									Rssi:      110,
+									Time:      now.Format(time.RFC3339Nano),
+									Timestamp: 1234,
+									Mac:       []byte{1, 2, 3, 4, 5, 6, 7, 8},
+									DataRate: &ns.DataRate{
+										Modulation:   "LORA",
+										BandWidth:    125,
+										SpreadFactor: 12,
+									},
+								},
+							},
+						})
 					})
 				})
 			})

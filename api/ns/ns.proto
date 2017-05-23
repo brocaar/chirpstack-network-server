@@ -44,6 +44,9 @@ service NetworkServer {
 
 	// GetGatewayStats returns stats of an existing gateway.
 	rpc GetGatewayStats(GetGatewayStatsRequest) returns (GetGatewayStatsResponse) {}
+
+	// GetFrameLogsForDevEUI returns the uplink / downlink frame logs for the given DevEUI.
+	rpc GetFrameLogsForDevEUI(GetFrameLogsForDevEUIRequest) returns (GetFrameLogsResponse) {}
 }
 
 enum RXWindow {
@@ -387,4 +390,96 @@ message GetGatewayStatsRequest {
 
 message GetGatewayStatsResponse {
 	repeated GatewayStats result = 1;
+}
+
+message GetFrameLogsForDevEUIRequest {
+	// The device EUI (8 bytes).
+	bytes devEUI = 1;
+
+	// Max number of logs to return in the result-set.
+	int32 limit = 2;
+
+	// Offset in the result-set (for pagination).
+	int32 offset = 3;
+}
+
+message GetFrameLogsResponse {
+	// Total number of logs.
+	int32 totalCount = 1;
+
+	// The result-set.
+	repeated FrameLog result = 2;
+}
+
+message FrameLog {
+	// Timestamp of when the frame was logged.
+	string createdAt = 1;
+
+	// RX-info set (in case of an uplink).
+	repeated RXInfo rxInfoSet = 2;
+
+	// TX-info (in case of a downlink).
+	TXInfo txInfo = 3;
+
+	// LoRaWAN PHYPayload.
+	bytes phyPayload = 4;
+}
+
+message DataRate {
+	string modulation = 1;
+	uint32 bandWidth = 2;
+	uint32 spreadFactor = 3;
+	uint32 bitrate = 4;
+}
+
+message RXInfo {
+	// Channel number on which the frame was received.
+	int32 channel = 1;
+
+	// Code-rate.
+	string codeRate = 2;
+
+	// frequency.
+	int64 frequency = 3;
+
+	// LoRa SNR.
+	double loRaSNR = 4;
+
+	// RSSI / signal strength.
+	int32 rssi = 5;
+
+	// Time (when the gateway has a GPS).
+	string time = 6;
+	
+	// Gateway internal timestamp.
+	uint32 timestamp = 7;
+
+	// Data-rate.
+	DataRate dataRate = 8;
+
+	// Gateway MAC.
+	bytes mac = 9;
+} 
+
+message TXInfo {
+	// Code-rate.
+	string codeRate = 1;
+
+	// Frequency.
+	int64 frequency = 2;
+
+	// Immediately.
+	bool immediately = 3;
+
+	// Gateway MAC.
+	bytes mac = 4;
+
+	// TX power.
+	int32 power = 5;
+
+	// Gateway internal timestamp.
+	uint32 timestamp = 6;
+
+	// Data-rate.
+	DataRate dataRate = 7;
 }
