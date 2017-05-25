@@ -427,7 +427,7 @@ func TestUplinkScenarios(t *testing.T) {
 			runUplinkTests(ctx, tests)
 		})
 
-		Convey("Given a set of test-scenarios for relaxt frame-counter mode", func() {
+		Convey("Given a set of test-scenarios for relax frame-counter mode", func() {
 			expectedApplicationPushDataUpNoData := &as.HandleDataUpRequest{
 				AppEUI: ns.AppEUI[:],
 				DevEUI: ns.DevEUI[:],
@@ -461,7 +461,7 @@ func TestUplinkScenarios(t *testing.T) {
 				AppEUI:         ns.AppEUI[:],
 				DevEUI:         ns.DevEUI[:],
 				MaxPayloadSize: 51,
-				FCnt:           0,
+				FCnt:           5,
 			}
 
 			expectedApplicationPushDataUpNoData7 := &as.HandleDataUpRequest{
@@ -497,7 +497,7 @@ func TestUplinkScenarios(t *testing.T) {
 				AppEUI:         ns.AppEUI[:],
 				DevEUI:         ns.DevEUI[:],
 				MaxPayloadSize: 51,
-				FCnt:           0,
+				FCnt:           5,
 			}
 
 			tests := []uplinkTestCase{
@@ -523,7 +523,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData7,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown7,
 					ExpectedFCntUp:                  8,
-					ExpectedFCntDown:                0,
+					ExpectedFCntDown:                5,
 					ExpectedEnabledChannels:         []int{0, 1, 2},
 				},
 				{
@@ -548,7 +548,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpNoData,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedFCntUp:                  1,
-					ExpectedFCntDown:                0,
+					ExpectedFCntDown:                5,
 					ExpectedEnabledChannels:         []int{0, 1, 2},
 				},
 			}

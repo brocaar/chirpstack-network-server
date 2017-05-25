@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.17.2
+
+**Bugfixes:**
+
+* Do not reset downlink frame-counter in case of relax frame-counter mode as
+  this would also reset the downlink counter on a re-transmit.
+
 ## 0.17.1
 
 **Features:**
