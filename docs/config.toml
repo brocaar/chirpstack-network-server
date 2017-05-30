@@ -38,4 +38,4 @@ title = "LoRa Server Server documentation"
     weight = 5
 
 [params]
-    version = "0.17.0"
+    version = "0.18.0"
