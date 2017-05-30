@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.18.0
+
+**Features:**
+
+* Add configuration option to log all uplink / downlink frames into a database
+  (`--log-node-frames` / `LOG_NODE_FRAMES`).
+
 ## 0.17.2
 
 **Bugfixes:**

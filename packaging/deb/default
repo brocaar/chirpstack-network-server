@@ -81,3 +81,6 @@ GW_STATS_AGGREGATION_INTERVALS=minute,hour,day
 
 # the ttl after which a node-session expires after no activity (default 31 days)
 NODE_SESSION_TTL=744h0m0s
+
+# log uplink and downlink frames to the database
+LOG_NODE_FRAMES=true
