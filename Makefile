@@ -12,6 +12,7 @@ build: statics
 clean:
 	@echo "Cleaning up workspace"
 	@rm -rf build
+	@rm -rf docs/public
 
 test: statics
 	@echo "Running tests"
@@ -20,6 +21,12 @@ test: statics
 	done
 	@go vet $(PKGS)
 	@go test -p 1 -v $(PKGS)
+
+documentation:
+	@echo "Building documentation"
+	@mkdir -p dist/docs
+	@cd docs && hugo
+	@cd docs/public/ && tar -pczf ../../dist/docs/loraserver.tar.gz .
 
 package: clean build
 	@echo "Creating package for $(GOOS) $(GOARCH)"

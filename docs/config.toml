@@ -1,0 +1,42 @@
+baseURL = "https://docs.loraserver.io/loraserver/"
+languageCode = "en-us"
+title = "LoRa Server Server documentation"
+googleAnalytics = "UA-3512995-9"
+
+[[menu.main]]
+    pre = "<i class='fa fa-hand-o-right'></i>"
+    name = "Overview"
+    identifier = "overview"
+    url = "/overview/"
+    weight = 1
+
+[[menu.main]]
+    pre = "<i class='fa fa-download'></i>"
+    name = "Install"
+    identifier = "install"
+    url = "/install/"
+    weight = 2
+
+[[menu.main]]
+    pre = "<i class='fa fa-user'></i>"
+    name = "Use"
+    identifier = "use"
+    url = "/use/"
+    weight = 3
+
+[[menu.main]]
+    pre = "<i class='fa fa-code'></i>"
+    name = "Integrate"
+    identifier = "integrate"
+    url = "/integrate/"
+    weight = 4
+
+[[menu.main]]
+    pre = "<i class='fa fa-github'></i>"
+    name = "Community & support"
+    identifier = "community"
+    url = "/community/"
+    weight = 5
+
+[params]
+    version = "0.18.0"

@@ -28,20 +28,27 @@ script:
   - make test
 
 before_deploy:
-  - make statics
+  - >
+    if ! [ "$BEFORE_DEPLOY_RUN" ]; then
+      export BEFORE_DEPLOY_RUN=1;
 
-  - rvm --default use system
-  - sudo apt-get install -y python-pip ruby ruby-dev
-  - sudo pip install -r requirements.txt
-  - sudo gem install --no-ri --no-rdoc fpm
-  - mkdocs build
+      make statics;
 
-  - GOOS=linux GOARCH=amd64 make package package-deb
-  - GOOS=linux GOARCH=386 make package package-deb
-  - GOOS=linux GOARCH=arm make package package-deb
-  - GOOS=darwin GOARCH=amd64 make package
-  - GOOS=windows BINEXT=.exe GOARCH=386 make package
-  - GOOS=windows BINEXT=.exe GOARCH=amd64 make package
+      rvm --default use system;
+      wget https://github.com/spf13/hugo/releases/download/v0.20.7/hugo_0.20.7_Linux-64bit.deb;
+      sudo dpkg -i hugo_0.20.7_Linux-64bit.deb;
+      rm *.deb;
+      sudo apt-get install -y ruby ruby-dev;
+      sudo gem install --no-ri --no-rdoc fpm;
+      make documentation;
+
+      GOOS=linux GOARCH=amd64 make package package-deb;
+      GOOS=linux GOARCH=386 make package package-deb;
+      GOOS=linux GOARCH=arm make package package-deb;
+      GOOS=darwin GOARCH=amd64 make package;
+      GOOS=windows BINEXT=.exe GOARCH=386 make package;
+      GOOS=windows BINEXT=.exe GOARCH=amd64 make package;
+    fi
 
 deploy:
   - provider: releases
@@ -72,10 +79,10 @@ deploy:
     access_key_id: AKIAJLTNEMD6RLNMP2NQ
     secret_access_key:
       secure: pnQNOFBYjOJ05WtwQxKHT/Wlgnefgox8OjaTL7xU7pDafDxlP24IKcCA9D7rg6ofWoX/OEcbtfFgJJOGRGCOheB3jji/HKlfVQJwANCJyF2mViveHSBniLPS7SlQ4YXiH1+bS0d+iPMzCiGVkBnH1v6ezzr7TDsb6436hHVI7FJZzJXy+QXX8A04pxXRtl9KJySlVR4hpcMQdY8mADFmmQ8LXjCMlIOBVjj00YCVMoZoE0WCQSmA0UB2LaMF1k0256FjPiIVJKXXh6TZmGmBpgt89D9IAQWjumgZZptGKoOBCfaLQdoS+hXsJmx3AgDWzqyx+tYiz/EXu6sjSWWDNIpvBhkHTPkTqDQqKUevL8WYdvrp42wk1/OxeqBpwh5SMA3uST6smqJ+EUS/8hmCVKQyfzvqf/hSYxARm5Qpa1yvEGwHnqXA3KoqZl8DMTivggmP/uN73kocZXwZeI7Dv8bIhSgQ+yHDgBCVR8UGhXtUp78aUIANxndVXvyJQKy9ThVCXJwtZCbAD5w88xt9LMAfnVmPQcf+i4aDWGDNR51VwysnGeixOUvLFPtD0EWx9W1lFtwQtK1hjXnm6SPkJ3CudMPjjpI/6QrHdv6lHMAd8qPlAEiz/OhdZxDkpENYUXk07mzJMB73K5+GMZqtuPCRBH1xJYg7m7IILT3QtPE=
-    bucket: docs.loraserver.io
-    local-dir: site
-    upload-dir: loraserver
-    acl: public_read
+    bucket: builds.loraserver.io
+    local-dir: dist/docs
+    upload-dir: docs
+    acl: private
     region: eu-west-1
     on:
       branch: master
