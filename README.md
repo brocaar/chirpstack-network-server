@@ -93,7 +93,7 @@ it, what the usecase is etc...
 ## Sponsors
 
 [![CableLabs](https://www.loraserver.io/img/sponsors/cablelabs.png)](https://www.cablelabs.com/)
-[![acklio](https://www.loraserver.io/img/sponsors/cablelabs.png)](http://www.ackl.io/)
+[![acklio](https://www.loraserver.io/img/sponsors/acklio.png)](http://www.ackl.io/)
 
 Would you like to support this project too? Please [get in touch](mailto:info@brocaar.com)!
 
