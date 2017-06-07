@@ -38,7 +38,7 @@ documentation and implemented [features](https://docs.loraserver.io/loraserver/f
 
 ## Building from source
 
-The easiest way to get started is by using the provided 
+The easiest way to get started is by using the provided
 [docker-compose](https://docs.docker.com/compose/) environment. To start a bash
 shell within the docker-compose environment, execute the following command from
 the root of this project:
@@ -89,6 +89,11 @@ There are a couple of ways to get involved:
 When you would like to add new features, please discuss the feature first
 by creating an issue describing your feature, how you're planning to implement
 it, what the usecase is etc...
+
+## Run VirtualBox machine with Vagrant
+
+Another option for the quick start is script in vagrant subdirectory.
+You got Ubuntu based virtual machine with Docker containers and all loraserver components built from source.
 
 ## Sponsors
 
