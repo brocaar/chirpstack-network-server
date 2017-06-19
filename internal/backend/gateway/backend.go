@@ -10,8 +10,10 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/backend"
+	"github.com/brocaar/lorawan"
 	"github.com/eclipse/paho.mqtt.golang"
 	"github.com/garyburd/redigo/redis"
+	"github.com/pkg/errors"
 )
 
 const rxTopic = "gateway/+/rx"
@@ -90,7 +92,14 @@ func (b *Backend) StatsPacketChan() chan gw.GatewayStatsPacket {
 
 // SendTXPacket sends the given TXPacket to the gateway.
 func (b *Backend) SendTXPacket(txPacket gw.TXPacket) error {
-	bytes, err := json.Marshal(txPacket)
+	phyB, err := txPacket.PHYPayload.MarshalBinary()
+	if err != nil {
+		return errors.Wrap(err, "marshal binary error")
+	}
+	bytes, err := json.Marshal(gw.TXPacketBytes{
+		TXInfo:     txPacket.TXInfo,
+		PHYPayload: phyB,
+	})
 	if err != nil {
 		return fmt.Errorf("backend/gateway: tx packet marshal error: %s", err)
 	}
@@ -110,12 +119,19 @@ func (b *Backend) rxPacketHandler(c mqtt.Client, msg mqtt.Message) {
 
 	log.Info("backend/gateway: rx packet received")
 
-	var rxPacket gw.RXPacket
-	if err := json.Unmarshal(msg.Payload(), &rxPacket); err != nil {
+	var phy lorawan.PHYPayload
+	var rxPacketBytes gw.RXPacketBytes
+	if err := json.Unmarshal(msg.Payload(), &rxPacketBytes); err != nil {
 		log.WithFields(log.Fields{
 			"data_base64": base64.StdEncoding.EncodeToString(msg.Payload()),
 		}).Errorf("backend/gateway: unmarshal rx packet error: %s", err)
 		return
+	}
+
+	if err := phy.UnmarshalBinary(rxPacketBytes.PHYPayload); err != nil {
+		log.WithFields(log.Fields{
+			"data_base64": base64.StdEncoding.EncodeToString(msg.Payload()),
+		}).Errorf("backend/gateway: unmarshal phypayload error: %s", err)
 	}
 
 	// Since with MQTT all subscribers will receive the uplink messages sent
@@ -123,11 +139,11 @@ func (b *Backend) rxPacketHandler(c mqtt.Client, msg mqtt.Message) {
 	// so that other instances can ignore the same message (from the same gw).
 	// As an unique id, the gw mac + base64 encoded payload is used. This is because
 	// we can't trust any of the data, as the MIC hasn't been validated yet.
-	strB, err := rxPacket.PHYPayload.MarshalText()
+	strB, err := phy.MarshalText()
 	if err != nil {
 		log.Errorf("backend/gateway: marshal text error: %s", err)
 	}
-	key := fmt.Sprintf("lora:ns:uplink:lock:%s:%s", rxPacket.RXInfo.MAC, string(strB))
+	key := fmt.Sprintf("lora:ns:uplink:lock:%s:%s", rxPacketBytes.RXInfo.MAC, string(strB))
 	redisConn := b.redisPool.Get()
 	defer redisConn.Close()
 
@@ -141,7 +157,10 @@ func (b *Backend) rxPacketHandler(c mqtt.Client, msg mqtt.Message) {
 		return
 	}
 
-	b.rxPacketChan <- rxPacket
+	b.rxPacketChan <- gw.RXPacket{
+		RXInfo:     rxPacketBytes.RXInfo,
+		PHYPayload: phy,
+	}
 }
 
 func (b *Backend) statsPacketHandler(c mqtt.Client, msg mqtt.Message) {

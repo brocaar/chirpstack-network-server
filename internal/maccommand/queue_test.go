@@ -164,7 +164,7 @@ func TestFilterItems(t *testing.T) {
 			MACCommands: []lorawan.MACCommand{
 				{
 					CID:     lorawan.DutyCycleReq,
-					Payload: &lorawan.DutyCycleReqPayload{MaxDCCycle: 1},
+					Payload: &lorawan.DutyCycleReqPayload{MaxDCycle: 1},
 				},
 			},
 		}

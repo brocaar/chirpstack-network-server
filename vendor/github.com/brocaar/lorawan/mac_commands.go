@@ -1,3 +1,5 @@
+//go:generate stringer -type=CID
+
 package lorawan
 
 import (
@@ -13,6 +15,11 @@ var macPayloadMutex sync.RWMutex
 
 // CID defines the MAC command identifier.
 type CID byte
+
+// MarshalText implements encoding.TextMarshaler.
+func (c CID) MarshalText() ([]byte, error) {
+	return []byte(c.String()), nil
+}
 
 // MAC commands as specified by the LoRaWAN R1.0 specs. Note that each *Req / *Ans
 // has the same value. Based on the fact if a message is uplink or downlink
@@ -123,8 +130,8 @@ type MACCommandPayload interface {
 
 // MACCommand represents a MAC command with optional payload.
 type MACCommand struct {
-	CID     CID
-	Payload MACCommandPayload
+	CID     CID               `json:"cid"`
+	Payload MACCommandPayload `json:"payload"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -152,7 +159,7 @@ func (m *MACCommand) UnmarshalBinary(uplink bool, data []byte) error {
 
 	m.CID = CID(data[0])
 	if !(m.CID >= 2 && m.CID <= 8) && !(m.CID >= 128) {
-		return fmt.Errorf("lorawan: invalid CID %x", m.CID)
+		return fmt.Errorf("lorawan: invalid CID %x", int(m.CID))
 	}
 
 	if len(data) > 1 {
@@ -170,7 +177,7 @@ func (m *MACCommand) UnmarshalBinary(uplink bool, data []byte) error {
 
 // ProprietaryMACCommandPayload represents a proprietary payload.
 type ProprietaryMACCommandPayload struct {
-	Bytes []byte
+	Bytes []byte `json:"bytes"`
 }
 
 // MarshalBinary marshals the object into a slice of bytes.
@@ -186,8 +193,8 @@ func (p *ProprietaryMACCommandPayload) UnmarshalBinary(data []byte) error {
 
 // LinkCheckAnsPayload represents the LinkCheckAns payload.
 type LinkCheckAnsPayload struct {
-	Margin uint8
-	GwCnt  uint8
+	Margin uint8 `json:"margin"`
+	GwCnt  uint8 `json:"gwCnt"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -237,8 +244,8 @@ func (m *ChMask) UnmarshalBinary(data []byte) error {
 
 // Redundancy represents the redundancy field.
 type Redundancy struct {
-	ChMaskCntl uint8
-	NbRep      uint8
+	ChMaskCntl uint8 `json:"chMaskCntl"`
+	NbRep      uint8 `json:"nbRep"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -266,10 +273,10 @@ func (r *Redundancy) UnmarshalBinary(data []byte) error {
 
 // LinkADRReqPayload represents the LinkADRReq payload.
 type LinkADRReqPayload struct {
-	DataRate   uint8
-	TXPower    uint8
-	ChMask     ChMask
-	Redundancy Redundancy
+	DataRate   uint8      `json:"dataRate"`
+	TXPower    uint8      `json:"txPower"`
+	ChMask     ChMask     `json:"chMask"`
+	Redundancy Redundancy `json:"redundancy"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -317,9 +324,9 @@ func (p *LinkADRReqPayload) UnmarshalBinary(data []byte) error {
 
 // LinkADRAnsPayload represents the LinkADRAns payload.
 type LinkADRAnsPayload struct {
-	ChannelMaskACK bool
-	DataRateACK    bool
-	PowerACK       bool
+	ChannelMaskACK bool `json:"channelMaskAck"`
+	DataRateACK    bool `json:"dataRateAck"`
+	PowerACK       bool `json:"powerAck"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -356,16 +363,16 @@ func (p *LinkADRAnsPayload) UnmarshalBinary(data []byte) error {
 
 // DutyCycleReqPayload represents the DutyCycleReq payload.
 type DutyCycleReqPayload struct {
-	MaxDCCycle uint8
+	MaxDCycle uint8 `json:"maxDCycle"`
 }
 
 // MarshalBinary marshals the object in binary form.
 func (p DutyCycleReqPayload) MarshalBinary() ([]byte, error) {
 	b := make([]byte, 0, 1)
-	if p.MaxDCCycle > 15 && p.MaxDCCycle < 255 {
+	if p.MaxDCycle > 15 && p.MaxDCycle < 255 {
 		return b, errors.New("lorawan: only a MaxDCycle value of 0 - 15 and 255 is allowed")
 	}
-	b = append(b, p.MaxDCCycle)
+	b = append(b, p.MaxDCycle)
 	return b, nil
 }
 
@@ -374,14 +381,14 @@ func (p *DutyCycleReqPayload) UnmarshalBinary(data []byte) error {
 	if len(data) != 1 {
 		return errors.New("lorawan: 1 byte of data is expected")
 	}
-	p.MaxDCCycle = data[0]
+	p.MaxDCycle = data[0]
 	return nil
 }
 
 // DLSettings represents the DLSettings fields (downlink settings).
 type DLSettings struct {
-	RX2DataRate uint8
-	RX1DROffset uint8
+	RX2DataRate uint8 `json:"rx2DataRate"`
+	RX1DROffset uint8 `json:"rx1DROffset"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -409,8 +416,8 @@ func (s *DLSettings) UnmarshalBinary(data []byte) error {
 
 // RX2SetupReqPayload represents the RX2SetupReq payload.
 type RX2SetupReqPayload struct {
-	Frequency  uint32
-	DLSettings DLSettings
+	Frequency  uint32     `json:"frequency"`
+	DLSettings DLSettings `json:"dlSettings"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -453,9 +460,9 @@ func (p *RX2SetupReqPayload) UnmarshalBinary(data []byte) error {
 
 // RX2SetupAnsPayload represents the RX2SetupAns payload.
 type RX2SetupAnsPayload struct {
-	ChannelACK     bool
-	RX2DataRateACK bool
-	RX1DROffsetACK bool
+	ChannelACK     bool `json:"channelAck"`
+	RX2DataRateACK bool `json:"rx2DataRateAck"`
+	RX1DROffsetACK bool `json:"rx1DROffsetAck"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -486,8 +493,8 @@ func (p *RX2SetupAnsPayload) UnmarshalBinary(data []byte) error {
 
 // DevStatusAnsPayload represents the DevStatusAns payload.
 type DevStatusAnsPayload struct {
-	Battery uint8
-	Margin  int8
+	Battery uint8 `json:"battery"`
+	Margin  int8  `json:"margin"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -525,10 +532,10 @@ func (p *DevStatusAnsPayload) UnmarshalBinary(data []byte) error {
 
 // NewChannelReqPayload represents the NewChannelReq payload.
 type NewChannelReqPayload struct {
-	ChIndex uint8
-	Freq    uint32
-	MaxDR   uint8
-	MinDR   uint8
+	ChIndex uint8  `json:"chIndex"`
+	Freq    uint32 `json:"freq"`
+	MaxDR   uint8  `json:"maxDR"`
+	MinDR   uint8  `json:"minDR"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -574,8 +581,8 @@ func (p *NewChannelReqPayload) UnmarshalBinary(data []byte) error {
 
 // NewChannelAnsPayload represents the NewChannelAns payload.
 type NewChannelAnsPayload struct {
-	ChannelFrequencyOK bool
-	DataRateRangeOK    bool
+	ChannelFrequencyOK bool `json:"channelFrequencyOK"`
+	DataRateRangeOK    bool `json:"dataRateRangeOK"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -602,7 +609,7 @@ func (p *NewChannelAnsPayload) UnmarshalBinary(data []byte) error {
 
 // RXTimingSetupReqPayload represents the RXTimingSetupReq payload.
 type RXTimingSetupReqPayload struct {
-	Delay uint8 // 0=1s, 1=1s, 2=2s, ... 15=15s
+	Delay uint8 `json:"delay"` // 0=1s, 1=1s, 2=2s, ... 15=15s
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -624,9 +631,9 @@ func (p *RXTimingSetupReqPayload) UnmarshalBinary(data []byte) error {
 
 // TXParamSetupReqPayload represents the TXParamSetupReq payload.
 type TXParamSetupReqPayload struct {
-	DownlinkDwelltime DwellTime
-	UplinkDwellTime   DwellTime
-	MaxEIRP           uint8
+	DownlinkDwelltime DwellTime `json:"downlinkDwellTime"`
+	UplinkDwellTime   DwellTime `json:"uplinkDwellTime"`
+	MaxEIRP           uint8     `json:"maxEIRP"`
 }
 
 // MarshalBinary encodes the object into a bytes.
@@ -670,8 +677,8 @@ func (p *TXParamSetupReqPayload) UnmarshalBinary(data []byte) error {
 
 // DLChannelReqPayload represents the DLChannelReq payload.
 type DLChannelReqPayload struct {
-	ChIndex uint8
-	Freq    uint32
+	ChIndex uint8  `json:"chIndex"`
+	Freq    uint32 `json:"freq"`
 }
 
 // MarshalBinary encodes the object into bytes.
@@ -706,8 +713,8 @@ func (p *DLChannelReqPayload) UnmarshalBinary(data []byte) error {
 
 // DLChannelAnsPayload represents the DLChannelAns payload.
 type DLChannelAnsPayload struct {
-	UplinkFrequencyExists bool
-	ChannelFrequencyOK    bool
+	UplinkFrequencyExists bool `json:"uplinkFrequencyExists"`
+	ChannelFrequencyOK    bool `json:"channelFrequencyOK"`
 }
 
 // MarshalBinary encodes the object into bytes.

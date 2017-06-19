@@ -68,6 +68,32 @@ func (e *EUI64) Scan(src interface{}) error {
 	return nil
 }
 
+// DevNonce represents a 2 byte dev-nonce.
+type DevNonce [2]byte
+
+// String implements fmt.Stringer.
+func (n DevNonce) String() string {
+	return hex.EncodeToString(n[:])
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (n DevNonce) MarshalText() ([]byte, error) {
+	return []byte(n.String()), nil
+}
+
+// AppNonce represents a 3 byte app-nonce.
+type AppNonce [3]byte
+
+// String implements fmt.Stringer.
+func (n AppNonce) String() string {
+	return hex.EncodeToString(n[:])
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (n AppNonce) MarshalText() ([]byte, error) {
+	return []byte(n.String()), nil
+}
+
 // Payload is the interface that every payload needs to implement.
 // Since it might be a MACPayload, an indication must be given if
 // the direction is uplink or downlink (it has different payloads
@@ -79,7 +105,7 @@ type Payload interface {
 
 // DataPayload represents a slice of bytes.
 type DataPayload struct {
-	Bytes []byte
+	Bytes []byte `json:"bytes"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -96,9 +122,9 @@ func (p *DataPayload) UnmarshalBinary(uplink bool, data []byte) error {
 
 // JoinRequestPayload represents the join-request message payload.
 type JoinRequestPayload struct {
-	AppEUI   EUI64
-	DevEUI   EUI64
-	DevNonce [2]byte
+	AppEUI   EUI64    `json:"appEUI"`
+	DevEUI   EUI64    `json:"devEUI"`
+	DevNonce DevNonce `json:"devNonce"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -179,12 +205,12 @@ func (l *CFList) UnmarshalBinary(data []byte) error {
 
 // JoinAcceptPayload represents the join-accept message payload.
 type JoinAcceptPayload struct {
-	AppNonce   [3]byte
-	NetID      [3]byte
-	DevAddr    DevAddr
-	DLSettings DLSettings
-	RXDelay    uint8 // 0=1s, 1=1s, 2=2s, ... 15=15s
-	CFList     *CFList
+	AppNonce   AppNonce   `json:"appNonce"`
+	NetID      NetID      `json:"netID"`
+	DevAddr    DevAddr    `json:"devAddr"`
+	DLSettings DLSettings `json:"dlSettings"`
+	RXDelay    uint8      `json:"rxDelay"` // 0=1s, 1=1s, 2=2s, ... 15=15s
+	CFList     *CFList    `json:"cFlist"`
 }
 
 // MarshalBinary marshals the object in binary form.

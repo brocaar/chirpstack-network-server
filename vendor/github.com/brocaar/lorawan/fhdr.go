@@ -77,10 +77,10 @@ func (a *DevAddr) Scan(src interface{}) error {
 
 // FCtrl represents the FCtrl (frame control) field.
 type FCtrl struct {
-	ADR       bool
-	ADRACKReq bool
-	ACK       bool
-	FPending  bool  // only used for downlink messages
+	ADR       bool  `json:"adr"`
+	ADRACKReq bool  `json:"adrAckReq"`
+	ACK       bool  `json:"ack"`
+	FPending  bool  `json:"fPending"` // only used for downlink messages
 	fOptsLen  uint8 // will be set automatically by the FHDR when serialized to []byte
 }
 
@@ -120,10 +120,10 @@ func (c *FCtrl) UnmarshalBinary(data []byte) error {
 
 // FHDR represents the frame header.
 type FHDR struct {
-	DevAddr DevAddr
-	FCtrl   FCtrl
-	FCnt    uint32       // only the least-significant 16 bits will be marshalled
-	FOpts   []MACCommand // max. number of allowed bytes is 15
+	DevAddr DevAddr      `json:"devAddr"`
+	FCtrl   FCtrl        `json:"fCtrl"`
+	FCnt    uint32       `json:"fCnt"`  // only the least-significant 16 bits will be marshalled
+	FOpts   []MACCommand `json:"fOpts"` // max. number of allowed bytes is 15
 }
 
 // MarshalBinary marshals the object in binary form.

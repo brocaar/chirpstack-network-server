@@ -1,4 +1,5 @@
 //go:generate stringer -type=MType
+//go:generate stringer -type=Major
 
 package lorawan
 
@@ -7,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -15,6 +17,11 @@ import (
 
 // MType represents the message type.
 type MType byte
+
+// MarshalText implements encoding.TextMarshaler.
+func (m MType) MarshalText() ([]byte, error) {
+	return []byte(m.String()), nil
+}
 
 // Major defines the major version of data message.
 type Major byte
@@ -35,6 +42,11 @@ const (
 const (
 	LoRaWANR1 Major = 0
 )
+
+// MarshalText implements encoding.TextMarshaler.
+func (m Major) MarshalText() ([]byte, error) {
+	return []byte(m.String()), nil
+}
 
 // AES128Key represents a 128 bit AES key.
 type AES128Key [16]byte
@@ -75,10 +87,23 @@ func (k *AES128Key) Scan(src interface{}) error {
 	return nil
 }
 
+// MIC represents the message integrity code.
+type MIC [4]byte
+
+// String implements fmt.Stringer.
+func (m MIC) String() string {
+	return hex.EncodeToString(m[:])
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (m MIC) MarshalText() ([]byte, error) {
+	return []byte(m.String()), nil
+}
+
 // MHDR represents the MAC header.
 type MHDR struct {
-	MType MType
-	Major Major
+	MType MType `json:"mType"`
+	Major Major `json:"major"`
 }
 
 // MarshalBinary marshals the object in binary form.
@@ -98,9 +123,9 @@ func (h *MHDR) UnmarshalBinary(data []byte) error {
 
 // PHYPayload represents the physical payload.
 type PHYPayload struct {
-	MHDR       MHDR
-	MACPayload Payload
-	MIC        [4]byte
+	MHDR       MHDR    `json:"mhdr"`
+	MACPayload Payload `json:"macPayload"`
+	MIC        MIC     `json:"mic"`
 }
 
 // calculateMIC calculates and returns the MIC.
@@ -501,6 +526,12 @@ func (p *PHYPayload) UnmarshalText(text []byte) error {
 		return err
 	}
 	return p.UnmarshalBinary(b)
+}
+
+// MarshalJSON encodes the PHYPayload into JSON.
+func (p PHYPayload) MarshalJSON() ([]byte, error) {
+	type phyAlias PHYPayload
+	return json.Marshal(phyAlias(p))
 }
 
 // isUplink returns a bool indicating if the packet is uplink or downlink.

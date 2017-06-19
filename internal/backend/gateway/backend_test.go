@@ -136,9 +136,14 @@ func TestBackend(t *testing.T) {
 							MACPayload: &lorawan.MACPayload{},
 						},
 					}
+					phyB, err := rxPacket.PHYPayload.MarshalBinary()
+					So(err, ShouldBeNil)
 
 					Convey("When sending it once", func() {
-						b, err := json.Marshal(rxPacket)
+						b, err := json.Marshal(gw.RXPacketBytes{
+							RXInfo:     rxPacket.RXInfo,
+							PHYPayload: phyB,
+						})
 						So(err, ShouldBeNil)
 						token := c.Publish("gateway/0102030405060708/rx", 0, false, b)
 						token.Wait()
@@ -151,7 +156,10 @@ func TestBackend(t *testing.T) {
 					})
 
 					Convey("When sending it twice with the same MAC", func() {
-						b, err := json.Marshal(rxPacket)
+						b, err := json.Marshal(gw.RXPacketBytes{
+							RXInfo:     rxPacket.RXInfo,
+							PHYPayload: phyB,
+						})
 						So(err, ShouldBeNil)
 						token := c.Publish("gateway/0102030405060708/rx", 0, false, b)
 						token.Wait()
@@ -174,13 +182,19 @@ func TestBackend(t *testing.T) {
 					})
 
 					Convey("When sending it twice with different MACs", func() {
-						b, err := json.Marshal(rxPacket)
+						b, err := json.Marshal(gw.RXPacketBytes{
+							RXInfo:     rxPacket.RXInfo,
+							PHYPayload: phyB,
+						})
 						So(err, ShouldBeNil)
 						token := c.Publish("gateway/0102030405060708/rx", 0, false, b)
 						token.Wait()
 
 						rxPacket.RXInfo.MAC = [8]byte{8, 7, 6, 5, 4, 3, 2, 1}
-						b, err = json.Marshal(rxPacket)
+						b, err = json.Marshal(gw.RXPacketBytes{
+							RXInfo:     rxPacket.RXInfo,
+							PHYPayload: phyB,
+						})
 						So(err, ShouldBeNil)
 						token = c.Publish("gateway/0102030405060708/rx", 0, false, b)
 						token.Wait()

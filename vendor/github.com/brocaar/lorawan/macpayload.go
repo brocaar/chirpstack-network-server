@@ -9,9 +9,9 @@ import (
 // MACPayload represents the MAC payload. Use NewMACPayload for creating a new
 // MACPayload.
 type MACPayload struct {
-	FHDR       FHDR
-	FPort      *uint8 // optional, but must be set when FRMPayload is set
-	FRMPayload []Payload
+	FHDR       FHDR      `json:"fhdr"`
+	FPort      *uint8    `json:"fPort"` // optional, but must be set when FRMPayload is set
+	FRMPayload []Payload `json:"frmPayload"`
 }
 
 func (p MACPayload) marshalPayload() ([]byte, error) {

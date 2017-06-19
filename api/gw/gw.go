@@ -14,7 +14,6 @@ type RXPacket struct {
 }
 
 // RXPacketBytes contains the PHYPayload as []byte received from the gateway.
-// The JSON output is compatible with RXPacket.
 type RXPacketBytes struct {
 	RXInfo     RXInfo `json:"rxInfo"`
 	PHYPayload []byte `json:"phyPayload"`
@@ -44,7 +43,7 @@ type TXPacket struct {
 }
 
 // TXPacketBytes contains the PHYPayload as []byte which should be send to the
-// gateway. The JSON output is compatible with TXPacket.
+// gateway.
 type TXPacketBytes struct {
 	TXInfo     TXInfo `json:"txInfo"`
 	PHYPayload []byte `json:"phyPayload"`
