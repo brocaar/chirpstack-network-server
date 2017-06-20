@@ -96,8 +96,8 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 
 	var block *maccommand.Block
 
-	// see if there are any LinkADRReq commands pending
-	block, err = maccommand.ReadPending(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
+	// see if there is already a LinkADRReq commands in the queue
+	block, err = maccommand.GetQueueItemByCID(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
 	if err != nil {
 		return errors.Wrap(err, "read pending error")
 	}
@@ -137,7 +137,7 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 			},
 		}
 	} else {
-		// there is a pending block of commands, add the adr parameters
+		// there is a pending block of commands in the queue, add the adr parameters
 		// to the last mac-command (as in case there are multiple commands
 		// the node will use the dr, tx power and nb-rep from the last command
 		lastMAC := block.MACCommands[len(block.MACCommands)-1]
@@ -151,19 +151,9 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 		lastMACPl.Redundancy.NbRep = uint8(idealNbRep)
 	}
 
-	err = maccommand.DeleteQueueItemByCID(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
-	if err != nil {
-		return errors.Wrap(err, "delete queue item by cid error")
-	}
-
-	err = maccommand.AddToQueue(ctx.RedisPool, ns.DevEUI, *block)
+	err = maccommand.AddQueueItem(ctx.RedisPool, ns.DevEUI, *block)
 	if err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
-	}
-
-	err = maccommand.SetPending(ctx.RedisPool, ns.DevEUI, *block)
-	if err != nil {
-		return errors.Wrap(err, "set mac-command block to pending error")
 	}
 
 	log.WithFields(log.Fields{

@@ -2030,7 +2030,7 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 			// populate session and queues
 			So(session.SaveNodeSession(ctx.RedisPool, t.NodeSession), ShouldBeNil)
 			for _, block := range t.MACCommandQueue {
-				So(maccommand.AddToQueue(ctx.RedisPool, t.NodeSession.DevEUI, block), ShouldBeNil)
+				So(maccommand.AddQueueItem(ctx.RedisPool, t.NodeSession.DevEUI, block), ShouldBeNil)
 			}
 			for _, pending := range t.MACCommandPending {
 				So(maccommand.SetPending(ctx.RedisPool, t.NodeSession.DevEUI, pending), ShouldBeNil)
@@ -2160,7 +2160,7 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 
 			// queue validations
 			Convey("Then the mac-command queue is as expected", func() {
-				macQueue, err := maccommand.ReadQueue(ctx.RedisPool, t.NodeSession.DevEUI)
+				macQueue, err := maccommand.ReadQueueItems(ctx.RedisPool, t.NodeSession.DevEUI)
 				So(err, ShouldBeNil)
 				So(macQueue, ShouldResemble, t.ExpectedMACCommandQueue)
 			})

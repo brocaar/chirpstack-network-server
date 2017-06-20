@@ -53,7 +53,7 @@ func TestHandle(t *testing.T) {
 				So(Handle(ctx, &ns, block, rxInfoSet), ShouldBeNil)
 
 				Convey("Then the expected response was added to the mac-command queue", func() {
-					items, err := ReadQueue(ctx.RedisPool, ns.DevEUI)
+					items, err := ReadQueueItems(ctx.RedisPool, ns.DevEUI)
 					So(err, ShouldBeNil)
 					So(items, ShouldHaveLength, 1)
 					So(items[0], ShouldResemble, Block{

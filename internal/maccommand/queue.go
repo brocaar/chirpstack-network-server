@@ -19,67 +19,6 @@ const (
 	pendingTempl = "lora:ns:mac:pending:%s:%d"
 )
 
-// AddToQueue adds the given payload to the queue of MAC commands
-// to send to the node.
-// AddToQueue adds the given MAC command block to the queue.
-func AddToQueue(p *redis.Pool, devEUI lorawan.EUI64, block Block) error {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(block); err != nil {
-		return errors.Wrap(err, "gob encode error")
-	}
-
-	c := p.Get()
-	defer c.Close()
-
-	exp := int64(common.NodeSessionTTL) / int64(time.Millisecond)
-	key := fmt.Sprintf(queueTempl, devEUI)
-
-	c.Send("MULTI")
-	c.Send("RPUSH", key, buf.Bytes())
-	c.Send("PEXPIRE", key, exp)
-	_, err := c.Do("EXEC")
-	if err != nil {
-		return errors.Wrap(err, "add mac-command block to queue error")
-	}
-
-	log.WithFields(log.Fields{
-		"dev_eui":    devEUI,
-		"frmpayload": block.FRMPayload,
-		"cid":        block.CID,
-	}).Info("mac-command block added to queue")
-	return nil
-}
-
-// ReadQueue returns all mac command blocks
-func ReadQueue(p *redis.Pool, devEUI lorawan.EUI64) ([]Block, error) {
-	var out []Block
-
-	c := p.Get()
-	defer c.Close()
-
-	key := fmt.Sprintf(queueTempl, devEUI)
-	values, err := redis.Values(c.Do("LRANGE", key, 0, -1))
-	if err != nil {
-		return nil, errors.Wrap(err, "read mac-command queue error")
-	}
-
-	for _, value := range values {
-		b, ok := value.([]byte)
-		if !ok {
-			return nil, fmt.Errorf("expected []byte type, got %T", value)
-		}
-
-		var block Block
-		err = gob.NewDecoder(bytes.NewReader(b)).Decode(&block)
-		if err != nil {
-			return nil, errors.Wrap(err, "decode mac-command block error")
-		}
-		out = append(out, block)
-	}
-	return out, nil
-}
-
 // FlushQueue flushes the mac-payload queue for the given devEUI.
 func FlushQueue(p *redis.Pool, devEUI lorawan.EUI64) error {
 	c := p.Get()
@@ -114,10 +53,92 @@ func FilterItems(blocks []Block, frmPayload bool, maxBytes int) ([]Block, error)
 	return out, nil
 }
 
+// AddQueueItem adds the given mac-command block to the queue.
+// In case a mac-command block for the same CID exists, the old mac-command
+// block will be removed.
+func AddQueueItem(p *redis.Pool, devEUI lorawan.EUI64, block Block) error {
+	if err := DeleteQueueItemByCID(p, devEUI, block.CID); err != nil {
+		return errors.Wrap(err, "delete queue item error")
+	}
+
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(block); err != nil {
+		return errors.Wrap(err, "gob encode error")
+	}
+
+	c := p.Get()
+	defer c.Close()
+
+	exp := int64(common.NodeSessionTTL) / int64(time.Millisecond)
+	key := fmt.Sprintf(queueTempl, devEUI)
+
+	c.Send("MULTI")
+	c.Send("RPUSH", key, buf.Bytes())
+	c.Send("PEXPIRE", key, exp)
+	_, err := c.Do("EXEC")
+	if err != nil {
+		return errors.Wrap(err, "add mac-command block to queue error")
+	}
+
+	log.WithFields(log.Fields{
+		"dev_eui":    devEUI,
+		"frmpayload": block.FRMPayload,
+		"cid":        block.CID,
+	}).Info("mac-command block added to queue")
+	return nil
+}
+
+// ReadQueueItems returns all mac command blocks.
+func ReadQueueItems(p *redis.Pool, devEUI lorawan.EUI64) ([]Block, error) {
+	var out []Block
+
+	c := p.Get()
+	defer c.Close()
+
+	key := fmt.Sprintf(queueTempl, devEUI)
+	values, err := redis.Values(c.Do("LRANGE", key, 0, -1))
+	if err != nil {
+		return nil, errors.Wrap(err, "read mac-command queue error")
+	}
+
+	for _, value := range values {
+		b, ok := value.([]byte)
+		if !ok {
+			return nil, fmt.Errorf("expected []byte type, got %T", value)
+		}
+
+		var block Block
+		err = gob.NewDecoder(bytes.NewReader(b)).Decode(&block)
+		if err != nil {
+			return nil, errors.Wrap(err, "decode mac-command block error")
+		}
+		out = append(out, block)
+	}
+	return out, nil
+}
+
+// GetQueueItemByCID returns the queue item matching the given CID.
+func GetQueueItemByCID(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID) (*Block, error) {
+	queue, err := ReadQueueItems(p, devEUI)
+	if err != nil {
+		return nil, errors.Wrap(err, "read queue error")
+	}
+
+	for _, block := range queue {
+		if block.CID == cid {
+			return &block, nil
+		}
+	}
+
+	return nil, nil
+}
+
 // DeleteQueueItemByCID deletes the mac-commands matching the given CID from
-// the queue.
+// the queue. No error is returned when the given CID does not match any
+// item in the queue.
 func DeleteQueueItemByCID(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID) error {
-	queue, err := ReadQueue(p, devEUI)
+	queue, err := ReadQueueItems(p, devEUI)
 	if err != nil {
 		return errors.Wrap(err, "read queue error")
 	}

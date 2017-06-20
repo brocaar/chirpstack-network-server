@@ -43,20 +43,49 @@ func TestQueue(t *testing.T) {
 						},
 					},
 				}
-				So(AddToQueue(p, ns.DevEUI, a), ShouldBeNil)
-				So(AddToQueue(p, ns.DevEUI, b), ShouldBeNil)
+				So(AddQueueItem(p, ns.DevEUI, a), ShouldBeNil)
+				So(AddQueueItem(p, ns.DevEUI, b), ShouldBeNil)
 
 				Convey("Then reading the queue returns both mac-command blocks in the correct order", func() {
-					blocks, err := ReadQueue(p, ns.DevEUI)
+					blocks, err := ReadQueueItems(p, ns.DevEUI)
 					So(err, ShouldBeNil)
 					So(blocks, ShouldResemble, []Block{a, b})
+				})
+
+				Convey("Then the mac-commands can be retrieved by their CID", func() {
+					aa, err := GetQueueItemByCID(p, ns.DevEUI, lorawan.LinkADRReq)
+					So(err, ShouldBeNil)
+					So(*aa, ShouldResemble, a)
+
+					bb, err := GetQueueItemByCID(p, ns.DevEUI, lorawan.RXParamSetupReq)
+					So(err, ShouldBeNil)
+					So(*bb, ShouldResemble, b)
+				})
+
+				Convey("When adding a mac-command to the queue with an existing CID", func() {
+					c := Block{
+						CID: lorawan.RXParamSetupReq,
+						MACCommands: []lorawan.MACCommand{
+							{
+								CID:     lorawan.RXParamSetupReq,
+								Payload: &lorawan.RX2SetupReqPayload{Frequency: 868200000},
+							},
+						},
+					}
+					So(AddQueueItem(p, ns.DevEUI, c), ShouldBeNil)
+
+					Convey("Then reading the queue should contained the replaced mac-command block", func() {
+						blocks, err := ReadQueueItems(p, ns.DevEUI)
+						So(err, ShouldBeNil)
+						So(blocks, ShouldResemble, []Block{a, c})
+					})
 				})
 
 				Convey("When deleting mac-command a by its CID", func() {
 					So(DeleteQueueItemByCID(p, ns.DevEUI, lorawan.LinkADRReq), ShouldBeNil)
 
 					Convey("Then only mac-command b is in the queue", func() {
-						blocks, err := ReadQueue(p, ns.DevEUI)
+						blocks, err := ReadQueueItems(p, ns.DevEUI)
 						So(err, ShouldBeNil)
 						So(blocks, ShouldResemble, []Block{b})
 					})
@@ -66,7 +95,7 @@ func TestQueue(t *testing.T) {
 					So(DeleteQueueItem(p, ns.DevEUI, a), ShouldBeNil)
 
 					Convey("Then only mac-command b is in the queue", func() {
-						blocks, err := ReadQueue(p, ns.DevEUI)
+						blocks, err := ReadQueueItems(p, ns.DevEUI)
 						So(err, ShouldBeNil)
 						So(blocks, ShouldResemble, []Block{b})
 					})

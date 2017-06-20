@@ -133,7 +133,7 @@ func handleLinkCheckReq(ctx common.Context, ns *session.NodeSession, rxInfoSet m
 		},
 	}
 
-	if err := AddToQueue(ctx.RedisPool, ns.DevEUI, block); err != nil {
+	if err := AddQueueItem(ctx.RedisPool, ns.DevEUI, block); err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
 	}
 	return nil

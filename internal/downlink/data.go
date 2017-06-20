@@ -275,8 +275,12 @@ func SendUplinkResponse(ctx common.Context, ns session.NodeSession, rxPacket mod
 		return fmt.Errorf("send data down error: %s", err)
 	}
 
-	// remove the transmitted mac commands from the queue
+	// set the mac-command blocks to pending and remove them from the queue
 	for _, block := range macBlocks {
+		if err = maccommand.SetPending(ctx.RedisPool, ns.DevEUI, block); err != nil {
+			return errors.Wrap(err, "set mac-command block as pending error")
+		}
+
 		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevEUI, block); err != nil {
 			return errors.Wrap(err, "delete mac-command block from queue error")
 		}
@@ -396,7 +400,7 @@ func getAndFilterMACQueueItems(ctx common.Context, ns session.NodeSession, allow
 	var blocks []maccommand.Block
 
 	// read the mac payload queue
-	allBlocks, err := maccommand.ReadQueue(ctx.RedisPool, ns.DevEUI)
+	allBlocks, err := maccommand.ReadQueueItems(ctx.RedisPool, ns.DevEUI)
 	if err != nil {
 		return nil, false, false, errors.Wrap(err, "read mac-command queue error")
 	}

@@ -55,7 +55,7 @@ func HandleChannelReconfigure(ctx common.Context, ns session.NodeSession, rxPack
 		return errors.Wrap(err, "delete queue item by cid error")
 	}
 
-	if err = maccommand.AddToQueue(ctx.RedisPool, ns.DevEUI, block); err != nil {
+	if err = maccommand.AddQueueItem(ctx.RedisPool, ns.DevEUI, block); err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
 	}
 

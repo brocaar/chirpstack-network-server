@@ -192,7 +192,7 @@ func (n *NetworkServerAPI) EnqueueDataDownMACCommand(ctx context.Context, req *n
 		MACCommands: []lorawan.MACCommand{mac},
 	}
 
-	if err := maccommand.AddToQueue(n.ctx.RedisPool, devEUI, block); err != nil {
+	if err := maccommand.AddQueueItem(n.ctx.RedisPool, devEUI, block); err != nil {
 		return nil, errToRPCError(err)
 	}
 	return &ns.EnqueueDataDownMACCommandResponse{}, nil
