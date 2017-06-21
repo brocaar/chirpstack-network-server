@@ -8,6 +8,26 @@ menu:
 
 ## Changelog
 
+### 0.19.0
+
+**Changes:**
+
+* `NetworkServer.EnqueueDataDownMACCommand` has been refactored in order to
+  support sending of mac-command blocks (guaranteed to be sent as a single
+  frame). Acknowledgements on mac-commands sent throught the API will be
+  sent to the `NetworkController.HandleDataUpMACCommandRequest` API method.
+* `NetworkController.HandleDataUpMACCommandRequest` has been updated to handle
+  blocks of mac-commands.
+* `NetworkController.HandleError` method has been removed.
+
+**Note:** In case you are using the gRPC API interface of LoRa Server,
+this might be a breaking change because of the above changes to the APi methods.
+
+**Bugfixes:**
+
+* Updated vendored libraries to include MQTT reconnect issue
+  ([eclipse/paho.mqtt.golang#96](https://github.com/eclipse/paho.mqtt.golang/issues/96)).
+
 ### 0.18.0
 
 **Features:**
