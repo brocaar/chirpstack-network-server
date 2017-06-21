@@ -177,24 +177,32 @@ func (n *NetworkServerAPI) GetRandomDevAddr(ctx context.Context, req *ns.GetRand
 }
 
 // EnqueueDataDownMACCommand adds a data down MAC command to the queue.
+// It replaces already enqueued mac-commands with the same CID.
 func (n *NetworkServerAPI) EnqueueDataDownMACCommand(ctx context.Context, req *ns.EnqueueDataDownMACCommandRequest) (*ns.EnqueueDataDownMACCommandResponse, error) {
-	var mac lorawan.MACCommand
+	var commands []lorawan.MACCommand
 	var devEUI lorawan.EUI64
 
 	copy(devEUI[:], req.DevEUI)
 
-	if err := mac.UnmarshalBinary(false, req.Data); err != nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
+	for _, b := range req.Commands {
+		var mac lorawan.MACCommand
+		if err := mac.UnmarshalBinary(false, b); err != nil {
+			return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
+		}
+		commands = append(commands, mac)
 	}
 
 	block := maccommand.Block{
-		CID:         mac.CID,
-		MACCommands: []lorawan.MACCommand{mac},
+		CID:         lorawan.CID(req.Cid),
+		FRMPayload:  req.FrmPayload,
+		External:    true,
+		MACCommands: commands,
 	}
 
 	if err := maccommand.AddQueueItem(n.ctx.RedisPool, devEUI, block); err != nil {
 		return nil, errToRPCError(err)
 	}
+
 	return &ns.EnqueueDataDownMACCommandResponse{}, nil
 }
 

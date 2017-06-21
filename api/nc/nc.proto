@@ -8,10 +8,10 @@ service NetworkController {
 	rpc HandleRXInfo(HandleRXInfoRequest) returns (HandleRXInfoResponse) {}
 
 	// HandleDataUpMACCommand publishes a mac-command received by an end-device.
+	// This method will only be called in case the mac-command request was
+	// enqueued throught the API or when the CID is >= 0x80 (proprietary
+	// mac-command range).
 	rpc HandleDataUpMACCommand(HandleDataUpMACCommandRequest) returns (HandleDataUpMACCommandResponse) {}
-
-	// HandleError publishes an error message.
-	rpc HandleError(HandleErrorRequest) returns (HandleErrorResponse) {}
 }
 
 message DataRate {
@@ -37,7 +37,6 @@ message TXInfo {
 
 message HandleRXInfoRequest {
 	bytes devEUI = 1;
-	bytes appEUI = 2;
 	TXInfo txInfo = 3;
 	repeated RXInfo rxInfo = 4;
 }
@@ -45,17 +44,23 @@ message HandleRXInfoRequest {
 message HandleRXInfoResponse {}
 
 message HandleDataUpMACCommandRequest {
+	// DevEUI of the node.
 	bytes devEUI = 1;
-	bytes appEUI = 2;
+
+	// MAC-command was received in the FRMPayload field.
 	bool frmPayload = 3;
-	bytes data = 4;
+
+	// Command identifier (specified by the LoRaWAN specs).
+	uint32 cid = 5;
+
+	// MAC-command payload(s).
+	repeated bytes data = 6;
 }
 
 message HandleDataUpMACCommandResponse {}
 
 message HandleErrorRequest {
 	bytes devEUI = 1;
-	bytes appEUI = 2;
 	string error = 3;
 }
 

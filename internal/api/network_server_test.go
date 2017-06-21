@@ -13,6 +13,7 @@ import (
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/gateway"
+	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/node"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/loraserver/internal/test"
@@ -157,6 +158,38 @@ func TestNetworkServerAPI(t *testing.T) {
 				resp, err := api.GetRandomDevAddr(ctx, &ns.GetRandomDevAddrRequest{})
 				So(err, ShouldBeNil)
 				So(resp.DevAddr, ShouldHaveLength, 4)
+			})
+
+			Convey("When enqueueing a downlink mac-command", func() {
+				mac := lorawan.MACCommand{
+					CID: lorawan.RXParamSetupReq,
+					Payload: &lorawan.RX2SetupReqPayload{
+						Frequency: 868100000,
+					},
+				}
+				b, err := mac.MarshalBinary()
+				So(err, ShouldBeNil)
+
+				_, err = api.EnqueueDataDownMACCommand(ctx, &ns.EnqueueDataDownMACCommandRequest{
+					DevEUI:     devEUI[:],
+					FrmPayload: true,
+					Cid:        uint32(lorawan.RXParamSetupReq),
+					Commands:   [][]byte{b},
+				})
+				So(err, ShouldBeNil)
+
+				Convey("Then the mac-command has been added to the queue", func() {
+					queue, err := maccommand.ReadQueueItems(p, devEUI)
+					So(err, ShouldBeNil)
+					So(queue, ShouldResemble, []maccommand.Block{
+						{
+							CID:         lorawan.RXParamSetupReq,
+							FRMPayload:  true,
+							External:    true,
+							MACCommands: []lorawan.MACCommand{mac},
+						},
+					})
+				})
 			})
 
 			Convey("When creating a gateway", func() {
