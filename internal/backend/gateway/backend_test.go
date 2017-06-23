@@ -26,7 +26,7 @@ func TestBackend(t *testing.T) {
 
 		Convey("Given a new Backend", func() {
 			test.MustFlushRedis(r)
-			backend, err := NewBackend(r, conf.Server, conf.Username, conf.Password)
+			backend, err := NewBackend(r, conf.Server, conf.Username, conf.Password, "")
 			So(err, ShouldBeNil)
 			defer backend.Close()
 			time.Sleep(time.Millisecond * 100) // give the backend some time to subscribe to the topic

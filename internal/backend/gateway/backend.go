@@ -1,9 +1,12 @@
 package gateway
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"sync"
 	"time"
 
@@ -31,7 +34,7 @@ type Backend struct {
 }
 
 // NewBackend creates a new Backend.
-func NewBackend(p *redis.Pool, server, username, password string) (backend.Gateway, error) {
+func NewBackend(p *redis.Pool, server, username, password, cafile string) (backend.Gateway, error) {
 	b := Backend{
 		rxPacketChan:    make(chan gw.RXPacket),
 		statsPacketChan: make(chan gw.GatewayStatsPacket),
@@ -45,6 +48,15 @@ func NewBackend(p *redis.Pool, server, username, password string) (backend.Gatew
 	opts.SetOnConnectHandler(b.onConnected)
 	opts.SetConnectionLostHandler(b.onConnectionLost)
 
+	if cafile != "" {
+		tlsconfig, err := newTLSConfig(cafile)
+		if err != nil {
+			log.Fatalf("Error with the mqtt CA certificate: %s", err)
+		} else {
+			opts.SetTLSConfig(tlsconfig)
+		}
+	}
+
 	log.WithField("server", server).Info("backend/gateway: connecting to mqtt broker")
 	b.conn = mqtt.NewClient(opts)
 	for {
@@ -57,6 +69,25 @@ func NewBackend(p *redis.Pool, server, username, password string) (backend.Gatew
 	}
 
 	return &b, nil
+}
+
+func newTLSConfig(cafile string) (*tls.Config, error) {
+	// Import trusted certificates from CAfile.pem.
+
+	cert, err := ioutil.ReadFile(cafile)
+	if err != nil {
+		log.Errorf("backend: couldn't load cafile: %s", err)
+		return nil, err
+	}
+
+	certpool := x509.NewCertPool()
+	certpool.AppendCertsFromPEM(cert)
+
+	// Create tls.Config with desired tls properties
+	return &tls.Config{
+		// RootCAs = certs used to verify server cert.
+		RootCAs: certpool,
+	}, nil
 }
 
 // Close closes the backend.
