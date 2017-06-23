@@ -44,6 +44,7 @@ func NewBackend(p *redis.Pool, server, username, password string) (backend.Gatew
 	opts.SetPassword(password)
 	opts.SetOnConnectHandler(b.onConnected)
 	opts.SetConnectionLostHandler(b.onConnectionLost)
+	opts.SetAutoReconnect(true)
 
 	log.WithField("server", server).Info("backend/gateway: connecting to mqtt broker")
 	b.conn = mqtt.NewClient(opts)
@@ -222,5 +223,9 @@ func (b *Backend) onConnected(c mqtt.Client) {
 }
 
 func (b *Backend) onConnectionLost(c mqtt.Client, reason error) {
-	log.Errorf("backend/gateway: mqtt connection error: %s", reason)
+	if c.IsConnected() {
+		log.Warn("backend/gateway: mqtt disconnected, now it is connected again. error: %s", reason)
+	} else {
+		log.Panic("backend/gateway: mqtt disconnected, impossible to reconnect. error: %s", reason)
+	}
 }
