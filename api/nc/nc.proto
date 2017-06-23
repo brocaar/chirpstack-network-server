@@ -54,7 +54,7 @@ message HandleDataUpMACCommandRequest {
 	uint32 cid = 5;
 
 	// MAC-command payload(s).
-	repeated bytes data = 6;
+	repeated bytes commands = 6;
 }
 
 message HandleDataUpMACCommandResponse {}

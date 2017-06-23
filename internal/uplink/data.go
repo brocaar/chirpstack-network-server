@@ -367,7 +367,7 @@ func handleUplinkMACCommands(ctx common.Context, ns *session.NodeSession, frmPay
 				DevEUI:     ns.DevEUI[:],
 				FrmPayload: block.FRMPayload,
 				Cid:        uint32(block.CID),
-				Data:       data,
+				Commands:   data,
 			})
 			if err != nil {
 				log.WithFields(logFields).Errorf("send mac-command to network-controller error: %s", err)

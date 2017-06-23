@@ -872,8 +872,8 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown: expectedGetDataDown,
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedControllerHandleDataUpMACCommands: []nc.HandleDataUpMACCommandRequest{
-						{DevEUI: ns.DevEUI[:], Cid: 128, Data: [][]byte{{128, 1, 2, 3}}},
-						{DevEUI: ns.DevEUI[:], Cid: 129, Data: [][]byte{{129, 4, 5}}},
+						{DevEUI: ns.DevEUI[:], Cid: 128, Commands: [][]byte{{128, 1, 2, 3}}},
+						{DevEUI: ns.DevEUI[:], Cid: 129, Commands: [][]byte{{129, 4, 5}}},
 					},
 					ExpectedFCntUp:          11,
 					ExpectedFCntDown:        5,
@@ -905,8 +905,8 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown: expectedGetDataDown,
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedControllerHandleDataUpMACCommands: []nc.HandleDataUpMACCommandRequest{
-						{DevEUI: ns.DevEUI[:], FrmPayload: true, Cid: 128, Data: [][]byte{{128, 1, 2, 3}}},
-						{DevEUI: ns.DevEUI[:], FrmPayload: true, Cid: 129, Data: [][]byte{{129, 4, 5}}},
+						{DevEUI: ns.DevEUI[:], FrmPayload: true, Cid: 128, Commands: [][]byte{{128, 1, 2, 3}}},
+						{DevEUI: ns.DevEUI[:], FrmPayload: true, Cid: 129, Commands: [][]byte{{129, 4, 5}}},
 					},
 					ExpectedFCntUp:          11,
 					ExpectedFCntDown:        5,

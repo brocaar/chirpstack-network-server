@@ -22,6 +22,8 @@ menu:
 
 **Note:** In case you are using the gRPC API interface of LoRa Server,
 this might be a breaking change because of the above changes to the APi methods.
+For a code-example, please see the [Network-controller](https://docs.loraserver.io/loraserver/integrate/network-controller/)
+documentation.
 
 **Bugfixes:**
 
