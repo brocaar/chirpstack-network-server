@@ -180,7 +180,6 @@ func sendRXInfoPayload(ctx common.Context, ns session.NodeSession, rxPacket mode
 	}
 
 	rxInfoReq := nc.HandleRXInfoRequest{
-		AppEUI: ns.AppEUI[:],
 		DevEUI: ns.DevEUI[:],
 		TxInfo: &nc.TXInfo{
 			Frequency: int64(rxPacket.RXInfoSet[0].Frequency),
@@ -298,54 +297,83 @@ func publishDataUp(ctx common.Context, ns session.NodeSession, rxPacket models.R
 }
 
 func handleUplinkMACCommands(ctx common.Context, ns *session.NodeSession, frmPayload bool, commands []lorawan.MACCommand, rxInfoSet models.RXInfoSet) error {
+	var cids []lorawan.CID
 	blocks := make(map[lorawan.CID]maccommand.Block)
 
+	// group mac-commands by CID
 	for _, cmd := range commands {
-		logFields := log.Fields{
-			"dev_eui":     ns.DevEUI,
-			"cid":         cmd.CID,
-			"frm_payload": frmPayload,
+		block, ok := blocks[cmd.CID]
+		if !ok {
+			block = maccommand.Block{
+				CID:        cmd.CID,
+				FRMPayload: frmPayload,
+			}
+			cids = append(cids, cmd.CID)
 		}
-
-		// proprietary MAC commands
-		// TODO: refactor / remove / implement proprietary mac-commands properly
-		if cmd.CID >= 0x80 {
-			b, err := cmd.MarshalBinary()
-			if err != nil {
-				return fmt.Errorf("binary marshal mac command error: %s", err)
-			}
-			_, err = ctx.Controller.HandleDataUpMACCommand(context.Background(), &nc.HandleDataUpMACCommandRequest{
-				AppEUI:     ns.AppEUI[:],
-				DevEUI:     ns.DevEUI[:],
-				FrmPayload: frmPayload,
-				Data:       b,
-			})
-			if err != nil {
-				log.WithFields(logFields).Errorf("send proprietary mac-command to network-controller error: %s", err)
-			} else {
-				log.WithFields(logFields).Info("proprietary mac-command sent to network-controller")
-			}
-		} else {
-			block, ok := blocks[cmd.CID]
-			if !ok {
-				block = maccommand.Block{
-					CID: cmd.CID,
-				}
-			}
-
-			block.MACCommands = append(block.MACCommands, cmd)
-			blocks[cmd.CID] = block
-
-		}
+		block.MACCommands = append(block.MACCommands, cmd)
+		blocks[cmd.CID] = block
 	}
 
-	for cid, block := range blocks {
-		if err := maccommand.Handle(ctx, ns, block, rxInfoSet); err != nil {
-			log.WithFields(log.Fields{
-				"dev_eui":     ns.DevEUI,
-				"cid":         cid,
-				"frm_payload": frmPayload,
-			}).Errorf("handle mac-command block error: %s", err)
+	for _, cid := range cids {
+		block := blocks[cid]
+
+		logFields := log.Fields{
+			"dev_eui":     ns.DevEUI,
+			"cid":         block.CID,
+			"frm_payload": block.FRMPayload,
+		}
+
+		// read pending mac-command block for CID. e.g. on case of an ack, the
+		// pending mac-command block contains the request.
+		// we need this pending mac-command block to find out if the command
+		// was scheduled through the API (external).
+		pending, err := maccommand.ReadPending(ctx.RedisPool, ns.DevEUI, block.CID)
+		if err != nil {
+			log.WithFields(logFields).Errorf("read pending mac-command error: %s", err)
+			continue
+		}
+		var external bool
+		if pending != nil {
+			external = pending.External
+		}
+
+		// in case the node is requesting a mac-command, there is nothing pending
+		if pending != nil {
+			if err = maccommand.DeletePending(ctx.RedisPool, ns.DevEUI, block.CID); err != nil {
+				log.WithFields(logFields).Errorf("delete pending mac-command error: %s", err)
+			}
+		}
+
+		// CID >= 0x80 are proprietary mac-commands and are not handled by LoRa Server
+		if block.CID < 0x80 {
+			if err := maccommand.Handle(ctx, ns, block, pending, rxInfoSet); err != nil {
+				log.WithFields(logFields).Errorf("handle mac-command block error: %s", err)
+			}
+		}
+
+		// report to external controller in case of proprietary mac-commands or
+		// in case when the request has been scheduled through the API.
+		if block.CID >= 0x80 || external {
+			var data [][]byte
+			for _, cmd := range block.MACCommands {
+				b, err := cmd.MarshalBinary()
+				if err != nil {
+					log.WithFields(logFields).Errorf("marshal mac-command to binary error: %s", err)
+					continue
+				}
+				data = append(data, b)
+			}
+			_, err = ctx.Controller.HandleDataUpMACCommand(context.Background(), &nc.HandleDataUpMACCommandRequest{
+				DevEUI:     ns.DevEUI[:],
+				FrmPayload: block.FRMPayload,
+				Cid:        uint32(block.CID),
+				Commands:   data,
+			})
+			if err != nil {
+				log.WithFields(logFields).Errorf("send mac-command to network-controller error: %s", err)
+			} else {
+				log.WithFields(logFields).Info("mac-command sent to network-controller")
+			}
 		}
 	}
 

@@ -37,7 +37,6 @@ type uplinkTestCase struct {
 
 	ExpectedControllerHandleRXInfo            *nc.HandleRXInfoRequest            // expected network-controller publish rxinfo request
 	ExpectedControllerHandleDataUpMACCommands []nc.HandleDataUpMACCommandRequest // expected network-controller publish dataup mac-command requests
-	ExpectedControllerHandleErrors            []nc.HandleErrorRequest            // expected network-controller error requests
 
 	ExpectedApplicationHandleDataUp      *as.HandleDataUpRequest      // expected application-server data up request
 	ExpectedApplicationHandleErrors      []as.HandleErrorRequest      // expected application-server error requests
@@ -210,7 +209,6 @@ func TestUplinkScenarios(t *testing.T) {
 		var fPortOne uint8 = 1
 
 		expectedControllerHandleRXInfo := &nc.HandleRXInfoRequest{
-			AppEUI: ns.AppEUI[:],
 			DevEUI: ns.DevEUI[:],
 			TxInfo: &nc.TXInfo{
 				Frequency: int64(rxInfo.Frequency),
@@ -232,7 +230,6 @@ func TestUplinkScenarios(t *testing.T) {
 		}
 
 		expectedControllerHandleRXInfoADR := &nc.HandleRXInfoRequest{
-			AppEUI: ns.AppEUI[:],
 			DevEUI: ns.DevEUI[:],
 			TxInfo: &nc.TXInfo{
 				Adr:       true,
@@ -875,8 +872,8 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown: expectedGetDataDown,
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedControllerHandleDataUpMACCommands: []nc.HandleDataUpMACCommandRequest{
-						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], Data: []byte{128, 1, 2, 3}},
-						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], Data: []byte{129, 4, 5}},
+						{DevEUI: ns.DevEUI[:], Cid: 128, Commands: [][]byte{{128, 1, 2, 3}}},
+						{DevEUI: ns.DevEUI[:], Cid: 129, Commands: [][]byte{{129, 4, 5}}},
 					},
 					ExpectedFCntUp:          11,
 					ExpectedFCntDown:        5,
@@ -908,8 +905,8 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown: expectedGetDataDown,
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedControllerHandleDataUpMACCommands: []nc.HandleDataUpMACCommandRequest{
-						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], FrmPayload: true, Data: []byte{128, 1, 2, 3}},
-						{AppEUI: ns.AppEUI[:], DevEUI: ns.DevEUI[:], FrmPayload: true, Data: []byte{129, 4, 5}},
+						{DevEUI: ns.DevEUI[:], FrmPayload: true, Cid: 128, Commands: [][]byte{{128, 1, 2, 3}}},
+						{DevEUI: ns.DevEUI[:], FrmPayload: true, Cid: 129, Commands: [][]byte{{129, 4, 5}}},
 					},
 					ExpectedFCntUp:          11,
 					ExpectedFCntDown:        5,
@@ -2030,7 +2027,7 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 			// populate session and queues
 			So(session.SaveNodeSession(ctx.RedisPool, t.NodeSession), ShouldBeNil)
 			for _, block := range t.MACCommandQueue {
-				So(maccommand.AddToQueue(ctx.RedisPool, t.NodeSession.DevEUI, block), ShouldBeNil)
+				So(maccommand.AddQueueItem(ctx.RedisPool, t.NodeSession.DevEUI, block), ShouldBeNil)
 			}
 			for _, pending := range t.MACCommandPending {
 				So(maccommand.SetPending(ctx.RedisPool, t.NodeSession.DevEUI, pending), ShouldBeNil)
@@ -2066,14 +2063,6 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 			} else {
 				So(ctx.Controller.(*test.NetworkControllerClient).HandleRXInfoChan, ShouldHaveLength, 0)
 			}
-
-			Convey("Then the expected error payloads are sent to the network-controller", func() {
-				So(ctx.Controller.(*test.NetworkControllerClient).HandleErrorChan, ShouldHaveLength, len(t.ExpectedControllerHandleErrors))
-				for _, expPL := range t.ExpectedControllerHandleErrors {
-					pl := <-ctx.Controller.(*test.NetworkControllerClient).HandleErrorChan
-					So(pl, ShouldResemble, expPL)
-				}
-			})
 
 			Convey("Then the expected mac-commands are received by the network-controller", func() {
 				So(ctx.Controller.(*test.NetworkControllerClient).HandleDataUpMACCommandChan, ShouldHaveLength, len(t.ExpectedControllerHandleDataUpMACCommands))
@@ -2160,7 +2149,7 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 
 			// queue validations
 			Convey("Then the mac-command queue is as expected", func() {
-				macQueue, err := maccommand.ReadQueue(ctx.RedisPool, t.NodeSession.DevEUI)
+				macQueue, err := maccommand.ReadQueueItems(ctx.RedisPool, t.NodeSession.DevEUI)
 				So(err, ShouldBeNil)
 				So(macQueue, ShouldResemble, t.ExpectedMACCommandQueue)
 			})

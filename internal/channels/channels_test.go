@@ -91,7 +91,7 @@ func TestHandleChannelReconfigure(t *testing.T) {
 				}
 
 				Convey("Then the expected mac-commands are in the queue", func() {
-					queue, err := maccommand.ReadQueue(ctx.RedisPool, test.NodeSession.DevEUI)
+					queue, err := maccommand.ReadQueueItems(ctx.RedisPool, test.NodeSession.DevEUI)
 					So(err, ShouldBeNil)
 					So(test.ExpectedQueue, ShouldResemble, queue)
 				})

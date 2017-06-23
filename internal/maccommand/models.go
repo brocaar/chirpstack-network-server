@@ -9,6 +9,7 @@ import (
 type Block struct {
 	CID         lorawan.CID
 	FRMPayload  bool // command must be sent as a FRMPayload (and thus encrypted)
+	External    bool // command was enqueued by an external service
 	MACCommands MACCommands
 }
 

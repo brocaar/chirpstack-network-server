@@ -283,7 +283,7 @@ func TestClassCScenarios(t *testing.T) {
 
 					// mac mac-command queue items
 					for _, qi := range t.MACCommandQueue {
-						So(maccommand.AddToQueue(ctx.RedisPool, t.NodeSession.DevEUI, qi), ShouldBeNil)
+						So(maccommand.AddQueueItem(ctx.RedisPool, t.NodeSession.DevEUI, qi), ShouldBeNil)
 					}
 
 					// push the data
@@ -308,7 +308,7 @@ func TestClassCScenarios(t *testing.T) {
 					}
 
 					Convey("Then the mac-command queue contains the expected items", func() {
-						items, err := maccommand.ReadQueue(ctx.RedisPool, t.NodeSession.DevEUI)
+						items, err := maccommand.ReadQueueItems(ctx.RedisPool, t.NodeSession.DevEUI)
 						So(err, ShouldBeNil)
 						So(items, ShouldResemble, t.ExpectedMACCommandQueue)
 					})

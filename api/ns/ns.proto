@@ -215,9 +215,18 @@ message GetRandomDevAddrResponse {
 }
 
 message EnqueueDataDownMACCommandRequest {
+	// DevEUI of the node.
 	bytes devEUI = 1;
+
+	// Send the mac-command as FRMPayload (encrypted).
 	bool frmPayload = 2;
-	bytes data = 3;
+
+	// Command identifier (specified by the LoRaWAN specs).
+	uint32 cid = 4;
+
+	// MAC-command(s). In case multiple payloads are defined, then they
+	// are always sent within a single frame.
+	repeated bytes commands = 5;
 }
 
 message EnqueueDataDownMACCommandResponse {}

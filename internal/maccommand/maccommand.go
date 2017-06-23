@@ -13,11 +13,11 @@ import (
 )
 
 // Handle handles a MACCommand sent by a node.
-func Handle(ctx common.Context, ns *session.NodeSession, block Block, rxInfoSet models.RXInfoSet) error {
+func Handle(ctx common.Context, ns *session.NodeSession, block Block, pending *Block, rxInfoSet models.RXInfoSet) error {
 	var err error
 	switch block.CID {
 	case lorawan.LinkADRAns:
-		err = handleLinkADRAns(ctx, ns, block)
+		err = handleLinkADRAns(ctx, ns, block, pending)
 	case lorawan.LinkCheckReq:
 		err = handleLinkCheckReq(ctx, ns, rxInfoSet)
 	default:
@@ -28,9 +28,13 @@ func Handle(ctx common.Context, ns *session.NodeSession, block Block, rxInfoSet 
 }
 
 // handleLinkADRAns handles the ack of an ADR request
-func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, block Block) error {
+func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, block Block, pendingBlock *Block) error {
 	if len(block.MACCommands) == 0 {
 		return errors.New("at least 1 mac-command expected, got none")
+	}
+
+	if pendingBlock == nil || len(pendingBlock.MACCommands) == 0 {
+		return ErrDoesNotExist
 	}
 
 	channelMaskACK := true
@@ -52,19 +56,6 @@ func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, block Block) 
 		if !pl.PowerACK {
 			powerACK = false
 		}
-	}
-
-	pendingBlock, err := ReadPending(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
-	if err != nil {
-		return fmt.Errorf("read pending mac-commands error: %s", err)
-	}
-
-	if pendingBlock == nil || len(pendingBlock.MACCommands) == 0 {
-		return ErrDoesNotExist
-	}
-
-	if err = DeletePending(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq); err != nil {
-		return errors.Wrap(err, "delete pending mac-command block error")
 	}
 
 	var linkADRPayloads []lorawan.LinkADRReqPayload
@@ -133,7 +124,7 @@ func handleLinkCheckReq(ctx common.Context, ns *session.NodeSession, rxInfoSet m
 		},
 	}
 
-	if err := AddToQueue(ctx.RedisPool, ns.DevEUI, block); err != nil {
+	if err := AddQueueItem(ctx.RedisPool, ns.DevEUI, block); err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
 	}
 	return nil

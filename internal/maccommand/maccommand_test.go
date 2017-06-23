@@ -50,10 +50,10 @@ func TestHandle(t *testing.T) {
 					},
 				}
 
-				So(Handle(ctx, &ns, block, rxInfoSet), ShouldBeNil)
+				So(Handle(ctx, &ns, block, nil, rxInfoSet), ShouldBeNil)
 
 				Convey("Then the expected response was added to the mac-command queue", func() {
-					items, err := ReadQueue(ctx.RedisPool, ns.DevEUI)
+					items, err := ReadQueueItems(ctx.RedisPool, ns.DevEUI)
 					So(err, ShouldBeNil)
 					So(items, ShouldHaveLength, 1)
 					So(items[0], ShouldResemble, Block{
@@ -99,13 +99,13 @@ func TestHandle(t *testing.T) {
 				}
 
 				Convey("Given a pending linkADRReq and positive ack", func() {
-					So(SetPending(p, ns.DevEUI, Block{
+					pending := &Block{
 						CID: linkADRAns.CID,
 						MACCommands: []lorawan.MACCommand{
 							linkADRReqMAC,
 						},
-					}), ShouldBeNil)
-					So(Handle(ctx, &ns, linkADRAns, nil), ShouldBeNil)
+					}
+					So(Handle(ctx, &ns, linkADRAns, pending, nil), ShouldBeNil)
 
 					Convey("Then the node-session TXPower and NbTrans are updated correctly", func() {
 						So(ns.TXPower, ShouldEqual, common.Band.TXPower[3])
@@ -119,13 +119,13 @@ func TestHandle(t *testing.T) {
 
 				Convey("Given a pending linkADRReq and negative ack", func() {
 					linkADRAnsPL.ChannelMaskACK = false
-					So(SetPending(p, ns.DevEUI, Block{
+					pending := &Block{
 						CID: lorawan.LinkADRReq,
 						MACCommands: []lorawan.MACCommand{
 							linkADRReqMAC,
 						},
-					}), ShouldBeNil)
-					So(Handle(ctx, &ns, linkADRAns, nil), ShouldBeNil)
+					}
+					So(Handle(ctx, &ns, linkADRAns, pending, nil), ShouldBeNil)
 
 					Convey("Then the node-session TXPower and NbTrans are not updated", func() {
 						So(ns.TXPower, ShouldEqual, 0)
@@ -138,7 +138,7 @@ func TestHandle(t *testing.T) {
 				})
 
 				Convey("Given no pending linkADRReq and positive ack", func() {
-					err := Handle(ctx, &ns, linkADRAns, nil)
+					err := Handle(ctx, &ns, linkADRAns, nil, nil)
 					Convey("Then an error is returned", func() {
 						So(errors.Cause(err), ShouldResemble, ErrDoesNotExist)
 					})

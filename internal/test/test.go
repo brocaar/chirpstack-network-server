@@ -200,11 +200,9 @@ func (t *ApplicationClient) HandleError(ctx context.Context, in *as.HandleErrorR
 type NetworkControllerClient struct {
 	HandleRXInfoChan           chan nc.HandleRXInfoRequest
 	HandleDataUpMACCommandChan chan nc.HandleDataUpMACCommandRequest
-	HandleErrorChan            chan nc.HandleErrorRequest
 
 	HandleRXInfoResponse           nc.HandleRXInfoResponse
 	HandleDataUpMACCommandResponse nc.HandleDataUpMACCommandResponse
-	HandleErrorResponse            nc.HandleErrorResponse
 }
 
 // NewNetworkControllerClient returns a new NetworkControllerClient.
@@ -212,7 +210,6 @@ func NewNetworkControllerClient() *NetworkControllerClient {
 	return &NetworkControllerClient{
 		HandleRXInfoChan:           make(chan nc.HandleRXInfoRequest, 100),
 		HandleDataUpMACCommandChan: make(chan nc.HandleDataUpMACCommandRequest, 100),
-		HandleErrorChan:            make(chan nc.HandleErrorRequest, 100),
 	}
 }
 
@@ -226,10 +223,4 @@ func (t *NetworkControllerClient) HandleRXInfo(ctx context.Context, in *nc.Handl
 func (t *NetworkControllerClient) HandleDataUpMACCommand(ctx context.Context, in *nc.HandleDataUpMACCommandRequest, opts ...grpc.CallOption) (*nc.HandleDataUpMACCommandResponse, error) {
 	t.HandleDataUpMACCommandChan <- *in
 	return &t.HandleDataUpMACCommandResponse, nil
-}
-
-// HandleError method.
-func (t *NetworkControllerClient) HandleError(ctx context.Context, in *nc.HandleErrorRequest, opts ...grpc.CallOption) (*nc.HandleErrorResponse, error) {
-	t.HandleErrorChan <- *in
-	return &t.HandleErrorResponse, nil
 }
