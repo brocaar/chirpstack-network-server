@@ -6,9 +6,9 @@ menu:
         weight: 3
 ---
 
-## LoRa App Server source
+## LoRa Server source
 
-Source-code can be found at [https://github.com/brocaar/lora-app-server](https://github.com/brocaar/loraserver).
+Source-code can be found at [https://github.com/brocaar/loraserver](https://github.com/brocaar/loraserver).
 
 ### Building
 
