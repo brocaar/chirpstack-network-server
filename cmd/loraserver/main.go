@@ -191,7 +191,7 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) common.Context {
 	}
 
 	// setup gateway backend
-	gw, err := gateway.NewBackend(rp, c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"))
+	gw, err := gateway.NewBackend(rp, c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"), c.String("gw-mqtt-ca-cert"))
 	if err != nil {
 		log.Fatalf("gateway-backend setup failed: %s", err)
 	}
@@ -418,6 +418,11 @@ func main() {
 			Name:   "gw-mqtt-password",
 			Usage:  "mqtt password used by the gateway backend (optional)",
 			EnvVar: "GW_MQTT_PASSWORD",
+		},
+		cli.StringFlag{
+			Name:   "gw-mqtt-ca-cert",
+			Usage:  "mqtt CA certificate file used by the gateway backend (optional)",
+			EnvVar: "GW_MQTT_CA_CERT",
 		},
 		cli.StringFlag{
 			Name:   "as-server",
