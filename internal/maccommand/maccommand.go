@@ -85,6 +85,15 @@ func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, block Block, 
 			"enabled_channels": chans,
 		}).Info("link_adr request acknowledged")
 	} else {
+		// This is a workaround for the RN2483 firmware (1.0.3) which sends
+		// a nACK on TXPower 0 (this is incorrect behaviour, following the
+		// specs). It should ACK and operate at its maximum possible power
+		// when TXPower 0 is not supported. See also section 5.2 in the
+		// LoRaWAN specs.
+		if channelMaskACK && dataRateACK && !powerACK && adrReq.TXPower == 0 {
+			ns.TXPowerIndex = 1
+		}
+
 		log.WithFields(log.Fields{
 			"dev_eui":          ns.DevEUI,
 			"channel_mask_ack": channelMaskACK,
