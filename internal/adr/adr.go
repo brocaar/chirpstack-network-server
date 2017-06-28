@@ -83,14 +83,13 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 	snrMargin := snrM - requiredSNR - ns.InstallationMargin
 	nStep := int(snrMargin / 3)
 
-	currentTXPower := getCurrentTXPower(ns)
-	currentTXPowerIndex := getTXPowerIndex(currentTXPower)
-	idealTXPower, idealDR := getIdealTXPowerAndDR(nStep, currentTXPower, currentDR)
-	idealTXPowerIndex := getTXPowerIndex(idealTXPower)
+	currentTXPowerOffset := getCurrentTXPowerOffset(ns)
+	idealTXPowerOffset, idealDR := getIdealTXPowerOffsetAndDR(nStep, currentTXPowerOffset, currentDR)
+	idealTXPowerIndex := getTXPowerIndexForOffset(idealTXPowerOffset)
 	idealNbRep := getNbRep(ns.NbTrans, ns.GetPacketLossPercentage())
 
 	// there is nothing to adjust
-	if currentTXPowerIndex == idealTXPowerIndex && currentDR == idealDR {
+	if ns.TXPowerIndex == idealTXPowerIndex && currentDR == idealDR {
 		return nil
 	}
 
@@ -157,13 +156,13 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 	}
 
 	log.WithFields(log.Fields{
-		"dev_eui":      ns.DevEUI,
-		"dr":           currentDR,
-		"req_dr":       idealDR,
-		"tx_power":     currentTXPower,
-		"req_tx_power": common.Band.TXPower[idealTXPowerIndex],
-		"nb_trans":     ns.NbTrans,
-		"req_nb_trans": idealNbRep,
+		"dev_eui":          ns.DevEUI,
+		"dr":               currentDR,
+		"req_dr":           idealDR,
+		"tx_power":         ns.TXPowerIndex,
+		"req_tx_power_idx": idealTXPowerIndex,
+		"nb_trans":         ns.NbTrans,
+		"req_nb_trans":     idealNbRep,
 	}).Info("adr request added to mac-command queue")
 
 	return nil
@@ -187,64 +186,58 @@ func getNbRep(currentNbRep uint8, pktLossRate float64) uint8 {
 	return pktLossRateTable[3][currentNbRep-1]
 }
 
-func getCurrentTXPower(ns *session.NodeSession) int {
-	if ns.TXPower > 0 {
-		return ns.TXPower
+func getCurrentTXPowerOffset(ns *session.NodeSession) int {
+	if ns.TXPowerIndex > len(common.Band.TXPowerOffset)+1 {
+		return common.Band.TXPowerOffset[0]
 	}
-	return common.Band.DefaultTXPower
+	return common.Band.TXPowerOffset[ns.TXPowerIndex]
 }
 
-func getMaxTXPower() int {
-	return common.Band.TXPower[0]
-}
-
-func getMinTXPower() int {
-	var minTX int
-	for _, p := range common.Band.TXPower {
-		// make sure we never use 0 and disable the device
-		if p > 0 {
-
-			minTX = p
+func getMaxTXPowerOffset() int {
+	var delta int
+	for _, p := range common.Band.TXPowerOffset {
+		if p < 0 {
+			delta = p
 		}
 	}
-	return minTX
+	return delta
 }
 
-func getTXPowerIndex(txPower int) int {
+func getTXPowerIndexForOffset(txPowerOffset int) int {
 	var idx int
-	for i, p := range common.Band.TXPower {
-		if p >= txPower {
+	for i, d := range common.Band.TXPowerOffset {
+		if txPowerOffset <= d {
 			idx = i
 		}
 	}
 	return idx
 }
 
-func getIdealTXPowerAndDR(nStep int, txPower int, dr int) (int, int) {
+func getIdealTXPowerOffsetAndDR(nStep int, txPowerOffset int, dr int) (int, int) {
 	if nStep == 0 {
-		return txPower, dr
+		return txPowerOffset, dr
 	}
 
 	if nStep > 0 {
 		if dr < getMaxAllowedDR() {
 			dr++
 		} else {
-			txPower -= 3
+			txPowerOffset -= 3
 		}
 		nStep--
-		if txPower <= getMinTXPower() {
-			return txPower, dr
+		if txPowerOffset <= getMaxTXPowerOffset() {
+			return txPowerOffset, dr
 		}
 	} else {
-		if txPower < getMaxTXPower() {
-			txPower += 3
+		if txPowerOffset < 0 {
+			txPowerOffset += 3
 			nStep++
 		} else {
-			return txPower, dr
+			return txPowerOffset, dr
 		}
 	}
 
-	return getIdealTXPowerAndDR(nStep, txPower, dr)
+	return getIdealTXPowerOffsetAndDR(nStep, txPowerOffset, dr)
 }
 
 func getRequiredSNRForSF(sf int) (float64, error) {

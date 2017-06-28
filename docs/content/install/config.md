@@ -14,7 +14,7 @@ flag. This will display:
 ```
 GLOBAL OPTIONS:
    --net-id value                          network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203) [$NET_ID]
-   --band value                            ism band configuration to use (options: AS_923, AU_915_928, CN_470_510, CN_779_787, EU_433, EU_863_870, KR_920_923, RU_864_869, US_902_928) [$BAND]
+   --band value                            ism band configuration to use (options: AS_923, AU_915_928, CN_470_510, CN_779_787, EU_433, EU_863_870, KR_920_923, US_902_928) [$BAND]
    --band-dwell-time-400ms                 band configuration takes 400ms dwell-time into account [$BAND_DWELL_TIME_400ms]
    --band-repeater-compatible              band configuration takes repeater encapsulation layer into account [$BAND_REPEATER_COMPATIBLE]
    --ca-cert value                         ca certificate used by the api server (optional) [$CA_CERT]

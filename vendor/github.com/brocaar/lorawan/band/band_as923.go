@@ -91,13 +91,15 @@ func newAS923Band(repeaterCompatible bool, dt lorawan.DwellTime) (Band, error) {
 
 		MaxPayloadSize: maxPayloadSize,
 
-		TXPower: []int{
-			14,
-			14 - 2,
-			14 - 4,
-			14 - 6,
-			14 - 8,
-			14 - 10,
+		TXPowerOffset: []int{
+			0,
+			-2,
+			-4,
+			-6,
+			-8,
+			-10,
+			-12,
+			-14,
 		},
 
 		UplinkChannels: []Channel{

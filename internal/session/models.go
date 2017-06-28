@@ -49,10 +49,11 @@ type NodeSession struct {
 	// possible packet-loss.
 	InstallationMargin float64
 
-	// TXPower of the node. This value is controlled by the ADR engine.
-	// TXPower 0 means the DefaultTXPower is used as defined by the band
-	// band configuration.
-	TXPower int
+	// TXPowerIndex which the node is using. The possible values are defined
+	// by the lorawan/band package and are region specific. By default it is
+	// assumed that the node is using TXPower 0. This value is controlled by
+	// the ADR engine.
+	TXPowerIndex int
 
 	// NbTrans defines the number of transmissions for each unconfirmed uplink
 	// frame. In case of 0, the default value is used.

@@ -73,13 +73,13 @@ func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, block Block, 
 			return errors.Wrap(err, "get enalbed channels for link_adr_req payloads error")
 		}
 
-		ns.TXPower = common.Band.TXPower[adrReq.TXPower]
+		ns.TXPowerIndex = int(adrReq.TXPower)
 		ns.NbTrans = adrReq.Redundancy.NbRep
 		ns.EnabledChannels = chans
 
 		log.WithFields(log.Fields{
 			"dev_eui":          ns.DevEUI,
-			"tx_power":         ns.TXPower,
+			"tx_power_idx":     ns.TXPowerIndex,
 			"dr":               adrReq.DataRate,
 			"nb_trans":         adrReq.Redundancy.NbRep,
 			"enabled_channels": chans,

@@ -39,7 +39,7 @@ func TestHandleChannelReconfigure(t *testing.T) {
 			{
 				Name: "no channels to reconfigure",
 				NodeSession: session.NodeSession{
-					TXPower:         14,
+					TXPowerIndex:    1,
 					NbTrans:         2,
 					EnabledChannels: []int{0, 1, 2},
 				},
@@ -49,7 +49,7 @@ func TestHandleChannelReconfigure(t *testing.T) {
 			{
 				Name: "channels to reconfigure",
 				NodeSession: session.NodeSession{
-					TXPower:         14,
+					TXPowerIndex:    1,
 					NbTrans:         2,
 					EnabledChannels: []int{0, 1}, // this is not realistic but good enough for testing
 				},

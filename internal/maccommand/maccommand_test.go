@@ -108,7 +108,7 @@ func TestHandle(t *testing.T) {
 					So(Handle(ctx, &ns, linkADRAns, pending, nil), ShouldBeNil)
 
 					Convey("Then the node-session TXPower and NbTrans are updated correctly", func() {
-						So(ns.TXPower, ShouldEqual, common.Band.TXPower[3])
+						So(ns.TXPowerIndex, ShouldEqual, 3)
 						So(ns.NbTrans, ShouldEqual, 2)
 					})
 
@@ -128,7 +128,7 @@ func TestHandle(t *testing.T) {
 					So(Handle(ctx, &ns, linkADRAns, pending, nil), ShouldBeNil)
 
 					Convey("Then the node-session TXPower and NbTrans are not updated", func() {
-						So(ns.TXPower, ShouldEqual, 0)
+						So(ns.TXPowerIndex, ShouldEqual, 0)
 						So(ns.NbTrans, ShouldEqual, 0)
 					})
 

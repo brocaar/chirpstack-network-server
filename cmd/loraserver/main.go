@@ -50,7 +50,6 @@ var bands = []string{
 	string(band.EU_433),
 	string(band.EU_863_870),
 	string(band.KR_920_923),
-	string(band.RU_864_869),
 	string(band.US_902_928),
 }
 

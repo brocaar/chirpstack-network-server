@@ -69,13 +69,15 @@ func newEU863Band(repeaterCompatible bool) (Band, error) {
 			{7, 6, 5, 4, 3, 2},
 		},
 
-		TXPower: []int{
-			20, // if supported
-			14,
-			11,
-			8,
-			5,
-			2,
+		TXPowerOffset: []int{
+			0,
+			-2,
+			-4,
+			-6,
+			-8,
+			-10,
+			-12,
+			-14,
 		},
 
 		UplinkChannels: []Channel{

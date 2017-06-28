@@ -49,7 +49,7 @@ type uplinkTestCase struct {
 	ExpectedFCntDown            uint32              // expected downlink frame counter
 	ExpectedHandleRXPacketError error               // expected handleRXPacket error
 	ExpectedMACCommandQueue     []maccommand.Block  // expected downlink mac-command queue
-	ExpectedTXPower             int                 // expected tx-power set by ADR
+	ExpectedTXPowerIndex        int                 // expected tx-power set by ADR
 	ExpectedNbTrans             uint8               // expected nb trans set by ADR
 	ExpectedEnabledChannels     []int               // expected channels enabled on the node
 }
@@ -1676,7 +1676,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown: expectedGetDataDown,
 					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               5,
-					ExpectedTXPower:                8,
+					ExpectedTXPowerIndex:           3,
 					ExpectedNbTrans:                1,
 					ExpectedEnabledChannels:        []int{0, 1, 2},
 				},
@@ -1814,7 +1814,7 @@ func TestUplinkScenarios(t *testing.T) {
 									{
 										CID: lorawan.LinkADRReq,
 										Payload: &lorawan.LinkADRReqPayload{
-											TXPower: 1,
+											TXPower: 0,
 											ChMask:  lorawan.ChMask{true, true, true},
 										},
 									},
@@ -1869,7 +1869,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationGetDataDown: expectedGetDataDown,
 					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               5,
-					ExpectedTXPower:                14,
+					ExpectedTXPowerIndex:           1,
 					ExpectedEnabledChannels:        []int{0, 1, 2},
 				},
 				{
@@ -1937,7 +1937,7 @@ func TestUplinkScenarios(t *testing.T) {
 									{
 										CID: lorawan.LinkADRReq,
 										Payload: &lorawan.LinkADRReqPayload{
-											TXPower: 1,
+											TXPower: 0,
 											ChMask:  lorawan.ChMask{true, true, true},
 										},
 									},
@@ -2142,7 +2142,7 @@ func runUplinkTests(ctx common.Context, tests []uplinkTestCase) {
 			Convey("Then the Channels, TXPower and NbTrans are as expected", func() {
 				ns, err := session.GetNodeSession(ctx.RedisPool, t.NodeSession.DevEUI)
 				So(err, ShouldBeNil)
-				So(ns.TXPower, ShouldEqual, t.ExpectedTXPower)
+				So(ns.TXPowerIndex, ShouldEqual, t.ExpectedTXPowerIndex)
 				So(ns.NbTrans, ShouldEqual, t.ExpectedNbTrans)
 				So(ns.EnabledChannels, ShouldResemble, t.ExpectedEnabledChannels)
 			})

@@ -98,5 +98,4 @@ At this moment the following ISM bands have been implemented:
 - EU 433
 - EU 863-870
 - KR 920-923
-- RU 864-869
 - US 902-928

@@ -152,8 +152,8 @@ message GetNodeSessionResponse {
 	// This is controlled by the ADR engine.
 	uint32 nbTrans = 15;
 
-	// The TX power of the node. This is controlled by the ADR engine.
-	uint32 txPower = 16;
+	// The TX power index of the node. This is controlled by the ADR engine.
+	uint32 txPowerIndex = 16;
 
 }
 

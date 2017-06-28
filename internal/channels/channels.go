@@ -26,9 +26,7 @@ func HandleChannelReconfigure(ctx common.Context, ns session.NodeSession, rxPack
 	if err != nil {
 		return fmt.Errorf("get data-rate error: %s", err)
 	}
-	currentTXPower := getCurrentTXPower(ns)
-	currentTXPowerIndex := getTXPowerIndex(currentTXPower)
-	payloads[len(payloads)-1].TXPower = uint8(currentTXPowerIndex)
+	payloads[len(payloads)-1].TXPower = uint8(ns.TXPowerIndex)
 	payloads[len(payloads)-1].DataRate = uint8(currentDR)
 	payloads[len(payloads)-1].Redundancy.NbRep = ns.NbTrans
 
@@ -56,21 +54,4 @@ func HandleChannelReconfigure(ctx common.Context, ns session.NodeSession, rxPack
 	}
 
 	return nil
-}
-
-func getCurrentTXPower(ns session.NodeSession) int {
-	if ns.TXPower > 0 {
-		return ns.TXPower
-	}
-	return common.Band.DefaultTXPower
-}
-
-func getTXPowerIndex(txPower int) int {
-	var idx int
-	for i, p := range common.Band.TXPower {
-		if p >= txPower {
-			idx = i
-		}
-	}
-	return idx
 }

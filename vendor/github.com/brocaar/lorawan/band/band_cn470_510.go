@@ -66,23 +66,15 @@ func newCN470Band() (Band, error) {
 			{5, 4, 3, 2, 1, 0},
 		},
 
-		TXPower: []int{
-			17,
-			16,
-			14,
-			12,
-			10,
-			7,
-			5,
-			2,
-			0, // rfu
-			0, // rfu
-			0, // rfu
-			0, // rfu
-			0, // rfu
-			0, // rfu
-			0, // rfu
-			0, // rfu
+		TXPowerOffset: []int{
+			0,
+			-2,
+			-4,
+			-6,
+			-8,
+			-10,
+			-12,
+			-14,
 		},
 
 		UplinkChannels:   make([]Channel, 96),

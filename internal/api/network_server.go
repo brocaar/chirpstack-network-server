@@ -98,7 +98,7 @@ func (n *NetworkServerAPI) GetNodeSession(ctx context.Context, req *ns.GetNodeSe
 		AdrInterval:        sess.ADRInterval,
 		InstallationMargin: sess.InstallationMargin,
 		NbTrans:            uint32(sess.NbTrans),
-		TxPower:            uint32(sess.TXPower),
+		TxPowerIndex:       uint32(sess.TXPowerIndex),
 	}
 
 	return resp, nil
@@ -135,7 +135,7 @@ func (n *NetworkServerAPI) UpdateNodeSession(ctx context.Context, req *ns.Update
 
 		// these values can't be overwritten
 		NbTrans:         sess.NbTrans,
-		TXPower:         sess.TXPower,
+		TXPowerIndex:    sess.TXPowerIndex,
 		UplinkHistory:   sess.UplinkHistory,
 		EnabledChannels: sess.EnabledChannels,
 	}
