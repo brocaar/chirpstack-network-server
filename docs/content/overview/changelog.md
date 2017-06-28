@@ -8,6 +8,20 @@ menu:
 
 ## Changelog
 
+### 0.19.1
+
+**Improvements:**
+
+* `--gw-mqtt-ca-cert` / `GW_MQTT_CA_CERT` configuration flag was added to
+  specify an optional CA certificate
+  (thanks [@siscia](https://github.com/siscia)).
+
+**Bugfixes:**
+
+* MQTT client library update which fixes an issue where during a failed
+  re-connect the protocol version would be downgraded
+  ([paho.mqtt.golang#116](https://github.com/eclipse/paho.mqtt.golang/issues/116)).
+
 ### 0.19.0
 
 **Changes:**
