@@ -8,6 +8,23 @@ menu:
 
 ## Changelog
 
+### 0.19.2
+
+**Improvements:**
+
+* The ADR engine has been updated together with the `lorawan/band` package
+  which now implements the LoRaWAN Regional Parameters 1.0.2 specification.
+
+**Removed:**
+
+* Removed `RU_864_869` band. This band is not officially defined by the
+  LoRa Alliance.
+
+**Note:** To deal with nodes implementing the Regional Parameters 1.0 **and**
+nodes implementing 1.0.2, the ADR engine will now only increase the TX power
+index of the node by one step. This is to avoid that the ADR engine would
+switch a node to an unsupported TX power index.
+
 ### 0.19.1
 
 **Improvements:**
