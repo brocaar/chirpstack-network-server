@@ -88,6 +88,20 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 	idealTXPowerIndex := getTXPowerIndexForOffset(idealTXPowerOffset)
 	idealNbRep := getNbRep(ns.NbTrans, ns.GetPacketLossPercentage())
 
+	// TODO: remove workaround once all nodes are implementing the
+	// LoRaWAN Regional Parameters 1.0.2 spec.
+	//
+	// Never decrease the txpower by multiple steps.
+	// This is a workaround to handle the changes introduced by the
+	// LoRaWAN Regional Parameters 1.0.2 specification. This update
+	// introduces new txpower indices for some regions. As we don't
+	// know which version of these parameters are implemented by the
+	// node, we can't make multiple steps as txpower n might be
+	// supported, but txpower n+1 not.
+	if idealTXPowerIndex > ns.TXPowerIndex {
+		idealTXPowerIndex = ns.TXPowerIndex + 1
+	}
+
 	// there is nothing to adjust
 	if ns.TXPowerIndex == idealTXPowerIndex && currentDR == idealDR {
 		return nil

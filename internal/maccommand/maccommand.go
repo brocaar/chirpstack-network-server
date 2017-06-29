@@ -85,6 +85,9 @@ func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, block Block, 
 			"enabled_channels": chans,
 		}).Info("link_adr request acknowledged")
 	} else {
+		// TODO: remove workaround once all RN2483 nodes have the issue below
+		// fixed.
+		//
 		// This is a workaround for the RN2483 firmware (1.0.3) which sends
 		// a nACK on TXPower 0 (this is incorrect behaviour, following the
 		// specs). It should ACK and operate at its maximum possible power

@@ -1593,7 +1593,7 @@ func TestUplinkScenarios(t *testing.T) {
 										CID: lorawan.LinkADRReq,
 										Payload: &lorawan.LinkADRReqPayload{
 											DataRate: 5,
-											TXPower:  3,
+											TXPower:  1, // the ideal txpower is 3, however only steps of 1 are allowed
 											ChMask:   [16]bool{true, true, true},
 											Redundancy: lorawan.Redundancy{
 												ChMaskCntl: 0,
@@ -1995,7 +1995,7 @@ func TestUplinkScenarios(t *testing.T) {
 										CID: lorawan.LinkADRReq,
 										Payload: &lorawan.LinkADRReqPayload{
 											DataRate: 5,
-											TXPower:  3,
+											TXPower:  1, // the ideal txpower is 3, however only steps of 1 are allowed
 											ChMask:   [16]bool{true, true, true},
 											Redundancy: lorawan.Redundancy{
 												ChMaskCntl: 0,
