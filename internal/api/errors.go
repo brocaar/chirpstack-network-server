@@ -21,6 +21,10 @@ var errToCode = map[error]codes.Code{
 	gateway.ErrAlreadyExists:              codes.AlreadyExists,
 	gateway.ErrInvalidAggregationInterval: codes.InvalidArgument,
 	gateway.ErrInvalidName:                codes.InvalidArgument,
+	gateway.ErrInvalidBand:                codes.InvalidArgument,
+	gateway.ErrInvalidChannel:             codes.InvalidArgument,
+	gateway.ErrInvalidChannelConfig:       codes.InvalidArgument,
+	gateway.ErrInvalidChannelModulation:   codes.InvalidArgument,
 
 	session.ErrDoesNotExistOrFCntOrMICInvalid: codes.NotFound,
 	session.ErrDoesNotExist:                   codes.NotFound,

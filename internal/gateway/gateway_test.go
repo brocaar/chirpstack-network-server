@@ -12,6 +12,98 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func TestChannelConfiguration(t *testing.T) {
+	conf := test.GetConfig()
+	db, err := common.OpenDatabase(conf.PostgresDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	Convey("Given a clean database", t, func() {
+		test.MustResetDB(db)
+
+		Convey("Creating a channel-configuration with invalid band-name returns an error", func() {
+			cf := ChannelConfiguration{
+				Name: "test-conf",
+				Band: "EU_433",
+			}
+			err := CreateChannelConfiguration(db, &cf)
+			So(err, ShouldNotBeNil)
+			So(errors.Cause(err), ShouldResemble, ErrInvalidBand)
+		})
+
+		Convey("Creating a channel-configuration with invalid channels returns an error", func() {
+			cf := ChannelConfiguration{
+				Name:     "test-conf",
+				Band:     string(common.BandName),
+				Channels: []int64{0, 1, 2, 3}, // only three channels are defined
+			}
+			err := CreateChannelConfiguration(db, &cf)
+			So(err, ShouldNotBeNil)
+			So(errors.Cause(err), ShouldResemble, ErrInvalidChannel)
+		})
+	})
+}
+
+func TestExtraChannel(t *testing.T) {
+	conf := test.GetConfig()
+	db, err := common.OpenDatabase(conf.PostgresDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	Convey("Given a clean database with a channel-configuration", t, func() {
+		test.MustResetDB(db)
+
+		cf := ChannelConfiguration{
+			Name: "test-conf",
+			Band: string(common.BandName),
+		}
+		So(CreateChannelConfiguration(db, &cf), ShouldBeNil)
+
+		c := ExtraChannel{
+			ChannelConfigurationID: cf.ID,
+			Frequency:              868700000,
+			BandWidth:              125,
+		}
+
+		Convey("Creating an extra LoRa channel without sf set returns an error", func() {
+			c.Modulation = ChannelModulationLoRa
+			err := CreateExtraChannel(db, &c)
+			So(err, ShouldNotBeNil)
+			So(errors.Cause(err), ShouldResemble, ErrInvalidChannelConfig)
+		})
+
+		Convey("Creating an extra LoRa channel with data-rate set returns an error", func() {
+			c.Modulation = ChannelModulationLoRa
+			c.SpreadFactors = []int64{12}
+			c.DataRate = 50000
+			err := CreateExtraChannel(db, &c)
+			So(err, ShouldNotBeNil)
+			So(errors.Cause(err), ShouldResemble, ErrInvalidChannelConfig)
+		})
+
+		Convey("Creating an extra FSK channel without datarate set returns an error", func() {
+			c.Modulation = ChannelModulationFSK
+			c.SpreadFactors = []int64{12}
+			err := CreateExtraChannel(db, &c)
+			So(err, ShouldNotBeNil)
+			So(errors.Cause(err), ShouldResemble, ErrInvalidChannelConfig)
+		})
+
+		Convey("Creating an extra FSK channel with spread-factor set returns an error", func() {
+			c.Modulation = ChannelModulationFSK
+			c.DataRate = 50000
+			c.SpreadFactors = []int64{12}
+			err := CreateExtraChannel(db, &c)
+			So(err, ShouldNotBeNil)
+			So(errors.Cause(err), ShouldResemble, ErrInvalidChannelConfig)
+		})
+
+	})
+
+}
+
 func TestGatewayStatsAggregation(t *testing.T) {
 	conf := test.GetConfig()
 	db, err := common.OpenDatabase(conf.PostgresDSN)
@@ -204,6 +296,108 @@ func TestGatewayFunctions(t *testing.T) {
 				So(DeleteGateway(db, gw.MAC), ShouldBeNil)
 				_, err := GetGateway(db, gw.MAC)
 				So(err, ShouldResemble, ErrDoesNotExist)
+			})
+
+			Convey("Given a channel-configuration", func() {
+				cf := ChannelConfiguration{
+					Name:     "test-conf",
+					Band:     string(common.BandName),
+					Channels: []int64{0, 1, 2},
+				}
+				So(CreateChannelConfiguration(db, &cf), ShouldBeNil)
+				cf.CreatedAt = cf.CreatedAt.UTC().Truncate(time.Millisecond)
+				cf.UpdatedAt = cf.UpdatedAt.UTC().Truncate(time.Millisecond)
+
+				Convey("Then the channel-configuration can be retrieved", func() {
+					cf2, err := GetChannelConfiguration(db, cf.ID)
+					So(err, ShouldBeNil)
+					cf2.CreatedAt = cf2.CreatedAt.UTC().Truncate(time.Millisecond)
+					cf2.UpdatedAt = cf2.UpdatedAt.UTC().Truncate(time.Millisecond)
+					So(cf2, ShouldResemble, cf)
+				})
+
+				Convey("Then the channel-configuration can be updated", func() {
+					cf.Name = "test-conf-2"
+					cf.Channels = []int64{0, 1}
+					So(UpdateChannelConfiguration(db, &cf), ShouldBeNil)
+					cf.CreatedAt = cf.CreatedAt.UTC().Truncate(time.Millisecond)
+					cf.UpdatedAt = cf.UpdatedAt.UTC().Truncate(time.Millisecond)
+
+					cf2, err := GetChannelConfiguration(db, cf.ID)
+					So(err, ShouldBeNil)
+					cf2.CreatedAt = cf2.CreatedAt.UTC().Truncate(time.Millisecond)
+					cf2.UpdatedAt = cf2.UpdatedAt.UTC().Truncate(time.Millisecond)
+					So(cf2, ShouldResemble, cf)
+				})
+
+				Convey("Then the channel-configuration can be deleted", func() {
+					So(DeleteChannelConfiguration(db, cf.ID), ShouldBeNil)
+					_, err := GetChannelConfiguration(db, cf.ID)
+					So(err, ShouldNotBeNil)
+					So(errors.Cause(err), ShouldResemble, ErrDoesNotExist)
+				})
+
+				Convey("Then the channel-configuration can be listed by band", func() {
+					cfs, err := GetChannelConfigurationsForBand(db, string(common.BandName))
+					So(err, ShouldBeNil)
+					So(cfs, ShouldHaveLength, 1)
+					cfs[0].CreatedAt = cfs[0].CreatedAt.UTC().Truncate(time.Millisecond)
+					cfs[0].UpdatedAt = cfs[0].UpdatedAt.UTC().Truncate(time.Millisecond)
+					So(cfs[0], ShouldResemble, cf)
+				})
+
+				Convey("Then the channel-configuration can be assigned to a gateway", func() {
+					gw.ChannelConfigurationID = &cf.ID
+					So(UpdateGateway(db, &gw), ShouldBeNil)
+
+					gw2, err := GetGateway(db, gw.MAC)
+					So(err, ShouldBeNil)
+					So(gw2.ChannelConfigurationID, ShouldNotBeNil)
+				})
+
+				Convey("Given an extra channel", func() {
+					ec := ExtraChannel{
+						ChannelConfigurationID: cf.ID,
+						Modulation:             ChannelModulationLoRa,
+						Frequency:              867100000,
+						BandWidth:              125,
+						SpreadFactors:          []int64{12, 10, 9, 8, 7},
+					}
+					So(CreateExtraChannel(db, &ec), ShouldBeNil)
+					ec.CreatedAt = ec.CreatedAt.UTC().Truncate(time.Millisecond)
+					ec.UpdatedAt = ec.UpdatedAt.UTC().Truncate(time.Millisecond)
+
+					Convey("Then the extra channel can be retrieved", func() {
+						ecs, err := GetExtraChannelsForChannelConfigurationID(db, cf.ID)
+						So(err, ShouldBeNil)
+						So(ecs, ShouldHaveLength, 1)
+						ecs[0].CreatedAt = ecs[0].CreatedAt.UTC().Truncate(time.Millisecond)
+						ecs[0].UpdatedAt = ecs[0].UpdatedAt.UTC().Truncate(time.Millisecond)
+						So(ecs[0], ShouldResemble, ec)
+					})
+
+					Convey("Then the extra channel can be updated", func() {
+						ec.Frequency = 867300000
+						ec.BandWidth = 250
+						ec.SpreadFactors = []int64{12}
+						So(UpdateExtraChannel(db, &ec), ShouldBeNil)
+						ec.UpdatedAt = ec.UpdatedAt.UTC().Truncate(time.Millisecond)
+
+						ecs, err := GetExtraChannelsForChannelConfigurationID(db, cf.ID)
+						So(err, ShouldBeNil)
+						So(ecs, ShouldHaveLength, 1)
+						ecs[0].CreatedAt = ecs[0].CreatedAt.UTC().Truncate(time.Millisecond)
+						ecs[0].UpdatedAt = ecs[0].UpdatedAt.UTC().Truncate(time.Millisecond)
+						So(ecs[0], ShouldResemble, ec)
+					})
+
+					Convey("Then the extra channel can be deleted", func() {
+						So(DeleteExtraChannel(db, ec.ID), ShouldBeNil)
+						ecs, err := GetExtraChannelsForChannelConfigurationID(db, cf.ID)
+						So(err, ShouldBeNil)
+						So(ecs, ShouldHaveLength, 0)
+					})
+				})
 			})
 		})
 	})

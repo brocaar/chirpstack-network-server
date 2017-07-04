@@ -55,6 +55,12 @@ func MustSetStatsAggregationIntervals(levels []string) {
 	}
 }
 
+// Channel modulations
+const (
+	ChannelModulationFSK  = "FSK"
+	ChannelModulationLoRa = "LORA"
+)
+
 // GPSPoint contains a GPS point.
 type GPSPoint struct {
 	Latitude  float64
@@ -109,15 +115,16 @@ func (s *StatsHandler) Stop() error {
 
 // Gateway represents a single gateway.
 type Gateway struct {
-	MAC         lorawan.EUI64 `db:"mac"`
-	Name        string        `db:"name"`
-	Description string        `db:"description"`
-	CreatedAt   time.Time     `db:"created_at"`
-	UpdatedAt   time.Time     `db:"updated_at"`
-	FirstSeenAt *time.Time    `db:"first_seen_at"`
-	LastSeenAt  *time.Time    `db:"last_seen_at"`
-	Location    *GPSPoint     `db:"location"`
-	Altitude    *float64      `db:"altitude"`
+	MAC                    lorawan.EUI64 `db:"mac"`
+	Name                   string        `db:"name"`
+	Description            string        `db:"description"`
+	CreatedAt              time.Time     `db:"created_at"`
+	UpdatedAt              time.Time     `db:"updated_at"`
+	FirstSeenAt            *time.Time    `db:"first_seen_at"`
+	LastSeenAt             *time.Time    `db:"last_seen_at"`
+	Location               *GPSPoint     `db:"location"`
+	Altitude               *float64      `db:"altitude"`
+	ChannelConfigurationID *int64        `db:"channel_configuration_id"`
 }
 
 // Validate validates the data of the gateway.
@@ -139,6 +146,78 @@ type Stats struct {
 	TXPacketsEmitted    int           `db:"tx_packets_emitted"`
 }
 
+// ChannelConfiguration contains the channel-configuration for a gateway.
+type ChannelConfiguration struct {
+	ID        int64     `db:"id"`
+	Name      string    `db:"name"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
+	Band      string    `db:"band"`
+	Channels  []int64   `db:"channels"`
+}
+
+// Validate validates the channel-configuration.
+func (cf ChannelConfiguration) Validate() error {
+	if cf.Band != string(common.BandName) {
+		return ErrInvalidBand
+	}
+
+	// check if the configured channels are defined as uplink channels
+	// for the active band.
+	enabledChannels := common.Band.GetUplinkChannels()
+	for _, c := range cf.Channels {
+		found := false
+		for _, ec := range enabledChannels {
+			if int(c) == ec {
+				found = true
+			}
+		}
+		if !found {
+			return ErrInvalidChannel
+		}
+	}
+
+	return nil
+}
+
+// ExtraChannel contains the information for an extra channel.
+type ExtraChannel struct {
+	ID                     int64     `db:"id"`
+	ChannelConfigurationID int64     `db:"channel_configuration_id"`
+	CreatedAt              time.Time `db:"created_at"`
+	UpdatedAt              time.Time `db:"updated_at"`
+	Modulation             string    `db:"modulation"`
+	Frequency              int       `db:"frequency"`
+	BandWidth              int       `db:"bandwidth"`
+	DataRate               int       `db:"data_rate"`
+	SpreadFactors          []int64   `db:"spread_factors"`
+}
+
+func (c ExtraChannel) Validate() error {
+	if c.Frequency == 0 {
+		return ErrInvalidChannelConfig
+	}
+
+	if c.BandWidth == 0 {
+		return ErrInvalidChannelConfig
+	}
+
+	switch c.Modulation {
+	case ChannelModulationLoRa:
+		if len(c.SpreadFactors) == 0 || c.DataRate != 0 {
+			return ErrInvalidChannelConfig
+		}
+	case ChannelModulationFSK:
+		if len(c.SpreadFactors) != 0 || c.DataRate == 0 {
+			return ErrInvalidChannelConfig
+		}
+	default:
+		return ErrInvalidChannelModulation
+	}
+
+	return nil
+}
+
 // CreateGateway creates the given gateway.
 func CreateGateway(db *sqlx.DB, gw *Gateway) error {
 	if err := gw.Validate(); err != nil {
@@ -156,8 +235,9 @@ func CreateGateway(db *sqlx.DB, gw *Gateway) error {
 			first_seen_at,
 			last_seen_at,
 			location,
-			altitude
-		) values ($1, $2, $3, $4, $4, $5, $6, $7, $8)`,
+			altitude,
+			channel_configuration_id
+		) values ($1, $2, $3, $4, $4, $5, $6, $7, $8, $9)`,
 		gw.MAC[:],
 		gw.Name,
 		gw.Description,
@@ -166,6 +246,7 @@ func CreateGateway(db *sqlx.DB, gw *Gateway) error {
 		gw.LastSeenAt,
 		gw.Location,
 		gw.Altitude,
+		gw.ChannelConfigurationID,
 	)
 	if err != nil {
 		switch err := err.(type) {
@@ -214,7 +295,8 @@ func UpdateGateway(db *sqlx.DB, gw *Gateway) error {
 			first_seen_at = $5,
 			last_seen_at = $6,
 			location = $7,
-			altitude = $8
+			altitude = $8,
+			channel_configuration_id = $9
 		where mac = $1`,
 		gw.MAC[:],
 		gw.Name,
@@ -224,6 +306,7 @@ func UpdateGateway(db *sqlx.DB, gw *Gateway) error {
 		gw.LastSeenAt,
 		gw.Location,
 		gw.Altitude,
+		gw.ChannelConfigurationID,
 	)
 	if err != nil {
 		return errors.Wrap(err, "update error")
@@ -372,6 +455,334 @@ func GetGatewayStats(db *sqlx.DB, mac lorawan.EUI64, interval string, start, end
 		return nil, errors.Wrap(err, "select error")
 	}
 	return stats, nil
+}
+
+// CreateChannelConfiguration creates the given channel-configuration.
+func CreateChannelConfiguration(db *sqlx.DB, cf *ChannelConfiguration) error {
+	if err := cf.Validate(); err != nil {
+		return errors.Wrap(err, "validate error")
+	}
+
+	now := time.Now()
+	err := db.Get(&cf.ID, `
+		insert into channel_configuration (
+			name,
+			created_at,
+			updated_at,
+			band,
+			channels
+		) values ($1, $2, $3, $4, $5)
+		returning id`,
+		cf.Name,
+		now,
+		now,
+		cf.Band,
+		pq.Array(cf.Channels),
+	)
+	if err != nil {
+		switch err := err.(type) {
+		case *pq.Error:
+			switch err.Code.Name() {
+			case "unique_violation":
+				return ErrAlreadyExists
+			default:
+				return errors.Wrap(err, "insert error")
+			}
+		default:
+			return errors.Wrap(err, "insert error")
+		}
+	}
+	cf.CreatedAt = now
+	cf.UpdatedAt = now
+	log.WithFields(log.Fields{
+		"id":   cf.ID,
+		"band": cf.Band,
+		"name": cf.Name,
+	}).Info("channel-configuration created")
+	return nil
+}
+
+// GetChannelConfiguration returns the channel-configuration for the given ID.
+func GetChannelConfiguration(db *sqlx.DB, id int64) (ChannelConfiguration, error) {
+	var cf ChannelConfiguration
+	err := db.QueryRow(`
+		select
+			id,
+			name,
+			created_at,
+			updated_at,
+			band,
+			channels
+		from channel_configuration
+		where id = $1`,
+		id,
+	).Scan(
+		&cf.ID,
+		&cf.Name,
+		&cf.CreatedAt,
+		&cf.UpdatedAt,
+		&cf.Band,
+		pq.Array(&cf.Channels),
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return cf, ErrDoesNotExist
+		}
+		return cf, errors.Wrap(err, "select error")
+	}
+	return cf, nil
+}
+
+// UpdateChannelConfiguration updates the given channel-configuration.
+func UpdateChannelConfiguration(db *sqlx.DB, cf *ChannelConfiguration) error {
+	if err := cf.Validate(); err != nil {
+		return errors.Wrap(err, "validate error")
+	}
+
+	now := time.Now()
+	res, err := db.Exec(`
+		update channel_configuration set
+			updated_at = $2,
+			name = $3,
+			band = $4,
+			channels = $5
+		where
+			id = $1`,
+		cf.ID,
+		now,
+		cf.Name,
+		cf.Band,
+		pq.Array(cf.Channels),
+	)
+	if err != nil {
+		return errors.Wrap(err, "update error")
+	}
+	ra, err := res.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "get rows affected error")
+	}
+	if ra == 0 {
+		return ErrDoesNotExist
+	}
+	cf.UpdatedAt = now
+	log.WithFields(log.Fields{
+		"id":   cf.ID,
+		"name": cf.Name,
+		"band": cf.Band,
+	}).Info("channel-configuration updated")
+	return nil
+}
+
+// DeleteChannelConfiguration deletes the channel-configuration matching the
+// given ID.
+func DeleteChannelConfiguration(db *sqlx.DB, id int64) error {
+	res, err := db.Exec("delete from channel_configuration where id = $1", id)
+	if err != nil {
+		return errors.Wrap(err, "delete error")
+	}
+	ra, err := res.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "get rows affected error")
+	}
+	if ra == 0 {
+		return ErrDoesNotExist
+	}
+	log.WithField("id", id).Info("channel-configuration deleted")
+	return nil
+}
+
+// GetChannelConfigurationsForBand returns all channel-configurations for the
+// given band name.
+func GetChannelConfigurationsForBand(db *sqlx.DB, band string) ([]ChannelConfiguration, error) {
+	var cfs []ChannelConfiguration
+	rows, err := db.Query(`
+		select
+			id,
+			name,
+			created_at,
+			updated_at,
+			band,
+			channels
+		from channel_configuration
+		where
+			band = $1
+		order by name`,
+		band,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "select error")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var cf ChannelConfiguration
+		if err := rows.Scan(&cf.ID, &cf.Name, &cf.CreatedAt, &cf.UpdatedAt, &cf.Band, pq.Array(&cf.Channels)); err != nil {
+			return nil, errors.Wrap(err, "scan row error")
+		}
+		cfs = append(cfs, cf)
+	}
+
+	return cfs, nil
+}
+
+// CreateExtraChannel creates the given extra channel.
+func CreateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
+	if err := c.Validate(); err != nil {
+		return errors.Wrap(err, "validate error")
+	}
+
+	now := time.Now()
+	err := db.Get(&c.ID, `
+		insert into extra_channel (
+			channel_configuration_id,
+			created_at,
+			updated_at,
+			modulation,
+			frequency,
+			bandwidth,
+			data_rate,
+			spread_factors
+		) values ($1, $2, $3, $4, $5, $6, $7, $8)
+		returning id`,
+		c.ChannelConfigurationID,
+		now,
+		now,
+		c.Modulation,
+		c.Frequency,
+		c.BandWidth,
+		c.DataRate,
+		pq.Array(c.SpreadFactors),
+	)
+	if err != nil {
+		switch err := err.(type) {
+		case *pq.Error:
+			switch err.Code.Name() {
+			case "unique_violation":
+				return ErrAlreadyExists
+			case "foreign_key_violation":
+				return ErrDoesNotExist
+			default:
+				return errors.Wrap(err, "insert error")
+			}
+		default:
+			return errors.Wrap(err, "insert error")
+		}
+	}
+	c.CreatedAt = now
+	c.UpdatedAt = now
+	log.WithFields(log.Fields{
+		"channel_configuration_id": c.ChannelConfigurationID,
+		"id": c.ID,
+	}).Info("extra channel created")
+	return nil
+}
+
+// UpdateExtraChannel updates the given extra channel.
+func UpdateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
+	if err := c.Validate(); err != nil {
+		return errors.Wrap(err, "validate error")
+	}
+
+	now := time.Now()
+	res, err := db.Exec(`
+		update extra_channel set
+			channel_configuration_id = $2,
+			updated_at = $3,
+			modulation = $4,
+			frequency = $5,
+			bandwidth = $6,
+			data_rate = $7,
+			spread_factors = $8
+		where
+			id = $1`,
+		c.ID,
+		c.ChannelConfigurationID,
+		now,
+		c.Modulation,
+		c.Frequency,
+		c.BandWidth,
+		c.DataRate,
+		pq.Array(c.SpreadFactors),
+	)
+	if err != nil {
+		return errors.Wrap(err, "update error")
+	}
+	ra, err := res.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "get rows affected error")
+	}
+	if ra == 0 {
+		return ErrDoesNotExist
+	}
+	c.UpdatedAt = now
+	log.WithFields(log.Fields{
+		"channel_configuration_id": c.ChannelConfigurationID,
+		"id": c.ID,
+	}).Info("extra channel updated")
+	return nil
+}
+
+// DeleteExtraChannel deletes the extra channel matching the given id.
+func DeleteExtraChannel(db *sqlx.DB, id int64) error {
+	res, err := db.Exec("delete from extra_channel where id = $1", id)
+	if err != nil {
+		return errors.Wrap(err, "delete error")
+	}
+	ra, err := res.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "get rows affected error")
+	}
+	if ra == 0 {
+		return ErrDoesNotExist
+	}
+	log.WithField("id", id).Info("extra channel deleted")
+	return nil
+}
+
+// GetExtraChannelsForChannelConfigurationID returns the extra channels for
+// the given channel-configuration id.
+func GetExtraChannelsForChannelConfigurationID(db *sqlx.DB, id int64) ([]ExtraChannel, error) {
+	var out []ExtraChannel
+	rows, err := db.Query(`
+		select
+			id,
+			channel_configuration_id,
+			created_at,
+			updated_at,
+			modulation,
+			frequency,
+			bandwidth,
+			data_rate,
+			spread_factors
+		from extra_channel
+		where
+			channel_configuration_id = $1
+		order by modulation, frequency`,
+		id,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "select error")
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var c ExtraChannel
+		if err := rows.Scan(
+			&c.ID,
+			&c.ChannelConfigurationID,
+			&c.CreatedAt,
+			&c.UpdatedAt,
+			&c.Modulation,
+			&c.Frequency,
+			&c.BandWidth,
+			&c.DataRate,
+			pq.Array(&c.SpreadFactors),
+		); err != nil {
+			return nil, errors.Wrap(err, "scan row error")
+		}
+		out = append(out, c)
+	}
+	return out, nil
 }
 
 // handleStatsPackets consumes received stats packets by the gateway.

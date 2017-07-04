@@ -254,6 +254,10 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 		Location:    location,
 		Altitude:    altitude,
 	}
+	if req.ChannelConfigurationID != 0 {
+		gw.ChannelConfigurationID = &req.ChannelConfigurationID
+	}
+
 	err := gateway.CreateGateway(n.ctx.DB, &gw)
 	if err != nil {
 		return nil, errToRPCError(err)
@@ -297,6 +301,12 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 
 	if req.Altitude != 0 {
 		altitude = &req.Altitude
+	}
+
+	if req.ChannelConfigurationID != 0 {
+		gw.ChannelConfigurationID = &req.ChannelConfigurationID
+	} else {
+		gw.ChannelConfigurationID = nil
 	}
 
 	gw.Name = req.Name
@@ -487,6 +497,10 @@ func gwToResp(gw gateway.Gateway) *ns.GetGatewayResponse {
 
 	if gw.Altitude != nil {
 		resp.Altitude = *gw.Altitude
+	}
+
+	if gw.ChannelConfigurationID != nil {
+		resp.ChannelConfigurationID = *gw.ChannelConfigurationID
 	}
 
 	return &resp
