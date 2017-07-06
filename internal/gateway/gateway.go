@@ -193,6 +193,7 @@ type ExtraChannel struct {
 	SpreadFactors          []int64   `db:"spread_factors"`
 }
 
+// Validate validates the extra channel data.
 func (c ExtraChannel) Validate() error {
 	if c.Frequency == 0 {
 		return ErrInvalidChannelConfig

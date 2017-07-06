@@ -47,6 +47,22 @@ service NetworkServer {
 
 	// GetFrameLogsForDevEUI returns the uplink / downlink frame logs for the given DevEUI.
 	rpc GetFrameLogsForDevEUI(GetFrameLogsForDevEUIRequest) returns (GetFrameLogsResponse) {}
+
+	// CreateChannelConfiguration creates the given channel-configuration.
+	rpc CreateChannelConfiguration(CreateChannelConfigurationRequest) returns (CreateChannelConfigurationResponse) {}
+
+	// GetChannelConfiguration returns the channel-configuration for the given ID.
+	rpc GetChannelConfiguration(GetChannelConfigurationRequest) returns (GetChannelConfigurationResponse) {}
+
+	// UpdateChannelConfiguration updates the given channel-configuration.
+	rpc UpdateChannelConfiguration(UpdateChannelConfigurationRequest) returns (UpdateChannelConfigurationResponse) {}
+
+	// DeleteChannelConfiguration deletes the channel-configuration matching the
+	// given ID.
+	rpc DeleteChannelConfiguration(DeleteChannelConfigurationRequest) returns (DeleteChannelConfigurationResponse) {}
+
+	// ListChannelConfigurations returns all channel-configurations.
+	rpc ListChannelConfigurations(ListChannelConfigurationsRequest) returns (ListChannelConfigurationsResponse) {}
 }
 
 enum RXWindow {
@@ -500,4 +516,69 @@ message TXInfo {
 
 	// Data-rate.
 	DataRate dataRate = 7;
+}
+
+message CreateChannelConfigurationRequest {
+	// Name of the channel-configuration.
+	string name = 1;
+
+	// Channels active in this configuration. These channel indices must map
+	// to the channel numbers as specified in the LoRaWAN Regional Parameters.
+	repeated int32 channels = 2;
+}
+
+message CreateChannelConfigurationResponse {
+	// ID of the channel-configuration.
+	int64 id = 1;
+}
+
+message GetChannelConfigurationRequest {
+	// ID of the channel-configuration.
+	int64 id = 1;
+}
+
+message GetChannelConfigurationResponse {
+	// ID of the channel-configuration.
+	int64 id = 1;
+
+	// Name of the channel-configuration.
+	string name = 2;
+
+	// Channels active in this configuration. These channel indices must map
+	// to the channel numbers as specified in the LoRaWAN Regional Parameters.
+	repeated int32 channels = 3;
+
+	// The timestamp when the channel-configuration was created.
+	string createdAt = 4;
+
+	// The timestamp when the channel-configuration was last updated.
+	string updatedAt = 5;
+}
+
+message UpdateChannelConfigurationRequest {
+	// ID of the channel-configuration.
+	int64 id = 1;
+
+	// Name of the channel-configuration.
+	string name = 2;
+
+	// Channels active in this configuration. These channel indices must map
+	// to the channel numbers as specified in the LoRaWAN Regional Parameters.
+	repeated int32 channels = 3;
+}
+
+message UpdateChannelConfigurationResponse {}
+
+message DeleteChannelConfigurationRequest {
+	// ID of the channel-configuration.
+	int64 id = 1;
+}
+
+message DeleteChannelConfigurationResponse {}
+
+message ListChannelConfigurationsRequest {}
+
+message ListChannelConfigurationsResponse {
+	// Result-set.
+	repeated GetChannelConfigurationResponse result = 1;
 }

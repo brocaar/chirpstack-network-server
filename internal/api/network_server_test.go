@@ -428,6 +428,85 @@ func TestNetworkServerAPI(t *testing.T) {
 							},
 						})
 					})
+
+					Convey("When creating a channel-configuration", func() {
+						cfResp, err := api.CreateChannelConfiguration(ctx, &ns.CreateChannelConfigurationRequest{
+							Name:     "test-config",
+							Channels: []int32{0, 1, 2},
+						})
+						So(err, ShouldBeNil)
+						So(cfResp.Id, ShouldNotEqual, 0)
+
+						Convey("Then the channel-configuration has been created", func() {
+							cf, err := api.GetChannelConfiguration(ctx, &ns.GetChannelConfigurationRequest{
+								Id: cfResp.Id,
+							})
+							So(err, ShouldBeNil)
+							So(cf.Name, ShouldEqual, "test-config")
+							So(cf.Channels, ShouldResemble, []int32{0, 1, 2})
+							So(cf.CreatedAt, ShouldNotEqual, "")
+							So(cf.UpdatedAt, ShouldNotEqual, "")
+
+							Convey("Then the channel-configuration can be listed", func() {
+								cfs, err := api.ListChannelConfigurations(ctx, &ns.ListChannelConfigurationsRequest{})
+								So(err, ShouldBeNil)
+								So(cfs.Result, ShouldHaveLength, 1)
+								So(cfs.Result[0], ShouldResemble, cf)
+							})
+
+							Convey("Then the channel-configuration can be updated", func() {
+								_, err := api.UpdateChannelConfiguration(ctx, &ns.UpdateChannelConfigurationRequest{
+									Id:       cfResp.Id,
+									Name:     "updated-channel-conf",
+									Channels: []int32{0, 1},
+								})
+								So(err, ShouldBeNil)
+
+								cf2, err := api.GetChannelConfiguration(ctx, &ns.GetChannelConfigurationRequest{
+									Id: cfResp.Id,
+								})
+								So(err, ShouldBeNil)
+								So(cf2.Name, ShouldEqual, "updated-channel-conf")
+								So(cf2.Channels, ShouldResemble, []int32{0, 1})
+								So(cf2.CreatedAt, ShouldEqual, cf.CreatedAt)
+								So(cf2.UpdatedAt, ShouldNotEqual, "")
+								So(cf2.UpdatedAt, ShouldNotEqual, cf.UpdatedAt)
+							})
+						})
+
+						Convey("Then the channel-configuration can be assigned to the gateway", func() {
+							req := ns.UpdateGatewayRequest{
+								Mac:                    []byte{1, 2, 3, 4, 5, 6, 7, 8},
+								Name:                   "test-gateway-updated",
+								Description:            "garden gateway",
+								Latitude:               1.1235,
+								Longitude:              1.1236,
+								Altitude:               15.7,
+								ChannelConfigurationID: cfResp.Id,
+							}
+							_, err := api.UpdateGateway(ctx, &req)
+							So(err, ShouldBeNil)
+
+							gw, err := api.GetGateway(ctx, &ns.GetGatewayRequest{
+								Mac: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+							})
+							So(err, ShouldBeNil)
+							So(gw.ChannelConfigurationID, ShouldEqual, cfResp.Id)
+						})
+
+						Convey("Then the channel-configuration can be deleted", func() {
+							_, err := api.DeleteChannelConfiguration(ctx, &ns.DeleteChannelConfigurationRequest{
+								Id: cfResp.Id,
+							})
+							So(err, ShouldBeNil)
+							_, err = api.GetChannelConfiguration(ctx, &ns.GetChannelConfigurationRequest{
+								Id: cfResp.Id,
+							})
+							So(err, ShouldNotBeNil)
+							So(grpc.Code(err), ShouldEqual, codes.NotFound)
+						})
+
+					})
 				})
 			})
 		})

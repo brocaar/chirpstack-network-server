@@ -473,6 +473,92 @@ func (n *NetworkServerAPI) GetFrameLogsForDevEUI(ctx context.Context, req *ns.Ge
 	return &resp, nil
 }
 
+// CreateChannelConfiguration creates the given channel-configuration.
+func (n *NetworkServerAPI) CreateChannelConfiguration(ctx context.Context, req *ns.CreateChannelConfigurationRequest) (*ns.CreateChannelConfigurationResponse, error) {
+	cf := gateway.ChannelConfiguration{
+		Name: req.Name,
+		Band: string(common.BandName),
+	}
+	for _, c := range req.Channels {
+		cf.Channels = append(cf.Channels, int64(c))
+	}
+
+	if err := gateway.CreateChannelConfiguration(n.ctx.DB, &cf); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.CreateChannelConfigurationResponse{Id: cf.ID}, nil
+}
+
+// GetChannelConfiguration returns the channel-configuration for the given ID.
+func (n *NetworkServerAPI) GetChannelConfiguration(ctx context.Context, req *ns.GetChannelConfigurationRequest) (*ns.GetChannelConfigurationResponse, error) {
+	cf, err := gateway.GetChannelConfiguration(n.ctx.DB, req.Id)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return channelConfigurationToResp(cf), nil
+}
+
+// UpdateChannelConfiguration updates the given channel-configuration.
+func (n *NetworkServerAPI) UpdateChannelConfiguration(ctx context.Context, req *ns.UpdateChannelConfigurationRequest) (*ns.UpdateChannelConfigurationResponse, error) {
+	cf, err := gateway.GetChannelConfiguration(n.ctx.DB, req.Id)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	cf.Name = req.Name
+	cf.Channels = []int64{}
+	for _, c := range req.Channels {
+		cf.Channels = append(cf.Channels, int64(c))
+	}
+
+	if err = gateway.UpdateChannelConfiguration(n.ctx.DB, &cf); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.UpdateChannelConfigurationResponse{}, nil
+}
+
+// DeleteChannelConfiguration deletes the channel-configuration matching the
+// given ID.
+func (n *NetworkServerAPI) DeleteChannelConfiguration(ctx context.Context, req *ns.DeleteChannelConfigurationRequest) (*ns.DeleteChannelConfigurationResponse, error) {
+	if err := gateway.DeleteChannelConfiguration(n.ctx.DB, req.Id); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.DeleteChannelConfigurationResponse{}, nil
+}
+
+// ListChannelConfigurations returns all channel-configurations.
+func (n *NetworkServerAPI) ListChannelConfigurations(ctx context.Context, req *ns.ListChannelConfigurationsRequest) (*ns.ListChannelConfigurationsResponse, error) {
+	cfs, err := gateway.GetChannelConfigurationsForBand(n.ctx.DB, string(common.BandName))
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	var out ns.ListChannelConfigurationsResponse
+
+	for _, cf := range cfs {
+		out.Result = append(out.Result, channelConfigurationToResp(cf))
+	}
+
+	return &out, nil
+}
+
+func channelConfigurationToResp(cf gateway.ChannelConfiguration) *ns.GetChannelConfigurationResponse {
+	out := ns.GetChannelConfigurationResponse{
+		Id:        cf.ID,
+		Name:      cf.Name,
+		CreatedAt: cf.CreatedAt.Format(time.RFC3339Nano),
+		UpdatedAt: cf.UpdatedAt.Format(time.RFC3339Nano),
+	}
+	for _, c := range cf.Channels {
+		out.Channels = append(out.Channels, int32(c))
+	}
+	return &out
+}
+
 func gwToResp(gw gateway.Gateway) *ns.GetGatewayResponse {
 	resp := ns.GetGatewayResponse{
 		Mac:         gw.MAC[:],
