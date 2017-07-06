@@ -13,7 +13,7 @@ menu:
 
 LoRa Server makes use of MQTT for publishing and receivng application
 payloads. [Mosquitto](http://mosquitto.org/) is a popular open-source MQTT
-server, but any MQTT broker implementing MQTT 3.1.1 should work. 
+server, but any MQTT broker implementing MQTT 3.1.1 should work.
 In case you install Mosquitto, make sure you install a **recent** version.
 
 #### Install
@@ -46,7 +46,7 @@ LoRa Server persists the gateway data into a
 [PostgreSQL](https://www.postgresql.org) database. Note that PostgreSQL 9.5+
 is required.
 
-#### Install 
+#### Install
 
 ##### Debian / Ubuntu
 
@@ -61,6 +61,7 @@ sudo apt-get update
 
 sudo apt-get install postgresql-9.6
 ```
+Please note that currently there are no binaries available for the Raspberry Pi at http://apt.postgresql.org/pub/repos/apt/dists/jessie-pgdg/. We recommend to install a Backport of postgresql-9.6 following the instructions at https://backports.debian.org/Instructions/ .
 
 ##### Other platforms
 
@@ -73,7 +74,7 @@ LoRa Server stores all non-persistent data into a
 [Redis](http://redis.io/) datastore. Note that at least Redis 2.6.0
 is required.
 
-#### Install 
+#### Install
 
 ##### Debian / Ubuntu
 
