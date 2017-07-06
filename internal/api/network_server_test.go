@@ -506,6 +506,54 @@ func TestNetworkServerAPI(t *testing.T) {
 							So(grpc.Code(err), ShouldEqual, codes.NotFound)
 						})
 
+						Convey("Then an extra channel can be added to this configuration", func() {
+							ecRes, err := api.CreateExtraChannel(ctx, &ns.CreateExtraChannelRequest{
+								ChannelConfigurationID: cfResp.Id,
+								Modulation:             ns.Modulation_LORA,
+								Frequency:              867100000,
+								BandWidth:              125,
+								SpreadFactors:          []int32{0, 1, 2, 3, 4, 5},
+							})
+							So(err, ShouldBeNil)
+							So(ecRes.Id, ShouldNotEqual, 0)
+
+							Convey("Then this extra channel can be updated", func() {
+								_, err := api.UpdateExtraChannel(ctx, &ns.UpdateExtraChannelRequest{
+									Id: ecRes.Id,
+									ChannelConfigurationID: cfResp.Id,
+									Modulation:             ns.Modulation_LORA,
+									Frequency:              867300000,
+									BandWidth:              250,
+									SpreadFactors:          []int32{5},
+								})
+								So(err, ShouldBeNil)
+
+								extraChans, err := api.GetExtraChannelsForChannelConfigurationID(ctx, &ns.GetExtraChannelsForChannelConfigurationIDRequest{
+									Id: cfResp.Id,
+								})
+								So(err, ShouldBeNil)
+								So(extraChans.Result, ShouldHaveLength, 1)
+								So(extraChans.Result[0].Modulation, ShouldEqual, ns.Modulation_LORA)
+								So(extraChans.Result[0].Frequency, ShouldEqual, 867300000)
+								So(extraChans.Result[0].Bandwidth, ShouldEqual, 250)
+								So(extraChans.Result[0].SpreadFactors, ShouldResemble, []int32{5})
+								So(extraChans.Result[0].CreatedAt, ShouldNotEqual, "")
+								So(extraChans.Result[0].UpdatedAt, ShouldNotEqual, "")
+							})
+
+							Convey("Then this extra channel can be removed", func() {
+								_, err := api.DeleteExtraChannel(ctx, &ns.DeleteExtraChannelRequest{
+									Id: ecRes.Id,
+								})
+								So(err, ShouldBeNil)
+
+								extraChans, err := api.GetExtraChannelsForChannelConfigurationID(ctx, &ns.GetExtraChannelsForChannelConfigurationIDRequest{
+									Id: cfResp.Id,
+								})
+								So(err, ShouldBeNil)
+								So(extraChans.Result, ShouldHaveLength, 0)
+							})
+						})
 					})
 				})
 			})

@@ -63,6 +63,19 @@ service NetworkServer {
 
 	// ListChannelConfigurations returns all channel-configurations.
 	rpc ListChannelConfigurations(ListChannelConfigurationsRequest) returns (ListChannelConfigurationsResponse) {}
+
+	// CreateExtraChannel creates the given extra channel.
+	rpc CreateExtraChannel(CreateExtraChannelRequest) returns (CreateExtraChannelResponse) {}
+
+	// UpdateExtraChannel updates the given extra channel.
+	rpc UpdateExtraChannel(UpdateExtraChannelRequest) returns (UpdateExtraChannelResponse) {}
+
+	// DeleteExtraChannel deletes the extra channel matching the given id.
+	rpc DeleteExtraChannel(DeleteExtraChannelRequest) returns (DeleteExtraChannelResponse) {}
+
+	// GetExtraChannelsForChannelConfigurationID returns the extra channels for
+	// the given channel-configuration id.
+	rpc GetExtraChannelsForChannelConfigurationID(GetExtraChannelsForChannelConfigurationIDRequest) returns (GetExtraChannelsForChannelConfigurationIDResponse) {}
 }
 
 enum RXWindow {
@@ -71,6 +84,14 @@ enum RXWindow {
 
 	// Receive window 2
 	RX2 = 1;
+}
+
+enum Modulation {
+	// LoRa
+	LORA = 0;
+
+	// FSK
+	FSK = 1;
 }
 
 message CreateNodeSessionRequest {
@@ -581,4 +602,100 @@ message ListChannelConfigurationsRequest {}
 message ListChannelConfigurationsResponse {
 	// Result-set.
 	repeated GetChannelConfigurationResponse result = 1;
+}
+
+message CreateExtraChannelRequest {
+	// ID of the channel-configuration.
+	int64 channelConfigurationID = 1;
+
+	// Modulation.
+	Modulation modulation = 2;
+
+	// Frequency.
+	int32 frequency = 3;
+
+	// Bandwidth.
+	int32 bandWidth = 4;
+
+	// Data-rate (in case of FSK modulation).
+	int32 dataRate = 5;
+
+	// Spread-factors (in case of LoRa modulation).
+	repeated int32 spreadFactors = 6;
+}
+
+message CreateExtraChannelResponse {
+	// ID of the extra channel.
+	int64 id = 1;
+}
+
+message UpdateExtraChannelRequest {
+	// ID of the extra channel.
+	int64 id = 1;
+
+	// ID of the channel-configuration.
+	int64 channelConfigurationID = 2;
+
+	// Modulation.
+	Modulation modulation = 3;
+
+	// Frequency.
+	int32 frequency = 4;
+
+	// Bandwidth.
+	int32 bandWidth = 5;
+
+	// Data-rate (in case of FSK modulation).
+	int32 dataRate = 6;
+
+	// Spread-factors (in case of LoRa modulation).
+	repeated int32 spreadFactors = 7;
+}
+
+message UpdateExtraChannelResponse {}
+
+message DeleteExtraChannelRequest {
+	// ID of the extra channel.
+	int64 id = 1;
+}
+
+message DeleteExtraChannelResponse {}
+
+message GetExtraChannelResponse {
+	// ID of the extra channel.
+	int64 id = 1;
+
+	// ID of the channel-configuration.
+	int64 channelConfigurationID = 2;
+
+	// Created-at timestamp.
+	string createdAt = 3;
+
+	// Updated-at timestamp.
+	string updatedAt = 4;
+
+	// Modulation.
+	Modulation modulation = 5;
+
+	// Frequency.
+	int32 frequency = 6;
+
+	// Bandwidth.
+	int32 bandwidth = 7;
+
+	// Data-rate (in case of FSK modulation).
+	int32 dataRate = 8;
+
+	// Spread-factors (in case of LoRa modulation).
+	repeated int32 spreadFactors = 9;
+}
+
+message GetExtraChannelsForChannelConfigurationIDRequest {
+	// ID of the channel-configuration.
+	int64 id = 1;
+}
+
+message GetExtraChannelsForChannelConfigurationIDResponse {
+	// Result-set.
+	repeated GetExtraChannelResponse result = 1;
 }

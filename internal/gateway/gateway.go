@@ -678,6 +678,43 @@ func CreateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
 	return nil
 }
 
+// GetExtraChannel returns the extra channel matching the given id.
+func GetExtraChannel(db *sqlx.DB, id int64) (ExtraChannel, error) {
+	var ec ExtraChannel
+	err := db.QueryRow(`
+		select
+			id,
+			channel_configuration_id,
+			created_at,
+			updated_at,
+			modulation,
+			frequency,
+			bandwidth,
+			data_rate,
+			spread_factors
+		from extra_channel
+		where id = $1`,
+		id,
+	).Scan(
+		&ec.ID,
+		&ec.ChannelConfigurationID,
+		&ec.CreatedAt,
+		&ec.UpdatedAt,
+		&ec.Modulation,
+		&ec.Frequency,
+		&ec.BandWidth,
+		&ec.DataRate,
+		pq.Array(&ec.SpreadFactors),
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ec, ErrDoesNotExist
+		}
+		return ec, errors.Wrap(err, "select error")
+	}
+	return ec, nil
+}
+
 // UpdateExtraChannel updates the given extra channel.
 func UpdateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
 	if err := c.Validate(); err != nil {

@@ -546,6 +546,116 @@ func (n *NetworkServerAPI) ListChannelConfigurations(ctx context.Context, req *n
 	return &out, nil
 }
 
+// CreateExtraChannel creates the given extra channel.
+func (n *NetworkServerAPI) CreateExtraChannel(ctx context.Context, req *ns.CreateExtraChannelRequest) (*ns.CreateExtraChannelResponse, error) {
+	ec := gateway.ExtraChannel{
+		ChannelConfigurationID: req.ChannelConfigurationID,
+		Frequency:              int(req.Frequency),
+		BandWidth:              int(req.BandWidth),
+		DataRate:               int(req.DataRate),
+	}
+
+	switch req.Modulation {
+	case ns.Modulation_LORA:
+		ec.Modulation = gateway.ChannelModulationLoRa
+	case ns.Modulation_FSK:
+		ec.Modulation = gateway.ChannelModulationFSK
+	default:
+		return nil, grpc.Errorf(codes.InvalidArgument, "invalid modulation")
+	}
+
+	for _, sf := range req.SpreadFactors {
+		ec.SpreadFactors = append(ec.SpreadFactors, int64(sf))
+	}
+
+	if err := gateway.CreateExtraChannel(n.ctx.DB, &ec); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.CreateExtraChannelResponse{Id: ec.ID}, nil
+}
+
+// UpdateExtraChannel updates the given extra channel.
+func (n *NetworkServerAPI) UpdateExtraChannel(ctx context.Context, req *ns.UpdateExtraChannelRequest) (*ns.UpdateExtraChannelResponse, error) {
+	ec, err := gateway.GetExtraChannel(n.ctx.DB, req.Id)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	ec.ChannelConfigurationID = req.ChannelConfigurationID
+	ec.Frequency = int(req.Frequency)
+	ec.BandWidth = int(req.BandWidth)
+	ec.DataRate = int(req.DataRate)
+	ec.SpreadFactors = []int64{}
+
+	switch req.Modulation {
+	case ns.Modulation_LORA:
+		ec.Modulation = gateway.ChannelModulationLoRa
+	case ns.Modulation_FSK:
+		ec.Modulation = gateway.ChannelModulationFSK
+	default:
+		return nil, grpc.Errorf(codes.InvalidArgument, "invalid modulation")
+	}
+
+	for _, sf := range req.SpreadFactors {
+		ec.SpreadFactors = append(ec.SpreadFactors, int64(sf))
+	}
+
+	if err = gateway.UpdateExtraChannel(n.ctx.DB, &ec); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.UpdateExtraChannelResponse{}, nil
+}
+
+// DeleteExtraChannel deletes the extra channel matching the given id.
+func (n *NetworkServerAPI) DeleteExtraChannel(ctx context.Context, req *ns.DeleteExtraChannelRequest) (*ns.DeleteExtraChannelResponse, error) {
+	err := gateway.DeleteExtraChannel(n.ctx.DB, req.Id)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.DeleteExtraChannelResponse{}, nil
+}
+
+// GetExtraChannelsForChannelConfigurationID returns the extra channels for
+// the given channel-configuration id.
+func (n *NetworkServerAPI) GetExtraChannelsForChannelConfigurationID(ctx context.Context, req *ns.GetExtraChannelsForChannelConfigurationIDRequest) (*ns.GetExtraChannelsForChannelConfigurationIDResponse, error) {
+	chans, err := gateway.GetExtraChannelsForChannelConfigurationID(n.ctx.DB, req.Id)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	var out ns.GetExtraChannelsForChannelConfigurationIDResponse
+
+	for i, c := range chans {
+		out.Result = append(out.Result, &ns.GetExtraChannelResponse{
+			Id: c.ID,
+			ChannelConfigurationID: c.ChannelConfigurationID,
+			CreatedAt:              c.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt:              c.UpdatedAt.Format(time.RFC3339Nano),
+			Frequency:              int32(c.Frequency),
+			Bandwidth:              int32(c.BandWidth),
+			DataRate:               int32(c.DataRate),
+		})
+
+		for _, sf := range c.SpreadFactors {
+			out.Result[i].SpreadFactors = append(out.Result[i].SpreadFactors, int32(sf))
+		}
+
+		switch c.Modulation {
+		case gateway.ChannelModulationLoRa:
+			out.Result[i].Modulation = ns.Modulation_LORA
+		case gateway.ChannelModulationFSK:
+			out.Result[i].Modulation = ns.Modulation_FSK
+		default:
+			return nil, grpc.Errorf(codes.Internal, "invalid modulation")
+		}
+	}
+
+	return &out, nil
+}
+
 func channelConfigurationToResp(cf gateway.ChannelConfiguration) *ns.GetChannelConfigurationResponse {
 	out := ns.GetChannelConfigurationResponse{
 		Id:        cf.ID,
