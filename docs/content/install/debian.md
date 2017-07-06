@@ -30,7 +30,7 @@ Within the the PostgreSQL prompt, enter the following queries:
 create role loraserver_ns with login password 'dbpassword';
 
 -- create the loraserver_ns database
-create database loraserver_ns with owner loraserver_as;
+create database loraserver_ns with owner loraserver_ns;
 
 -- exit the prompt
 \q
