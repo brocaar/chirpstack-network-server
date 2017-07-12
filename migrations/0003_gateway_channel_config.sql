@@ -14,7 +14,7 @@ create index idx_channel_configuration_band on channel_configuration(band);
 
 create table extra_channel (
 	id bigserial primary key,
-	channel_configuration_id bigint references channel_configuration not null,
+	channel_configuration_id bigint not null references channel_configuration on delete cascade,
 	created_at timestamp with time zone not null,
 	updated_at timestamp with time zone not null,
 	modulation varchar(10) not null,
