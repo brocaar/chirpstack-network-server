@@ -43,6 +43,7 @@ api:
 	@go generate api/as/as.go
 	@go generate api/nc/nc.go
 	@go generate api/ns/ns.go
+	@go generate api/gw/gw.go
 
 statics:
 	@echo "Generating static files"

@@ -1,3 +1,5 @@
+//go:generate protoc -I . --go_out=plugins=grpc:. gw.proto
+
 package gw
 
 import (

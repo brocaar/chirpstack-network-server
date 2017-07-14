@@ -795,7 +795,7 @@ func GetExtraChannelsForChannelConfigurationID(db *sqlx.DB, id int64) ([]ExtraCh
 		from extra_channel
 		where
 			channel_configuration_id = $1
-		order by modulation, frequency`,
+		order by frequency`,
 		id,
 	)
 	if err != nil {

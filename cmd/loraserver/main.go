@@ -22,15 +22,17 @@ import (
 	"google.golang.org/grpc/grpclog"
 
 	"github.com/brocaar/loraserver/api/as"
+	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api"
+	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/backend/controller"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
+	gwBackend "github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/migrations"
 	// TODO: merge backend/gateway into internal/gateway?
-	gw "github.com/brocaar/loraserver/internal/gateway"
+	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/migration"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
@@ -79,7 +81,7 @@ func run(c *cli.Context) error {
 	}
 
 	// get the gw stats aggregation intervals
-	gw.MustSetStatsAggregationIntervals(strings.Split(c.String("gw-stats-aggregation-intervals"), ","))
+	gateway.MustSetStatsAggregationIntervals(strings.Split(c.String("gw-stats-aggregation-intervals"), ","))
 
 	// get the timezone
 	if c.String("timezone") != "" {
@@ -143,13 +145,27 @@ func run(c *cli.Context) error {
 	}
 	go apiServer.Serve(ln)
 
+	// start the gateway api server
+	log.WithFields(log.Fields{
+		"bind":     c.String("gw-server-bind"),
+		"ca-cert":  c.String("gw-server-ca-cert"),
+		"tls-cert": c.String("gw-server-tls-cert"),
+		"tls-key":  c.String("gw-server-tls-key"),
+	}).Info("starting gateway api server")
+	gwAPIServer := mustGetGWAPIServer(lsCtx, c)
+	gwServerLn, err := net.Listen("tcp", c.String("gw-server-bind"))
+	if err != nil {
+		log.Fatalf("start gateway api server listener error: %s", err)
+	}
+	go gwAPIServer.Serve(gwServerLn)
+
 	// start the loraserver
 	server := uplink.NewServer(lsCtx)
 	if err := server.Start(); err != nil {
 		log.Fatal(err)
 	}
 	// start the stats server
-	gwStats := gw.NewStatsHandler(lsCtx)
+	gwStats := gateway.NewStatsHandler(lsCtx)
 	if err := gwStats.Start(); err != nil {
 		log.Fatal(err)
 	}
@@ -190,7 +206,7 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) common.Context {
 	}
 
 	// setup gateway backend
-	gw, err := gateway.NewBackend(rp, c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"), c.String("gw-mqtt-ca-cert"))
+	gw, err := gwBackend.NewBackend(rp, c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"), c.String("gw-mqtt-ca-cert"))
 	if err != nil {
 		log.Fatalf("gateway-backend setup failed: %s", err)
 	}
@@ -262,6 +278,26 @@ func mustGetAPIServer(ctx common.Context, c *cli.Context) *grpc.Server {
 	gs := grpc.NewServer(opts...)
 	nsAPI := api.NewNetworkServerAPI(ctx)
 	ns.RegisterNetworkServerServer(gs, nsAPI)
+
+	return gs
+}
+
+func mustGetGWAPIServer(ctx common.Context, c *cli.Context) *grpc.Server {
+	var validator auth.Validator
+	if c.String("gw-server-jwt-secret") != "" {
+		validator = auth.NewJWTValidator("HS256", c.String("gw-server-jwt-secret"))
+	} else {
+		log.Fatal("--gw-server-jwt-secret must be set")
+	}
+
+	var opts []grpc.ServerOption
+	if c.String("gw-server-tls-cert") != "" && c.String("gw-server-tls-key") != "" {
+		creds := mustGetTransportCredentials(c.String("gw-server-tls-cert"), c.String("gw-server-tls-key"), c.String("gw-server-ca-cert"), false)
+		opts = append(opts, grpc.Creds(creds))
+	}
+	gs := grpc.NewServer(opts...)
+	gwAPI := api.NewGatewayAPI(ctx, validator)
+	gw.RegisterGatewayServer(gs, gwAPI)
 
 	return gs
 }
@@ -364,26 +400,56 @@ func main() {
 			Usage:  "band configuration takes repeater encapsulation layer into account",
 			EnvVar: "BAND_REPEATER_COMPATIBLE",
 		},
+		// TODO refactor to NS_SERVER_CA_CERT?
 		cli.StringFlag{
 			Name:   "ca-cert",
 			Usage:  "ca certificate used by the api server (optional)",
 			EnvVar: "CA_CERT",
 		},
+		// TODO refactor to NS_SERVER_TLS_CERT?
 		cli.StringFlag{
 			Name:   "tls-cert",
 			Usage:  "tls certificate used by the api server (optional)",
 			EnvVar: "TLS_CERT",
 		},
+		// TODO refactor to NS_SERVER_TLS_KEY?
 		cli.StringFlag{
 			Name:   "tls-key",
 			Usage:  "tls key used by the api server (optional)",
 			EnvVar: "TLS_KEY",
 		},
+		// TODO refactor to NS_SERVER_BIND?
 		cli.StringFlag{
 			Name:   "bind",
 			Usage:  "ip:port to bind the api server",
 			Value:  "0.0.0.0:8000",
 			EnvVar: "BIND",
+		},
+		cli.StringFlag{
+			Name:   "gw-server-ca-cert",
+			Usage:  "ca certificate used by the gateway api server (optional)",
+			EnvVar: "GW_SERVER_CA_CERT",
+		},
+		cli.StringFlag{
+			Name:   "gw-server-tls-cert",
+			Usage:  "tls certificate used by the gateway api server (optional)",
+			EnvVar: "GW_SERVER_TLS_CERT",
+		},
+		cli.StringFlag{
+			Name:   "gw-server-tls-key",
+			Usage:  "tls key used by the gateway api server (optional)",
+			EnvVar: "GW_SERVER_TLS_KEY",
+		},
+		cli.StringFlag{
+			Name:   "gw-server-jwt-secret",
+			Usage:  "JWT secret used by the gateway api server for gateway authentication / authorization",
+			EnvVar: "GW_SERVER_JWT_SECRET",
+		},
+		cli.StringFlag{
+			Name:   "gw-server-bind",
+			Usage:  "ip:port to bind the gateway api server",
+			Value:  "0.0.0.0:8002",
+			EnvVar: "GW_SERVER_BIND",
 		},
 		cli.StringFlag{
 			Name:   "redis-url",

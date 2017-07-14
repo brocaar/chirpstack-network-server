@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package gw;
+
+enum Modulation {
+	// LoRa
+	LORA = 0;
+
+	// FSK
+	FSK = 1;
+}
+
+// Gateway is the gateway service.
+service Gateway {
+	// GetConfiguration returns the gateway configuration for the given MAC.
+	rpc GetConfiguration(GetConfigurationRequest) returns (GetConfigurationResponse) {}
+}
+
+message Channel {
+	// Modulation of the channel.
+	Modulation modulation = 1;
+
+	// Frequency.
+	int32 frequency = 2;
+
+	// Bandwidth.
+	int32 bandwidth = 3;
+
+	// Data-rate (FSK modulation only).
+	int32 dataRate = 4;
+
+	// Spread-factors (LoRa modulation only).
+	repeated int32 spreadFactors = 5;
+}
+
+message GetConfigurationRequest {
+	// MAC address of the gateway.
+	bytes mac = 1;
+}
+
+message GetConfigurationResponse {
+	// Channels configured on the gateway.
+	repeated Channel channels = 1;
+}
