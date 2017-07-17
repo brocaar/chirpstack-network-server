@@ -552,7 +552,7 @@ func (n *NetworkServerAPI) CreateExtraChannel(ctx context.Context, req *ns.Creat
 		ChannelConfigurationID: req.ChannelConfigurationID,
 		Frequency:              int(req.Frequency),
 		BandWidth:              int(req.BandWidth),
-		DataRate:               int(req.DataRate),
+		BitRate:                int(req.BitRate),
 	}
 
 	switch req.Modulation {
@@ -585,7 +585,7 @@ func (n *NetworkServerAPI) UpdateExtraChannel(ctx context.Context, req *ns.Updat
 	ec.ChannelConfigurationID = req.ChannelConfigurationID
 	ec.Frequency = int(req.Frequency)
 	ec.BandWidth = int(req.BandWidth)
-	ec.DataRate = int(req.DataRate)
+	ec.BitRate = int(req.BitRate)
 	ec.SpreadFactors = []int64{}
 
 	switch req.Modulation {
@@ -636,7 +636,7 @@ func (n *NetworkServerAPI) GetExtraChannelsForChannelConfigurationID(ctx context
 			UpdatedAt:              c.UpdatedAt.Format(time.RFC3339Nano),
 			Frequency:              int32(c.Frequency),
 			Bandwidth:              int32(c.BandWidth),
-			DataRate:               int32(c.DataRate),
+			BitRate:                int32(c.BitRate),
 		})
 
 		for _, sf := range c.SpreadFactors {

@@ -189,7 +189,7 @@ type ExtraChannel struct {
 	Modulation             string    `db:"modulation"`
 	Frequency              int       `db:"frequency"`
 	BandWidth              int       `db:"bandwidth"`
-	DataRate               int       `db:"data_rate"`
+	BitRate                int       `db:"bit_rate"`
 	SpreadFactors          []int64   `db:"spread_factors"`
 }
 
@@ -205,11 +205,11 @@ func (c ExtraChannel) Validate() error {
 
 	switch c.Modulation {
 	case ChannelModulationLoRa:
-		if len(c.SpreadFactors) == 0 || c.DataRate != 0 {
+		if len(c.SpreadFactors) == 0 || c.BitRate != 0 {
 			return ErrInvalidChannelConfig
 		}
 	case ChannelModulationFSK:
-		if len(c.SpreadFactors) != 0 || c.DataRate == 0 {
+		if len(c.SpreadFactors) != 0 || c.BitRate == 0 {
 			return ErrInvalidChannelConfig
 		}
 	default:
@@ -641,7 +641,7 @@ func CreateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
 			modulation,
 			frequency,
 			bandwidth,
-			data_rate,
+			bit_rate,
 			spread_factors
 		) values ($1, $2, $3, $4, $5, $6, $7, $8)
 		returning id`,
@@ -651,7 +651,7 @@ func CreateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
 		c.Modulation,
 		c.Frequency,
 		c.BandWidth,
-		c.DataRate,
+		c.BitRate,
 		pq.Array(c.SpreadFactors),
 	)
 	if err != nil {
@@ -690,7 +690,7 @@ func GetExtraChannel(db *sqlx.DB, id int64) (ExtraChannel, error) {
 			modulation,
 			frequency,
 			bandwidth,
-			data_rate,
+			bit_rate,
 			spread_factors
 		from extra_channel
 		where id = $1`,
@@ -703,7 +703,7 @@ func GetExtraChannel(db *sqlx.DB, id int64) (ExtraChannel, error) {
 		&ec.Modulation,
 		&ec.Frequency,
 		&ec.BandWidth,
-		&ec.DataRate,
+		&ec.BitRate,
 		pq.Array(&ec.SpreadFactors),
 	)
 	if err != nil {
@@ -729,7 +729,7 @@ func UpdateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
 			modulation = $4,
 			frequency = $5,
 			bandwidth = $6,
-			data_rate = $7,
+			bit_rate = $7,
 			spread_factors = $8
 		where
 			id = $1`,
@@ -739,7 +739,7 @@ func UpdateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
 		c.Modulation,
 		c.Frequency,
 		c.BandWidth,
-		c.DataRate,
+		c.BitRate,
 		pq.Array(c.SpreadFactors),
 	)
 	if err != nil {
@@ -790,7 +790,7 @@ func GetExtraChannelsForChannelConfigurationID(db *sqlx.DB, id int64) ([]ExtraCh
 			modulation,
 			frequency,
 			bandwidth,
-			data_rate,
+			bit_rate,
 			spread_factors
 		from extra_channel
 		where
@@ -813,7 +813,7 @@ func GetExtraChannelsForChannelConfigurationID(db *sqlx.DB, id int64) ([]ExtraCh
 			&c.Modulation,
 			&c.Frequency,
 			&c.BandWidth,
-			&c.DataRate,
+			&c.BitRate,
 			pq.Array(&c.SpreadFactors),
 		); err != nil {
 			return nil, errors.Wrap(err, "scan row error")

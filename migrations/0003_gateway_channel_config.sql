@@ -20,7 +20,7 @@ create table extra_channel (
 	modulation varchar(10) not null,
 	frequency integer not null,
 	bandwidth integer not null,
-	data_rate integer,
+	bit_rate integer,
 	spread_factors smallint[]
 );
 

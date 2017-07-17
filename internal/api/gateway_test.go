@@ -95,7 +95,7 @@ func TestGatewayAPI(t *testing.T) {
 						Modulation:             gateway.ChannelModulationFSK,
 						Frequency:              868800000,
 						BandWidth:              125,
-						DataRate:               50000,
+						BitRate:                50000,
 					},
 				}
 
@@ -149,7 +149,7 @@ func TestGatewayAPI(t *testing.T) {
 								Modulation: gw.Modulation_FSK,
 								Frequency:  868800000,
 								Bandwidth:  125,
-								DataRate:   50000,
+								BitRate:    50000,
 							},
 						})
 					})

@@ -77,7 +77,7 @@ func TestExtraChannel(t *testing.T) {
 		Convey("Creating an extra LoRa channel with data-rate set returns an error", func() {
 			c.Modulation = ChannelModulationLoRa
 			c.SpreadFactors = []int64{12}
-			c.DataRate = 50000
+			c.BitRate = 50000
 			err := CreateExtraChannel(db, &c)
 			So(err, ShouldNotBeNil)
 			So(errors.Cause(err), ShouldResemble, ErrInvalidChannelConfig)
@@ -93,7 +93,7 @@ func TestExtraChannel(t *testing.T) {
 
 		Convey("Creating an extra FSK channel with spread-factor set returns an error", func() {
 			c.Modulation = ChannelModulationFSK
-			c.DataRate = 50000
+			c.BitRate = 50000
 			c.SpreadFactors = []int64{12}
 			err := CreateExtraChannel(db, &c)
 			So(err, ShouldNotBeNil)

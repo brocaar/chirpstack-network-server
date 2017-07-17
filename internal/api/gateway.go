@@ -88,7 +88,7 @@ func (a *GatewayAPI) GetConfiguration(ctx context.Context, req *gw.GetConfigurat
 				gwChannel.SpreadFactors = append(gwChannel.SpreadFactors, int32(common.Band.DataRates[dr].SpreadFactor))
 			case band.FSKModulation:
 				gwChannel.Modulation = gw.Modulation_FSK
-				gwChannel.DataRate = int32(common.Band.DataRates[dr].BitRate)
+				gwChannel.BitRate = int32(common.Band.DataRates[dr].BitRate)
 			}
 		}
 
@@ -106,7 +106,7 @@ func (a *GatewayAPI) GetConfiguration(ctx context.Context, req *gw.GetConfigurat
 			gwChannel.Modulation = gw.Modulation_LORA
 		case band.FSKModulation:
 			gwChannel.Modulation = gw.Modulation_FSK
-			gwChannel.DataRate = int32(ch.DataRate)
+			gwChannel.BitRate = int32(ch.BitRate)
 		}
 
 		for _, sf := range ch.SpreadFactors {

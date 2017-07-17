@@ -617,8 +617,8 @@ message CreateExtraChannelRequest {
 	// Bandwidth.
 	int32 bandWidth = 4;
 
-	// Data-rate (in case of FSK modulation).
-	int32 dataRate = 5;
+	// Bit rate (in case of FSK modulation).
+	int32 bitRate = 5;
 
 	// Spread-factors (in case of LoRa modulation).
 	repeated int32 spreadFactors = 6;
@@ -645,8 +645,8 @@ message UpdateExtraChannelRequest {
 	// Bandwidth.
 	int32 bandWidth = 5;
 
-	// Data-rate (in case of FSK modulation).
-	int32 dataRate = 6;
+	// Bit rate (in case of FSK modulation).
+	int32 bitRate = 6;
 
 	// Spread-factors (in case of LoRa modulation).
 	repeated int32 spreadFactors = 7;
@@ -683,8 +683,8 @@ message GetExtraChannelResponse {
 	// Bandwidth.
 	int32 bandwidth = 7;
 
-	// Data-rate (in case of FSK modulation).
-	int32 dataRate = 8;
+	// Bit rate (in case of FSK modulation).
+	int32 bitRate = 8;
 
 	// Spread-factors (in case of LoRa modulation).
 	repeated int32 spreadFactors = 9;

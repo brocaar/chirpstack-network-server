@@ -26,8 +26,8 @@ message Channel {
 	// Bandwidth.
 	int32 bandwidth = 3;
 
-	// Data-rate (FSK modulation only).
-	int32 dataRate = 4;
+	// Bit rate (FSK modulation only).
+	int32 bitRate = 4;
 
 	// Spread-factors (LoRa modulation only).
 	repeated int32 spreadFactors = 5;
