@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"testing"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -111,6 +112,13 @@ func TestGatewayAPI(t *testing.T) {
 						Mac: g.MAC[:],
 					})
 					So(err, ShouldBeNil)
+
+					Convey("Then the UpdatedAt timestamp is around now", func() {
+						ts, err := time.Parse(time.RFC3339Nano, resp.UpdatedAt)
+						So(err, ShouldBeNil)
+
+						So(time.Now().Sub(ts), ShouldBeBetween, time.Duration(0), time.Millisecond*10)
+					})
 
 					Convey("Then the expected channels are returned", func() {
 						So(resp.Channels, ShouldHaveLength, 6)

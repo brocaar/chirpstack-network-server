@@ -41,4 +41,7 @@ message GetConfigurationRequest {
 message GetConfigurationResponse {
 	// Channels configured on the gateway.
 	repeated Channel channels = 1;
+
+	// UpdatedAt timestamp.
+	string UpdatedAt = 2;
 }

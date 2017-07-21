@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	log "github.com/Sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -62,7 +64,9 @@ func (a *GatewayAPI) GetConfiguration(ctx context.Context, req *gw.GetConfigurat
 		return nil, errToRPCError(err)
 	}
 
-	var out gw.GetConfigurationResponse
+	out := gw.GetConfigurationResponse{
+		UpdatedAt: channelConf.UpdatedAt.Format(time.RFC3339Nano),
+	}
 
 	for _, cidx := range channelConf.Channels {
 		if int(cidx) >= len(common.Band.UplinkChannels) {

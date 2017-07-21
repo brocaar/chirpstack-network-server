@@ -627,6 +627,7 @@ func GetChannelConfigurationsForBand(db *sqlx.DB, band string) ([]ChannelConfigu
 }
 
 // CreateExtraChannel creates the given extra channel.
+// This will also update the UpdatedAt timestamp of the ChannelConfiguration.
 func CreateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
 	if err := c.Validate(); err != nil {
 		return errors.Wrap(err, "validate error")
@@ -675,6 +676,18 @@ func CreateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
 		"channel_configuration_id": c.ChannelConfigurationID,
 		"id": c.ID,
 	}).Info("extra channel created")
+
+	_, err = db.Exec(`
+		update channel_configuration
+		set
+			updated_at = $2
+		where
+			id = $1
+	`, c.ChannelConfigurationID, now)
+	if err != nil {
+		return errors.Wrap(err, "update error")
+	}
+
 	return nil
 }
 
@@ -757,6 +770,18 @@ func UpdateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
 		"channel_configuration_id": c.ChannelConfigurationID,
 		"id": c.ID,
 	}).Info("extra channel updated")
+
+	_, err = db.Exec(`
+		update channel_configuration
+		set
+			updated_at = $2
+		where
+			id = $1
+	`, c.ChannelConfigurationID, now)
+	if err != nil {
+		return errors.Wrap(err, "update error")
+	}
+
 	return nil
 }
 
@@ -774,6 +799,7 @@ func DeleteExtraChannel(db *sqlx.DB, id int64) error {
 		return ErrDoesNotExist
 	}
 	log.WithField("id", id).Info("extra channel deleted")
+
 	return nil
 }
 
