@@ -56,8 +56,9 @@ func TestExtraChannel(t *testing.T) {
 		test.MustResetDB(db)
 
 		cf := ChannelConfiguration{
-			Name: "test-conf",
-			Band: string(common.BandName),
+			Name:     "test-conf",
+			Band:     string(common.BandName),
+			Channels: []int64{0, 1, 2},
 		}
 		So(CreateChannelConfiguration(db, &cf), ShouldBeNil)
 

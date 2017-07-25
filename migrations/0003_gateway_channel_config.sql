@@ -5,7 +5,7 @@ create table channel_configuration (
 	created_at timestamp with time zone not null,
 	updated_at timestamp with time zone not null,
 	band varchar(20) not null,
-	channels integer[]
+	channels smallint[] not null
 );
 
 create index idx_channel_configuration_created_at on channel_configuration(created_at);
@@ -20,7 +20,7 @@ create table extra_channel (
 	modulation varchar(10) not null,
 	frequency integer not null,
 	bandwidth integer not null,
-	bit_rate integer,
+	bit_rate integer not null,
 	spread_factors smallint[]
 );
 
@@ -29,7 +29,7 @@ create index idx_extra_channel_created_at on extra_channel(created_at);
 create index idx_extra_channel_updated_at on extra_channel(updated_at);
 
 alter table gateway
-	add column channel_configuration_id bigint references channel_configuration;
+	add column channel_configuration_id bigint references channel_configuration on delete set null;
 
 create index idx_gateway_channel_configuration_id on gateway(channel_configuration_id);
 
