@@ -42,6 +42,10 @@ service NetworkServer {
 	// DeleteGateway deletes a gateway.
 	rpc DeleteGateway(DeleteGatewayRequest) returns (DeleteGatewayResponse) {}
 
+	// GenerateGatewayToken issues a JWT token which can be used by the gateway
+	// for authentication.
+	rpc GenerateGatewayToken(GenerateGatewayTokenRequest) returns (GenerateGatewayTokenResponse) {}
+
 	// GetGatewayStats returns stats of an existing gateway.
 	rpc GetGatewayStats(GetGatewayStatsRequest) returns (GetGatewayStatsResponse) {}
 
@@ -397,6 +401,16 @@ message ListGatewayResponse {
 message DeleteGatewayRequest {
 	// MAC address of the gateway.
 	bytes mac = 1;
+}
+
+message GenerateGatewayTokenRequest {
+	// MAC address of the gateway.
+	bytes mac = 1;
+}
+
+message GenerateGatewayTokenResponse {
+	// Generated token.
+	string token = 1;
 }
 
 message DeleteGatewayResponse {}

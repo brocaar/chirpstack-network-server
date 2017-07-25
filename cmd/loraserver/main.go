@@ -99,6 +99,7 @@ func run(c *cli.Context) error {
 	common.CreateGatewayOnStats = c.Bool("gw-create-on-stats")
 	common.NodeSessionTTL = c.Duration("node-session-ttl")
 	common.LogNodeFrames = c.Bool("log-node-frames")
+	common.GatewayServerJWTSecret = c.String("gw-server-jwt-secret")
 
 	log.WithFields(log.Fields{
 		"version": version,

@@ -10,6 +10,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
+	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/gateway"
@@ -17,6 +18,7 @@ import (
 	"github.com/brocaar/loraserver/internal/node"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 // defaultCodeRate defines the default code rate
@@ -356,6 +358,37 @@ func (n *NetworkServerAPI) DeleteGateway(ctx context.Context, req *ns.DeleteGate
 	}
 
 	return &ns.DeleteGatewayResponse{}, nil
+}
+
+// GenerateGatewayToken issues a JWT token which can be used by the gateway
+// for authentication.
+func (n *NetworkServerAPI) GenerateGatewayToken(ctx context.Context, req *ns.GenerateGatewayTokenRequest) (*ns.GenerateGatewayTokenResponse, error) {
+	var mac lorawan.EUI64
+	copy(mac[:], req.Mac)
+
+	// check that the gateway exists
+	_, err := gateway.GetGateway(n.ctx.DB, mac)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, auth.Claims{
+		StandardClaims: jwt.StandardClaims{
+			Audience:  "ns",
+			Issuer:    "ns",
+			NotBefore: time.Now().Unix(),
+			Subject:   "gateway",
+		},
+		MAC: mac,
+	})
+	signedToken, err := token.SignedString([]byte(common.GatewayServerJWTSecret))
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.GenerateGatewayTokenResponse{
+		Token: signedToken,
+	}, nil
 }
 
 // GetGatewayStats returns stats of an existing gateway.

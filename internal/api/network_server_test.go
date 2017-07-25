@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
+	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
@@ -19,6 +21,7 @@ import (
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
+	jwt "github.com/dgrijalva/jwt-go"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -268,6 +271,29 @@ func TestNetworkServerAPI(t *testing.T) {
 							Mac: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						})
 						So(err, ShouldResemble, grpc.Errorf(codes.NotFound, "gateway does not exist"))
+					})
+				})
+
+				Convey("When generating a gateway token", func() {
+					common.GatewayServerJWTSecret = "verysecret"
+
+					tokenResp, err := api.GenerateGatewayToken(ctx, &ns.GenerateGatewayTokenRequest{
+						Mac: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+					})
+					So(err, ShouldBeNil)
+
+					Convey("Then a valid JWT token has been returned", func() {
+						token, err := jwt.ParseWithClaims(tokenResp.Token, &auth.Claims{}, func(token *jwt.Token) (interface{}, error) {
+							if token.Header["alg"] != "HS256" {
+								return nil, fmt.Errorf("invalid algorithm %s", token.Header["alg"])
+							}
+							return []byte("verysecret"), nil
+						})
+						So(err, ShouldBeNil)
+						So(token.Valid, ShouldBeTrue)
+						claims, ok := token.Claims.(*auth.Claims)
+						So(ok, ShouldBeTrue)
+						So(claims.MAC, ShouldEqual, lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8})
 					})
 				})
 

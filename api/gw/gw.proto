@@ -45,3 +45,4 @@ message GetConfigurationResponse {
 	// UpdatedAt timestamp.
 	string UpdatedAt = 2;
 }
+

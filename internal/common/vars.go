@@ -45,3 +45,7 @@ var SpreadFactorToRequiredSNRTable = map[int]float64{
 // LogNodeFrames defines if uplink and downlink frames must be logged to
 // the database.
 var LogNodeFrames bool
+
+// GatewayServerJWTSecret contains the JWT secret used by the gateway API
+// server for gateway authentication.
+var GatewayServerJWTSecret string
