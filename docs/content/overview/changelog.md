@@ -8,6 +8,19 @@ menu:
 
 ## Changelog
 
+### 0.20.0
+
+**Features:**
+
+* LoRa Server now offers the possiblity to configure channel-plans which can
+  be assigned to gateways. It exposes an API (by default on port `8002`) which
+  can be used by [LoRa Gateway Config](https://docs.loraserver.io/lora-gateway-config/).
+  An UI for channel-configurations is provided by [LoRa App Server](https://docs.loraserver.io/lora-app-server/)
+  version 0.11.0+.
+
+**Note:** Before upgrading, make sure to configure the `--gw-server-jwt-secret`
+/ `GW_SERVER_JWT_SECRET` configuration flag!
+
 ### 0.19.2
 
 **Improvements:**
