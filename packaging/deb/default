@@ -84,3 +84,19 @@ NODE_SESSION_TTL=744h0m0s
 
 # log uplink and downlink frames to the database
 LOG_NODE_FRAMES=true
+
+# ca certificate used by the gateway api server (optional)
+GW_SERVER_CA_CERT=
+
+# tls certificate used by the gateway api server (optional)
+GW_SERVER_TLS_CERT=
+
+# tls key used by the gateway api server (optional)
+GW_SERVER_TLS_KEY=
+
+# JWT secret used by the gateway api server for gateway authentication / authorization
+# You could generate this by executing 'openssl rand -base64 32' for example
+GW_SERVER_JWT_SECRET=
+
+# ip:port to bind the gateway api server (default: "0.0.0.0:8002")
+GW_SERVER_BIND=0.0.0.0:8002
