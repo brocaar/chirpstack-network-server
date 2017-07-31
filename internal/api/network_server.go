@@ -235,26 +235,15 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 	var mac lorawan.EUI64
 	copy(mac[:], req.Mac)
 
-	var location *gateway.GPSPoint
-	var altitude *float64
-
-	if req.Latitude != 0 && req.Longitude != 0 {
-		location = &gateway.GPSPoint{
-			Latitude:  req.Latitude,
-			Longitude: req.Longitude,
-		}
-	}
-
-	if req.Altitude != 0 {
-		altitude = &req.Altitude
-	}
-
 	gw := gateway.Gateway{
 		MAC:         mac,
 		Name:        req.Name,
 		Description: req.Description,
-		Location:    location,
-		Altitude:    altitude,
+		Location: gateway.GPSPoint{
+			Latitude:  req.Latitude,
+			Longitude: req.Longitude,
+		},
+		Altitude: req.Altitude,
 	}
 	if req.ChannelConfigurationID != 0 {
 		gw.ChannelConfigurationID = &req.ChannelConfigurationID
@@ -291,20 +280,6 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 		return nil, errToRPCError(err)
 	}
 
-	var location *gateway.GPSPoint
-	var altitude *float64
-
-	if req.Latitude != 0 && req.Longitude != 0 {
-		location = &gateway.GPSPoint{
-			Latitude:  req.Latitude,
-			Longitude: req.Longitude,
-		}
-	}
-
-	if req.Altitude != 0 {
-		altitude = &req.Altitude
-	}
-
 	if req.ChannelConfigurationID != 0 {
 		gw.ChannelConfigurationID = &req.ChannelConfigurationID
 	} else {
@@ -313,8 +288,11 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 
 	gw.Name = req.Name
 	gw.Description = req.Description
-	gw.Location = location
-	gw.Altitude = altitude
+	gw.Location = gateway.GPSPoint{
+		Latitude:  req.Latitude,
+		Longitude: req.Longitude,
+	}
+	gw.Altitude = req.Altitude
 
 	err = gateway.UpdateGateway(n.ctx.DB, &gw)
 	if err != nil {
@@ -709,6 +687,9 @@ func gwToResp(gw gateway.Gateway) *ns.GetGatewayResponse {
 		Description: gw.Description,
 		CreatedAt:   gw.CreatedAt.Format(time.RFC3339Nano),
 		UpdatedAt:   gw.UpdatedAt.Format(time.RFC3339Nano),
+		Latitude:    gw.Location.Latitude,
+		Longitude:   gw.Location.Longitude,
+		Altitude:    gw.Altitude,
 	}
 
 	if gw.FirstSeenAt != nil {
@@ -717,15 +698,6 @@ func gwToResp(gw gateway.Gateway) *ns.GetGatewayResponse {
 
 	if gw.LastSeenAt != nil {
 		resp.LastSeenAt = gw.LastSeenAt.Format(time.RFC3339Nano)
-	}
-
-	if gw.Location != nil {
-		resp.Latitude = gw.Location.Latitude
-		resp.Longitude = gw.Location.Longitude
-	}
-
-	if gw.Altitude != nil {
-		resp.Altitude = *gw.Altitude
 	}
 
 	if gw.ChannelConfigurationID != nil {

@@ -122,8 +122,8 @@ type Gateway struct {
 	UpdatedAt              time.Time     `db:"updated_at"`
 	FirstSeenAt            *time.Time    `db:"first_seen_at"`
 	LastSeenAt             *time.Time    `db:"last_seen_at"`
-	Location               *GPSPoint     `db:"location"`
-	Altitude               *float64      `db:"altitude"`
+	Location               GPSPoint      `db:"location"`
+	Altitude               float64       `db:"altitude"`
 	ChannelConfigurationID *int64        `db:"channel_configuration_id"`
 }
 
@@ -864,25 +864,25 @@ func handleStatsPackets(wg *sync.WaitGroup, ctx common.Context) {
 
 // handleStatsPacket handles a received stats packet by the gateway.
 func handleStatsPacket(db *sqlx.DB, stats gw.GatewayStatsPacket) error {
-	var location *GPSPoint
-	var altitude *float64
+	var location GPSPoint
+	var altitude float64
 
 	if stats.Latitude != nil && stats.Longitude != nil {
-		location = &GPSPoint{
+		location = GPSPoint{
 			Latitude:  *stats.Latitude,
 			Longitude: *stats.Longitude,
 		}
 	}
 
 	if stats.Altitude != nil {
-		altitude = stats.Altitude
+		altitude = *stats.Altitude
 	}
 
 	// create or update the gateway
 	gw, err := GetGateway(db, stats.MAC)
 	if err != nil {
-		// create the gateway
 		if err == ErrDoesNotExist && common.CreateGatewayOnStats {
+			// create the gateway
 			now := time.Now()
 
 			gw = Gateway{
@@ -906,10 +906,11 @@ func handleStatsPacket(db *sqlx.DB, stats gw.GatewayStatsPacket) error {
 			gw.FirstSeenAt = &now
 		}
 		gw.LastSeenAt = &now
-		if location != nil {
+
+		if stats.Latitude != nil && stats.Longitude != nil {
 			gw.Location = location
 		}
-		if altitude != nil {
+		if stats.Altitude != nil {
 			gw.Altitude = altitude
 		}
 

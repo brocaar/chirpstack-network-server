@@ -8,6 +8,14 @@ menu:
 
 ## Changelog
 
+### 0.20.1
+
+**Bugfixes:**
+
+* Remove gateway location and altitude 'nullable' option in the database.
+  This removes some complexity and fixes a nil pointer issue
+  ([#210](https://github.com/brocaar/loraserver/issues/210)).
+
 ### 0.20.0
 
 **Features:**

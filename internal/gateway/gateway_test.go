@@ -153,11 +153,11 @@ func TestGatewayStatsAggregation(t *testing.T) {
 				So(gw.UpdatedAt, ShouldNotBeNil)
 				So(gw.FirstSeenAt, ShouldNotBeNil)
 				So(gw.FirstSeenAt, ShouldResemble, gw.LastSeenAt)
-				So(gw.Location, ShouldResemble, &GPSPoint{
+				So(gw.Location, ShouldResemble, GPSPoint{
 					Latitude:  lat,
 					Longitude: long,
 				})
-				So(gw.Altitude, ShouldResemble, &alt)
+				So(gw.Altitude, ShouldResemble, alt)
 			})
 		})
 
@@ -225,7 +225,7 @@ func TestGatewayFunctions(t *testing.T) {
 			gw := Gateway{
 				Name: "test-gateway",
 				MAC:  lorawan.EUI64{29, 238, 8, 208, 182, 145, 209, 73},
-				Location: &GPSPoint{
+				Location: GPSPoint{
 					Latitude:  1.23456789,
 					Longitude: 4.56789012,
 				},
@@ -255,13 +255,12 @@ func TestGatewayFunctions(t *testing.T) {
 
 			Convey("Then it can be updated", func() {
 				now := time.Now().UTC().Truncate(time.Millisecond)
-				altitude := 100.5
 
 				gw.FirstSeenAt = &now
 				gw.LastSeenAt = &now
 				gw.Location.Latitude = 1.23456780
 				gw.Location.Longitude = 5.56789012
-				gw.Altitude = &altitude
+				gw.Altitude = 100.5
 
 				So(UpdateGateway(db, &gw), ShouldBeNil)
 

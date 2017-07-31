@@ -263,15 +263,9 @@ func publishDataUp(ctx common.Context, ns session.NodeSession, rxPacket models.R
 
 		if gw, ok := gws[rxInfo.MAC]; ok {
 			asRxInfo.Name = gw.Name
-
-			if gw.Location != nil {
-				asRxInfo.Latitude = gw.Location.Latitude
-				asRxInfo.Longitude = gw.Location.Longitude
-			}
-
-			if gw.Altitude != nil {
-				asRxInfo.Altitude = *gw.Altitude
-			}
+			asRxInfo.Latitude = gw.Location.Latitude
+			asRxInfo.Longitude = gw.Location.Longitude
+			asRxInfo.Altitude = gw.Altitude
 		}
 
 		publishDataUpReq.RxInfo = append(publishDataUpReq.RxInfo, &asRxInfo)

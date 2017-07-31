@@ -85,16 +85,14 @@ func TestUplinkScenarios(t *testing.T) {
 			Controller:  test.NewNetworkControllerClient(),
 		}
 
-		altitude := float64(10.5)
-
 		gw1 := gateway.Gateway{
 			MAC:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			Name: "test-gateway",
-			Location: &gateway.GPSPoint{
+			Location: gateway.GPSPoint{
 				Latitude:  1.1234,
 				Longitude: 1.1235,
 			},
-			Altitude: &altitude,
+			Altitude: 10.5,
 		}
 		So(gateway.CreateGateway(db, &gw1), ShouldBeNil)
 
@@ -273,7 +271,7 @@ func TestUplinkScenarios(t *testing.T) {
 					Time:      rxInfo.Time.Format(time.RFC3339Nano),
 					Rssi:      int32(rxInfo.RSSI),
 					LoRaSNR:   rxInfo.LoRaSNR,
-					Altitude:  *gw1.Altitude,
+					Altitude:  gw1.Altitude,
 					Latitude:  gw1.Location.Latitude,
 					Longitude: gw1.Location.Longitude,
 				},
@@ -302,7 +300,7 @@ func TestUplinkScenarios(t *testing.T) {
 					Time:      rxInfo.Time.Format(time.RFC3339Nano),
 					Rssi:      int32(rxInfo.RSSI),
 					LoRaSNR:   rxInfo.LoRaSNR,
-					Altitude:  *gw1.Altitude,
+					Altitude:  gw1.Altitude,
 					Latitude:  gw1.Location.Latitude,
 					Longitude: gw1.Location.Longitude,
 				},
@@ -331,7 +329,7 @@ func TestUplinkScenarios(t *testing.T) {
 					Time:      rxInfo.Time.Format(time.RFC3339Nano),
 					Rssi:      int32(rxInfo.RSSI),
 					LoRaSNR:   rxInfo.LoRaSNR,
-					Altitude:  *gw1.Altitude,
+					Altitude:  gw1.Altitude,
 					Latitude:  gw1.Location.Latitude,
 					Longitude: gw1.Location.Longitude,
 				},
@@ -447,7 +445,7 @@ func TestUplinkScenarios(t *testing.T) {
 						Time:      rxInfo.Time.Format(time.RFC3339Nano),
 						Rssi:      int32(rxInfo.RSSI),
 						LoRaSNR:   rxInfo.LoRaSNR,
-						Altitude:  *gw1.Altitude,
+						Altitude:  gw1.Altitude,
 						Latitude:  gw1.Location.Latitude,
 						Longitude: gw1.Location.Longitude,
 					},
@@ -483,7 +481,7 @@ func TestUplinkScenarios(t *testing.T) {
 						Time:      rxInfo.Time.Format(time.RFC3339Nano),
 						Rssi:      int32(rxInfo.RSSI),
 						LoRaSNR:   rxInfo.LoRaSNR,
-						Altitude:  *gw1.Altitude,
+						Altitude:  gw1.Altitude,
 						Latitude:  gw1.Location.Latitude,
 						Longitude: gw1.Location.Longitude,
 					},
