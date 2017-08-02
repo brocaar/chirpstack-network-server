@@ -83,24 +83,11 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 	snrMargin := snrM - requiredSNR - ns.InstallationMargin
 	nStep := int(snrMargin / 3)
 
-	currentTXPowerOffset := getCurrentTXPowerOffset(ns)
-	idealTXPowerOffset, idealDR := getIdealTXPowerOffsetAndDR(nStep, currentTXPowerOffset, currentDR)
-	idealTXPowerIndex := getTXPowerIndexForOffset(idealTXPowerOffset)
-	idealNbRep := getNbRep(ns.NbTrans, ns.GetPacketLossPercentage())
+	maxSupportedDR := getMaxSupportedDRForNode(ns)
+	maxSupportedTXPowerOffsetIndex := getMaxSupportedTXPowerOffsetIndexForNode(ns)
 
-	// TODO: remove workaround once all nodes are implementing the
-	// LoRaWAN Regional Parameters 1.0.2 spec.
-	//
-	// Never decrease the txpower by multiple steps.
-	// This is a workaround to handle the changes introduced by the
-	// LoRaWAN Regional Parameters 1.0.2 specification. This update
-	// introduces new txpower indices for some regions. As we don't
-	// know which version of these parameters are implemented by the
-	// node, we can't make multiple steps as txpower n might be
-	// supported, but txpower n+1 not.
-	if idealTXPowerIndex > ns.TXPowerIndex {
-		idealTXPowerIndex = ns.TXPowerIndex + 1
-	}
+	idealTXPowerIndex, idealDR := getIdealTXPowerOffsetAndDR(nStep, ns.TXPowerIndex, currentDR, maxSupportedTXPowerOffsetIndex, maxSupportedDR)
+	idealNbRep := getNbRep(ns.NbTrans, ns.GetPacketLossPercentage())
 
 	// there is nothing to adjust
 	if ns.TXPowerIndex == idealTXPowerIndex && currentDR == idealDR {
@@ -200,58 +187,59 @@ func getNbRep(currentNbRep uint8, pktLossRate float64) uint8 {
 	return pktLossRateTable[3][currentNbRep-1]
 }
 
-func getCurrentTXPowerOffset(ns *session.NodeSession) int {
-	if ns.TXPowerIndex > len(common.Band.TXPowerOffset)+1 {
-		return common.Band.TXPowerOffset[0]
-	}
-	return common.Band.TXPowerOffset[ns.TXPowerIndex]
-}
-
-func getMaxTXPowerOffset() int {
-	var delta int
-	for _, p := range common.Band.TXPowerOffset {
-		if p < 0 {
-			delta = p
-		}
-	}
-	return delta
-}
-
-func getTXPowerIndexForOffset(txPowerOffset int) int {
+func getMaxTXPowerOffsetIndex() int {
 	var idx int
-	for i, d := range common.Band.TXPowerOffset {
-		if txPowerOffset <= d {
+	for i, p := range common.Band.TXPowerOffset {
+		if p < 0 {
 			idx = i
 		}
 	}
 	return idx
 }
 
-func getIdealTXPowerOffsetAndDR(nStep int, txPowerOffset int, dr int) (int, int) {
+func getMaxSupportedTXPowerOffsetIndexForNode(ns *session.NodeSession) int {
+	if ns.MaxSupportedTXPowerIndex != 0 {
+		return ns.MaxSupportedTXPowerIndex
+	}
+	return getMaxTXPowerOffsetIndex()
+}
+
+func getIdealTXPowerOffsetAndDR(nStep, txPowerOffsetIndex, dr, maxSupportedTXPowerOffsetIndex, maxSupportedDR int) (int, int) {
 	if nStep == 0 {
-		return txPowerOffset, dr
+		return txPowerOffsetIndex, dr
 	}
 
 	if nStep > 0 {
-		if dr < getMaxAllowedDR() {
+		if dr < getMaxAllowedDR() && dr < maxSupportedDR {
+			// maxSupportedDR is the max supported DR by the node. Depending the
+			// Regional Parameters specification the node is implementing, this
+			// might not be equal to the getMaxAllowedDR value.
 			dr++
-		} else {
-			txPowerOffset -= 3
+
+		} else if txPowerOffsetIndex < getMaxTXPowerOffsetIndex() && txPowerOffsetIndex < maxSupportedTXPowerOffsetIndex {
+			// maxSupportedTXPowerOffsetIndex is the max supported TXPower
+			// index by the node. Depending the Regional Parameters
+			// specification the node is implementing, this might not be
+			// equal to the getMaxTXPowerOffsetIndex value.
+			txPowerOffsetIndex++
+
 		}
+
 		nStep--
-		if txPowerOffset <= getMaxTXPowerOffset() {
-			return txPowerOffset, dr
+		if txPowerOffsetIndex >= getMaxTXPowerOffsetIndex() {
+			return getMaxTXPowerOffsetIndex(), dr
 		}
+
 	} else {
-		if txPowerOffset < 0 {
-			txPowerOffset += 3
+		if txPowerOffsetIndex > 0 {
+			txPowerOffsetIndex--
 			nStep++
 		} else {
-			return txPowerOffset, dr
+			return txPowerOffsetIndex, dr
 		}
 	}
 
-	return getIdealTXPowerOffsetAndDR(nStep, txPowerOffset, dr)
+	return getIdealTXPowerOffsetAndDR(nStep, txPowerOffsetIndex, dr, maxSupportedTXPowerOffsetIndex, maxSupportedDR)
 }
 
 func getRequiredSNRForSF(sf int) (float64, error) {
@@ -271,4 +259,11 @@ func getMaxAllowedDR() int {
 		}
 	}
 	return maxDR
+}
+
+func getMaxSupportedDRForNode(ns *session.NodeSession) int {
+	if ns.MaxSupportedDR != 0 {
+		return ns.MaxSupportedDR
+	}
+	return getMaxAllowedDR()
 }

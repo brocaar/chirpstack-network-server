@@ -84,6 +84,7 @@ func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, block Block, 
 			"nb_trans":         adrReq.Redundancy.NbRep,
 			"enabled_channels": chans,
 		}).Info("link_adr request acknowledged")
+
 	} else {
 		// TODO: remove workaround once all RN2483 nodes have the issue below
 		// fixed.
@@ -93,8 +94,24 @@ func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, block Block, 
 		// specs). It should ACK and operate at its maximum possible power
 		// when TXPower 0 is not supported. See also section 5.2 in the
 		// LoRaWAN specs.
-		if channelMaskACK && dataRateACK && !powerACK && adrReq.TXPower == 0 {
+		if !powerACK && adrReq.TXPower == 0 {
 			ns.TXPowerIndex = 1
+		}
+
+		// It is possible that the node does not support all TXPower
+		// indices. In this case we set the MaxSupportedTXPowerIndex
+		// to the request - 1. If that index is not supported, it will
+		// be lowered by 1 at the next nACK.
+		if !powerACK && adrReq.TXPower > 0 {
+			ns.MaxSupportedTXPowerIndex = int(adrReq.TXPower) - 1
+		}
+
+		// It is possible that the node does not support all data-rates.
+		// In this case we set the MaxSupportedDR to the requested - 1.
+		// If that DR is not supported, it will be lowered by 1 at the
+		// next nACK.
+		if !dataRateACK && adrReq.DataRate > 0 {
+			ns.MaxSupportedDR = int(adrReq.DataRate) - 1
 		}
 
 		log.WithFields(log.Fields{

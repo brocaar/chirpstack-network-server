@@ -1,6 +1,7 @@
 package maccommand
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/common"
@@ -9,11 +10,10 @@ import (
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
-	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestHandle(t *testing.T) {
+func TestLinkCheckReq(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {
@@ -70,79 +70,183 @@ func TestHandle(t *testing.T) {
 					})
 				})
 			})
+		})
+	})
+}
+
+func TestLinkADRAns(t *testing.T) {
+	conf := test.GetConfig()
+
+	Convey("Given a clean Redis database", t, func() {
+		p := common.NewRedisPool(conf.RedisURL)
+		test.MustFlushRedis(p)
+
+		ctx := common.Context{
+			RedisPool: p,
+		}
+
+		Convey("Given a node-session", func() {
+			ns := session.NodeSession{
+				DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				EnabledChannels: []int{0, 1},
+			}
+			So(session.SaveNodeSession(p, ns), ShouldBeNil)
 
 			Convey("Testing LinkADRAns", func() {
-				linkADRReqMAC := lorawan.MACCommand{
-					CID: lorawan.LinkADRReq,
-					Payload: &lorawan.LinkADRReqPayload{
-						ChMask:  lorawan.ChMask{true, true, true},
-						TXPower: 3,
-						Redundancy: lorawan.Redundancy{
-							NbRep: 2,
+				testTable := []struct {
+					Name                string
+					NodeSession         session.NodeSession
+					LinkADRReqPayload   *lorawan.LinkADRReqPayload
+					LinkADRAnsPayload   lorawan.LinkADRAnsPayload
+					ExpectedNodeSession session.NodeSession
+					ExpectedError       error
+				}{
+					{
+						Name: "pending request and positive ACK updates tx-power, nbtrans and channels",
+						NodeSession: session.NodeSession{
+							EnabledChannels: []int{0, 1},
+						},
+						LinkADRReqPayload: &lorawan.LinkADRReqPayload{
+							ChMask:   lorawan.ChMask{true, true, true},
+							DataRate: 5,
+							TXPower:  3,
+							Redundancy: lorawan.Redundancy{
+								NbRep: 2,
+							},
+						},
+						LinkADRAnsPayload: lorawan.LinkADRAnsPayload{
+							ChannelMaskACK: true,
+							DataRateACK:    true,
+							PowerACK:       true,
+						},
+						ExpectedNodeSession: session.NodeSession{
+							EnabledChannels: []int{0, 1, 2},
+							TXPowerIndex:    3,
+							NbTrans:         2,
+						},
+					},
+					{
+						Name: "pending request and negative DR ack decrements the max allowed data-rate",
+						NodeSession: session.NodeSession{
+							EnabledChannels: []int{0, 1},
+						},
+						LinkADRReqPayload: &lorawan.LinkADRReqPayload{
+							ChMask:   lorawan.ChMask{true, true, true},
+							DataRate: 5,
+							TXPower:  3,
+							Redundancy: lorawan.Redundancy{
+								NbRep: 2,
+							},
+						},
+						LinkADRAnsPayload: lorawan.LinkADRAnsPayload{
+							ChannelMaskACK: true,
+							DataRateACK:    false,
+							PowerACK:       true,
+						},
+						ExpectedNodeSession: session.NodeSession{
+							EnabledChannels: []int{0, 1},
+							MaxSupportedDR:  4,
+						},
+					},
+					{
+						Name: "pending request and negative tx-power ack decrements the max allowed tx-power index",
+						NodeSession: session.NodeSession{
+							EnabledChannels: []int{0, 1},
+						},
+						LinkADRReqPayload: &lorawan.LinkADRReqPayload{
+							ChMask:   lorawan.ChMask{true, true, true},
+							DataRate: 5,
+							TXPower:  3,
+							Redundancy: lorawan.Redundancy{
+								NbRep: 2,
+							},
+						},
+						LinkADRAnsPayload: lorawan.LinkADRAnsPayload{
+							ChannelMaskACK: true,
+							DataRateACK:    true,
+							PowerACK:       false,
+						},
+						ExpectedNodeSession: session.NodeSession{
+							EnabledChannels:          []int{0, 1},
+							MaxSupportedTXPowerIndex: 2,
+						},
+					},
+					{
+						Name: "pending request and negative tx-power ack on tx-power 0 sets tx-power to 1",
+						NodeSession: session.NodeSession{
+							EnabledChannels: []int{0, 1},
+						},
+						LinkADRReqPayload: &lorawan.LinkADRReqPayload{
+							ChMask:   lorawan.ChMask{true, true, true},
+							DataRate: 5,
+							TXPower:  0,
+							Redundancy: lorawan.Redundancy{
+								NbRep: 2,
+							},
+						},
+						LinkADRAnsPayload: lorawan.LinkADRAnsPayload{
+							ChannelMaskACK: true,
+							DataRateACK:    true,
+							PowerACK:       false,
+						},
+						ExpectedNodeSession: session.NodeSession{
+							EnabledChannels: []int{0, 1},
+							TXPowerIndex:    1,
+						},
+					},
+					{
+						Name: "nothing pending and positive ACK returns an error",
+						NodeSession: session.NodeSession{
+							EnabledChannels: []int{0, 1},
+						},
+						LinkADRAnsPayload: lorawan.LinkADRAnsPayload{
+							ChannelMaskACK: true,
+							DataRateACK:    true,
+							PowerACK:       true,
+						},
+						ExpectedError: ErrDoesNotExist,
+						ExpectedNodeSession: session.NodeSession{
+							EnabledChannels: []int{0, 1},
 						},
 					},
 				}
-				linkADRAnsPL := &lorawan.LinkADRAnsPayload{
-					ChannelMaskACK: true,
-					DataRateACK:    true,
-					PowerACK:       true,
+
+				for i, tst := range testTable {
+					Convey(fmt.Sprintf("Testing: %s [%d]", tst.Name, i), func() {
+						var pending *Block
+
+						if tst.LinkADRReqPayload != nil {
+							pending = &Block{
+								CID: lorawan.LinkADRReq,
+								MACCommands: []lorawan.MACCommand{
+									lorawan.MACCommand{
+										CID:     lorawan.LinkADRReq,
+										Payload: tst.LinkADRReqPayload,
+									},
+								},
+							}
+						}
+
+						answer := Block{
+							CID: lorawan.LinkADRAns,
+							MACCommands: MACCommands{
+								lorawan.MACCommand{
+									CID:     lorawan.LinkADRAns,
+									Payload: &tst.LinkADRAnsPayload,
+								},
+							},
+						}
+
+						err := Handle(ctx, &tst.NodeSession, answer, pending, nil)
+						Convey("Then the expected error (or nil) was returned", func() {
+							So(err, ShouldResemble, tst.ExpectedError)
+						})
+
+						Convey("Then the node-session was updated as expected", func() {
+							So(tst.ExpectedNodeSession, ShouldResemble, tst.NodeSession)
+						})
+					})
 				}
-
-				linkADRAns := Block{
-					CID: lorawan.LinkADRAns,
-					MACCommands: MACCommands{
-						lorawan.MACCommand{
-							CID:     lorawan.LinkADRAns,
-							Payload: linkADRAnsPL,
-						},
-					},
-				}
-
-				Convey("Given a pending linkADRReq and positive ack", func() {
-					pending := &Block{
-						CID: linkADRAns.CID,
-						MACCommands: []lorawan.MACCommand{
-							linkADRReqMAC,
-						},
-					}
-					So(Handle(ctx, &ns, linkADRAns, pending, nil), ShouldBeNil)
-
-					Convey("Then the node-session TXPower and NbTrans are updated correctly", func() {
-						So(ns.TXPowerIndex, ShouldEqual, 3)
-						So(ns.NbTrans, ShouldEqual, 2)
-					})
-
-					Convey("Then the enabled channels on the node are updated", func() {
-						So(ns.EnabledChannels, ShouldResemble, []int{0, 1, 2})
-					})
-				})
-
-				Convey("Given a pending linkADRReq and negative ack", func() {
-					linkADRAnsPL.ChannelMaskACK = false
-					pending := &Block{
-						CID: lorawan.LinkADRReq,
-						MACCommands: []lorawan.MACCommand{
-							linkADRReqMAC,
-						},
-					}
-					So(Handle(ctx, &ns, linkADRAns, pending, nil), ShouldBeNil)
-
-					Convey("Then the node-session TXPower and NbTrans are not updated", func() {
-						So(ns.TXPowerIndex, ShouldEqual, 0)
-						So(ns.NbTrans, ShouldEqual, 0)
-					})
-
-					Convey("Then the enabled channels on the node are not updated", func() {
-						So(ns.EnabledChannels, ShouldResemble, []int{0, 1})
-					})
-				})
-
-				Convey("Given no pending linkADRReq and positive ack", func() {
-					err := Handle(ctx, &ns, linkADRAns, nil, nil)
-					Convey("Then an error is returned", func() {
-						So(errors.Cause(err), ShouldResemble, ErrDoesNotExist)
-					})
-				})
 			})
 		})
 	})

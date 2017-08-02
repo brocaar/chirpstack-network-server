@@ -38,75 +38,158 @@ func TestADR(t *testing.T) {
 			}
 		})
 
-		Convey("Given a node-session with TXPowerIndex: 20 (out of range)", func() {
-			ns := session.NodeSession{TXPowerIndex: 20}
-			Convey("Then getCurrentTXPowerOffset returns 0", func() {
-				So(getCurrentTXPowerOffset(&ns), ShouldEqual, 0)
+		Convey("Testing getMaxSupportedDRForNode", func() {
+			Convey("When no MaxSupportedDR is set on the node session, it returns getMaxAllowedDR", func() {
+				ns := session.NodeSession{}
+				So(getMaxSupportedDRForNode(&ns), ShouldEqual, getMaxAllowedDR())
+			})
+
+			Convey("When MaxSupportedDR is set on the node session, this value is returned", func() {
+				ns := session.NodeSession{
+					MaxSupportedDR: 3,
+				}
+				So(getMaxSupportedDRForNode(&ns), ShouldEqual, ns.MaxSupportedDR)
+				So(getMaxSupportedDRForNode(&ns), ShouldNotEqual, getMaxAllowedDR())
 			})
 		})
 
-		Convey("Given a node-session with TXPowerIndex set", func() {
-			ns := session.NodeSession{TXPowerIndex: 1}
-			Convey("Then getCurrentTXPowerOffset returns the expected value", func() {
-				So(getCurrentTXPowerOffset(&ns), ShouldEqual, common.Band.TXPowerOffset[1])
+		Convey("getMaxTXPowerOffsetIndex returns 7", func() {
+			So(getMaxTXPowerOffsetIndex(), ShouldEqual, 7)
+		})
+
+		Convey("Testing getMaxSupportedTXPowerOffsetIndexForNode", func() {
+			Convey("When no MaxSupportedTXPowerIndex is set on the node session, it returns getMaxTXPowerOffsetIndex", func() {
+				ns := session.NodeSession{}
+				So(getMaxSupportedTXPowerOffsetIndexForNode(&ns), ShouldEqual, getMaxTXPowerOffsetIndex())
 			})
-		})
 
-		Convey("getMaxTXPowerOffset returns -14", func() {
-			So(getMaxTXPowerOffset(), ShouldEqual, -14)
-		})
-
-		Convey("Given a testtable for getTXPowerIndexForOffset", func() {
-			testTable := []struct {
-				TXPowerOffset int
-				ExpectedIndex int
-			}{
-				{0, 0},
-				{-1, 0},
-				{-2, 1},
-				{-3, 1},
-				{-4, 2},
-				{-5, 2},
-				{-6, 3},
-				{-7, 3},
-				{-8, 4},
-				{-9, 4},
-				{-10, 5},
-				{-11, 5},
-				{-12, 6},
-				{-13, 6},
-				{-14, 7},
-				{-15, 7},
-			}
-
-			for i, tst := range testTable {
-				Convey(fmt.Sprintf("Given TXPowerOffset is %d, then the returned TXPower index is: %d [%d]", tst.TXPowerOffset, tst.ExpectedIndex, i), func() {
-					So(getTXPowerIndexForOffset(tst.TXPowerOffset), ShouldEqual, tst.ExpectedIndex)
-				})
-			}
+			Convey("When MaxSupportedTXPowerIndex is set on the node session, this value is returned", func() {
+				ns := session.NodeSession{
+					MaxSupportedTXPowerIndex: 3,
+				}
+				So(getMaxSupportedTXPowerOffsetIndexForNode(&ns), ShouldEqual, ns.MaxSupportedTXPowerIndex)
+				So(getMaxSupportedTXPowerOffsetIndexForNode(&ns), ShouldNotEqual, getMaxTXPowerOffsetIndex())
+			})
 		})
 
 		Convey("Given a testtable for getIdealTXPowerAndDR", func() {
 			testTable := []struct {
-				NStep                 int
-				TXPowerOffset         int
-				DR                    int
-				ExpectedTXPowerOffset int
-				ExpectedDR            int
+				Name                     string
+				NStep                    int
+				TXPowerIndex             int
+				MaxSupportedDR           int
+				MaxSupportedTXPowerIndex int
+				DR                       int
+				ExpectedTXPowerIndex     int
+				ExpectedDR               int
 			}{
-				{NStep: 0, TXPowerOffset: -2, DR: 3, ExpectedTXPowerOffset: -2, ExpectedDR: 3},
-				{NStep: 1, TXPowerOffset: -2, DR: 4, ExpectedTXPowerOffset: -2, ExpectedDR: 5},
-				{NStep: 1, TXPowerOffset: -2, DR: 5, ExpectedTXPowerOffset: -5, ExpectedDR: 5},
-				{NStep: 2, TXPowerOffset: -2, DR: 4, ExpectedTXPowerOffset: -5, ExpectedDR: 5},
-				{NStep: -1, TXPowerOffset: -2, DR: 4, ExpectedTXPowerOffset: 1, ExpectedDR: 4},
-				{NStep: -1, TXPowerOffset: 0, DR: 4, ExpectedTXPowerOffset: 0, ExpectedDR: 4},
+				{
+					Name:                     "nothing to adjust",
+					NStep:                    0,
+					TXPowerIndex:             1,
+					MaxSupportedDR:           getMaxAllowedDR(),          // 5
+					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
+					DR:                   3,
+					ExpectedDR:           3,
+					ExpectedTXPowerIndex: 1,
+				},
+				{
+					Name:                     "one step: one step data-rate increase",
+					NStep:                    1,
+					TXPowerIndex:             1,
+					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
+					DR:                   4,
+					ExpectedDR:           5,
+					ExpectedTXPowerIndex: 1,
+				},
+				{
+					Name:                     "one step: one step tx-power decrease",
+					NStep:                    1,
+					TXPowerIndex:             1,
+					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
+					DR:                   5,
+					ExpectedDR:           5,
+					ExpectedTXPowerIndex: 2,
+				},
+				{
+					Name:                     "two steps: two steps data-rate increase",
+					NStep:                    2,
+					TXPowerIndex:             1,
+					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
+					DR:                   3,
+					ExpectedDR:           5,
+					ExpectedTXPowerIndex: 1,
+				},
+				{
+					Name:                     "two steps: one step data-rate increase (due to max supported dr), one step tx-power decrease",
+					NStep:                    2,
+					TXPowerIndex:             1,
+					MaxSupportedDR:           4,
+					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
+					DR:                   3,
+					ExpectedDR:           4,
+					ExpectedTXPowerIndex: 2,
+				},
+				{
+					Name:                     "two steps: one step data-rate increase, one step tx-power decrease",
+					NStep:                    2,
+					TXPowerIndex:             1,
+					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
+					DR:                   4,
+					ExpectedDR:           5,
+					ExpectedTXPowerIndex: 2,
+				},
+				{
+					Name:                     "two steps: two steps tx-power decrease",
+					NStep:                    2,
+					TXPowerIndex:             1,
+					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
+					DR:                   5,
+					ExpectedDR:           5,
+					ExpectedTXPowerIndex: 3,
+				},
+				{
+					Name:                     "two steps: one step tx-power decrease due to max supported tx power index",
+					NStep:                    2,
+					TXPowerIndex:             1,
+					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedTXPowerIndex: 2,
+					DR:                   5,
+					ExpectedDR:           5,
+					ExpectedTXPowerIndex: 2,
+				},
+				{
+					Name:                     "one negative step: one step power increase",
+					NStep:                    -1,
+					TXPowerIndex:             1,
+					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
+					DR:                   4,
+					ExpectedDR:           4,
+					ExpectedTXPowerIndex: 0,
+				},
+				{
+					Name:                     "one negative step, nothing to do (adr engine will never decrease data-rate)",
+					NStep:                    -1,
+					TXPowerIndex:             0,
+					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
+					DR:                   4,
+					ExpectedDR:           4,
+					ExpectedTXPowerIndex: 0,
+				},
 			}
 
 			for i, tst := range testTable {
-				Convey(fmt.Sprintf("Given NStep: %d, TXPowerOffset: %d, DR: %d [%d]", tst.NStep, tst.TXPowerOffset, tst.DR, i), func() {
-					Convey(fmt.Sprintf("Then the ideal TXPowerOffset is %d and DR %d", tst.ExpectedTXPowerOffset, tst.ExpectedDR), func() {
-						idealTXPowerOffset, idealDR := getIdealTXPowerOffsetAndDR(tst.NStep, tst.TXPowerOffset, tst.DR)
-						So(idealTXPowerOffset, ShouldEqual, tst.ExpectedTXPowerOffset)
+				Convey(fmt.Sprintf("Testing '%s' with NStep: %d, TXPowerOffsetIndex: %d, DR: %d [%d]", tst.Name, tst.NStep, tst.TXPowerIndex, tst.DR, i), func() {
+					Convey(fmt.Sprintf("Then the ideal TXPowerOffsetIndex is %d and DR %d", tst.ExpectedTXPowerIndex, tst.ExpectedDR), func() {
+						idealTXPowerIndex, idealDR := getIdealTXPowerOffsetAndDR(tst.NStep, tst.TXPowerIndex, tst.DR, tst.MaxSupportedTXPowerIndex, tst.MaxSupportedDR)
+						So(idealTXPowerIndex, ShouldEqual, tst.ExpectedTXPowerIndex)
 						So(idealDR, ShouldEqual, tst.ExpectedDR)
 					})
 				})
