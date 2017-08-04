@@ -97,5 +97,6 @@ At this moment the following ISM bands have been implemented:
 - CN 779-787
 - EU 433
 - EU 863-870
+- IN 865-867
 - KR 920-923
 - US 902-928

@@ -51,6 +51,7 @@ var bands = []string{
 	string(band.CN_779_787),
 	string(band.EU_433),
 	string(band.EU_863_870),
+	string(band.IN_865_867),
 	string(band.KR_920_923),
 	string(band.US_902_928),
 }
