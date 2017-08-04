@@ -55,6 +55,10 @@ type NodeSession struct {
 	// the ADR engine.
 	TXPowerIndex int
 
+	// DR defines the (last known) data-rate at which the node is operating.
+	// This value is controlled by the ADR engine.
+	DR int
+
 	// MaxSupportedTXPowerIndex defines the maximum supported tx-power index
 	// by the node, or 0 when not set.
 	MaxSupportedTXPowerIndex int

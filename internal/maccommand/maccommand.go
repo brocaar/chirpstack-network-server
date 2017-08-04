@@ -74,6 +74,7 @@ func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, block Block, 
 		}
 
 		ns.TXPowerIndex = int(adrReq.TXPower)
+		ns.DR = int(adrReq.DataRate)
 		ns.NbTrans = adrReq.Redundancy.NbRep
 		ns.EnabledChannels = chans
 

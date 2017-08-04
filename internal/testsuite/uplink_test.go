@@ -99,7 +99,7 @@ func TestUplinkScenarios(t *testing.T) {
 		rxInfo := gw.RXInfo{
 			MAC:       [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			Frequency: common.Band.UplinkChannels[0].Frequency,
-			DataRate:  common.Band.DataRates[common.Band.UplinkChannels[0].DataRates[0]],
+			DataRate:  common.Band.DataRates[0],
 			LoRaSNR:   7,
 		}
 
@@ -1643,7 +1643,7 @@ func TestUplinkScenarios(t *testing.T) {
 								{
 									CID: lorawan.LinkADRReq,
 									Payload: &lorawan.LinkADRReqPayload{
-										DataRate: 5,
+										DataRate: 0,
 										TXPower:  3,
 										ChMask:   [16]bool{true, true, true},
 										Redundancy: lorawan.Redundancy{

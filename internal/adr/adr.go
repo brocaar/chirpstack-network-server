@@ -43,6 +43,22 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 		MaxSNR:       maxSNR,
 	})
 
+	currentDR, err := common.Band.GetDataRate(rxPacket.RXInfoSet[0].DataRate)
+	if err != nil {
+		return fmt.Errorf("get data-rate error: %s", err)
+	}
+
+	// The node changed its data-rate. Possibly the node did also reset its
+	// tx-power to max power. Because of this, we need to reset the tx-power
+	// at the network-server side too.
+	if ns.DR != currentDR {
+		ns.TXPowerIndex = 0
+	}
+
+	// keep track of the last-used data-rate
+	ns.DR = currentDR
+
+	// get the MACPayload
 	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
@@ -60,11 +76,6 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 		if i == 0 || uh.MaxSNR > snrM {
 			snrM = uh.MaxSNR
 		}
-	}
-
-	currentDR, err := common.Band.GetDataRate(rxPacket.RXInfoSet[0].DataRate)
-	if err != nil {
-		return fmt.Errorf("get data-rate error: %s", err)
 	}
 
 	if currentDR > getMaxAllowedDR() {

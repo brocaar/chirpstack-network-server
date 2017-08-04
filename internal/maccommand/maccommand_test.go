@@ -123,6 +123,7 @@ func TestLinkADRAns(t *testing.T) {
 							EnabledChannels: []int{0, 1, 2},
 							TXPowerIndex:    3,
 							NbTrans:         2,
+							DR:              5,
 						},
 					},
 					{

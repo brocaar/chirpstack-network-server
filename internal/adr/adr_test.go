@@ -296,6 +296,93 @@ func TestADR(t *testing.T) {
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
 							EnabledChannels: []int{0, 1, 2},
+							DR:              2,
+						},
+						ExpectedMACCommandQueue: []maccommand.Block{
+							macBlock,
+						},
+						ExpectedError: nil,
+					},
+					{
+						Name: "ADR increasing tx-power by one step (no CFlist)",
+						NodeSession: &session.NodeSession{
+							DevAddr:            [4]byte{1, 2, 3, 4},
+							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							ADRInterval:        1,
+							InstallationMargin: 5,
+							EnabledChannels:    []int{0, 1, 2},
+							DR:                 5,
+							TXPowerIndex:       3,
+						},
+						RXPacket: models.RXPacket{
+							PHYPayload: phyPayloadADR,
+							RXInfoSet: models.RXInfoSet{
+								{DataRate: common.Band.DataRates[5], LoRaSNR: 1},
+							},
+						},
+						FullFCnt: 1,
+						ExpectedNodeSession: session.NodeSession{
+							DevAddr:            [4]byte{1, 2, 3, 4},
+							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							ADRInterval:        1,
+							InstallationMargin: 5,
+							UplinkHistory: []session.UplinkHistory{
+								{FCnt: 1, MaxSNR: 1, GatewayCount: 1},
+							},
+							EnabledChannels: []int{0, 1, 2},
+							DR:              5,
+							TXPowerIndex:    3,
+						},
+						ExpectedMACCommandQueue: []maccommand.Block{
+							{
+								CID: lorawan.LinkADRReq,
+								MACCommands: []lorawan.MACCommand{
+									{
+										CID: lorawan.LinkADRReq,
+										Payload: &lorawan.LinkADRReqPayload{
+											DataRate: 5,
+											TXPower:  4,
+											ChMask:   lorawan.ChMask{true, true, true},
+											Redundancy: lorawan.Redundancy{
+												ChMaskCntl: 0,
+												NbRep:      1,
+											},
+										},
+									},
+								},
+							},
+						},
+						ExpectedError: nil,
+					},
+					{
+						Name: "ADR increasing data-rate by one step and tx-power reset due to node changing its data-rate (no CFlist)",
+						NodeSession: &session.NodeSession{
+							DevAddr:            [4]byte{1, 2, 3, 4},
+							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							ADRInterval:        1,
+							InstallationMargin: 5,
+							EnabledChannels:    []int{0, 1, 2},
+							DR:                 5,
+							TXPowerIndex:       3,
+						},
+						RXPacket: models.RXPacket{
+							PHYPayload: phyPayloadADR,
+							RXInfoSet: models.RXInfoSet{
+								{DataRate: common.Band.DataRates[2], LoRaSNR: -7},
+							},
+						},
+						FullFCnt: 1,
+						ExpectedNodeSession: session.NodeSession{
+							DevAddr:            [4]byte{1, 2, 3, 4},
+							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							ADRInterval:        1,
+							InstallationMargin: 5,
+							UplinkHistory: []session.UplinkHistory{
+								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
+							},
+							EnabledChannels: []int{0, 1, 2},
+							DR:              2,
+							TXPowerIndex:    0,
 						},
 						ExpectedMACCommandQueue: []maccommand.Block{
 							macBlock,
@@ -340,6 +427,7 @@ func TestADR(t *testing.T) {
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
 							EnabledChannels: []int{0, 1, 2},
+							DR:              2,
 						},
 						ExpectedMACCommandQueue: []maccommand.Block{
 							{
@@ -387,6 +475,7 @@ func TestADR(t *testing.T) {
 							UplinkHistory: []session.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
+							DR: 2,
 						},
 						ExpectedMACCommandQueue: []maccommand.Block{
 							macCFListBlock,
@@ -416,6 +505,7 @@ func TestADR(t *testing.T) {
 							UplinkHistory: []session.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
+							DR: 2,
 						},
 						ExpectedError: nil,
 					},
