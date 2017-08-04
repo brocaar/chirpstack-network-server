@@ -12,13 +12,13 @@ func newAU915Band(repeaterCompatible bool) (Band, error) {
 
 	if repeaterCompatible {
 		maxPayloadSize = []MaxPayloadSize{
-			{M: 19, N: 11},
-			{M: 61, N: 53},
-			{M: 134, N: 126},
-			{M: 250, N: 242},
-			{M: 250, N: 242},
-			{}, // Not defined
-			{}, // Not defined
+			{M: 59, N: 51},
+			{M: 59, N: 51},
+			{M: 59, N: 51},
+			{M: 123, N: 115},
+			{M: 230, N: 222},
+			{M: 230, N: 222},
+			{M: 230, N: 222},
 			{}, // Not defined
 			{M: 41, N: 33},
 			{M: 117, N: 109},
@@ -31,13 +31,13 @@ func newAU915Band(repeaterCompatible bool) (Band, error) {
 		}
 	} else {
 		maxPayloadSize = []MaxPayloadSize{
-			{M: 19, N: 11},
-			{M: 61, N: 53},
-			{M: 134, N: 126},
+			{M: 59, N: 51},
+			{M: 59, N: 51},
+			{M: 59, N: 51},
+			{M: 123, N: 115},
 			{M: 250, N: 242},
 			{M: 250, N: 242},
-			{}, // Not defined
-			{}, // Not defined
+			{M: 250, N: 242},
 			{}, // Not defined
 			{M: 61, N: 53},
 			{M: 137, N: 129},
@@ -67,13 +67,13 @@ func newAU915Band(repeaterCompatible bool) (Band, error) {
 		ACKTimeoutMax:    time.Second * 3,
 
 		DataRates: []DataRate{
-			{Modulation: LoRaModulation, SpreadFactor: 10, Bandwidth: 125}, //0
-			{Modulation: LoRaModulation, SpreadFactor: 9, Bandwidth: 125},  //1
-			{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 125},  //2
-			{Modulation: LoRaModulation, SpreadFactor: 7, Bandwidth: 125},  //3
-			{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 500},  //4
-			{}, // RFU
-			{}, // RFU
+			{Modulation: LoRaModulation, SpreadFactor: 12, Bandwidth: 125}, //0
+			{Modulation: LoRaModulation, SpreadFactor: 11, Bandwidth: 125},  //1
+			{Modulation: LoRaModulation, SpreadFactor: 10, Bandwidth: 125},  //2
+			{Modulation: LoRaModulation, SpreadFactor: 9, Bandwidth: 125},  //3
+			{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 125},  //4
+			{Modulation: LoRaModulation, SpreadFactor: 7, Bandwidth: 125},  //5
+			{Modulation: LoRaModulation, SpreadFactor: 8, Bandwidth: 500},  //6
 			{}, // RFU
 			{Modulation: LoRaModulation, SpreadFactor: 12, Bandwidth: 500}, //8
 			{Modulation: LoRaModulation, SpreadFactor: 11, Bandwidth: 500}, //9
@@ -88,11 +88,13 @@ func newAU915Band(repeaterCompatible bool) (Band, error) {
 		MaxPayloadSize: maxPayloadSize,
 
 		rx1DataRate: [][]int{
-			{10, 9, 8, 8},
-			{11, 10, 9, 8},
-			{12, 11, 10, 9},
-			{13, 12, 11, 10},
-			{13, 13, 12, 11},
+			{8, 8, 8, 8, 8, 8},
+			{9, 8, 8, 8, 8, 8},
+			{10, 9, 8, 8, 8, 8},
+			{11, 10, 9, 8, 8, 8},
+			{12, 11, 10, 9, 8, 8},
+			{13, 12, 11, 10, 9, 8},
+			{13, 13, 12, 11, 10, 9},
 		},
 
 		TXPowerOffset: []int{
@@ -221,7 +223,7 @@ func newAU915Band(repeaterCompatible bool) (Band, error) {
 	for i := 0; i < 64; i++ {
 		band.UplinkChannels[i] = Channel{
 			Frequency: 915200000 + (i * 200000),
-			DataRates: []int{0, 1, 2, 3},
+			DataRates: []int{0, 1, 2, 3, 4, 5},
 		}
 	}
 
@@ -229,7 +231,7 @@ func newAU915Band(repeaterCompatible bool) (Band, error) {
 	for i := 0; i < 8; i++ {
 		band.UplinkChannels[i+64] = Channel{
 			Frequency: 915900000 + (i * 1600000),
-			DataRates: []int{4},
+			DataRates: []int{6},
 		}
 	}
 
