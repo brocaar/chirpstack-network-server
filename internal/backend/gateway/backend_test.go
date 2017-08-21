@@ -15,7 +15,7 @@ import (
 
 func TestBackend(t *testing.T) {
 	conf := getConfig()
-	r := common.NewRedisPool(conf.RedisURL)
+	common.RedisPool = common.NewRedisPool(conf.RedisURL)
 
 	Convey("Given a MQTT client", t, func() {
 		opts := mqtt.NewClientOptions().AddBroker(conf.Server).SetUsername(conf.Username).SetPassword(conf.Password)
@@ -25,8 +25,8 @@ func TestBackend(t *testing.T) {
 		So(token.Error(), ShouldBeNil)
 
 		Convey("Given a new Backend", func() {
-			test.MustFlushRedis(r)
-			backend, err := NewBackend(r, conf.Server, conf.Username, conf.Password, "")
+			test.MustFlushRedis(common.RedisPool)
+			backend, err := NewBackend(conf.Server, conf.Username, conf.Password, "")
 			So(err, ShouldBeNil)
 			defer backend.Close()
 			time.Sleep(time.Millisecond * 100) // give the backend some time to subscribe to the topic

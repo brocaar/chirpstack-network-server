@@ -17,15 +17,12 @@ import (
 
 // Server represents a server listening for uplink packets.
 type Server struct {
-	ctx common.Context
-	wg  sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 // NewServer creates a new server.
-func NewServer(ctx common.Context) *Server {
-	return &Server{
-		ctx: ctx,
-	}
+func NewServer() *Server {
+	return &Server{}
 }
 
 // Start starts the server.
@@ -33,7 +30,7 @@ func (s *Server) Start() error {
 	go func() {
 		s.wg.Add(1)
 		defer s.wg.Done()
-		HandleRXPackets(&s.wg, s.ctx)
+		HandleRXPackets(&s.wg)
 	}()
 	return nil
 }
@@ -41,7 +38,7 @@ func (s *Server) Start() error {
 // Stop closes the gateway backend and waits for the server to complete the
 // pending packets.
 func (s *Server) Stop() error {
-	if err := s.ctx.Gateway.Close(); err != nil {
+	if err := common.Gateway.Close(); err != nil {
 		return fmt.Errorf("close gateway backend error: %s", err)
 	}
 	log.Info("waiting for pending actions to complete")
@@ -51,12 +48,12 @@ func (s *Server) Stop() error {
 
 // HandleRXPackets consumes received packets by the gateway and handles them
 // in a separate go-routine. Errors are logged.
-func HandleRXPackets(wg *sync.WaitGroup, ctx common.Context) {
-	for rxPacket := range ctx.Gateway.RXPacketChan() {
+func HandleRXPackets(wg *sync.WaitGroup) {
+	for rxPacket := range common.Gateway.RXPacketChan() {
 		go func(rxPacket gw.RXPacket) {
 			wg.Add(1)
 			defer wg.Done()
-			if err := HandleRXPacket(ctx, rxPacket); err != nil {
+			if err := HandleRXPacket(rxPacket); err != nil {
 				data, _ := rxPacket.PHYPayload.MarshalText()
 				log.WithField("data_base64", string(data)).Errorf("processing rx packet error: %s", err)
 			}
@@ -65,12 +62,12 @@ func HandleRXPackets(wg *sync.WaitGroup, ctx common.Context) {
 }
 
 // HandleRXPacket handles a single rxpacket.
-func HandleRXPacket(ctx common.Context, rxPacket gw.RXPacket) error {
+func HandleRXPacket(rxPacket gw.RXPacket) error {
 	switch rxPacket.PHYPayload.MHDR.MType {
 	case lorawan.JoinRequest:
-		return collectJoinRequestPacket(ctx, rxPacket)
+		return collectJoinRequestPacket(rxPacket)
 	case lorawan.UnconfirmedDataUp, lorawan.ConfirmedDataUp:
-		return validateAndCollectDataUpRXPacket(ctx, rxPacket)
+		return validateAndCollectDataUpRXPacket(rxPacket)
 	default:
 		return fmt.Errorf("unknown MType: %v", rxPacket.PHYPayload.MHDR.MType)
 	}

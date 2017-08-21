@@ -66,7 +66,7 @@ func (ctx DataDownFrameContext) Validate() error {
 }
 
 // SendDataDown sends the given data to the gateway for transmission.
-func SendDataDown(ctx common.Context, ns *session.NodeSession, txInfo gw.TXInfo, dataDown DataDownFrameContext) error {
+func SendDataDown(ns *session.NodeSession, txInfo gw.TXInfo, dataDown DataDownFrameContext) error {
 	if err := dataDown.Validate(); err != nil {
 		return errors.Wrap(err, "validation error")
 	}
@@ -123,10 +123,10 @@ func SendDataDown(ctx common.Context, ns *session.NodeSession, txInfo gw.TXInfo,
 		return errors.Wrap(err, "set MIC error")
 	}
 
-	logDownlink(ctx.DB, ns.DevEUI, phy, txInfo)
+	logDownlink(common.DB, ns.DevEUI, phy, txInfo)
 
 	// send the packet to the gateway
-	if err := ctx.Gateway.SendTXPacket(gw.TXPacket{
+	if err := common.Gateway.SendTXPacket(gw.TXPacket{
 		TXInfo:     txInfo,
 		PHYPayload: phy,
 	}); err != nil {
@@ -136,7 +136,7 @@ func SendDataDown(ctx common.Context, ns *session.NodeSession, txInfo gw.TXInfo,
 	// increment the FCntDown when Confirmed = false
 	if !dataDown.Confirmed {
 		ns.FCntDown++
-		if err := session.SaveNodeSession(ctx.RedisPool, *ns); err != nil {
+		if err := session.SaveNodeSession(common.RedisPool, *ns); err != nil {
 			return errors.Wrap(err, "save node-session error")
 		}
 	}
@@ -145,7 +145,7 @@ func SendDataDown(ctx common.Context, ns *session.NodeSession, txInfo gw.TXInfo,
 }
 
 // HandlePushDataDown handles requests to push data to a given node.
-func HandlePushDataDown(ctx common.Context, ns session.NodeSession, confirmed bool, fPort uint8, data []byte) error {
+func HandlePushDataDown(ns session.NodeSession, confirmed bool, fPort uint8, data []byte) error {
 	if len(ns.LastRXInfoSet) == 0 {
 		return ErrNoLastRXInfoSet
 	}
@@ -161,7 +161,7 @@ func HandlePushDataDown(ctx common.Context, ns session.NodeSession, confirmed bo
 	}
 	remainingPayloadSize = remainingPayloadSize - len(data)
 
-	blocks, _, _, err := getAndFilterMACQueueItems(ctx, ns, false, remainingPayloadSize)
+	blocks, _, _, err := getAndFilterMACQueueItems(ns, false, remainingPayloadSize)
 	if err != nil {
 		return errors.Wrap(err, "get mac-command blocks error")
 	}
@@ -189,13 +189,13 @@ func HandlePushDataDown(ctx common.Context, ns session.NodeSession, confirmed bo
 		MACCommands: macCommands,
 	}
 
-	if err := SendDataDown(ctx, &ns, txInfo, ddCTX); err != nil {
+	if err := SendDataDown(&ns, txInfo, ddCTX); err != nil {
 		return errors.Wrap(err, "send data down error")
 	}
 
 	// remove the transmitted mac commands from the queue
 	for _, block := range blocks {
-		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevEUI, block); err != nil {
+		if err = maccommand.DeleteQueueItem(common.RedisPool, ns.DevEUI, block); err != nil {
 			return errors.Wrap(err, "delete mac-command block from queue error")
 		}
 	}
@@ -207,14 +207,14 @@ func HandlePushDataDown(ctx common.Context, ns session.NodeSession, confirmed bo
 // A downlink response happens when: there is data in the downlink queue,
 // there are MAC commmands to send and / or when the uplink packet was of
 // type ConfirmedDataUp, so an ACK response is needed.
-func SendUplinkResponse(ctx common.Context, ns session.NodeSession, rxPacket models.RXPacket) error {
+func SendUplinkResponse(ns session.NodeSession, rxPacket models.RXPacket) error {
 	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
 	}
 
 	// get data down tx properties
-	txInfo, dr, err := getDataDownTXInfoAndDR(ctx, ns, rxPacket.RXInfoSet[0])
+	txInfo, dr, err := getDataDownTXInfoAndDR(ns, rxPacket.RXInfoSet[0])
 	if err != nil {
 		return fmt.Errorf("get data down txinfo error: %s", err)
 	}
@@ -223,7 +223,7 @@ func SendUplinkResponse(ctx common.Context, ns session.NodeSession, rxPacket mod
 	remainingPayloadSize := common.Band.MaxPayloadSize[dr].N
 
 	// get data down from application-server (if it has anything in its queue)
-	txPayload := getDataDownFromApplication(ctx, ns, dr)
+	txPayload := getDataDownFromApplication(ns, dr)
 
 	// get mac-commands to fill the remaining payload bytes
 	if txPayload != nil {
@@ -232,7 +232,7 @@ func SendUplinkResponse(ctx common.Context, ns session.NodeSession, rxPacket mod
 	}
 
 	// read mac-commands queue items
-	macBlocks, encryptMACCommands, pendingMACCommands, err := getAndFilterMACQueueItems(ctx, ns, allowEncryptedMACCommands, remainingPayloadSize)
+	macBlocks, encryptMACCommands, pendingMACCommands, err := getAndFilterMACQueueItems(ns, allowEncryptedMACCommands, remainingPayloadSize)
 	if err != nil {
 		return fmt.Errorf("get mac-commands error: %s", err)
 	}
@@ -271,17 +271,17 @@ func SendUplinkResponse(ctx common.Context, ns session.NodeSession, rxPacket mod
 	}
 
 	// send the data to the node
-	if err := SendDataDown(ctx, &ns, txInfo, ddCTX); err != nil {
+	if err := SendDataDown(&ns, txInfo, ddCTX); err != nil {
 		return fmt.Errorf("send data down error: %s", err)
 	}
 
 	// set the mac-command blocks to pending and remove them from the queue
 	for _, block := range macBlocks {
-		if err = maccommand.SetPending(ctx.RedisPool, ns.DevEUI, block); err != nil {
+		if err = maccommand.SetPending(common.RedisPool, ns.DevEUI, block); err != nil {
 			return errors.Wrap(err, "set mac-command block as pending error")
 		}
 
-		if err = maccommand.DeleteQueueItem(ctx.RedisPool, ns.DevEUI, block); err != nil {
+		if err = maccommand.DeleteQueueItem(common.RedisPool, ns.DevEUI, block); err != nil {
 			return errors.Wrap(err, "delete mac-command block from queue error")
 		}
 	}
@@ -289,7 +289,7 @@ func SendUplinkResponse(ctx common.Context, ns session.NodeSession, rxPacket mod
 	return nil
 }
 
-func getDataDownTXInfoAndDR(ctx common.Context, ns session.NodeSession, rxInfo gw.RXInfo) (gw.TXInfo, int, error) {
+func getDataDownTXInfoAndDR(ns session.NodeSession, rxInfo gw.RXInfo) (gw.TXInfo, int, error) {
 	var dr int
 	txInfo := gw.TXInfo{
 		MAC:      rxInfo.MAC,
@@ -347,8 +347,8 @@ func getDataDownTXInfoAndDR(ctx common.Context, ns session.NodeSession, rxInfo g
 
 // getDataDownFromApplication gets the downlink data from the application
 // (if any). On error the error is logged.
-func getDataDownFromApplication(ctx common.Context, ns session.NodeSession, dr int) *as.GetDataDownResponse {
-	resp, err := ctx.Application.GetDataDown(context.Background(), &as.GetDataDownRequest{
+func getDataDownFromApplication(ns session.NodeSession, dr int) *as.GetDataDownResponse {
+	resp, err := common.Application.GetDataDown(context.Background(), &as.GetDataDownRequest{
 		AppEUI:         ns.AppEUI[:],
 		DevEUI:         ns.DevEUI[:],
 		MaxPayloadSize: uint32(common.Band.MaxPayloadSize[dr].N),
@@ -395,12 +395,12 @@ func getDataDownFromApplication(ctx common.Context, ns session.NodeSession, dr i
 // - a slice of mac-command queue items
 // - if the mac-commands must be put into FRMPayload
 // - if there are remaining mac-commands in the queue
-func getAndFilterMACQueueItems(ctx common.Context, ns session.NodeSession, allowEncrypted bool, remainingPayloadSize int) ([]maccommand.Block, bool, bool, error) {
+func getAndFilterMACQueueItems(ns session.NodeSession, allowEncrypted bool, remainingPayloadSize int) ([]maccommand.Block, bool, bool, error) {
 	var encrypted bool
 	var blocks []maccommand.Block
 
 	// read the mac payload queue
-	allBlocks, err := maccommand.ReadQueueItems(ctx.RedisPool, ns.DevEUI)
+	allBlocks, err := maccommand.ReadQueueItems(common.RedisPool, ns.DevEUI)
 	if err != nil {
 		return nil, false, false, errors.Wrap(err, "read mac-command queue error")
 	}

@@ -3,7 +3,13 @@ package common
 import (
 	"time"
 
+	"github.com/brocaar/loraserver/api/as"
+	"github.com/brocaar/loraserver/api/nc"
+	"github.com/brocaar/loraserver/internal/backend"
+	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
+	"github.com/garyburd/redigo/redis"
+	"github.com/jmoiron/sqlx"
 )
 
 // NodeSessionTTL defines the TTL of a node session (will be renewed on each
@@ -49,3 +55,21 @@ var LogNodeFrames bool
 // GatewayServerJWTSecret contains the JWT secret used by the gateway API
 // server for gateway authentication.
 var GatewayServerJWTSecret string
+
+// RedisPool holds the Redis connection pool.
+var RedisPool *redis.Pool
+
+// DB holds the PostgreSQL database connection.
+var DB *sqlx.DB
+
+// NetID contains the LoRaWAN NetID.
+var NetID lorawan.NetID
+
+// Application holds the connection to the application-server.
+var Application as.ApplicationServerClient
+
+// Controller holds the connection to the network-controller.
+var Controller nc.NetworkControllerClient
+
+// Gateway holds the gateway backend.
+var Gateway backend.Gateway

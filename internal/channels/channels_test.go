@@ -17,11 +17,8 @@ func TestHandleChannelReconfigure(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database and a set of tests", t, func() {
-		p := common.NewRedisPool(conf.RedisURL)
-		test.MustFlushRedis(p)
-		ctx := common.Context{
-			RedisPool: p,
-		}
+		common.RedisPool = common.NewRedisPool(conf.RedisURL)
+		test.MustFlushRedis(common.RedisPool)
 
 		rxPacket := models.RXPacket{
 			RXInfoSet: models.RXInfoSet{
@@ -77,21 +74,21 @@ func TestHandleChannelReconfigure(t *testing.T) {
 		for i, test := range tests {
 			Convey(fmt.Sprintf("test: %s [%d]", test.Name, i), func() {
 				if test.Pending != nil {
-					So(maccommand.SetPending(ctx.RedisPool, test.NodeSession.DevEUI, *test.Pending), ShouldBeNil)
+					So(maccommand.SetPending(common.RedisPool, test.NodeSession.DevEUI, *test.Pending), ShouldBeNil)
 				}
 
-				So(HandleChannelReconfigure(ctx, test.NodeSession, rxPacket), ShouldBeNil)
+				So(HandleChannelReconfigure(test.NodeSession, rxPacket), ShouldBeNil)
 
 				if test.ExpectedPending != nil {
 					Convey("Then the expected mac-command block is set to pending", func() {
-						pending, err := maccommand.ReadPending(ctx.RedisPool, test.NodeSession.DevEUI, lorawan.LinkADRReq)
+						pending, err := maccommand.ReadPending(common.RedisPool, test.NodeSession.DevEUI, lorawan.LinkADRReq)
 						So(err, ShouldBeNil)
 						So(pending, ShouldResemble, test.ExpectedPending)
 					})
 				}
 
 				Convey("Then the expected mac-commands are in the queue", func() {
-					queue, err := maccommand.ReadQueueItems(ctx.RedisPool, test.NodeSession.DevEUI)
+					queue, err := maccommand.ReadQueueItems(common.RedisPool, test.NodeSession.DevEUI)
 					So(err, ShouldBeNil)
 					So(test.ExpectedQueue, ShouldResemble, queue)
 				})

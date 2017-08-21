@@ -85,15 +85,12 @@ func (l *GPSPoint) Scan(src interface{}) error {
 
 // StatsHandler represents a stat handler for incoming gateway stats.
 type StatsHandler struct {
-	ctx common.Context
-	wg  sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 // NewStatsHandler creates a new StatsHandler.
-func NewStatsHandler(ctx common.Context) *StatsHandler {
-	return &StatsHandler{
-		ctx: ctx,
-	}
+func NewStatsHandler() *StatsHandler {
+	return &StatsHandler{}
 }
 
 // Start starts the stats handler.
@@ -101,7 +98,7 @@ func (s *StatsHandler) Start() error {
 	go func() {
 		s.wg.Add(1)
 		defer s.wg.Done()
-		handleStatsPackets(&s.wg, s.ctx)
+		handleStatsPackets(&s.wg)
 	}()
 	return nil
 }
@@ -850,12 +847,12 @@ func GetExtraChannelsForChannelConfigurationID(db *sqlx.DB, id int64) ([]ExtraCh
 }
 
 // handleStatsPackets consumes received stats packets by the gateway.
-func handleStatsPackets(wg *sync.WaitGroup, ctx common.Context) {
-	for statsPacket := range ctx.Gateway.StatsPacketChan() {
+func handleStatsPackets(wg *sync.WaitGroup) {
+	for statsPacket := range common.Gateway.StatsPacketChan() {
 		go func(stats gw.GatewayStatsPacket) {
 			wg.Add(1)
 			defer wg.Done()
-			if err := handleStatsPacket(ctx.DB, stats); err != nil {
+			if err := handleStatsPacket(common.DB, stats); err != nil {
 				log.Errorf("handle stats packet error: %s", err)
 			}
 		}(statsPacket)

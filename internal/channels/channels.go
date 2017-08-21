@@ -15,7 +15,7 @@ import (
 // on the node. This is needed in case only a sub-set of channels is used
 // (e.g. for the US band) or when a reconfiguration of active channels
 // happens.
-func HandleChannelReconfigure(ctx common.Context, ns session.NodeSession, rxPacket models.RXPacket) error {
+func HandleChannelReconfigure(ns session.NodeSession, rxPacket models.RXPacket) error {
 	payloads := common.Band.GetLinkADRReqPayloadsForEnabledChannels(ns.EnabledChannels)
 	if len(payloads) == 0 {
 		return nil
@@ -49,7 +49,7 @@ func HandleChannelReconfigure(ctx common.Context, ns session.NodeSession, rxPack
 		})
 	}
 
-	if err = maccommand.AddQueueItem(ctx.RedisPool, ns.DevEUI, block); err != nil {
+	if err = maccommand.AddQueueItem(common.RedisPool, ns.DevEUI, block); err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
 	}
 

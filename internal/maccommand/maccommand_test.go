@@ -17,19 +17,15 @@ func TestLinkCheckReq(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {
-		p := common.NewRedisPool(conf.RedisURL)
-		test.MustFlushRedis(p)
-
-		ctx := common.Context{
-			RedisPool: p,
-		}
+		common.RedisPool = common.NewRedisPool(conf.RedisURL)
+		test.MustFlushRedis(common.RedisPool)
 
 		Convey("Given a node-session", func() {
 			ns := session.NodeSession{
 				DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				EnabledChannels: []int{0, 1},
 			}
-			So(session.SaveNodeSession(p, ns), ShouldBeNil)
+			So(session.SaveNodeSession(common.RedisPool, ns), ShouldBeNil)
 
 			Convey("Test LinkCheckReq", func() {
 				block := Block{
@@ -50,10 +46,10 @@ func TestLinkCheckReq(t *testing.T) {
 					},
 				}
 
-				So(Handle(ctx, &ns, block, nil, rxInfoSet), ShouldBeNil)
+				So(Handle(&ns, block, nil, rxInfoSet), ShouldBeNil)
 
 				Convey("Then the expected response was added to the mac-command queue", func() {
-					items, err := ReadQueueItems(ctx.RedisPool, ns.DevEUI)
+					items, err := ReadQueueItems(common.RedisPool, ns.DevEUI)
 					So(err, ShouldBeNil)
 					So(items, ShouldHaveLength, 1)
 					So(items[0], ShouldResemble, Block{
@@ -78,19 +74,15 @@ func TestLinkADRAns(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {
-		p := common.NewRedisPool(conf.RedisURL)
-		test.MustFlushRedis(p)
-
-		ctx := common.Context{
-			RedisPool: p,
-		}
+		common.RedisPool = common.NewRedisPool(conf.RedisURL)
+		test.MustFlushRedis(common.RedisPool)
 
 		Convey("Given a node-session", func() {
 			ns := session.NodeSession{
 				DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				EnabledChannels: []int{0, 1},
 			}
-			So(session.SaveNodeSession(p, ns), ShouldBeNil)
+			So(session.SaveNodeSession(common.RedisPool, ns), ShouldBeNil)
 
 			Convey("Testing LinkADRAns", func() {
 				testTable := []struct {
@@ -238,7 +230,7 @@ func TestLinkADRAns(t *testing.T) {
 							},
 						}
 
-						err := Handle(ctx, &tst.NodeSession, answer, pending, nil)
+						err := Handle(&tst.NodeSession, answer, pending, nil)
 						Convey("Then the expected error (or nil) was returned", func() {
 							So(err, ShouldResemble, tst.ExpectedError)
 						})

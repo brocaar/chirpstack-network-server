@@ -41,20 +41,17 @@ func TestClassCScenarios(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	common.DB = db
+	common.RedisPool = common.NewRedisPool(conf.RedisURL)
 
 	Convey("Given a clean state", t, func() {
-		test.MustResetDB(db)
-		p := common.NewRedisPool(conf.RedisURL)
-		test.MustFlushRedis(p)
+		test.MustResetDB(common.DB)
+		test.MustFlushRedis(common.RedisPool)
 
-		ctx := common.Context{
-			RedisPool:   p,
-			Gateway:     test.NewGatewayBackend(),
-			Application: test.NewApplicationClient(),
-			DB:          db,
-		}
+		common.Gateway = test.NewGatewayBackend()
+		common.Application = test.NewApplicationClient()
 
-		api := api.NewNetworkServerAPI(ctx)
+		api := api.NewNetworkServerAPI()
 
 		sess := session.NodeSession{
 			DevAddr:  lorawan.DevAddr{1, 2, 3, 4},
@@ -279,11 +276,11 @@ func TestClassCScenarios(t *testing.T) {
 					}
 
 					// create node-session
-					So(session.SaveNodeSession(ctx.RedisPool, t.NodeSession), ShouldBeNil)
+					So(session.SaveNodeSession(common.RedisPool, t.NodeSession), ShouldBeNil)
 
 					// mac mac-command queue items
 					for _, qi := range t.MACCommandQueue {
-						So(maccommand.AddQueueItem(ctx.RedisPool, t.NodeSession.DevEUI, qi), ShouldBeNil)
+						So(maccommand.AddQueueItem(common.RedisPool, t.NodeSession.DevEUI, qi), ShouldBeNil)
 					}
 
 					// push the data
@@ -291,7 +288,7 @@ func TestClassCScenarios(t *testing.T) {
 					So(err, ShouldResemble, t.ExpectedPushDataDownError)
 
 					Convey("Then the frame-counters are as expected", func() {
-						sess, err := session.GetNodeSession(ctx.RedisPool, t.NodeSession.DevEUI)
+						sess, err := session.GetNodeSession(common.RedisPool, t.NodeSession.DevEUI)
 						So(err, ShouldBeNil)
 						So(sess.FCntUp, ShouldEqual, t.ExpectedFCntUp)
 						So(sess.FCntDown, ShouldEqual, t.ExpectedFCntDown)
@@ -299,16 +296,16 @@ func TestClassCScenarios(t *testing.T) {
 
 					if t.ExpectedTXInfo != nil && t.ExpectedPHYPayload != nil {
 						Convey("Then the expected frame was sent", func() {
-							So(ctx.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
-							txPacket := <-ctx.Gateway.(*test.GatewayBackend).TXPacketChan
+							So(common.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
+							txPacket := <-common.Gateway.(*test.GatewayBackend).TXPacketChan
 							So(&txPacket.TXInfo, ShouldResemble, t.ExpectedTXInfo)
 						})
 					} else {
-						So(ctx.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 0)
+						So(common.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 0)
 					}
 
 					Convey("Then the mac-command queue contains the expected items", func() {
-						items, err := maccommand.ReadQueueItems(ctx.RedisPool, t.NodeSession.DevEUI)
+						items, err := maccommand.ReadQueueItems(common.RedisPool, t.NodeSession.DevEUI)
 						So(err, ShouldBeNil)
 						So(items, ShouldResemble, t.ExpectedMACCommandQueue)
 					})

@@ -13,13 +13,13 @@ import (
 )
 
 // Handle handles a MACCommand sent by a node.
-func Handle(ctx common.Context, ns *session.NodeSession, block Block, pending *Block, rxInfoSet models.RXInfoSet) error {
+func Handle(ns *session.NodeSession, block Block, pending *Block, rxInfoSet models.RXInfoSet) error {
 	var err error
 	switch block.CID {
 	case lorawan.LinkADRAns:
-		err = handleLinkADRAns(ctx, ns, block, pending)
+		err = handleLinkADRAns(ns, block, pending)
 	case lorawan.LinkCheckReq:
-		err = handleLinkCheckReq(ctx, ns, rxInfoSet)
+		err = handleLinkCheckReq(ns, rxInfoSet)
 	default:
 		err = fmt.Errorf("undefined CID %d", block.CID)
 
@@ -28,7 +28,7 @@ func Handle(ctx common.Context, ns *session.NodeSession, block Block, pending *B
 }
 
 // handleLinkADRAns handles the ack of an ADR request
-func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, block Block, pendingBlock *Block) error {
+func handleLinkADRAns(ns *session.NodeSession, block Block, pendingBlock *Block) error {
 	if len(block.MACCommands) == 0 {
 		return errors.New("at least 1 mac-command expected, got none")
 	}
@@ -126,7 +126,7 @@ func handleLinkADRAns(ctx common.Context, ns *session.NodeSession, block Block, 
 	return nil
 }
 
-func handleLinkCheckReq(ctx common.Context, ns *session.NodeSession, rxInfoSet models.RXInfoSet) error {
+func handleLinkCheckReq(ns *session.NodeSession, rxInfoSet models.RXInfoSet) error {
 	if len(rxInfoSet) == 0 {
 		return errors.New("rx info-set contains zero items")
 	}
@@ -154,7 +154,7 @@ func handleLinkCheckReq(ctx common.Context, ns *session.NodeSession, rxInfoSet m
 		},
 	}
 
-	if err := AddQueueItem(ctx.RedisPool, ns.DevEUI, block); err != nil {
+	if err := AddQueueItem(common.RedisPool, ns.DevEUI, block); err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
 	}
 	return nil

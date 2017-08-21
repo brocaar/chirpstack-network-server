@@ -16,6 +16,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	"github.com/pkg/errors"
 	migrate "github.com/rubenv/sql-migrate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -33,7 +34,6 @@ import (
 	"github.com/brocaar/loraserver/internal/migrations"
 	// TODO: merge backend/gateway into internal/gateway?
 	"github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/loraserver/internal/migration"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -57,119 +57,38 @@ var bands = []string{
 }
 
 func run(c *cli.Context) error {
-	// parse the NetID
-	var netID lorawan.NetID
-	if err := netID.UnmarshalText([]byte(c.String("net-id"))); err != nil {
-		log.Fatalf("NetID parse error: %s", err)
+	var server *uplink.Server
+	var gwStats *gateway.StatsHandler
+
+	tasks := []func(*cli.Context) error{
+		setNetID,
+		setBandConfig,
+		setDeduplicationDelay,
+		setGetDownlinkDataDelay,
+		setCreateGatewayOnStats,
+		setNodeSessionTTL,
+		setLogNodeFrames,
+		setGatewayServerJWTSecret,
+		setStatsAggregationIntervals,
+		setTimezone,
+		printStartMessage,
+		enableUplinkChannels,
+		setRedisPool,
+		setPostgreSQLConnection,
+		setGatewayBackend,
+		setApplicationServer,
+		setNetworkController,
+		runDatabaseMigrations,
+		startAPIServer,
+		startGatewayAPIServer,
+		startLoRaServer(server),
+		startStatsServer(gwStats),
 	}
 
-	// get the band config
-	if c.String("band") == "" {
-		log.Fatalf("--band is undefined, valid options are: %s", strings.Join(bands, ", "))
-	}
-	dwellTime := lorawan.DwellTimeNoLimit
-	if c.Bool("band-dwell-time-400ms") {
-		dwellTime = lorawan.DwellTime400ms
-	}
-	bandConfig, err := band.GetConfig(band.Name(c.String("band")), c.Bool("band-repeater-compatible"), dwellTime)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, f := range c.IntSlice("extra-frequencies") {
-		if err := bandConfig.AddChannel(f); err != nil {
-			log.Fatalf("add channel error: %s", err)
+	for _, t := range tasks {
+		if err := t(c); err != nil {
+			log.Fatal(err)
 		}
-	}
-
-	// get the gw stats aggregation intervals
-	gateway.MustSetStatsAggregationIntervals(strings.Split(c.String("gw-stats-aggregation-intervals"), ","))
-
-	// get the timezone
-	if c.String("timezone") != "" {
-		l, err := time.LoadLocation(c.String("timezone"))
-		if err != nil {
-			log.Fatalf("load timezone location error: %s", err)
-		}
-		common.TimeLocation = l
-	}
-
-	common.Band = bandConfig
-	common.BandName = band.Name(c.String("band"))
-	common.DeduplicationDelay = c.Duration("deduplication-delay")
-	common.GetDownlinkDataDelay = c.Duration("get-downlink-data-delay")
-	common.CreateGatewayOnStats = c.Bool("gw-create-on-stats")
-	common.NodeSessionTTL = c.Duration("node-session-ttl")
-	common.LogNodeFrames = c.Bool("log-node-frames")
-	common.GatewayServerJWTSecret = c.String("gw-server-jwt-secret")
-
-	log.WithFields(log.Fields{
-		"version": version,
-		"net_id":  netID.String(),
-		"band":    c.String("band"),
-		"docs":    "https://docs.loraserver.io/",
-	}).Info("starting LoRa Server")
-
-	mustEnableUplinkChannels(c)
-
-	lsCtx := mustGetContext(netID, c)
-
-	// migrate old node-session keys to new layout
-	if err = migration.MigrateNodeSessionDevAddrDevEUI(lsCtx.RedisPool); err != nil {
-		log.Fatalf("node-session migration error: %s", err)
-	}
-
-	// migrate the database
-	if c.Bool("db-automigrate") {
-		log.Info("applying database migrations")
-		m := &migrate.AssetMigrationSource{
-			Asset:    migrations.Asset,
-			AssetDir: migrations.AssetDir,
-			Dir:      "",
-		}
-		n, err := migrate.Exec(lsCtx.DB.DB, "postgres", m, migrate.Up)
-		if err != nil {
-			log.Fatalf("applying migrations failed: %s", err)
-		}
-		log.WithField("count", n).Info("migrations applied")
-	}
-
-	// start the api server
-	log.WithFields(log.Fields{
-		"bind":     c.String("bind"),
-		"ca-cert":  c.String("ca-cert"),
-		"tls-cert": c.String("tls-cert"),
-		"tls-key":  c.String("tls-key"),
-	}).Info("starting api server")
-	apiServer := mustGetAPIServer(lsCtx, c)
-	ln, err := net.Listen("tcp", c.String("bind"))
-	if err != nil {
-		log.Fatalf("start api listener error: %s", err)
-	}
-	go apiServer.Serve(ln)
-
-	// start the gateway api server
-	log.WithFields(log.Fields{
-		"bind":     c.String("gw-server-bind"),
-		"ca-cert":  c.String("gw-server-ca-cert"),
-		"tls-cert": c.String("gw-server-tls-cert"),
-		"tls-key":  c.String("gw-server-tls-key"),
-	}).Info("starting gateway api server")
-	gwAPIServer := mustGetGWAPIServer(lsCtx, c)
-	gwServerLn, err := net.Listen("tcp", c.String("gw-server-bind"))
-	if err != nil {
-		log.Fatalf("start gateway api server listener error: %s", err)
-	}
-	go gwAPIServer.Serve(gwServerLn)
-
-	// start the loraserver
-	server := uplink.NewServer(lsCtx)
-	if err := server.Start(); err != nil {
-		log.Fatal(err)
-	}
-	// start the stats server
-	gwStats := gateway.NewStatsHandler(lsCtx)
-	if err := gwStats.Start(); err != nil {
-		log.Fatal(err)
 	}
 
 	sigChan := make(chan os.Signal)
@@ -195,25 +114,160 @@ func run(c *cli.Context) error {
 	return nil
 }
 
-func mustGetContext(netID lorawan.NetID, c *cli.Context) common.Context {
-	// setup redis pool
-	log.WithField("url", c.String("redis-url")).Info("setup redis connection pool")
-	rp := common.NewRedisPool(c.String("redis-url"))
+func setNetID(c *cli.Context) error {
+	var netID lorawan.NetID
+	if err := netID.UnmarshalText([]byte(c.String("net-id"))); err != nil {
+		return errors.Wrap(err, "NetID parse error")
+	}
+	common.NetID = netID
+	return nil
+}
 
-	// setup PostgreSQL connection
+func setBandConfig(c *cli.Context) error {
+	if c.String("band") == "" {
+		return fmt.Errorf("--band is undefined, valid options are: %s", strings.Join(bands, ", "))
+	}
+	dwellTime := lorawan.DwellTimeNoLimit
+	if c.Bool("band-dwell-time-400ms") {
+		dwellTime = lorawan.DwellTime400ms
+	}
+	bandConfig, err := band.GetConfig(band.Name(c.String("band")), c.Bool("band-repeater-compatible"), dwellTime)
+	if err != nil {
+		return errors.Wrap(err, "get band config error")
+	}
+	for _, f := range c.IntSlice("extra-frequencies") {
+		if err := bandConfig.AddChannel(f); err != nil {
+			return errors.Wrap(err, "add channel error")
+		}
+	}
+
+	common.Band = bandConfig
+	common.BandName = band.Name(c.String("band"))
+
+	return nil
+}
+
+func setDeduplicationDelay(c *cli.Context) error {
+	common.DeduplicationDelay = c.Duration("deduplication-delay")
+	return nil
+}
+
+func setGetDownlinkDataDelay(c *cli.Context) error {
+	common.GetDownlinkDataDelay = c.Duration("get-downlink-data-delay")
+	return nil
+}
+
+func setCreateGatewayOnStats(c *cli.Context) error {
+	common.CreateGatewayOnStats = c.Bool("gw-create-on-stats")
+	return nil
+}
+
+func setNodeSessionTTL(c *cli.Context) error {
+	common.NodeSessionTTL = c.Duration("node-session-ttl")
+	return nil
+}
+
+func setLogNodeFrames(c *cli.Context) error {
+	common.LogNodeFrames = c.Bool("log-node-frames")
+	return nil
+}
+
+func setGatewayServerJWTSecret(c *cli.Context) error {
+	common.GatewayServerJWTSecret = c.String("gw-server-jwt-secret")
+	return nil
+}
+
+func setStatsAggregationIntervals(c *cli.Context) error {
+	// get the gw stats aggregation intervals
+	gateway.MustSetStatsAggregationIntervals(strings.Split(c.String("gw-stats-aggregation-intervals"), ","))
+	return nil
+}
+
+func setTimezone(c *cli.Context) error {
+	// get the timezone
+	if c.String("timezone") != "" {
+		l, err := time.LoadLocation(c.String("timezone"))
+		if err != nil {
+			return errors.Wrap(err, "load timezone location error")
+		}
+		common.TimeLocation = l
+	}
+	return nil
+}
+
+func printStartMessage(c *cli.Context) error {
+	log.WithFields(log.Fields{
+		"version": version,
+		"net_id":  common.NetID.String(),
+		"band":    c.String("band"),
+		"docs":    "https://docs.loraserver.io/",
+	}).Info("starting LoRa Server")
+	return nil
+}
+
+func enableUplinkChannels(c *cli.Context) error {
+	if c.String("enable-uplink-channels") == "" {
+		return nil
+	}
+
+	log.Info("disabling all channels")
+	for _, c := range common.Band.GetEnabledUplinkChannels() {
+		if err := common.Band.DisableUplinkChannel(c); err != nil {
+			return errors.Wrap(err, "disable uplink channel error")
+		}
+	}
+
+	blocks := strings.Split(c.String("enable-uplink-channels"), ",")
+	for _, block := range blocks {
+		block = strings.Trim(block, " ")
+		var start, end int
+		if _, err := fmt.Sscanf(block, "%d-%d", &start, &end); err != nil {
+			if _, err := fmt.Sscanf(block, "%d", &start); err != nil {
+				return errors.Wrap(err, "parse channel range error")
+			}
+			end = start
+		}
+
+		log.WithFields(log.Fields{
+			"first_channel": start,
+			"last_channel":  end,
+		}).Info("enabling channel block")
+
+		for ; start <= end; start++ {
+			if err := common.Band.EnableUplinkChannel(start); err != nil {
+				errors.Wrap(err, "enable uplink channel error")
+			}
+		}
+	}
+	return nil
+}
+
+func setRedisPool(c *cli.Context) error {
+	log.WithField("url", c.String("redis-url")).Info("setup redis connection pool")
+	common.RedisPool = common.NewRedisPool(c.String("redis-url"))
+	return nil
+}
+
+func setPostgreSQLConnection(c *cli.Context) error {
 	log.Info("connecting to postgresql")
 	db, err := common.OpenDatabase(c.String("postgres-dsn"))
 	if err != nil {
-		log.Fatalf("database connection error: %s", err)
+		return errors.Wrap(err, "database connection error")
 	}
+	common.DB = db
+	return nil
+}
 
-	// setup gateway backend
-	gw, err := gwBackend.NewBackend(rp, c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"), c.String("gw-mqtt-ca-cert"))
+func setGatewayBackend(c *cli.Context) error {
+	gw, err := gwBackend.NewBackend(c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"), c.String("gw-mqtt-ca-cert"))
 	if err != nil {
-		log.Fatalf("gateway-backend setup failed: %s", err)
+		return errors.Wrap(err, "gateway-backend setup failed")
 	}
+	common.Gateway = gw
+	return nil
+}
 
-	// setup application client
+func setApplicationServer(c *cli.Context) error {
 	log.WithFields(log.Fields{
 		"server":   c.String("as-server"),
 		"ca-cert":  c.String("as-ca-cert"),
@@ -230,10 +284,13 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) common.Context {
 	}
 	asConn, err := grpc.Dial(c.String("as-server"), asDialOptions...)
 	if err != nil {
-		log.Fatalf("application-server dial error: %s", err)
+		return errors.Wrap(err, "application-server dial error")
 	}
-	asClient := as.NewApplicationServerClient(asConn)
+	common.Application = as.NewApplicationServerClient(asConn)
+	return nil
+}
 
+func setNetworkController(c *cli.Context) error {
 	var ncClient nc.NetworkControllerClient
 	if c.String("nc-server") != "" {
 		// setup network-controller client
@@ -253,43 +310,72 @@ func mustGetContext(netID lorawan.NetID, c *cli.Context) common.Context {
 		}
 		ncConn, err := grpc.Dial(c.String("nc-server"), ncDialOptions...)
 		if err != nil {
-			log.Fatalf("network-controller dial error: %s", err)
+			return errors.Wrap(err, "network-controller dial error")
 		}
 		ncClient = nc.NewNetworkControllerClient(ncConn)
 	} else {
 		log.Info("no network-controller configured")
 		ncClient = &controller.NopNetworkControllerClient{}
 	}
-
-	return common.Context{
-		RedisPool:   rp,
-		DB:          db,
-		Gateway:     gw,
-		Application: asClient,
-		Controller:  ncClient,
-		NetID:       netID,
-	}
+	common.Controller = ncClient
+	return nil
 }
 
-func mustGetAPIServer(ctx common.Context, c *cli.Context) *grpc.Server {
+func runDatabaseMigrations(c *cli.Context) error {
+	if c.Bool("db-automigrate") {
+		log.Info("applying database migrations")
+		m := &migrate.AssetMigrationSource{
+			Asset:    migrations.Asset,
+			AssetDir: migrations.AssetDir,
+			Dir:      "",
+		}
+		n, err := migrate.Exec(common.DB.DB, "postgres", m, migrate.Up)
+		if err != nil {
+			return errors.Wrap(err, "applying migrations failed")
+		}
+		log.WithField("count", n).Info("migrations applied")
+	}
+	return nil
+}
+
+func startAPIServer(c *cli.Context) error {
+	log.WithFields(log.Fields{
+		"bind":     c.String("bind"),
+		"ca-cert":  c.String("ca-cert"),
+		"tls-cert": c.String("tls-cert"),
+		"tls-key":  c.String("tls-key"),
+	}).Info("starting api server")
+
 	var opts []grpc.ServerOption
 	if c.String("tls-cert") != "" && c.String("tls-key") != "" {
 		creds := mustGetTransportCredentials(c.String("tls-cert"), c.String("tls-key"), c.String("ca-cert"), false)
 		opts = append(opts, grpc.Creds(creds))
 	}
 	gs := grpc.NewServer(opts...)
-	nsAPI := api.NewNetworkServerAPI(ctx)
+	nsAPI := api.NewNetworkServerAPI()
 	ns.RegisterNetworkServerServer(gs, nsAPI)
 
-	return gs
+	ln, err := net.Listen("tcp", c.String("bind"))
+	if err != nil {
+		return errors.Wrap(err, "start api listener error")
+	}
+	go gs.Serve(ln)
+	return nil
 }
 
-func mustGetGWAPIServer(ctx common.Context, c *cli.Context) *grpc.Server {
+func startGatewayAPIServer(c *cli.Context) error {
+	log.WithFields(log.Fields{
+		"bind":     c.String("gw-server-bind"),
+		"ca-cert":  c.String("gw-server-ca-cert"),
+		"tls-cert": c.String("gw-server-tls-cert"),
+		"tls-key":  c.String("gw-server-tls-key"),
+	}).Info("starting gateway api server")
+
 	var validator auth.Validator
 	if c.String("gw-server-jwt-secret") != "" {
 		validator = auth.NewJWTValidator("HS256", c.String("gw-server-jwt-secret"))
 	} else {
-		log.Fatal("--gw-server-jwt-secret must be set")
+		return errors.New("--gw-server-jwt-secret must be set")
 	}
 
 	var opts []grpc.ServerOption
@@ -298,10 +384,35 @@ func mustGetGWAPIServer(ctx common.Context, c *cli.Context) *grpc.Server {
 		opts = append(opts, grpc.Creds(creds))
 	}
 	gs := grpc.NewServer(opts...)
-	gwAPI := api.NewGatewayAPI(ctx, validator)
+	gwAPI := api.NewGatewayAPI(validator)
 	gw.RegisterGatewayServer(gs, gwAPI)
 
-	return gs
+	gwServerLn, err := net.Listen("tcp", c.String("gw-server-bind"))
+	if err != nil {
+		return errors.Wrap(err, "start gateway api server listener error")
+	}
+	go gs.Serve(gwServerLn)
+	return nil
+}
+
+func startLoRaServer(server *uplink.Server) func(*cli.Context) error {
+	return func(c *cli.Context) error {
+		server = uplink.NewServer()
+		if err := server.Start(); err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
+func startStatsServer(gwStats *gateway.StatsHandler) func(*cli.Context) error {
+	return func(c *cli.Context) error {
+		gwStats = gateway.NewStatsHandler()
+		if err := gwStats.Start(); err != nil {
+			log.Fatal(err)
+		}
+		return nil
+	}
 }
 
 func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCert bool) credentials.TransportCredentials {
@@ -336,42 +447,6 @@ func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCer
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      caCertPool,
 	})
-}
-
-func mustEnableUplinkChannels(c *cli.Context) {
-	if c.String("enable-uplink-channels") == "" {
-		return
-	}
-
-	log.Info("disabling all channels")
-	for _, c := range common.Band.GetEnabledUplinkChannels() {
-		if err := common.Band.DisableUplinkChannel(c); err != nil {
-			log.Fatalf("disable uplink channel error: %s", err)
-		}
-	}
-
-	blocks := strings.Split(c.String("enable-uplink-channels"), ",")
-	for _, block := range blocks {
-		block = strings.Trim(block, " ")
-		var start, end int
-		if _, err := fmt.Sscanf(block, "%d-%d", &start, &end); err != nil {
-			if _, err := fmt.Sscanf(block, "%d", &start); err != nil {
-				log.Fatalf("parse channel range error: %s", err)
-			}
-			end = start
-		}
-
-		log.WithFields(log.Fields{
-			"first_channel": start,
-			"last_channel":  end,
-		}).Info("enabling channel block")
-
-		for ; start <= end; start++ {
-			if err := common.Band.EnableUplinkChannel(start); err != nil {
-				log.Fatalf("enable uplink channel error: %s", err)
-			}
-		}
-	}
 }
 
 func main() {

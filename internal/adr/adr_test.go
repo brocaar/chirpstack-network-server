@@ -197,12 +197,8 @@ func TestADR(t *testing.T) {
 		})
 
 		Convey("Given a clean Redis database", func() {
-			p := common.NewRedisPool(conf.RedisURL)
-			test.MustFlushRedis(p)
-
-			ctx := common.Context{
-				RedisPool: p,
-			}
+			common.RedisPool = common.NewRedisPool(conf.RedisURL)
+			test.MustFlushRedis(common.RedisPool)
 
 			Convey("Given a testtable for HandleADR", func() {
 				phyPayloadNoADR := lorawan.PHYPayload{
@@ -513,13 +509,13 @@ func TestADR(t *testing.T) {
 
 				for i, tst := range testTable {
 					Convey(fmt.Sprintf("Test: %s [%d]", tst.Name, i), func() {
-						So(session.SaveNodeSession(p, *tst.NodeSession), ShouldBeNil)
+						So(session.SaveNodeSession(common.RedisPool, *tst.NodeSession), ShouldBeNil)
 
 						for _, block := range tst.MACCommandQueue {
-							So(maccommand.AddQueueItem(p, tst.NodeSession.DevEUI, block), ShouldBeNil)
+							So(maccommand.AddQueueItem(common.RedisPool, tst.NodeSession.DevEUI, block), ShouldBeNil)
 						}
 
-						err := HandleADR(ctx, tst.NodeSession, tst.RXPacket, tst.FullFCnt)
+						err := HandleADR(tst.NodeSession, tst.RXPacket, tst.FullFCnt)
 						if tst.ExpectedError != nil {
 							So(err, ShouldResemble, tst.ExpectedError)
 							return
@@ -528,7 +524,7 @@ func TestADR(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(tst.NodeSession, ShouldResemble, &tst.ExpectedNodeSession)
 
-						macPayloadQueue, err := maccommand.ReadQueueItems(p, tst.NodeSession.DevEUI)
+						macPayloadQueue, err := maccommand.ReadQueueItems(common.RedisPool, tst.NodeSession.DevEUI)
 						So(err, ShouldBeNil)
 						So(macPayloadQueue, ShouldResemble, tst.ExpectedMACCommandQueue)
 					})

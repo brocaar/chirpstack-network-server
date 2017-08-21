@@ -34,14 +34,12 @@ func TestGatewayAPI(t *testing.T) {
 		db, err := common.OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		test.MustResetDB(db)
+		common.DB = db
 
-		lsCtx := common.Context{
-			DB: db,
-		}
 		ctx := context.Background()
 
 		validator := &TestValidator{}
-		api := NewGatewayAPI(lsCtx, validator)
+		api := NewGatewayAPI(validator)
 
 		Convey("Given a gateway", func() {
 			g := gateway.Gateway{

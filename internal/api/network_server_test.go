@@ -29,19 +29,16 @@ func TestNetworkServerAPI(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean PostgreSQL and Redis database + api instance", t, func() {
-		p := common.NewRedisPool(conf.RedisURL)
-		test.MustFlushRedis(p)
+		common.RedisPool = common.NewRedisPool(conf.RedisURL)
+		test.MustFlushRedis(common.RedisPool)
 		db, err := common.OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		test.MustResetDB(db)
+		common.DB = db
+		common.NetID = [3]byte{1, 2, 3}
 
-		lsCtx := common.Context{
-			RedisPool: p,
-			DB:        db,
-			NetID:     [3]byte{1, 2, 3},
-		}
 		ctx := context.Background()
-		api := NetworkServerAPI{ctx: lsCtx}
+		api := NetworkServerAPI{}
 
 		gateway.MustSetStatsAggregationIntervals([]string{"MINUTE"})
 
@@ -84,7 +81,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				})
 
 				Convey("Then the enabled channels are set on the node-session", func() {
-					ns, err := session.GetNodeSession(lsCtx.RedisPool, devEUI)
+					ns, err := session.GetNodeSession(common.RedisPool, devEUI)
 					So(err, ShouldBeNil)
 					So(ns.EnabledChannels, ShouldResemble, common.Band.GetUplinkChannels())
 				})
@@ -137,7 +134,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				})
 
 				Convey("Then the internal fields are still set", func() {
-					ns, err := session.GetNodeSession(lsCtx.RedisPool, devEUI)
+					ns, err := session.GetNodeSession(common.RedisPool, devEUI)
 					So(err, ShouldBeNil)
 					So(ns.EnabledChannels, ShouldResemble, common.Band.GetUplinkChannels())
 				})
@@ -182,7 +179,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				So(err, ShouldBeNil)
 
 				Convey("Then the mac-command has been added to the queue", func() {
-					queue, err := maccommand.ReadQueueItems(p, devEUI)
+					queue, err := maccommand.ReadQueueItems(common.RedisPool, devEUI)
 					So(err, ShouldBeNil)
 					So(queue, ShouldResemble, []maccommand.Block{
 						{

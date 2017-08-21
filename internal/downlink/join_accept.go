@@ -11,7 +11,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-func getJoinAcceptTXInfo(ctx common.Context, ns session.NodeSession, rxInfo gw.RXInfo) (gw.TXInfo, error) {
+func getJoinAcceptTXInfo(ns session.NodeSession, rxInfo gw.RXInfo) (gw.TXInfo, error) {
 	txInfo := gw.TXInfo{
 		MAC:      rxInfo.MAC,
 		CodeRate: rxInfo.CodeRate,
@@ -51,15 +51,15 @@ func getJoinAcceptTXInfo(ctx common.Context, ns session.NodeSession, rxInfo gw.R
 }
 
 // SendJoinAcceptResponse sends the join-accept response.
-func SendJoinAcceptResponse(ctx common.Context, ns session.NodeSession, rxPacket models.RXPacket, phy lorawan.PHYPayload) error {
-	txInfo, err := getJoinAcceptTXInfo(ctx, ns, rxPacket.RXInfoSet[0])
+func SendJoinAcceptResponse(ns session.NodeSession, rxPacket models.RXPacket, phy lorawan.PHYPayload) error {
+	txInfo, err := getJoinAcceptTXInfo(ns, rxPacket.RXInfoSet[0])
 	if err != nil {
 		return fmt.Errorf("get join-accept txinfo error: %s", err)
 	}
 
-	logDownlink(ctx.DB, ns.DevEUI, phy, txInfo)
+	logDownlink(common.DB, ns.DevEUI, phy, txInfo)
 
-	if err = ctx.Gateway.SendTXPacket(gw.TXPacket{
+	if err = common.Gateway.SendTXPacket(gw.TXPacket{
 		TXInfo:     txInfo,
 		PHYPayload: phy,
 	}); err != nil {

@@ -18,16 +18,17 @@ func TestChannelConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	common.DB = db
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(db)
+		test.MustResetDB(common.DB)
 
 		Convey("Creating a channel-configuration with invalid band-name returns an error", func() {
 			cf := ChannelConfiguration{
 				Name: "test-conf",
 				Band: "EU_433",
 			}
-			err := CreateChannelConfiguration(db, &cf)
+			err := CreateChannelConfiguration(common.DB, &cf)
 			So(err, ShouldNotBeNil)
 			So(errors.Cause(err), ShouldResemble, ErrInvalidBand)
 		})
@@ -51,16 +52,17 @@ func TestExtraChannel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	common.DB = db
 
 	Convey("Given a clean database with a channel-configuration", t, func() {
-		test.MustResetDB(db)
+		test.MustResetDB(common.DB)
 
 		cf := ChannelConfiguration{
 			Name:     "test-conf",
 			Band:     string(common.BandName),
 			Channels: []int64{0, 1, 2},
 		}
-		So(CreateChannelConfiguration(db, &cf), ShouldBeNil)
+		So(CreateChannelConfiguration(common.DB, &cf), ShouldBeNil)
 
 		c := ExtraChannel{
 			ChannelConfigurationID: cf.ID,
@@ -70,7 +72,7 @@ func TestExtraChannel(t *testing.T) {
 
 		Convey("Creating an extra LoRa channel without sf set returns an error", func() {
 			c.Modulation = ChannelModulationLoRa
-			err := CreateExtraChannel(db, &c)
+			err := CreateExtraChannel(common.DB, &c)
 			So(err, ShouldNotBeNil)
 			So(errors.Cause(err), ShouldResemble, ErrInvalidChannelConfig)
 		})
@@ -79,7 +81,7 @@ func TestExtraChannel(t *testing.T) {
 			c.Modulation = ChannelModulationLoRa
 			c.SpreadFactors = []int64{12}
 			c.BitRate = 50000
-			err := CreateExtraChannel(db, &c)
+			err := CreateExtraChannel(common.DB, &c)
 			So(err, ShouldNotBeNil)
 			So(errors.Cause(err), ShouldResemble, ErrInvalidChannelConfig)
 		})
@@ -87,7 +89,7 @@ func TestExtraChannel(t *testing.T) {
 		Convey("Creating an extra FSK channel without datarate set returns an error", func() {
 			c.Modulation = ChannelModulationFSK
 			c.SpreadFactors = []int64{12}
-			err := CreateExtraChannel(db, &c)
+			err := CreateExtraChannel(common.DB, &c)
 			So(err, ShouldNotBeNil)
 			So(errors.Cause(err), ShouldResemble, ErrInvalidChannelConfig)
 		})
@@ -96,7 +98,7 @@ func TestExtraChannel(t *testing.T) {
 			c.Modulation = ChannelModulationFSK
 			c.BitRate = 50000
 			c.SpreadFactors = []int64{12}
-			err := CreateExtraChannel(db, &c)
+			err := CreateExtraChannel(common.DB, &c)
 			So(err, ShouldNotBeNil)
 			So(errors.Cause(err), ShouldResemble, ErrInvalidChannelConfig)
 		})
@@ -111,11 +113,12 @@ func TestGatewayStatsAggregation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	common.DB = db
 
 	Convey("Given a clean database", t, func() {
 		common.CreateGatewayOnStats = false
 		So(err, ShouldBeNil)
-		test.MustResetDB(db)
+		test.MustResetDB(common.DB)
 
 		MustSetStatsAggregationIntervals([]string{"SECOND", "MINUTE"})
 		lat := float64(1.123)

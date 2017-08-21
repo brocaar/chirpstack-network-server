@@ -18,14 +18,12 @@ import (
 
 // GatewayAPI defines the gateway API.
 type GatewayAPI struct {
-	ctx       common.Context
 	validator auth.Validator
 }
 
 // NewGatewayAPI returns a new GatewayAPI.
-func NewGatewayAPI(ctx common.Context, validator auth.Validator) *GatewayAPI {
+func NewGatewayAPI(validator auth.Validator) *GatewayAPI {
 	return &GatewayAPI{
-		ctx:       ctx,
 		validator: validator,
 	}
 }
@@ -44,7 +42,7 @@ func (a *GatewayAPI) GetConfiguration(ctx context.Context, req *gw.GetConfigurat
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid mac")
 	}
 
-	g, err := gateway.GetGateway(a.ctx.DB, mac)
+	g, err := gateway.GetGateway(common.DB, mac)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -54,12 +52,12 @@ func (a *GatewayAPI) GetConfiguration(ctx context.Context, req *gw.GetConfigurat
 		return &gw.GetConfigurationResponse{}, nil
 	}
 
-	channelConf, err := gateway.GetChannelConfiguration(a.ctx.DB, *g.ChannelConfigurationID)
+	channelConf, err := gateway.GetChannelConfiguration(common.DB, *g.ChannelConfigurationID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	extraChannels, err := gateway.GetExtraChannelsForChannelConfigurationID(a.ctx.DB, *g.ChannelConfigurationID)
+	extraChannels, err := gateway.GetExtraChannelsForChannelConfigurationID(common.DB, *g.ChannelConfigurationID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}

@@ -26,14 +26,11 @@ const defaultCodeRate = "4/5"
 
 // NetworkServerAPI defines the nework-server API.
 type NetworkServerAPI struct {
-	ctx common.Context
 }
 
 // NewNetworkServerAPI returns a new NetworkServerAPI.
-func NewNetworkServerAPI(ctx common.Context) *NetworkServerAPI {
-	return &NetworkServerAPI{
-		ctx: ctx,
-	}
+func NewNetworkServerAPI() *NetworkServerAPI {
+	return &NetworkServerAPI{}
 }
 
 // CreateNodeSession create a node-session.
@@ -56,7 +53,7 @@ func (n *NetworkServerAPI) CreateNodeSession(ctx context.Context, req *ns.Create
 	copy(sess.DevEUI[:], req.DevEUI)
 	copy(sess.NwkSKey[:], req.NwkSKey)
 
-	exists, err := session.NodeSessionExists(n.ctx.RedisPool, sess.DevEUI)
+	exists, err := session.NodeSessionExists(common.RedisPool, sess.DevEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -64,11 +61,11 @@ func (n *NetworkServerAPI) CreateNodeSession(ctx context.Context, req *ns.Create
 		return nil, grpc.Errorf(codes.AlreadyExists, "node-session already exists")
 	}
 
-	if err := session.SaveNodeSession(n.ctx.RedisPool, sess); err != nil {
+	if err := session.SaveNodeSession(common.RedisPool, sess); err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if err := maccommand.FlushQueue(n.ctx.RedisPool, sess.DevEUI); err != nil {
+	if err := maccommand.FlushQueue(common.RedisPool, sess.DevEUI); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -80,7 +77,7 @@ func (n *NetworkServerAPI) GetNodeSession(ctx context.Context, req *ns.GetNodeSe
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	sess, err := session.GetNodeSession(n.ctx.RedisPool, devEUI)
+	sess, err := session.GetNodeSession(common.RedisPool, devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -115,7 +112,7 @@ func (n *NetworkServerAPI) UpdateNodeSession(ctx context.Context, req *ns.Update
 	copy(devEUI[:], req.DevEUI)
 	copy(appEUI[:], req.AppEUI)
 
-	sess, err := session.GetNodeSession(n.ctx.RedisPool, devEUI)
+	sess, err := session.GetNodeSession(common.RedisPool, devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -147,7 +144,7 @@ func (n *NetworkServerAPI) UpdateNodeSession(ctx context.Context, req *ns.Update
 	copy(newSess.DevEUI[:], req.DevEUI)
 	copy(newSess.NwkSKey[:], req.NwkSKey)
 
-	if err := session.SaveNodeSession(n.ctx.RedisPool, newSess); err != nil {
+	if err := session.SaveNodeSession(common.RedisPool, newSess); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -159,7 +156,7 @@ func (n *NetworkServerAPI) DeleteNodeSession(ctx context.Context, req *ns.Delete
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	if err := session.DeleteNodeSession(n.ctx.RedisPool, devEUI); err != nil {
+	if err := session.DeleteNodeSession(common.RedisPool, devEUI); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -168,7 +165,7 @@ func (n *NetworkServerAPI) DeleteNodeSession(ctx context.Context, req *ns.Delete
 
 // GetRandomDevAddr returns a random DevAddr.
 func (n *NetworkServerAPI) GetRandomDevAddr(ctx context.Context, req *ns.GetRandomDevAddrRequest) (*ns.GetRandomDevAddrResponse, error) {
-	devAddr, err := session.GetRandomDevAddr(n.ctx.RedisPool, n.ctx.NetID)
+	devAddr, err := session.GetRandomDevAddr(common.RedisPool, common.NetID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -201,7 +198,7 @@ func (n *NetworkServerAPI) EnqueueDataDownMACCommand(ctx context.Context, req *n
 		MACCommands: commands,
 	}
 
-	if err := maccommand.AddQueueItem(n.ctx.RedisPool, devEUI, block); err != nil {
+	if err := maccommand.AddQueueItem(common.RedisPool, devEUI, block); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -213,7 +210,7 @@ func (n *NetworkServerAPI) PushDataDown(ctx context.Context, req *ns.PushDataDow
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	sess, err := session.GetNodeSession(n.ctx.RedisPool, devEUI)
+	sess, err := session.GetNodeSession(common.RedisPool, devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -222,7 +219,7 @@ func (n *NetworkServerAPI) PushDataDown(ctx context.Context, req *ns.PushDataDow
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid FCnt (expected: %d)", sess.FCntDown)
 	}
 
-	err = downlink.HandlePushDataDown(n.ctx, sess, req.Confirmed, uint8(req.FPort), req.Data)
+	err = downlink.HandlePushDataDown(sess, req.Confirmed, uint8(req.FPort), req.Data)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -249,7 +246,7 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 		gw.ChannelConfigurationID = &req.ChannelConfigurationID
 	}
 
-	err := gateway.CreateGateway(n.ctx.DB, &gw)
+	err := gateway.CreateGateway(common.DB, &gw)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -262,7 +259,7 @@ func (n *NetworkServerAPI) GetGateway(ctx context.Context, req *ns.GetGatewayReq
 	var mac lorawan.EUI64
 	copy(mac[:], req.Mac)
 
-	gw, err := gateway.GetGateway(n.ctx.DB, mac)
+	gw, err := gateway.GetGateway(common.DB, mac)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -275,7 +272,7 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 	var mac lorawan.EUI64
 	copy(mac[:], req.Mac)
 
-	gw, err := gateway.GetGateway(n.ctx.DB, mac)
+	gw, err := gateway.GetGateway(common.DB, mac)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -294,7 +291,7 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 	}
 	gw.Altitude = req.Altitude
 
-	err = gateway.UpdateGateway(n.ctx.DB, &gw)
+	err = gateway.UpdateGateway(common.DB, &gw)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -304,12 +301,12 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 
 // ListGateways returns the existing gateways.
 func (n *NetworkServerAPI) ListGateways(ctx context.Context, req *ns.ListGatewayRequest) (*ns.ListGatewayResponse, error) {
-	count, err := gateway.GetGatewayCount(n.ctx.DB)
+	count, err := gateway.GetGatewayCount(common.DB)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	gws, err := gateway.GetGateways(n.ctx.DB, int(req.Limit), int(req.Offset))
+	gws, err := gateway.GetGateways(common.DB, int(req.Limit), int(req.Offset))
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -330,7 +327,7 @@ func (n *NetworkServerAPI) DeleteGateway(ctx context.Context, req *ns.DeleteGate
 	var mac lorawan.EUI64
 	copy(mac[:], req.Mac)
 
-	err := gateway.DeleteGateway(n.ctx.DB, mac)
+	err := gateway.DeleteGateway(common.DB, mac)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -345,7 +342,7 @@ func (n *NetworkServerAPI) GenerateGatewayToken(ctx context.Context, req *ns.Gen
 	copy(mac[:], req.Mac)
 
 	// check that the gateway exists
-	_, err := gateway.GetGateway(n.ctx.DB, mac)
+	_, err := gateway.GetGateway(common.DB, mac)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -384,7 +381,7 @@ func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatew
 		return nil, grpc.Errorf(codes.InvalidArgument, "parse end timestamp: %s", err)
 	}
 
-	stats, err := gateway.GetGatewayStats(n.ctx.DB, mac, req.Interval.String(), start, end)
+	stats, err := gateway.GetGatewayStats(common.DB, mac, req.Interval.String(), start, end)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -409,12 +406,12 @@ func (n *NetworkServerAPI) GetFrameLogsForDevEUI(ctx context.Context, req *ns.Ge
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	count, err := node.GetFrameLogCountForDevEUI(n.ctx.DB, devEUI)
+	count, err := node.GetFrameLogCountForDevEUI(common.DB, devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	logs, err := node.GetFrameLogsForDevEUI(n.ctx.DB, devEUI, int(req.Limit), int(req.Offset))
+	logs, err := node.GetFrameLogsForDevEUI(common.DB, devEUI, int(req.Limit), int(req.Offset))
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -494,7 +491,7 @@ func (n *NetworkServerAPI) CreateChannelConfiguration(ctx context.Context, req *
 		cf.Channels = append(cf.Channels, int64(c))
 	}
 
-	if err := gateway.CreateChannelConfiguration(n.ctx.DB, &cf); err != nil {
+	if err := gateway.CreateChannelConfiguration(common.DB, &cf); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -503,7 +500,7 @@ func (n *NetworkServerAPI) CreateChannelConfiguration(ctx context.Context, req *
 
 // GetChannelConfiguration returns the channel-configuration for the given ID.
 func (n *NetworkServerAPI) GetChannelConfiguration(ctx context.Context, req *ns.GetChannelConfigurationRequest) (*ns.GetChannelConfigurationResponse, error) {
-	cf, err := gateway.GetChannelConfiguration(n.ctx.DB, req.Id)
+	cf, err := gateway.GetChannelConfiguration(common.DB, req.Id)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -513,7 +510,7 @@ func (n *NetworkServerAPI) GetChannelConfiguration(ctx context.Context, req *ns.
 
 // UpdateChannelConfiguration updates the given channel-configuration.
 func (n *NetworkServerAPI) UpdateChannelConfiguration(ctx context.Context, req *ns.UpdateChannelConfigurationRequest) (*ns.UpdateChannelConfigurationResponse, error) {
-	cf, err := gateway.GetChannelConfiguration(n.ctx.DB, req.Id)
+	cf, err := gateway.GetChannelConfiguration(common.DB, req.Id)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -524,7 +521,7 @@ func (n *NetworkServerAPI) UpdateChannelConfiguration(ctx context.Context, req *
 		cf.Channels = append(cf.Channels, int64(c))
 	}
 
-	if err = gateway.UpdateChannelConfiguration(n.ctx.DB, &cf); err != nil {
+	if err = gateway.UpdateChannelConfiguration(common.DB, &cf); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -534,7 +531,7 @@ func (n *NetworkServerAPI) UpdateChannelConfiguration(ctx context.Context, req *
 // DeleteChannelConfiguration deletes the channel-configuration matching the
 // given ID.
 func (n *NetworkServerAPI) DeleteChannelConfiguration(ctx context.Context, req *ns.DeleteChannelConfigurationRequest) (*ns.DeleteChannelConfigurationResponse, error) {
-	if err := gateway.DeleteChannelConfiguration(n.ctx.DB, req.Id); err != nil {
+	if err := gateway.DeleteChannelConfiguration(common.DB, req.Id); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -543,7 +540,7 @@ func (n *NetworkServerAPI) DeleteChannelConfiguration(ctx context.Context, req *
 
 // ListChannelConfigurations returns all channel-configurations.
 func (n *NetworkServerAPI) ListChannelConfigurations(ctx context.Context, req *ns.ListChannelConfigurationsRequest) (*ns.ListChannelConfigurationsResponse, error) {
-	cfs, err := gateway.GetChannelConfigurationsForBand(n.ctx.DB, string(common.BandName))
+	cfs, err := gateway.GetChannelConfigurationsForBand(common.DB, string(common.BandName))
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -579,7 +576,7 @@ func (n *NetworkServerAPI) CreateExtraChannel(ctx context.Context, req *ns.Creat
 		ec.SpreadFactors = append(ec.SpreadFactors, int64(sf))
 	}
 
-	if err := gateway.CreateExtraChannel(n.ctx.DB, &ec); err != nil {
+	if err := gateway.CreateExtraChannel(common.DB, &ec); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -588,7 +585,7 @@ func (n *NetworkServerAPI) CreateExtraChannel(ctx context.Context, req *ns.Creat
 
 // UpdateExtraChannel updates the given extra channel.
 func (n *NetworkServerAPI) UpdateExtraChannel(ctx context.Context, req *ns.UpdateExtraChannelRequest) (*ns.UpdateExtraChannelResponse, error) {
-	ec, err := gateway.GetExtraChannel(n.ctx.DB, req.Id)
+	ec, err := gateway.GetExtraChannel(common.DB, req.Id)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -612,7 +609,7 @@ func (n *NetworkServerAPI) UpdateExtraChannel(ctx context.Context, req *ns.Updat
 		ec.SpreadFactors = append(ec.SpreadFactors, int64(sf))
 	}
 
-	if err = gateway.UpdateExtraChannel(n.ctx.DB, &ec); err != nil {
+	if err = gateway.UpdateExtraChannel(common.DB, &ec); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -621,7 +618,7 @@ func (n *NetworkServerAPI) UpdateExtraChannel(ctx context.Context, req *ns.Updat
 
 // DeleteExtraChannel deletes the extra channel matching the given id.
 func (n *NetworkServerAPI) DeleteExtraChannel(ctx context.Context, req *ns.DeleteExtraChannelRequest) (*ns.DeleteExtraChannelResponse, error) {
-	err := gateway.DeleteExtraChannel(n.ctx.DB, req.Id)
+	err := gateway.DeleteExtraChannel(common.DB, req.Id)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -632,7 +629,7 @@ func (n *NetworkServerAPI) DeleteExtraChannel(ctx context.Context, req *ns.Delet
 // GetExtraChannelsForChannelConfigurationID returns the extra channels for
 // the given channel-configuration id.
 func (n *NetworkServerAPI) GetExtraChannelsForChannelConfigurationID(ctx context.Context, req *ns.GetExtraChannelsForChannelConfigurationIDRequest) (*ns.GetExtraChannelsForChannelConfigurationIDResponse, error) {
-	chans, err := gateway.GetExtraChannelsForChannelConfigurationID(n.ctx.DB, req.Id)
+	chans, err := gateway.GetExtraChannelsForChannelConfigurationID(common.DB, req.Id)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}

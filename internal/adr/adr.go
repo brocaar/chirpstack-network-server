@@ -26,7 +26,7 @@ var pktLossRateTable = [][3]uint8{
 // ADR for other bands is still work in progress. When implementing ADR for
 // other bands, maybe it is an idea to move ADR related constants to the
 // lorawan/band package.
-func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPacket, fullFCnt uint32) error {
+func HandleADR(ns *session.NodeSession, rxPacket models.RXPacket, fullFCnt uint32) error {
 	var maxSNR float64
 	for i, rxInfo := range rxPacket.RXInfoSet {
 		// as the default value is 0 and the LoRaSNR can be negative, we always
@@ -108,7 +108,7 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 	var block *maccommand.Block
 
 	// see if there is already a LinkADRReq commands in the queue
-	block, err = maccommand.GetQueueItemByCID(ctx.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
+	block, err = maccommand.GetQueueItemByCID(common.RedisPool, ns.DevEUI, lorawan.LinkADRReq)
 	if err != nil {
 		return errors.Wrap(err, "read pending error")
 	}
@@ -162,7 +162,7 @@ func HandleADR(ctx common.Context, ns *session.NodeSession, rxPacket models.RXPa
 		lastMACPl.Redundancy.NbRep = uint8(idealNbRep)
 	}
 
-	err = maccommand.AddQueueItem(ctx.RedisPool, ns.DevEUI, *block)
+	err = maccommand.AddQueueItem(common.RedisPool, ns.DevEUI, *block)
 	if err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
 	}

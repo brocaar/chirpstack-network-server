@@ -20,14 +20,14 @@ import (
 
 // collectJoinRequestPacket collects a single received RXPacket of type
 // join-request.
-func collectJoinRequestPacket(ctx common.Context, rxPacket gw.RXPacket) error {
-	return collectAndCallOnce(ctx.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
-		return handleCollectedJoinRequestPackets(ctx, rxPacket)
+func collectJoinRequestPacket(rxPacket gw.RXPacket) error {
+	return collectAndCallOnce(common.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
+		return handleCollectedJoinRequestPackets(rxPacket)
 	})
 }
 
 // handleCollectedJoinRequestPackets handles the received join-requests.
-func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPacket) error {
+func handleCollectedJoinRequestPackets(rxPacket models.RXPacket) error {
 	var macs []string
 	for _, p := range rxPacket.RXInfoSet {
 		macs = append(macs, p.MAC.String())
@@ -52,7 +52,7 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPac
 	}).Info("packet(s) collected")
 
 	// get random DevAddr
-	devAddr, err := session.GetRandomDevAddr(ctx.RedisPool, ctx.NetID)
+	devAddr, err := session.GetRandomDevAddr(common.RedisPool, common.NetID)
 	if err != nil {
 		return fmt.Errorf("get random DevAddr error: %s", err)
 	}
@@ -64,10 +64,10 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPac
 			cFListSlice = append(cFListSlice, f)
 		}
 	}
-	joinResp, err := ctx.Application.JoinRequest(context.Background(), &as.JoinRequestRequest{
+	joinResp, err := common.Application.JoinRequest(context.Background(), &as.JoinRequestRequest{
 		PhyPayload: b,
 		DevAddr:    devAddr[:],
-		NetID:      ctx.NetID[:],
+		NetID:      common.NetID[:],
 		CFList:     cFListSlice,
 	})
 	if err != nil {
@@ -77,12 +77,12 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPac
 	// log the uplink frame
 	// note we log it at this place to make sure the join-request has been
 	// authenticated by the application-server
-	logUplink(ctx.DB, jrPL.DevEUI, rxPacket)
+	logUplink(common.DB, jrPL.DevEUI, rxPacket)
 
 	var downlinkPHY lorawan.PHYPayload
 	if err = downlinkPHY.UnmarshalBinary(joinResp.PhyPayload); err != nil {
 		errStr := fmt.Sprintf("downlink PHYPayload unmarshal error: %s", err)
-		ctx.Application.HandleError(context.Background(), &as.HandleErrorRequest{
+		common.Application.HandleError(context.Background(), &as.HandleErrorRequest{
 			AppEUI: jrPL.AppEUI[:],
 			DevEUI: jrPL.DevEUI[:],
 			Type:   as.ErrorType_OTAA,
@@ -112,15 +112,15 @@ func handleCollectedJoinRequestPackets(ctx common.Context, rxPacket models.RXPac
 		LastRXInfoSet:      rxPacket.RXInfoSet,
 	}
 
-	if err = session.SaveNodeSession(ctx.RedisPool, ns); err != nil {
+	if err = session.SaveNodeSession(common.RedisPool, ns); err != nil {
 		return fmt.Errorf("save node-session error: %s", err)
 	}
 
-	if err = maccommand.FlushQueue(ctx.RedisPool, ns.DevEUI); err != nil {
+	if err = maccommand.FlushQueue(common.RedisPool, ns.DevEUI); err != nil {
 		return fmt.Errorf("flush mac-command queue error: %s", err)
 	}
 
-	if err = downlink.SendJoinAcceptResponse(ctx, ns, rxPacket, downlinkPHY); err != nil {
+	if err = downlink.SendJoinAcceptResponse(ns, rxPacket, downlinkPHY); err != nil {
 		return fmt.Errorf("send join-accept response error: %s", err)
 	}
 
