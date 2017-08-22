@@ -2,11 +2,11 @@ package uplink
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
@@ -18,109 +18,142 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-// collectJoinRequestPacket collects a single received RXPacket of type
-// join-request.
 func collectJoinRequestPacket(rxPacket gw.RXPacket) error {
+	flow := NewFlow().JoinRequest(
+		setContextFromJoinRequestPHYPayload,
+		logJoinRequestFramesCollected,
+		getRandomDevAddr,
+		getOptionalCFList,
+		getJoinAcceptFromAS,
+		logJoinRequestFrame,
+		createNodeSession,
+		sendJoinAcceptDownlink,
+	)
+
 	return collectAndCallOnce(common.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
-		return handleCollectedJoinRequestPackets(rxPacket)
+		return flow.Run(rxPacket)
 	})
 }
 
-// handleCollectedJoinRequestPackets handles the received join-requests.
-func handleCollectedJoinRequestPackets(rxPacket models.RXPacket) error {
+func setContextFromJoinRequestPHYPayload(ctx *JoinRequestContext) error {
+	jrPL, ok := ctx.RXPacket.PHYPayload.MACPayload.(*lorawan.JoinRequestPayload)
+	if !ok {
+		return fmt.Errorf("expected *lorawan.JoinRequestPayload, got: %T", ctx.RXPacket.PHYPayload.MACPayload)
+	}
+	ctx.JoinRequestPayload = jrPL
+
+	return nil
+}
+
+func logJoinRequestFramesCollected(ctx *JoinRequestContext) error {
 	var macs []string
-	for _, p := range rxPacket.RXInfoSet {
+	for _, p := range ctx.RXPacket.RXInfoSet {
 		macs = append(macs, p.MAC.String())
 	}
 
-	// MACPayload must be of type *lorawan.JoinRequestPayload
-	jrPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.JoinRequestPayload)
-	if !ok {
-		return fmt.Errorf("expected *lorawan.JoinRequestPayload, got: %T", rxPacket.PHYPayload.MACPayload)
-	}
-
-	b, err := rxPacket.PHYPayload.MarshalBinary()
-	if err != nil {
-		return fmt.Errorf("phypayload marshal binary error: %s", err)
-	}
-
 	log.WithFields(log.Fields{
-		"dev_eui":  jrPL.DevEUI,
+		"dev_eui":  ctx.JoinRequestPayload.DevEUI,
 		"gw_count": len(macs),
 		"gw_macs":  strings.Join(macs, ", "),
-		"mtype":    rxPacket.PHYPayload.MHDR.MType,
+		"mtype":    ctx.RXPacket.PHYPayload.MHDR.MType,
 	}).Info("packet(s) collected")
 
-	// get random DevAddr
+	return nil
+}
+
+func getRandomDevAddr(ctx *JoinRequestContext) error {
 	devAddr, err := session.GetRandomDevAddr(common.RedisPool, common.NetID)
 	if err != nil {
-		return fmt.Errorf("get random DevAddr error: %s", err)
+		return errors.Wrap(err, "get random DevAddr error")
 	}
+	ctx.DevAddr = devAddr
 
+	return nil
+}
+
+func getOptionalCFList(ctx *JoinRequestContext) error {
 	cFList := common.Band.GetCFList()
-	var cFListSlice []uint32
 	if cFList != nil {
 		for _, f := range cFList {
-			cFListSlice = append(cFListSlice, f)
+			ctx.CFList = append(ctx.CFList, f)
 		}
 	}
-	joinResp, err := common.Application.JoinRequest(context.Background(), &as.JoinRequestRequest{
-		PhyPayload: b,
-		DevAddr:    devAddr[:],
-		NetID:      common.NetID[:],
-		CFList:     cFListSlice,
-	})
+	return nil
+}
+
+func getJoinAcceptFromAS(ctx *JoinRequestContext) error {
+	b, err := ctx.RXPacket.PHYPayload.MarshalBinary()
 	if err != nil {
-		return fmt.Errorf("application server join-request error: %s", err)
+		return errors.Wrap(err, "PHYPayload marshal binary error")
 	}
 
-	// log the uplink frame
-	// note we log it at this place to make sure the join-request has been
-	// authenticated by the application-server
-	logUplink(common.DB, jrPL.DevEUI, rxPacket)
+	joinResp, err := common.Application.JoinRequest(context.Background(), &as.JoinRequestRequest{
+		PhyPayload: b,
+		DevAddr:    ctx.DevAddr[:],
+		NetID:      common.NetID[:],
+		CFList:     ctx.CFList,
+	})
+	if err != nil {
+		return errors.Wrap(err, "application server join-request error")
+	}
 
-	var downlinkPHY lorawan.PHYPayload
-	if err = downlinkPHY.UnmarshalBinary(joinResp.PhyPayload); err != nil {
+	ctx.JoinRequestResponse = joinResp
+
+	return nil
+}
+
+func logJoinRequestFrame(ctx *JoinRequestContext) error {
+	logUplink(common.DB, ctx.JoinRequestPayload.DevEUI, ctx.RXPacket)
+	return nil
+}
+
+func createNodeSession(ctx *JoinRequestContext) error {
+	var nwkSKey lorawan.AES128Key
+	copy(nwkSKey[:], ctx.JoinRequestResponse.NwkSKey)
+
+	ctx.NodeSession = session.NodeSession{
+		DevAddr:            ctx.DevAddr,
+		AppEUI:             ctx.JoinRequestPayload.AppEUI,
+		DevEUI:             ctx.JoinRequestPayload.DevEUI,
+		NwkSKey:            nwkSKey,
+		FCntUp:             0,
+		FCntDown:           0,
+		RelaxFCnt:          ctx.JoinRequestResponse.DisableFCntCheck,
+		RXWindow:           session.RXWindow(ctx.JoinRequestResponse.RxWindow),
+		RXDelay:            uint8(ctx.JoinRequestResponse.RxDelay),
+		RX1DROffset:        uint8(ctx.JoinRequestResponse.Rx1DROffset),
+		RX2DR:              uint8(ctx.JoinRequestResponse.Rx2DR),
+		EnabledChannels:    common.Band.GetUplinkChannels(),
+		ADRInterval:        ctx.JoinRequestResponse.AdrInterval,
+		InstallationMargin: ctx.JoinRequestResponse.InstallationMargin,
+		LastRXInfoSet:      ctx.RXPacket.RXInfoSet,
+	}
+
+	if err := session.SaveNodeSession(common.RedisPool, ctx.NodeSession); err != nil {
+		return errors.Wrap(err, "save node-session error")
+	}
+
+	if err := maccommand.FlushQueue(common.RedisPool, ctx.NodeSession.DevEUI); err != nil {
+		return fmt.Errorf("flush mac-command queue error: %s", err)
+	}
+
+	return nil
+}
+
+func sendJoinAcceptDownlink(ctx *JoinRequestContext) error {
+	var phy lorawan.PHYPayload
+	if err := phy.UnmarshalBinary(ctx.JoinRequestResponse.PhyPayload); err != nil {
 		errStr := fmt.Sprintf("downlink PHYPayload unmarshal error: %s", err)
 		common.Application.HandleError(context.Background(), &as.HandleErrorRequest{
-			AppEUI: jrPL.AppEUI[:],
-			DevEUI: jrPL.DevEUI[:],
+			AppEUI: ctx.JoinRequestPayload.AppEUI[:],
+			DevEUI: ctx.JoinRequestPayload.DevEUI[:],
 			Type:   as.ErrorType_OTAA,
 			Error:  errStr,
 		})
 		return errors.New(errStr)
 	}
 
-	var nwkSKey lorawan.AES128Key
-	copy(nwkSKey[:], joinResp.NwkSKey)
-
-	ns := session.NodeSession{
-		DevAddr:            devAddr,
-		AppEUI:             jrPL.AppEUI,
-		DevEUI:             jrPL.DevEUI,
-		NwkSKey:            nwkSKey,
-		FCntUp:             0,
-		FCntDown:           0,
-		RelaxFCnt:          joinResp.DisableFCntCheck,
-		RXWindow:           session.RXWindow(joinResp.RxWindow),
-		RXDelay:            uint8(joinResp.RxDelay),
-		RX1DROffset:        uint8(joinResp.Rx1DROffset),
-		RX2DR:              uint8(joinResp.Rx2DR),
-		EnabledChannels:    common.Band.GetUplinkChannels(),
-		ADRInterval:        joinResp.AdrInterval,
-		InstallationMargin: joinResp.InstallationMargin,
-		LastRXInfoSet:      rxPacket.RXInfoSet,
-	}
-
-	if err = session.SaveNodeSession(common.RedisPool, ns); err != nil {
-		return fmt.Errorf("save node-session error: %s", err)
-	}
-
-	if err = maccommand.FlushQueue(common.RedisPool, ns.DevEUI); err != nil {
-		return fmt.Errorf("flush mac-command queue error: %s", err)
-	}
-
-	if err = downlink.SendJoinAcceptResponse(ns, rxPacket, downlinkPHY); err != nil {
+	if err := downlink.SendJoinAcceptResponse(ctx.NodeSession, ctx.RXPacket, phy); err != nil {
 		return fmt.Errorf("send join-accept response error: %s", err)
 	}
 

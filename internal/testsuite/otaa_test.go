@@ -1,9 +1,11 @@
 package testsuite
 
 import (
-	"errors"
 	"fmt"
 	"testing"
+
+	"github.com/pkg/errors"
+	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
@@ -13,7 +15,6 @@ import (
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 type otaaTestCase struct {
@@ -252,13 +253,15 @@ func runOTAATests(tests []otaaTestCase) {
 			common.Application.(*test.ApplicationClient).JoinRequestErr = t.ApplicationJoinRequestError
 			common.Application.(*test.ApplicationClient).JoinRequestResponse = t.ApplicationJoinRequestResponse
 
-			So(uplink.HandleRXPacket(gw.RXPacket{
+			err = uplink.HandleRXPacket(gw.RXPacket{
 				RXInfo:     t.RXInfo,
 				PHYPayload: t.PHYPayload,
-			}), ShouldResemble, t.ExpectedError)
-
-			if t.ExpectedError != nil {
+			})
+			if err != nil {
+				So(err.Error(), ShouldEqual, t.ExpectedError.Error())
 				return
+			} else {
+				So(t.ExpectedError, ShouldBeNil)
 			}
 
 			Convey("Then the expected join-request request was made to the application server", func() {
