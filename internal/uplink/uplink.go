@@ -63,14 +63,40 @@ func HandleRXPackets(wg *sync.WaitGroup) {
 
 // HandleRXPacket handles a single rxpacket.
 func HandleRXPacket(rxPacket gw.RXPacket) error {
-	switch rxPacket.PHYPayload.MHDR.MType {
-	case lorawan.JoinRequest:
-		return collectJoinRequestPacket(rxPacket)
-	case lorawan.UnconfirmedDataUp, lorawan.ConfirmedDataUp:
-		return validateAndCollectDataUpRXPacket(rxPacket)
-	default:
-		return fmt.Errorf("unknown MType: %v", rxPacket.PHYPayload.MHDR.MType)
-	}
+	return collectPackets(rxPacket)
+}
+
+func collectPackets(rxPacket gw.RXPacket) error {
+	flow := NewFlow().JoinRequest(
+		setContextFromJoinRequestPHYPayload,
+		logJoinRequestFramesCollected,
+		getRandomDevAddr,
+		getOptionalCFList,
+		getJoinAcceptFromAS,
+		logJoinRequestFrame,
+		createNodeSession,
+		sendJoinAcceptDownlink,
+	).DataUp(
+		setContextFromDataPHYPayload,
+		getNodeSessionForDataUp,
+		logDataFramesCollected,
+		decryptFRMPayloadMACCommands,
+		sendRXInfoToNetworkController,
+		handleFOptsMACCommands,
+		handleFRMPayloadMACCommands,
+		sendFRMPayloadToApplicationServer,
+		handleChannelReconfiguration,
+		handleADR,
+		setLastRXInfoSet, // for class-c
+		syncUplinkFCnt,
+		saveNodeSession,
+		handleUplinkACK,
+		handleDownlink,
+	)
+
+	return collectAndCallOnce(common.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
+		return flow.Run(rxPacket)
+	})
 }
 
 func logUplink(db *sqlx.DB, devEUI lorawan.EUI64, rxPacket models.RXPacket) {

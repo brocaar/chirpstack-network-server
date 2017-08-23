@@ -19,7 +19,9 @@ type JoinRequestContext struct {
 
 // DataUpContext holds the context of an uplink data.
 type DataUpContext struct {
-	RXPacket models.RXPacket
+	RXPacket    models.RXPacket
+	MACPayload  *lorawan.MACPayload
+	NodeSession session.NodeSession
 }
 
 // JoinRequestTask is the signature of a join-request task.

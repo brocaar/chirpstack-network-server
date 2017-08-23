@@ -2045,7 +2045,15 @@ func runUplinkTests(tests []uplinkTestCase) {
 				RXInfo:     t.RXInfo,
 				PHYPayload: phy,
 			}
-			So(uplink.HandleRXPacket(rxPacket), ShouldResemble, t.ExpectedHandleRXPacketError)
+			err = uplink.HandleRXPacket(rxPacket)
+			if err != nil {
+				if t.ExpectedHandleRXPacketError == nil {
+					So(err.Error(), ShouldEqual, "")
+				}
+				So(err.Error(), ShouldEqual, t.ExpectedHandleRXPacketError.Error())
+			} else {
+				So(t.ExpectedHandleRXPacketError, ShouldBeNil)
+			}
 
 			// network-controller validations
 			if t.ExpectedControllerHandleRXInfo != nil {

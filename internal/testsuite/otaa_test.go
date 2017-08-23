@@ -260,9 +260,8 @@ func runOTAATests(tests []otaaTestCase) {
 			if err != nil {
 				So(err.Error(), ShouldEqual, t.ExpectedError.Error())
 				return
-			} else {
-				So(t.ExpectedError, ShouldBeNil)
 			}
+			So(t.ExpectedError, ShouldBeNil)
 
 			Convey("Then the expected join-request request was made to the application server", func() {
 				So(common.Application.(*test.ApplicationClient).JoinRequestChan, ShouldHaveLength, 1)

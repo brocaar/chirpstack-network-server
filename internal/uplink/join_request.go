@@ -9,31 +9,12 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/maccommand"
-	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
 )
-
-func collectJoinRequestPacket(rxPacket gw.RXPacket) error {
-	flow := NewFlow().JoinRequest(
-		setContextFromJoinRequestPHYPayload,
-		logJoinRequestFramesCollected,
-		getRandomDevAddr,
-		getOptionalCFList,
-		getJoinAcceptFromAS,
-		logJoinRequestFrame,
-		createNodeSession,
-		sendJoinAcceptDownlink,
-	)
-
-	return collectAndCallOnce(common.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
-		return flow.Run(rxPacket)
-	})
-}
 
 func setContextFromJoinRequestPHYPayload(ctx *JoinRequestContext) error {
 	jrPL, ok := ctx.RXPacket.PHYPayload.MACPayload.(*lorawan.JoinRequestPayload)

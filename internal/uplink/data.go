@@ -2,15 +2,14 @@ package uplink
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/adr"
 	"github.com/brocaar/loraserver/internal/channels"
@@ -23,152 +22,178 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-func validateAndCollectDataUpRXPacket(rxPacket gw.RXPacket) error {
-	ns, err := session.GetNodeSessionForPHYPayload(common.RedisPool, rxPacket.PHYPayload)
-	if err != nil {
-		return fmt.Errorf("get node-session error: %s", err)
-	}
-
-	// MACPayload must be of type *lorawan.MACPayload
-	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
+func setContextFromDataPHYPayload(ctx *DataUpContext) error {
+	macPL, ok := ctx.RXPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
-		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
+		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", ctx.RXPacket.PHYPayload.MACPayload)
 	}
-
-	if macPL.FPort != nil {
-		if *macPL.FPort == 0 {
-			// decrypt FRMPayload with NwkSKey when FPort == 0
-			if err := rxPacket.PHYPayload.DecryptFRMPayload(ns.NwkSKey); err != nil {
-				return fmt.Errorf("decrypt FRMPayload error: %s", err)
-			}
-		}
-	}
-
-	return collectAndCallOnce(common.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
-		rxPacket.DevEUI = ns.DevEUI
-		logUplink(common.DB, ns.DevEUI, rxPacket)
-		return handleCollectedDataUpPackets(rxPacket)
-	})
+	ctx.MACPayload = macPL
+	return nil
 }
 
-func handleCollectedDataUpPackets(rxPacket models.RXPacket) error {
+func getNodeSessionForDataUp(ctx *DataUpContext) error {
+	ns, err := session.GetNodeSessionForPHYPayload(common.RedisPool, ctx.RXPacket.PHYPayload)
+	if err != nil {
+		return errors.Wrap(err, "get node-session error")
+	}
+	ctx.NodeSession = ns
+
+	return nil
+}
+
+func logDataFramesCollected(ctx *DataUpContext) error {
 	var macs []string
-	for _, p := range rxPacket.RXInfoSet {
+	for _, p := range ctx.RXPacket.RXInfoSet {
 		macs = append(macs, p.MAC.String())
 	}
 
-	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
-	if !ok {
-		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
-	}
-
-	ns, err := session.GetNodeSession(common.RedisPool, rxPacket.DevEUI)
-	if err != nil {
-		return err
-	}
-
-	// expand the FCnt, the value itself has already been validated during the
-	// collection, so there is no need to handle the ok value
-	macPL.FHDR.FCnt, _ = session.ValidateAndGetFullFCntUp(ns, macPL.FHDR.FCnt)
-
 	log.WithFields(log.Fields{
-		"dev_eui":  ns.DevEUI,
+		"dev_eui":  ctx.NodeSession.DevEUI,
 		"gw_count": len(macs),
 		"gw_macs":  strings.Join(macs, ", "),
-		"mtype":    rxPacket.PHYPayload.MHDR.MType,
+		"mtype":    ctx.RXPacket.PHYPayload.MHDR.MType,
 	}).Info("packet(s) collected")
 
-	// send rx info notification to be used by the network-controller
-	if err = sendRXInfoPayload(ns, rxPacket); err != nil {
-		log.WithFields(log.Fields{
-			"dev_eui": ns.DevEUI,
-		}).Errorf("send rx info to network-controller error: %s", err)
+	logUplink(common.DB, ctx.NodeSession.DevEUI, ctx.RXPacket)
+
+	return nil
+}
+
+func decryptFRMPayloadMACCommands(ctx *DataUpContext) error {
+	// only decrypt when FPort is equal to 0
+	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0 {
+		if err := ctx.RXPacket.PHYPayload.DecryptFRMPayload(ctx.NodeSession.NwkSKey); err != nil {
+			return errors.Wrap(err, "decrypt FRMPayload error")
+		}
 	}
 
-	// handle FOpts mac commands (if any)
-	if len(macPL.FHDR.FOpts) > 0 {
-		if err := handleUplinkMACCommands(&ns, false, macPL.FHDR.FOpts, rxPacket.RXInfoSet); err != nil {
+	return nil
+}
+
+func sendRXInfoToNetworkController(ctx *DataUpContext) error {
+	// TODO: change so that errors get logged but not returned
+	if err := sendRXInfoPayload(ctx.NodeSession, ctx.RXPacket); err != nil {
+		return errors.Wrap(err, "send rx-info to network-controller error")
+	}
+
+	return nil
+}
+
+func handleFOptsMACCommands(ctx *DataUpContext) error {
+	if len(ctx.MACPayload.FHDR.FOpts) > 0 {
+		if err := handleUplinkMACCommands(&ctx.NodeSession, false, ctx.MACPayload.FHDR.FOpts, ctx.RXPacket.RXInfoSet); err != nil {
 			log.WithFields(log.Fields{
-				"dev_eui": ns.DevEUI,
-				"fopts":   macPL.FHDR.FOpts,
+				"dev_eui": ctx.NodeSession.DevEUI,
+				"fopts":   ctx.MACPayload.FHDR.FOpts,
 			}).Errorf("handle FOpts mac commands error: %s", err)
 		}
 	}
 
-	if macPL.FPort != nil {
-		if *macPL.FPort == 0 {
-			if len(macPL.FRMPayload) == 0 {
-				return errors.New("expected mac commands, but FRMPayload is empty (FPort=0)")
-			}
+	return nil
+}
 
-			// since the PHYPayload has been marshaled / unmarshaled when
-			// storing it into and retrieving it from the database, we need
-			// to decode the MAC commands from the FRMPayload.
-			if err = rxPacket.PHYPayload.DecodeFRMPayloadToMACCommands(); err != nil {
-				return fmt.Errorf("decode FRMPayload field to MACCommand items error: %s", err)
-			}
+func handleFRMPayloadMACCommands(ctx *DataUpContext) error {
+	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0 {
+		if len(ctx.MACPayload.FRMPayload) == 0 {
+			return errors.New("expected mac commands, but FRMPayload is empty (FPort=0)")
+		}
 
-			var commands []lorawan.MACCommand
-			for _, pl := range macPL.FRMPayload {
-				cmd, ok := pl.(*lorawan.MACCommand)
-				if !ok {
-					return fmt.Errorf("expected MACPayload, but got %T", macPL.FRMPayload)
-				}
-				commands = append(commands, *cmd)
+		var commands []lorawan.MACCommand
+		for _, pl := range ctx.MACPayload.FRMPayload {
+			cmd, ok := pl.(*lorawan.MACCommand)
+			if !ok {
+				return fmt.Errorf("expected MACPayload, but got %T", ctx.MACPayload.FRMPayload)
 			}
-			if err := handleUplinkMACCommands(&ns, true, commands, rxPacket.RXInfoSet); err != nil {
-				log.WithFields(log.Fields{
-					"dev_eui":  ns.DevEUI,
-					"commands": commands,
-				}).Errorf("handle FRMPayload mac commands error: %s", err)
-			}
-		} else {
-			if err := publishDataUp(ns, rxPacket, *macPL); err != nil {
-				return err
-			}
+			commands = append(commands, *cmd)
+		}
+		if err := handleUplinkMACCommands(&ctx.NodeSession, true, commands, ctx.RXPacket.RXInfoSet); err != nil {
+			log.WithFields(log.Fields{
+				"dev_eui":  ctx.NodeSession.DevEUI,
+				"commands": commands,
+			}).Errorf("handle FRMPayload mac commands error: %s", err)
 		}
 	}
 
+	return nil
+}
+
+func sendFRMPayloadToApplicationServer(ctx *DataUpContext) error {
+	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort > 0 {
+		return publishDataUp(ctx.NodeSession, ctx.RXPacket, *ctx.MACPayload)
+	}
+
+	return nil
+}
+
+func handleChannelReconfiguration(ctx *DataUpContext) error {
 	// handle channel configuration
 	// note that this must come before ADR!
-	if err := channels.HandleChannelReconfigure(ns, rxPacket); err != nil {
+	if err := channels.HandleChannelReconfigure(ctx.NodeSession, ctx.RXPacket); err != nil {
 		log.WithFields(log.Fields{
-			"dev_eui": ns.DevEUI,
+			"dev_eui": ctx.NodeSession.DevEUI,
 		}).Warningf("handle channel reconfigure error: %s", err)
 	}
 
+	return nil
+}
+
+func handleADR(ctx *DataUpContext) error {
 	// handle ADR (should be executed before saving the node-session)
-	if err := adr.HandleADR(&ns, rxPacket, macPL.FHDR.FCnt); err != nil {
+	if err := adr.HandleADR(&ctx.NodeSession, ctx.RXPacket, ctx.MACPayload.FHDR.FCnt); err != nil {
 		log.WithFields(log.Fields{
-			"dev_eui": ns.DevEUI,
-			"fcnt_up": macPL.FHDR.FCnt,
+			"dev_eui": ctx.NodeSession.DevEUI,
+			"fcnt_up": ctx.MACPayload.FHDR.FCnt,
 		}).Warningf("handle adr error: %s", err)
 	}
 
+	return nil
+}
+
+func setLastRXInfoSet(ctx *DataUpContext) error {
 	// update the RXInfoSet
-	ns.LastRXInfoSet = rxPacket.RXInfoSet
+	ctx.NodeSession.LastRXInfoSet = ctx.RXPacket.RXInfoSet
+	return nil
+}
 
+func syncUplinkFCnt(ctx *DataUpContext) error {
 	// sync counter with that of the device + 1
-	ns.FCntUp = macPL.FHDR.FCnt + 1
+	ctx.NodeSession.FCntUp = ctx.MACPayload.FHDR.FCnt + 1
+	return nil
+}
 
+func saveNodeSession(ctx *DataUpContext) error {
 	// save node-session
-	if err := session.SaveNodeSession(common.RedisPool, ns); err != nil {
+	return session.SaveNodeSession(common.RedisPool, ctx.NodeSession)
+}
+
+func handleUplinkACK(ctx *DataUpContext) error {
+	// TODO: only log in case of error?
+	if !ctx.MACPayload.FHDR.FCtrl.ACK {
+		return nil
+	}
+
+	_, err := common.Application.HandleDataDownACK(context.Background(), &as.HandleDataDownACKRequest{
+		AppEUI: ctx.NodeSession.AppEUI[:],
+		DevEUI: ctx.NodeSession.DevEUI[:],
+		FCnt:   ctx.NodeSession.FCntDown,
+	})
+	if err != nil {
+		return errors.Wrap(err, "error publish downlink data ack to application-server")
+	}
+	ctx.NodeSession.FCntDown++
+	if err = session.SaveNodeSession(common.RedisPool, ctx.NodeSession); err != nil {
 		return err
 	}
 
-	// handle uplink ACK
-	if macPL.FHDR.FCtrl.ACK {
-		if err := handleUplinkACK(&ns); err != nil {
-			return fmt.Errorf("handle uplink ack error: %s", err)
-		}
-	}
+	return nil
+}
 
+func handleDownlink(ctx *DataUpContext) error {
 	// handle downlink (ACK)
 	time.Sleep(common.GetDownlinkDataDelay)
-	if err := downlink.SendUplinkResponse(ns, rxPacket); err != nil {
-		return fmt.Errorf("handling downlink data for node %s failed: %s", ns.DevEUI, err)
+	if err := downlink.SendUplinkResponse(ctx.NodeSession, ctx.RXPacket); err != nil {
+		return fmt.Errorf("handling downlink data for node %s failed: %s", ctx.NodeSession.DevEUI, err)
 	}
-
 	return nil
 }
 
@@ -371,21 +396,5 @@ func handleUplinkMACCommands(ns *session.NodeSession, frmPayload bool, commands 
 		}
 	}
 
-	return nil
-}
-
-func handleUplinkACK(ns *session.NodeSession) error {
-	_, err := common.Application.HandleDataDownACK(context.Background(), &as.HandleDataDownACKRequest{
-		AppEUI: ns.AppEUI[:],
-		DevEUI: ns.DevEUI[:],
-		FCnt:   ns.FCntDown,
-	})
-	if err != nil {
-		return fmt.Errorf("error publish downlink data ack to application-server: %s", err)
-	}
-	ns.FCntDown++
-	if err = session.SaveNodeSession(common.RedisPool, *ns); err != nil {
-		return err
-	}
 	return nil
 }
