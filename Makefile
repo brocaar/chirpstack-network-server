@@ -7,7 +7,7 @@ GOARCH ?= amd64
 build: statics
 	@echo "Compiling source for $(GOOS) $(GOARCH)"
 	@mkdir -p build
-	@GOOS=$(GOOS) GOARCH=$(GOARCH) go build -ldflags "-X main.version=$(VERSION)" -o build/loraserver$(BINEXT) cmd/loraserver/main.go
+	@GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags "-X main.version=$(VERSION)" -o build/loraserver$(BINEXT) cmd/loraserver/main.go
 
 clean:
 	@echo "Cleaning up workspace"
@@ -50,10 +50,15 @@ statics:
 	@go generate cmd/loraserver/main.go
 
 requirements:
+	@go get -u github.com/kisielk/errcheck
 	@go get -u github.com/golang/lint/golint
-	@go get -u github.com/golang/protobuf/protoc-gen-go
-	@go get -u github.com/golang/protobuf/proto
 	@go get -u github.com/kardianos/govendor
+	@go get -u github.com/smartystreets/goconvey
+	@go get -u golang.org/x/tools/cmd/stringer
+	@go get -u github.com/golang/protobuf/proto
+	@go get -u github.com/golang/protobuf/protoc-gen-go
+	@go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+	@go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 	@go get -u github.com/elazarl/go-bindata-assetfs/...
 	@go get -u github.com/jteeuwen/go-bindata/...
 
