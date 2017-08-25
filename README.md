@@ -1,101 +1,41 @@
 # LoRa Server
 
 [![Build Status](https://travis-ci.org/brocaar/loraserver.svg?branch=master)](https://travis-ci.org/brocaar/loraserver)
-[![GoDoc](https://godoc.org/github.com/brocaar/loraserver?status.svg)](https://godoc.org/github.com/brocaar/loraserver)
 [![Gitter chat](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/loraserver/loraserver)
 
-LoRa Server is an open-source LoRaWAN network-server. It is responsible for
+LoRa Server is an open-source LoRaWAN network-server, part of the
+[LoRa Server](https://docs.loraserver.io/) project. It is responsible for
 handling (and de-duplication) of uplink data received by the gateway(s)
 and the scheduling of downlink data transmissions.
 
-## Project components
+## Architecture
 
 ![architecture](https://docs.loraserver.io/img/architecture.png)
 
-* [lora-gateway-bridge](https://docs.loraserver.io/lora-gateway-bridge) - converts
-  the [packet_forwarder protocol](https://github.com/Lora-net/packet_forwarder/blob/master/PROTOCOL.TXT)
-  to JSON over MQTT and back
-* [loraserver](https://docs.loraserver.io/loraserver/) - LoRaWAN network-server
-* [lora-app-server](https://docs.loraserver.io/lora-app-server/) - LoRaWAN
-  application-server
+### Component links
 
-## Documentation
+* [LoRa Gateway Bridge](https://docs.loraserver.io/lora-gateway-bridge)
+* [LoRa Gateway Config](https://docs.loraserver/lora-gateway-config)
+* [LoRa Server](https://docs.loraserver.io/loraserver/)
+* [LoRa App Server](https://docs.loraserver.io/lora-app-server/)
 
-Please refer to the [documentation](https://docs.loraserver.io/loraserver/) for the
-[getting started](https://docs.loraserver.io/loraserver/getting-started/)
-documentation and implemented [features](https://docs.loraserver.io/loraserver/features/).
+## Links
 
-## Downloads
-
-* Pre-compiled binaries are available at the [releases](https://github.com/brocaar/loraserver/releases) page:
-
-	* Linux (including ARM / Raspberry Pi)
-	* OS X
-	* Windows
-
-* Debian and Ubuntu packages are available at [https://repos.loraserver.io](https://repos.loraserver.io/).
-* Source-code can be found at [https://github.com/brocaar/loraserver](https://github.com/brocaar/loraserver).
-
-## Building from source
-
-The easiest way to get started is by using the provided 
-[docker-compose](https://docs.docker.com/compose/) environment. To start a bash
-shell within the docker-compose environment, execute the following command from
-the root of this project:
-
-```bash
-docker-compose run --rm loraserver bash
-```
-
-A few example commands that you can run:
-
-```bash
-# run the tests
-make test
-
-# compile
-make build
-
-# cross-compile for Linux ARM
-GOOS=linux GOARCH=arm make build
-
-# cross-compile for Windows AMD64
-GOOS=windows BINEXT=.exe GOARCH=amd64 make build
-
-# build the .tar.gz file
-make package
-
-# build the .tar.gz file for Linux ARM
-GOOS=linux GOARCH=arm make package
-
-# build the .tar.gz file for Windows AMD64
-GOOS=windows BINEXT=.exe GOARCH=amd64 make package
-```
-
-Alternatively, you can run the same commands from any working
-[Go](https://golang.org/) environment. As all requirements are vendored,
-there is no need to `go get` these. Make sure you have Go 1.7.x installed
-and that you clone this repository to
-`$GOPATH/src/github.com/brocaar/loraserver`.
-
-## Contributing
-
-There are a couple of ways to get involved:
-
-* Join the discussions and share your feedback at [https://gitter.im/loraserver/loraserver](https://gitter.im/loraserver/loraserver)
-* Report bugs or make feature-requests by opening an issue at [https://github.com/brocaar/loraserver/issues](https://github.com/brocaar/loraserver/issues)
-* Fix issues or improve documentation by creating pull-requests
-
-When you would like to add new features, please discuss the feature first
-by creating an issue describing your feature, how you're planning to implement
-it, what the usecase is etc...
+* [Downloads](https://docs.loraserver.io/loraserver/overview/downloads/)
+* [Docker image](https://hub.docker.com/r/loraserver/loraserver/)
+* [Documentation](https://docs.loraserver.io/loraserver/) and
+  [Getting started](https://docs.loraserver.io/loraserver/getting-started/)
+* [Building from source](https://docs.loraserver.io/loraserver/community/source/)
+* [Contributing](https://docs.loraserver.io/loraserver/community/contribute/)
+* Support
+  * [Support forum](https://forum.loraserver.io)
+  * [Support chat](https://gitter.im/loraserver/loraserver)
+  * [Bug or feature requests](https://github.com/brocaar/loraserver/issues)
 
 ## Sponsors
 
 [![CableLabs](https://www.loraserver.io/img/sponsors/cablelabs.png)](https://www.cablelabs.com/)
 [![acklio](https://www.loraserver.io/img/sponsors/acklio.png)](http://www.ackl.io/)
-
-Would you like to support this project too? Please [get in touch](mailto:info@brocaar.com)!
 
 ## License
 

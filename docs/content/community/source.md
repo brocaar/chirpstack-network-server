@@ -32,7 +32,7 @@ pre-compiled packages available):
 ##### Go
 
 Make sure you have [Go](https://golang.org/) installed (1.7+) and that the LoRa
-App Server repository has been cloned to 
+App Server repository has been cloned into 
 `$GOPATH/src/github.com/brocaar/loraserver`.
 
 ##### Go protocol buffer support
@@ -40,24 +40,14 @@ App Server repository has been cloned to
 Install the C++ implementation of protocol buffers and Go support by following
 the GO support for Protocol Buffers [installation instructions](https://github.com/golang/protobuf).
 
-##### Development utilities
-
-Finally, install some utilities used for development by executing the
-following commands:
-
-```bash
-go get github.com/golang/lint/golint
-go get github.com/kisielk/errcheck
-go get github.com/smartystreets/goconvey
-go get golang.org/x/tools/cmd/stringer
-go get github.com/jteeuwen/go-bindata/...
-```
-
 #### Example commands
 
 A few example commands that you can run:
 
 ```bash
+# install requirements
+make requirements
+
 # run the tests
 make test
 
