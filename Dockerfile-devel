@@ -3,7 +3,8 @@ FROM golang:1.8-alpine3.6
 ENV PROJECT_PATH=/go/src/github.com/brocaar/loraserver
 ENV PATH=$PATH:$PROJECT_PATH/build
 
-RUN apk add --no-cache ca-certificates make git bash protobuf
+RUN apk add --no-cache ca-certificates make git bash protobuf alpine-sdk ruby ruby-dev libffi-dev
+RUN gem install --no-ri --no-rdoc fpm
 
 RUN mkdir -p $PROJECT_PATH
 COPY . $PROJECT_PATH

@@ -8,6 +8,8 @@ case $GOARCH in
 		;;
 	'arm') ARCH="armhf"
 		;;
+	'arm64') ARCH="arm64"
+		;;
 	*)
 		echo "Unknown target $GOARCH"
 		exit 1
