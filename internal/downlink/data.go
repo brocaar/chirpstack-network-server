@@ -133,12 +133,10 @@ func SendDataDown(ns *session.NodeSession, txInfo gw.TXInfo, dataDown DataDownFr
 		return errors.Wrap(err, "send tx packet to gateway error")
 	}
 
-	// increment the FCntDown when Confirmed = false
-	if !dataDown.Confirmed {
-		ns.FCntDown++
-		if err := session.SaveNodeSession(common.RedisPool, *ns); err != nil {
-			return errors.Wrap(err, "save node-session error")
-		}
+	// increment downlink framecounter
+	ns.FCntDown++
+	if err := session.SaveNodeSession(common.RedisPool, *ns); err != nil {
+		return errors.Wrap(err, "save node-session error")
 	}
 
 	return nil

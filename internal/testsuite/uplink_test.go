@@ -1424,7 +1424,7 @@ func TestUplinkScenarios(t *testing.T) {
 						},
 					},
 					ExpectedFCntUp:          11,
-					ExpectedFCntDown:        5, // will be incremented after the node ACKs the frame
+					ExpectedFCntDown:        6,
 					ExpectedEnabledChannels: []int{0, 1, 2},
 				},
 				{

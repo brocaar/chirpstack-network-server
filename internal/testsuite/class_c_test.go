@@ -124,7 +124,7 @@ func TestClassCScenarios(t *testing.T) {
 					},
 
 					ExpectedFCntUp:   8,
-					ExpectedFCntDown: 5,
+					ExpectedFCntDown: 6,
 					ExpectedTXInfo:   &txInfo,
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{

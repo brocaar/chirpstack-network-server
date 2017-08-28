@@ -180,10 +180,6 @@ func handleUplinkACK(ctx *DataUpContext) error {
 	if err != nil {
 		return errors.Wrap(err, "error publish downlink data ack to application-server")
 	}
-	ctx.NodeSession.FCntDown++
-	if err = session.SaveNodeSession(common.RedisPool, ctx.NodeSession); err != nil {
-		return err
-	}
 
 	return nil
 }
