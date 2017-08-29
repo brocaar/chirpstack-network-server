@@ -17,4 +17,4 @@ FROM alpine:latest AS production
 WORKDIR /root/
 RUN apk --no-cache add ca-certificates
 COPY --from=development /go/src/github.com/brocaar/loraserver/build/loraserver .
-CMD ["./loraserver"]
+ENTRYPOINT ["./loraserver"]
