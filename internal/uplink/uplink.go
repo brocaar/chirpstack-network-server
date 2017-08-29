@@ -15,6 +15,33 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+var flow = NewFlow().JoinRequest(
+	setContextFromJoinRequestPHYPayload,
+	logJoinRequestFramesCollected,
+	getRandomDevAddr,
+	getOptionalCFList,
+	getJoinAcceptFromAS,
+	logJoinRequestFrame,
+	createNodeSession,
+	sendJoinAcceptDownlink,
+).DataUp(
+	setContextFromDataPHYPayload,
+	getNodeSessionForDataUp,
+	logDataFramesCollected,
+	decryptFRMPayloadMACCommands,
+	sendRXInfoToNetworkController,
+	handleFOptsMACCommands,
+	handleFRMPayloadMACCommands,
+	sendFRMPayloadToApplicationServer,
+	handleChannelReconfiguration,
+	handleADR,
+	setLastRXInfoSet, // for class-c
+	syncUplinkFCnt,
+	saveNodeSession,
+	handleUplinkACK,
+	handleDownlink,
+)
+
 // Server represents a server listening for uplink packets.
 type Server struct {
 	wg sync.WaitGroup
@@ -67,33 +94,6 @@ func HandleRXPacket(rxPacket gw.RXPacket) error {
 }
 
 func collectPackets(rxPacket gw.RXPacket) error {
-	flow := NewFlow().JoinRequest(
-		setContextFromJoinRequestPHYPayload,
-		logJoinRequestFramesCollected,
-		getRandomDevAddr,
-		getOptionalCFList,
-		getJoinAcceptFromAS,
-		logJoinRequestFrame,
-		createNodeSession,
-		sendJoinAcceptDownlink,
-	).DataUp(
-		setContextFromDataPHYPayload,
-		getNodeSessionForDataUp,
-		logDataFramesCollected,
-		decryptFRMPayloadMACCommands,
-		sendRXInfoToNetworkController,
-		handleFOptsMACCommands,
-		handleFRMPayloadMACCommands,
-		sendFRMPayloadToApplicationServer,
-		handleChannelReconfiguration,
-		handleADR,
-		setLastRXInfoSet, // for class-c
-		syncUplinkFCnt,
-		saveNodeSession,
-		handleUplinkACK,
-		handleDownlink,
-	)
-
 	return collectAndCallOnce(common.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
 		return flow.Run(rxPacket)
 	})
