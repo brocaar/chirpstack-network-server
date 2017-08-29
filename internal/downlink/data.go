@@ -58,6 +58,10 @@ func (ctx DataDownFrameContext) Validate() error {
 		return ErrFPortMustNotBeZero
 	}
 
+	if ctx.FPort > 224 {
+		return ErrInvalidAppFPort
+	}
+
 	if ctx.FPort > 0 && ctx.EncryptMACCommands {
 		return ErrFPortMustBeZero
 	}
