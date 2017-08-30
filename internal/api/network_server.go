@@ -219,7 +219,7 @@ func (n *NetworkServerAPI) PushDataDown(ctx context.Context, req *ns.PushDataDow
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid FCnt (expected: %d)", sess.FCntDown)
 	}
 
-	err = downlink.HandlePushDataDown(sess, req.Confirmed, uint8(req.FPort), req.Data)
+	err = downlink.Flow.RunPushDataDown(sess, req.Confirmed, uint8(req.FPort), req.Data)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}

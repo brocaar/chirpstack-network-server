@@ -35,7 +35,7 @@ var flow = NewFlow().JoinRequest(
 	sendFRMPayloadToApplicationServer,
 	handleChannelReconfiguration,
 	handleADR,
-	setLastRXInfoSet, // for class-c
+	setLastRXInfoSet,
 	syncUplinkFCnt,
 	saveNodeSession,
 	handleUplinkACK,

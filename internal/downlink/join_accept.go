@@ -4,66 +4,71 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/session"
-	"github.com/brocaar/lorawan"
 )
 
-func getJoinAcceptTXInfo(ns session.NodeSession, rxInfo gw.RXInfo) (gw.TXInfo, error) {
-	txInfo := gw.TXInfo{
+func getJoinAcceptTXInfo(ctx *JoinContext) error {
+	if len(ctx.NodeSession.LastRXInfoSet) == 0 {
+		return errors.New("empty LastRXInfoSet")
+	}
+
+	rxInfo := ctx.NodeSession.LastRXInfoSet[0]
+
+	ctx.TXInfo = gw.TXInfo{
 		MAC:      rxInfo.MAC,
 		CodeRate: rxInfo.CodeRate,
 		Power:    common.Band.DefaultTXPower,
 	}
 
-	if ns.RXWindow == session.RX1 {
-		txInfo.Timestamp = rxInfo.Timestamp + uint32(common.Band.JoinAcceptDelay1/time.Microsecond)
+	if ctx.NodeSession.RXWindow == session.RX1 {
+		ctx.TXInfo.Timestamp = rxInfo.Timestamp + uint32(common.Band.JoinAcceptDelay1/time.Microsecond)
 
 		// get uplink dr
 		uplinkDR, err := common.Band.GetDataRate(rxInfo.DataRate)
 		if err != nil {
-			return txInfo, err
+			return errors.Wrap(err, "get data-rate error")
 		}
 
 		// get RX1 DR
 		rx1DR, err := common.Band.GetRX1DataRate(uplinkDR, 0)
 		if err != nil {
-			return txInfo, err
-
+			return errors.Wrap(err, "get rx1 data-rate error")
 		}
-		txInfo.DataRate = common.Band.DataRates[rx1DR]
+		ctx.TXInfo.DataRate = common.Band.DataRates[rx1DR]
 
 		// get RX1 frequency
-		txInfo.Frequency, err = common.Band.GetRX1Frequency(rxInfo.Frequency)
+		ctx.TXInfo.Frequency, err = common.Band.GetRX1Frequency(rxInfo.Frequency)
 		if err != nil {
-			return txInfo, err
+			return errors.Wrap(err, "get rx1 frequency error")
 		}
-	} else if ns.RXWindow == session.RX2 {
-		txInfo.Timestamp = rxInfo.Timestamp + uint32(common.Band.JoinAcceptDelay2/time.Microsecond)
-		txInfo.DataRate = common.Band.DataRates[common.Band.RX2DataRate]
-		txInfo.Frequency = common.Band.RX2Frequency
+	} else if ctx.NodeSession.RXWindow == session.RX2 {
+		ctx.TXInfo.Timestamp = rxInfo.Timestamp + uint32(common.Band.JoinAcceptDelay2/time.Microsecond)
+		ctx.TXInfo.DataRate = common.Band.DataRates[common.Band.RX2DataRate]
+		ctx.TXInfo.Frequency = common.Band.RX2Frequency
 	} else {
-		return txInfo, fmt.Errorf("unkonwn RXWindow option %d", ns.RXWindow)
+		return fmt.Errorf("unknown RXWindow defined %d", ctx.NodeSession.RXWindow)
 	}
-	return txInfo, nil
+
+	return nil
 }
 
-// SendJoinAcceptResponse sends the join-accept response.
-func SendJoinAcceptResponse(ns session.NodeSession, rxPacket models.RXPacket, phy lorawan.PHYPayload) error {
-	txInfo, err := getJoinAcceptTXInfo(ns, rxPacket.RXInfoSet[0])
+func logJoinAcceptFrame(ctx *JoinContext) error {
+	logDownlink(common.DB, ctx.NodeSession.DevEUI, ctx.PHYPayload, ctx.TXInfo)
+	return nil
+}
+
+func sendJoinAcceptResponse(ctx *JoinContext) error {
+	err := common.Gateway.SendTXPacket(gw.TXPacket{
+		TXInfo:     ctx.TXInfo,
+		PHYPayload: ctx.PHYPayload,
+	})
 	if err != nil {
-		return fmt.Errorf("get join-accept txinfo error: %s", err)
+		return errors.Wrap(err, "send tx-packet error")
 	}
 
-	logDownlink(common.DB, ns.DevEUI, phy, txInfo)
-
-	if err = common.Gateway.SendTXPacket(gw.TXPacket{
-		TXInfo:     txInfo,
-		PHYPayload: phy,
-	}); err != nil {
-		return fmt.Errorf("send txpacket error: %s", err)
-	}
 	return nil
 }

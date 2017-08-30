@@ -15,63 +15,117 @@ import (
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/maccommand"
-	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/node"
 	"github.com/brocaar/loraserver/internal/session"
 	"github.com/brocaar/lorawan"
 )
 
-// DataDownFrameContext describes the context for a downlink frame.
-type DataDownFrameContext struct {
-	// ACK defines if ACK must be set to true (e.g. the frame acknowledges
-	// an uplink frame).
-	ACK bool
-
-	// FPort to use for transmission. This must be set to a value != 0 in case
-	// Data is not empty.
-	FPort uint8
-
-	// MACCommands contains the mac-commands to send (if any). Make sure the
-	// total size fits within the FRMPayload or FPort (depending on if
-	// EncryptMACCommands is set to true).
-	MACCommands []lorawan.MACCommand
-
-	// EncryptMACCommands defines if the mac-commands (if any) must be
-	// encrypted and put in the FRMPayload. Note that it is not possible to
-	// send encrypted mac-commands when FPort is set to a value != 0.
-	EncryptMACCommands bool
-
-	// Confirmed defines if the frame must be send as confirmed-data.
-	Confirmed bool
-
-	// MoreData defines if there is more data pending.
-	MoreData bool
-
-	// Data contains the bytes to send. Note that this requires FPort to be a
-	// value other than 0.
-	Data []byte
-}
-
-// Validate validates the correctness of DataDownFrameContext.
-func (ctx DataDownFrameContext) Validate() error {
-	if ctx.FPort == 0 && len(ctx.Data) > 0 {
-		return ErrFPortMustNotBeZero
+func getDataTXInfo(ctx *DataContext) error {
+	if len(ctx.NodeSession.LastRXInfoSet) == 0 {
+		return ErrNoLastRXInfoSet
 	}
-
-	if ctx.FPort > 224 {
-		return ErrInvalidAppFPort
-	}
-
-	if ctx.FPort > 0 && ctx.EncryptMACCommands {
-		return ErrFPortMustBeZero
+	rxInfo := ctx.NodeSession.LastRXInfoSet[0]
+	var err error
+	ctx.TXInfo, ctx.DataRate, err = getDataDownTXInfoAndDR(ctx.NodeSession, rxInfo)
+	if err != nil {
+		return errors.Wrap(err, "get data down tx-info error")
 	}
 
 	return nil
 }
 
-// SendDataDown sends the given data to the gateway for transmission.
-func SendDataDown(ns *session.NodeSession, txInfo gw.TXInfo, dataDown DataDownFrameContext) error {
-	if err := dataDown.Validate(); err != nil {
+func getDataTXInfoForRX2(ctx *DataContext) error {
+	if len(ctx.NodeSession.LastRXInfoSet) == 0 {
+		return ErrNoLastRXInfoSet
+	}
+	rxInfo := ctx.NodeSession.LastRXInfoSet[0]
+
+	if int(ctx.NodeSession.RX2DR) > len(common.Band.DataRates)-1 {
+		return errors.Wrapf(ErrInvalidDataRate, "dr: %d (max dr: %d)", ctx.NodeSession.RX2DR, len(common.Band.DataRates)-1)
+	}
+
+	ctx.TXInfo = gw.TXInfo{
+		MAC:         rxInfo.MAC,
+		Immediately: true,
+		Frequency:   int(common.Band.RX2Frequency),
+		Power:       common.Band.DefaultTXPower,
+		DataRate:    common.Band.DataRates[int(ctx.NodeSession.RX2DR)],
+		CodeRate:    "4/5",
+	}
+
+	return nil
+}
+
+func setRemainingPayloadSize(ctx *DataContext) error {
+	ctx.RemainingPayloadSize = common.Band.MaxPayloadSize[ctx.DataRate].N - len(ctx.Data)
+
+	if ctx.RemainingPayloadSize < 0 {
+		return ErrMaxPayloadSizeExceeded
+	}
+
+	return nil
+}
+
+func getDataDownFromApplicationServer(ctx *DataContext) error {
+	txPayload := getDataDownFromApplication(ctx.NodeSession, ctx.DataRate)
+	if txPayload == nil {
+		return nil
+	}
+
+	ctx.RemainingPayloadSize = ctx.RemainingPayloadSize - len(txPayload.Data)
+	ctx.Data = txPayload.Data
+	ctx.Confirmed = txPayload.Confirmed
+	ctx.MoreData = txPayload.MoreData
+	ctx.FPort = uint8(txPayload.FPort)
+
+	return nil
+}
+
+func getMACCommands(ctx *DataContext) error {
+	allowEncryptedMACCommands := (ctx.FPort == 0)
+
+	macBlocks, encryptMACCommands, pendingMACCommands, err := getAndFilterMACQueueItems(ctx.NodeSession, allowEncryptedMACCommands, ctx.RemainingPayloadSize)
+	if err != nil {
+		return errors.Wrap(err, "get mac-commands error")
+	}
+
+	for bi := range macBlocks {
+		for mi := range macBlocks[bi].MACCommands {
+			ctx.MACCommands = append(ctx.MACCommands, macBlocks[bi].MACCommands[mi])
+		}
+	}
+
+	ctx.EncryptMACCommands = encryptMACCommands
+
+	if pendingMACCommands {
+		// note that MoreData might already be true
+		ctx.MoreData = true
+	}
+
+	for _, block := range macBlocks {
+		if err = maccommand.SetPending(common.RedisPool, ctx.NodeSession.DevEUI, block); err != nil {
+			return errors.Wrap(err, "set mac-command block as pending error")
+		}
+
+		if err = maccommand.DeleteQueueItem(common.RedisPool, ctx.NodeSession.DevEUI, block); err != nil {
+			return errors.Wrap(err, "delete mac-command block from queue error")
+		}
+	}
+
+	return nil
+}
+
+func stopOnNothingToSend(ctx *DataContext) error {
+	if ctx.FPort == 0 && len(ctx.MACCommands) == 0 && !ctx.ACK && !ctx.MustSend {
+		// ErrAbort will not be handled as a real error
+		return ErrAbort
+	}
+
+	return nil
+}
+
+func sendDataDown(ctx *DataContext) error {
+	if err := ctx.Validate(); err != nil {
 		return errors.Wrap(err, "validation error")
 	}
 
@@ -81,213 +135,72 @@ func SendDataDown(ns *session.NodeSession, txInfo gw.TXInfo, dataDown DataDownFr
 			Major: lorawan.LoRaWANR1,
 		},
 	}
-	if dataDown.Confirmed {
+	if ctx.Confirmed {
 		phy.MHDR.MType = lorawan.ConfirmedDataDown
 	}
 
 	macPL := &lorawan.MACPayload{
 		FHDR: lorawan.FHDR{
-			DevAddr: ns.DevAddr,
+			DevAddr: ctx.NodeSession.DevAddr,
 			FCtrl: lorawan.FCtrl{
-				ADR:      ns.ADRInterval != 0,
-				ACK:      dataDown.ACK,
-				FPending: dataDown.MoreData,
+				ADR:      ctx.NodeSession.ADRInterval != 0,
+				ACK:      ctx.ACK,
+				FPending: ctx.MoreData,
 			},
-			FCnt: ns.FCntDown,
+			FCnt: ctx.NodeSession.FCntDown,
 		},
 	}
 	phy.MACPayload = macPL
 
-	if len(dataDown.MACCommands) > 0 {
-		if dataDown.EncryptMACCommands {
+	if len(ctx.MACCommands) > 0 {
+		if ctx.EncryptMACCommands {
 			var frmPayload []lorawan.Payload
-			for i := range dataDown.MACCommands {
-				frmPayload = append(frmPayload, &dataDown.MACCommands[i])
+			for i := range ctx.MACCommands {
+				frmPayload = append(frmPayload, &ctx.MACCommands[i])
 			}
-			macPL.FPort = &dataDown.FPort
+			macPL.FPort = &ctx.FPort
 			macPL.FRMPayload = frmPayload
 
 			// encrypt the FRMPayload with the NwkSKey
-			if err := phy.EncryptFRMPayload(ns.NwkSKey); err != nil {
+			if err := phy.EncryptFRMPayload(ctx.NodeSession.NwkSKey); err != nil {
 				return errors.Wrap(err, "encrypt FRMPayload error")
 			}
 		} else {
-			macPL.FHDR.FOpts = dataDown.MACCommands
+			macPL.FHDR.FOpts = ctx.MACCommands
 		}
 	}
 
-	if dataDown.FPort > 0 {
-		macPL.FPort = &dataDown.FPort
+	if ctx.FPort > 0 {
+		macPL.FPort = &ctx.FPort
 		macPL.FRMPayload = []lorawan.Payload{
-			&lorawan.DataPayload{Bytes: dataDown.Data},
+			&lorawan.DataPayload{Bytes: ctx.Data},
 		}
 	}
 
-	if err := phy.SetMIC(ns.NwkSKey); err != nil {
+	if err := phy.SetMIC(ctx.NodeSession.NwkSKey); err != nil {
 		return errors.Wrap(err, "set MIC error")
 	}
 
-	logDownlink(common.DB, ns.DevEUI, phy, txInfo)
+	logDownlink(common.DB, ctx.NodeSession.DevEUI, phy, ctx.TXInfo)
 
 	// send the packet to the gateway
 	if err := common.Gateway.SendTXPacket(gw.TXPacket{
-		TXInfo:     txInfo,
+		TXInfo:     ctx.TXInfo,
 		PHYPayload: phy,
 	}); err != nil {
 		return errors.Wrap(err, "send tx packet to gateway error")
 	}
 
 	// increment downlink framecounter
-	ns.FCntDown++
-	if err := session.SaveNodeSession(common.RedisPool, *ns); err != nil {
+	ctx.NodeSession.FCntDown++
+
+	return nil
+}
+
+func saveNodeSession(ctx *DataContext) error {
+	if err := session.SaveNodeSession(common.RedisPool, ctx.NodeSession); err != nil {
 		return errors.Wrap(err, "save node-session error")
 	}
-
-	return nil
-}
-
-// HandlePushDataDown handles requests to push data to a given node.
-func HandlePushDataDown(ns session.NodeSession, confirmed bool, fPort uint8, data []byte) error {
-	if len(ns.LastRXInfoSet) == 0 {
-		return ErrNoLastRXInfoSet
-	}
-
-	dr := int(ns.RX2DR)
-	if dr > len(common.Band.DataRates)-1 {
-		return errors.Wrapf(ErrInvalidDataRate, "dr: %d (max dr: %d)", dr, len(common.Band.DataRates)-1)
-	}
-
-	remainingPayloadSize := common.Band.MaxPayloadSize[dr].N
-	if len(data) > remainingPayloadSize {
-		return errors.Wrapf(ErrMaxPayloadSizeExceeded, "(max: %d)", remainingPayloadSize)
-	}
-	remainingPayloadSize = remainingPayloadSize - len(data)
-
-	blocks, _, _, err := getAndFilterMACQueueItems(ns, false, remainingPayloadSize)
-	if err != nil {
-		return errors.Wrap(err, "get mac-command blocks error")
-	}
-
-	var macCommands []lorawan.MACCommand
-	for bi := range blocks {
-		for mi := range blocks[bi].MACCommands {
-			macCommands = append(macCommands, blocks[bi].MACCommands[mi])
-		}
-	}
-
-	txInfo := gw.TXInfo{
-		MAC:         ns.LastRXInfoSet[0].MAC,
-		Immediately: true,
-		Frequency:   int(common.Band.RX2Frequency),
-		Power:       common.Band.DefaultTXPower,
-		DataRate:    common.Band.DataRates[dr],
-		CodeRate:    "4/5",
-	}
-
-	ddCTX := DataDownFrameContext{
-		FPort:       fPort,
-		Data:        data,
-		Confirmed:   confirmed,
-		MACCommands: macCommands,
-	}
-
-	if err := SendDataDown(&ns, txInfo, ddCTX); err != nil {
-		return errors.Wrap(err, "send data down error")
-	}
-
-	// remove the transmitted mac commands from the queue
-	for _, block := range blocks {
-		if err = maccommand.DeleteQueueItem(common.RedisPool, ns.DevEUI, block); err != nil {
-			return errors.Wrap(err, "delete mac-command block from queue error")
-		}
-	}
-
-	return nil
-}
-
-// SendUplinkResponse sends the data-down response to an uplink packet.
-// A downlink response happens when: there is data in the downlink queue,
-// there are MAC commmands to send and / or when the uplink packet was of
-// type ConfirmedDataUp, so an ACK response is needed.
-func SendUplinkResponse(ns session.NodeSession, rxPacket models.RXPacket) error {
-	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
-	if !ok {
-		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
-	}
-
-	// get data down tx properties
-	txInfo, dr, err := getDataDownTXInfoAndDR(ns, rxPacket.RXInfoSet[0])
-	if err != nil {
-		return fmt.Errorf("get data down txinfo error: %s", err)
-	}
-
-	allowEncryptedMACCommands := true
-	remainingPayloadSize := common.Band.MaxPayloadSize[dr].N
-
-	// get data down from application-server (if it has anything in its queue)
-	txPayload := getDataDownFromApplication(ns, dr)
-
-	// get mac-commands to fill the remaining payload bytes
-	if txPayload != nil {
-		remainingPayloadSize = remainingPayloadSize - len(txPayload.Data)
-		allowEncryptedMACCommands = false
-	}
-
-	// read mac-commands queue items
-	macBlocks, encryptMACCommands, pendingMACCommands, err := getAndFilterMACQueueItems(ns, allowEncryptedMACCommands, remainingPayloadSize)
-	if err != nil {
-		return fmt.Errorf("get mac-commands error: %s", err)
-	}
-
-	var macCommands []lorawan.MACCommand
-	for bi := range macBlocks {
-		for mi := range macBlocks[bi].MACCommands {
-			macCommands = append(macCommands, macBlocks[bi].MACCommands[mi])
-		}
-	}
-
-	ddCTX := DataDownFrameContext{
-		ACK:         rxPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp,
-		MACCommands: macCommands,
-	}
-
-	if txPayload != nil {
-		ddCTX.Confirmed = txPayload.Confirmed
-		ddCTX.MoreData = txPayload.MoreData
-		ddCTX.FPort = uint8(txPayload.FPort)
-		ddCTX.Data = txPayload.Data
-	}
-
-	if pendingMACCommands {
-		ddCTX.MoreData = true
-	}
-
-	if allowEncryptedMACCommands && encryptMACCommands {
-		ddCTX.EncryptMACCommands = true
-	}
-
-	// Uplink was unconfirmed and no downlink data in queue and no mac commands to send.
-	// Note: in case of a ADRACKReq we still need to respond.
-	if txPayload == nil && !ddCTX.ACK && len(ddCTX.MACCommands) == 0 && !macPL.FHDR.FCtrl.ADRACKReq {
-		return nil
-	}
-
-	// send the data to the node
-	if err := SendDataDown(&ns, txInfo, ddCTX); err != nil {
-		return fmt.Errorf("send data down error: %s", err)
-	}
-
-	// set the mac-command blocks to pending and remove them from the queue
-	for _, block := range macBlocks {
-		if err = maccommand.SetPending(common.RedisPool, ns.DevEUI, block); err != nil {
-			return errors.Wrap(err, "set mac-command block as pending error")
-		}
-
-		if err = maccommand.DeleteQueueItem(common.RedisPool, ns.DevEUI, block); err != nil {
-			return errors.Wrap(err, "delete mac-command block from queue error")
-		}
-	}
-
 	return nil
 }
 

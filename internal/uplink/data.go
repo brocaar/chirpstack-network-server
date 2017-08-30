@@ -187,9 +187,15 @@ func handleUplinkACK(ctx *DataUpContext) error {
 func handleDownlink(ctx *DataUpContext) error {
 	// handle downlink (ACK)
 	time.Sleep(common.GetDownlinkDataDelay)
-	if err := downlink.SendUplinkResponse(ctx.NodeSession, ctx.RXPacket); err != nil {
-		return fmt.Errorf("handling downlink data for node %s failed: %s", ctx.NodeSession.DevEUI, err)
+	if err := downlink.Flow.RunUplinkResponse(
+		ctx.NodeSession,
+		ctx.MACPayload.FHDR.FCtrl.ADR,
+		ctx.MACPayload.FHDR.FCtrl.ADRACKReq,
+		ctx.RXPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp,
+	); err != nil {
+		return errors.Wrap(err, "run uplink response flow error")
 	}
+
 	return nil
 }
 

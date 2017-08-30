@@ -134,8 +134,8 @@ func sendJoinAcceptDownlink(ctx *JoinRequestContext) error {
 		return errors.New(errStr)
 	}
 
-	if err := downlink.SendJoinAcceptResponse(ctx.NodeSession, ctx.RXPacket, phy); err != nil {
-		return fmt.Errorf("send join-accept response error: %s", err)
+	if err := downlink.Flow.RunJoinResponse(ctx.NodeSession, phy); err != nil {
+		return errors.Wrap(err, "run join-response flow error")
 	}
 
 	return nil

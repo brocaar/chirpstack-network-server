@@ -10,4 +10,5 @@ var (
 	ErrNoLastRXInfoSet        = errors.New("no last RX-Info set available")
 	ErrInvalidDataRate        = errors.New("invalid data-rate")
 	ErrMaxPayloadSizeExceeded = errors.New("maximum payload size exceeded")
+	ErrAbort                  = errors.New("nothing to do")
 )
