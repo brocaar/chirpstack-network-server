@@ -15,7 +15,7 @@ and the scheduling of downlink data transmissions.
 ### Component links
 
 * [LoRa Gateway Bridge](https://docs.loraserver.io/lora-gateway-bridge)
-* [LoRa Gateway Config](https://docs.loraserver/lora-gateway-config)
+* [LoRa Gateway Config](https://docs.loraserver.io/lora-gateway-config)
 * [LoRa Server](https://docs.loraserver.io/loraserver/)
 * [LoRa App Server](https://docs.loraserver.io/lora-app-server/)
 
