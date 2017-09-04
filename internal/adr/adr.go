@@ -22,10 +22,6 @@ var pktLossRateTable = [][3]uint8{
 
 // HandleADR handles ADR in case requested by the node and configured
 // in the node-session.
-// Note that this function only implements ADR for the EU_863_870 band as
-// ADR for other bands is still work in progress. When implementing ADR for
-// other bands, maybe it is an idea to move ADR related constants to the
-// lorawan/band package.
 func HandleADR(ns *session.NodeSession, rxPacket models.RXPacket, fullFCnt uint32) error {
 	var maxSNR float64
 	for i, rxInfo := range rxPacket.RXInfoSet {
