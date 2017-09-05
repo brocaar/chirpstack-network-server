@@ -3,7 +3,7 @@ package maccommand
 import (
 	"fmt"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/internal/common"
