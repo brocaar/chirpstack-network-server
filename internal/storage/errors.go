@@ -23,6 +23,8 @@ func handlePSQLError(err error, description string) error {
 		switch err.Code.Name() {
 		case "unique_violation":
 			return ErrAlreadyExists
+		case "foreign_key_violation":
+			return ErrDoesNotExist
 		}
 	}
 
