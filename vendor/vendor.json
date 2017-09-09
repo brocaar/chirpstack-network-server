@@ -3,10 +3,16 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "he6U+ANcoXKilCk8LlDweHzWohY=",
+			"checksumSHA1": "u52BzfoKG0x7CgBgg/PB1AEVSag=",
 			"path": "github.com/brocaar/lorawan",
 			"revision": "493811893ace2e3e4db4bb8e402ce28b72a04198",
 			"revisionTime": "2017-09-12T08:35:35Z"
+		},
+		{
+			"checksumSHA1": "T//dyqNqnJZdIfxvYEdgwaTQmbU=",
+			"path": "github.com/brocaar/lorawan/backend",
+			"revision": "c2988e26744cd01ba93e54cb7422f274213eab08",
+			"revisionTime": "2017-09-05T08:15:54Z"
 		},
 		{
 			"checksumSHA1": "HglcYT/tCUHsT4cJtaa62vM55Dc=",
@@ -121,6 +127,12 @@
 			"path": "github.com/rubenv/sql-migrate/sqlparse",
 			"revision": "f64b6080c334adaf843209164107439e92bb170b",
 			"revisionTime": "2017-02-07T10:19:24Z"
+		},
+		{
+			"checksumSHA1": "zmC8/3V4ls53DJlNTKDZwPSC/dA=",
+			"path": "github.com/satori/go.uuid",
+			"revision": "5bf94b69c6b68ee1b541973bb8e1144db23a194b",
+			"revisionTime": "2017-03-21T23:07:31Z"
 		},
 		{
 			"checksumSHA1": "Liv7AJyNinmP3pvwohcXp4R6xY4=",
