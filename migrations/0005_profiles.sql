@@ -44,7 +44,7 @@ create table service_profile (
     dl_rate_policy char(4) not null,
     add_gw_metadata boolean not null,
     dev_status_req_freq integer not null,
-    report_dev_status_batery boolean not null,
+    report_dev_status_battery boolean not null,
     report_dev_status_margin boolean not null,
     dr_min integer not null,
     dr_max integer not null,
