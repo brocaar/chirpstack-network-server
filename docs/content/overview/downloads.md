@@ -23,9 +23,9 @@ menu:
 
 | File name                                                                                                 | OS      | Arch  |
 | ----------------------------------------------------------------------------------------------------------| ------- | ----- |
-| [loraserver_{{< version >}}_amd64.deb](https://dl.loraserver.io/deb/loraserver_{{< version >}}_amd64.deb) | Linux   | 386   |
-| [loraserver_{{< version >}}_armhf.deb](https://dl.loraserver.io/deb/loraserver_{{< version >}}_armhf.deb) | Linux   | amd64 |
-| [loraserver_{{< version >}}_i386.deb](https://dl.loraserver.io/deb/loraserver_{{< version >}}_i386.deb)   | Linux   | arm   |
+| [loraserver_{{< version >}}_i386.deb](https://dl.loraserver.io/deb/loraserver_{{< version >}}_i386.deb)   | Linux   | 386   |
+| [loraserver_{{< version >}}_amd64.deb](https://dl.loraserver.io/deb/loraserver_{{< version >}}_amd64.deb) | Linux   | amd64 |
+| [loraserver_{{< version >}}_armhf.deb](https://dl.loraserver.io/deb/loraserver_{{< version >}}_armhf.deb) | Linux   | arm   |
 
 ### Debian Ubuntu repository
 
