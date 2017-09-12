@@ -1,8 +1,10 @@
 package downlink
 
-import "github.com/brocaar/loraserver/internal/session"
-import "github.com/brocaar/loraserver/api/gw"
-import "github.com/brocaar/lorawan"
+import (
+	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/lorawan"
+)
 
 // Flow holds all the different downlink flows.
 var Flow = newFlow().JoinResponse(
@@ -16,22 +18,22 @@ var Flow = newFlow().JoinResponse(
 	getMACCommands,
 	stopOnNothingToSend,
 	sendDataDown,
-	saveNodeSession,
+	saveDeviceSession,
 ).PushDataDown(
 	getDataTXInfoForRX2,
 	setRemainingPayloadSize,
 	getMACCommands,
 	sendDataDown,
-	saveNodeSession,
+	saveDeviceSession,
 ).ProprietaryDown(
 	sendProprietaryDown,
 )
 
 // DataContext holds the context of a downlink transmission.
 type DataContext struct {
-	// NodeSession holds the node-session of the node for which to send
+	// DeviceSession holds the device-session of the device for which to send
 	// the downlink data.
-	NodeSession session.NodeSession
+	DeviceSession storage.DeviceSession
 
 	// TXInfo holds the data needed for transmission.
 	TXInfo gw.TXInfo
@@ -96,9 +98,9 @@ func (ctx DataContext) Validate() error {
 
 // JoinContext holds the context of a join response.
 type JoinContext struct {
-	NodeSession session.NodeSession
-	TXInfo      gw.TXInfo
-	PHYPayload  lorawan.PHYPayload
+	DeviceSession storage.DeviceSession
+	TXInfo        gw.TXInfo
+	PHYPayload    lorawan.PHYPayload
 }
 
 // ProprietaryDownContext holds the context of a proprietary down context.
@@ -160,11 +162,11 @@ func (f *flow) ProprietaryDown(tasks ...ProprietaryDownTask) *flow {
 }
 
 // RunUplinkResponse runs the uplink response flow.
-func (f *flow) RunUplinkResponse(ns session.NodeSession, adr, mustSend, ack bool) error {
+func (f *flow) RunUplinkResponse(ds storage.DeviceSession, adr, mustSend, ack bool) error {
 	ctx := DataContext{
-		NodeSession: ns,
-		ACK:         ack,
-		MustSend:    mustSend,
+		DeviceSession: ds,
+		ACK:           ack,
+		MustSend:      mustSend,
 	}
 
 	for _, t := range f.uplinkResponseTasks {
@@ -181,12 +183,12 @@ func (f *flow) RunUplinkResponse(ns session.NodeSession, adr, mustSend, ack bool
 }
 
 // RunPushDataDown runs the push data-down flow.
-func (f *flow) RunPushDataDown(ns session.NodeSession, confirmed bool, fPort uint8, data []byte) error {
+func (f *flow) RunPushDataDown(ds storage.DeviceSession, confirmed bool, fPort uint8, data []byte) error {
 	ctx := DataContext{
-		NodeSession: ns,
-		Confirmed:   confirmed,
-		FPort:       fPort,
-		Data:        data,
+		DeviceSession: ds,
+		Confirmed:     confirmed,
+		FPort:         fPort,
+		Data:          data,
 	}
 
 	for _, t := range f.pushDataDownTasks {
@@ -203,10 +205,10 @@ func (f *flow) RunPushDataDown(ns session.NodeSession, confirmed bool, fPort uin
 }
 
 // RunJoinResponse runs the join response flow.
-func (f *flow) RunJoinResponse(ns session.NodeSession, phy lorawan.PHYPayload) error {
+func (f *flow) RunJoinResponse(ds storage.DeviceSession, phy lorawan.PHYPayload) error {
 	ctx := JoinContext{
-		NodeSession: ns,
-		PHYPayload:  phy,
+		DeviceSession: ds,
+		PHYPayload:    phy,
 	}
 
 	for _, t := range f.joinResponseTasks {

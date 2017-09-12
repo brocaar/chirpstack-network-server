@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/maccommand"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -43,7 +43,7 @@ func logJoinRequestFramesCollected(ctx *JoinRequestContext) error {
 }
 
 func getRandomDevAddr(ctx *JoinRequestContext) error {
-	devAddr, err := session.GetRandomDevAddr(common.RedisPool, common.NetID)
+	devAddr, err := storage.GetRandomDevAddr(common.RedisPool, common.NetID)
 	if err != nil {
 		return errors.Wrap(err, "get random DevAddr error")
 	}
@@ -92,15 +92,15 @@ func createNodeSession(ctx *JoinRequestContext) error {
 	var nwkSKey lorawan.AES128Key
 	copy(nwkSKey[:], ctx.JoinRequestResponse.NwkSKey)
 
-	ctx.NodeSession = session.NodeSession{
+	ctx.DeviceSession = storage.DeviceSession{
 		DevAddr:            ctx.DevAddr,
-		AppEUI:             ctx.JoinRequestPayload.AppEUI,
+		JoinEUI:            ctx.JoinRequestPayload.AppEUI,
 		DevEUI:             ctx.JoinRequestPayload.DevEUI,
 		NwkSKey:            nwkSKey,
 		FCntUp:             0,
 		FCntDown:           0,
-		RelaxFCnt:          ctx.JoinRequestResponse.DisableFCntCheck,
-		RXWindow:           session.RXWindow(ctx.JoinRequestResponse.RxWindow),
+		SkipFCntValidation: ctx.JoinRequestResponse.DisableFCntCheck,
+		RXWindow:           storage.RXWindow(ctx.JoinRequestResponse.RxWindow),
 		RXDelay:            uint8(ctx.JoinRequestResponse.RxDelay),
 		RX1DROffset:        uint8(ctx.JoinRequestResponse.Rx1DROffset),
 		RX2DR:              uint8(ctx.JoinRequestResponse.Rx2DR),
@@ -110,11 +110,11 @@ func createNodeSession(ctx *JoinRequestContext) error {
 		LastRXInfoSet:      ctx.RXPacket.RXInfoSet,
 	}
 
-	if err := session.SaveNodeSession(common.RedisPool, ctx.NodeSession); err != nil {
+	if err := storage.SaveDeviceSession(common.RedisPool, ctx.DeviceSession); err != nil {
 		return errors.Wrap(err, "save node-session error")
 	}
 
-	if err := maccommand.FlushQueue(common.RedisPool, ctx.NodeSession.DevEUI); err != nil {
+	if err := maccommand.FlushQueue(common.RedisPool, ctx.DeviceSession.DevEUI); err != nil {
 		return fmt.Errorf("flush mac-command queue error: %s", err)
 	}
 
@@ -134,7 +134,7 @@ func sendJoinAcceptDownlink(ctx *JoinRequestContext) error {
 		return errors.New(errStr)
 	}
 
-	if err := downlink.Flow.RunJoinResponse(ctx.NodeSession, phy); err != nil {
+	if err := downlink.Flow.RunJoinResponse(ctx.DeviceSession, phy); err != nil {
 		return errors.Wrap(err, "run join-response flow error")
 	}
 

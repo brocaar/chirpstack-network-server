@@ -6,7 +6,7 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/pkg/errors"
 )
@@ -15,8 +15,8 @@ import (
 // on the node. This is needed in case only a sub-set of channels is used
 // (e.g. for the US band) or when a reconfiguration of active channels
 // happens.
-func HandleChannelReconfigure(ns session.NodeSession, rxPacket models.RXPacket) error {
-	payloads := common.Band.GetLinkADRReqPayloadsForEnabledChannels(ns.EnabledChannels)
+func HandleChannelReconfigure(ds storage.DeviceSession, rxPacket models.RXPacket) error {
+	payloads := common.Band.GetLinkADRReqPayloadsForEnabledChannels(ds.EnabledChannels)
 	if len(payloads) == 0 {
 		return nil
 	}
@@ -26,9 +26,9 @@ func HandleChannelReconfigure(ns session.NodeSession, rxPacket models.RXPacket) 
 	if err != nil {
 		return fmt.Errorf("get data-rate error: %s", err)
 	}
-	payloads[len(payloads)-1].TXPower = uint8(ns.TXPowerIndex)
+	payloads[len(payloads)-1].TXPower = uint8(ds.TXPowerIndex)
 	payloads[len(payloads)-1].DataRate = uint8(currentDR)
-	payloads[len(payloads)-1].Redundancy.NbRep = ns.NbTrans
+	payloads[len(payloads)-1].Redundancy.NbRep = ds.NbTrans
 
 	// when reconfiguring the channels requires more than 3 commands, we must
 	// send these as FRMPayload as the FOpts has a max of 15 bytes and each
@@ -49,7 +49,7 @@ func HandleChannelReconfigure(ns session.NodeSession, rxPacket models.RXPacket) 
 		})
 	}
 
-	if err = maccommand.AddQueueItem(common.RedisPool, ns.DevEUI, block); err != nil {
+	if err = maccommand.AddQueueItem(common.RedisPool, ds.DevEUI, block); err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
 	}
 

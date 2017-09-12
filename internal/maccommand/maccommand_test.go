@@ -6,7 +6,7 @@ import (
 
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -20,12 +20,12 @@ func TestLinkCheckReq(t *testing.T) {
 		common.RedisPool = common.NewRedisPool(conf.RedisURL)
 		test.MustFlushRedis(common.RedisPool)
 
-		Convey("Given a node-session", func() {
-			ns := session.NodeSession{
+		Convey("Given a device-session", func() {
+			ds := storage.DeviceSession{
 				DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				EnabledChannels: []int{0, 1},
 			}
-			So(session.SaveNodeSession(common.RedisPool, ns), ShouldBeNil)
+			So(storage.SaveDeviceSession(common.RedisPool, ds), ShouldBeNil)
 
 			Convey("Test LinkCheckReq", func() {
 				block := Block{
@@ -46,10 +46,10 @@ func TestLinkCheckReq(t *testing.T) {
 					},
 				}
 
-				So(Handle(&ns, block, nil, rxInfoSet), ShouldBeNil)
+				So(Handle(&ds, block, nil, rxInfoSet), ShouldBeNil)
 
 				Convey("Then the expected response was added to the mac-command queue", func() {
-					items, err := ReadQueueItems(common.RedisPool, ns.DevEUI)
+					items, err := ReadQueueItems(common.RedisPool, ds.DevEUI)
 					So(err, ShouldBeNil)
 					So(items, ShouldHaveLength, 1)
 					So(items[0], ShouldResemble, Block{
@@ -77,25 +77,25 @@ func TestLinkADRAns(t *testing.T) {
 		common.RedisPool = common.NewRedisPool(conf.RedisURL)
 		test.MustFlushRedis(common.RedisPool)
 
-		Convey("Given a node-session", func() {
-			ns := session.NodeSession{
+		Convey("Given a device-session", func() {
+			ds := storage.DeviceSession{
 				DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				EnabledChannels: []int{0, 1},
 			}
-			So(session.SaveNodeSession(common.RedisPool, ns), ShouldBeNil)
+			So(storage.SaveDeviceSession(common.RedisPool, ds), ShouldBeNil)
 
 			Convey("Testing LinkADRAns", func() {
 				testTable := []struct {
-					Name                string
-					NodeSession         session.NodeSession
-					LinkADRReqPayload   *lorawan.LinkADRReqPayload
-					LinkADRAnsPayload   lorawan.LinkADRAnsPayload
-					ExpectedNodeSession session.NodeSession
-					ExpectedError       error
+					Name                  string
+					DeviceSession         storage.DeviceSession
+					LinkADRReqPayload     *lorawan.LinkADRReqPayload
+					LinkADRAnsPayload     lorawan.LinkADRAnsPayload
+					ExpectedDeviceSession storage.DeviceSession
+					ExpectedError         error
 				}{
 					{
 						Name: "pending request and positive ACK updates tx-power, nbtrans and channels",
-						NodeSession: session.NodeSession{
+						DeviceSession: storage.DeviceSession{
 							EnabledChannels: []int{0, 1},
 						},
 						LinkADRReqPayload: &lorawan.LinkADRReqPayload{
@@ -111,7 +111,7 @@ func TestLinkADRAns(t *testing.T) {
 							DataRateACK:    true,
 							PowerACK:       true,
 						},
-						ExpectedNodeSession: session.NodeSession{
+						ExpectedDeviceSession: storage.DeviceSession{
 							EnabledChannels: []int{0, 1, 2},
 							TXPowerIndex:    3,
 							NbTrans:         2,
@@ -120,7 +120,7 @@ func TestLinkADRAns(t *testing.T) {
 					},
 					{
 						Name: "pending request and negative DR ack decrements the max allowed data-rate",
-						NodeSession: session.NodeSession{
+						DeviceSession: storage.DeviceSession{
 							EnabledChannels: []int{0, 1},
 						},
 						LinkADRReqPayload: &lorawan.LinkADRReqPayload{
@@ -136,14 +136,14 @@ func TestLinkADRAns(t *testing.T) {
 							DataRateACK:    false,
 							PowerACK:       true,
 						},
-						ExpectedNodeSession: session.NodeSession{
+						ExpectedDeviceSession: storage.DeviceSession{
 							EnabledChannels: []int{0, 1},
 							MaxSupportedDR:  4,
 						},
 					},
 					{
 						Name: "pending request and negative tx-power ack decrements the max allowed tx-power index",
-						NodeSession: session.NodeSession{
+						DeviceSession: storage.DeviceSession{
 							EnabledChannels: []int{0, 1},
 						},
 						LinkADRReqPayload: &lorawan.LinkADRReqPayload{
@@ -159,14 +159,14 @@ func TestLinkADRAns(t *testing.T) {
 							DataRateACK:    true,
 							PowerACK:       false,
 						},
-						ExpectedNodeSession: session.NodeSession{
+						ExpectedDeviceSession: storage.DeviceSession{
 							EnabledChannels:          []int{0, 1},
 							MaxSupportedTXPowerIndex: 2,
 						},
 					},
 					{
 						Name: "pending request and negative tx-power ack on tx-power 0 sets tx-power to 1",
-						NodeSession: session.NodeSession{
+						DeviceSession: storage.DeviceSession{
 							EnabledChannels: []int{0, 1},
 						},
 						LinkADRReqPayload: &lorawan.LinkADRReqPayload{
@@ -182,14 +182,14 @@ func TestLinkADRAns(t *testing.T) {
 							DataRateACK:    true,
 							PowerACK:       false,
 						},
-						ExpectedNodeSession: session.NodeSession{
+						ExpectedDeviceSession: storage.DeviceSession{
 							EnabledChannels: []int{0, 1},
 							TXPowerIndex:    1,
 						},
 					},
 					{
 						Name: "nothing pending and positive ACK returns an error",
-						NodeSession: session.NodeSession{
+						DeviceSession: storage.DeviceSession{
 							EnabledChannels: []int{0, 1},
 						},
 						LinkADRAnsPayload: lorawan.LinkADRAnsPayload{
@@ -198,7 +198,7 @@ func TestLinkADRAns(t *testing.T) {
 							PowerACK:       true,
 						},
 						ExpectedError: ErrDoesNotExist,
-						ExpectedNodeSession: session.NodeSession{
+						ExpectedDeviceSession: storage.DeviceSession{
 							EnabledChannels: []int{0, 1},
 						},
 					},
@@ -230,13 +230,13 @@ func TestLinkADRAns(t *testing.T) {
 							},
 						}
 
-						err := Handle(&tst.NodeSession, answer, pending, nil)
+						err := Handle(&tst.DeviceSession, answer, pending, nil)
 						Convey("Then the expected error (or nil) was returned", func() {
 							So(err, ShouldResemble, tst.ExpectedError)
 						})
 
-						Convey("Then the node-session was updated as expected", func() {
-							So(tst.ExpectedNodeSession, ShouldResemble, tst.NodeSession)
+						Convey("Then the device-session was updated as expected", func() {
+							So(tst.ExpectedDeviceSession, ShouldResemble, tst.DeviceSession)
 						})
 					})
 				}

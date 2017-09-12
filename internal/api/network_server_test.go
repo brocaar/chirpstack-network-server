@@ -17,7 +17,7 @@ import (
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/node"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -81,7 +81,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				})
 
 				Convey("Then the enabled channels are set on the node-session", func() {
-					ns, err := session.GetNodeSession(common.RedisPool, devEUI)
+					ns, err := storage.GetDeviceSession(common.RedisPool, devEUI)
 					So(err, ShouldBeNil)
 					So(ns.EnabledChannels, ShouldResemble, common.Band.GetUplinkChannels())
 				})
@@ -99,7 +99,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					Rx1DROffset: 20,
 				})
 				Convey("Then an error is returned", func() {
-					So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "node-session belongs to a different AppEUI"))
+					So(err, ShouldResemble, grpc.Errorf(codes.InvalidArgument, "device-session belongs to a different AppEUI"))
 				})
 			})
 
@@ -134,7 +134,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				})
 
 				Convey("Then the internal fields are still set", func() {
-					ns, err := session.GetNodeSession(common.RedisPool, devEUI)
+					ns, err := storage.GetDeviceSession(common.RedisPool, devEUI)
 					So(err, ShouldBeNil)
 					So(ns.EnabledChannels, ShouldResemble, common.Band.GetUplinkChannels())
 				})
@@ -297,15 +297,15 @@ func TestNetworkServerAPI(t *testing.T) {
 				Convey("Given some stats for this gateway", func() {
 					now := time.Now().UTC()
 					_, err := db.Exec(`
-						insert into gateway_stats (
-							mac,
-							"timestamp",
-							"interval",
-							rx_packets_received,
-							rx_packets_received_ok,
-							tx_packets_received,
-							tx_packets_emitted
-						) values ($1, $2, $3, $4, $5, $6, $7)`,
+                        insert into gateway_stats (
+                            mac,
+                            "timestamp",
+                            "interval",
+                            rx_packets_received,
+                            rx_packets_received_ok,
+                            tx_packets_received,
+                            tx_packets_emitted
+                        ) values ($1, $2, $3, $4, $5, $6, $7)`,
 						[]byte{1, 2, 3, 4, 5, 6, 7, 8},
 						now.Truncate(time.Minute),
 						"MINUTE",

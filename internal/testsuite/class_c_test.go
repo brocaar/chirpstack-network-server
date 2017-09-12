@@ -15,17 +15,17 @@ import (
 	"github.com/brocaar/loraserver/internal/api"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/maccommand"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 )
 
 type classCTestCase struct {
-	Name                string                        // name of the test
-	PreFunc             func(ns *session.NodeSession) // function to call before running the test
-	NodeSession         session.NodeSession           // node-session in the storage
-	PushDataDownRequest ns.PushDataDownRequest        // class-c push data-down request
-	MACCommandQueue     []maccommand.Block            // downlink mac-command queue
+	Name                string                          // name of the test
+	PreFunc             func(ns *storage.DeviceSession) // function to call before running the test
+	DeviceSession       storage.DeviceSession           // node-session in the storage
+	PushDataDownRequest ns.PushDataDownRequest          // class-c push data-down request
+	MACCommandQueue     []maccommand.Block              // downlink mac-command queue
 
 	ExpectedPushDataDownError error // expected error returned
 	ExpectedFCntUp            uint32
@@ -53,10 +53,10 @@ func TestClassCScenarios(t *testing.T) {
 
 		api := api.NewNetworkServerAPI()
 
-		sess := session.NodeSession{
+		sess := storage.DeviceSession{
 			DevAddr:  lorawan.DevAddr{1, 2, 3, 4},
 			DevEUI:   lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-			AppEUI:   lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
+			JoinEUI:  lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
 			NwkSKey:  lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 			FCntUp:   8,
 			FCntDown: 5,
@@ -81,8 +81,8 @@ func TestClassCScenarios(t *testing.T) {
 		Convey("Given a set of test-scenarios for Class-C", func() {
 			tests := []classCTestCase{
 				{
-					Name:        "unconfirmed data",
-					NodeSession: sess,
+					Name:          "unconfirmed data",
+					DeviceSession: sess,
 					PushDataDownRequest: ns.PushDataDownRequest{
 						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Data:      []byte{5, 4, 3, 2, 1},
@@ -113,8 +113,8 @@ func TestClassCScenarios(t *testing.T) {
 					},
 				},
 				{
-					Name:        "confirmed data",
-					NodeSession: sess,
+					Name:          "confirmed data",
+					DeviceSession: sess,
 					PushDataDownRequest: ns.PushDataDownRequest{
 						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Data:      []byte{5, 4, 3, 2, 1},
@@ -145,8 +145,8 @@ func TestClassCScenarios(t *testing.T) {
 					},
 				},
 				{
-					Name:        "mac-commands in the queue",
-					NodeSession: sess,
+					Name:          "mac-commands in the queue",
+					DeviceSession: sess,
 					MACCommandQueue: []maccommand.Block{
 						{
 							CID: lorawan.DevStatusReq,
@@ -194,8 +194,8 @@ func TestClassCScenarios(t *testing.T) {
 				},
 				// errors
 				{
-					Name:        "maximum payload exceeded",
-					NodeSession: sess,
+					Name:          "maximum payload exceeded",
+					DeviceSession: sess,
 					PushDataDownRequest: ns.PushDataDownRequest{
 						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Data:      make([]byte, 300),
@@ -209,8 +209,8 @@ func TestClassCScenarios(t *testing.T) {
 					ExpectedFCntDown:          5,
 				},
 				{
-					Name:        "invalid FPort",
-					NodeSession: sess,
+					Name:          "invalid FPort",
+					DeviceSession: sess,
 					PushDataDownRequest: ns.PushDataDownRequest{
 						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Data:      []byte{1, 2, 3, 4, 5},
@@ -223,8 +223,8 @@ func TestClassCScenarios(t *testing.T) {
 					ExpectedFCntDown:          5,
 				},
 				{
-					Name:        "invalid DevEUI",
-					NodeSession: sess,
+					Name:          "invalid DevEUI",
+					DeviceSession: sess,
 					PushDataDownRequest: ns.PushDataDownRequest{
 						DevEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1, 1},
 						Data:      []byte{1, 2, 3, 4, 5},
@@ -232,14 +232,14 @@ func TestClassCScenarios(t *testing.T) {
 						FPort:     10,
 						FCnt:      5,
 					},
-					ExpectedPushDataDownError: grpc.Errorf(codes.NotFound, session.ErrDoesNotExist.Error()),
+					ExpectedPushDataDownError: grpc.Errorf(codes.NotFound, storage.ErrDoesNotExist.Error()),
 					ExpectedFCntUp:            8,
 					ExpectedFCntDown:          5,
 				},
 				{
-					Name:        "no last RXInfoSet available",
-					NodeSession: sess,
-					PreFunc: func(ns *session.NodeSession) {
+					Name:          "no last RXInfoSet available",
+					DeviceSession: sess,
+					PreFunc: func(ns *storage.DeviceSession) {
 						ns.LastRXInfoSet = []gw.RXInfo{}
 					},
 					PushDataDownRequest: ns.PushDataDownRequest{
@@ -254,8 +254,8 @@ func TestClassCScenarios(t *testing.T) {
 					ExpectedFCntDown:          5,
 				},
 				{
-					Name:        "given FCnt does not match the FCntDown",
-					NodeSession: sess,
+					Name:          "given FCnt does not match the FCntDown",
+					DeviceSession: sess,
 					PushDataDownRequest: ns.PushDataDownRequest{
 						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Data:      []byte{1, 2, 3, 4, 5},
@@ -272,15 +272,15 @@ func TestClassCScenarios(t *testing.T) {
 			for i, t := range tests {
 				Convey(fmt.Sprintf("When testing: %s [%d]", t.Name, i), func() {
 					if t.PreFunc != nil {
-						t.PreFunc(&t.NodeSession)
+						t.PreFunc(&t.DeviceSession)
 					}
 
 					// create node-session
-					So(session.SaveNodeSession(common.RedisPool, t.NodeSession), ShouldBeNil)
+					So(storage.SaveDeviceSession(common.RedisPool, t.DeviceSession), ShouldBeNil)
 
 					// mac mac-command queue items
 					for _, qi := range t.MACCommandQueue {
-						So(maccommand.AddQueueItem(common.RedisPool, t.NodeSession.DevEUI, qi), ShouldBeNil)
+						So(maccommand.AddQueueItem(common.RedisPool, t.DeviceSession.DevEUI, qi), ShouldBeNil)
 					}
 
 					// push the data
@@ -288,7 +288,7 @@ func TestClassCScenarios(t *testing.T) {
 					So(err, ShouldResemble, t.ExpectedPushDataDownError)
 
 					Convey("Then the frame-counters are as expected", func() {
-						sess, err := session.GetNodeSession(common.RedisPool, t.NodeSession.DevEUI)
+						sess, err := storage.GetDeviceSession(common.RedisPool, t.DeviceSession.DevEUI)
 						So(err, ShouldBeNil)
 						So(sess.FCntUp, ShouldEqual, t.ExpectedFCntUp)
 						So(sess.FCntDown, ShouldEqual, t.ExpectedFCntDown)
@@ -305,7 +305,7 @@ func TestClassCScenarios(t *testing.T) {
 					}
 
 					Convey("Then the mac-command queue contains the expected items", func() {
-						items, err := maccommand.ReadQueueItems(common.RedisPool, t.NodeSession.DevEUI)
+						items, err := maccommand.ReadQueueItems(common.RedisPool, t.DeviceSession.DevEUI)
 						So(err, ShouldBeNil)
 						So(items, ShouldResemble, t.ExpectedMACCommandQueue)
 					})

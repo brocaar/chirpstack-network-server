@@ -66,7 +66,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 	}
 
 	// acquire a lock on processing this packet
-	_, err = redis.String((c.Do("SET", lockKey, "lock", "PX", int64(deduplicationTTL)/int64(time.Millisecond), "NX")))
+	_, err = redis.String(c.Do("SET", lockKey, "lock", "PX", int64(deduplicationTTL)/int64(time.Millisecond), "NX"))
 	if err != nil {
 		if err == redis.ErrNil {
 			// the packet processing is already locked by an other process

@@ -7,26 +7,26 @@ import (
 	"fmt"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/node"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
 func getDataTXInfo(ctx *DataContext) error {
-	if len(ctx.NodeSession.LastRXInfoSet) == 0 {
+	if len(ctx.DeviceSession.LastRXInfoSet) == 0 {
 		return ErrNoLastRXInfoSet
 	}
-	rxInfo := ctx.NodeSession.LastRXInfoSet[0]
+	rxInfo := ctx.DeviceSession.LastRXInfoSet[0]
 	var err error
-	ctx.TXInfo, ctx.DataRate, err = getDataDownTXInfoAndDR(ctx.NodeSession, rxInfo)
+	ctx.TXInfo, ctx.DataRate, err = getDataDownTXInfoAndDR(ctx.DeviceSession, rxInfo)
 	if err != nil {
 		return errors.Wrap(err, "get data down tx-info error")
 	}
@@ -35,13 +35,13 @@ func getDataTXInfo(ctx *DataContext) error {
 }
 
 func getDataTXInfoForRX2(ctx *DataContext) error {
-	if len(ctx.NodeSession.LastRXInfoSet) == 0 {
+	if len(ctx.DeviceSession.LastRXInfoSet) == 0 {
 		return ErrNoLastRXInfoSet
 	}
-	rxInfo := ctx.NodeSession.LastRXInfoSet[0]
+	rxInfo := ctx.DeviceSession.LastRXInfoSet[0]
 
-	if int(ctx.NodeSession.RX2DR) > len(common.Band.DataRates)-1 {
-		return errors.Wrapf(ErrInvalidDataRate, "dr: %d (max dr: %d)", ctx.NodeSession.RX2DR, len(common.Band.DataRates)-1)
+	if int(ctx.DeviceSession.RX2DR) > len(common.Band.DataRates)-1 {
+		return errors.Wrapf(ErrInvalidDataRate, "dr: %d (max dr: %d)", ctx.DeviceSession.RX2DR, len(common.Band.DataRates)-1)
 	}
 
 	ctx.TXInfo = gw.TXInfo{
@@ -49,7 +49,7 @@ func getDataTXInfoForRX2(ctx *DataContext) error {
 		Immediately: true,
 		Frequency:   int(common.Band.RX2Frequency),
 		Power:       common.Band.DefaultTXPower,
-		DataRate:    common.Band.DataRates[int(ctx.NodeSession.RX2DR)],
+		DataRate:    common.Band.DataRates[int(ctx.DeviceSession.RX2DR)],
 		CodeRate:    "4/5",
 	}
 
@@ -67,7 +67,7 @@ func setRemainingPayloadSize(ctx *DataContext) error {
 }
 
 func getDataDownFromApplicationServer(ctx *DataContext) error {
-	txPayload := getDataDownFromApplication(ctx.NodeSession, ctx.DataRate)
+	txPayload := getDataDownFromApplication(ctx.DeviceSession, ctx.DataRate)
 	if txPayload == nil {
 		return nil
 	}
@@ -84,7 +84,7 @@ func getDataDownFromApplicationServer(ctx *DataContext) error {
 func getMACCommands(ctx *DataContext) error {
 	allowEncryptedMACCommands := (ctx.FPort == 0)
 
-	macBlocks, encryptMACCommands, pendingMACCommands, err := getAndFilterMACQueueItems(ctx.NodeSession, allowEncryptedMACCommands, ctx.RemainingPayloadSize)
+	macBlocks, encryptMACCommands, pendingMACCommands, err := getAndFilterMACQueueItems(ctx.DeviceSession, allowEncryptedMACCommands, ctx.RemainingPayloadSize)
 	if err != nil {
 		return errors.Wrap(err, "get mac-commands error")
 	}
@@ -103,11 +103,11 @@ func getMACCommands(ctx *DataContext) error {
 	}
 
 	for _, block := range macBlocks {
-		if err = maccommand.SetPending(common.RedisPool, ctx.NodeSession.DevEUI, block); err != nil {
+		if err = maccommand.SetPending(common.RedisPool, ctx.DeviceSession.DevEUI, block); err != nil {
 			return errors.Wrap(err, "set mac-command block as pending error")
 		}
 
-		if err = maccommand.DeleteQueueItem(common.RedisPool, ctx.NodeSession.DevEUI, block); err != nil {
+		if err = maccommand.DeleteQueueItem(common.RedisPool, ctx.DeviceSession.DevEUI, block); err != nil {
 			return errors.Wrap(err, "delete mac-command block from queue error")
 		}
 	}
@@ -141,13 +141,13 @@ func sendDataDown(ctx *DataContext) error {
 
 	macPL := &lorawan.MACPayload{
 		FHDR: lorawan.FHDR{
-			DevAddr: ctx.NodeSession.DevAddr,
+			DevAddr: ctx.DeviceSession.DevAddr,
 			FCtrl: lorawan.FCtrl{
-				ADR:      ctx.NodeSession.ADRInterval != 0,
+				ADR:      ctx.DeviceSession.ADRInterval != 0,
 				ACK:      ctx.ACK,
 				FPending: ctx.MoreData,
 			},
-			FCnt: ctx.NodeSession.FCntDown,
+			FCnt: ctx.DeviceSession.FCntDown,
 		},
 	}
 	phy.MACPayload = macPL
@@ -162,7 +162,7 @@ func sendDataDown(ctx *DataContext) error {
 			macPL.FRMPayload = frmPayload
 
 			// encrypt the FRMPayload with the NwkSKey
-			if err := phy.EncryptFRMPayload(ctx.NodeSession.NwkSKey); err != nil {
+			if err := phy.EncryptFRMPayload(ctx.DeviceSession.NwkSKey); err != nil {
 				return errors.Wrap(err, "encrypt FRMPayload error")
 			}
 		} else {
@@ -177,11 +177,11 @@ func sendDataDown(ctx *DataContext) error {
 		}
 	}
 
-	if err := phy.SetMIC(ctx.NodeSession.NwkSKey); err != nil {
+	if err := phy.SetMIC(ctx.DeviceSession.NwkSKey); err != nil {
 		return errors.Wrap(err, "set MIC error")
 	}
 
-	logDownlink(common.DB, ctx.NodeSession.DevEUI, phy, ctx.TXInfo)
+	logDownlink(common.DB, ctx.DeviceSession.DevEUI, phy, ctx.TXInfo)
 
 	// send the packet to the gateway
 	if err := common.Gateway.SendTXPacket(gw.TXPacket{
@@ -192,19 +192,19 @@ func sendDataDown(ctx *DataContext) error {
 	}
 
 	// increment downlink framecounter
-	ctx.NodeSession.FCntDown++
+	ctx.DeviceSession.FCntDown++
 
 	return nil
 }
 
-func saveNodeSession(ctx *DataContext) error {
-	if err := session.SaveNodeSession(common.RedisPool, ctx.NodeSession); err != nil {
-		return errors.Wrap(err, "save node-session error")
+func saveDeviceSession(ctx *DataContext) error {
+	if err := storage.SaveDeviceSession(common.RedisPool, ctx.DeviceSession); err != nil {
+		return errors.Wrap(err, "save device-session error")
 	}
 	return nil
 }
 
-func getDataDownTXInfoAndDR(ns session.NodeSession, rxInfo gw.RXInfo) (gw.TXInfo, int, error) {
+func getDataDownTXInfoAndDR(ds storage.DeviceSession, rxInfo gw.RXInfo) (gw.TXInfo, int, error) {
 	var dr int
 	txInfo := gw.TXInfo{
 		MAC:      rxInfo.MAC,
@@ -212,14 +212,14 @@ func getDataDownTXInfoAndDR(ns session.NodeSession, rxInfo gw.RXInfo) (gw.TXInfo
 		Power:    common.Band.DefaultTXPower,
 	}
 
-	if ns.RXWindow == session.RX1 {
+	if ds.RXWindow == storage.RX1 {
 		uplinkDR, err := common.Band.GetDataRate(rxInfo.DataRate)
 		if err != nil {
 			return txInfo, dr, err
 		}
 
 		// get rx1 dr
-		dr, err = common.Band.GetRX1DataRate(uplinkDR, int(ns.RX1DROffset))
+		dr, err = common.Band.GetRX1DataRate(uplinkDR, int(ds.RX1DROffset))
 		if err != nil {
 			return txInfo, dr, err
 		}
@@ -233,12 +233,12 @@ func getDataDownTXInfoAndDR(ns session.NodeSession, rxInfo gw.RXInfo) (gw.TXInfo
 
 		// get timestamp
 		txInfo.Timestamp = rxInfo.Timestamp + uint32(common.Band.ReceiveDelay1/time.Microsecond)
-		if ns.RXDelay > 0 {
-			txInfo.Timestamp = rxInfo.Timestamp + uint32(time.Duration(ns.RXDelay)*time.Second/time.Microsecond)
+		if ds.RXDelay > 0 {
+			txInfo.Timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
 		}
-	} else if ns.RXWindow == session.RX2 {
+	} else if ds.RXWindow == storage.RX2 {
 		// rx2 dr
-		dr = int(ns.RX2DR)
+		dr = int(ds.RX2DR)
 		if dr > len(common.Band.DataRates)-1 {
 			return txInfo, 0, fmt.Errorf("invalid rx2 dr: %d (max dr: %d)", dr, len(common.Band.DataRates)-1)
 		}
@@ -249,12 +249,12 @@ func getDataDownTXInfoAndDR(ns session.NodeSession, rxInfo gw.RXInfo) (gw.TXInfo
 
 		// rx2 timestamp (rx1 + 1 sec)
 		txInfo.Timestamp = rxInfo.Timestamp + uint32(common.Band.ReceiveDelay1/time.Microsecond)
-		if ns.RXDelay > 0 {
-			txInfo.Timestamp = rxInfo.Timestamp + uint32(time.Duration(ns.RXDelay)*time.Second/time.Microsecond)
+		if ds.RXDelay > 0 {
+			txInfo.Timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
 		}
 		txInfo.Timestamp = txInfo.Timestamp + uint32(time.Second/time.Microsecond)
 	} else {
-		return txInfo, dr, fmt.Errorf("unknown RXWindow option %d", ns.RXWindow)
+		return txInfo, dr, fmt.Errorf("unknown RXWindow option %d", ds.RXWindow)
 	}
 
 	return txInfo, dr, nil
@@ -262,17 +262,17 @@ func getDataDownTXInfoAndDR(ns session.NodeSession, rxInfo gw.RXInfo) (gw.TXInfo
 
 // getDataDownFromApplication gets the downlink data from the application
 // (if any). On error the error is logged.
-func getDataDownFromApplication(ns session.NodeSession, dr int) *as.GetDataDownResponse {
+func getDataDownFromApplication(ds storage.DeviceSession, dr int) *as.GetDataDownResponse {
 	resp, err := common.Application.GetDataDown(context.Background(), &as.GetDataDownRequest{
-		AppEUI:         ns.AppEUI[:],
-		DevEUI:         ns.DevEUI[:],
+		AppEUI:         ds.JoinEUI[:],
+		DevEUI:         ds.DevEUI[:],
 		MaxPayloadSize: uint32(common.Band.MaxPayloadSize[dr].N),
-		FCnt:           ns.FCntDown,
+		FCnt:           ds.FCntDown,
 	})
 	if err != nil {
 		log.WithFields(log.Fields{
-			"dev_eui": ns.DevEUI,
-			"fcnt":    ns.FCntDown,
+			"dev_eui": ds.DevEUI,
+			"fcnt":    ds.FCntDown,
 		}).Errorf("get data down from application error: %s", err)
 		return nil
 	}
@@ -283,7 +283,7 @@ func getDataDownFromApplication(ns session.NodeSession, dr int) *as.GetDataDownR
 
 	if len(resp.Data) > common.Band.MaxPayloadSize[dr].N {
 		log.WithFields(log.Fields{
-			"dev_eui":          ns.DevEUI,
+			"dev_eui":          ds.DevEUI,
 			"size":             len(resp.Data),
 			"max_payload_size": common.Band.MaxPayloadSize[dr].N,
 			"dr":               dr,
@@ -292,8 +292,8 @@ func getDataDownFromApplication(ns session.NodeSession, dr int) *as.GetDataDownR
 	}
 
 	log.WithFields(log.Fields{
-		"dev_eui":     ns.DevEUI,
-		"fcnt":        ns.FCntDown,
+		"dev_eui":     ds.DevEUI,
+		"fcnt":        ds.FCntDown,
 		"data_base64": base64.StdEncoding.EncodeToString(resp.Data),
 		"confirmed":   resp.Confirmed,
 		"more_data":   resp.MoreData,
@@ -310,12 +310,12 @@ func getDataDownFromApplication(ns session.NodeSession, dr int) *as.GetDataDownR
 // - a slice of mac-command queue items
 // - if the mac-commands must be put into FRMPayload
 // - if there are remaining mac-commands in the queue
-func getAndFilterMACQueueItems(ns session.NodeSession, allowEncrypted bool, remainingPayloadSize int) ([]maccommand.Block, bool, bool, error) {
+func getAndFilterMACQueueItems(ds storage.DeviceSession, allowEncrypted bool, remainingPayloadSize int) ([]maccommand.Block, bool, bool, error) {
 	var encrypted bool
 	var blocks []maccommand.Block
 
 	// read the mac payload queue
-	allBlocks, err := maccommand.ReadQueueItems(common.RedisPool, ns.DevEUI)
+	allBlocks, err := maccommand.ReadQueueItems(common.RedisPool, ds.DevEUI)
 	if err != nil {
 		return nil, false, false, errors.Wrap(err, "read mac-command queue error")
 	}

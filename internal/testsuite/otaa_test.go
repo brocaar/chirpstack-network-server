@@ -10,7 +10,7 @@ import (
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
@@ -30,7 +30,7 @@ type otaaTestCase struct {
 	ExpectedApplicationJoinRequestRequest as.JoinRequestRequest // expected join-request request
 	ExpectedTXInfo                        gw.TXInfo             // expected tx-info
 	ExpectedPHYPayload                    lorawan.PHYPayload    // expected (plaintext) PHYPayload
-	ExpectedNodeSession                   session.NodeSession   // expected node-session
+	ExpectedDeviceSession                 storage.DeviceSession // expected node-session
 }
 
 func TestOTAAScenarios(t *testing.T) {
@@ -133,11 +133,11 @@ func TestOTAAScenarios(t *testing.T) {
 						CodeRate:  rxInfo.CodeRate,
 					},
 					ExpectedPHYPayload: jaPHY,
-					ExpectedNodeSession: session.NodeSession{
-						AppEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+					ExpectedDeviceSession: storage.DeviceSession{
+						JoinEUI:         [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 						DevEUI:          [8]byte{2, 2, 3, 4, 5, 6, 7, 8},
 						NwkSKey:         [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-						RXWindow:        session.RX1,
+						RXWindow:        storage.RX1,
 						RXDelay:         jaPayload.RXDelay,
 						RX1DROffset:     jaPayload.DLSettings.RX1DROffset,
 						RX2DR:           jaPayload.DLSettings.RX2DataRate,
@@ -175,11 +175,11 @@ func TestOTAAScenarios(t *testing.T) {
 						CodeRate:  rxInfo.CodeRate,
 					},
 					ExpectedPHYPayload: jaPHY,
-					ExpectedNodeSession: session.NodeSession{
-						AppEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+					ExpectedDeviceSession: storage.DeviceSession{
+						JoinEUI:         [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 						DevEUI:          [8]byte{2, 2, 3, 4, 5, 6, 7, 8},
 						NwkSKey:         [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-						RXWindow:        session.RX1,
+						RXWindow:        storage.RX1,
 						RXDelay:         jaPayload.RXDelay,
 						RX1DROffset:     jaPayload.DLSettings.RX1DROffset,
 						RX2DR:           jaPayload.DLSettings.RX2DataRate,
@@ -215,11 +215,11 @@ func TestOTAAScenarios(t *testing.T) {
 						CodeRate:  rxInfo.CodeRate,
 					},
 					ExpectedPHYPayload: jaPHY,
-					ExpectedNodeSession: session.NodeSession{
-						AppEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+					ExpectedDeviceSession: storage.DeviceSession{
+						JoinEUI:         [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 						DevEUI:          [8]byte{2, 2, 3, 4, 5, 6, 7, 8},
 						NwkSKey:         [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-						RXWindow:        session.RX2,
+						RXWindow:        storage.RX2,
 						RXDelay:         jaPayload.RXDelay,
 						RX1DROffset:     jaPayload.DLSettings.RX1DROffset,
 						RX2DR:           jaPayload.DLSettings.RX2DataRate,
@@ -290,11 +290,11 @@ func runOTAATests(tests []otaaTestCase) {
 			})
 
 			Convey("Then the expected node-session was created", func() {
-				ns, err := session.GetNodeSession(common.RedisPool, lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8})
+				ns, err := storage.GetDeviceSession(common.RedisPool, lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8})
 				So(err, ShouldBeNil)
 				So(ns.DevAddr, ShouldNotEqual, lorawan.DevAddr{0, 0, 0, 0})
 				ns.DevAddr = lorawan.DevAddr{}
-				So(ns, ShouldResemble, t.ExpectedNodeSession)
+				So(ns, ShouldResemble, t.ExpectedDeviceSession)
 			})
 		})
 	}

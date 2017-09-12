@@ -3,7 +3,7 @@ package uplink
 import (
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -14,14 +14,14 @@ type JoinRequestContext struct {
 	DevAddr             lorawan.DevAddr
 	CFList              []uint32
 	JoinRequestResponse *as.JoinRequestResponse
-	NodeSession         session.NodeSession
+	DeviceSession       storage.DeviceSession
 }
 
 // DataUpContext holds the context of an uplink data.
 type DataUpContext struct {
-	RXPacket    models.RXPacket
-	MACPayload  *lorawan.MACPayload
-	NodeSession session.NodeSession
+	RXPacket      models.RXPacket
+	MACPayload    *lorawan.MACPayload
+	DeviceSession storage.DeviceSession
 }
 
 // ProprietaryUpContext holds the context of a proprietary up context.

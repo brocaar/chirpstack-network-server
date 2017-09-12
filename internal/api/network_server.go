@@ -16,7 +16,7 @@ import (
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/node"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	jwt "github.com/dgrijalva/jwt-go"
 )
@@ -35,25 +35,25 @@ func NewNetworkServerAPI() *NetworkServerAPI {
 
 // CreateNodeSession create a node-session.
 func (n *NetworkServerAPI) CreateNodeSession(ctx context.Context, req *ns.CreateNodeSessionRequest) (*ns.CreateNodeSessionResponse, error) {
-	sess := session.NodeSession{
+	sess := storage.DeviceSession{
 		FCntUp:             req.FCntUp,
 		FCntDown:           req.FCntDown,
 		RXDelay:            uint8(req.RxDelay),
 		RX1DROffset:        uint8(req.Rx1DROffset),
-		RXWindow:           session.RXWindow(req.RxWindow),
+		RXWindow:           storage.RXWindow(req.RxWindow),
 		RX2DR:              uint8(req.Rx2DR),
-		RelaxFCnt:          req.RelaxFCnt,
+		SkipFCntValidation: req.RelaxFCnt,
 		ADRInterval:        req.AdrInterval,
 		InstallationMargin: req.InstallationMargin,
 		EnabledChannels:    common.Band.GetUplinkChannels(),
 	}
 
 	copy(sess.DevAddr[:], req.DevAddr)
-	copy(sess.AppEUI[:], req.AppEUI)
+	copy(sess.JoinEUI[:], req.AppEUI)
 	copy(sess.DevEUI[:], req.DevEUI)
 	copy(sess.NwkSKey[:], req.NwkSKey)
 
-	exists, err := session.NodeSessionExists(common.RedisPool, sess.DevEUI)
+	exists, err := storage.DeviceSessionExists(common.RedisPool, sess.DevEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -61,7 +61,7 @@ func (n *NetworkServerAPI) CreateNodeSession(ctx context.Context, req *ns.Create
 		return nil, grpc.Errorf(codes.AlreadyExists, "node-session already exists")
 	}
 
-	if err := session.SaveNodeSession(common.RedisPool, sess); err != nil {
+	if err := storage.SaveDeviceSession(common.RedisPool, sess); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -77,14 +77,14 @@ func (n *NetworkServerAPI) GetNodeSession(ctx context.Context, req *ns.GetNodeSe
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	sess, err := session.GetNodeSession(common.RedisPool, devEUI)
+	sess, err := storage.GetDeviceSession(common.RedisPool, devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
 	resp := &ns.GetNodeSessionResponse{
 		DevAddr:            sess.DevAddr[:],
-		AppEUI:             sess.AppEUI[:],
+		AppEUI:             sess.JoinEUI[:],
 		DevEUI:             sess.DevEUI[:],
 		NwkSKey:            sess.NwkSKey[:],
 		FCntUp:             sess.FCntUp,
@@ -93,7 +93,7 @@ func (n *NetworkServerAPI) GetNodeSession(ctx context.Context, req *ns.GetNodeSe
 		Rx1DROffset:        uint32(sess.RX1DROffset),
 		RxWindow:           ns.RXWindow(sess.RXWindow),
 		Rx2DR:              uint32(sess.RX2DR),
-		RelaxFCnt:          sess.RelaxFCnt,
+		RelaxFCnt:          sess.SkipFCntValidation,
 		AdrInterval:        sess.ADRInterval,
 		InstallationMargin: sess.InstallationMargin,
 		NbTrans:            uint32(sess.NbTrans),
@@ -112,23 +112,23 @@ func (n *NetworkServerAPI) UpdateNodeSession(ctx context.Context, req *ns.Update
 	copy(devEUI[:], req.DevEUI)
 	copy(appEUI[:], req.AppEUI)
 
-	sess, err := session.GetNodeSession(common.RedisPool, devEUI)
+	sess, err := storage.GetDeviceSession(common.RedisPool, devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if sess.AppEUI != appEUI {
-		return nil, grpc.Errorf(codes.InvalidArgument, "node-session belongs to a different AppEUI")
+	if sess.JoinEUI != appEUI {
+		return nil, grpc.Errorf(codes.InvalidArgument, "device-session belongs to a different AppEUI")
 	}
 
-	newSess := session.NodeSession{
+	newSess := storage.DeviceSession{
 		FCntUp:             req.FCntUp,
 		FCntDown:           req.FCntDown,
 		RXDelay:            uint8(req.RxDelay),
 		RX1DROffset:        uint8(req.Rx1DROffset),
-		RXWindow:           session.RXWindow(req.RxWindow),
+		RXWindow:           storage.RXWindow(req.RxWindow),
 		RX2DR:              uint8(req.Rx2DR),
-		RelaxFCnt:          req.RelaxFCnt,
+		SkipFCntValidation: req.RelaxFCnt,
 		ADRInterval:        req.AdrInterval,
 		InstallationMargin: req.InstallationMargin,
 
@@ -140,11 +140,11 @@ func (n *NetworkServerAPI) UpdateNodeSession(ctx context.Context, req *ns.Update
 	}
 
 	copy(newSess.DevAddr[:], req.DevAddr)
-	copy(newSess.AppEUI[:], req.AppEUI)
+	copy(newSess.JoinEUI[:], req.AppEUI)
 	copy(newSess.DevEUI[:], req.DevEUI)
 	copy(newSess.NwkSKey[:], req.NwkSKey)
 
-	if err := session.SaveNodeSession(common.RedisPool, newSess); err != nil {
+	if err := storage.SaveDeviceSession(common.RedisPool, newSess); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -156,7 +156,7 @@ func (n *NetworkServerAPI) DeleteNodeSession(ctx context.Context, req *ns.Delete
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	if err := session.DeleteNodeSession(common.RedisPool, devEUI); err != nil {
+	if err := storage.DeleteDeviceSession(common.RedisPool, devEUI); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -165,7 +165,7 @@ func (n *NetworkServerAPI) DeleteNodeSession(ctx context.Context, req *ns.Delete
 
 // GetRandomDevAddr returns a random DevAddr.
 func (n *NetworkServerAPI) GetRandomDevAddr(ctx context.Context, req *ns.GetRandomDevAddrRequest) (*ns.GetRandomDevAddrResponse, error) {
-	devAddr, err := session.GetRandomDevAddr(common.RedisPool, common.NetID)
+	devAddr, err := storage.GetRandomDevAddr(common.RedisPool, common.NetID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -210,7 +210,7 @@ func (n *NetworkServerAPI) PushDataDown(ctx context.Context, req *ns.PushDataDow
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	sess, err := session.GetNodeSession(common.RedisPool, devEUI)
+	sess, err := storage.GetDeviceSession(common.RedisPool, devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}

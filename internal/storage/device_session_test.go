@@ -1,7 +1,6 @@
-package session
+package storage
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 
@@ -39,115 +38,94 @@ func TestGetRandomDevAddr(t *testing.T) {
 }
 
 func TestUplinkHistory(t *testing.T) {
-	Convey("Given an empty node-session", t, func() {
-		ns := NodeSession{}
+	Convey("Given an empty device-session", t, func() {
+		s := DeviceSession{}
 
 		Convey("When appending 30 items to the UplinkHistory", func() {
 			for i := uint32(0); i < 30; i++ {
-				ns.AppendUplinkHistory(UplinkHistory{FCnt: i})
+				s.AppendUplinkHistory(UplinkHistory{FCnt: i})
 			}
 
 			Convey("Then only the last 20 items are preserved", func() {
-				So(ns.UplinkHistory, ShouldHaveLength, 20)
-				So(ns.UplinkHistory[19].FCnt, ShouldEqual, 29)
-				So(ns.UplinkHistory[0].FCnt, ShouldEqual, 10)
+				So(s.UplinkHistory, ShouldHaveLength, 20)
+				So(s.UplinkHistory[19].FCnt, ShouldEqual, 29)
+				So(s.UplinkHistory[0].FCnt, ShouldEqual, 10)
 			})
 		})
 
 		Convey("In case of adding the same FCnt twice", func() {
-			ns.AppendUplinkHistory(UplinkHistory{FCnt: 10, MaxSNR: 5})
-			ns.AppendUplinkHistory(UplinkHistory{FCnt: 10, MaxSNR: 6})
+			s.AppendUplinkHistory(UplinkHistory{FCnt: 10, MaxSNR: 5})
+			s.AppendUplinkHistory(UplinkHistory{FCnt: 10, MaxSNR: 6})
 
 			Convey("Then the first record is kept", func() {
-				So(ns.UplinkHistory, ShouldHaveLength, 1)
-				So(ns.UplinkHistory[0].MaxSNR, ShouldEqual, 5)
+				So(s.UplinkHistory, ShouldHaveLength, 1)
+				So(s.UplinkHistory[0].MaxSNR, ShouldEqual, 5)
 			})
 		})
 
 		Convey("When appending 20 items, with two missing frames", func() {
 			for i := uint32(0); i < 20; i++ {
 				if i < 5 {
-					ns.AppendUplinkHistory(UplinkHistory{FCnt: i})
+					s.AppendUplinkHistory(UplinkHistory{FCnt: i})
 					continue
 				}
 
 				if i < 10 {
-					ns.AppendUplinkHistory(UplinkHistory{FCnt: i + 1})
+					s.AppendUplinkHistory(UplinkHistory{FCnt: i + 1})
 					continue
 				}
 
-				ns.AppendUplinkHistory(UplinkHistory{FCnt: i + 2})
+				s.AppendUplinkHistory(UplinkHistory{FCnt: i + 2})
 			}
 
 			Convey("Then the packet-loss is 10%", func() {
-				So(ns.GetPacketLossPercentage(), ShouldEqual, 10)
+				So(s.GetPacketLossPercentage(), ShouldEqual, 10)
 			})
 		})
 	})
 }
 
-func TestNodeSession(t *testing.T) {
+func TestDeviceSession(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)
 		test.MustFlushRedis(p)
 
-		Convey("Given a NodeSession", func() {
-			ns := NodeSession{
-				DevAddr: [4]byte{1, 2, 3, 4},
-				DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+		Convey("Given a device-session", func() {
+			s := DeviceSession{
+				DevAddr: lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:  lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 			}
 
-			Convey("When getting a non-existing NodeSession", func() {
-				_, err := GetNodeSession(p, ns.DevEUI)
-				Convey("Then an error is returned", func() {
+			Convey("When getting a non-existing device-session", func() {
+				_, err := GetDeviceSession(p, s.DevEUI)
+
+				Convey("Then the expected error is returned", func() {
 					So(err, ShouldResemble, ErrDoesNotExist)
 				})
 			})
 
-			Convey("When checking if a non-existing NodeSession exists", func() {
-				exists, err := NodeSessionExists(p, ns.DevEUI)
-				So(err, ShouldBeNil)
+			Convey("When saving the device-session", func() {
+				So(SaveDeviceSession(p, s), ShouldBeNil)
 
-				Convey("Then false is returned", func() {
-					So(exists, ShouldBeFalse)
-				})
-			})
-
-			Convey("When saving the NodeSession", func() {
-				So(SaveNodeSession(p, ns), ShouldBeNil)
-
-				Convey("Then when getting the NodeSessions for its DevAddr, it contains the NodeSession", func() {
-					sessions, err := GetNodeSessionsForDevAddr(p, ns.DevAddr)
+				Convey("Then GetDeviceSessionsForDevAddr includes the device-session", func() {
+					sessions, err := GetDeviceSessionsForDevAddr(p, s.DevAddr)
 					So(err, ShouldBeNil)
 					So(sessions, ShouldHaveLength, 1)
-					So(sessions[0], ShouldResemble, ns)
+					So(sessions[0], ShouldResemble, s)
 				})
 
 				Convey("Then the session can be retrieved by it's DevEUI", func() {
-					ns2, err := GetNodeSession(p, ns.DevEUI)
+					s2, err := GetDeviceSession(p, s.DevEUI)
 					So(err, ShouldBeNil)
-					So(ns2, ShouldResemble, ns)
+					So(s2, ShouldResemble, s)
 				})
 
-				Convey("When checking if a NodeSession exists", func() {
-					exists, err := NodeSessionExists(p, ns.DevEUI)
-					So(err, ShouldBeNil)
+				Convey("Then DeleteDeviceSession deletes the device-session", func() {
+					So(DeleteDeviceSession(p, s.DevEUI), ShouldBeNil)
+					So(DeleteDeviceSession(p, s.DevEUI), ShouldEqual, ErrDoesNotExist)
 
-					Convey("Then true is returned", func() {
-						So(exists, ShouldBeTrue)
-					})
-				})
-
-				Convey("When deleting a NodeSession", func() {
-					So(DeleteNodeSession(p, ns.DevEUI), ShouldBeNil)
-
-					Convey("Then the node-session has been removed", func() {
-						exists, err := NodeSessionExists(p, ns.DevEUI)
-						So(err, ShouldBeNil)
-						So(exists, ShouldBeFalse)
-					})
 				})
 			})
 
@@ -172,8 +150,8 @@ func TestNodeSession(t *testing.T) {
 
 				for _, test := range testTable {
 					Convey(fmt.Sprintf("Then when FCntUp=%d, ValidateAndGetFullFCntUp(%d) should return (%d, %t)", test.ServerFCnt, test.NodeFCnt, test.FullFCnt, test.Valid), func() {
-						ns.FCntUp = test.ServerFCnt
-						fullFCntUp, ok := ValidateAndGetFullFCntUp(ns, test.NodeFCnt)
+						s.FCntUp = test.ServerFCnt
+						fullFCntUp, ok := ValidateAndGetFullFCntUp(s, test.NodeFCnt)
 						So(ok, ShouldEqual, test.Valid)
 						So(fullFCntUp, ShouldEqual, test.FullFCnt)
 					})
@@ -184,33 +162,33 @@ func TestNodeSession(t *testing.T) {
 	})
 }
 
-func TestGetNodeSessionForPHYPayload(t *testing.T) {
+func TestGetDeviceSessionForPHYPayload(t *testing.T) {
 	conf := test.GetConfig()
 
-	Convey("Given a clean Redis database with a set of node-sessions for the same DevAddr", t, func() {
+	Convey("Given a clean Redis database with a set of device-sessions for the same DevAddr", t, func() {
 		p := common.NewRedisPool(conf.RedisURL)
 		test.MustFlushRedis(p)
 
 		devAddr := lorawan.DevAddr{1, 2, 3, 4}
 
-		nodeSessions := []NodeSession{
+		deviceSessions := []DeviceSession{
 			{
-				DevAddr:   devAddr,
-				DevEUI:    lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
-				NwkSKey:   lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-				FCntUp:    100,
-				RelaxFCnt: true,
+				DevAddr:            devAddr,
+				DevEUI:             lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+				NwkSKey:            lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+				FCntUp:             100,
+				SkipFCntValidation: true,
 			},
 			{
-				DevAddr:   devAddr,
-				DevEUI:    lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2},
-				NwkSKey:   lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-				FCntUp:    200,
-				RelaxFCnt: false,
+				DevAddr:            devAddr,
+				DevEUI:             lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2},
+				NwkSKey:            lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+				FCntUp:             200,
+				SkipFCntValidation: false,
 			},
 		}
-		for _, ns := range nodeSessions {
-			So(SaveNodeSession(p, ns), ShouldBeNil)
+		for _, s := range deviceSessions {
+			So(SaveDeviceSession(p, s), ShouldBeNil)
 		}
 
 		Convey("Given a set of tests", func() {
@@ -226,47 +204,47 @@ func TestGetNodeSessionForPHYPayload(t *testing.T) {
 				{
 					Name:           "matching DevEUI 0101010101010101",
 					DevAddr:        devAddr,
-					NwkSKey:        nodeSessions[0].NwkSKey,
-					FCnt:           nodeSessions[0].FCntUp,
-					ExpectedFCntUp: nodeSessions[0].FCntUp,
-					ExpectedDevEUI: nodeSessions[0].DevEUI,
+					NwkSKey:        deviceSessions[0].NwkSKey,
+					FCnt:           deviceSessions[0].FCntUp,
+					ExpectedFCntUp: deviceSessions[0].FCntUp,
+					ExpectedDevEUI: deviceSessions[0].DevEUI,
 				},
 				{
 					Name:           "matching DevEUI 0202020202020202",
 					DevAddr:        devAddr,
-					NwkSKey:        nodeSessions[1].NwkSKey,
-					FCnt:           nodeSessions[1].FCntUp,
-					ExpectedFCntUp: nodeSessions[1].FCntUp,
-					ExpectedDevEUI: nodeSessions[1].DevEUI,
+					NwkSKey:        deviceSessions[1].NwkSKey,
+					FCnt:           deviceSessions[1].FCntUp,
+					ExpectedFCntUp: deviceSessions[1].FCntUp,
+					ExpectedDevEUI: deviceSessions[1].DevEUI,
 				},
 				{
 					Name:           "matching DevEUI 0101010101010101 with frame counter reset",
 					DevAddr:        devAddr,
-					NwkSKey:        nodeSessions[0].NwkSKey,
+					NwkSKey:        deviceSessions[0].NwkSKey,
 					FCnt:           0,
 					ExpectedFCntUp: 0, // has been reset
-					ExpectedDevEUI: nodeSessions[0].DevEUI,
+					ExpectedDevEUI: deviceSessions[0].DevEUI,
 				},
 				{
 					Name:          "matching DevEUI 0202020202020202 with invalid frame counter",
 					DevAddr:       devAddr,
-					NwkSKey:       nodeSessions[1].NwkSKey,
+					NwkSKey:       deviceSessions[1].NwkSKey,
 					FCnt:          0,
-					ExpectedError: errors.New("node-session does not exist or invalid fcnt or mic"),
+					ExpectedError: ErrDoesNotExistOrFCntOrMICInvalid,
 				},
 				{
 					Name:          "invalid DevAddr",
 					DevAddr:       lorawan.DevAddr{1, 1, 1, 1},
-					NwkSKey:       nodeSessions[0].NwkSKey,
-					FCnt:          nodeSessions[0].FCntUp,
-					ExpectedError: errors.New("node-session does not exist or invalid fcnt or mic"),
+					NwkSKey:       deviceSessions[0].NwkSKey,
+					FCnt:          deviceSessions[0].FCntUp,
+					ExpectedError: ErrDoesNotExistOrFCntOrMICInvalid,
 				},
 				{
 					Name:          "invalid NwkSKey",
-					DevAddr:       nodeSessions[0].DevAddr,
+					DevAddr:       deviceSessions[0].DevAddr,
 					NwkSKey:       lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-					FCnt:          nodeSessions[0].FCntUp,
-					ExpectedError: errors.New("node-session does not exist or invalid fcnt or mic"),
+					FCnt:          deviceSessions[0].FCntUp,
+					ExpectedError: ErrDoesNotExistOrFCntOrMICInvalid,
 				},
 			}
 
@@ -287,19 +265,21 @@ func TestGetNodeSessionForPHYPayload(t *testing.T) {
 					}
 					So(phy.SetMIC(test.NwkSKey), ShouldBeNil)
 
-					ns, err := GetNodeSessionForPHYPayload(p, phy)
-					So(err, ShouldResemble, test.ExpectedError)
+					s, err := GetDeviceSessionForPHYPayload(p, phy)
 					if test.ExpectedError != nil {
+						So(err, ShouldNotBeNil)
+						So(err.Error(), ShouldEqual, test.ExpectedError.Error())
 						return
 					}
-
-					// "refresh" the ns, to test if the FCnt has been updated
-					// in case of a frame counter reset
-					ns, err = GetNodeSession(p, ns.DevEUI)
 					So(err, ShouldBeNil)
 
-					So(ns.DevEUI, ShouldResemble, test.ExpectedDevEUI)
-					So(ns.FCntUp, ShouldEqual, test.ExpectedFCntUp)
+					// "refresh" the s, to test if the FCnt has been updated
+					// in case of a frame counter reset
+					s, err = GetDeviceSession(p, s.DevEUI)
+					So(err, ShouldBeNil)
+
+					So(s.DevEUI, ShouldResemble, test.ExpectedDevEUI)
+					So(s.FCntUp, ShouldEqual, test.ExpectedFCntUp)
 				})
 			}
 		})

@@ -3,23 +3,23 @@ package maccommand
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
 // Handle handles a MACCommand sent by a node.
-func Handle(ns *session.NodeSession, block Block, pending *Block, rxInfoSet models.RXInfoSet) error {
+func Handle(ds *storage.DeviceSession, block Block, pending *Block, rxInfoSet models.RXInfoSet) error {
 	var err error
 	switch block.CID {
 	case lorawan.LinkADRAns:
-		err = handleLinkADRAns(ns, block, pending)
+		err = handleLinkADRAns(ds, block, pending)
 	case lorawan.LinkCheckReq:
-		err = handleLinkCheckReq(ns, rxInfoSet)
+		err = handleLinkCheckReq(ds, rxInfoSet)
 	default:
 		err = fmt.Errorf("undefined CID %d", block.CID)
 
@@ -28,7 +28,7 @@ func Handle(ns *session.NodeSession, block Block, pending *Block, rxInfoSet mode
 }
 
 // handleLinkADRAns handles the ack of an ADR request
-func handleLinkADRAns(ns *session.NodeSession, block Block, pendingBlock *Block) error {
+func handleLinkADRAns(ds *storage.DeviceSession, block Block, pendingBlock *Block) error {
 	if len(block.MACCommands) == 0 {
 		return errors.New("at least 1 mac-command expected, got none")
 	}
@@ -68,19 +68,19 @@ func handleLinkADRAns(ns *session.NodeSession, block Block, pendingBlock *Block)
 	adrReq := linkADRPayloads[len(linkADRPayloads)-1]
 
 	if channelMaskACK && dataRateACK && powerACK {
-		chans, err := common.Band.GetEnabledChannelsForLinkADRReqPayloads(ns.EnabledChannels, linkADRPayloads)
+		chans, err := common.Band.GetEnabledChannelsForLinkADRReqPayloads(ds.EnabledChannels, linkADRPayloads)
 		if err != nil {
 			return errors.Wrap(err, "get enalbed channels for link_adr_req payloads error")
 		}
 
-		ns.TXPowerIndex = int(adrReq.TXPower)
-		ns.DR = int(adrReq.DataRate)
-		ns.NbTrans = adrReq.Redundancy.NbRep
-		ns.EnabledChannels = chans
+		ds.TXPowerIndex = int(adrReq.TXPower)
+		ds.DR = int(adrReq.DataRate)
+		ds.NbTrans = adrReq.Redundancy.NbRep
+		ds.EnabledChannels = chans
 
 		log.WithFields(log.Fields{
-			"dev_eui":          ns.DevEUI,
-			"tx_power_idx":     ns.TXPowerIndex,
+			"dev_eui":          ds.DevEUI,
+			"tx_power_idx":     ds.TXPowerIndex,
 			"dr":               adrReq.DataRate,
 			"nb_trans":         adrReq.Redundancy.NbRep,
 			"enabled_channels": chans,
@@ -96,7 +96,7 @@ func handleLinkADRAns(ns *session.NodeSession, block Block, pendingBlock *Block)
 		// when TXPower 0 is not supported. See also section 5.2 in the
 		// LoRaWAN specs.
 		if !powerACK && adrReq.TXPower == 0 {
-			ns.TXPowerIndex = 1
+			ds.TXPowerIndex = 1
 		}
 
 		// It is possible that the node does not support all TXPower
@@ -104,7 +104,7 @@ func handleLinkADRAns(ns *session.NodeSession, block Block, pendingBlock *Block)
 		// to the request - 1. If that index is not supported, it will
 		// be lowered by 1 at the next nACK.
 		if !powerACK && adrReq.TXPower > 0 {
-			ns.MaxSupportedTXPowerIndex = int(adrReq.TXPower) - 1
+			ds.MaxSupportedTXPowerIndex = int(adrReq.TXPower) - 1
 		}
 
 		// It is possible that the node does not support all data-rates.
@@ -112,11 +112,11 @@ func handleLinkADRAns(ns *session.NodeSession, block Block, pendingBlock *Block)
 		// If that DR is not supported, it will be lowered by 1 at the
 		// next nACK.
 		if !dataRateACK && adrReq.DataRate > 0 {
-			ns.MaxSupportedDR = int(adrReq.DataRate) - 1
+			ds.MaxSupportedDR = int(adrReq.DataRate) - 1
 		}
 
 		log.WithFields(log.Fields{
-			"dev_eui":          ns.DevEUI,
+			"dev_eui":          ds.DevEUI,
 			"channel_mask_ack": channelMaskACK,
 			"data_rate_ack":    dataRateACK,
 			"power_ack":        powerACK,
@@ -126,7 +126,7 @@ func handleLinkADRAns(ns *session.NodeSession, block Block, pendingBlock *Block)
 	return nil
 }
 
-func handleLinkCheckReq(ns *session.NodeSession, rxInfoSet models.RXInfoSet) error {
+func handleLinkCheckReq(ds *storage.DeviceSession, rxInfoSet models.RXInfoSet) error {
 	if len(rxInfoSet) == 0 {
 		return errors.New("rx info-set contains zero items")
 	}
@@ -154,7 +154,7 @@ func handleLinkCheckReq(ns *session.NodeSession, rxInfoSet models.RXInfoSet) err
 		},
 	}
 
-	if err := AddQueueItem(common.RedisPool, ns.DevEUI, block); err != nil {
+	if err := AddQueueItem(common.RedisPool, ds.DevEUI, block); err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
 	}
 	return nil

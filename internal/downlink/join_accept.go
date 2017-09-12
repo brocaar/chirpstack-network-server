@@ -8,15 +8,15 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 )
 
 func getJoinAcceptTXInfo(ctx *JoinContext) error {
-	if len(ctx.NodeSession.LastRXInfoSet) == 0 {
+	if len(ctx.DeviceSession.LastRXInfoSet) == 0 {
 		return errors.New("empty LastRXInfoSet")
 	}
 
-	rxInfo := ctx.NodeSession.LastRXInfoSet[0]
+	rxInfo := ctx.DeviceSession.LastRXInfoSet[0]
 
 	ctx.TXInfo = gw.TXInfo{
 		MAC:      rxInfo.MAC,
@@ -24,7 +24,7 @@ func getJoinAcceptTXInfo(ctx *JoinContext) error {
 		Power:    common.Band.DefaultTXPower,
 	}
 
-	if ctx.NodeSession.RXWindow == session.RX1 {
+	if ctx.DeviceSession.RXWindow == storage.RX1 {
 		ctx.TXInfo.Timestamp = rxInfo.Timestamp + uint32(common.Band.JoinAcceptDelay1/time.Microsecond)
 
 		// get uplink dr
@@ -45,19 +45,19 @@ func getJoinAcceptTXInfo(ctx *JoinContext) error {
 		if err != nil {
 			return errors.Wrap(err, "get rx1 frequency error")
 		}
-	} else if ctx.NodeSession.RXWindow == session.RX2 {
+	} else if ctx.DeviceSession.RXWindow == storage.RX2 {
 		ctx.TXInfo.Timestamp = rxInfo.Timestamp + uint32(common.Band.JoinAcceptDelay2/time.Microsecond)
 		ctx.TXInfo.DataRate = common.Band.DataRates[common.Band.RX2DataRate]
 		ctx.TXInfo.Frequency = common.Band.RX2Frequency
 	} else {
-		return fmt.Errorf("unknown RXWindow defined %d", ctx.NodeSession.RXWindow)
+		return fmt.Errorf("unknown RXWindow defined %d", ctx.DeviceSession.RXWindow)
 	}
 
 	return nil
 }
 
 func logJoinAcceptFrame(ctx *JoinContext) error {
-	logDownlink(common.DB, ctx.NodeSession.DevEUI, ctx.PHYPayload, ctx.TXInfo)
+	logDownlink(common.DB, ctx.DeviceSession.DevEUI, ctx.PHYPayload, ctx.TXInfo)
 	return nil
 }
 

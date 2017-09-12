@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
@@ -17,12 +17,12 @@ func TestQueue(t *testing.T) {
 		p := common.NewRedisPool(conf.RedisURL)
 		test.MustFlushRedis(p)
 
-		Convey("Given a node-session", func() {
-			ns := session.NodeSession{
+		Convey("Given a device-session", func() {
+			ds := storage.DeviceSession{
 				DevAddr: [4]byte{1, 2, 3, 4},
 				DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			}
-			So(session.SaveNodeSession(p, ns), ShouldBeNil)
+			So(storage.SaveDeviceSession(p, ds), ShouldBeNil)
 
 			Convey("When adding mac-command a and b to the queue", func() {
 				a := Block{
@@ -43,21 +43,21 @@ func TestQueue(t *testing.T) {
 						},
 					},
 				}
-				So(AddQueueItem(p, ns.DevEUI, a), ShouldBeNil)
-				So(AddQueueItem(p, ns.DevEUI, b), ShouldBeNil)
+				So(AddQueueItem(p, ds.DevEUI, a), ShouldBeNil)
+				So(AddQueueItem(p, ds.DevEUI, b), ShouldBeNil)
 
 				Convey("Then reading the queue returns both mac-command blocks in the correct order", func() {
-					blocks, err := ReadQueueItems(p, ns.DevEUI)
+					blocks, err := ReadQueueItems(p, ds.DevEUI)
 					So(err, ShouldBeNil)
 					So(blocks, ShouldResemble, []Block{a, b})
 				})
 
 				Convey("Then the mac-commands can be retrieved by their CID", func() {
-					aa, err := GetQueueItemByCID(p, ns.DevEUI, lorawan.LinkADRReq)
+					aa, err := GetQueueItemByCID(p, ds.DevEUI, lorawan.LinkADRReq)
 					So(err, ShouldBeNil)
 					So(*aa, ShouldResemble, a)
 
-					bb, err := GetQueueItemByCID(p, ns.DevEUI, lorawan.RXParamSetupReq)
+					bb, err := GetQueueItemByCID(p, ds.DevEUI, lorawan.RXParamSetupReq)
 					So(err, ShouldBeNil)
 					So(*bb, ShouldResemble, b)
 				})
@@ -72,30 +72,30 @@ func TestQueue(t *testing.T) {
 							},
 						},
 					}
-					So(AddQueueItem(p, ns.DevEUI, c), ShouldBeNil)
+					So(AddQueueItem(p, ds.DevEUI, c), ShouldBeNil)
 
 					Convey("Then reading the queue should contained the replaced mac-command block", func() {
-						blocks, err := ReadQueueItems(p, ns.DevEUI)
+						blocks, err := ReadQueueItems(p, ds.DevEUI)
 						So(err, ShouldBeNil)
 						So(blocks, ShouldResemble, []Block{a, c})
 					})
 				})
 
 				Convey("When deleting mac-command a by its CID", func() {
-					So(DeleteQueueItemByCID(p, ns.DevEUI, lorawan.LinkADRReq), ShouldBeNil)
+					So(DeleteQueueItemByCID(p, ds.DevEUI, lorawan.LinkADRReq), ShouldBeNil)
 
 					Convey("Then only mac-command b is in the queue", func() {
-						blocks, err := ReadQueueItems(p, ns.DevEUI)
+						blocks, err := ReadQueueItems(p, ds.DevEUI)
 						So(err, ShouldBeNil)
 						So(blocks, ShouldResemble, []Block{b})
 					})
 				})
 
 				Convey("When deleting mac-command a", func() {
-					So(DeleteQueueItem(p, ns.DevEUI, a), ShouldBeNil)
+					So(DeleteQueueItem(p, ds.DevEUI, a), ShouldBeNil)
 
 					Convey("Then only mac-command b is in the queue", func() {
-						blocks, err := ReadQueueItems(p, ns.DevEUI)
+						blocks, err := ReadQueueItems(p, ds.DevEUI)
 						So(err, ShouldBeNil)
 						So(blocks, ShouldResemble, []Block{b})
 					})

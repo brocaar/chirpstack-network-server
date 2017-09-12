@@ -7,7 +7,7 @@ import (
 
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 )
 
 var errToCode = map[error]codes.Code{
@@ -26,8 +26,8 @@ var errToCode = map[error]codes.Code{
 	gateway.ErrInvalidChannelConfig:       codes.InvalidArgument,
 	gateway.ErrInvalidChannelModulation:   codes.InvalidArgument,
 
-	session.ErrDoesNotExistOrFCntOrMICInvalid: codes.NotFound,
-	session.ErrDoesNotExist:                   codes.NotFound,
+	storage.ErrDoesNotExistOrFCntOrMICInvalid: codes.NotFound,
+	storage.ErrDoesNotExist:                   codes.NotFound,
 }
 
 func errToRPCError(err error) error {

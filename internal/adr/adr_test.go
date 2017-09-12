@@ -7,7 +7,7 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/session"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
@@ -39,17 +39,17 @@ func TestADR(t *testing.T) {
 		})
 
 		Convey("Testing getMaxSupportedDRForNode", func() {
-			Convey("When no MaxSupportedDR is set on the node session, it returns getMaxAllowedDR", func() {
-				ns := session.NodeSession{}
-				So(getMaxSupportedDRForNode(&ns), ShouldEqual, getMaxAllowedDR())
+			Convey("When no MaxSupportedDR is set on the device session, it returns getMaxAllowedDR", func() {
+				ds := storage.DeviceSession{}
+				So(getMaxSupportedDRForNode(&ds), ShouldEqual, getMaxAllowedDR())
 			})
 
-			Convey("When MaxSupportedDR is set on the node session, this value is returned", func() {
-				ns := session.NodeSession{
+			Convey("When MaxSupportedDR is set on the device session, this value is returned", func() {
+				ds := storage.DeviceSession{
 					MaxSupportedDR: 3,
 				}
-				So(getMaxSupportedDRForNode(&ns), ShouldEqual, ns.MaxSupportedDR)
-				So(getMaxSupportedDRForNode(&ns), ShouldNotEqual, getMaxAllowedDR())
+				So(getMaxSupportedDRForNode(&ds), ShouldEqual, ds.MaxSupportedDR)
+				So(getMaxSupportedDRForNode(&ds), ShouldNotEqual, getMaxAllowedDR())
 			})
 		})
 
@@ -58,17 +58,17 @@ func TestADR(t *testing.T) {
 		})
 
 		Convey("Testing getMaxSupportedTXPowerOffsetIndexForNode", func() {
-			Convey("When no MaxSupportedTXPowerIndex is set on the node session, it returns getMaxTXPowerOffsetIndex", func() {
-				ns := session.NodeSession{}
-				So(getMaxSupportedTXPowerOffsetIndexForNode(&ns), ShouldEqual, getMaxTXPowerOffsetIndex())
+			Convey("When no MaxSupportedTXPowerIndex is set on the device session, it returns getMaxTXPowerOffsetIndex", func() {
+				ds := storage.DeviceSession{}
+				So(getMaxSupportedTXPowerOffsetIndexForNode(&ds), ShouldEqual, getMaxTXPowerOffsetIndex())
 			})
 
-			Convey("When MaxSupportedTXPowerIndex is set on the node session, this value is returned", func() {
-				ns := session.NodeSession{
+			Convey("When MaxSupportedTXPowerIndex is set on the device session, this value is returned", func() {
+				ds := storage.DeviceSession{
 					MaxSupportedTXPowerIndex: 3,
 				}
-				So(getMaxSupportedTXPowerOffsetIndexForNode(&ns), ShouldEqual, ns.MaxSupportedTXPowerIndex)
-				So(getMaxSupportedTXPowerOffsetIndexForNode(&ns), ShouldNotEqual, getMaxTXPowerOffsetIndex())
+				So(getMaxSupportedTXPowerOffsetIndexForNode(&ds), ShouldEqual, ds.MaxSupportedTXPowerIndex)
+				So(getMaxSupportedTXPowerOffsetIndexForNode(&ds), ShouldNotEqual, getMaxTXPowerOffsetIndex())
 			})
 		})
 
@@ -259,17 +259,17 @@ func TestADR(t *testing.T) {
 
 				testTable := []struct {
 					Name                    string
-					NodeSession             *session.NodeSession
+					DeviceSession           *storage.DeviceSession
 					RXPacket                models.RXPacket
 					FullFCnt                uint32
 					MACCommandQueue         []maccommand.Block
-					ExpectedNodeSession     session.NodeSession
+					ExpectedDeviceSession   storage.DeviceSession
 					ExpectedMACCommandQueue []maccommand.Block
 					ExpectedError           error
 				}{
 					{
 						Name: "ADR increasing data-rate by one step (no CFlist)",
-						NodeSession: &session.NodeSession{
+						DeviceSession: &storage.DeviceSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
@@ -283,12 +283,12 @@ func TestADR(t *testing.T) {
 							},
 						},
 						FullFCnt: 1,
-						ExpectedNodeSession: session.NodeSession{
+						ExpectedDeviceSession: storage.DeviceSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
 							InstallationMargin: 5,
-							UplinkHistory: []session.UplinkHistory{
+							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
 							EnabledChannels: []int{0, 1, 2},
@@ -301,7 +301,7 @@ func TestADR(t *testing.T) {
 					},
 					{
 						Name: "ADR increasing tx-power by one step (no CFlist)",
-						NodeSession: &session.NodeSession{
+						DeviceSession: &storage.DeviceSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
@@ -317,12 +317,12 @@ func TestADR(t *testing.T) {
 							},
 						},
 						FullFCnt: 1,
-						ExpectedNodeSession: session.NodeSession{
+						ExpectedDeviceSession: storage.DeviceSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
 							InstallationMargin: 5,
-							UplinkHistory: []session.UplinkHistory{
+							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: 1, GatewayCount: 1},
 							},
 							EnabledChannels: []int{0, 1, 2},
@@ -352,7 +352,7 @@ func TestADR(t *testing.T) {
 					},
 					{
 						Name: "ADR increasing data-rate by one step and tx-power reset due to node changing its data-rate (no CFlist)",
-						NodeSession: &session.NodeSession{
+						DeviceSession: &storage.DeviceSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
@@ -368,12 +368,12 @@ func TestADR(t *testing.T) {
 							},
 						},
 						FullFCnt: 1,
-						ExpectedNodeSession: session.NodeSession{
+						ExpectedDeviceSession: storage.DeviceSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
 							InstallationMargin: 5,
-							UplinkHistory: []session.UplinkHistory{
+							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
 							EnabledChannels: []int{0, 1, 2},
@@ -387,7 +387,7 @@ func TestADR(t *testing.T) {
 					},
 					{
 						Name: "ADR increasing data-rate by one step (no CFlist), but mac-command block pending",
-						NodeSession: &session.NodeSession{
+						DeviceSession: &storage.DeviceSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
@@ -414,12 +414,12 @@ func TestADR(t *testing.T) {
 								},
 							},
 						},
-						ExpectedNodeSession: session.NodeSession{
+						ExpectedDeviceSession: storage.DeviceSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
 							InstallationMargin: 5,
-							UplinkHistory: []session.UplinkHistory{
+							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
 							EnabledChannels: []int{0, 1, 2},
@@ -448,7 +448,7 @@ func TestADR(t *testing.T) {
 					},
 					{
 						Name: "ADR increasing data-rate by one step (extra channels added)",
-						NodeSession: &session.NodeSession{
+						DeviceSession: &storage.DeviceSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
@@ -462,13 +462,13 @@ func TestADR(t *testing.T) {
 							},
 						},
 						FullFCnt: 1,
-						ExpectedNodeSession: session.NodeSession{
+						ExpectedDeviceSession: storage.DeviceSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
 							InstallationMargin: 5,
 							EnabledChannels:    []int{0, 1, 2, 3, 4, 6},
-							UplinkHistory: []session.UplinkHistory{
+							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
 							DR: 2,
@@ -480,7 +480,7 @@ func TestADR(t *testing.T) {
 					},
 					{
 						Name: "data-rate can be increased, but no ADR flag set",
-						NodeSession: &session.NodeSession{
+						DeviceSession: &storage.DeviceSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
@@ -493,12 +493,12 @@ func TestADR(t *testing.T) {
 							},
 						},
 						FullFCnt: 1,
-						ExpectedNodeSession: session.NodeSession{
+						ExpectedDeviceSession: storage.DeviceSession{
 							DevAddr:            [4]byte{1, 2, 3, 4},
 							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							ADRInterval:        1,
 							InstallationMargin: 5,
-							UplinkHistory: []session.UplinkHistory{
+							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
 							DR: 2,
@@ -509,22 +509,22 @@ func TestADR(t *testing.T) {
 
 				for i, tst := range testTable {
 					Convey(fmt.Sprintf("Test: %s [%d]", tst.Name, i), func() {
-						So(session.SaveNodeSession(common.RedisPool, *tst.NodeSession), ShouldBeNil)
+						So(storage.SaveDeviceSession(common.RedisPool, *tst.DeviceSession), ShouldBeNil)
 
 						for _, block := range tst.MACCommandQueue {
-							So(maccommand.AddQueueItem(common.RedisPool, tst.NodeSession.DevEUI, block), ShouldBeNil)
+							So(maccommand.AddQueueItem(common.RedisPool, tst.DeviceSession.DevEUI, block), ShouldBeNil)
 						}
 
-						err := HandleADR(tst.NodeSession, tst.RXPacket, tst.FullFCnt)
+						err := HandleADR(tst.DeviceSession, tst.RXPacket, tst.FullFCnt)
 						if tst.ExpectedError != nil {
 							So(err, ShouldResemble, tst.ExpectedError)
 							return
 						}
 
 						So(err, ShouldBeNil)
-						So(tst.NodeSession, ShouldResemble, &tst.ExpectedNodeSession)
+						So(tst.DeviceSession, ShouldResemble, &tst.ExpectedDeviceSession)
 
-						macPayloadQueue, err := maccommand.ReadQueueItems(common.RedisPool, tst.NodeSession.DevEUI)
+						macPayloadQueue, err := maccommand.ReadQueueItems(common.RedisPool, tst.DeviceSession.DevEUI)
 						So(err, ShouldBeNil)
 						So(macPayloadQueue, ShouldResemble, tst.ExpectedMACCommandQueue)
 					})
