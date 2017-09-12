@@ -3,16 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "Liv7AJyNinmP3pvwohcXp4R6xY4=",
-			"path": "github.com/sirupsen/logrus",
-			"revision": "85b1699d505667d13f8ac4478c1debbf85d6c5de",
-			"revisionTime": "2017-06-08T22:14:41Z"
-		},
-		{
-			"checksumSHA1": "u52BzfoKG0x7CgBgg/PB1AEVSag=",
+			"checksumSHA1": "he6U+ANcoXKilCk8LlDweHzWohY=",
 			"path": "github.com/brocaar/lorawan",
-			"revision": "909df3392c6ae1acc73b075640d7dce3cdf4305d",
-			"revisionTime": "2017-05-24T09:31:27Z"
+			"revision": "493811893ace2e3e4db4bb8e402ce28b72a04198",
+			"revisionTime": "2017-09-12T08:35:35Z"
 		},
 		{
 			"checksumSHA1": "HglcYT/tCUHsT4cJtaa62vM55Dc=",
@@ -127,6 +121,12 @@
 			"path": "github.com/rubenv/sql-migrate/sqlparse",
 			"revision": "f64b6080c334adaf843209164107439e92bb170b",
 			"revisionTime": "2017-02-07T10:19:24Z"
+		},
+		{
+			"checksumSHA1": "Liv7AJyNinmP3pvwohcXp4R6xY4=",
+			"path": "github.com/sirupsen/logrus",
+			"revision": "85b1699d505667d13f8ac4478c1debbf85d6c5de",
+			"revisionTime": "2017-06-08T22:14:41Z"
 		},
 		{
 			"checksumSHA1": "AikWjAOvWHSJ8G1iU+wNReZnyCk=",

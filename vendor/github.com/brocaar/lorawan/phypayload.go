@@ -494,6 +494,8 @@ func (p *PHYPayload) UnmarshalBinary(data []byte) error {
 		p.MACPayload = &JoinRequestPayload{}
 	case JoinAccept:
 		p.MACPayload = &DataPayload{}
+	case Proprietary:
+		p.MACPayload = &DataPayload{}
 	default:
 		p.MACPayload = &MACPayload{}
 	}
