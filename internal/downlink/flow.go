@@ -23,6 +23,8 @@ var Flow = newFlow().JoinResponse(
 	getMACCommands,
 	sendDataDown,
 	saveNodeSession,
+).ProprietaryDown(
+	sendProprietaryDown,
 )
 
 // DataContext holds the context of a downlink transmission.
@@ -99,6 +101,16 @@ type JoinContext struct {
 	PHYPayload  lorawan.PHYPayload
 }
 
+// ProprietaryDownContext holds the context of a proprietary down context.
+type ProprietaryDownContext struct {
+	MACPayload  []byte
+	MIC         lorawan.MIC
+	GatewayMACs []lorawan.EUI64
+	IPol        bool
+	Frequency   int
+	DR          int
+}
+
 // UplinkResponseTask is the signature of an uplink response task.
 type UplinkResponseTask func(*DataContext) error
 
@@ -108,11 +120,15 @@ type PushDataDownTask func(*DataContext) error
 // JoinResponseTask is the signature of a join response task.
 type JoinResponseTask func(*JoinContext) error
 
+// ProprietaryDownTask is the signature of a proprietary down task.
+type ProprietaryDownTask func(*ProprietaryDownContext) error
+
 // Flow contains one or multiple tasks to execute.
 type flow struct {
-	uplinkResponseTasks []UplinkResponseTask
-	pushDataDownTasks   []PushDataDownTask
-	joinResponseTasks   []JoinResponseTask
+	uplinkResponseTasks  []UplinkResponseTask
+	pushDataDownTasks    []PushDataDownTask
+	joinResponseTasks    []JoinResponseTask
+	proprietaryDownTasks []ProprietaryDownTask
 }
 
 func newFlow() *flow {
@@ -134,6 +150,12 @@ func (f *flow) PushDataDown(tasks ...PushDataDownTask) *flow {
 // JoinResponse adds join response tasks to the flow.
 func (f *flow) JoinResponse(tasks ...JoinResponseTask) *flow {
 	f.joinResponseTasks = tasks
+	return f
+}
+
+// ProprietaryDown adds proprietary down tasks to the flow.
+func (f *flow) ProprietaryDown(tasks ...ProprietaryDownTask) *flow {
+	f.proprietaryDownTasks = tasks
 	return f
 }
 
@@ -188,6 +210,30 @@ func (f *flow) RunJoinResponse(ns session.NodeSession, phy lorawan.PHYPayload) e
 	}
 
 	for _, t := range f.joinResponseTasks {
+		if err := t(&ctx); err != nil {
+			if err == ErrAbort {
+				return nil
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// RunProprietaryDown runs the proprietary down flow.
+func (f *flow) RunProprietaryDown(macPayload []byte, mic lorawan.MIC, gwMACs []lorawan.EUI64, iPol bool, frequency, dr int) error {
+	ctx := ProprietaryDownContext{
+		MACPayload:  macPayload,
+		MIC:         mic,
+		GatewayMACs: gwMACs,
+		IPol:        iPol,
+		Frequency:   frequency,
+		DR:          dr,
+	}
+
+	for _, t := range f.proprietaryDownTasks {
 		if err := t(&ctx); err != nil {
 			if err == ErrAbort {
 				return nil

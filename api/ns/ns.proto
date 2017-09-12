@@ -27,6 +27,9 @@ service NetworkServer {
 	// PushDataDown pushes the given downlink payload to the node (only works for Class-C nodes).
 	rpc PushDataDown(PushDataDownRequest) returns (PushDataDownResponse) {}
 
+	// SendProprietaryPayload send a payload using the 'Proprietary' LoRaWAN message-type.
+	rpc SendProprietaryPayload(SendProprietaryPayloadRequest) returns (SendProprietaryPayloadResponse) {}
+
 	// CreateGateway creates the given gateway.
 	rpc CreateGateway(CreateGatewayRequest) returns (CreateGatewayResponse) {}
 
@@ -291,6 +294,29 @@ message PushDataDownRequest {
 }
 
 message PushDataDownResponse {}
+
+message SendProprietaryPayloadRequest {
+	// MACPayload of the proprietary LoRaWAN frame.
+	bytes macPayload = 1;
+
+	// MIC of the proprietary LoRaWAN frame (must be 4 bytes).
+	bytes mic = 2;
+
+	// Gateway MAC address(es) to use for transmitting the LoRaWAN frame.
+	repeated bytes gatewayMACs = 3;
+
+	// Set to true for sending as a gateway, or false for sending as a node.
+	// In the latter case the frame will be received by other gateways.
+	bool iPol = 4;
+
+	// Frequency (Hz) to use for the transmission.
+	uint32 frequency = 5;
+
+	// Data-rate to use for the transmission.
+	uint32 dr = 6;
+}
+
+message SendProprietaryPayloadResponse {}
 
 message CreateGatewayRequest {
 	// MAC address of the gateway.

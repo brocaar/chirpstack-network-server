@@ -227,6 +227,26 @@ func (n *NetworkServerAPI) PushDataDown(ctx context.Context, req *ns.PushDataDow
 	return &ns.PushDataDownResponse{}, nil
 }
 
+// SendProprietaryPayload send a payload using the 'Proprietary' LoRaWAN message-type.
+func (n *NetworkServerAPI) SendProprietaryPayload(ctx context.Context, req *ns.SendProprietaryPayloadRequest) (*ns.SendProprietaryPayloadResponse, error) {
+	var mic lorawan.MIC
+	var gwMACs []lorawan.EUI64
+
+	copy(mic[:], req.Mic)
+	for i := range req.GatewayMACs {
+		var mac lorawan.EUI64
+		copy(mac[:], req.GatewayMACs[i])
+		gwMACs = append(gwMACs, mac)
+	}
+
+	err := downlink.Flow.RunProprietaryDown(req.MacPayload, mic, gwMACs, req.IPol, int(req.Frequency), int(req.Dr))
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.SendProprietaryPayloadResponse{}, nil
+}
+
 // CreateGateway creates the given gateway.
 func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGatewayRequest) (*ns.CreateGatewayResponse, error) {
 	var mac lorawan.EUI64
