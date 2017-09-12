@@ -14,10 +14,10 @@ import (
 	"syscall"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/codegangsta/cli"
 	"github.com/pkg/errors"
 	migrate "github.com/rubenv/sql-migrate"
+	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
@@ -57,8 +57,8 @@ var bands = []string{
 }
 
 func run(c *cli.Context) error {
-	var server *uplink.Server
-	var gwStats *gateway.StatsHandler
+	var server = new(uplink.Server)
+	var gwStats = new(gateway.StatsHandler)
 
 	tasks := []func(*cli.Context) error{
 		setNetID,
@@ -397,7 +397,7 @@ func startGatewayAPIServer(c *cli.Context) error {
 
 func startLoRaServer(server *uplink.Server) func(*cli.Context) error {
 	return func(c *cli.Context) error {
-		server = uplink.NewServer()
+		*server = *uplink.NewServer()
 		if err := server.Start(); err != nil {
 			return err
 		}
@@ -407,7 +407,7 @@ func startLoRaServer(server *uplink.Server) func(*cli.Context) error {
 
 func startStatsServer(gwStats *gateway.StatsHandler) func(*cli.Context) error {
 	return func(c *cli.Context) error {
-		gwStats = gateway.NewStatsHandler()
+		*gwStats = *gateway.NewStatsHandler()
 		if err := gwStats.Start(); err != nil {
 			log.Fatal(err)
 		}
