@@ -3,17 +3,16 @@ package uplink
 import (
 	"bytes"
 	"encoding/gob"
-	"encoding/hex"
-	"errors"
 	"fmt"
 	"sort"
 	"time"
 
+	"github.com/garyburd/redigo/redis"
+	"github.com/pkg/errors"
+
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/lorawan"
-	"github.com/garyburd/redigo/redis"
 )
 
 // Templates used for generating Redis keys
@@ -42,16 +41,14 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 	// store the packet in a set with DeduplicationDelay expiration
 	// in case the packet is received by multiple gateways, the set will contain
 	// each packet.
-	// since we can't trust the MIC (in case of a join-request, it will be
-	// validated after the collect), we generate a new one and use it as the
-	// hash for the storage key.
-	if err := rxPacket.PHYPayload.SetMIC(lorawan.AES128Key{}); err != nil {
-		return fmt.Errorf("set mic error: %s", err)
+	// The text representation of the PHYPayload is used as key.
+	phyB, err := rxPacket.PHYPayload.MarshalText()
+	if err != nil {
+		return errors.Wrap(err, "marshal to text error")
 	}
 
-	mic := hex.EncodeToString(rxPacket.PHYPayload.MIC[:])
-	key := fmt.Sprintf(CollectKeyTempl, mic)
-	lockKey := fmt.Sprintf(CollectLockKeyTempl, mic)
+	key := fmt.Sprintf(CollectKeyTempl, string(phyB))
+	lockKey := fmt.Sprintf(CollectLockKeyTempl, string(phyB))
 
 	// this way we can set a really low DeduplicationDelay for testing, without
 	// the risk that the set already expired in redis on read
@@ -63,7 +60,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 	c.Send("MULTI")
 	c.Send("SADD", key, buf.Bytes())
 	c.Send("PEXPIRE", key, int64(deduplicationTTL)/int64(time.Millisecond))
-	_, err := c.Do("EXEC")
+	_, err = c.Do("EXEC")
 	if err != nil {
 		return fmt.Errorf("add rx packet to collect set error: %s", err)
 	}
