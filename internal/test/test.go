@@ -4,10 +4,10 @@ import (
 	"os"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	migrate "github.com/rubenv/sql-migrate"
+	log "github.com/sirupsen/logrus"
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 
@@ -130,30 +130,34 @@ func (b *GatewayBackend) Close() error {
 
 // ApplicationClient is an application client for testing.
 type ApplicationClient struct {
-	HandleDataUpErr       error
-	JoinRequestErr        error
-	GetDataDownErr        error
-	JoinRequestChan       chan as.JoinRequestRequest
-	HandleDataUpChan      chan as.HandleDataUpRequest
-	HandleDataDownACKChan chan as.HandleDataDownACKRequest
-	HandleErrorChan       chan as.HandleErrorRequest
-	GetDataDownChan       chan as.GetDataDownRequest
+	HandleDataUpErr         error
+	HandleProprietaryUpErr  error
+	JoinRequestErr          error
+	GetDataDownErr          error
+	JoinRequestChan         chan as.JoinRequestRequest
+	HandleDataUpChan        chan as.HandleDataUpRequest
+	HandleProprietaryUpChan chan as.HandleProprietaryUpRequest
+	HandleDataDownACKChan   chan as.HandleDataDownACKRequest
+	HandleErrorChan         chan as.HandleErrorRequest
+	GetDataDownChan         chan as.GetDataDownRequest
 
-	JoinRequestResponse       as.JoinRequestResponse
-	HandleDataUpResponse      as.HandleDataUpResponse
-	HandleDataDownACKResponse as.HandleDataDownACKResponse
-	HandleErrorResponse       as.HandleErrorResponse
-	GetDataDownResponse       as.GetDataDownResponse
+	JoinRequestResponse         as.JoinRequestResponse
+	HandleDataUpResponse        as.HandleDataUpResponse
+	HandleProprietaryUpResponse as.HandleProprietaryUpResponse
+	HandleDataDownACKResponse   as.HandleDataDownACKResponse
+	HandleErrorResponse         as.HandleErrorResponse
+	GetDataDownResponse         as.GetDataDownResponse
 }
 
 // NewApplicationClient returns a new ApplicationClient.
 func NewApplicationClient() *ApplicationClient {
 	return &ApplicationClient{
-		JoinRequestChan:       make(chan as.JoinRequestRequest, 100),
-		HandleDataUpChan:      make(chan as.HandleDataUpRequest, 100),
-		HandleDataDownACKChan: make(chan as.HandleDataDownACKRequest, 100),
-		HandleErrorChan:       make(chan as.HandleErrorRequest, 100),
-		GetDataDownChan:       make(chan as.GetDataDownRequest, 100),
+		JoinRequestChan:         make(chan as.JoinRequestRequest, 100),
+		HandleDataUpChan:        make(chan as.HandleDataUpRequest, 100),
+		HandleProprietaryUpChan: make(chan as.HandleProprietaryUpRequest, 100),
+		HandleDataDownACKChan:   make(chan as.HandleDataDownACKRequest, 100),
+		HandleErrorChan:         make(chan as.HandleErrorRequest, 100),
+		GetDataDownChan:         make(chan as.GetDataDownRequest, 100),
 	}
 }
 
@@ -173,6 +177,15 @@ func (t *ApplicationClient) HandleDataUp(ctx context.Context, in *as.HandleDataU
 	}
 	t.HandleDataUpChan <- *in
 	return &t.HandleDataUpResponse, nil
+}
+
+// HandleProprietaryUp method.
+func (t *ApplicationClient) HandleProprietaryUp(ctx context.Context, in *as.HandleProprietaryUpRequest, opts ...grpc.CallOption) (*as.HandleProprietaryUpResponse, error) {
+	if t.HandleProprietaryUpErr != nil {
+		return nil, t.HandleProprietaryUpErr
+	}
+	t.HandleProprietaryUpChan <- *in
+	return &t.HandleProprietaryUpResponse, nil
 }
 
 // GetDataDown method.

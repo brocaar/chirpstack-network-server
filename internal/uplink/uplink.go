@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
@@ -40,6 +40,9 @@ var flow = NewFlow().JoinRequest(
 	saveNodeSession,
 	handleUplinkACK,
 	handleDownlink,
+).ProprietaryUp(
+	setContextFromProprietaryPHYPayload,
+	sendProprietaryPayloadToApplicationServer,
 )
 
 // Server represents a server listening for uplink packets.

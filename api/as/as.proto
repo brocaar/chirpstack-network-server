@@ -10,6 +10,9 @@ service ApplicationServer {
 	// HandleDataUp publishes data received from an end-device.
 	rpc HandleDataUp(HandleDataUpRequest) returns (HandleDataUpResponse) {}
 
+	// HandleProprietaryUp handles proprietary uplink payloads.
+	rpc HandleProprietaryUp(HandleProprietaryUpRequest) returns (HandleProprietaryUpResponse) {}
+
 	// GetDataDown gets data from the downlink queue.
 	rpc GetDataDown(GetDataDownRequest) returns (GetDataDownResponse) {}
 
@@ -111,6 +114,22 @@ message HandleDataUpRequest {
 	TXInfo txInfo = 6;
 	repeated RXInfo rxInfo = 7;
 }
+
+message HandleProprietaryUpRequest {
+	// MACPayload of the proprietary LoRaWAN frame.
+	bytes macPayload = 1;
+
+	// MIC of the proprietary LoRaWAN frame.
+	bytes mic = 2;
+
+	// TXInfo contains the TX related meta-data.
+	TXInfo txInfo = 3;
+
+	// RXInfo contains the RX related meta-data.
+	repeated RXInfo rxInfo = 4;
+}
+
+message HandleProprietaryUpResponse {}
 
 message GetDataDownRequest {
 	bytes devEUI = 1;

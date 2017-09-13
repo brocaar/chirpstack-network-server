@@ -24,16 +24,26 @@ type DataUpContext struct {
 	NodeSession session.NodeSession
 }
 
+// ProprietaryUpContext holds the context of a proprietary up context.
+type ProprietaryUpContext struct {
+	RXPacket    models.RXPacket
+	DataPayload *lorawan.DataPayload
+}
+
 // JoinRequestTask is the signature of a join-request task.
 type JoinRequestTask func(*JoinRequestContext) error
 
 // DataUpTask is the signature of an uplink data task.
 type DataUpTask func(*DataUpContext) error
 
+// ProprietaryUpTask is the signature of a proprietary up task.
+type ProprietaryUpTask func(*ProprietaryUpContext) error
+
 // Flow contains one or multiple tasks to execute.
 type Flow struct {
-	joinRequestTasks []JoinRequestTask
-	dataUpTasks      []DataUpTask
+	joinRequestTasks   []JoinRequestTask
+	dataUpTasks        []DataUpTask
+	proprietaryUpTasks []ProprietaryUpTask
 }
 
 // NewFlow creates a new Flow.
@@ -48,6 +58,8 @@ func (f *Flow) Run(rxPacket models.RXPacket) error {
 		return f.runJoinRequestTasks(rxPacket)
 	case lorawan.UnconfirmedDataUp, lorawan.ConfirmedDataUp:
 		return f.runDataUpTasks(rxPacket)
+	case lorawan.Proprietary:
+		return f.runProprietaryUpTasks(rxPacket)
 	default:
 		return nil
 	}
@@ -62,6 +74,12 @@ func (f *Flow) JoinRequest(tasks ...JoinRequestTask) *Flow {
 // DataUp adds DataUpTasks to the flow.
 func (f *Flow) DataUp(tasks ...DataUpTask) *Flow {
 	f.dataUpTasks = tasks
+	return f
+}
+
+// ProprietaryUp adds ProprietaryUpTasks to the flow.
+func (f *Flow) ProprietaryUp(tasks ...ProprietaryUpTask) *Flow {
+	f.proprietaryUpTasks = tasks
 	return f
 }
 
@@ -85,6 +103,20 @@ func (f *Flow) runDataUpTasks(rxPacket models.RXPacket) error {
 	}
 
 	for _, t := range f.dataUpTasks {
+		if err := t(&ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (f *Flow) runProprietaryUpTasks(rxPacket models.RXPacket) error {
+	ctx := ProprietaryUpContext{
+		RXPacket: rxPacket,
+	}
+
+	for _, t := range f.proprietaryUpTasks {
 		if err := t(&ctx); err != nil {
 			return err
 		}
