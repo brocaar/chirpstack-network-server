@@ -33,126 +33,60 @@ func NewNetworkServerAPI() *NetworkServerAPI {
 	return &NetworkServerAPI{}
 }
 
-// CreateNodeSession create a node-session.
-func (n *NetworkServerAPI) CreateNodeSession(ctx context.Context, req *ns.CreateNodeSessionRequest) (*ns.CreateNodeSessionResponse, error) {
-	sess := storage.DeviceSession{
-		FCntUp:             req.FCntUp,
-		FCntDown:           req.FCntDown,
-		RXDelay:            uint8(req.RxDelay),
-		RX1DROffset:        uint8(req.Rx1DROffset),
-		RXWindow:           storage.RXWindow(req.RxWindow),
-		RX2DR:              uint8(req.Rx2DR),
-		SkipFCntValidation: req.RelaxFCnt,
-		ADRInterval:        req.AdrInterval,
-		InstallationMargin: req.InstallationMargin,
-		EnabledChannels:    common.Band.GetUplinkChannels(),
-	}
-
-	copy(sess.DevAddr[:], req.DevAddr)
-	copy(sess.JoinEUI[:], req.AppEUI)
-	copy(sess.DevEUI[:], req.DevEUI)
-	copy(sess.NwkSKey[:], req.NwkSKey)
-
-	exists, err := storage.DeviceSessionExists(common.RedisPool, sess.DevEUI)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-	if exists {
-		return nil, grpc.Errorf(codes.AlreadyExists, "node-session already exists")
-	}
-
-	if err := storage.SaveDeviceSession(common.RedisPool, sess); err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	if err := maccommand.FlushQueue(common.RedisPool, sess.DevEUI); err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	return &ns.CreateNodeSessionResponse{}, nil
-}
-
-// GetNodeSession returns a node-session.
-func (n *NetworkServerAPI) GetNodeSession(ctx context.Context, req *ns.GetNodeSessionRequest) (*ns.GetNodeSessionResponse, error) {
+// ActivateDevice activates a device (ABP).
+func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateDeviceRequest) (*ns.ActivateDeviceResponse, error) {
 	var devEUI lorawan.EUI64
-	copy(devEUI[:], req.DevEUI)
-
-	sess, err := storage.GetDeviceSession(common.RedisPool, devEUI)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	resp := &ns.GetNodeSessionResponse{
-		DevAddr:            sess.DevAddr[:],
-		AppEUI:             sess.JoinEUI[:],
-		DevEUI:             sess.DevEUI[:],
-		NwkSKey:            sess.NwkSKey[:],
-		FCntUp:             sess.FCntUp,
-		FCntDown:           sess.FCntDown,
-		RxDelay:            uint32(sess.RXDelay),
-		Rx1DROffset:        uint32(sess.RX1DROffset),
-		RxWindow:           ns.RXWindow(sess.RXWindow),
-		Rx2DR:              uint32(sess.RX2DR),
-		RelaxFCnt:          sess.SkipFCntValidation,
-		AdrInterval:        sess.ADRInterval,
-		InstallationMargin: sess.InstallationMargin,
-		NbTrans:            uint32(sess.NbTrans),
-		TxPowerIndex:       uint32(sess.TXPowerIndex),
-	}
-
-	return resp, nil
-}
-
-// UpdateNodeSession updates a node-session.
-func (n *NetworkServerAPI) UpdateNodeSession(ctx context.Context, req *ns.UpdateNodeSessionRequest) (*ns.UpdateNodeSessionResponse, error) {
 	var devAddr lorawan.DevAddr
-	copy(devAddr[:], req.DevAddr)
+	var nwkSKey lorawan.AES128Key
 
-	var devEUI, appEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
-	copy(appEUI[:], req.AppEUI)
+	copy(devAddr[:], req.DevAddr)
+	copy(nwkSKey[:], req.NwkSKey)
 
-	sess, err := storage.GetDeviceSession(common.RedisPool, devEUI)
+	d, err := storage.GetDevice(common.DB, devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if sess.JoinEUI != appEUI {
-		return nil, grpc.Errorf(codes.InvalidArgument, "device-session belongs to a different AppEUI")
+	dp, err := storage.GetDeviceProfile(common.DB, d.DeviceProfileID)
+	if err != nil {
+		return nil, errToRPCError(err)
 	}
 
-	newSess := storage.DeviceSession{
+	var channelFrequencies []int
+	for _, f := range dp.FactoryPresetFreqs {
+		channelFrequencies = append(channelFrequencies, int(f*1000000)) // convert MHz -> Hz
+	}
+
+	ds := storage.DeviceSession{
+		DeviceProfileID:  d.DeviceProfileID,
+		ServiceProfileID: d.ServiceProfileID,
+		RoutingProfileID: d.RoutingProfileID,
+
+		DevEUI:  devEUI,
+		DevAddr: devAddr,
+		NwkSKey: nwkSKey,
+
 		FCntUp:             req.FCntUp,
 		FCntDown:           req.FCntDown,
-		RXDelay:            uint8(req.RxDelay),
-		RX1DROffset:        uint8(req.Rx1DROffset),
-		RXWindow:           storage.RXWindow(req.RxWindow),
-		RX2DR:              uint8(req.Rx2DR),
-		SkipFCntValidation: req.RelaxFCnt,
-		ADRInterval:        req.AdrInterval,
-		InstallationMargin: req.InstallationMargin,
+		SkipFCntValidation: req.SkipFCntCheck,
 
-		// these values can't be overwritten
-		NbTrans:         sess.NbTrans,
-		TXPowerIndex:    sess.TXPowerIndex,
-		UplinkHistory:   sess.UplinkHistory,
-		EnabledChannels: sess.EnabledChannels,
+		EnabledChannels:    common.Band.GetUplinkChannels(), // TODO: replace by ServiceProfile.ChannelMask?
+		ChannelFrequencies: channelFrequencies,
 	}
-
-	copy(newSess.DevAddr[:], req.DevAddr)
-	copy(newSess.JoinEUI[:], req.AppEUI)
-	copy(newSess.DevEUI[:], req.DevEUI)
-	copy(newSess.NwkSKey[:], req.NwkSKey)
-
-	if err := storage.SaveDeviceSession(common.RedisPool, newSess); err != nil {
+	if err := storage.SaveDeviceSession(common.RedisPool, ds); err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	return &ns.UpdateNodeSessionResponse{}, nil
+	if err := maccommand.FlushQueue(common.RedisPool, ds.DevEUI); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.ActivateDeviceResponse{}, nil
 }
 
-// DeleteNodeSession deletes a node-session.
-func (n *NetworkServerAPI) DeleteNodeSession(ctx context.Context, req *ns.DeleteNodeSessionRequest) (*ns.DeleteNodeSessionResponse, error) {
+// DeactivateDevice de-activates a device.
+func (n *NetworkServerAPI) DeactivateDevice(ctx context.Context, req *ns.DeactivateDeviceRequest) (*ns.DeactivateDeviceResponse, error) {
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
@@ -160,7 +94,26 @@ func (n *NetworkServerAPI) DeleteNodeSession(ctx context.Context, req *ns.Delete
 		return nil, errToRPCError(err)
 	}
 
-	return &ns.DeleteNodeSessionResponse{}, nil
+	return &ns.DeactivateDeviceResponse{}, nil
+}
+
+// GetDeviceActivation returns the device activation details.
+func (n *NetworkServerAPI) GetDeviceActivation(ctx context.Context, req *ns.GetDeviceActivationRequest) (*ns.GetDeviceActivationResponse, error) {
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], req.DevEUI)
+
+	ds, err := storage.GetDeviceSession(common.RedisPool, devEUI)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.GetDeviceActivationResponse{
+		DevAddr:       ds.DevAddr[:],
+		NwkSKey:       ds.NwkSKey[:],
+		FCntUp:        ds.FCntUp,
+		FCntDown:      ds.FCntDown,
+		SkipFCntCheck: ds.SkipFCntValidation,
+	}, nil
 }
 
 // GetRandomDevAddr returns a random DevAddr.
@@ -175,9 +128,9 @@ func (n *NetworkServerAPI) GetRandomDevAddr(ctx context.Context, req *ns.GetRand
 	}, nil
 }
 
-// EnqueueDataDownMACCommand adds a data down MAC command to the queue.
+// EnqueueDownlinkMACCommand adds a data down MAC command to the queue.
 // It replaces already enqueued mac-commands with the same CID.
-func (n *NetworkServerAPI) EnqueueDataDownMACCommand(ctx context.Context, req *ns.EnqueueDataDownMACCommandRequest) (*ns.EnqueueDataDownMACCommandResponse, error) {
+func (n *NetworkServerAPI) EnqueueDownlinkMACCommand(ctx context.Context, req *ns.EnqueueDownlinkMACCommandRequest) (*ns.EnqueueDownlinkMACCommandResponse, error) {
 	var commands []lorawan.MACCommand
 	var devEUI lorawan.EUI64
 
@@ -202,11 +155,11 @@ func (n *NetworkServerAPI) EnqueueDataDownMACCommand(ctx context.Context, req *n
 		return nil, errToRPCError(err)
 	}
 
-	return &ns.EnqueueDataDownMACCommandResponse{}, nil
+	return &ns.EnqueueDownlinkMACCommandResponse{}, nil
 }
 
-// PushDataDown pushes the given downlink payload to the node (only works for Class-C nodes).
-func (n *NetworkServerAPI) PushDataDown(ctx context.Context, req *ns.PushDataDownRequest) (*ns.PushDataDownResponse, error) {
+// SendDownlinkData pushes the given downlink payload to the node (only works for Class-C nodes).
+func (n *NetworkServerAPI) SendDownlinkData(ctx context.Context, req *ns.SendDownlinkDataRequest) (*ns.SendDownlinkDataResponse, error) {
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
@@ -224,7 +177,7 @@ func (n *NetworkServerAPI) PushDataDown(ctx context.Context, req *ns.PushDataDow
 		return nil, errToRPCError(err)
 	}
 
-	return &ns.PushDataDownResponse{}, nil
+	return &ns.SendDownlinkDataResponse{}, nil
 }
 
 // SendProprietaryPayload send a payload using the 'Proprietary' LoRaWAN message-type.

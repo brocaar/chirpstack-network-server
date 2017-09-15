@@ -4,296 +4,192 @@ package ns;
 
 // NetworkServer is the network-server service.
 service NetworkServer {
-	// CreateNodeSession creates the given node-session.
-	// The DevAddr must contain the same NwkID as the configured NetID.
-	// Node-sessions will expire automatically after the configured TTL.
-	rpc CreateNodeSession(CreateNodeSessionRequest) returns (CreateNodeSessionResponse) {}
+    // ActivateDevice activates a device (ABP).
+    rpc ActivateDevice(ActivateDeviceRequest) returns (ActivateDeviceResponse) {}
 
-	// GetNodeSession returns the node-session matching the given DevEUI.
-	rpc GetNodeSession(GetNodeSessionRequest) returns (GetNodeSessionResponse) {}
+    // DeactivateDevice de-activates a device.
+    rpc DeactivateDevice(DeactivateDeviceRequest) returns (DeactivateDeviceResponse) {}
 
-	// UpdateNodeSession updates the given node-session.
-	rpc UpdateNodeSession(UpdateNodeSessionRequest) returns (UpdateNodeSessionResponse) {}
+    // GetDeviceActivation returns the device activation details.
+    rpc GetDeviceActivation(GetDeviceActivationRequest) returns (GetDeviceActivationResponse) {}
 
-	// DeleteNodeSession deletes the node-session matching the given DevAddr.
-	rpc DeleteNodeSession(DeleteNodeSessionRequest) returns (DeleteNodeSessionResponse) {}
+    // GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
+    rpc GetRandomDevAddr(GetRandomDevAddrRequest) returns (GetRandomDevAddrResponse) {}
 
-	// GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
-	rpc GetRandomDevAddr(GetRandomDevAddrRequest) returns (GetRandomDevAddrResponse) {}
+    // EnqueueDownlinkMACCommand adds the downlink mac-command to the queue.
+    rpc EnqueueDownlinkMACCommand(EnqueueDownlinkMACCommandRequest) returns (EnqueueDownlinkMACCommandResponse) {}
 
-	// EnqueueDataDownMACCommand adds the downlink mac-command to the queue.
-	rpc EnqueueDataDownMACCommand(EnqueueDataDownMACCommandRequest) returns (EnqueueDataDownMACCommandResponse) {}
-
-	// PushDataDown pushes the given downlink payload to the node (only works for Class-C nodes).
-	rpc PushDataDown(PushDataDownRequest) returns (PushDataDownResponse) {}
+    // SendDownlinkData pushes the given downlink payload to the node (only works for Class-C nodes).
+    rpc SendDownlinkData(SendDownlinkDataRequest) returns (SendDownlinkDataResponse) {}
 
 	// SendProprietaryPayload send a payload using the 'Proprietary' LoRaWAN message-type.
 	rpc SendProprietaryPayload(SendProprietaryPayloadRequest) returns (SendProprietaryPayloadResponse) {}
 
-	// CreateGateway creates the given gateway.
-	rpc CreateGateway(CreateGatewayRequest) returns (CreateGatewayResponse) {}
+    // CreateGateway creates the given gateway.
+    rpc CreateGateway(CreateGatewayRequest) returns (CreateGatewayResponse) {}
 
-	// GetGateway returns data for a particular gateway.
-	rpc GetGateway(GetGatewayRequest) returns (GetGatewayResponse) {}
+    // GetGateway returns data for a particular gateway.
+    rpc GetGateway(GetGatewayRequest) returns (GetGatewayResponse) {}
 
-	// UpdateGateway updates an existing gateway.
-	rpc UpdateGateway(UpdateGatewayRequest) returns (UpdateGatewayResponse) {}
+    // UpdateGateway updates an existing gateway.
+    rpc UpdateGateway(UpdateGatewayRequest) returns (UpdateGatewayResponse) {}
 
-	// ListGateways returns the existing gateways.
-	rpc ListGateways(ListGatewayRequest) returns (ListGatewayResponse) {}
+    // ListGateways returns the existing gateways.
+    rpc ListGateways(ListGatewayRequest) returns (ListGatewayResponse) {}
 
-	// DeleteGateway deletes a gateway.
-	rpc DeleteGateway(DeleteGatewayRequest) returns (DeleteGatewayResponse) {}
+    // DeleteGateway deletes a gateway.
+    rpc DeleteGateway(DeleteGatewayRequest) returns (DeleteGatewayResponse) {}
 
-	// GenerateGatewayToken issues a JWT token which can be used by the gateway
-	// for authentication.
-	rpc GenerateGatewayToken(GenerateGatewayTokenRequest) returns (GenerateGatewayTokenResponse) {}
+    // GenerateGatewayToken issues a JWT token which can be used by the gateway
+    // for authentication.
+    rpc GenerateGatewayToken(GenerateGatewayTokenRequest) returns (GenerateGatewayTokenResponse) {}
 
-	// GetGatewayStats returns stats of an existing gateway.
-	rpc GetGatewayStats(GetGatewayStatsRequest) returns (GetGatewayStatsResponse) {}
+    // GetGatewayStats returns stats of an existing gateway.
+    rpc GetGatewayStats(GetGatewayStatsRequest) returns (GetGatewayStatsResponse) {}
 
-	// GetFrameLogsForDevEUI returns the uplink / downlink frame logs for the given DevEUI.
-	rpc GetFrameLogsForDevEUI(GetFrameLogsForDevEUIRequest) returns (GetFrameLogsResponse) {}
+    // GetFrameLogsForDevEUI returns the uplink / downlink frame logs for the given DevEUI.
+    rpc GetFrameLogsForDevEUI(GetFrameLogsForDevEUIRequest) returns (GetFrameLogsResponse) {}
 
-	// CreateChannelConfiguration creates the given channel-configuration.
-	rpc CreateChannelConfiguration(CreateChannelConfigurationRequest) returns (CreateChannelConfigurationResponse) {}
+    // CreateChannelConfiguration creates the given channel-configuration.
+    rpc CreateChannelConfiguration(CreateChannelConfigurationRequest) returns (CreateChannelConfigurationResponse) {}
 
-	// GetChannelConfiguration returns the channel-configuration for the given ID.
-	rpc GetChannelConfiguration(GetChannelConfigurationRequest) returns (GetChannelConfigurationResponse) {}
+    // GetChannelConfiguration returns the channel-configuration for the given ID.
+    rpc GetChannelConfiguration(GetChannelConfigurationRequest) returns (GetChannelConfigurationResponse) {}
 
-	// UpdateChannelConfiguration updates the given channel-configuration.
-	rpc UpdateChannelConfiguration(UpdateChannelConfigurationRequest) returns (UpdateChannelConfigurationResponse) {}
+    // UpdateChannelConfiguration updates the given channel-configuration.
+    rpc UpdateChannelConfiguration(UpdateChannelConfigurationRequest) returns (UpdateChannelConfigurationResponse) {}
 
-	// DeleteChannelConfiguration deletes the channel-configuration matching the
-	// given ID.
-	rpc DeleteChannelConfiguration(DeleteChannelConfigurationRequest) returns (DeleteChannelConfigurationResponse) {}
+    // DeleteChannelConfiguration deletes the channel-configuration matching the
+    // given ID.
+    rpc DeleteChannelConfiguration(DeleteChannelConfigurationRequest) returns (DeleteChannelConfigurationResponse) {}
 
-	// ListChannelConfigurations returns all channel-configurations.
-	rpc ListChannelConfigurations(ListChannelConfigurationsRequest) returns (ListChannelConfigurationsResponse) {}
+    // ListChannelConfigurations returns all channel-configurations.
+    rpc ListChannelConfigurations(ListChannelConfigurationsRequest) returns (ListChannelConfigurationsResponse) {}
 
-	// CreateExtraChannel creates the given extra channel.
-	rpc CreateExtraChannel(CreateExtraChannelRequest) returns (CreateExtraChannelResponse) {}
+    // CreateExtraChannel creates the given extra channel.
+    rpc CreateExtraChannel(CreateExtraChannelRequest) returns (CreateExtraChannelResponse) {}
 
-	// UpdateExtraChannel updates the given extra channel.
-	rpc UpdateExtraChannel(UpdateExtraChannelRequest) returns (UpdateExtraChannelResponse) {}
+    // UpdateExtraChannel updates the given extra channel.
+    rpc UpdateExtraChannel(UpdateExtraChannelRequest) returns (UpdateExtraChannelResponse) {}
 
-	// DeleteExtraChannel deletes the extra channel matching the given id.
-	rpc DeleteExtraChannel(DeleteExtraChannelRequest) returns (DeleteExtraChannelResponse) {}
+    // DeleteExtraChannel deletes the extra channel matching the given id.
+    rpc DeleteExtraChannel(DeleteExtraChannelRequest) returns (DeleteExtraChannelResponse) {}
 
-	// GetExtraChannelsForChannelConfigurationID returns the extra channels for
-	// the given channel-configuration id.
-	rpc GetExtraChannelsForChannelConfigurationID(GetExtraChannelsForChannelConfigurationIDRequest) returns (GetExtraChannelsForChannelConfigurationIDResponse) {}
+    // GetExtraChannelsForChannelConfigurationID returns the extra channels for
+    // the given channel-configuration id.
+    rpc GetExtraChannelsForChannelConfigurationID(GetExtraChannelsForChannelConfigurationIDRequest) returns (GetExtraChannelsForChannelConfigurationIDResponse) {}
 }
 
 enum RXWindow {
-	// Receive window 1
-	RX1 = 0;
+    // Receive window 1
+    RX1 = 0;
 
-	// Receive window 2
-	RX2 = 1;
+    // Receive window 2
+    RX2 = 1;
 }
 
 enum Modulation {
-	// LoRa
-	LORA = 0;
+    // LoRa
+    LORA = 0;
 
-	// FSK
-	FSK = 1;
+    // FSK
+    FSK = 1;
 }
 
-message CreateNodeSessionRequest {
-	// The address of the device (4 bytes).
-	bytes devAddr = 1;
+message ActivateDeviceRequest {
+    // Device EUI (8 bytes).
+    bytes devEUI = 1;
 
-	// The application EUI (8 bytes).
-	bytes appEUI = 2;
+    // The address of the device (4 bytes).
+    bytes devAddr = 2;
 
-	// The device EUI (8 bytes).
-	bytes devEUI = 3;
+    // The network-session key (16 bytes).
+    bytes nwkSKey = 3;
 
-	// The network-session key (16 bytes).
-	bytes nwkSKey = 4;
+    // The next expected uplink frame-counter.
+    uint32 fCntUp = 4;
 
-	// The next expected uplink frame-counter.
-	uint32 fCntUp = 5;
+    // The frame-counter used for the next downlink frame.
+    uint32 fCntDown = 5;
 
-	// The frame-counter used for the next downlink frame.
-	uint32 fCntDown = 6;
-
-	// the RX delay value (0 = 1 sec, 1 = 1 sec, 2 = 2 sec ...).
-	uint32 rxDelay = 7;
-
-	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
-	uint32 rx1DROffset = 8;
-
-	// The RX window to use for downlink transmissions.
-	RXWindow rxWindow = 10;
-
-	// The data-rate to use for RX2 transmissions.
-	uint32 rx2DR = 11;
-
-	// Use relax frame-counter mode for ABP devices (this is insecure!).
-	bool relaxFCnt = 12;
-
-	// The interval (based on frame-counter) on which to calculate the ideal
-	// data-rate and tx-power of the node and if needed, request an adaption.
-	uint32 adrInterval = 13;
-
-	// The installation margin to take into account when calculating the ideal
-	// data-rate and tx-power. The default recommended value is 5dB.
-	double installationMargin = 14;
+    // Skip frame-counter checks (this is insecure, but could be helpful for debugging).
+    bool skipFCntCheck = 6;
 }
 
-message CreateNodeSessionResponse {}
+message ActivateDeviceResponse {}
 
-message GetNodeSessionRequest {
-	bytes devEUI = 1;
+message DeactivateDeviceRequest {
+    // Device EUI (8 bytes).
+    bytes devEUI = 1;
 }
 
-message GetNodeSessionResponse {
-	// The address of the device (4 bytes).
-	bytes devAddr = 1;
+message DeactivateDeviceResponse {}
 
-	// The application EUI (8 bytes).
-	bytes appEUI = 2;
-
-	// The device EUI (8 bytes).
-	bytes devEUI = 3;
-
-	// The network-session key (16 bytes).
-	bytes nwkSKey = 4;
-
-	// The next expected uplink frame-counter.
-	uint32 fCntUp = 5;
-
-	// The frame-counter used for the next downlink frame.
-	uint32 fCntDown = 6;
-
-	// the RX delay value (0 = 1 sec, 1 = 1 sec, 2 = 2 sec ...).
-	uint32 rxDelay = 7;
-
-	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
-	uint32 rx1DROffset = 8;
-
-	// The RX window to use for downlink transmissions.
-	RXWindow rxWindow = 10;
-
-	// The data-rate to use for RX2 transmissions.
-	uint32 rx2DR = 11;
-
-	// Use relax frame-counter mode for ABP devices (this is insecure!).
-	bool relaxFCnt = 12;
-
-	// The interval (based on frame-counter) on which to calculate the ideal
-	// data-rate and tx-power of the node and if needed, request an adaption.
-	uint32 adrInterval = 13;
-
-	// The installation margin to take into account when calculating the ideal
-	// data-rate and tx-power. The default recommended value is 5dB.
-	double installationMargin = 14;
-
-	// The number of times the node should re-transmit an uplink frame.
-	// This is controlled by the ADR engine.
-	uint32 nbTrans = 15;
-
-	// The TX power index of the node. This is controlled by the ADR engine.
-	uint32 txPowerIndex = 16;
-
+message GetDeviceActivationRequest {
+    // Device EUI (8 bytes).
+    bytes devEUI = 1;
 }
 
-message UpdateNodeSessionRequest {
-	// The address of the device (4 bytes).
-	bytes devAddr = 1;
+message GetDeviceActivationResponse {
+    // The address of the device (4 bytes).
+    bytes devAddr = 1;
 
-	// The application EUI (8 bytes).
-	bytes appEUI = 2;
+    // The network-session key (16 bytes).
+    bytes nwkSKey = 2;
 
-	// The device EUI (8 bytes).
-	bytes devEUI = 3;
+    // The next expected uplink frame-counter.
+    uint32 fCntUp = 3;
 
-	// The network-session key (16 bytes).
-	bytes nwkSKey = 4;
+    // The frame-counter used for the next downlink frame.
+    uint32 fCntDown = 4;
 
-	// The next expected uplink frame-counter.
-	uint32 fCntUp = 5;
-
-	// The frame-counter used for the next downlink frame.
-	uint32 fCntDown = 6;
-
-	// the RX delay value (0 = 1 sec, 1 = 1 sec, 2 = 2 sec ...).
-	uint32 rxDelay = 7;
-
-	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
-	uint32 rx1DROffset = 8;
-
-	// The RX window to use for downlink transmissions.
-	RXWindow rxWindow = 10;
-
-	// The data-rate to use for RX2 transmissions.
-	uint32 rx2DR = 11;
-
-	// Use relax frame-counter mode for ABP devices (this is insecure!).
-	bool relaxFCnt = 12;
-
-	// The interval (based on frame-counter) on which to calculate the ideal
-	// data-rate and tx-power of the node and if needed, request an adaption.
-	uint32 adrInterval = 13;
-
-	// The installation margin to take into account when calculating the ideal
-	// data-rate and tx-power. The default recommended value is 5dB.
-	double installationMargin = 14;
+    // Skip frame-counter checks (this is insecure, but could be helpful for debugging).
+    bool skipFCntCheck = 5;
 }
 
-message UpdateNodeSessionResponse {}
-
-message DeleteNodeSessionRequest {
-	bytes devEUI = 1;
-}
-
-message DeleteNodeSessionResponse {}
 
 message GetRandomDevAddrRequest {}
 
 message GetRandomDevAddrResponse {
-	bytes devAddr = 1;
+    bytes devAddr = 1;
 }
 
-message EnqueueDataDownMACCommandRequest {
-	// DevEUI of the node.
-	bytes devEUI = 1;
+message EnqueueDownlinkMACCommandRequest {
+    // DevEUI of the node.
+    bytes devEUI = 1;
 
-	// Send the mac-command as FRMPayload (encrypted).
-	bool frmPayload = 2;
+    // Send the mac-command as FRMPayload (encrypted).
+    bool frmPayload = 2;
 
-	// Command identifier (specified by the LoRaWAN specs).
-	uint32 cid = 4;
+    // Command identifier (specified by the LoRaWAN specs).
+    uint32 cid = 4;
 
-	// MAC-command(s). In case multiple payloads are defined, then they
-	// are always sent within a single frame.
-	repeated bytes commands = 5;
+    // MAC-command(s). In case multiple payloads are defined, then they
+    // are always sent within a single frame.
+    repeated bytes commands = 5;
 }
 
-message EnqueueDataDownMACCommandResponse {}
+message EnqueueDownlinkMACCommandResponse {}
 
-message PushDataDownRequest {
-	// DevEUI of the node to which to push the data.
-	bytes devEUI = 1;
+message SendDownlinkDataRequest {
+    // DevEUI of the node to which to push the data.
+    bytes devEUI = 1;
 
-	// Data (encrypted with the AppSKey) to push to the node.
-	bytes data = 2;
+    // Data (encrypted with the AppSKey) to push to the node.
+    bytes data = 2;
 
-	// Payload must be acknowledged by the node.
-	bool confirmed = 3;
+    // Payload must be acknowledged by the node.
+    bool confirmed = 3;
 
-	// FPort to use for transmitting the payload.
-	uint32 fPort = 4;
+    // FPort to use for transmitting the payload.
+    uint32 fPort = 4;
 
-	// FCnt used for encrypting the data. When this does not match the FCntDown
-	// of the network-server, an error is returned.
-	uint32 fCnt = 5;
+    // FCnt used for encrypting the data. When this does not match the FCntDown
+    // of the network-server, an error is returned.
+    uint32 fCnt = 5;
 }
 
-message PushDataDownResponse {}
+message SendDownlinkDataResponse {}
 
 message SendProprietaryPayloadRequest {
 	// MACPayload of the proprietary LoRaWAN frame.
@@ -319,320 +215,320 @@ message SendProprietaryPayloadRequest {
 message SendProprietaryPayloadResponse {}
 
 message CreateGatewayRequest {
-	// MAC address of the gateway.
-	bytes mac = 1;
+    // MAC address of the gateway.
+    bytes mac = 1;
 
-	// Name of the gateway.
-	string name = 2;
+    // Name of the gateway.
+    string name = 2;
 
-	// Description for the gateway.
-	string description = 3;
+    // Description for the gateway.
+    string description = 3;
 
-	// Latitude of the gateway.
-	double latitude = 4;
+    // Latitude of the gateway.
+    double latitude = 4;
 
-	// Longitude of the gateway.
-	double longitude = 5;
+    // Longitude of the gateway.
+    double longitude = 5;
 
-	// Altitude of the gateway.
-	double altitude = 6;
+    // Altitude of the gateway.
+    double altitude = 6;
 
-	// ID of the channel-configuration (optional).
-	int64 channelConfigurationID = 7;
+    // ID of the channel-configuration (optional).
+    int64 channelConfigurationID = 7;
 }
 
 message CreateGatewayResponse {}
 
 message GetGatewayRequest {
-	// MAC address of the gateway.
-	bytes mac = 1;
+    // MAC address of the gateway.
+    bytes mac = 1;
 }
 
 message GetGatewayResponse {
-	// MAC address of the gateway.
-	bytes mac = 1;
+    // MAC address of the gateway.
+    bytes mac = 1;
 
-	// Name of the gateway.
-	string name = 2;
+    // Name of the gateway.
+    string name = 2;
 
-	// Description for the gateway.
-	string description = 3;
+    // Description for the gateway.
+    string description = 3;
 
-	// Latitude of the gateway.
-	double latitude = 4;
+    // Latitude of the gateway.
+    double latitude = 4;
 
-	// Longitude of the gateway.
-	double longitude = 5;
+    // Longitude of the gateway.
+    double longitude = 5;
 
-	// Altitude of the gateway.
-	double altitude = 6;
+    // Altitude of the gateway.
+    double altitude = 6;
 
-	// The timestamp when the gateway was created.
-	string createdAt = 7;
+    // The timestamp when the gateway was created.
+    string createdAt = 7;
 
-	// The timestamp when the gateway was last updated.
-	string updatedAt = 8;
+    // The timestamp when the gateway was last updated.
+    string updatedAt = 8;
 
-	// The timestamp when the gateway was first seen.
-	string firstSeenAt = 9;
+    // The timestamp when the gateway was first seen.
+    string firstSeenAt = 9;
 
-	// The timestamp when the gateway was last seen.
-	string lastSeenAt = 10;
+    // The timestamp when the gateway was last seen.
+    string lastSeenAt = 10;
 
-	// ID of the channel-configuration (optional).
-	int64 channelConfigurationID = 11;
+    // ID of the channel-configuration (optional).
+    int64 channelConfigurationID = 11;
 }
 
 message UpdateGatewayRequest {
-	// MAC address of the gateway.
-	bytes mac = 1;
+    // MAC address of the gateway.
+    bytes mac = 1;
 
-	// Name of the gateway.
-	string name = 2;
+    // Name of the gateway.
+    string name = 2;
 
-	// Description for the gateway.
-	string description = 3;
+    // Description for the gateway.
+    string description = 3;
 
-	// Latitude of the gateway.
-	double latitude = 4;
+    // Latitude of the gateway.
+    double latitude = 4;
 
-	// Longitude of the gateway.
-	double longitude = 5;
+    // Longitude of the gateway.
+    double longitude = 5;
 
-	// Altitude of the gateway.
-	double altitude = 6;
+    // Altitude of the gateway.
+    double altitude = 6;
 
-	// ID of the channel-configuration (optional).
-	int64 channelConfigurationID = 7;
+    // ID of the channel-configuration (optional).
+    int64 channelConfigurationID = 7;
 }
 
 message UpdateGatewayResponse {}
 
 message ListGatewayRequest {
-	// Max number of gateways to return in the result-set.
-	int32 limit = 1;
+    // Max number of gateways to return in the result-set.
+    int32 limit = 1;
 
-	// Offset in the result-set (for pagination).
-	int32 offset = 2;
+    // Offset in the result-set (for pagination).
+    int32 offset = 2;
 }
 
 message ListGatewayResponse {
-	// Total number of gateways.
-	int32 totalCount = 1;
+    // Total number of gateways.
+    int32 totalCount = 1;
 
-	// Result-set.
-	repeated GetGatewayResponse result = 2;
+    // Result-set.
+    repeated GetGatewayResponse result = 2;
 }
 
 message DeleteGatewayRequest {
-	// MAC address of the gateway.
-	bytes mac = 1;
+    // MAC address of the gateway.
+    bytes mac = 1;
 }
 
 message GenerateGatewayTokenRequest {
-	// MAC address of the gateway.
-	bytes mac = 1;
+    // MAC address of the gateway.
+    bytes mac = 1;
 }
 
 message GenerateGatewayTokenResponse {
-	// Generated token.
-	string token = 1;
+    // Generated token.
+    string token = 1;
 }
 
 message DeleteGatewayResponse {}
 
 enum AggregationInterval {
-	SECOND = 0;
-	MINUTE = 1;
-	HOUR = 2;
-	DAY = 3;
-	WEEK = 4;
-	MONTH = 5;
-	QUARTER = 6;
-	YEAR = 7;
+    SECOND = 0;
+    MINUTE = 1;
+    HOUR = 2;
+    DAY = 3;
+    WEEK = 4;
+    MONTH = 5;
+    QUARTER = 6;
+    YEAR = 7;
 }
 
 message GatewayStats {
-	// Timestamp of the (aggregated) measurement.
-	string timestamp = 1;
+    // Timestamp of the (aggregated) measurement.
+    string timestamp = 1;
 
-	// Packets received by the gateway.
-	int32 rxPacketsReceived = 2;
+    // Packets received by the gateway.
+    int32 rxPacketsReceived = 2;
 
-	// Packets received by the gateway that passed the CRC check.
-	int32 rxPacketsReceivedOK = 3;
+    // Packets received by the gateway that passed the CRC check.
+    int32 rxPacketsReceivedOK = 3;
 
-	// Packets received by the gateway for transmission.
-	int32 txPacketsReceived = 4;
+    // Packets received by the gateway for transmission.
+    int32 txPacketsReceived = 4;
 
-	// Packets transmitted by the gateway.
-	int32 txPacketsEmitted = 5;
+    // Packets transmitted by the gateway.
+    int32 txPacketsEmitted = 5;
 }
 
 message GetGatewayStatsRequest {
-	// MAC address of the gateway.
-	bytes mac = 1;
+    // MAC address of the gateway.
+    bytes mac = 1;
 
-	// Aggregation interval.
-	AggregationInterval interval = 2;
+    // Aggregation interval.
+    AggregationInterval interval = 2;
 
-	// Timestamp to start from.
-	string startTimestamp = 3;
+    // Timestamp to start from.
+    string startTimestamp = 3;
 
-	// Timestamp until to get from.
-	string endTimestamp = 4;
+    // Timestamp until to get from.
+    string endTimestamp = 4;
 }
 
 message GetGatewayStatsResponse {
-	repeated GatewayStats result = 1;
+    repeated GatewayStats result = 1;
 }
 
 message GetFrameLogsForDevEUIRequest {
-	// The device EUI (8 bytes).
-	bytes devEUI = 1;
+    // The device EUI (8 bytes).
+    bytes devEUI = 1;
 
-	// Max number of logs to return in the result-set.
-	int32 limit = 2;
+    // Max number of logs to return in the result-set.
+    int32 limit = 2;
 
-	// Offset in the result-set (for pagination).
-	int32 offset = 3;
+    // Offset in the result-set (for pagination).
+    int32 offset = 3;
 }
 
 message GetFrameLogsResponse {
-	// Total number of logs.
-	int32 totalCount = 1;
+    // Total number of logs.
+    int32 totalCount = 1;
 
-	// The result-set.
-	repeated FrameLog result = 2;
+    // The result-set.
+    repeated FrameLog result = 2;
 }
 
 message FrameLog {
-	// Timestamp of when the frame was logged.
-	string createdAt = 1;
+    // Timestamp of when the frame was logged.
+    string createdAt = 1;
 
-	// RX-info set (in case of an uplink).
-	repeated RXInfo rxInfoSet = 2;
+    // RX-info set (in case of an uplink).
+    repeated RXInfo rxInfoSet = 2;
 
-	// TX-info (in case of a downlink).
-	TXInfo txInfo = 3;
+    // TX-info (in case of a downlink).
+    TXInfo txInfo = 3;
 
-	// LoRaWAN PHYPayload.
-	bytes phyPayload = 4;
+    // LoRaWAN PHYPayload.
+    bytes phyPayload = 4;
 }
 
 message DataRate {
-	string modulation = 1;
-	uint32 bandWidth = 2;
-	uint32 spreadFactor = 3;
-	uint32 bitrate = 4;
+    string modulation = 1;
+    uint32 bandWidth = 2;
+    uint32 spreadFactor = 3;
+    uint32 bitrate = 4;
 }
 
 message RXInfo {
-	// Channel number on which the frame was received.
-	int32 channel = 1;
+    // Channel number on which the frame was received.
+    int32 channel = 1;
 
-	// Code-rate.
-	string codeRate = 2;
+    // Code-rate.
+    string codeRate = 2;
 
-	// frequency.
-	int64 frequency = 3;
+    // frequency.
+    int64 frequency = 3;
 
-	// LoRa SNR.
-	double loRaSNR = 4;
+    // LoRa SNR.
+    double loRaSNR = 4;
 
-	// RSSI / signal strength.
-	int32 rssi = 5;
+    // RSSI / signal strength.
+    int32 rssi = 5;
 
-	// Time (when the gateway has a GPS).
-	string time = 6;
-	
-	// Gateway internal timestamp.
-	uint32 timestamp = 7;
+    // Time (when the gateway has a GPS).
+    string time = 6;
+    
+    // Gateway internal timestamp.
+    uint32 timestamp = 7;
 
-	// Data-rate.
-	DataRate dataRate = 8;
+    // Data-rate.
+    DataRate dataRate = 8;
 
-	// Gateway MAC.
-	bytes mac = 9;
+    // Gateway MAC.
+    bytes mac = 9;
 } 
 
 message TXInfo {
-	// Code-rate.
-	string codeRate = 1;
+    // Code-rate.
+    string codeRate = 1;
 
-	// Frequency.
-	int64 frequency = 2;
+    // Frequency.
+    int64 frequency = 2;
 
-	// Immediately.
-	bool immediately = 3;
+    // Immediately.
+    bool immediately = 3;
 
-	// Gateway MAC.
-	bytes mac = 4;
+    // Gateway MAC.
+    bytes mac = 4;
 
-	// TX power.
-	int32 power = 5;
+    // TX power.
+    int32 power = 5;
 
-	// Gateway internal timestamp.
-	uint32 timestamp = 6;
+    // Gateway internal timestamp.
+    uint32 timestamp = 6;
 
-	// Data-rate.
-	DataRate dataRate = 7;
+    // Data-rate.
+    DataRate dataRate = 7;
 }
 
 message CreateChannelConfigurationRequest {
-	// Name of the channel-configuration.
-	string name = 1;
+    // Name of the channel-configuration.
+    string name = 1;
 
-	// Channels active in this configuration. These channel indices must map
-	// to the channel numbers as specified in the LoRaWAN Regional Parameters.
-	repeated int32 channels = 2;
+    // Channels active in this configuration. These channel indices must map
+    // to the channel numbers as specified in the LoRaWAN Regional Parameters.
+    repeated int32 channels = 2;
 }
 
 message CreateChannelConfigurationResponse {
-	// ID of the channel-configuration.
-	int64 id = 1;
+    // ID of the channel-configuration.
+    int64 id = 1;
 }
 
 message GetChannelConfigurationRequest {
-	// ID of the channel-configuration.
-	int64 id = 1;
+    // ID of the channel-configuration.
+    int64 id = 1;
 }
 
 message GetChannelConfigurationResponse {
-	// ID of the channel-configuration.
-	int64 id = 1;
+    // ID of the channel-configuration.
+    int64 id = 1;
 
-	// Name of the channel-configuration.
-	string name = 2;
+    // Name of the channel-configuration.
+    string name = 2;
 
-	// Channels active in this configuration. These channel indices must map
-	// to the channel numbers as specified in the LoRaWAN Regional Parameters.
-	repeated int32 channels = 3;
+    // Channels active in this configuration. These channel indices must map
+    // to the channel numbers as specified in the LoRaWAN Regional Parameters.
+    repeated int32 channels = 3;
 
-	// The timestamp when the channel-configuration was created.
-	string createdAt = 4;
+    // The timestamp when the channel-configuration was created.
+    string createdAt = 4;
 
-	// The timestamp when the channel-configuration was last updated.
-	string updatedAt = 5;
+    // The timestamp when the channel-configuration was last updated.
+    string updatedAt = 5;
 }
 
 message UpdateChannelConfigurationRequest {
-	// ID of the channel-configuration.
-	int64 id = 1;
+    // ID of the channel-configuration.
+    int64 id = 1;
 
-	// Name of the channel-configuration.
-	string name = 2;
+    // Name of the channel-configuration.
+    string name = 2;
 
-	// Channels active in this configuration. These channel indices must map
-	// to the channel numbers as specified in the LoRaWAN Regional Parameters.
-	repeated int32 channels = 3;
+    // Channels active in this configuration. These channel indices must map
+    // to the channel numbers as specified in the LoRaWAN Regional Parameters.
+    repeated int32 channels = 3;
 }
 
 message UpdateChannelConfigurationResponse {}
 
 message DeleteChannelConfigurationRequest {
-	// ID of the channel-configuration.
-	int64 id = 1;
+    // ID of the channel-configuration.
+    int64 id = 1;
 }
 
 message DeleteChannelConfigurationResponse {}
@@ -640,102 +536,102 @@ message DeleteChannelConfigurationResponse {}
 message ListChannelConfigurationsRequest {}
 
 message ListChannelConfigurationsResponse {
-	// Result-set.
-	repeated GetChannelConfigurationResponse result = 1;
+    // Result-set.
+    repeated GetChannelConfigurationResponse result = 1;
 }
 
 message CreateExtraChannelRequest {
-	// ID of the channel-configuration.
-	int64 channelConfigurationID = 1;
+    // ID of the channel-configuration.
+    int64 channelConfigurationID = 1;
 
-	// Modulation.
-	Modulation modulation = 2;
+    // Modulation.
+    Modulation modulation = 2;
 
-	// Frequency.
-	int32 frequency = 3;
+    // Frequency.
+    int32 frequency = 3;
 
-	// Bandwidth.
-	int32 bandWidth = 4;
+    // Bandwidth.
+    int32 bandWidth = 4;
 
-	// Bit rate (in case of FSK modulation).
-	int32 bitRate = 5;
+    // Bit rate (in case of FSK modulation).
+    int32 bitRate = 5;
 
-	// Spread-factors (in case of LoRa modulation).
-	repeated int32 spreadFactors = 6;
+    // Spread-factors (in case of LoRa modulation).
+    repeated int32 spreadFactors = 6;
 }
 
 message CreateExtraChannelResponse {
-	// ID of the extra channel.
-	int64 id = 1;
+    // ID of the extra channel.
+    int64 id = 1;
 }
 
 message UpdateExtraChannelRequest {
-	// ID of the extra channel.
-	int64 id = 1;
+    // ID of the extra channel.
+    int64 id = 1;
 
-	// ID of the channel-configuration.
-	int64 channelConfigurationID = 2;
+    // ID of the channel-configuration.
+    int64 channelConfigurationID = 2;
 
-	// Modulation.
-	Modulation modulation = 3;
+    // Modulation.
+    Modulation modulation = 3;
 
-	// Frequency.
-	int32 frequency = 4;
+    // Frequency.
+    int32 frequency = 4;
 
-	// Bandwidth.
-	int32 bandWidth = 5;
+    // Bandwidth.
+    int32 bandWidth = 5;
 
-	// Bit rate (in case of FSK modulation).
-	int32 bitRate = 6;
+    // Bit rate (in case of FSK modulation).
+    int32 bitRate = 6;
 
-	// Spread-factors (in case of LoRa modulation).
-	repeated int32 spreadFactors = 7;
+    // Spread-factors (in case of LoRa modulation).
+    repeated int32 spreadFactors = 7;
 }
 
 message UpdateExtraChannelResponse {}
 
 message DeleteExtraChannelRequest {
-	// ID of the extra channel.
-	int64 id = 1;
+    // ID of the extra channel.
+    int64 id = 1;
 }
 
 message DeleteExtraChannelResponse {}
 
 message GetExtraChannelResponse {
-	// ID of the extra channel.
-	int64 id = 1;
+    // ID of the extra channel.
+    int64 id = 1;
 
-	// ID of the channel-configuration.
-	int64 channelConfigurationID = 2;
+    // ID of the channel-configuration.
+    int64 channelConfigurationID = 2;
 
-	// Created-at timestamp.
-	string createdAt = 3;
+    // Created-at timestamp.
+    string createdAt = 3;
 
-	// Updated-at timestamp.
-	string updatedAt = 4;
+    // Updated-at timestamp.
+    string updatedAt = 4;
 
-	// Modulation.
-	Modulation modulation = 5;
+    // Modulation.
+    Modulation modulation = 5;
 
-	// Frequency.
-	int32 frequency = 6;
+    // Frequency.
+    int32 frequency = 6;
 
-	// Bandwidth.
-	int32 bandwidth = 7;
+    // Bandwidth.
+    int32 bandwidth = 7;
 
-	// Bit rate (in case of FSK modulation).
-	int32 bitRate = 8;
+    // Bit rate (in case of FSK modulation).
+    int32 bitRate = 8;
 
-	// Spread-factors (in case of LoRa modulation).
-	repeated int32 spreadFactors = 9;
+    // Spread-factors (in case of LoRa modulation).
+    repeated int32 spreadFactors = 9;
 }
 
 message GetExtraChannelsForChannelConfigurationIDRequest {
-	// ID of the channel-configuration.
-	int64 id = 1;
+    // ID of the channel-configuration.
+    int64 id = 1;
 }
 
 message GetExtraChannelsForChannelConfigurationIDResponse {
-	// Result-set.
-	repeated GetExtraChannelResponse result = 1;
+    // Result-set.
+    repeated GetExtraChannelResponse result = 1;
 }

@@ -21,18 +21,18 @@ import (
 )
 
 type classCTestCase struct {
-	Name                string                          // name of the test
-	PreFunc             func(ns *storage.DeviceSession) // function to call before running the test
-	DeviceSession       storage.DeviceSession           // node-session in the storage
-	PushDataDownRequest ns.PushDataDownRequest          // class-c push data-down request
-	MACCommandQueue     []maccommand.Block              // downlink mac-command queue
+	Name                    string                          // name of the test
+	PreFunc                 func(ns *storage.DeviceSession) // function to call before running the test
+	DeviceSession           storage.DeviceSession           // node-session in the storage
+	SendDownlinkDataRequest ns.SendDownlinkDataRequest      // class-c push data-down request
+	MACCommandQueue         []maccommand.Block              // downlink mac-command queue
 
-	ExpectedPushDataDownError error // expected error returned
-	ExpectedFCntUp            uint32
-	ExpectedFCntDown          uint32
-	ExpectedTXInfo            *gw.TXInfo
-	ExpectedPHYPayload        *lorawan.PHYPayload
-	ExpectedMACCommandQueue   []maccommand.Block
+	ExpectedSendDownlinkDataError error // expected error returned
+	ExpectedFCntUp                uint32
+	ExpectedFCntDown              uint32
+	ExpectedTXInfo                *gw.TXInfo
+	ExpectedPHYPayload            *lorawan.PHYPayload
+	ExpectedMACCommandQueue       []maccommand.Block
 }
 
 func TestClassCScenarios(t *testing.T) {
@@ -83,7 +83,7 @@ func TestClassCScenarios(t *testing.T) {
 				{
 					Name:          "unconfirmed data",
 					DeviceSession: sess,
-					PushDataDownRequest: ns.PushDataDownRequest{
+					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
 						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Data:      []byte{5, 4, 3, 2, 1},
 						Confirmed: false,
@@ -115,7 +115,7 @@ func TestClassCScenarios(t *testing.T) {
 				{
 					Name:          "confirmed data",
 					DeviceSession: sess,
-					PushDataDownRequest: ns.PushDataDownRequest{
+					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
 						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Data:      []byte{5, 4, 3, 2, 1},
 						Confirmed: true,
@@ -161,7 +161,7 @@ func TestClassCScenarios(t *testing.T) {
 							},
 						},
 					},
-					PushDataDownRequest: ns.PushDataDownRequest{
+					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
 						DevEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Data:   []byte{5, 4, 3, 2, 1},
 						FPort:  10,
@@ -196,7 +196,7 @@ func TestClassCScenarios(t *testing.T) {
 				{
 					Name:          "maximum payload exceeded",
 					DeviceSession: sess,
-					PushDataDownRequest: ns.PushDataDownRequest{
+					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
 						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Data:      make([]byte, 300),
 						Confirmed: false,
@@ -204,37 +204,37 @@ func TestClassCScenarios(t *testing.T) {
 						FCnt:      5,
 					},
 
-					ExpectedPushDataDownError: grpc.Errorf(codes.InvalidArgument, "maximum payload size exceeded"),
-					ExpectedFCntUp:            8,
-					ExpectedFCntDown:          5,
+					ExpectedSendDownlinkDataError: grpc.Errorf(codes.InvalidArgument, "maximum payload size exceeded"),
+					ExpectedFCntUp:                8,
+					ExpectedFCntDown:              5,
 				},
 				{
 					Name:          "invalid FPort",
 					DeviceSession: sess,
-					PushDataDownRequest: ns.PushDataDownRequest{
+					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
 						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Data:      []byte{1, 2, 3, 4, 5},
 						Confirmed: false,
 						FPort:     0,
 						FCnt:      5,
 					},
-					ExpectedPushDataDownError: grpc.Errorf(codes.InvalidArgument, "FPort must not be 0"),
-					ExpectedFCntUp:            8,
-					ExpectedFCntDown:          5,
+					ExpectedSendDownlinkDataError: grpc.Errorf(codes.InvalidArgument, "FPort must not be 0"),
+					ExpectedFCntUp:                8,
+					ExpectedFCntDown:              5,
 				},
 				{
 					Name:          "invalid DevEUI",
 					DeviceSession: sess,
-					PushDataDownRequest: ns.PushDataDownRequest{
+					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
 						DevEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1, 1},
 						Data:      []byte{1, 2, 3, 4, 5},
 						Confirmed: false,
 						FPort:     10,
 						FCnt:      5,
 					},
-					ExpectedPushDataDownError: grpc.Errorf(codes.NotFound, storage.ErrDoesNotExist.Error()),
-					ExpectedFCntUp:            8,
-					ExpectedFCntDown:          5,
+					ExpectedSendDownlinkDataError: grpc.Errorf(codes.NotFound, storage.ErrDoesNotExist.Error()),
+					ExpectedFCntUp:                8,
+					ExpectedFCntDown:              5,
 				},
 				{
 					Name:          "no last RXInfoSet available",
@@ -242,30 +242,30 @@ func TestClassCScenarios(t *testing.T) {
 					PreFunc: func(ns *storage.DeviceSession) {
 						ns.LastRXInfoSet = []gw.RXInfo{}
 					},
-					PushDataDownRequest: ns.PushDataDownRequest{
+					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
 						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Data:      []byte{1, 2, 3, 4, 5},
 						Confirmed: false,
 						FPort:     10,
 						FCnt:      5,
 					},
-					ExpectedPushDataDownError: grpc.Errorf(codes.FailedPrecondition, "no last RX-Info set available"),
-					ExpectedFCntUp:            8,
-					ExpectedFCntDown:          5,
+					ExpectedSendDownlinkDataError: grpc.Errorf(codes.FailedPrecondition, "no last RX-Info set available"),
+					ExpectedFCntUp:                8,
+					ExpectedFCntDown:              5,
 				},
 				{
 					Name:          "given FCnt does not match the FCntDown",
 					DeviceSession: sess,
-					PushDataDownRequest: ns.PushDataDownRequest{
+					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
 						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Data:      []byte{1, 2, 3, 4, 5},
 						Confirmed: false,
 						FPort:     10,
 						FCnt:      6,
 					},
-					ExpectedPushDataDownError: grpc.Errorf(codes.InvalidArgument, "invalid FCnt (expected: 5)"),
-					ExpectedFCntUp:            8,
-					ExpectedFCntDown:          5,
+					ExpectedSendDownlinkDataError: grpc.Errorf(codes.InvalidArgument, "invalid FCnt (expected: 5)"),
+					ExpectedFCntUp:                8,
+					ExpectedFCntDown:              5,
 				},
 			}
 
@@ -284,8 +284,8 @@ func TestClassCScenarios(t *testing.T) {
 					}
 
 					// push the data
-					_, err := api.PushDataDown(context.Background(), &t.PushDataDownRequest)
-					So(err, ShouldResemble, t.ExpectedPushDataDownError)
+					_, err := api.SendDownlinkData(context.Background(), &t.SendDownlinkDataRequest)
+					So(err, ShouldResemble, t.ExpectedSendDownlinkDataError)
 
 					Convey("Then the frame-counters are as expected", func() {
 						sess, err := storage.GetDeviceSession(common.RedisPool, t.DeviceSession.DevEUI)

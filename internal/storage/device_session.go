@@ -14,7 +14,6 @@ import (
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
 )
 
 const (
@@ -40,15 +39,15 @@ type UplinkHistory struct {
 
 // DeviceSession defines a device-session.
 type DeviceSession struct {
-	// profiles
-	DeviceProfile  backend.DeviceProfile
-	ServiceProfile backend.ServiceProfile
-	RoutingProfile backend.RoutingProfile
+	// profile ids
+	DeviceProfileID  string
+	ServiceProfileID string
+	RoutingProfileID string
 
 	// session data
 	DevAddr  lorawan.DevAddr
 	DevEUI   lorawan.EUI64
-	JoinEUI  lorawan.EUI64
+	JoinEUI  lorawan.EUI64 // TODO: remove?
 	NwkSKey  lorawan.AES128Key
 	FCntUp   uint32
 	FCntDown uint32
@@ -97,9 +96,10 @@ type DeviceSession struct {
 	// This value is controlled by the ADR engine.
 	NbTrans uint8
 
-	EnabledChannels []int           // channels that are activated on the node
-	UplinkHistory   []UplinkHistory // contains the last 20 transmissions
-	LastRXInfoSet   []gw.RXInfo     // sorted set (best at index 0)
+	EnabledChannels    []int           // channels that are activated on the node
+	ChannelFrequencies []int           // frequency of each channel
+	UplinkHistory      []UplinkHistory // contains the last 20 transmissions
+	LastRXInfoSet      []gw.RXInfo     // sorted set (best at index 0)
 }
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list
