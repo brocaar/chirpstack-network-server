@@ -4,6 +4,54 @@ package ns;
 
 // NetworkServer is the network-server service.
 service NetworkServer {
+    // CreateServiceProfile creates the given service-profile.
+    rpc CreateServiceProfile(CreateServiceProfileRequest) returns (CreateServiceProfileResponse) {}
+
+    // GetServiceProfile returns the service-profile matching the given id.
+    rpc GetServiceProfile(GetServiceProfileRequest) returns (GetServiceProfileResponse) {}
+
+    // UpdateServiceProfile updates the given service-profile.
+    rpc UpdateServiceProfile(UpdateServiceProfileRequest) returns (UpdateServiceProfileResponse) {}
+
+    // DeleteServiceProfile deletes the service-profile matching the given id.
+    rpc DeleteServiceProfile(DeleteServiceProfileRequest) returns (DeleteServiceProfileResponse) {}
+
+    // CreateRoutingProfile creates the given routing-profile.
+    rpc CreateRoutingProfile(CreateRoutingProfileRequest) returns (CreateRoutingProfileResponse) {}
+
+    // GetRoutingProfile returns the routing-profile matching the given id.
+    rpc GetRoutingProfile(GetRoutingProfileRequest) returns (GetRoutingProfileResponse) {}
+
+    // UpdateRoutingProfile updates the given routing-profile.
+    rpc UpdateRoutingProfile(UpdateRoutingProfileRequest) returns (UpdateRoutingProfileResponse) {}
+
+    // DeleteRoutingProfile deletes the routing-profile matching the given id.
+    rpc DeleteRoutingProfile(DeleteRoutingProfileRequest) returns (DeleteRoutingProfileResponse) {}
+
+    // CreateDeviceProfile creates the given device-profile.
+    rpc CreateDeviceProfile(CreateDeviceProfileRequest) returns (CreateDeviceProfileResponse) {}
+
+    // GetDeviceProfile returns the device-profile matching the given id.
+    rpc GetDeviceProfile(GetDeviceProfileRequest) returns (GetDeviceProfileResponse) {}
+
+    // UpdateDeviceProfile updates the given device-profile.
+    rpc UpdateDeviceProfile(UpdateDeviceProfileRequest) returns (UpdateDeviceProfileResponse) {}
+
+    // DeleteDeviceProfile deletes the device-profile matching the given id.
+    rpc DeleteDeviceProfile(DeleteDeviceProfileRequest) returns (DeleteDeviceProfileResponse) {}
+
+    // CreateDevice creates the given device.
+    rpc CreateDevice(CreateDeviceRequest) returns (CreateDeviceResponse) {}
+
+    // GetDevice returns the device matching the given DevEUI.
+    rpc GetDevice(GetDeviceRequest) returns (GetDeviceResponse) {}
+
+    // UpdateDevice updates the given device.
+    rpc UpdateDevice(UpdateDeviceRequest) returns (UpdateDeviceResponse) {}
+
+    // DeleteDevice deletes the device matching the given DevEUI.
+    rpc DeleteDevice(DeleteDeviceRequest) returns (DeleteDeviceResponse) {}
+
     // ActivateDevice activates a device (ABP).
     rpc ActivateDevice(ActivateDeviceRequest) returns (ActivateDeviceResponse) {}
 
@@ -95,6 +143,190 @@ enum Modulation {
     // FSK
     FSK = 1;
 }
+
+enum RatePolicy {
+    // Drop
+    DROP = 0;
+
+    // Mark
+    MARK = 1;
+}
+
+message ServiceProfile {
+    uint32 ulRate = 1;
+    uint32 ulBucketSize = 2;
+    RatePolicy ulRatePolicy = 3;
+    uint32 dlRate = 4;
+    uint32 dlBucketSize = 5;
+    RatePolicy dlRatePolicy = 6;
+    bool addGWMetadata = 7;
+    uint32 devStatusReqFreq = 8;
+    bool reportDevStatusBattery = 9;
+    bool reportDevStatusMargin = 10;
+    uint32 drMin = 11;
+    uint32 drMax = 12;
+    bytes channelMask = 13;
+    bool prAllowed = 14;
+    bool hrAllowed = 15;
+    bool raAllowed = 16;
+    bool nwkGeoLoc = 17;
+    uint32 targetPER = 18;
+    uint32 minGWDiversity = 19;
+}
+
+message CreateServiceProfileRequest {
+    ServiceProfile serviceProfile = 1;
+}
+
+message CreateServiceProfileResponse {
+    string serviceProfileID = 1;
+}
+
+message GetServiceProfileRequest {
+    string serviceProfileID = 1;
+}
+
+message GetServiceProfileResponse {
+    ServiceProfile serviceProfile = 1;
+    string createdAt = 2;
+    string updatedAt = 3;
+}
+
+message UpdateServiceProfileRequest {
+    string serviceProfileID = 1;
+    ServiceProfile serviceProfile = 2;
+}
+
+message UpdateServiceProfileResponse {}
+
+message DeleteServiceProfileRequest {
+    string serviceProfileID = 1;
+}
+
+message DeleteServiceProfileResponse {}
+
+message RoutingProfile {
+    string asID = 1;
+}
+
+message CreateRoutingProfileRequest {
+    RoutingProfile routingProfile = 1;
+}
+
+message CreateRoutingProfileResponse {
+    string routingProfileID = 1;
+}
+
+message GetRoutingProfileRequest {
+    string routingProfileID = 1;
+}
+
+message GetRoutingProfileResponse {
+    RoutingProfile routingProfile = 1;
+    string createdAt = 2;
+    string updatedAt = 3;
+}
+
+message UpdateRoutingProfileRequest {
+    string routingProfileID = 1;
+    RoutingProfile routingProfile = 2;
+}
+
+message UpdateRoutingProfileResponse {}
+
+message DeleteRoutingProfileRequest {
+    string routingProfileID = 1;
+}
+
+message DeleteRoutingProfileResponse {}
+
+message DeviceProfile {
+    bool supportsClassB = 1;
+    uint32 classBTimeout = 2;
+    uint32 pingSlotPeriod = 3;
+    uint32 pingSlotDR = 4;
+    uint32 pingSlotFreq = 5;
+    bool supportsClassC = 6;
+    uint32 classCTimeout = 7;
+    string macVersion = 8;
+    string regParamsRevision = 9;
+    uint32 rxDelay1 = 10;
+    uint32 rxDROffset1 = 11;
+    uint32 rxDataRate2 = 12;
+    uint32 rxFreq2 = 13;
+    repeated uint32 factoryPresetFreqs = 14;
+    uint32 maxEIRP = 15;
+    uint32 maxDutyCycle = 16;
+    bool supportsJoin = 17;
+    string rfRegion = 18;
+    bool supports32bitFCnt = 19;
+}
+
+message CreateDeviceProfileRequest {
+    DeviceProfile deviceProfile = 1;
+}
+
+message CreateDeviceProfileResponse {
+    string deviceProfileID = 1;
+}
+
+message GetDeviceProfileRequest {
+    string deviceProfileID = 1;
+}
+
+message GetDeviceProfileResponse {
+    DeviceProfile deviceProfile = 1;
+    string createdAt = 2;
+    string updatedAt = 3;
+}
+
+message UpdateDeviceProfileRequest {
+    string deviceProfileID = 1;
+    DeviceProfile deviceProfile = 2;
+}
+
+message UpdateDeviceProfileResponse {}
+
+message DeleteDeviceProfileRequest {
+    string deviceProfileID = 1;
+}
+
+message DeleteDeviceProfileResponse {}
+
+message Device {
+    bytes devEUI = 1;
+    string deviceProfileID = 2;
+    string serviceProfileID = 3;
+    string routingProfileID = 4;
+}
+
+message CreateDeviceRequest {
+    Device device = 1;
+}
+
+message CreateDeviceResponse {}
+
+message GetDeviceRequest {
+    bytes devEUI = 1;
+}
+
+message GetDeviceResponse {
+    Device device = 1;
+    string createdAt = 2;
+    string updatedAt = 3;
+}
+
+message UpdateDeviceRequest {
+    Device device = 1;
+}
+
+message UpdateDeviceResponse {}
+
+message DeleteDeviceRequest {
+    bytes devEUI = 1;
+}
+
+message DeleteDeviceResponse {}
 
 message ActivateDeviceRequest {
     // Device EUI (8 bytes).

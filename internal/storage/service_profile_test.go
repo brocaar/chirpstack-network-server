@@ -44,7 +44,7 @@ func TestServiceProfile(t *testing.T) {
 					HRAllowed:      true,
 					RAAllowed:      true,
 					NwkGeoLoc:      true,
-					TargetPER:      0.01,
+					TargetPER:      1,
 					MinGWDiversity: 8,
 				},
 			}
@@ -82,7 +82,7 @@ func TestServiceProfile(t *testing.T) {
 					HRAllowed:      false,
 					RAAllowed:      false,
 					NwkGeoLoc:      false,
-					TargetPER:      0.02,
+					TargetPER:      2,
 					MinGWDiversity: 9,
 				}
 				So(UpdateServiceProfile(db, &sp), ShouldBeNil)

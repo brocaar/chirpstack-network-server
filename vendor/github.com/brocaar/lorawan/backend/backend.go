@@ -2,10 +2,8 @@
 package backend
 
 import (
-	"database/sql/driver"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -125,54 +123,46 @@ func (hb *HEXBytes) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Frequency defines the frequency type. This type contains methods so that
-// it can be stored as a decimal(9,6)
-type Frequency float64
+// Frequency defines the frequency type (in Hz).
+type Frequency int
 
-// Scan implements the sql.Scanner interface.
-func (f *Frequency) Scan(src interface{}) error {
-	str, ok := src.([]byte)
-	if !ok {
-		return fmt.Errorf("expected []byte, got %T", src)
-	}
+// MarshalJSON implements the json.Marshaler interface.
+// This returns the frequency value in MHz (e.g. 868.1) to be compatible
+// with the LoRaWAN Backend Interfaces specification.
+func (f Frequency) MarshalJSON() ([]byte, error) {
+	return json.Marshal(float64(f) / 1000000)
+}
 
-	freq, err := strconv.ParseFloat(string(str), 64)
+// UnmarshalJSON implements the json.Unmarshaler interface.
+// This parses a frequency in MHz (float type) back to Hz (int).
+func (f *Frequency) UnmarshalJSON(str []byte) error {
+	mhz, err := strconv.ParseFloat(string(str), 64)
 	if err != nil {
 		return errors.Wrap(err, "parse float error")
 	}
-	*f = Frequency(freq)
-
+	*f = Frequency(mhz * 1000000)
 	return nil
 }
 
-// Value implements the driver.Valuer interface.
-func (f Frequency) Value() (driver.Value, error) {
-	return fmt.Sprintf("%.6f", f), nil
+// Percentage defines the percentage type as an int (1 = 1%, 100 = 100%).
+type Percentage int
+
+// MarshalJSON implements the json.Marshaler interface.
+// This returns the percentage as a float (0.1 for 10%) to be compatible
+// with the LoRaWAN Backend Interfaces specification.
+func (p Percentage) MarshalJSON() ([]byte, error) {
+	return json.Marshal(float64(p) / 100)
 }
 
-// Percentage defines the percentage type. This type contains methods so that
-// it can be stored as decimal(3,2)
-type Percentage float64
-
-// Scan implements the sql.Scanner interface.
-func (p *Percentage) Scan(src interface{}) error {
-	str, ok := src.([]byte)
-	if !ok {
-		return fmt.Errorf("expected []byte, got %T", src)
-	}
-
-	freq, err := strconv.ParseFloat(string(str), 64)
+// UnmarshalJSON implements the json.Unmarshaler interface.
+// This parses a percentage presented as 0.1 (float) back to 10 (int).
+func (p *Percentage) UnmarshalJSON(str []byte) error {
+	perc, err := strconv.ParseFloat(string(str), 64)
 	if err != nil {
 		return errors.Wrap(err, "parse float error")
 	}
-	*p = Percentage(freq)
-
+	*p = Percentage(perc * 100)
 	return nil
-}
-
-// Value implements the driver.Valuer interface.
-func (p Percentage) Value() (driver.Value, error) {
-	return fmt.Sprintf("%.2f", p), nil
 }
 
 // BasePayload defines the base payload that is sent with every request

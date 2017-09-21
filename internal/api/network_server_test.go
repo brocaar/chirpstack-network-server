@@ -54,6 +54,332 @@ func TestNetworkServerAPI(t *testing.T) {
 		devAddr := [4]byte{6, 2, 3, 4}
 		nwkSKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
+		Convey("When calling CreateServiceProfile", func() {
+			resp, err := api.CreateServiceProfile(ctx, &ns.CreateServiceProfileRequest{
+				ServiceProfile: &ns.ServiceProfile{
+					UlRate:                 1,
+					UlBucketSize:           2,
+					UlRatePolicy:           ns.RatePolicy_DROP,
+					DlRate:                 3,
+					DlBucketSize:           4,
+					DlRatePolicy:           ns.RatePolicy_MARK,
+					AddGWMetadata:          true,
+					DevStatusReqFreq:       4,
+					ReportDevStatusBattery: true,
+					ReportDevStatusMargin:  true,
+					DrMin:          5,
+					DrMax:          6,
+					ChannelMask:    []byte{1, 2, 3},
+					PrAllowed:      true,
+					HrAllowed:      true,
+					RaAllowed:      true,
+					NwkGeoLoc:      true,
+					TargetPER:      1,
+					MinGWDiversity: 7,
+				},
+			})
+			So(err, ShouldBeNil)
+			So(resp.ServiceProfileID, ShouldNotEqual, "")
+
+			Convey("Then GetServiceProfile returns the service-profile", func() {
+				getResp, err := api.GetServiceProfile(ctx, &ns.GetServiceProfileRequest{
+					ServiceProfileID: resp.ServiceProfileID,
+				})
+				So(err, ShouldBeNil)
+				So(getResp.ServiceProfile, ShouldResemble, &ns.ServiceProfile{
+					UlRate:                 1,
+					UlBucketSize:           2,
+					UlRatePolicy:           ns.RatePolicy_DROP,
+					DlRate:                 3,
+					DlBucketSize:           4,
+					DlRatePolicy:           ns.RatePolicy_MARK,
+					AddGWMetadata:          true,
+					DevStatusReqFreq:       4,
+					ReportDevStatusBattery: true,
+					ReportDevStatusMargin:  true,
+					DrMin:          5,
+					DrMax:          6,
+					ChannelMask:    []byte{1, 2, 3},
+					PrAllowed:      true,
+					HrAllowed:      true,
+					RaAllowed:      true,
+					NwkGeoLoc:      true,
+					TargetPER:      1,
+					MinGWDiversity: 7,
+				})
+			})
+
+			Convey("Then UpdateServiceProfile updates the service-profile", func() {
+				_, err := api.UpdateServiceProfile(ctx, &ns.UpdateServiceProfileRequest{
+					ServiceProfileID: resp.ServiceProfileID,
+					ServiceProfile: &ns.ServiceProfile{
+						UlRate:                 2,
+						UlBucketSize:           3,
+						UlRatePolicy:           ns.RatePolicy_MARK,
+						DlRate:                 4,
+						DlBucketSize:           5,
+						DlRatePolicy:           ns.RatePolicy_DROP,
+						AddGWMetadata:          false,
+						DevStatusReqFreq:       6,
+						ReportDevStatusBattery: false,
+						ReportDevStatusMargin:  false,
+						DrMin:          7,
+						DrMax:          8,
+						ChannelMask:    []byte{3, 2, 1},
+						PrAllowed:      false,
+						HrAllowed:      false,
+						RaAllowed:      false,
+						NwkGeoLoc:      false,
+						TargetPER:      2,
+						MinGWDiversity: 8,
+					},
+				})
+				So(err, ShouldBeNil)
+
+				getResp, err := api.GetServiceProfile(ctx, &ns.GetServiceProfileRequest{
+					ServiceProfileID: resp.ServiceProfileID,
+				})
+				So(err, ShouldBeNil)
+				So(getResp.ServiceProfile, ShouldResemble, &ns.ServiceProfile{
+					UlRate:                 2,
+					UlBucketSize:           3,
+					UlRatePolicy:           ns.RatePolicy_MARK,
+					DlRate:                 4,
+					DlBucketSize:           5,
+					DlRatePolicy:           ns.RatePolicy_DROP,
+					AddGWMetadata:          false,
+					DevStatusReqFreq:       6,
+					ReportDevStatusBattery: false,
+					ReportDevStatusMargin:  false,
+					DrMin:          7,
+					DrMax:          8,
+					ChannelMask:    []byte{3, 2, 1},
+					PrAllowed:      false,
+					HrAllowed:      false,
+					RaAllowed:      false,
+					NwkGeoLoc:      false,
+					TargetPER:      2,
+					MinGWDiversity: 8,
+				})
+			})
+
+			Convey("Then DeleteServiceProfile deletes the service-profile", func() {
+				_, err := api.DeleteServiceProfile(ctx, &ns.DeleteServiceProfileRequest{
+					ServiceProfileID: resp.ServiceProfileID,
+				})
+				So(err, ShouldBeNil)
+
+				_, err = api.DeleteServiceProfile(ctx, &ns.DeleteServiceProfileRequest{
+					ServiceProfileID: resp.ServiceProfileID,
+				})
+				So(err, ShouldNotBeNil)
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			})
+		})
+
+		Convey("When calling CreateRoutingProfile", func() {
+			resp, err := api.CreateRoutingProfile(ctx, &ns.CreateRoutingProfileRequest{
+				RoutingProfile: &ns.RoutingProfile{
+					AsID: "application-server:1234",
+				},
+			})
+			So(err, ShouldBeNil)
+			So(resp.RoutingProfileID, ShouldNotEqual, "")
+
+			Convey("Then GetRoutingProfile returns the routing-profile", func() {
+				getResp, err := api.GetRoutingProfile(ctx, &ns.GetRoutingProfileRequest{
+					RoutingProfileID: resp.RoutingProfileID,
+				})
+				So(err, ShouldBeNil)
+				So(getResp.RoutingProfile, ShouldResemble, &ns.RoutingProfile{
+					AsID: "application-server:1234",
+				})
+			})
+
+			Convey("Then UpdateRoutingProifle updates the routing-profile", func() {
+				_, err := api.UpdateRoutingProfile(ctx, &ns.UpdateRoutingProfileRequest{
+					RoutingProfileID: resp.RoutingProfileID,
+					RoutingProfile: &ns.RoutingProfile{
+						AsID: "new-application-server:1234",
+					},
+				})
+				So(err, ShouldBeNil)
+
+				getResp, err := api.GetRoutingProfile(ctx, &ns.GetRoutingProfileRequest{
+					RoutingProfileID: resp.RoutingProfileID,
+				})
+				So(err, ShouldBeNil)
+				So(getResp.RoutingProfile, ShouldResemble, &ns.RoutingProfile{
+					AsID: "new-application-server:1234",
+				})
+			})
+
+			Convey("Then DeleteRoutingProfile deletes the routing-profile", func() {
+				_, err := api.DeleteRoutingProfile(ctx, &ns.DeleteRoutingProfileRequest{
+					RoutingProfileID: resp.RoutingProfileID,
+				})
+				So(err, ShouldBeNil)
+
+				_, err = api.DeleteRoutingProfile(ctx, &ns.DeleteRoutingProfileRequest{
+					RoutingProfileID: resp.RoutingProfileID,
+				})
+				So(err, ShouldNotBeNil)
+				So(grpc.Code(err), ShouldEqual, codes.NotFound)
+			})
+		})
+
+		Convey("When calling CreateDeviceProfile", func() {
+			resp, err := api.CreateDeviceProfile(ctx, &ns.CreateDeviceProfileRequest{
+				DeviceProfile: &ns.DeviceProfile{
+					SupportsClassB:     true,
+					ClassBTimeout:      1,
+					PingSlotPeriod:     2,
+					PingSlotDR:         3,
+					PingSlotFreq:       868100000,
+					SupportsClassC:     true,
+					ClassCTimeout:      4,
+					MacVersion:         "1.0.2",
+					RegParamsRevision:  "B",
+					RxDelay1:           5,
+					RxDROffset1:        6,
+					RxDataRate2:        7,
+					RxFreq2:            868200000,
+					FactoryPresetFreqs: []uint32{868100000, 868300000, 868500000},
+					MaxEIRP:            14,
+					MaxDutyCycle:       1,
+					SupportsJoin:       true,
+					RfRegion:           "EU868",
+					Supports32BitFCnt:  true,
+				},
+			})
+			So(err, ShouldBeNil)
+			So(resp.DeviceProfileID, ShouldNotEqual, "")
+
+			Convey("Then GetDeviceProfile returns the device-profile", func() {
+				getResp, err := api.GetDeviceProfile(ctx, &ns.GetDeviceProfileRequest{
+					DeviceProfileID: resp.DeviceProfileID,
+				})
+				So(err, ShouldBeNil)
+				So(getResp.DeviceProfile, ShouldResemble, &ns.DeviceProfile{
+					SupportsClassB:     true,
+					ClassBTimeout:      1,
+					PingSlotPeriod:     2,
+					PingSlotDR:         3,
+					PingSlotFreq:       868100000,
+					SupportsClassC:     true,
+					ClassCTimeout:      4,
+					MacVersion:         "1.0.2",
+					RegParamsRevision:  "B",
+					RxDelay1:           5,
+					RxDROffset1:        6,
+					RxDataRate2:        7,
+					RxFreq2:            868200000,
+					FactoryPresetFreqs: []uint32{868100000, 868300000, 868500000},
+					MaxEIRP:            14,
+					MaxDutyCycle:       1,
+					SupportsJoin:       true,
+					RfRegion:           "EU868",
+					Supports32BitFCnt:  true,
+				})
+			})
+		})
+
+		Convey("Given a ServiceProfile, RoutingProfile and DeviceProfile", func() {
+			createdBy := uuid.NewV4().String()
+
+			sp := storage.ServiceProfile{
+				CreatedBy:      createdBy,
+				ServiceProfile: backend.ServiceProfile{},
+			}
+			So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
+
+			rp := storage.RoutingProfile{
+				CreatedBy:      createdBy,
+				RoutingProfile: backend.RoutingProfile{},
+			}
+			So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
+
+			dp := storage.DeviceProfile{
+				CreatedBy: createdBy,
+				DeviceProfile: backend.DeviceProfile{
+					FactoryPresetFreqs: []backend.Frequency{
+						868100000,
+						868300000,
+						868500000,
+					},
+				},
+			}
+			So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
+
+			Convey("When calling CreateDevice", func() {
+				_, err := api.CreateDevice(ctx, &ns.CreateDeviceRequest{
+					Device: &ns.Device{
+						DevEUI:           devEUI[:],
+						DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+						ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+						RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+					},
+				})
+				So(err, ShouldBeNil)
+
+				Convey("Then GetDevice returns the device", func() {
+					resp, err := api.GetDevice(ctx, &ns.GetDeviceRequest{
+						DevEUI: devEUI[:],
+					})
+					So(err, ShouldBeNil)
+					So(resp.Device, ShouldResemble, &ns.Device{
+						DevEUI:           devEUI[:],
+						DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+						ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+						RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+					})
+				})
+
+				Convey("Then UpdateDevice updates the device", func() {
+					rp2Resp, err := api.CreateRoutingProfile(ctx, &ns.CreateRoutingProfileRequest{
+						RoutingProfile: &ns.RoutingProfile{
+							AsID: "new-application-server:1234",
+						},
+					})
+					So(err, ShouldBeNil)
+
+					_, err = api.UpdateDevice(ctx, &ns.UpdateDeviceRequest{
+						Device: &ns.Device{
+							DevEUI:           devEUI[:],
+							DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+							ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+							RoutingProfileID: rp2Resp.RoutingProfileID,
+						},
+					})
+					So(err, ShouldBeNil)
+
+					resp, err := api.GetDevice(ctx, &ns.GetDeviceRequest{
+						DevEUI: devEUI[:],
+					})
+					So(err, ShouldBeNil)
+					So(resp.Device, ShouldResemble, &ns.Device{
+						DevEUI:           devEUI[:],
+						DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+						ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+						RoutingProfileID: rp2Resp.RoutingProfileID,
+					})
+				})
+
+				Convey("Then DeleteDevice deletes the device", func() {
+					_, err := api.DeleteDevice(ctx, &ns.DeleteDeviceRequest{
+						DevEUI: devEUI[:],
+					})
+					So(err, ShouldBeNil)
+
+					_, err = api.DeleteDevice(ctx, &ns.DeleteDeviceRequest{
+						DevEUI: devEUI[:],
+					})
+					So(err, ShouldNotBeNil)
+					So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				})
+			})
+		})
+
 		Convey("Given a ServiceProfile, RoutingProfile, DeviceProfile and Device", func() {
 			createdBy := uuid.NewV4().String()
 
@@ -73,9 +399,9 @@ func TestNetworkServerAPI(t *testing.T) {
 				CreatedBy: createdBy,
 				DeviceProfile: backend.DeviceProfile{
 					FactoryPresetFreqs: []backend.Frequency{
-						868.1,
-						868.3,
-						868.5,
+						868100000,
+						868300000,
+						868500000,
 					},
 				},
 			}

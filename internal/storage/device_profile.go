@@ -125,6 +125,8 @@ func GetDeviceProfile(db *sqlx.DB, id string) (DeviceProfile, error) {
 			device_profile_id = $1
 		`, id)
 
+	var factoryPresetFreqs []int64
+
 	err := row.Scan(
 		&dp.CreatedBy,
 		&dp.CreatedAt,
@@ -143,7 +145,7 @@ func GetDeviceProfile(db *sqlx.DB, id string) (DeviceProfile, error) {
 		&dp.DeviceProfile.RXDROffset1,
 		&dp.DeviceProfile.RXDataRate2,
 		&dp.DeviceProfile.RXFreq2,
-		pq.Array(&dp.DeviceProfile.FactoryPresetFreqs),
+		pq.Array(&factoryPresetFreqs),
 		&dp.DeviceProfile.MaxEIRP,
 		&dp.DeviceProfile.MaxDutyCycle,
 		&dp.DeviceProfile.SupportsJoin,
@@ -152,6 +154,10 @@ func GetDeviceProfile(db *sqlx.DB, id string) (DeviceProfile, error) {
 	)
 	if err != nil {
 		return dp, handlePSQLError(err, "select error")
+	}
+
+	for _, f := range factoryPresetFreqs {
+		dp.DeviceProfile.FactoryPresetFreqs = append(dp.DeviceProfile.FactoryPresetFreqs, backend.Frequency(f))
 	}
 
 	return dp, nil

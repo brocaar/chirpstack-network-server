@@ -115,7 +115,7 @@ func TestGatewayAPI(t *testing.T) {
 						ts, err := time.Parse(time.RFC3339Nano, resp.UpdatedAt)
 						So(err, ShouldBeNil)
 
-						So(time.Now().Sub(ts), ShouldBeBetween, time.Duration(0), time.Millisecond*10)
+						So(time.Now().Sub(ts), ShouldBeBetween, time.Duration(0), time.Millisecond*50)
 					})
 
 					Convey("Then the expected channels are returned", func() {

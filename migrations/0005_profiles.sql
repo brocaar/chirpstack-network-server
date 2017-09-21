@@ -9,7 +9,7 @@ create table device_profile (
     class_b_timeout integer not null,
     ping_slot_period integer not null,
     ping_slot_dr integer not null,
-    ping_slot_freq decimal(9,6) not null,
+    ping_slot_freq integer not null,
     supports_class_c boolean not null,
     class_c_timeout integer not null,
     mac_version varchar(10) not null,
@@ -17,10 +17,10 @@ create table device_profile (
     rx_delay_1 integer not null,
     rx_dr_offset_1 integer not null,
     rx_data_rate_2 integer not null,
-    rx_freq_2 decimal(9,6) not null,
-    factory_preset_freqs decimal(9,6)[],
+    rx_freq_2 integer not null,
+    factory_preset_freqs integer[],
     max_eirp integer not null,
-    max_duty_cycle decimal(3,2) not null,
+    max_duty_cycle integer not null,
     supports_join boolean not null,
     rf_region varchar(20) not null,
     supports_32bit_fcnt boolean not null
@@ -53,7 +53,7 @@ create table service_profile (
     hr_allowed boolean not null,
     ra_allowed boolean not null,
     nwk_geo_loc boolean not null,
-    target_per decimal(3,2) not null,
+    target_per integer not null,
     min_gw_diversity integer not null
 );
 

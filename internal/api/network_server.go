@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/satori/go.uuid"
+
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -18,6 +20,7 @@ import (
 	"github.com/brocaar/loraserver/internal/node"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
@@ -31,6 +34,425 @@ type NetworkServerAPI struct {
 // NewNetworkServerAPI returns a new NetworkServerAPI.
 func NewNetworkServerAPI() *NetworkServerAPI {
 	return &NetworkServerAPI{}
+}
+
+// CreateServiceProfile creates the given service-profile.
+func (n *NetworkServerAPI) CreateServiceProfile(ctx context.Context, req *ns.CreateServiceProfileRequest) (*ns.CreateServiceProfileResponse, error) {
+	sp := storage.ServiceProfile{
+		CreatedBy: uuid.NewV4().String(), // TODO: get from context
+		ServiceProfile: backend.ServiceProfile{
+			ULRate:                 int(req.ServiceProfile.UlRate),
+			ULBucketSize:           int(req.ServiceProfile.UlBucketSize),
+			DLRate:                 int(req.ServiceProfile.DlRate),
+			DLBucketSize:           int(req.ServiceProfile.DlBucketSize),
+			AddGWMetadata:          req.ServiceProfile.AddGWMetadata,
+			DevStatusReqFreq:       int(req.ServiceProfile.DevStatusReqFreq),
+			ReportDevStatusBattery: req.ServiceProfile.ReportDevStatusBattery,
+			ReportDevStatusMargin:  req.ServiceProfile.ReportDevStatusMargin,
+			DRMin:          int(req.ServiceProfile.DrMin),
+			DRMax:          int(req.ServiceProfile.DrMax),
+			ChannelMask:    backend.HEXBytes(req.ServiceProfile.ChannelMask),
+			PRAllowed:      req.ServiceProfile.PrAllowed,
+			HRAllowed:      req.ServiceProfile.HrAllowed,
+			RAAllowed:      req.ServiceProfile.RaAllowed,
+			NwkGeoLoc:      req.ServiceProfile.NwkGeoLoc,
+			TargetPER:      backend.Percentage(req.ServiceProfile.TargetPER),
+			MinGWDiversity: int(req.ServiceProfile.MinGWDiversity),
+		},
+	}
+
+	switch req.ServiceProfile.UlRatePolicy {
+	case ns.RatePolicy_MARK:
+		sp.ServiceProfile.ULRatePolicy = backend.Mark
+	case ns.RatePolicy_DROP:
+		sp.ServiceProfile.ULRatePolicy = backend.Drop
+	}
+
+	switch req.ServiceProfile.DlRatePolicy {
+	case ns.RatePolicy_MARK:
+		sp.ServiceProfile.DLRatePolicy = backend.Mark
+	case ns.RatePolicy_DROP:
+		sp.ServiceProfile.DLRatePolicy = backend.Drop
+	}
+
+	if err := storage.CreateServiceProfile(common.DB, &sp); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.CreateServiceProfileResponse{
+		ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+	}, nil
+}
+
+// GetServiceProfile returns the service-profile matching the given id.
+func (n *NetworkServerAPI) GetServiceProfile(ctx context.Context, req *ns.GetServiceProfileRequest) (*ns.GetServiceProfileResponse, error) {
+	sp, err := storage.GetServiceProfile(common.DB, req.ServiceProfileID)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	resp := ns.GetServiceProfileResponse{
+		CreatedAt: sp.CreatedAt.Format(time.RFC3339Nano),
+		UpdatedAt: sp.UpdatedAt.Format(time.RFC3339Nano),
+		ServiceProfile: &ns.ServiceProfile{
+			UlRate:                 uint32(sp.ServiceProfile.ULRate),
+			UlBucketSize:           uint32(sp.ServiceProfile.ULBucketSize),
+			DlRate:                 uint32(sp.ServiceProfile.DLRate),
+			DlBucketSize:           uint32(sp.ServiceProfile.DLBucketSize),
+			AddGWMetadata:          sp.ServiceProfile.AddGWMetadata,
+			DevStatusReqFreq:       uint32(sp.ServiceProfile.DevStatusReqFreq),
+			ReportDevStatusBattery: sp.ServiceProfile.ReportDevStatusBattery,
+			ReportDevStatusMargin:  sp.ServiceProfile.ReportDevStatusMargin,
+			DrMin:          uint32(sp.ServiceProfile.DRMin),
+			DrMax:          uint32(sp.ServiceProfile.DRMax),
+			ChannelMask:    []byte(sp.ServiceProfile.ChannelMask),
+			PrAllowed:      sp.ServiceProfile.PRAllowed,
+			HrAllowed:      sp.ServiceProfile.HRAllowed,
+			RaAllowed:      sp.ServiceProfile.RAAllowed,
+			NwkGeoLoc:      sp.ServiceProfile.NwkGeoLoc,
+			TargetPER:      uint32(sp.ServiceProfile.TargetPER),
+			MinGWDiversity: uint32(sp.ServiceProfile.MinGWDiversity),
+		},
+	}
+
+	switch sp.ServiceProfile.ULRatePolicy {
+	case backend.Mark:
+		resp.ServiceProfile.UlRatePolicy = ns.RatePolicy_MARK
+	case backend.Drop:
+		resp.ServiceProfile.UlRatePolicy = ns.RatePolicy_DROP
+	}
+
+	switch sp.ServiceProfile.DLRatePolicy {
+	case backend.Mark:
+		resp.ServiceProfile.DlRatePolicy = ns.RatePolicy_MARK
+	case backend.Drop:
+		resp.ServiceProfile.DlRatePolicy = ns.RatePolicy_DROP
+	}
+
+	return &resp, nil
+}
+
+// UpdateServiceProfile updates the given service-profile.
+func (n *NetworkServerAPI) UpdateServiceProfile(ctx context.Context, req *ns.UpdateServiceProfileRequest) (*ns.UpdateServiceProfileResponse, error) {
+	sp, err := storage.GetServiceProfile(common.DB, req.ServiceProfileID)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	sp.ServiceProfile = backend.ServiceProfile{
+		ServiceProfileID:       sp.ServiceProfile.ServiceProfileID,
+		ULRate:                 int(req.ServiceProfile.UlRate),
+		ULBucketSize:           int(req.ServiceProfile.UlBucketSize),
+		DLRate:                 int(req.ServiceProfile.DlRate),
+		DLBucketSize:           int(req.ServiceProfile.DlBucketSize),
+		AddGWMetadata:          req.ServiceProfile.AddGWMetadata,
+		DevStatusReqFreq:       int(req.ServiceProfile.DevStatusReqFreq),
+		ReportDevStatusBattery: req.ServiceProfile.ReportDevStatusBattery,
+		ReportDevStatusMargin:  req.ServiceProfile.ReportDevStatusMargin,
+		DRMin:          int(req.ServiceProfile.DrMin),
+		DRMax:          int(req.ServiceProfile.DrMax),
+		ChannelMask:    backend.HEXBytes(req.ServiceProfile.ChannelMask),
+		PRAllowed:      req.ServiceProfile.PrAllowed,
+		HRAllowed:      req.ServiceProfile.HrAllowed,
+		RAAllowed:      req.ServiceProfile.RaAllowed,
+		NwkGeoLoc:      req.ServiceProfile.NwkGeoLoc,
+		TargetPER:      backend.Percentage(req.ServiceProfile.TargetPER),
+		MinGWDiversity: int(req.ServiceProfile.MinGWDiversity),
+	}
+
+	switch req.ServiceProfile.UlRatePolicy {
+	case ns.RatePolicy_MARK:
+		sp.ServiceProfile.ULRatePolicy = backend.Mark
+	case ns.RatePolicy_DROP:
+		sp.ServiceProfile.ULRatePolicy = backend.Drop
+	}
+
+	switch req.ServiceProfile.DlRatePolicy {
+	case ns.RatePolicy_MARK:
+		sp.ServiceProfile.DLRatePolicy = backend.Mark
+	case ns.RatePolicy_DROP:
+		sp.ServiceProfile.DLRatePolicy = backend.Drop
+	}
+
+	if err := storage.UpdateServiceProfile(common.DB, &sp); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.UpdateServiceProfileResponse{}, nil
+}
+
+// DeleteServiceProfile deletes the service-profile matching the given id.
+func (n *NetworkServerAPI) DeleteServiceProfile(ctx context.Context, req *ns.DeleteServiceProfileRequest) (*ns.DeleteServiceProfileResponse, error) {
+	if err := storage.DeleteServiceProfile(common.DB, req.ServiceProfileID); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.DeleteServiceProfileResponse{}, nil
+}
+
+// CreateRoutingProfile creates the given routing-profile.
+func (n *NetworkServerAPI) CreateRoutingProfile(ctx context.Context, req *ns.CreateRoutingProfileRequest) (*ns.CreateRoutingProfileResponse, error) {
+	rp := storage.RoutingProfile{
+		CreatedBy: uuid.NewV4().String(), // TODO: get from context
+		RoutingProfile: backend.RoutingProfile{
+			ASID: req.RoutingProfile.AsID,
+		},
+	}
+	if err := storage.CreateRoutingProfile(common.DB, &rp); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.CreateRoutingProfileResponse{
+		RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+	}, nil
+}
+
+// GetRoutingProfile returns the routing-profile matching the given id.
+func (n *NetworkServerAPI) GetRoutingProfile(ctx context.Context, req *ns.GetRoutingProfileRequest) (*ns.GetRoutingProfileResponse, error) {
+	rp, err := storage.GetRoutingProfile(common.DB, req.RoutingProfileID)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.GetRoutingProfileResponse{
+		CreatedAt: rp.CreatedAt.Format(time.RFC3339Nano),
+		UpdatedAt: rp.UpdatedAt.Format(time.RFC3339Nano),
+		RoutingProfile: &ns.RoutingProfile{
+			AsID: rp.RoutingProfile.ASID,
+		},
+	}, nil
+}
+
+// UpdateRoutingProfile updates the given routing-profile.
+func (n *NetworkServerAPI) UpdateRoutingProfile(ctx context.Context, req *ns.UpdateRoutingProfileRequest) (*ns.UpdateRoutingProfileResponse, error) {
+	rp, err := storage.GetRoutingProfile(common.DB, req.RoutingProfileID)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	rp.RoutingProfile = backend.RoutingProfile{
+		RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+		ASID:             req.RoutingProfile.AsID,
+	}
+	if err := storage.UpdateRoutingProfile(common.DB, &rp); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.UpdateRoutingProfileResponse{}, nil
+}
+
+// DeleteRoutingProfile deletes the routing-profile matching the given id.
+func (n *NetworkServerAPI) DeleteRoutingProfile(ctx context.Context, req *ns.DeleteRoutingProfileRequest) (*ns.DeleteRoutingProfileResponse, error) {
+	if err := storage.DeleteRoutingProfile(common.DB, req.RoutingProfileID); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.DeleteRoutingProfileResponse{}, nil
+}
+
+// CreateDeviceProfile creates the given device-profile.
+func (n *NetworkServerAPI) CreateDeviceProfile(ctx context.Context, req *ns.CreateDeviceProfileRequest) (*ns.CreateDeviceProfileResponse, error) {
+	var factoryPresetFreqs []backend.Frequency
+	for _, f := range req.DeviceProfile.FactoryPresetFreqs {
+		factoryPresetFreqs = append(factoryPresetFreqs, backend.Frequency(f))
+	}
+
+	dp := storage.DeviceProfile{
+		CreatedBy: uuid.NewV4().String(), // TODO: get from context
+		DeviceProfile: backend.DeviceProfile{
+			SupportsClassB:     req.DeviceProfile.SupportsClassB,
+			ClassBTimeout:      int(req.DeviceProfile.ClassBTimeout),
+			PingSlotPeriod:     int(req.DeviceProfile.PingSlotPeriod),
+			PingSlotDR:         int(req.DeviceProfile.PingSlotDR),
+			PingSlotFreq:       backend.Frequency(req.DeviceProfile.PingSlotFreq),
+			SupportsClassC:     req.DeviceProfile.SupportsClassC,
+			ClassCTimeout:      int(req.DeviceProfile.ClassCTimeout),
+			MACVersion:         req.DeviceProfile.MacVersion,
+			RegParamsRevision:  req.DeviceProfile.RegParamsRevision,
+			RXDelay1:           int(req.DeviceProfile.RxDelay1),
+			RXDROffset1:        int(req.DeviceProfile.RxDROffset1),
+			RXDataRate2:        int(req.DeviceProfile.RxDataRate2),
+			RXFreq2:            backend.Frequency(req.DeviceProfile.RxFreq2),
+			FactoryPresetFreqs: factoryPresetFreqs,
+			MaxEIRP:            int(req.DeviceProfile.MaxEIRP),
+			MaxDutyCycle:       backend.Percentage(req.DeviceProfile.MaxDutyCycle),
+			SupportsJoin:       req.DeviceProfile.SupportsJoin,
+			RFRegion:           backend.RFRegion(req.DeviceProfile.RfRegion),
+			Supports32bitFCnt:  req.DeviceProfile.Supports32BitFCnt,
+		},
+	}
+	if err := storage.CreateDeviceProfile(common.DB, &dp); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.CreateDeviceProfileResponse{
+		DeviceProfileID: dp.DeviceProfile.DeviceProfileID,
+	}, nil
+}
+
+// GetDeviceProfile returns the device-profile matching the given id.
+func (n *NetworkServerAPI) GetDeviceProfile(ctx context.Context, req *ns.GetDeviceProfileRequest) (*ns.GetDeviceProfileResponse, error) {
+	dp, err := storage.GetDeviceProfile(common.DB, req.DeviceProfileID)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	var factoryPresetFreqs []uint32
+	for _, f := range dp.DeviceProfile.FactoryPresetFreqs {
+		factoryPresetFreqs = append(factoryPresetFreqs, uint32(f))
+	}
+
+	resp := ns.GetDeviceProfileResponse{
+		CreatedAt: dp.CreatedAt.Format(time.RFC3339Nano),
+		UpdatedAt: dp.UpdatedAt.Format(time.RFC3339Nano),
+		DeviceProfile: &ns.DeviceProfile{
+			SupportsClassB:     dp.DeviceProfile.SupportsClassB,
+			ClassBTimeout:      uint32(dp.DeviceProfile.ClassBTimeout),
+			PingSlotPeriod:     uint32(dp.DeviceProfile.PingSlotPeriod),
+			PingSlotDR:         uint32(dp.DeviceProfile.PingSlotDR),
+			PingSlotFreq:       uint32(dp.DeviceProfile.PingSlotFreq),
+			SupportsClassC:     dp.DeviceProfile.SupportsClassC,
+			ClassCTimeout:      uint32(dp.DeviceProfile.ClassCTimeout),
+			MacVersion:         dp.DeviceProfile.MACVersion,
+			RegParamsRevision:  dp.DeviceProfile.RegParamsRevision,
+			RxDelay1:           uint32(dp.DeviceProfile.RXDelay1),
+			RxDROffset1:        uint32(dp.DeviceProfile.RXDROffset1),
+			RxDataRate2:        uint32(dp.DeviceProfile.RXDataRate2),
+			RxFreq2:            uint32(dp.DeviceProfile.RXFreq2),
+			FactoryPresetFreqs: factoryPresetFreqs,
+			MaxEIRP:            uint32(dp.DeviceProfile.MaxEIRP),
+			MaxDutyCycle:       uint32(dp.DeviceProfile.MaxDutyCycle),
+			SupportsJoin:       dp.DeviceProfile.SupportsJoin,
+			RfRegion:           string(dp.DeviceProfile.RFRegion),
+			Supports32BitFCnt:  dp.DeviceProfile.Supports32bitFCnt,
+		},
+	}
+
+	return &resp, nil
+}
+
+// UpdateDeviceProfile updates the given device-profile.
+func (n *NetworkServerAPI) UpdateDeviceProfile(ctx context.Context, req *ns.UpdateDeviceProfileRequest) (*ns.UpdateDeviceProfileResponse, error) {
+	dp, err := storage.GetDeviceProfile(common.DB, req.DeviceProfileID)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	var factoryPresetFreqs []backend.Frequency
+	for _, f := range req.DeviceProfile.FactoryPresetFreqs {
+		factoryPresetFreqs = append(factoryPresetFreqs, backend.Frequency(f))
+	}
+
+	dp.DeviceProfile = backend.DeviceProfile{
+		DeviceProfileID:    dp.DeviceProfile.DeviceProfileID,
+		SupportsClassB:     req.DeviceProfile.SupportsClassB,
+		PingSlotPeriod:     int(req.DeviceProfile.PingSlotPeriod),
+		PingSlotDR:         int(req.DeviceProfile.PingSlotDR),
+		PingSlotFreq:       backend.Frequency(req.DeviceProfile.PingSlotFreq),
+		SupportsClassC:     req.DeviceProfile.SupportsClassC,
+		ClassCTimeout:      int(req.DeviceProfile.ClassCTimeout),
+		MACVersion:         req.DeviceProfile.MacVersion,
+		RegParamsRevision:  req.DeviceProfile.RegParamsRevision,
+		RXDelay1:           int(req.DeviceProfile.RxDelay1),
+		RXDROffset1:        int(req.DeviceProfile.RxDROffset1),
+		RXDataRate2:        int(req.DeviceProfile.RxDataRate2),
+		RXFreq2:            backend.Frequency(req.DeviceProfile.RxFreq2),
+		FactoryPresetFreqs: factoryPresetFreqs,
+		MaxEIRP:            int(req.DeviceProfile.MaxEIRP),
+		MaxDutyCycle:       backend.Percentage(req.DeviceProfile.MaxDutyCycle),
+		SupportsJoin:       req.DeviceProfile.SupportsJoin,
+		RFRegion:           backend.RFRegion(req.DeviceProfile.RfRegion),
+		Supports32bitFCnt:  req.DeviceProfile.Supports32BitFCnt,
+	}
+
+	if err := storage.UpdateDeviceProfile(common.DB, &dp); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.UpdateDeviceProfileResponse{}, nil
+}
+
+// DeleteDeviceProfile deletes the device-profile matching the given id.
+func (n *NetworkServerAPI) DeleteDeviceProfile(ctx context.Context, req *ns.DeleteDeviceProfileRequest) (*ns.DeleteDeviceProfileResponse, error) {
+	if err := storage.DeleteDeviceProfile(common.DB, req.DeviceProfileID); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.DeleteDeviceProfileResponse{}, nil
+}
+
+// CreateDevice creates the given device.
+func (n *NetworkServerAPI) CreateDevice(ctx context.Context, req *ns.CreateDeviceRequest) (*ns.CreateDeviceResponse, error) {
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], req.Device.DevEUI)
+
+	d := storage.Device{
+		DevEUI:           devEUI,
+		CreatedBy:        uuid.NewV4().String(), // TODO: get from context
+		DeviceProfileID:  req.Device.DeviceProfileID,
+		ServiceProfileID: req.Device.ServiceProfileID,
+		RoutingProfileID: req.Device.RoutingProfileID,
+	}
+	if err := storage.CreateDevice(common.DB, &d); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.CreateDeviceResponse{}, nil
+}
+
+// GetDevice returns the device matching the given DevEUI.
+func (n *NetworkServerAPI) GetDevice(ctx context.Context, req *ns.GetDeviceRequest) (*ns.GetDeviceResponse, error) {
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], req.DevEUI)
+
+	d, err := storage.GetDevice(common.DB, devEUI)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.GetDeviceResponse{
+		CreatedAt: d.CreatedAt.Format(time.RFC3339Nano),
+		UpdatedAt: d.UpdatedAt.Format(time.RFC3339Nano),
+		Device: &ns.Device{
+			DevEUI:           d.DevEUI[:],
+			DeviceProfileID:  d.DeviceProfileID,
+			ServiceProfileID: d.ServiceProfileID,
+			RoutingProfileID: d.RoutingProfileID,
+		},
+	}, nil
+}
+
+// UpdateDevice updates the given device.
+func (n *NetworkServerAPI) UpdateDevice(ctx context.Context, req *ns.UpdateDeviceRequest) (*ns.UpdateDeviceResponse, error) {
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], req.Device.DevEUI)
+
+	d, err := storage.GetDevice(common.DB, devEUI)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	d.DeviceProfileID = req.Device.DeviceProfileID
+	d.ServiceProfileID = req.Device.ServiceProfileID
+	d.RoutingProfileID = req.Device.RoutingProfileID
+
+	if err := storage.UpdateDevice(common.DB, &d); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.UpdateDeviceResponse{}, nil
+}
+
+// DeleteDevice deletes the device matching the given DevEUI.
+func (n *NetworkServerAPI) DeleteDevice(ctx context.Context, req *ns.DeleteDeviceRequest) (*ns.DeleteDeviceResponse, error) {
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], req.DevEUI)
+
+	if err := storage.DeleteDevice(common.DB, devEUI); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.DeleteDeviceResponse{}, nil
 }
 
 // ActivateDevice activates a device (ABP).
@@ -55,7 +477,7 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 
 	var channelFrequencies []int
 	for _, f := range dp.FactoryPresetFreqs {
-		channelFrequencies = append(channelFrequencies, int(f*1000000)) // convert MHz -> Hz
+		channelFrequencies = append(channelFrequencies, int(f))
 	}
 
 	ds := storage.DeviceSession{
