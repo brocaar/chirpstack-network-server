@@ -23,7 +23,9 @@ type DeviceProfile struct {
 // CreateDeviceProfile creates the given device-profile.
 func CreateDeviceProfile(db *sqlx.DB, dp *DeviceProfile) error {
 	now := time.Now()
-	dp.DeviceProfile.DeviceProfileID = uuid.NewV4().String()
+	if dp.DeviceProfile.DeviceProfileID == "" {
+		dp.DeviceProfile.DeviceProfileID = uuid.NewV4().String()
+	}
 	dp.CreatedAt = now
 	dp.UpdatedAt = now
 

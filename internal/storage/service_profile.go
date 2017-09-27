@@ -21,7 +21,9 @@ type ServiceProfile struct {
 // CreateServiceProfile creates the given service-profile.
 func CreateServiceProfile(db *sqlx.DB, sp *ServiceProfile) error {
 	now := time.Now()
-	sp.ServiceProfile.ServiceProfileID = uuid.NewV4().String()
+	if sp.ServiceProfile.ServiceProfileID == "" {
+		sp.ServiceProfile.ServiceProfileID = uuid.NewV4().String()
+	}
 	sp.CreatedAt = now
 	sp.UpdatedAt = now
 

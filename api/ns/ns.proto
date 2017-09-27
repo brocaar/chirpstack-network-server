@@ -153,25 +153,26 @@ enum RatePolicy {
 }
 
 message ServiceProfile {
-    uint32 ulRate = 1;
-    uint32 ulBucketSize = 2;
-    RatePolicy ulRatePolicy = 3;
-    uint32 dlRate = 4;
-    uint32 dlBucketSize = 5;
-    RatePolicy dlRatePolicy = 6;
-    bool addGWMetadata = 7;
-    uint32 devStatusReqFreq = 8;
-    bool reportDevStatusBattery = 9;
-    bool reportDevStatusMargin = 10;
-    uint32 drMin = 11;
-    uint32 drMax = 12;
-    bytes channelMask = 13;
-    bool prAllowed = 14;
-    bool hrAllowed = 15;
-    bool raAllowed = 16;
-    bool nwkGeoLoc = 17;
-    uint32 targetPER = 18;
-    uint32 minGWDiversity = 19;
+	string serviceProfileID = 1;
+    uint32 ulRate = 2;
+    uint32 ulBucketSize = 3;
+    RatePolicy ulRatePolicy = 4;
+    uint32 dlRate = 5;
+    uint32 dlBucketSize = 6;
+    RatePolicy dlRatePolicy = 7;
+    bool addGWMetadata = 8;
+    uint32 devStatusReqFreq = 9;
+    bool reportDevStatusBattery = 10;
+    bool reportDevStatusMargin = 11;
+    uint32 drMin = 12;
+    uint32 drMax = 13;
+    bytes channelMask = 14;
+    bool prAllowed = 15;
+    bool hrAllowed = 16;
+    bool raAllowed = 17;
+    bool nwkGeoLoc = 18;
+    uint32 targetPER = 19;
+    uint32 minGWDiversity = 20;
 }
 
 message CreateServiceProfileRequest {
@@ -193,8 +194,7 @@ message GetServiceProfileResponse {
 }
 
 message UpdateServiceProfileRequest {
-    string serviceProfileID = 1;
-    ServiceProfile serviceProfile = 2;
+    ServiceProfile serviceProfile = 1;
 }
 
 message UpdateServiceProfileResponse {}
@@ -206,7 +206,8 @@ message DeleteServiceProfileRequest {
 message DeleteServiceProfileResponse {}
 
 message RoutingProfile {
-    string asID = 1;
+	string routingProfileID = 1;
+    string asID = 2;
 }
 
 message CreateRoutingProfileRequest {
@@ -228,8 +229,7 @@ message GetRoutingProfileResponse {
 }
 
 message UpdateRoutingProfileRequest {
-    string routingProfileID = 1;
-    RoutingProfile routingProfile = 2;
+    RoutingProfile routingProfile = 1;
 }
 
 message UpdateRoutingProfileResponse {}
@@ -241,25 +241,26 @@ message DeleteRoutingProfileRequest {
 message DeleteRoutingProfileResponse {}
 
 message DeviceProfile {
-    bool supportsClassB = 1;
-    uint32 classBTimeout = 2;
-    uint32 pingSlotPeriod = 3;
-    uint32 pingSlotDR = 4;
-    uint32 pingSlotFreq = 5;
-    bool supportsClassC = 6;
-    uint32 classCTimeout = 7;
-    string macVersion = 8;
-    string regParamsRevision = 9;
-    uint32 rxDelay1 = 10;
-    uint32 rxDROffset1 = 11;
-    uint32 rxDataRate2 = 12;
-    uint32 rxFreq2 = 13;
-    repeated uint32 factoryPresetFreqs = 14;
-    uint32 maxEIRP = 15;
-    uint32 maxDutyCycle = 16;
-    bool supportsJoin = 17;
-    string rfRegion = 18;
-    bool supports32bitFCnt = 19;
+	string deviceProfileID = 1;
+    bool supportsClassB = 2;
+    uint32 classBTimeout = 3;
+    uint32 pingSlotPeriod = 4;
+    uint32 pingSlotDR = 5;
+    uint32 pingSlotFreq = 6;
+    bool supportsClassC = 7;
+    uint32 classCTimeout = 8;
+    string macVersion = 9;
+    string regParamsRevision = 10;
+    uint32 rxDelay1 = 11;
+    uint32 rxDROffset1 = 12;
+    uint32 rxDataRate2 = 13;
+    uint32 rxFreq2 = 14;
+    repeated uint32 factoryPresetFreqs = 15;
+    uint32 maxEIRP = 16;
+    uint32 maxDutyCycle = 17;
+    bool supportsJoin = 18;
+    string rfRegion = 19;
+    bool supports32bitFCnt = 20;
 }
 
 message CreateDeviceProfileRequest {
@@ -281,8 +282,7 @@ message GetDeviceProfileResponse {
 }
 
 message UpdateDeviceProfileRequest {
-    string deviceProfileID = 1;
-    DeviceProfile deviceProfile = 2;
+    DeviceProfile deviceProfile = 1;
 }
 
 message UpdateDeviceProfileResponse {}

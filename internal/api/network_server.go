@@ -41,6 +41,7 @@ func (n *NetworkServerAPI) CreateServiceProfile(ctx context.Context, req *ns.Cre
 	sp := storage.ServiceProfile{
 		CreatedBy: uuid.NewV4().String(), // TODO: get from context
 		ServiceProfile: backend.ServiceProfile{
+			ServiceProfileID:       req.ServiceProfile.ServiceProfileID,
 			ULRate:                 int(req.ServiceProfile.UlRate),
 			ULBucketSize:           int(req.ServiceProfile.UlBucketSize),
 			DLRate:                 int(req.ServiceProfile.DlRate),
@@ -134,7 +135,7 @@ func (n *NetworkServerAPI) GetServiceProfile(ctx context.Context, req *ns.GetSer
 
 // UpdateServiceProfile updates the given service-profile.
 func (n *NetworkServerAPI) UpdateServiceProfile(ctx context.Context, req *ns.UpdateServiceProfileRequest) (*ns.UpdateServiceProfileResponse, error) {
-	sp, err := storage.GetServiceProfile(common.DB, req.ServiceProfileID)
+	sp, err := storage.GetServiceProfile(common.DB, req.ServiceProfile.ServiceProfileID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -195,7 +196,8 @@ func (n *NetworkServerAPI) CreateRoutingProfile(ctx context.Context, req *ns.Cre
 	rp := storage.RoutingProfile{
 		CreatedBy: uuid.NewV4().String(), // TODO: get from context
 		RoutingProfile: backend.RoutingProfile{
-			ASID: req.RoutingProfile.AsID,
+			RoutingProfileID: req.RoutingProfile.RoutingProfileID,
+			ASID:             req.RoutingProfile.AsID,
 		},
 	}
 	if err := storage.CreateRoutingProfile(common.DB, &rp); err != nil {
@@ -225,7 +227,7 @@ func (n *NetworkServerAPI) GetRoutingProfile(ctx context.Context, req *ns.GetRou
 
 // UpdateRoutingProfile updates the given routing-profile.
 func (n *NetworkServerAPI) UpdateRoutingProfile(ctx context.Context, req *ns.UpdateRoutingProfileRequest) (*ns.UpdateRoutingProfileResponse, error) {
-	rp, err := storage.GetRoutingProfile(common.DB, req.RoutingProfileID)
+	rp, err := storage.GetRoutingProfile(common.DB, req.RoutingProfile.RoutingProfileID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -260,6 +262,7 @@ func (n *NetworkServerAPI) CreateDeviceProfile(ctx context.Context, req *ns.Crea
 	dp := storage.DeviceProfile{
 		CreatedBy: uuid.NewV4().String(), // TODO: get from context
 		DeviceProfile: backend.DeviceProfile{
+			DeviceProfileID:    req.DeviceProfile.DeviceProfileID,
 			SupportsClassB:     req.DeviceProfile.SupportsClassB,
 			ClassBTimeout:      int(req.DeviceProfile.ClassBTimeout),
 			PingSlotPeriod:     int(req.DeviceProfile.PingSlotPeriod),
@@ -333,7 +336,7 @@ func (n *NetworkServerAPI) GetDeviceProfile(ctx context.Context, req *ns.GetDevi
 
 // UpdateDeviceProfile updates the given device-profile.
 func (n *NetworkServerAPI) UpdateDeviceProfile(ctx context.Context, req *ns.UpdateDeviceProfileRequest) (*ns.UpdateDeviceProfileResponse, error) {
-	dp, err := storage.GetDeviceProfile(common.DB, req.DeviceProfileID)
+	dp, err := storage.GetDeviceProfile(common.DB, req.DeviceProfile.DeviceProfileID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}

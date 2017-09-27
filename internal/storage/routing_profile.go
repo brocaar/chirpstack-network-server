@@ -21,7 +21,9 @@ type RoutingProfile struct {
 // CreateRoutingProfile creates the given routing-profile.
 func CreateRoutingProfile(db *sqlx.DB, rp *RoutingProfile) error {
 	now := time.Now()
-	rp.RoutingProfile.RoutingProfileID = uuid.NewV4().String()
+	if rp.RoutingProfile.RoutingProfileID == "" {
+		rp.RoutingProfile.RoutingProfileID = uuid.NewV4().String()
+	}
 	rp.CreatedAt = now
 	rp.UpdatedAt = now
 

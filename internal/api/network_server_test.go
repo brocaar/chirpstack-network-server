@@ -111,8 +111,8 @@ func TestNetworkServerAPI(t *testing.T) {
 
 			Convey("Then UpdateServiceProfile updates the service-profile", func() {
 				_, err := api.UpdateServiceProfile(ctx, &ns.UpdateServiceProfileRequest{
-					ServiceProfileID: resp.ServiceProfileID,
 					ServiceProfile: &ns.ServiceProfile{
+						ServiceProfileID:       resp.ServiceProfileID,
 						UlRate:                 2,
 						UlBucketSize:           3,
 						UlRatePolicy:           ns.RatePolicy_MARK,
@@ -198,9 +198,9 @@ func TestNetworkServerAPI(t *testing.T) {
 
 			Convey("Then UpdateRoutingProifle updates the routing-profile", func() {
 				_, err := api.UpdateRoutingProfile(ctx, &ns.UpdateRoutingProfileRequest{
-					RoutingProfileID: resp.RoutingProfileID,
 					RoutingProfile: &ns.RoutingProfile{
-						AsID: "new-application-server:1234",
+						RoutingProfileID: resp.RoutingProfileID,
+						AsID:             "new-application-server:1234",
 					},
 				})
 				So(err, ShouldBeNil)
