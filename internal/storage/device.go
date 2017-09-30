@@ -20,6 +20,17 @@ type Device struct {
 	RoutingProfileID string        `db:"routing_profile_id"`
 }
 
+// DeviceActivation defines the device-activation for a LoRaWAN device.
+type DeviceActivation struct {
+	ID        int64             `db:"id"`
+	CreatedAt time.Time         `db:"created_at"`
+	DevEUI    lorawan.EUI64     `db:"dev_eui"`
+	JoinEUI   lorawan.EUI64     `db:"join_eui"`
+	DevAddr   lorawan.DevAddr   `db:"dev_addr"`
+	NwkSKey   lorawan.AES128Key `db:"nwk_s_key"`
+	DevNonce  lorawan.DevNonce  `db:"dev_nonce"`
+}
+
 // CreateDevice creates the given device.
 func CreateDevice(db *sqlx.DB, d *Device) error {
 	now := time.Now()
@@ -115,5 +126,88 @@ func DeleteDevice(db *sqlx.DB, devEUI lorawan.EUI64) error {
 	}
 
 	log.WithField("dev_eui", devEUI).Info("node deleted")
+	return nil
+}
+
+// CreateDeviceActivation creates the given device-activation.
+func CreateDeviceActivation(db sqlx.Queryer, da *DeviceActivation) error {
+	da.CreatedAt = time.Now()
+
+	err := sqlx.Get(db, &da.ID, `
+		insert into device_activation (
+			created_at,
+			dev_eui,
+			join_eui,
+			dev_addr,
+			nwk_s_key,
+			dev_nonce
+		) values ($1, $2, $3, $4, $5, $6)
+		returning id`,
+		da.CreatedAt,
+		da.DevEUI[:],
+		da.JoinEUI[:],
+		da.DevAddr[:],
+		da.NwkSKey[:],
+		da.DevNonce[:],
+	)
+	if err != nil {
+		return handlePSQLError(err, "insert error")
+	}
+
+	log.WithFields(log.Fields{
+		"id":      da.ID,
+		"dev_eui": da.DevEUI,
+	}).Info("device-activation created")
+
+	return nil
+}
+
+// GetLastDeviceActivationForDevEUI returns the most recent activation
+// for the given DevEUI.
+func GetLastDeviceActivationForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (DeviceActivation, error) {
+	var da DeviceActivation
+	err := sqlx.Get(db, &da, `
+		select
+			*
+		from device_activation
+		where
+			dev_eui = $1
+		order by
+			created_at desc
+		limit 1`,
+		devEUI[:],
+	)
+	if err != nil {
+		return da, handlePSQLError(err, "select error")
+	}
+
+	return da, nil
+}
+
+// ValidateDevNonce validates the given dev-nonce for the given
+// DevEUI / JoinEUI combination.
+func ValidateDevNonce(db sqlx.Queryer, joinEUI, devEUI lorawan.EUI64, nonce lorawan.DevNonce) error {
+	var count int
+	err := sqlx.Get(db, &count, `
+		select
+			count(*)
+		from
+			device_activation
+		where
+			dev_eui = $1
+			and join_eui = $2
+			and dev_nonce = $3`,
+		devEUI,
+		joinEUI,
+		nonce,
+	)
+	if err != nil {
+		return handlePSQLError(err, "select error")
+	}
+
+	if count != 0 {
+		return ErrAlreadyExists
+	}
+
 	return nil
 }

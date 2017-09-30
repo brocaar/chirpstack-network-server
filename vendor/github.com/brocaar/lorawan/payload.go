@@ -1,6 +1,7 @@
 package lorawan
 
 import (
+	"database/sql/driver"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
@@ -62,10 +63,15 @@ func (e *EUI64) Scan(src interface{}) error {
 		return errors.New("lorawan: []byte type expected")
 	}
 	if len(b) != len(e) {
-		return fmt.Errorf("lorawan []byte must have length %d", len(e))
+		return fmt.Errorf("lorawan: []byte must have length %d", len(e))
 	}
 	copy(e[:], b)
 	return nil
+}
+
+// Value implements driver.Valuer.
+func (e EUI64) Value() (driver.Value, error) {
+	return e[:], nil
 }
 
 // DevNonce represents a 2 byte dev-nonce.
@@ -81,6 +87,38 @@ func (n DevNonce) MarshalText() ([]byte, error) {
 	return []byte(n.String()), nil
 }
 
+// UnmarshalText implements encoding.TestUnmarshaler.
+func (n *DevNonce) UnmarshalText(text []byte) error {
+	b, err := hex.DecodeString(string(text))
+	if err != nil {
+		return err
+	}
+
+	if len(n) != len(b) {
+		return fmt.Errorf("lorawan: exactly %d bytes are expected", len(n))
+	}
+	copy(n[:], b)
+	return nil
+}
+
+// Scan implements sql.Scanner.
+func (n *DevNonce) Scan(src interface{}) error {
+	b, ok := src.([]byte)
+	if !ok {
+		return errors.New("lorawan: []byte type expected")
+	}
+	if len(b) != len(n) {
+		return fmt.Errorf("lorawan: []byte must have length %d", len(n))
+	}
+	copy(n[:], b)
+	return nil
+}
+
+// Value implements driver.Valuer.
+func (n DevNonce) Value() (driver.Value, error) {
+	return n[:], nil
+}
+
 // AppNonce represents a 3 byte app-nonce.
 type AppNonce [3]byte
 
@@ -92,6 +130,38 @@ func (n AppNonce) String() string {
 // MarshalText implements encoding.TextMarshaler.
 func (n AppNonce) MarshalText() ([]byte, error) {
 	return []byte(n.String()), nil
+}
+
+// UnmarshalText implements encoding.TestUnmarshaler.
+func (n *AppNonce) UnmarshalText(text []byte) error {
+	b, err := hex.DecodeString(string(text))
+	if err != nil {
+		return err
+	}
+
+	if len(n) != len(b) {
+		return fmt.Errorf("lorawan: exactly %d bytes are expected", len(n))
+	}
+	copy(n[:], b)
+	return nil
+}
+
+// Scan implements sql.Scanner.
+func (n *AppNonce) Scan(src interface{}) error {
+	b, ok := src.([]byte)
+	if !ok {
+		return errors.New("lorawan: []byte type expected")
+	}
+	if len(b) != len(n) {
+		return fmt.Errorf("lorawan: []byte must have length %d", len(n))
+	}
+	copy(n[:], b)
+	return nil
+}
+
+// Value implements driver.Valuer.
+func (n AppNonce) Value() (driver.Value, error) {
+	return n[:], nil
 }
 
 // Payload is the interface that every payload needs to implement.

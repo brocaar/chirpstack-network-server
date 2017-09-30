@@ -91,7 +91,28 @@ create index idx_device_device_profile_id on device(device_profile_id);
 create index idx_device_service_profile_id on device(service_profile_id);
 create index idx_device_routing_profile_id on device(routing_profile_id);
 
+create table device_activation (
+    id bigserial primary key,
+    created_at timestamp with time zone not null,
+    dev_eui bytea not null references device on delete cascade,
+    join_eui bytea not null,
+    dev_addr bytea not null,
+    nwk_s_key bytea not null,
+    dev_nonce bytea not null
+);
+
+create index idx_device_activation_created_at on device_activation(created_at);
+create index idx_device_activation_join_eui on device_activation(join_eui);
+create index idx_device_activation_dev_eui on device_activation(dev_eui);
+create index idx_device_activation_dev_nonce on device_activation(dev_nonce);
+
 -- +migrate Down
+drop index idx_device_activation_dev_nonce;
+drop index idx_device_activation_join_eui;
+drop index idx_device_activation_dev_eui;
+drop index idx_device_activation_created_at;
+drop table device_activation;
+
 drop index idx_device_routing_profile_id;
 drop index idx_device_service_profile_id;
 drop index idx_device_device_profile_id;

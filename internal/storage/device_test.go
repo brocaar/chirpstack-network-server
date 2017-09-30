@@ -97,6 +97,44 @@ func TestDevice(t *testing.T) {
 					So(DeleteDevice(db, d.DevEUI), ShouldBeNil)
 					So(DeleteDevice(db, d.DevEUI), ShouldEqual, ErrDoesNotExist)
 				})
+
+				Convey("Then CreateDeviceActivation creates the device-activation", func() {
+					joinEUI := lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}
+
+					da := DeviceActivation{
+						DevEUI:   d.DevEUI,
+						JoinEUI:  joinEUI,
+						DevAddr:  lorawan.DevAddr{1, 2, 3, 4},
+						NwkSKey:  lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+						DevNonce: lorawan.DevNonce{1, 2},
+					}
+					So(CreateDeviceActivation(common.DB, &da), ShouldBeNil)
+
+					Convey("Then GetLastDeviceActivationForDevEUI returns the most recent device-activation", func() {
+						da2 := DeviceActivation{
+							DevEUI:   d.DevEUI,
+							JoinEUI:  joinEUI,
+							DevAddr:  lorawan.DevAddr{4, 3, 2, 1},
+							NwkSKey:  lorawan.AES128Key{8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1},
+							DevNonce: lorawan.DevNonce{2, 1},
+						}
+						So(CreateDeviceActivation(common.DB, &da2), ShouldBeNil)
+						da2.CreatedAt = da2.CreatedAt.UTC().Truncate(time.Millisecond)
+
+						daGet, err := GetLastDeviceActivationForDevEUI(common.DB, d.DevEUI)
+						So(err, ShouldBeNil)
+						daGet.CreatedAt = daGet.CreatedAt.UTC().Truncate(time.Millisecond)
+						So(daGet, ShouldResemble, da2)
+					})
+
+					Convey("Then ValidateDevNonce for an used dev-nonce returns an error", func() {
+						So(ValidateDevNonce(common.DB, joinEUI, d.DevEUI, da.DevNonce), ShouldEqual, ErrAlreadyExists)
+					})
+
+					Convey("Then ValidateDevNonce for an unused dev-nonce returns no error", func() {
+						So(ValidateDevNonce(common.DB, joinEUI, d.DevEUI, lorawan.DevNonce{2, 1}), ShouldBeNil)
+					})
+				})
 			})
 		})
 	})

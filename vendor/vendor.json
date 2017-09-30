@@ -3,10 +3,10 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "u52BzfoKG0x7CgBgg/PB1AEVSag=",
+			"checksumSHA1": "qyLhufCYgpjXZUov1+7EvaF+uCY=",
 			"path": "github.com/brocaar/lorawan",
-			"revision": "493811893ace2e3e4db4bb8e402ce28b72a04198",
-			"revisionTime": "2017-09-12T08:35:35Z"
+			"revision": "331bb86260c74aa8adcd7bf42ec9036dfefcaf95",
+			"revisionTime": "2017-09-29T15:47:39Z"
 		},
 		{
 			"checksumSHA1": "XfgENnc24v4hkH4fveDJSI07zOQ=",

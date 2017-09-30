@@ -5,6 +5,7 @@ package lorawan
 
 import (
 	"crypto/aes"
+	"database/sql/driver"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
@@ -85,6 +86,11 @@ func (k *AES128Key) Scan(src interface{}) error {
 	}
 	copy(k[:], b)
 	return nil
+}
+
+// Value implements driver.Valuer.
+func (k AES128Key) Value() (driver.Value, error) {
+	return k[:], nil
 }
 
 // MIC represents the message integrity code.
