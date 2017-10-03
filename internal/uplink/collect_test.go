@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
@@ -15,37 +16,55 @@ import (
 
 func TestCollectAndCallOnce(t *testing.T) {
 	conf := test.GetConfig()
+	p := common.NewRedisPool(conf.RedisURL)
+	common.RedisPool = p
+	common.DeduplicationDelay = time.Millisecond * 500
 
 	Convey("Given a Redis connection pool", t, func() {
-		p := common.NewRedisPool(conf.RedisURL)
 		test.MustFlushRedis(p)
 
 		Convey("Given a single LoRaWAN packet", func() {
-			phy := lorawan.PHYPayload{
-				MHDR: lorawan.MHDR{
-					MType: lorawan.UnconfirmedDataUp,
-					Major: lorawan.LoRaWANR1,
-				},
-				MIC:        [4]byte{1, 2, 3, 4},
-				MACPayload: &lorawan.MACPayload{},
-			}
-
 			testTable := []struct {
-				Gateways []lorawan.EUI64
-				Count    int
+				PHYPayload lorawan.PHYPayload
+				Gateways   []lorawan.EUI64
+				Count      int
 			}{
 				{
+					lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MIC:        [4]byte{1, 2, 3, 4},
+						MACPayload: &lorawan.MACPayload{},
+					},
 					[]lorawan.EUI64{
 						{1, 1, 1, 1, 1, 1, 1, 1},
 					},
 					1,
 				}, {
+					lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MIC:        [4]byte{2, 2, 3, 4},
+						MACPayload: &lorawan.MACPayload{},
+					},
 					[]lorawan.EUI64{
 						{2, 1, 1, 1, 1, 1, 1, 1},
 						{2, 2, 2, 2, 2, 2, 2, 2},
 					},
 					2,
 				}, {
+					lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MIC:        [4]byte{3, 2, 3, 4},
+						MACPayload: &lorawan.MACPayload{},
+					},
 					[]lorawan.EUI64{
 						{3, 1, 1, 1, 1, 1, 1, 1},
 						{3, 2, 2, 2, 2, 2, 2, 2},
@@ -73,7 +92,7 @@ func TestCollectAndCallOnce(t *testing.T) {
 							RXInfo: gw.RXInfo{
 								MAC: g,
 							},
-							PHYPayload: phy,
+							PHYPayload: test.PHYPayload,
 						}
 						go func() {
 							err := collectAndCallOnce(p, packet, cb)
