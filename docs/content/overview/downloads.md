@@ -16,6 +16,7 @@ menu:
 | [loraserver_{{< version >}}_linux_386.tar.gz](https://dl.loraserver.io/tar/loraserver_{{< version >}}_linux_386.tar.gz)         | Linux   | 386   |
 | [loraserver_{{< version >}}_linux_amd64.tar.gz](https://dl.loraserver.io/tar/loraserver_{{< version >}}_linux_amd64.tar.gz)     | Linux   | amd64 |
 | [loraserver_{{< version >}}_linux_arm.tar.gz](https://dl.loraserver.io/tar/loraserver_{{< version >}}_linux_arm.tar.gz)         | Linux   | arm   |
+| [loraserver_{{< version >}}_linux_arm64.tar.gz](https://dl.loraserver.io/tar/loraserver_{{< version >}}_linux_arm64.tar.gz)     | Linux   | arm64 |
 | [loraserver_{{< version >}}_windows_386.tar.gz](https://dl.loraserver.io/tar/loraserver_{{< version >}}_windows_386.tar.gz)     | Windows | 386   |
 | [loraserver_{{< version >}}_windows_amd64.tar.gz](https://dl.loraserver.io/tar/loraserver_{{< version >}}_windows_amd64.tar.gz) | Windows | amd64 |
 
@@ -26,6 +27,7 @@ menu:
 | [loraserver_{{< version >}}_i386.deb](https://dl.loraserver.io/deb/loraserver_{{< version >}}_i386.deb)   | Linux   | 386   |
 | [loraserver_{{< version >}}_amd64.deb](https://dl.loraserver.io/deb/loraserver_{{< version >}}_amd64.deb) | Linux   | amd64 |
 | [loraserver_{{< version >}}_armhf.deb](https://dl.loraserver.io/deb/loraserver_{{< version >}}_armhf.deb) | Linux   | arm   |
+| [loraserver_{{< version >}}_arm64.deb](https://dl.loraserver.io/deb/loraserver_{{< version >}}_arm64.deb) | Linux   | arm64 |
 
 ### Debian Ubuntu repository
 

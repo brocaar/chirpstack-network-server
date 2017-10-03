@@ -8,6 +8,22 @@ menu:
 
 ## Changelog
 
+### 0.21.0
+
+**Features:**
+
+* Implement sending and receiving 'Proprietary' LoRaWAN message type.
+  LoRa Server now implements an API method for sending downlink LoRaWAN frames
+  using the 'Proprietary' message-type. 'Proprietary' uplink messages will be
+  de-duplicated by LoRa Server, before being forwarded to LoRa App Server.
+
+* ARM64 binaries are now provided.
+
+**Internal improvements:**
+
+* Various parts of the codebase have been cleaned up in preparation for the
+  upcoming LoRaWAN 1.1 changes.
+
 ### 0.20.1
 
 **Features:**
