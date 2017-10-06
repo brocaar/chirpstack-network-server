@@ -96,6 +96,7 @@ func (n *NetworkServerAPI) GetServiceProfile(ctx context.Context, req *ns.GetSer
 		CreatedAt: sp.CreatedAt.Format(time.RFC3339Nano),
 		UpdatedAt: sp.UpdatedAt.Format(time.RFC3339Nano),
 		ServiceProfile: &ns.ServiceProfile{
+			ServiceProfileID:       sp.ServiceProfile.ServiceProfileID,
 			UlRate:                 uint32(sp.ServiceProfile.ULRate),
 			UlBucketSize:           uint32(sp.ServiceProfile.ULBucketSize),
 			DlRate:                 uint32(sp.ServiceProfile.DLRate),
