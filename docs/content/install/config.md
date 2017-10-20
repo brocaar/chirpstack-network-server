@@ -50,7 +50,7 @@ GLOBAL OPTIONS:
    --enable-uplink-channels value          enable only a given sub-set of channels (e.g. '0-7,8-15') [$ENABLE_UPLINK_CHANNELS]
    --node-session-ttl value                the ttl after which a node-session expires after no activity (default: 744h0m0s) [$NODE_SESSION_TTL]
    --log-node-frames                       log uplink and downlink frames to the database [$LOG_NODE_FRAMES]
-   --log-level value                debug=5, info=4, warning=3, error=2, fatal=1, panic=0 (default: 4) [$LOG_LEVEL]
+   --log-level value                       debug=5, info=4, warning=3, error=2, fatal=1, panic=0 (default: 4) [$LOG_LEVEL]
    --help, -h                              show help
    --version, -v                           print the version
 ```
