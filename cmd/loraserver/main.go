@@ -61,6 +61,7 @@ func run(c *cli.Context) error {
 	var gwStats = new(gateway.StatsHandler)
 
 	tasks := []func(*cli.Context) error{
+		setLogLevel,
 		setNetID,
 		setBandConfig,
 		setDeduplicationDelay,
@@ -192,6 +193,11 @@ func setTimezone(c *cli.Context) error {
 		}
 		common.TimeLocation = l
 	}
+	return nil
+}
+
+func setLogLevel(c *cli.Context) error {
+	log.SetLevel(log.Level(uint8(c.Int("log-level"))))
 	return nil
 }
 
@@ -655,6 +661,12 @@ func main() {
 			Name:   "log-node-frames",
 			Usage:  "log uplink and downlink frames to the database",
 			EnvVar: "LOG_NODE_FRAMES",
+		},
+		cli.IntFlag{
+			Name:   "log-level",
+			Value:  4,
+			Usage:  "debug=5, info=4, warning=3, error=2, fatal=1, panic=0",
+			EnvVar: "LOG_LEVEL",
 		},
 	}
 	app.Run(os.Args)
