@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	uuid "github.com/satori/go.uuid"
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/brocaar/loraserver/api/as"
@@ -18,6 +19,7 @@ import (
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
 )
 
 type uplinkTestCase struct {
@@ -77,9 +79,12 @@ func TestUplinkScenarios(t *testing.T) {
 		test.MustFlushRedis(common.RedisPool)
 		test.MustResetDB(common.DB)
 
+		asClient := test.NewApplicationClient()
+		common.ApplicationServerPool = test.NewApplicationServerPool(asClient)
 		common.Gateway = test.NewGatewayBackend()
-		common.Application = test.NewApplicationClient()
 		common.Controller = test.NewNetworkControllerClient()
+
+		createdBy := uuid.NewV4().String()
 
 		gw1 := gateway.Gateway{
 			MAC:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -92,6 +97,24 @@ func TestUplinkScenarios(t *testing.T) {
 		}
 		So(gateway.CreateGateway(db, &gw1), ShouldBeNil)
 
+		sp := storage.ServiceProfile{
+			CreatedBy:      createdBy,
+			ServiceProfile: backend.ServiceProfile{},
+		}
+		So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
+
+		dp := storage.DeviceProfile{
+			CreatedBy:     createdBy,
+			DeviceProfile: backend.DeviceProfile{},
+		}
+		So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
+
+		rp := storage.RoutingProfile{
+			CreatedBy:      createdBy,
+			RoutingProfile: backend.RoutingProfile{},
+		}
+		So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
+
 		rxInfo := gw.RXInfo{
 			MAC:       [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			Frequency: common.Band.UplinkChannels[0].Frequency,
@@ -100,26 +123,35 @@ func TestUplinkScenarios(t *testing.T) {
 		}
 
 		ns := storage.DeviceSession{
-			DevAddr:         [4]byte{1, 2, 3, 4},
-			DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:          8,
-			FCntDown:        5,
-			JoinEUI:         [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
-			EnabledChannels: []int{0, 1, 2},
+			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+			DevAddr:          [4]byte{1, 2, 3, 4},
+			DevEUI:           [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:          [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:           8,
+			FCntDown:         5,
+			JoinEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			EnabledChannels:  []int{0, 1, 2},
 		}
 
 		nsFCntRollOver := storage.DeviceSession{
-			DevAddr:         [4]byte{1, 2, 3, 4},
-			DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:          65535,
-			FCntDown:        5,
-			JoinEUI:         [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
-			EnabledChannels: []int{0, 1, 2},
+			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+			DevAddr:          [4]byte{1, 2, 3, 4},
+			DevEUI:           [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:          [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:           65535,
+			FCntDown:         5,
+			JoinEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			EnabledChannels:  []int{0, 1, 2},
 		}
 
 		nsRelaxFCnt := storage.DeviceSession{
+			DeviceProfileID:    dp.DeviceProfile.DeviceProfileID,
+			ServiceProfileID:   sp.ServiceProfile.ServiceProfileID,
+			RoutingProfileID:   rp.RoutingProfile.RoutingProfileID,
 			DevAddr:            [4]byte{1, 2, 3, 4},
 			DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			NwkSKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
@@ -131,41 +163,53 @@ func TestUplinkScenarios(t *testing.T) {
 		}
 
 		nsDelay := storage.DeviceSession{
-			DevAddr:         [4]byte{1, 2, 3, 4},
-			DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:          8,
-			FCntDown:        5,
-			JoinEUI:         [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
-			RXDelay:         3,
-			EnabledChannels: []int{0, 1, 2},
+			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+			DevAddr:          [4]byte{1, 2, 3, 4},
+			DevEUI:           [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:          [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:           8,
+			FCntDown:         5,
+			JoinEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			RXDelay:          3,
+			EnabledChannels:  []int{0, 1, 2},
 		}
 
 		nsRX2 := storage.DeviceSession{
-			DevAddr:         [4]byte{1, 2, 3, 4},
-			DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:          8,
-			FCntDown:        5,
-			JoinEUI:         [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
-			RXWindow:        storage.RX2,
-			RX2DR:           3,
-			EnabledChannels: []int{0, 1, 2},
+			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+			DevAddr:          [4]byte{1, 2, 3, 4},
+			DevEUI:           [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:          [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:           8,
+			FCntDown:         5,
+			JoinEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			RXWindow:         storage.RX2,
+			RX2DR:            3,
+			EnabledChannels:  []int{0, 1, 2},
 		}
 
 		nsRX2Delay := storage.DeviceSession{
-			DevAddr:         [4]byte{1, 2, 3, 4},
-			DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:          8,
-			FCntDown:        5,
-			JoinEUI:         [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
-			RXWindow:        storage.RX2,
-			RXDelay:         5,
-			EnabledChannels: []int{0, 1, 2},
+			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+			DevAddr:          [4]byte{1, 2, 3, 4},
+			DevEUI:           [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:          [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:           8,
+			FCntDown:         5,
+			JoinEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			RXWindow:         storage.RX2,
+			RXDelay:          5,
+			EnabledChannels:  []int{0, 1, 2},
 		}
 
 		nsADREnabled := storage.DeviceSession{
+			DeviceProfileID:    dp.DeviceProfile.DeviceProfileID,
+			ServiceProfileID:   sp.ServiceProfile.ServiceProfileID,
+			RoutingProfileID:   rp.RoutingProfile.RoutingProfileID,
 			DevAddr:            [4]byte{1, 2, 3, 4},
 			DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			NwkSKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
@@ -178,16 +222,22 @@ func TestUplinkScenarios(t *testing.T) {
 		}
 
 		nsExtraChannels := storage.DeviceSession{
-			DevAddr:         [4]byte{1, 2, 3, 4},
-			DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:          8,
-			FCntDown:        5,
-			JoinEUI:         [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
-			EnabledChannels: []int{0, 1, 2, 3, 4, 5, 6, 7},
+			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+			DevAddr:          [4]byte{1, 2, 3, 4},
+			DevEUI:           [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:          [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:           8,
+			FCntDown:         5,
+			JoinEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			EnabledChannels:  []int{0, 1, 2, 3, 4, 5, 6, 7},
 		}
 
 		nsExtraChannelsADR := storage.DeviceSession{
+			DeviceProfileID:    dp.DeviceProfile.DeviceProfileID,
+			ServiceProfileID:   sp.ServiceProfile.ServiceProfileID,
+			RoutingProfileID:   rp.RoutingProfile.RoutingProfileID,
 			DevAddr:            [4]byte{1, 2, 3, 4},
 			DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			NwkSKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
@@ -415,7 +465,7 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 			}
 
-			runUplinkTests(tests)
+			runUplinkTests(asClient, tests)
 		})
 
 		Convey("Given a set of test-scenarios for relax frame-counter mode", func() {
@@ -544,7 +594,7 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 			}
 
-			runUplinkTests(tests)
+			runUplinkTests(asClient, tests)
 		})
 
 		// TODO: add ACK test
@@ -934,7 +984,7 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 			}
 
-			runUplinkTests(tests)
+			runUplinkTests(asClient, tests)
 		})
 
 		Convey("Given a set of test-scenarios for mac-command queue", func() {
@@ -1259,7 +1309,7 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 			}
 
-			runUplinkTests(tests)
+			runUplinkTests(asClient, tests)
 		})
 
 		Convey("Given a set of test-scenarios for tx-payload queue", func() {
@@ -1534,7 +1584,7 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 			}
 
-			runUplinkTests(tests)
+			runUplinkTests(asClient, tests)
 		})
 
 		Convey("Given a set of test-scenarios for ADR", func() {
@@ -2005,18 +2055,18 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 			}
 
-			runUplinkTests(tests)
+			runUplinkTests(asClient, tests)
 		})
 	})
 }
 
-func runUplinkTests(tests []uplinkTestCase) {
+func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 	for i, t := range tests {
 		Convey(fmt.Sprintf("When testing: %s [%d]", t.Name, i), func() {
 			// set application-server mocks
-			common.Application.(*test.ApplicationClient).HandleDataUpErr = t.ApplicationHandleDataUpError
-			common.Application.(*test.ApplicationClient).GetDataDownResponse = t.ApplicationGetDataDown
-			common.Application.(*test.ApplicationClient).GetDataDownErr = t.ApplicationGetDataDownError
+			asClient.HandleDataUpErr = t.ApplicationHandleDataUpError
+			asClient.GetDataDownResponse = t.ApplicationGetDataDown
+			asClient.GetDataDownErr = t.ApplicationGetDataDownError
 
 			// populate session and queues
 			So(storage.SaveDeviceSession(common.RedisPool, t.DeviceSession), ShouldBeNil)
@@ -2077,40 +2127,40 @@ func runUplinkTests(tests []uplinkTestCase) {
 			// application-server validations
 			if t.ExpectedApplicationHandleDataUp != nil {
 				Convey("Then the expected rx-payloads are received by the application-server", func() {
-					So(common.Application.(*test.ApplicationClient).HandleDataUpChan, ShouldHaveLength, 1)
-					req := <-common.Application.(*test.ApplicationClient).HandleDataUpChan
+					So(asClient.HandleDataUpChan, ShouldHaveLength, 1)
+					req := <-asClient.HandleDataUpChan
 					So(&req, ShouldResemble, t.ExpectedApplicationHandleDataUp)
 				})
 			} else {
-				So(common.Application.(*test.ApplicationClient).HandleDataUpChan, ShouldHaveLength, 0)
+				So(asClient.HandleDataUpChan, ShouldHaveLength, 0)
 			}
 
 			Convey("Then the expected error payloads are sent to the application-server", func() {
-				So(common.Application.(*test.ApplicationClient).HandleErrorChan, ShouldHaveLength, len(t.ExpectedApplicationHandleErrors))
+				So(asClient.HandleErrorChan, ShouldHaveLength, len(t.ExpectedApplicationHandleErrors))
 				for _, expPL := range t.ExpectedApplicationHandleErrors {
-					pl := <-common.Application.(*test.ApplicationClient).HandleErrorChan
+					pl := <-asClient.HandleErrorChan
 					So(pl, ShouldResemble, expPL)
 				}
 			})
 
 			if t.ExpectedApplicationHandleDataDownACK != nil {
 				Convey("Then the expected downlink ACK was sent to the application-server", func() {
-					So(common.Application.(*test.ApplicationClient).HandleDataDownACKChan, ShouldHaveLength, 1)
-					req := <-common.Application.(*test.ApplicationClient).HandleDataDownACKChan
+					So(asClient.HandleDataDownACKChan, ShouldHaveLength, 1)
+					req := <-asClient.HandleDataDownACKChan
 					So(&req, ShouldResemble, t.ExpectedApplicationHandleDataDownACK)
 				})
 			} else {
-				So(common.Application.(*test.ApplicationClient).HandleDataDownACKChan, ShouldHaveLength, 0)
+				So(asClient.HandleDataDownACKChan, ShouldHaveLength, 0)
 			}
 
 			if t.ExpectedApplicationGetDataDown != nil {
 				Convey("Then the expected get data down request was made to the application-server", func() {
-					So(common.Application.(*test.ApplicationClient).GetDataDownChan, ShouldHaveLength, 1)
-					req := <-common.Application.(*test.ApplicationClient).GetDataDownChan
+					So(asClient.GetDataDownChan, ShouldHaveLength, 1)
+					req := <-asClient.GetDataDownChan
 					So(&req, ShouldResemble, t.ExpectedApplicationGetDataDown)
 				})
 			} else {
-				So(common.Application.(*test.ApplicationClient).GetDataDownChan, ShouldHaveLength, 0)
+				So(asClient.GetDataDownChan, ShouldHaveLength, 0)
 			}
 
 			// gateway validations

@@ -48,8 +48,9 @@ func TestClassCScenarios(t *testing.T) {
 		test.MustResetDB(common.DB)
 		test.MustFlushRedis(common.RedisPool)
 
+		asClient := test.NewApplicationClient()
+		common.ApplicationServerPool = test.NewApplicationServerPool(asClient)
 		common.Gateway = test.NewGatewayBackend()
-		common.Application = test.NewApplicationClient()
 
 		api := api.NewNetworkServerAPI()
 

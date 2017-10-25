@@ -14,20 +14,18 @@ import (
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
+	"github.com/brocaar/loraserver/internal/asclient"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/jsclient"
 	"github.com/brocaar/loraserver/internal/migrations"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
 	"github.com/brocaar/lorawan/band"
 )
 
 func init() {
-	var err error
 	log.SetLevel(log.ErrorLevel)
 
-	common.Band, err = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)
-	if err != nil {
-		panic(err)
-	}
 	common.BandName = band.EU_863_870
 	common.DeduplicationDelay = 5 * time.Millisecond
 	common.GetDownlinkDataDelay = 5 * time.Millisecond
@@ -47,7 +45,13 @@ type Config struct {
 
 // GetConfig returns the test configuration.
 func GetConfig() *Config {
+	var err error
 	log.SetLevel(log.ErrorLevel)
+
+	common.Band, err = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)
+	if err != nil {
+		panic(err)
+	}
 
 	c := &Config{
 		RedisURL:    "redis://localhost:6379",
@@ -128,20 +132,77 @@ func (b *GatewayBackend) Close() error {
 	return nil
 }
 
+// JoinServerPool is a join-server pool for testing.
+type JoinServerPool struct {
+	Client     jsclient.Client
+	GetJoinEUI lorawan.EUI64
+}
+
+// NewJoinServerPool create a join-server pool for testing.
+func NewJoinServerPool(client jsclient.Client) jsclient.Pool {
+	return &JoinServerPool{
+		Client: client,
+	}
+}
+
+// Get method.
+func (p *JoinServerPool) Get(joinEUI lorawan.EUI64) (jsclient.Client, error) {
+	p.GetJoinEUI = joinEUI
+	return p.Client, nil
+}
+
+// JoinServerClient is a join-server client for testing.
+type JoinServerClient struct {
+	JoinReqPayloadChan chan backend.JoinReqPayload
+	JoinReqError       error
+	JoinAnsPayload     backend.JoinAnsPayload
+}
+
+// NewJoinServerClient creates a new join-server client.
+func NewJoinServerClient() *JoinServerClient {
+	return &JoinServerClient{
+		JoinReqPayloadChan: make(chan backend.JoinReqPayload, 100),
+	}
+}
+
+// JoinReq method.
+func (c *JoinServerClient) JoinReq(pl backend.JoinReqPayload) (backend.JoinAnsPayload, error) {
+	c.JoinReqPayloadChan <- pl
+	return c.JoinAnsPayload, c.JoinReqError
+}
+
+// ApplicationServerPool is an application-server pool for testing.
+type ApplicationServerPool struct {
+	Client      as.ApplicationServerClient
+	GetHostname string
+}
+
+// Get returns the Client.
+func (p *ApplicationServerPool) Get(hostname string) (as.ApplicationServerClient, error) {
+	p.GetHostname = hostname
+	return p.Client, nil
+}
+
+// NewApplicationServerPool create an application-server client pool which
+// always returns the given client on Get.
+func NewApplicationServerPool(client *ApplicationClient) asclient.Pool {
+	return &ApplicationServerPool{
+		Client: client,
+	}
+}
+
 // ApplicationClient is an application client for testing.
 type ApplicationClient struct {
-	HandleDataUpErr         error
-	HandleProprietaryUpErr  error
-	JoinRequestErr          error
-	GetDataDownErr          error
-	JoinRequestChan         chan as.JoinRequestRequest
+	HandleDataUpErr        error
+	HandleProprietaryUpErr error
+	GetDataDownErr         error
+
 	HandleDataUpChan        chan as.HandleDataUpRequest
 	HandleProprietaryUpChan chan as.HandleProprietaryUpRequest
 	HandleDataDownACKChan   chan as.HandleDataDownACKRequest
 	HandleErrorChan         chan as.HandleErrorRequest
 	GetDataDownChan         chan as.GetDataDownRequest
 
-	JoinRequestResponse         as.JoinRequestResponse
 	HandleDataUpResponse        as.HandleDataUpResponse
 	HandleProprietaryUpResponse as.HandleProprietaryUpResponse
 	HandleDataDownACKResponse   as.HandleDataDownACKResponse
@@ -152,22 +213,12 @@ type ApplicationClient struct {
 // NewApplicationClient returns a new ApplicationClient.
 func NewApplicationClient() *ApplicationClient {
 	return &ApplicationClient{
-		JoinRequestChan:         make(chan as.JoinRequestRequest, 100),
 		HandleDataUpChan:        make(chan as.HandleDataUpRequest, 100),
 		HandleProprietaryUpChan: make(chan as.HandleProprietaryUpRequest, 100),
 		HandleDataDownACKChan:   make(chan as.HandleDataDownACKRequest, 100),
 		HandleErrorChan:         make(chan as.HandleErrorRequest, 100),
 		GetDataDownChan:         make(chan as.GetDataDownRequest, 100),
 	}
-}
-
-// JoinRequest method.
-func (t *ApplicationClient) JoinRequest(ctx context.Context, in *as.JoinRequestRequest, opts ...grpc.CallOption) (*as.JoinRequestResponse, error) {
-	if t.JoinRequestErr != nil {
-		return nil, t.JoinRequestErr
-	}
-	t.JoinRequestChan <- *in
-	return &t.JoinRequestResponse, nil
 }
 
 // HandleDataUp method.

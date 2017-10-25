@@ -43,6 +43,16 @@ func TestRoutingProfile(t *testing.T) {
 				So(rpGet, ShouldResemble, rp)
 			})
 
+			Convey("Then GetAllRoutingProfiles includes the created routing-profile", func() {
+				rpGetAll, err := GetAllRoutingProfiles(db)
+				So(err, ShouldBeNil)
+				So(rpGetAll, ShouldHaveLength, 1)
+
+				rpGetAll[0].CreatedAt = rpGetAll[0].CreatedAt.UTC().Truncate(time.Millisecond)
+				rpGetAll[0].UpdatedAt = rpGetAll[0].UpdatedAt.UTC().Truncate(time.Millisecond)
+				So(rpGetAll[0], ShouldResemble, rp)
+			})
+
 			Convey("Then UpdateRoutingProfile updates the routing-profile", func() {
 				rp.RoutingProfile = backend.RoutingProfile{
 					RoutingProfileID: rp.RoutingProfile.RoutingProfileID,

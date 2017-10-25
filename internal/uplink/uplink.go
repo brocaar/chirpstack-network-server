@@ -18,8 +18,8 @@ import (
 var flow = NewFlow().JoinRequest(
 	setContextFromJoinRequestPHYPayload,
 	logJoinRequestFramesCollected,
+	getDeviceAndDeviceProfile,
 	getRandomDevAddr,
-	getOptionalCFList,
 	getJoinAcceptFromAS,
 	logJoinRequestFrame,
 	createNodeSession,
@@ -28,6 +28,7 @@ var flow = NewFlow().JoinRequest(
 	setContextFromDataPHYPayload,
 	getNodeSessionForDataUp,
 	logDataFramesCollected,
+	getApplicationServerClientForDataUp,
 	decryptFRMPayloadMACCommands,
 	sendRXInfoToNetworkController,
 	handleFOptsMACCommands,

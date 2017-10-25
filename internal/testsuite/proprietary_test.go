@@ -6,7 +6,10 @@ import (
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/gateway"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/uplink"
+	"github.com/brocaar/lorawan/backend"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/brocaar/loraserver/api/as"
 
@@ -108,12 +111,21 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 	common.DB = db
 	common.RedisPool = common.NewRedisPool(conf.RedisURL)
 
-	Convey("Given a clean state and a gateway", t, func() {
+	Convey("Given a clean state with a gateway and routing profile", t, func() {
 		test.MustResetDB(common.DB)
 		test.MustFlushRedis(common.RedisPool)
 
+		asClient := test.NewApplicationClient()
+		common.ApplicationServerPool = test.NewApplicationServerPool(asClient)
 		common.Gateway = test.NewGatewayBackend()
-		common.Application = test.NewApplicationClient()
+
+		// the routing profile is needed as the ns will send the proprietary
+		// frame to all application-servers.
+		rp := storage.RoutingProfile{
+			CreatedBy:      uuid.NewV4().String(),
+			RoutingProfile: backend.RoutingProfile{},
+		}
+		So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
 
 		g := gateway.Gateway{
 			MAC:         lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
@@ -186,8 +198,8 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 
 					if t.ExpectedApplicationHandleProprietaryUp != nil {
 						Convey("Then HandleProprietaryUp was called with the expected data", func() {
-							So(common.Application.(*test.ApplicationClient).HandleProprietaryUpChan, ShouldHaveLength, 1)
-							req := <-common.Application.(*test.ApplicationClient).HandleProprietaryUpChan
+							So(asClient.HandleProprietaryUpChan, ShouldHaveLength, 1)
+							req := <-asClient.HandleProprietaryUpChan
 							So(t.ExpectedApplicationHandleProprietaryUp, ShouldResemble, &req)
 						})
 					}

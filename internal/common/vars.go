@@ -3,9 +3,10 @@ package common
 import (
 	"time"
 
-	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/nc"
+	"github.com/brocaar/loraserver/internal/asclient"
 	"github.com/brocaar/loraserver/internal/backend"
+	"github.com/brocaar/loraserver/internal/jsclient"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 	"github.com/garyburd/redigo/redis"
@@ -65,11 +66,14 @@ var DB *sqlx.DB
 // NetID contains the LoRaWAN NetID.
 var NetID lorawan.NetID
 
-// Application holds the connection to the application-server.
-var Application as.ApplicationServerClient
+// ApplicationServerPool holds the connection(s) to the application-server(s).
+var ApplicationServerPool asclient.Pool
 
 // Controller holds the connection to the network-controller.
 var Controller nc.NetworkControllerClient
 
 // Gateway holds the gateway backend.
 var Gateway backend.Gateway
+
+// JoinServerPool holds the join-server client pool.
+var JoinServerPool jsclient.Pool

@@ -3,16 +3,16 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "qyLhufCYgpjXZUov1+7EvaF+uCY=",
+			"checksumSHA1": "SXduRGvopYeWA1mkYjS+1xHkvbg=",
 			"path": "github.com/brocaar/lorawan",
-			"revision": "331bb86260c74aa8adcd7bf42ec9036dfefcaf95",
-			"revisionTime": "2017-09-29T15:47:39Z"
+			"revision": "4adc321781d02e25ebc1e69e882c3a401d8812cd",
+			"revisionTime": "2017-10-19T08:55:29Z"
 		},
 		{
-			"checksumSHA1": "XfgENnc24v4hkH4fveDJSI07zOQ=",
+			"checksumSHA1": "i6XGoGlbMxIVqr34XEJDexx+Vjo=",
 			"path": "github.com/brocaar/lorawan/backend",
-			"revision": "7dd606faf87874f48913503604d0f5836ba253db",
-			"revisionTime": "2017-09-05T08:15:54Z"
+			"revision": "4adc321781d02e25ebc1e69e882c3a401d8812cd",
+			"revisionTime": "2017-10-19T08:55:29Z"
 		},
 		{
 			"checksumSHA1": "HglcYT/tCUHsT4cJtaa62vM55Dc=",

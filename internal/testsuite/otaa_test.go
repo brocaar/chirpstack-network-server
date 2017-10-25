@@ -1,36 +1,39 @@
 package testsuite
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/pkg/errors"
+	"github.com/brocaar/loraserver/internal/uplink"
+
+	"github.com/brocaar/lorawan/band"
+
+	uuid "github.com/satori/go.uuid"
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
-	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
+	"github.com/brocaar/lorawan/backend"
 )
 
 type otaaTestCase struct {
-	Name                           string                 // name of the test
-	RXInfo                         gw.RXInfo              // rx-info of the "received" packet
-	PHYPayload                     lorawan.PHYPayload     // received PHYPayload
-	ApplicationJoinRequestResponse as.JoinRequestResponse // application-client join-request response
-	ApplicationJoinRequestError    error                  // application-client join-request error
-	AppKey                         lorawan.AES128Key      // app-key (used to decrypt the expected PHYPayload)
-	ExtraChannels                  []int                  // extra channels for CFList
+	Name                     string                 // name of the test
+	RXInfo                   gw.RXInfo              // rx-info of the "received" packet
+	PHYPayload               lorawan.PHYPayload     // received PHYPayload
+	JoinServerJoinReqError   error                  // error returned by the join-req method
+	JoinServerJoinAnsPayload backend.JoinAnsPayload // join-server join-ans payload
+	AppKey                   lorawan.AES128Key      // app-key (used to decrypt the expected PHYPayload)
+	ExtraChannels            []int                  // extra channels for CFList
 
-	ExpectedError                         error                 // expected error
-	ExpectedApplicationJoinRequestRequest as.JoinRequestRequest // expected join-request request
-	ExpectedTXInfo                        gw.TXInfo             // expected tx-info
-	ExpectedPHYPayload                    lorawan.PHYPayload    // expected (plaintext) PHYPayload
-	ExpectedDeviceSession                 storage.DeviceSession // expected node-session
+	ExpectedError          error                  // expected error
+	ExpectedJoinReqPayload backend.JoinReqPayload // expected join-request request
+	ExpectedTXInfo         gw.TXInfo              // expected tx-info
+	ExpectedPHYPayload     lorawan.PHYPayload     // expected (plaintext) PHYPayload
+	ExpectedDeviceSession  storage.DeviceSession  // expected node-session
 }
 
 func TestOTAAScenarios(t *testing.T) {
@@ -43,12 +46,44 @@ func TestOTAAScenarios(t *testing.T) {
 	common.RedisPool = common.NewRedisPool(conf.RedisURL)
 	common.NetID = [3]byte{3, 2, 1}
 
-	Convey("Given a clean state", t, func() {
+	Convey("Given a clean database with a device", t, func() {
 		test.MustResetDB(common.DB)
 		test.MustFlushRedis(common.RedisPool)
 
+		asClient := test.NewApplicationClient()
+		jsClient := test.NewJoinServerClient()
+
+		common.ApplicationServerPool = test.NewApplicationServerPool(asClient)
+		common.JoinServerPool = test.NewJoinServerPool(jsClient)
 		common.Gateway = test.NewGatewayBackend()
-		common.Application = test.NewApplicationClient()
+
+		createdBy := uuid.NewV4().String()
+		sp := storage.ServiceProfile{
+			CreatedBy:      createdBy,
+			ServiceProfile: backend.ServiceProfile{},
+		}
+		So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
+
+		dp := storage.DeviceProfile{
+			CreatedBy:     createdBy,
+			DeviceProfile: backend.DeviceProfile{},
+		}
+		So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
+
+		rp := storage.RoutingProfile{
+			CreatedBy:      createdBy,
+			RoutingProfile: backend.RoutingProfile{},
+		}
+		So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
+
+		d := storage.Device{
+			CreatedBy:        createdBy,
+			DevEUI:           lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
+			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+		}
+		So(storage.CreateDevice(common.DB, &d), ShouldBeNil)
 
 		appKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
@@ -63,8 +98,8 @@ func TestOTAAScenarios(t *testing.T) {
 				Major: lorawan.LoRaWANR1,
 			},
 			MACPayload: &lorawan.JoinRequestPayload{
-				AppEUI:   [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-				DevEUI:   [8]byte{2, 2, 3, 4, 5, 6, 7, 8},
+				AppEUI:   lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+				DevEUI:   d.DevEUI,
 				DevNonce: [2]byte{1, 2},
 			},
 		}
@@ -99,30 +134,42 @@ func TestOTAAScenarios(t *testing.T) {
 		Convey("Given a set of test-scenarios", func() {
 			tests := []otaaTestCase{
 				{
-					Name:                        "application-client returns an error",
-					RXInfo:                      rxInfo,
-					PHYPayload:                  jrPayload,
-					ApplicationJoinRequestError: errors.New("BOOM"),
-					ExpectedError:               errors.New("application server join-request error: BOOM"),
+					Name:                   "join-server returns an error",
+					RXInfo:                 rxInfo,
+					PHYPayload:             jrPayload,
+					JoinServerJoinReqError: errors.New("invalid deveui"),
+					ExpectedError:          errors.New("join-request to join-server error: invalid deveui"),
 				},
 				{
-					Name:       "join-accept using rx1",
+					Name:       "join-request accepted using rx1",
 					RXInfo:     rxInfo,
 					PHYPayload: jrPayload,
-					ApplicationJoinRequestResponse: as.JoinRequestResponse{
-						PhyPayload:  jaBytes,
-						NwkSKey:     []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-						RxDelay:     uint32(jaPayload.RXDelay),
-						Rx1DROffset: uint32(jaPayload.DLSettings.RX1DROffset),
-						RxWindow:    as.RXWindow_RX1,
-						Rx2DR:       uint32(jaPayload.DLSettings.RX2DataRate),
+					AppKey:     appKey,
+					JoinServerJoinAnsPayload: backend.JoinAnsPayload{
+						PHYPayload: backend.HEXBytes(jaBytes),
+						Result: backend.Result{
+							ResultCode: backend.Success,
+						},
+						NwkSKey: &backend.KeyEnvelope{
+							AESKey: lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						},
 					},
-					AppKey: appKey,
 
-					ExpectedApplicationJoinRequestRequest: as.JoinRequestRequest{
-						PhyPayload: jrBytes,
-						NetID:      []byte{3, 2, 1},
-						DevAddr:    []byte{0, 0, 0, 0},
+					ExpectedJoinReqPayload: backend.JoinReqPayload{
+						BasePayload: backend.BasePayload{
+							ProtocolVersion: backend.ProtocolVersion1_0,
+							SenderID:        "030201",
+							ReceiverID:      "0102030405060708",
+							MessageType:     backend.JoinReq,
+						},
+						MACVersion: dp.DeviceProfile.MACVersion,
+						PHYPayload: backend.HEXBytes(jrBytes),
+						DevEUI:     d.DevEUI,
+						DLSettings: lorawan.DLSettings{
+							RX2DataRate: uint8(dp.DeviceProfile.RXDataRate2),
+							RX1DROffset: uint8(dp.DeviceProfile.RXDROffset1),
+						},
+						RxDelay: dp.DeviceProfile.RXDelay1,
 					},
 					ExpectedTXInfo: gw.TXInfo{
 						MAC:       rxInfo.MAC,
@@ -134,37 +181,49 @@ func TestOTAAScenarios(t *testing.T) {
 					},
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
-						JoinEUI:         [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-						DevEUI:          [8]byte{2, 2, 3, 4, 5, 6, 7, 8},
-						NwkSKey:         [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-						RXWindow:        storage.RX1,
-						RXDelay:         jaPayload.RXDelay,
-						RX1DROffset:     jaPayload.DLSettings.RX1DROffset,
-						RX2DR:           jaPayload.DLSettings.RX2DataRate,
-						EnabledChannels: []int{0, 1, 2},
-						LastRXInfoSet:   []gw.RXInfo{rxInfo},
+						RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+						DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+						ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+						JoinEUI:          lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+						DevEUI:           lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
+						NwkSKey:          lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						RXWindow:         storage.RX1,
+						EnabledChannels:  []int{0, 1, 2},
+						LastRXInfoSet:    []gw.RXInfo{rxInfo},
 					},
 				},
 				{
-					Name:          "join-accept using rx1 and CFList",
+					Name:          "join-request using rx1 and CFList",
 					RXInfo:        rxInfo,
 					PHYPayload:    jrPayload,
+					AppKey:        appKey,
 					ExtraChannels: []int{868400000, 868500000, 868600000},
-					ApplicationJoinRequestResponse: as.JoinRequestResponse{
-						PhyPayload:  jaBytes,
-						NwkSKey:     []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-						RxDelay:     uint32(jaPayload.RXDelay),
-						Rx1DROffset: uint32(jaPayload.DLSettings.RX1DROffset),
-						RxWindow:    as.RXWindow_RX1,
-						Rx2DR:       uint32(jaPayload.DLSettings.RX2DataRate),
+					JoinServerJoinAnsPayload: backend.JoinAnsPayload{
+						PHYPayload: backend.HEXBytes(jaBytes),
+						Result: backend.Result{
+							ResultCode: backend.Success,
+						},
+						NwkSKey: &backend.KeyEnvelope{
+							AESKey: lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						},
 					},
-					AppKey: appKey,
 
-					ExpectedApplicationJoinRequestRequest: as.JoinRequestRequest{
-						PhyPayload: jrBytes,
-						NetID:      []byte{3, 2, 1},
-						DevAddr:    []byte{0, 0, 0, 0},
-						CFList:     []uint32{868400000, 868500000, 868600000, 0, 0},
+					ExpectedJoinReqPayload: backend.JoinReqPayload{
+						BasePayload: backend.BasePayload{
+							ProtocolVersion: backend.ProtocolVersion1_0,
+							SenderID:        "030201",
+							ReceiverID:      "0102030405060708",
+							MessageType:     backend.JoinReq,
+						},
+						MACVersion: dp.DeviceProfile.MACVersion,
+						PHYPayload: backend.HEXBytes(jrBytes),
+						DevEUI:     d.DevEUI,
+						DLSettings: lorawan.DLSettings{
+							RX2DataRate: uint8(dp.DeviceProfile.RXDataRate2),
+							RX1DROffset: uint8(dp.DeviceProfile.RXDROffset1),
+						},
+						RxDelay: dp.DeviceProfile.RXDelay1,
+						CFList:  &lorawan.CFList{868400000, 868500000, 868600000},
 					},
 					ExpectedTXInfo: gw.TXInfo{
 						MAC:       rxInfo.MAC,
@@ -176,82 +235,38 @@ func TestOTAAScenarios(t *testing.T) {
 					},
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
-						JoinEUI:         [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-						DevEUI:          [8]byte{2, 2, 3, 4, 5, 6, 7, 8},
-						NwkSKey:         [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-						RXWindow:        storage.RX1,
-						RXDelay:         jaPayload.RXDelay,
-						RX1DROffset:     jaPayload.DLSettings.RX1DROffset,
-						RX2DR:           jaPayload.DLSettings.RX2DataRate,
-						EnabledChannels: []int{0, 1, 2, 3, 4, 5},
-						LastRXInfoSet:   []gw.RXInfo{rxInfo},
-					},
-				},
-				{
-					Name:       "join-accept using rx2",
-					RXInfo:     rxInfo,
-					PHYPayload: jrPayload,
-					ApplicationJoinRequestResponse: as.JoinRequestResponse{
-						PhyPayload:  jaBytes,
-						NwkSKey:     []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-						RxDelay:     uint32(jaPayload.RXDelay),
-						Rx1DROffset: uint32(jaPayload.DLSettings.RX1DROffset),
-						RxWindow:    as.RXWindow_RX2,
-						Rx2DR:       uint32(jaPayload.DLSettings.RX2DataRate),
-					},
-					AppKey: appKey,
-
-					ExpectedApplicationJoinRequestRequest: as.JoinRequestRequest{
-						PhyPayload: jrBytes,
-						NetID:      []byte{3, 2, 1},
-						DevAddr:    []byte{0, 0, 0, 0},
-					},
-					ExpectedTXInfo: gw.TXInfo{
-						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 6000000,
-						Frequency: common.Band.RX2Frequency,
-						Power:     14,
-						DataRate:  common.Band.DataRates[common.Band.RX2DataRate],
-						CodeRate:  rxInfo.CodeRate,
-					},
-					ExpectedPHYPayload: jaPHY,
-					ExpectedDeviceSession: storage.DeviceSession{
-						JoinEUI:         [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-						DevEUI:          [8]byte{2, 2, 3, 4, 5, 6, 7, 8},
-						NwkSKey:         [16]byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-						RXWindow:        storage.RX2,
-						RXDelay:         jaPayload.RXDelay,
-						RX1DROffset:     jaPayload.DLSettings.RX1DROffset,
-						RX2DR:           jaPayload.DLSettings.RX2DataRate,
-						EnabledChannels: []int{0, 1, 2},
-						LastRXInfoSet:   []gw.RXInfo{rxInfo},
+						RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+						DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+						ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+						JoinEUI:          lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+						DevEUI:           lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
+						NwkSKey:          lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						RXWindow:         storage.RX1,
+						EnabledChannels:  []int{0, 1, 2, 3, 4, 5},
+						LastRXInfoSet:    []gw.RXInfo{rxInfo},
 					},
 				},
 			}
 
-			runOTAATests(tests)
+			runOTAATests(asClient, jsClient, tests)
 		})
 	})
 }
 
-func runOTAATests(tests []otaaTestCase) {
+func runOTAATests(asClient *test.ApplicationClient, jsClient *test.JoinServerClient, tests []otaaTestCase) {
 	for i, t := range tests {
-
 		Convey(fmt.Sprintf("When testing: %s [%d]", t.Name, i), func() {
 			// reset band
 			var err error
 			common.Band, err = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)
-			if err != nil {
-				So(err, ShouldBeNil)
-			}
-
+			So(err, ShouldBeNil)
 			for _, f := range t.ExtraChannels {
 				So(common.Band.AddChannel(f), ShouldBeNil)
 			}
 
 			// set mocks
-			common.Application.(*test.ApplicationClient).JoinRequestErr = t.ApplicationJoinRequestError
-			common.Application.(*test.ApplicationClient).JoinRequestResponse = t.ApplicationJoinRequestResponse
+			jsClient.JoinAnsPayload = t.JoinServerJoinAnsPayload
+			jsClient.JoinReqError = t.JoinServerJoinReqError
 
 			err = uplink.HandleRXPacket(gw.RXPacket{
 				RXInfo:     t.RXInfo,
@@ -263,18 +278,20 @@ func runOTAATests(tests []otaaTestCase) {
 			}
 			So(t.ExpectedError, ShouldBeNil)
 
-			Convey("Then the expected join-request request was made to the application server", func() {
-				So(common.Application.(*test.ApplicationClient).JoinRequestChan, ShouldHaveLength, 1)
-				req := <-common.Application.(*test.ApplicationClient).JoinRequestChan
+			Convey("Then the expected join-request was made to the join-server", func() {
+				So(jsClient.JoinReqPayloadChan, ShouldHaveLength, 1)
+				req := <-jsClient.JoinReqPayloadChan
 
-				So(req.DevAddr, ShouldHaveLength, 4)
-				So(req.DevAddr, ShouldNotResemble, []byte{0, 0, 0, 0})
-				req.DevAddr = []byte{0, 0, 0, 0} // as this is random, we can't compare it unless it is set to a known value
+				So(req.BasePayload.TransactionID, ShouldNotEqual, "")
+				req.BasePayload.TransactionID = 0
 
-				So(req, ShouldResemble, t.ExpectedApplicationJoinRequestRequest)
+				So(req.DevAddr, ShouldNotEqual, lorawan.DevAddr{})
+				req.DevAddr = lorawan.DevAddr{}
+
+				So(req, ShouldResemble, t.ExpectedJoinReqPayload)
 			})
 
-			Convey("Then the expected txinfo is used", func() {
+			Convey("Then the expected txinfo was used", func() {
 				So(common.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
 				txPacket := <-common.Gateway.(*test.GatewayBackend).TXPacketChan
 
@@ -289,12 +306,12 @@ func runOTAATests(tests []otaaTestCase) {
 				So(txPacket.PHYPayload, ShouldResemble, t.ExpectedPHYPayload)
 			})
 
-			Convey("Then the expected node-session was created", func() {
-				ns, err := storage.GetDeviceSession(common.RedisPool, lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8})
+			Convey("Then the expected device-session was created", func() {
+				ds, err := storage.GetDeviceSession(common.RedisPool, lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8})
 				So(err, ShouldBeNil)
-				So(ns.DevAddr, ShouldNotEqual, lorawan.DevAddr{0, 0, 0, 0})
-				ns.DevAddr = lorawan.DevAddr{}
-				So(ns, ShouldResemble, t.ExpectedDeviceSession)
+				So(ds.DevAddr, ShouldNotEqual, lorawan.DevAddr{})
+				ds.DevAddr = lorawan.DevAddr{}
+				So(ds, ShouldResemble, t.ExpectedDeviceSession)
 			})
 		})
 	}

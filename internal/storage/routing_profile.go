@@ -111,3 +111,13 @@ func DeleteRoutingProfile(db *sqlx.DB, id string) error {
 	log.WithField("routing_profile_id", id).Info("routing-profile deleted")
 	return nil
 }
+
+// GetAllRoutingProfiles returns all the available routing-profiles.
+func GetAllRoutingProfiles(db sqlx.Queryer) ([]RoutingProfile, error) {
+	var rps []RoutingProfile
+	err := sqlx.Select(db, &rps, "select * from routing_profile")
+	if err != nil {
+		return nil, handlePSQLError(err, "select error")
+	}
+	return rps, nil
+}

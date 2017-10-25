@@ -11,6 +11,7 @@ import (
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/gateway"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -74,8 +75,27 @@ func sendProprietaryPayloadToApplicationServer(ctx *ProprietaryUpContext) error 
 		handleReq.RxInfo = append(handleReq.RxInfo, &asRxInfo)
 	}
 
-	if _, err := common.Application.HandleProprietaryUp(context.Background(), &handleReq); err != nil {
-		return errors.Wrap(err, "handle proprietary up error")
+	// send proprietary to all application servers, as the network-server
+	// has know knowledge / state about which application-server is responsible
+	// for this frame
+	rps, err := storage.GetAllRoutingProfiles(common.DB)
+	if err != nil {
+		return errors.Wrap(err, "get all routing-profiles error")
+	}
+
+	for _, rp := range rps {
+		go func(rp storage.RoutingProfile, handleReq as.HandleProprietaryUpRequest) {
+			asClient, err := common.ApplicationServerPool.Get(rp.ASID)
+			if err != nil {
+				log.WithError(err).Error("get application-server client error")
+				return
+			}
+
+			if _, err = asClient.HandleProprietaryUp(context.Background(), &handleReq); err != nil {
+				log.WithError(err).Error("handle proprietary up error")
+				return
+			}
+		}(rp, handleReq)
 	}
 
 	return nil

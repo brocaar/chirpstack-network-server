@@ -87,6 +87,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				So(getResp.ServiceProfile, ShouldResemble, &ns.ServiceProfile{
+					ServiceProfileID:       resp.ServiceProfileID,
 					UlRate:                 1,
 					UlBucketSize:           2,
 					UlRatePolicy:           ns.RatePolicy_DROP,
@@ -141,6 +142,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				})
 				So(err, ShouldBeNil)
 				So(getResp.ServiceProfile, ShouldResemble, &ns.ServiceProfile{
+					ServiceProfileID:       resp.ServiceProfileID,
 					UlRate:                 2,
 					UlBucketSize:           3,
 					UlRatePolicy:           ns.RatePolicy_MARK,

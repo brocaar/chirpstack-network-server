@@ -4,9 +4,6 @@ package as;
 
 // ApplicationServer is the server to be implemented by the application server.
 service ApplicationServer {
-	// JoinRequest requests the application server to validate the join-request and return an encrypted join-accept.
-	rpc JoinRequest(JoinRequestRequest) returns (JoinRequestResponse) {}
-
 	// HandleDataUp publishes data received from an end-device.
 	rpc HandleDataUp(HandleDataUpRequest) returns (HandleDataUpResponse) {}
 

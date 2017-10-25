@@ -59,6 +59,22 @@ func logDataFramesCollected(ctx *DataUpContext) error {
 	return nil
 }
 
+func getApplicationServerClientForDataUp(ctx *DataUpContext) error {
+	rp, err := storage.GetRoutingProfile(common.DB, ctx.DeviceSession.RoutingProfileID)
+	if err != nil {
+		return errors.Wrap(err, "get routing-profile error")
+	}
+
+	asClient, err := common.ApplicationServerPool.Get(rp.ASID)
+	if err != nil {
+		return errors.Wrap(err, "get application-server client error")
+	}
+
+	ctx.ApplicationServerClient = asClient
+
+	return nil
+}
+
 func decryptFRMPayloadMACCommands(ctx *DataUpContext) error {
 	// only decrypt when FPort is equal to 0
 	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0 {
@@ -119,7 +135,7 @@ func handleFRMPayloadMACCommands(ctx *DataUpContext) error {
 
 func sendFRMPayloadToApplicationServer(ctx *DataUpContext) error {
 	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort > 0 {
-		return publishDataUp(ctx.DeviceSession, ctx.RXPacket, *ctx.MACPayload)
+		return publishDataUp(ctx.ApplicationServerClient, ctx.DeviceSession, ctx.RXPacket, *ctx.MACPayload)
 	}
 
 	return nil
@@ -172,7 +188,7 @@ func handleUplinkACK(ctx *DataUpContext) error {
 		return nil
 	}
 
-	_, err := common.Application.HandleDataDownACK(context.Background(), &as.HandleDataDownACKRequest{
+	_, err := ctx.ApplicationServerClient.HandleDataDownACK(context.Background(), &as.HandleDataDownACKRequest{
 		AppEUI: ctx.DeviceSession.JoinEUI[:],
 		DevEUI: ctx.DeviceSession.DevEUI[:],
 		FCnt:   ctx.DeviceSession.FCntDown,
@@ -245,7 +261,7 @@ func sendRXInfoPayload(ds storage.DeviceSession, rxPacket models.RXPacket) error
 	return nil
 }
 
-func publishDataUp(ds storage.DeviceSession, rxPacket models.RXPacket, macPL lorawan.MACPayload) error {
+func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession, rxPacket models.RXPacket, macPL lorawan.MACPayload) error {
 	publishDataUpReq := as.HandleDataUpRequest{
 		AppEUI: ds.JoinEUI[:],
 		DevEUI: ds.DevEUI[:],
@@ -311,7 +327,7 @@ func publishDataUp(ds storage.DeviceSession, rxPacket models.RXPacket, macPL lor
 
 	}
 
-	if _, err := common.Application.HandleDataUp(context.Background(), &publishDataUpReq); err != nil {
+	if _, err := asClient.HandleDataUp(context.Background(), &publishDataUpReq); err != nil {
 		return fmt.Errorf("publish data up to application-server error: %s", err)
 	}
 	return nil

@@ -4,6 +4,7 @@ package lorawan
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sync"
@@ -404,6 +405,16 @@ func (s DLSettings) MarshalBinary() ([]byte, error) {
 	return b, nil
 }
 
+// MarshalText implements encoding.TextMarshaler.
+func (s DLSettings) MarshalText() ([]byte, error) {
+	b, err := s.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(hex.EncodeToString(b)), nil
+}
+
 // UnmarshalBinary decodes the object from binary form.
 func (s *DLSettings) UnmarshalBinary(data []byte) error {
 	if len(data) != 1 {
@@ -412,6 +423,16 @@ func (s *DLSettings) UnmarshalBinary(data []byte) error {
 	s.RX2DataRate = data[0] & ((1 << 3) ^ (1 << 2) ^ (1 << 1) ^ (1 << 0))
 	s.RX1DROffset = (data[0] & ((1 << 6) ^ (1 << 5) ^ (1 << 4))) >> 4
 	return nil
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DLSettings) UnmarshalText(text []byte) error {
+	b, err := hex.DecodeString(string(text))
+	if err != nil {
+		return err
+	}
+
+	return s.UnmarshalBinary(b)
 }
 
 // RX2SetupReqPayload represents the RX2SetupReq payload.

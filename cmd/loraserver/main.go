@@ -14,6 +14,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/brocaar/loraserver/internal/asclient"
+
+	"github.com/brocaar/loraserver/internal/jsclient"
+
 	"github.com/codegangsta/cli"
 	"github.com/pkg/errors"
 	migrate "github.com/rubenv/sql-migrate"
@@ -22,7 +26,6 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
 
-	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/api/ns"
@@ -78,6 +81,7 @@ func run(c *cli.Context) error {
 		setPostgreSQLConnection,
 		setGatewayBackend,
 		setApplicationServer,
+		setJoinServer,
 		setNetworkController,
 		runDatabaseMigrations,
 		startAPIServer,
@@ -274,25 +278,26 @@ func setGatewayBackend(c *cli.Context) error {
 }
 
 func setApplicationServer(c *cli.Context) error {
-	log.WithFields(log.Fields{
-		"server":   c.String("as-server"),
-		"ca-cert":  c.String("as-ca-cert"),
-		"tls-cert": c.String("as-tls-cert"),
-		"tls-key":  c.String("as-tls-key"),
-	}).Info("connecting to application-server")
-	var asDialOptions []grpc.DialOption
-	if c.String("as-tls-cert") != "" && c.String("as-tls-key") != "" {
-		asDialOptions = append(asDialOptions, grpc.WithTransportCredentials(
-			mustGetTransportCredentials(c.String("as-tls-cert"), c.String("as-tls-key"), c.String("as-ca-cert"), false),
-		))
-	} else {
-		asDialOptions = append(asDialOptions, grpc.WithInsecure())
-	}
-	asConn, err := grpc.Dial(c.String("as-server"), asDialOptions...)
+	common.ApplicationServerPool = asclient.NewPool(
+		c.String("as-ca-cert"),
+		c.String("as-tls-cert"),
+		c.String("as-tls-key"),
+	)
+	return nil
+}
+
+func setJoinServer(c *cli.Context) error {
+	jsClient, err := jsclient.NewClient(
+		c.String("js-server"),
+		c.String("js-ca-cert"),
+		c.String("js-tls-cert"),
+		c.String("js-tls-key"),
+	)
 	if err != nil {
-		return errors.Wrap(err, "application-server dial error")
+		return errors.Wrap(err, "create new join-server client error")
 	}
-	common.Application = as.NewApplicationServerClient(asConn)
+	common.JoinServerPool = jsclient.NewPool(jsClient)
+
 	return nil
 }
 
@@ -667,6 +672,27 @@ func main() {
 			Value:  4,
 			Usage:  "debug=5, info=4, warning=3, error=2, fatal=1, panic=0",
 			EnvVar: "LOG_LEVEL",
+		},
+		cli.StringFlag{
+			Name:   "js-server",
+			Usage:  "hostname:port of the default join-server",
+			EnvVar: "JS_SERVER",
+			Value:  "http://localhost:8003",
+		},
+		cli.StringFlag{
+			Name:   "js-ca-cert",
+			Usage:  "ca certificate used by the default join-server client (optional)",
+			EnvVar: "JS_CA_CERT",
+		},
+		cli.StringFlag{
+			Name:   "js-tls-cert",
+			Usage:  "tls certificate used by the default join-server client (optional)",
+			EnvVar: "JS_TLS_CERT",
+		},
+		cli.StringFlag{
+			Name:   "js-tls-key",
+			Usage:  "tls key used by the default join-server client (optional)",
+			EnvVar: "JS_TLS_KEY",
 		},
 	}
 	app.Run(os.Args)

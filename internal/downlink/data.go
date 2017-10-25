@@ -263,7 +263,19 @@ func getDataDownTXInfoAndDR(ds storage.DeviceSession, rxInfo gw.RXInfo) (gw.TXIn
 // getDataDownFromApplication gets the downlink data from the application
 // (if any). On error the error is logged.
 func getDataDownFromApplication(ds storage.DeviceSession, dr int) *as.GetDataDownResponse {
-	resp, err := common.Application.GetDataDown(context.Background(), &as.GetDataDownRequest{
+	rp, err := storage.GetRoutingProfile(common.DB, ds.RoutingProfileID)
+	if err != nil {
+		log.WithError(err).Error("get routing-profile error")
+		return nil
+	}
+
+	asClient, err := common.ApplicationServerPool.Get(rp.ASID)
+	if err != nil {
+		log.WithError(err).Error("get application-server client error")
+		return nil
+	}
+
+	resp, err := asClient.GetDataDown(context.Background(), &as.GetDataDownRequest{
 		AppEUI:         ds.JoinEUI[:],
 		DevEUI:         ds.DevEUI[:],
 		MaxPayloadSize: uint32(common.Band.MaxPayloadSize[dr].N),

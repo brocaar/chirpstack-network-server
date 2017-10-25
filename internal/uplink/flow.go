@@ -5,23 +5,27 @@ import (
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
 )
 
 // JoinRequestContext holds the context of a join-request.
 type JoinRequestContext struct {
-	RXPacket            models.RXPacket
-	JoinRequestPayload  *lorawan.JoinRequestPayload
-	DevAddr             lorawan.DevAddr
-	CFList              []uint32
-	JoinRequestResponse *as.JoinRequestResponse
-	DeviceSession       storage.DeviceSession
+	RXPacket           models.RXPacket
+	JoinRequestPayload *lorawan.JoinRequestPayload
+	Device             storage.Device
+	DeviceProfile      storage.DeviceProfile
+	DevAddr            lorawan.DevAddr
+	CFList             []uint32
+	JoinAnsPayload     backend.JoinAnsPayload
+	DeviceSession      storage.DeviceSession
 }
 
 // DataUpContext holds the context of an uplink data.
 type DataUpContext struct {
-	RXPacket      models.RXPacket
-	MACPayload    *lorawan.MACPayload
-	DeviceSession storage.DeviceSession
+	RXPacket                models.RXPacket
+	MACPayload              *lorawan.MACPayload
+	DeviceSession           storage.DeviceSession
+	ApplicationServerClient as.ApplicationServerClient
 }
 
 // ProprietaryUpContext holds the context of a proprietary up context.
