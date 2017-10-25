@@ -77,3 +77,6 @@ var Gateway backend.Gateway
 
 // JoinServerPool holds the join-server client pool.
 var JoinServerPool jsclient.Pool
+
+// DefaultApplicationServerID holds the default application-server ID (UUID).
+var DefaultApplicationServerID = "6d5db27e-4ce2-4b2b-b5d7-91f069397978"

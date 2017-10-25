@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/satori/go.uuid"
-
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -28,18 +26,26 @@ import (
 const defaultCodeRate = "4/5"
 
 // NetworkServerAPI defines the nework-server API.
-type NetworkServerAPI struct {
-}
+type NetworkServerAPI struct{}
 
 // NewNetworkServerAPI returns a new NetworkServerAPI.
 func NewNetworkServerAPI() *NetworkServerAPI {
 	return &NetworkServerAPI{}
 }
 
+func (n *NetworkServerAPI) getRemoteID(ctx context.Context) (string, error) {
+	return common.DefaultApplicationServerID, nil
+}
+
 // CreateServiceProfile creates the given service-profile.
 func (n *NetworkServerAPI) CreateServiceProfile(ctx context.Context, req *ns.CreateServiceProfileRequest) (*ns.CreateServiceProfileResponse, error) {
+	remoteID, err := n.getRemoteID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	sp := storage.ServiceProfile{
-		CreatedBy: uuid.NewV4().String(), // TODO: get from context
+		CreatedBy: remoteID,
 		ServiceProfile: backend.ServiceProfile{
 			ServiceProfileID:       req.ServiceProfile.ServiceProfileID,
 			ULRate:                 int(req.ServiceProfile.UlRate),
@@ -194,8 +200,13 @@ func (n *NetworkServerAPI) DeleteServiceProfile(ctx context.Context, req *ns.Del
 
 // CreateRoutingProfile creates the given routing-profile.
 func (n *NetworkServerAPI) CreateRoutingProfile(ctx context.Context, req *ns.CreateRoutingProfileRequest) (*ns.CreateRoutingProfileResponse, error) {
+	remoteID, err := n.getRemoteID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	rp := storage.RoutingProfile{
-		CreatedBy: uuid.NewV4().String(), // TODO: get from context
+		CreatedBy: remoteID,
 		RoutingProfile: backend.RoutingProfile{
 			RoutingProfileID: req.RoutingProfile.RoutingProfileID,
 			ASID:             req.RoutingProfile.AsID,
@@ -255,13 +266,18 @@ func (n *NetworkServerAPI) DeleteRoutingProfile(ctx context.Context, req *ns.Del
 
 // CreateDeviceProfile creates the given device-profile.
 func (n *NetworkServerAPI) CreateDeviceProfile(ctx context.Context, req *ns.CreateDeviceProfileRequest) (*ns.CreateDeviceProfileResponse, error) {
+	remoteID, err := n.getRemoteID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var factoryPresetFreqs []backend.Frequency
 	for _, f := range req.DeviceProfile.FactoryPresetFreqs {
 		factoryPresetFreqs = append(factoryPresetFreqs, backend.Frequency(f))
 	}
 
 	dp := storage.DeviceProfile{
-		CreatedBy: uuid.NewV4().String(), // TODO: get from context
+		CreatedBy: remoteID,
 		DeviceProfile: backend.DeviceProfile{
 			DeviceProfileID:    req.DeviceProfile.DeviceProfileID,
 			SupportsClassB:     req.DeviceProfile.SupportsClassB,
@@ -387,12 +403,17 @@ func (n *NetworkServerAPI) DeleteDeviceProfile(ctx context.Context, req *ns.Dele
 
 // CreateDevice creates the given device.
 func (n *NetworkServerAPI) CreateDevice(ctx context.Context, req *ns.CreateDeviceRequest) (*ns.CreateDeviceResponse, error) {
+	remoteID, err := n.getRemoteID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.Device.DevEUI)
 
 	d := storage.Device{
 		DevEUI:           devEUI,
-		CreatedBy:        uuid.NewV4().String(), // TODO: get from context
+		CreatedBy:        remoteID,
 		DeviceProfileID:  req.Device.DeviceProfileID,
 		ServiceProfileID: req.Device.ServiceProfileID,
 		RoutingProfileID: req.Device.RoutingProfileID,
