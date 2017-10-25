@@ -1,6 +1,7 @@
 package asclient
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
@@ -72,7 +73,6 @@ func (p *pool) Get(hostname string) (as.ApplicationServerClient, error) {
 
 func (p *pool) createClient(hostname string) (as.ApplicationServerClient, error) {
 	asOpts := []grpc.DialOption{
-		grpc.FailOnNonTempDialError(true),
 		grpc.WithBlock(),
 	}
 
@@ -100,7 +100,10 @@ func (p *pool) createClient(hostname string) (as.ApplicationServerClient, error)
 		})))
 	}
 
-	asClient, err := grpc.Dial(hostname, asOpts...)
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+
+	asClient, err := grpc.DialContext(ctx, hostname, asOpts...)
 	if err != nil {
 		return nil, errors.Wrap(err, "dial application-server api error")
 	}
