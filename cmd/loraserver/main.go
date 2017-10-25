@@ -77,6 +77,7 @@ func run(c *cli.Context) error {
 		setTimezone,
 		printStartMessage,
 		enableUplinkChannels,
+		setInstallationMargin,
 		setRedisPool,
 		setPostgreSQLConnection,
 		setGatewayBackend,
@@ -212,6 +213,11 @@ func printStartMessage(c *cli.Context) error {
 		"band":    c.String("band"),
 		"docs":    "https://docs.loraserver.io/",
 	}).Info("starting LoRa Server")
+	return nil
+}
+
+func setInstallationMargin(c *cli.Context) error {
+	common.InstallationMargin = c.Float64("installation-margin")
 	return nil
 }
 
@@ -693,6 +699,12 @@ func main() {
 			Name:   "js-tls-key",
 			Usage:  "tls key used by the default join-server client (optional)",
 			EnvVar: "JS_TLS_KEY",
+		},
+		cli.Float64Flag{
+			Name:   "installation-margin",
+			Usage:  "installation margin (dB) used by the ADR engine",
+			Value:  10,
+			EnvVar: "INSTALLATION_MARGIN",
 		},
 	}
 	app.Run(os.Args)

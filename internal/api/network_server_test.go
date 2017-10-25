@@ -405,6 +405,10 @@ func TestNetworkServerAPI(t *testing.T) {
 						868300000,
 						868500000,
 					},
+					RXDelay1:    3,
+					RXDROffset1: 2,
+					RXDataRate2: 5,
+					RXFreq2:     868900000,
 				},
 			}
 			So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
@@ -445,6 +449,10 @@ func TestNetworkServerAPI(t *testing.T) {
 						SkipFCntValidation: true,
 						EnabledChannels:    common.Band.GetUplinkChannels(),
 						ChannelFrequencies: []int{868100000, 868300000, 868500000},
+						RXDelay:            3,
+						RX1DROffset:        2,
+						RX2DR:              5,
+						RX2Frequency:       868900000,
 					})
 				})
 

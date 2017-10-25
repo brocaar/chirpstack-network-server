@@ -52,26 +52,14 @@ type DeviceSession struct {
 	FCntUp   uint32
 	FCntDown uint32
 
+	// Only used by ABP activation
 	SkipFCntValidation bool
 
-	// TODO: Remove or refactor?
-	RXWindow    RXWindow
-	RXDelay     uint8
-	RX1DROffset uint8
-	RX2DR       uint8
-
-	// ADRInterval controls the interval on which to send ADR mac-commands
-	// (in case the data-rate / tx power of the node can be changed).
-	// Setting this to 0 will disable ADR, 1 means to respond to every uplink
-	// with ADR commands.
-	ADRInterval uint32
-
-	// Installation margin in dB, used for calculated the recommended DR (ADR).
-	// A higher margin will lower the data-rate and therefore decrease
-	// packet-loss.
-	// A lower margin will increase the data-rate and therefore increase
-	// possible packet-loss.
-	InstallationMargin float64
+	RXWindow     RXWindow
+	RXDelay      uint8
+	RX1DROffset  uint8
+	RX2DR        uint8
+	RX2Frequency int
 
 	// TXPowerIndex which the node is using. The possible values are defined
 	// by the lorawan/band package and are region specific. By default it is

@@ -143,7 +143,7 @@ func sendDataDown(ctx *DataContext) error {
 		FHDR: lorawan.FHDR{
 			DevAddr: ctx.DeviceSession.DevAddr,
 			FCtrl: lorawan.FCtrl{
-				ADR:      ctx.DeviceSession.ADRInterval != 0,
+				ADR:      true,
 				ACK:      ctx.ACK,
 				FPending: ctx.MoreData,
 			},

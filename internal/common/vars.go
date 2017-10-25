@@ -80,3 +80,6 @@ var JoinServerPool jsclient.Pool
 
 // DefaultApplicationServerID holds the default application-server ID (UUID).
 var DefaultApplicationServerID = "6d5db27e-4ce2-4b2b-b5d7-91f069397978"
+
+// InstallationMargin (dB), used by the ADR engine
+var InstallationMargin float64

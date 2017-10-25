@@ -60,9 +60,8 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
 	}
 
-	// if the node has ADR disabled or the uplink framecounter does not meet
-	// the configured ADR interval, there is nothing to do :-)
-	if !macPL.FHDR.FCtrl.ADR || fullFCnt == 0 || ds.ADRInterval == 0 || fullFCnt%ds.ADRInterval > 0 {
+	// if the node has ADR disabled
+	if !macPL.FHDR.FCtrl.ADR {
 		return nil
 	}
 
@@ -87,7 +86,7 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 		return err
 	}
 
-	snrMargin := snrM - requiredSNR - ds.InstallationMargin
+	snrMargin := snrM - requiredSNR - common.InstallationMargin
 	nStep := int(snrMargin / 3)
 
 	maxSupportedDR := getMaxSupportedDRForNode(ds)

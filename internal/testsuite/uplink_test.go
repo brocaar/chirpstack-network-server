@@ -74,6 +74,7 @@ func TestUplinkScenarios(t *testing.T) {
 	}
 	common.DB = db
 	common.RedisPool = common.NewRedisPool(conf.RedisURL)
+	common.InstallationMargin = 5
 
 	Convey("Given a clean database", t, func() {
 		test.MustFlushRedis(common.RedisPool)
@@ -207,18 +208,16 @@ func TestUplinkScenarios(t *testing.T) {
 		}
 
 		nsADREnabled := storage.DeviceSession{
-			DeviceProfileID:    dp.DeviceProfile.DeviceProfileID,
-			ServiceProfileID:   sp.ServiceProfile.ServiceProfileID,
-			RoutingProfileID:   rp.RoutingProfile.RoutingProfileID,
-			DevAddr:            [4]byte{1, 2, 3, 4},
-			DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:             10,
-			FCntDown:           5,
-			JoinEUI:            [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
-			ADRInterval:        10,
-			InstallationMargin: 5,
-			EnabledChannels:    []int{0, 1, 2},
+			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+			DevAddr:          [4]byte{1, 2, 3, 4},
+			DevEUI:           [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:          [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:           10,
+			FCntDown:         5,
+			JoinEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			EnabledChannels:  []int{0, 1, 2},
 		}
 
 		nsExtraChannels := storage.DeviceSession{
@@ -235,18 +234,16 @@ func TestUplinkScenarios(t *testing.T) {
 		}
 
 		nsExtraChannelsADR := storage.DeviceSession{
-			DeviceProfileID:    dp.DeviceProfile.DeviceProfileID,
-			ServiceProfileID:   sp.ServiceProfile.ServiceProfileID,
-			RoutingProfileID:   rp.RoutingProfile.RoutingProfileID,
-			DevAddr:            [4]byte{1, 2, 3, 4},
-			DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			NwkSKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:             10,
-			FCntDown:           5,
-			JoinEUI:            [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
-			ADRInterval:        10,
-			InstallationMargin: 5,
-			EnabledChannels:    []int{0, 1, 2, 3, 4, 5, 6, 7},
+			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+			DevAddr:          [4]byte{1, 2, 3, 4},
+			DevEUI:           [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			NwkSKey:          [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:           10,
+			FCntDown:         5,
+			JoinEUI:          [8]byte{8, 7, 6, 5, 4, 3, 2, 1},
+			EnabledChannels:  []int{0, 1, 2, 3, 4, 5, 6, 7},
 		}
 
 		var fPortZero uint8
@@ -691,6 +688,7 @@ func TestUplinkScenarios(t *testing.T) {
 								FCnt:    5,
 								FCtrl: lorawan.FCtrl{
 									ACK: true,
+									ADR: true,
 								},
 							},
 						},
@@ -738,6 +736,7 @@ func TestUplinkScenarios(t *testing.T) {
 								FCnt:    5,
 								FCtrl: lorawan.FCtrl{
 									ACK: true,
+									ADR: true,
 								},
 							},
 						},
@@ -785,6 +784,7 @@ func TestUplinkScenarios(t *testing.T) {
 								FCnt:    5,
 								FCtrl: lorawan.FCtrl{
 									ACK: true,
+									ADR: true,
 								},
 							},
 						},
@@ -837,6 +837,7 @@ func TestUplinkScenarios(t *testing.T) {
 								FCnt:    5,
 								FCtrl: lorawan.FCtrl{
 									ACK: true,
+									ADR: true,
 								},
 							},
 						},
@@ -884,6 +885,7 @@ func TestUplinkScenarios(t *testing.T) {
 								FCnt:    5,
 								FCtrl: lorawan.FCtrl{
 									ACK: true,
+									ADR: true,
 								},
 							},
 						},
@@ -1046,6 +1048,9 @@ func TestUplinkScenarios(t *testing.T) {
 						},
 						MACPayload: &lorawan.MACPayload{
 							FHDR: lorawan.FHDR{
+								FCtrl: lorawan.FCtrl{
+									ADR: true,
+								},
 								DevAddr: ns.DevAddr,
 								FCnt:    5,
 								FOpts: []lorawan.MACCommand{
@@ -1119,6 +1124,9 @@ func TestUplinkScenarios(t *testing.T) {
 						},
 						MACPayload: &lorawan.MACPayload{
 							FHDR: lorawan.FHDR{
+								FCtrl: lorawan.FCtrl{
+									ADR: true,
+								},
 								DevAddr: ns.DevAddr,
 								FCnt:    5,
 								FOpts: []lorawan.MACCommand{
@@ -1197,6 +1205,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FHDR: lorawan.FHDR{
 								DevAddr: ns.DevAddr,
 								FCnt:    5,
+								FCtrl: lorawan.FCtrl{
+									ADR: true,
+								},
 							},
 							FPort: &fPortZero,
 							FRMPayload: []lorawan.Payload{
@@ -1274,6 +1285,7 @@ func TestUplinkScenarios(t *testing.T) {
 								FCnt:    5,
 								FCtrl: lorawan.FCtrl{
 									FPending: true,
+									ADR:      true,
 								},
 							},
 							FPort: &fPortThree,
@@ -1357,6 +1369,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FHDR: lorawan.FHDR{
 								DevAddr: ns.DevAddr,
 								FCnt:    5,
+								FCtrl: lorawan.FCtrl{
+									ADR: true,
+								},
 							},
 							FPort: &fPortTen,
 							FRMPayload: []lorawan.Payload{
@@ -1412,6 +1427,7 @@ func TestUplinkScenarios(t *testing.T) {
 								FCnt:    5,
 								FCtrl: lorawan.FCtrl{
 									FPending: true,
+									ADR:      true,
 								},
 							},
 							FPort: &fPortTen,
@@ -1466,6 +1482,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FHDR: lorawan.FHDR{
 								DevAddr: ns.DevAddr,
 								FCnt:    5,
+								FCtrl: lorawan.FCtrl{
+									ADR: true,
+								},
 							},
 							FPort: &fPortTen,
 							FRMPayload: []lorawan.Payload{
@@ -1559,6 +1578,7 @@ func TestUplinkScenarios(t *testing.T) {
 								FCnt:    5,
 								FCtrl: lorawan.FCtrl{
 									FPending: true,
+									ADR:      true,
 								},
 							},
 							FPort: &fPortTen,
@@ -1590,7 +1610,7 @@ func TestUplinkScenarios(t *testing.T) {
 		Convey("Given a set of test-scenarios for ADR", func() {
 			tests := []uplinkTestCase{
 				{
-					Name:          "adr triggered because of adr interval",
+					Name:          "adr triggered",
 					DeviceSession: nsADREnabled,
 					RXInfo:        rxInfo,
 					SetMICKey:     ns.NwkSKey,
@@ -1854,6 +1874,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FHDR: lorawan.FHDR{
 								DevAddr: ns.DevAddr,
 								FCnt:    5,
+								FCtrl: lorawan.FCtrl{
+									ADR: true,
+								},
 								FOpts: []lorawan.MACCommand{
 									{
 										CID: lorawan.LinkADRReq,
@@ -1977,6 +2000,9 @@ func TestUplinkScenarios(t *testing.T) {
 							FHDR: lorawan.FHDR{
 								DevAddr: ns.DevAddr,
 								FCnt:    5,
+								FCtrl: lorawan.FCtrl{
+									ADR: true,
+								},
 								FOpts: []lorawan.MACCommand{
 									{
 										CID: lorawan.LinkADRReq,

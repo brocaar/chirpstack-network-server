@@ -15,6 +15,7 @@ import (
 
 func TestADR(t *testing.T) {
 	conf := test.GetConfig()
+	common.InstallationMargin = 5
 
 	Convey("Testing the ADR functions", t, func() {
 		Convey("Given a testtable for getNbRep", func() {
@@ -270,11 +271,9 @@ func TestADR(t *testing.T) {
 					{
 						Name: "ADR increasing data-rate by one step (no CFlist)",
 						DeviceSession: &storage.DeviceSession{
-							DevAddr:            [4]byte{1, 2, 3, 4},
-							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							ADRInterval:        1,
-							InstallationMargin: 5,
-							EnabledChannels:    []int{0, 1, 2},
+							DevAddr:         [4]byte{1, 2, 3, 4},
+							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledChannels: []int{0, 1, 2},
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
@@ -284,10 +283,8 @@ func TestADR(t *testing.T) {
 						},
 						FullFCnt: 1,
 						ExpectedDeviceSession: storage.DeviceSession{
-							DevAddr:            [4]byte{1, 2, 3, 4},
-							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							ADRInterval:        1,
-							InstallationMargin: 5,
+							DevAddr: [4]byte{1, 2, 3, 4},
+							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
@@ -302,13 +299,11 @@ func TestADR(t *testing.T) {
 					{
 						Name: "ADR increasing tx-power by one step (no CFlist)",
 						DeviceSession: &storage.DeviceSession{
-							DevAddr:            [4]byte{1, 2, 3, 4},
-							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							ADRInterval:        1,
-							InstallationMargin: 5,
-							EnabledChannels:    []int{0, 1, 2},
-							DR:                 5,
-							TXPowerIndex:       3,
+							DevAddr:         [4]byte{1, 2, 3, 4},
+							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledChannels: []int{0, 1, 2},
+							DR:              5,
+							TXPowerIndex:    3,
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
@@ -318,10 +313,8 @@ func TestADR(t *testing.T) {
 						},
 						FullFCnt: 1,
 						ExpectedDeviceSession: storage.DeviceSession{
-							DevAddr:            [4]byte{1, 2, 3, 4},
-							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							ADRInterval:        1,
-							InstallationMargin: 5,
+							DevAddr: [4]byte{1, 2, 3, 4},
+							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: 1, GatewayCount: 1},
 							},
@@ -353,13 +346,11 @@ func TestADR(t *testing.T) {
 					{
 						Name: "ADR increasing data-rate by one step and tx-power reset due to node changing its data-rate (no CFlist)",
 						DeviceSession: &storage.DeviceSession{
-							DevAddr:            [4]byte{1, 2, 3, 4},
-							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							ADRInterval:        1,
-							InstallationMargin: 5,
-							EnabledChannels:    []int{0, 1, 2},
-							DR:                 5,
-							TXPowerIndex:       3,
+							DevAddr:         [4]byte{1, 2, 3, 4},
+							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledChannels: []int{0, 1, 2},
+							DR:              5,
+							TXPowerIndex:    3,
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
@@ -369,10 +360,8 @@ func TestADR(t *testing.T) {
 						},
 						FullFCnt: 1,
 						ExpectedDeviceSession: storage.DeviceSession{
-							DevAddr:            [4]byte{1, 2, 3, 4},
-							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							ADRInterval:        1,
-							InstallationMargin: 5,
+							DevAddr: [4]byte{1, 2, 3, 4},
+							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
@@ -388,11 +377,9 @@ func TestADR(t *testing.T) {
 					{
 						Name: "ADR increasing data-rate by one step (no CFlist), but mac-command block pending",
 						DeviceSession: &storage.DeviceSession{
-							DevAddr:            [4]byte{1, 2, 3, 4},
-							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							ADRInterval:        1,
-							InstallationMargin: 5,
-							EnabledChannels:    []int{0, 1, 2},
+							DevAddr:         [4]byte{1, 2, 3, 4},
+							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledChannels: []int{0, 1, 2},
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
@@ -415,10 +402,8 @@ func TestADR(t *testing.T) {
 							},
 						},
 						ExpectedDeviceSession: storage.DeviceSession{
-							DevAddr:            [4]byte{1, 2, 3, 4},
-							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							ADRInterval:        1,
-							InstallationMargin: 5,
+							DevAddr: [4]byte{1, 2, 3, 4},
+							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
@@ -449,11 +434,9 @@ func TestADR(t *testing.T) {
 					{
 						Name: "ADR increasing data-rate by one step (extra channels added)",
 						DeviceSession: &storage.DeviceSession{
-							DevAddr:            [4]byte{1, 2, 3, 4},
-							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							ADRInterval:        1,
-							InstallationMargin: 5,
-							EnabledChannels:    []int{0, 1, 2, 3, 4, 6},
+							DevAddr:         [4]byte{1, 2, 3, 4},
+							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledChannels: []int{0, 1, 2, 3, 4, 6},
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
@@ -463,11 +446,9 @@ func TestADR(t *testing.T) {
 						},
 						FullFCnt: 1,
 						ExpectedDeviceSession: storage.DeviceSession{
-							DevAddr:            [4]byte{1, 2, 3, 4},
-							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							ADRInterval:        1,
-							InstallationMargin: 5,
-							EnabledChannels:    []int{0, 1, 2, 3, 4, 6},
+							DevAddr:         [4]byte{1, 2, 3, 4},
+							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledChannels: []int{0, 1, 2, 3, 4, 6},
 							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
@@ -481,10 +462,8 @@ func TestADR(t *testing.T) {
 					{
 						Name: "data-rate can be increased, but no ADR flag set",
 						DeviceSession: &storage.DeviceSession{
-							DevAddr:            [4]byte{1, 2, 3, 4},
-							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							ADRInterval:        1,
-							InstallationMargin: 5,
+							DevAddr: [4]byte{1, 2, 3, 4},
+							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadNoADR,
@@ -494,10 +473,8 @@ func TestADR(t *testing.T) {
 						},
 						FullFCnt: 1,
 						ExpectedDeviceSession: storage.DeviceSession{
-							DevAddr:            [4]byte{1, 2, 3, 4},
-							DevEUI:             [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							ADRInterval:        1,
-							InstallationMargin: 5,
+							DevAddr: [4]byte{1, 2, 3, 4},
+							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
