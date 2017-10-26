@@ -13,6 +13,7 @@ type JoinRequestContext struct {
 	RXPacket           models.RXPacket
 	JoinRequestPayload *lorawan.JoinRequestPayload
 	Device             storage.Device
+	ServiceProfile     storage.ServiceProfile
 	DeviceProfile      storage.DeviceProfile
 	DevAddr            lorawan.DevAddr
 	CFList             []uint32

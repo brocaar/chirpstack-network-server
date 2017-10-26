@@ -386,8 +386,11 @@ func TestNetworkServerAPI(t *testing.T) {
 			createdBy := uuid.NewV4().String()
 
 			sp := storage.ServiceProfile{
-				CreatedBy:      createdBy,
-				ServiceProfile: backend.ServiceProfile{},
+				CreatedBy: createdBy,
+				ServiceProfile: backend.ServiceProfile{
+					DRMin: 3,
+					DRMax: 6,
+				},
 			}
 			So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
 
@@ -453,6 +456,7 @@ func TestNetworkServerAPI(t *testing.T) {
 						RX1DROffset:        2,
 						RX2DR:              5,
 						RX2Frequency:       868900000,
+						MaxSupportedDR:     6,
 					})
 				})
 

@@ -495,6 +495,11 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		return nil, errToRPCError(err)
 	}
 
+	sp, err := storage.GetServiceProfile(common.DB, d.ServiceProfileID)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
 	dp, err := storage.GetDeviceProfile(common.DB, d.DeviceProfileID)
 	if err != nil {
 		return nil, errToRPCError(err)
@@ -517,11 +522,12 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		FCntDown:           req.FCntDown,
 		SkipFCntValidation: req.SkipFCntCheck,
 
-		RXWindow:     storage.RX1,
-		RXDelay:      uint8(dp.RXDelay1),
-		RX1DROffset:  uint8(dp.RXDROffset1),
-		RX2DR:        uint8(dp.RXDataRate2),
-		RX2Frequency: int(dp.RXFreq2),
+		RXWindow:       storage.RX1,
+		RXDelay:        uint8(dp.RXDelay1),
+		RX1DROffset:    uint8(dp.RXDROffset1),
+		RX2DR:          uint8(dp.RXDataRate2),
+		RX2Frequency:   int(dp.RXFreq2),
+		MaxSupportedDR: sp.ServiceProfile.DRMax,
 
 		EnabledChannels:    common.Band.GetUplinkChannels(), // TODO: replace by ServiceProfile.ChannelMask?
 		ChannelFrequencies: channelFrequencies,

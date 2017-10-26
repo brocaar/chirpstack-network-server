@@ -56,6 +56,11 @@ func getDeviceAndDeviceProfile(ctx *JoinRequestContext) error {
 		return errors.Wrap(err, "get device-profile error")
 	}
 
+	ctx.ServiceProfile, err = storage.GetServiceProfile(common.DB, ctx.Device.ServiceProfileID)
+	if err != nil {
+		return errors.Wrap(err, "get service-profile error")
+	}
+
 	if !ctx.DeviceProfile.SupportsJoin {
 		return errors.Wrap(err, "device does not support join")
 	}
@@ -146,6 +151,7 @@ func createNodeSession(ctx *JoinRequestContext) error {
 		RX2DR:           uint8(ctx.DeviceProfile.RXDataRate2),
 		EnabledChannels: common.Band.GetUplinkChannels(),
 		LastRXInfoSet:   ctx.RXPacket.RXInfoSet,
+		MaxSupportedDR:  ctx.ServiceProfile.ServiceProfile.DRMax,
 	}
 
 	if err := storage.SaveDeviceSession(common.RedisPool, ctx.DeviceSession); err != nil {
