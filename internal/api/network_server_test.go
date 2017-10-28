@@ -250,7 +250,6 @@ func TestNetworkServerAPI(t *testing.T) {
 					MaxEIRP:            14,
 					MaxDutyCycle:       1,
 					SupportsJoin:       true,
-					RfRegion:           "EU868",
 					Supports32BitFCnt:  true,
 				},
 			})
@@ -280,7 +279,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					MaxEIRP:            14,
 					MaxDutyCycle:       1,
 					SupportsJoin:       true,
-					RfRegion:           "EU868",
+					RfRegion:           "EU868", // set by the api
 					Supports32BitFCnt:  true,
 				})
 			})

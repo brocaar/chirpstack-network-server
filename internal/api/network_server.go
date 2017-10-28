@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -19,8 +20,20 @@ import (
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/brocaar/lorawan/band"
 )
+
+var rfRegionMapping = map[band.Name]backend.RFRegion{
+	band.AS_923:     backend.AS923,
+	band.AU_915_928: backend.Australia915,
+	band.CN_470_510: backend.China470,
+	band.CN_779_787: backend.China779,
+	band.EU_433:     backend.EU433,
+	band.EU_863_870: backend.EU868,
+	band.IN_865_867: backend.RFRegion("India865"),      // ? is not defined
+	band.KR_920_923: backend.RFRegion("SouthKorea920"), // ? is not defined
+	band.US_902_928: backend.US902,
+}
 
 // defaultCodeRate defines the default code rate
 const defaultCodeRate = "4/5"
@@ -265,6 +278,7 @@ func (n *NetworkServerAPI) DeleteRoutingProfile(ctx context.Context, req *ns.Del
 }
 
 // CreateDeviceProfile creates the given device-profile.
+// The RFRegion field will get set automatically according to the configured band.
 func (n *NetworkServerAPI) CreateDeviceProfile(ctx context.Context, req *ns.CreateDeviceProfileRequest) (*ns.CreateDeviceProfileResponse, error) {
 	remoteID, err := n.getRemoteID(ctx)
 	if err != nil {
@@ -297,10 +311,20 @@ func (n *NetworkServerAPI) CreateDeviceProfile(ctx context.Context, req *ns.Crea
 			MaxEIRP:            int(req.DeviceProfile.MaxEIRP),
 			MaxDutyCycle:       backend.Percentage(req.DeviceProfile.MaxDutyCycle),
 			SupportsJoin:       req.DeviceProfile.SupportsJoin,
-			RFRegion:           backend.RFRegion(req.DeviceProfile.RfRegion),
 			Supports32bitFCnt:  req.DeviceProfile.Supports32BitFCnt,
 		},
 	}
+
+	var ok bool
+	dp.DeviceProfile.RFRegion, ok = rfRegionMapping[common.BandName]
+	if !ok {
+		// band name has not been specified by the LoRaWAN backend interfaces
+		// specification. use the internal BandName for now so that when these
+		// values are specified in a next version, this can be fixed in a db
+		// migration
+		dp.DeviceProfile.RFRegion = backend.RFRegion(common.BandName)
+	}
+
 	if err := storage.CreateDeviceProfile(common.DB, &dp); err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -352,6 +376,7 @@ func (n *NetworkServerAPI) GetDeviceProfile(ctx context.Context, req *ns.GetDevi
 }
 
 // UpdateDeviceProfile updates the given device-profile.
+// The RFRegion field will get set automatically according to the configured band.
 func (n *NetworkServerAPI) UpdateDeviceProfile(ctx context.Context, req *ns.UpdateDeviceProfileRequest) (*ns.UpdateDeviceProfileResponse, error) {
 	dp, err := storage.GetDeviceProfile(common.DB, req.DeviceProfile.DeviceProfileID)
 	if err != nil {
@@ -381,8 +406,17 @@ func (n *NetworkServerAPI) UpdateDeviceProfile(ctx context.Context, req *ns.Upda
 		MaxEIRP:            int(req.DeviceProfile.MaxEIRP),
 		MaxDutyCycle:       backend.Percentage(req.DeviceProfile.MaxDutyCycle),
 		SupportsJoin:       req.DeviceProfile.SupportsJoin,
-		RFRegion:           backend.RFRegion(req.DeviceProfile.RfRegion),
 		Supports32bitFCnt:  req.DeviceProfile.Supports32BitFCnt,
+	}
+
+	var ok bool
+	dp.DeviceProfile.RFRegion, ok = rfRegionMapping[common.BandName]
+	if !ok {
+		// band name has not been specified by the LoRaWAN backend interfaces
+		// specification. use the internal BandName for now so that when these
+		// values are specified in a next version, this can be fixed in a db
+		// migration
+		dp.DeviceProfile.RFRegion = backend.RFRegion(common.BandName)
 	}
 
 	if err := storage.UpdateDeviceProfile(common.DB, &dp); err != nil {
