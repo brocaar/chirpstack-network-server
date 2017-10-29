@@ -27,6 +27,7 @@ var flow = NewFlow().JoinRequest(
 ).DataUp(
 	setContextFromDataPHYPayload,
 	getNodeSessionForDataUp,
+	getServiceProfile,
 	logDataFramesCollected,
 	getApplicationServerClientForDataUp,
 	decryptFRMPayloadMACCommands,

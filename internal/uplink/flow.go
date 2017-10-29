@@ -26,6 +26,7 @@ type DataUpContext struct {
 	RXPacket                models.RXPacket
 	MACPayload              *lorawan.MACPayload
 	DeviceSession           storage.DeviceSession
+	ServiceProfile          storage.ServiceProfile
 	ApplicationServerClient as.ApplicationServerClient
 }
 

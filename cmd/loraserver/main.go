@@ -415,10 +415,7 @@ func startGatewayAPIServer(c *cli.Context) error {
 func startLoRaServer(server *uplink.Server) func(*cli.Context) error {
 	return func(c *cli.Context) error {
 		*server = *uplink.NewServer()
-		if err := server.Start(); err != nil {
-			return err
-		}
-		return nil
+		return server.Start()
 	}
 }
 

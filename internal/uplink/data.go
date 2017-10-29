@@ -41,6 +41,16 @@ func getNodeSessionForDataUp(ctx *DataUpContext) error {
 	return nil
 }
 
+func getServiceProfile(ctx *DataUpContext) error {
+	sp, err := storage.GetServiceProfile(common.DB, ctx.DeviceSession.ServiceProfileID)
+	if err != nil {
+		return errors.Wrap(err, "get service-profile error")
+	}
+	ctx.ServiceProfile = sp
+
+	return nil
+}
+
 func logDataFramesCollected(ctx *DataUpContext) error {
 	var macs []string
 	for _, p := range ctx.RXPacket.RXInfoSet {
@@ -135,7 +145,7 @@ func handleFRMPayloadMACCommands(ctx *DataUpContext) error {
 
 func sendFRMPayloadToApplicationServer(ctx *DataUpContext) error {
 	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort > 0 {
-		return publishDataUp(ctx.ApplicationServerClient, ctx.DeviceSession, ctx.RXPacket, *ctx.MACPayload)
+		return publishDataUp(ctx.ApplicationServerClient, ctx.DeviceSession, ctx.ServiceProfile, ctx.RXPacket, *ctx.MACPayload)
 	}
 
 	return nil
@@ -261,7 +271,7 @@ func sendRXInfoPayload(ds storage.DeviceSession, rxPacket models.RXPacket) error
 	return nil
 }
 
-func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession, rxPacket models.RXPacket, macPL lorawan.MACPayload) error {
+func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession, sp storage.ServiceProfile, rxPacket models.RXPacket, macPL lorawan.MACPayload) error {
 	publishDataUpReq := as.HandleDataUpRequest{
 		AppEUI: ds.JoinEUI[:],
 		DevEUI: ds.DevEUI[:],
@@ -279,39 +289,41 @@ func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession
 		},
 	}
 
-	var macs []lorawan.EUI64
-	for i := range rxPacket.RXInfoSet {
-		macs = append(macs, rxPacket.RXInfoSet[i].MAC)
-	}
-
-	// get gateway info
-	gws, err := gateway.GetGatewaysForMACs(common.DB, macs)
-	if err != nil {
-		log.WithField("macs", macs).Warningf("get gateways for macs error: %s", err)
-		gws = make(map[lorawan.EUI64]gateway.Gateway)
-	}
-
-	for _, rxInfo := range rxPacket.RXInfoSet {
-		// make sure we have a copy of the MAC byte slice, else every RxInfo
-		// slice item will get the same Mac
-		mac := make([]byte, 8)
-		copy(mac, rxInfo.MAC[:])
-
-		asRxInfo := as.RXInfo{
-			Mac:     mac,
-			Time:    rxInfo.Time.Format(time.RFC3339Nano),
-			Rssi:    int32(rxInfo.RSSI),
-			LoRaSNR: rxInfo.LoRaSNR,
+	if sp.ServiceProfile.AddGWMetadata {
+		var macs []lorawan.EUI64
+		for i := range rxPacket.RXInfoSet {
+			macs = append(macs, rxPacket.RXInfoSet[i].MAC)
 		}
 
-		if gw, ok := gws[rxInfo.MAC]; ok {
-			asRxInfo.Name = gw.Name
-			asRxInfo.Latitude = gw.Location.Latitude
-			asRxInfo.Longitude = gw.Location.Longitude
-			asRxInfo.Altitude = gw.Altitude
+		// get gateway info
+		gws, err := gateway.GetGatewaysForMACs(common.DB, macs)
+		if err != nil {
+			log.WithField("macs", macs).Warningf("get gateways for macs error: %s", err)
+			gws = make(map[lorawan.EUI64]gateway.Gateway)
 		}
 
-		publishDataUpReq.RxInfo = append(publishDataUpReq.RxInfo, &asRxInfo)
+		for _, rxInfo := range rxPacket.RXInfoSet {
+			// make sure we have a copy of the MAC byte slice, else every RxInfo
+			// slice item will get the same Mac
+			mac := make([]byte, 8)
+			copy(mac, rxInfo.MAC[:])
+
+			asRxInfo := as.RXInfo{
+				Mac:     mac,
+				Time:    rxInfo.Time.Format(time.RFC3339Nano),
+				Rssi:    int32(rxInfo.RSSI),
+				LoRaSNR: rxInfo.LoRaSNR,
+			}
+
+			if gw, ok := gws[rxInfo.MAC]; ok {
+				asRxInfo.Name = gw.Name
+				asRxInfo.Latitude = gw.Location.Latitude
+				asRxInfo.Longitude = gw.Location.Longitude
+				asRxInfo.Altitude = gw.Altitude
+			}
+
+			publishDataUpReq.RxInfo = append(publishDataUpReq.RxInfo, &asRxInfo)
+		}
 	}
 
 	if macPL.FPort != nil {

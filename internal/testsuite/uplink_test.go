@@ -23,7 +23,9 @@ import (
 )
 
 type uplinkTestCase struct {
-	Name                 string                // name of the test
+	Name       string       // name of the test
+	BeforeFunc func() error // function to run before the test
+
 	DeviceSession        storage.DeviceSession // node-session
 	SetMICKey            lorawan.AES128Key     // key to use for setting the mic
 	EncryptFRMPayloadKey *lorawan.AES128Key    // key to use for encrypting the uplink FRMPayload (e.g. for mac-commands in FRMPayload)
@@ -99,8 +101,10 @@ func TestUplinkScenarios(t *testing.T) {
 		So(gateway.CreateGateway(db, &gw1), ShouldBeNil)
 
 		sp := storage.ServiceProfile{
-			CreatedBy:      createdBy,
-			ServiceProfile: backend.ServiceProfile{},
+			CreatedBy: createdBy,
+			ServiceProfile: backend.ServiceProfile{
+				AddGWMetadata: true,
+			},
 		}
 		So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
 
@@ -981,6 +985,40 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUpFCntRollOver,
 					ExpectedApplicationGetDataDown:  expectedGetDataDown,
 					ExpectedFCntUp:                  65537,
+					ExpectedFCntDown:                5,
+					ExpectedEnabledChannels:         []int{0, 1, 2},
+				},
+				{
+					Name: "unconfirmed uplink data with payload (service-profile: no gateway info)",
+					BeforeFunc: func() error {
+						// remove rx info set
+						expectedApplicationPushDataUp.RxInfo = nil
+
+						// set add gw meta-data to false
+						sp.ServiceProfile.AddGWMetadata = false
+						return storage.UpdateServiceProfile(common.DB, &sp)
+					},
+					DeviceSession: ns,
+					RXInfo:        rxInfo,
+					SetMICKey:     ns.NwkSKey,
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ns.DevAddr,
+								FCnt:    10,
+							},
+							FPort:      &fPortOne,
+							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+						},
+					},
+					ExpectedControllerHandleRXInfo:  expectedControllerHandleRXInfo,
+					ExpectedApplicationHandleDataUp: expectedApplicationPushDataUp,
+					ExpectedApplicationGetDataDown:  expectedGetDataDown,
+					ExpectedFCntUp:                  11,
 					ExpectedFCntDown:                5,
 					ExpectedEnabledChannels:         []int{0, 1, 2},
 				},
@@ -2089,6 +2127,10 @@ func TestUplinkScenarios(t *testing.T) {
 func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 	for i, t := range tests {
 		Convey(fmt.Sprintf("When testing: %s [%d]", t.Name, i), func() {
+			if t.BeforeFunc != nil {
+				So(t.BeforeFunc(), ShouldBeNil)
+			}
+
 			// set application-server mocks
 			asClient.HandleDataUpErr = t.ApplicationHandleDataUpError
 			asClient.GetDataDownResponse = t.ApplicationGetDataDown
