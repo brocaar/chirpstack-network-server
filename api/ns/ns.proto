@@ -128,6 +128,9 @@ service NetworkServer {
     // GetExtraChannelsForChannelConfigurationID returns the extra channels for
     // the given channel-configuration id.
     rpc GetExtraChannelsForChannelConfigurationID(GetExtraChannelsForChannelConfigurationIDRequest) returns (GetExtraChannelsForChannelConfigurationIDResponse) {}
+
+    // MigrateNodeToDeviceSession. This method is for internal us only.
+    rpc MigrateNodeToDeviceSession(MigrateNodeToDeviceSessionRequest) returns (MigrateNodeToDeviceSessionResponse) {}
 }
 
 enum RXWindow {
@@ -816,3 +819,9 @@ message GetExtraChannelsForChannelConfigurationIDResponse {
     // Result-set.
     repeated GetExtraChannelResponse result = 1;
 }
+
+message MigrateNodeToDeviceSessionRequest {
+    bytes devEUI = 1;
+}
+
+message MigrateNodeToDeviceSessionResponse {}

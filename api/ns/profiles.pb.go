@@ -99,6 +99,8 @@ It has these top-level messages:
 	GetExtraChannelResponse
 	GetExtraChannelsForChannelConfigurationIDRequest
 	GetExtraChannelsForChannelConfigurationIDResponse
+	MigrateNodeToDeviceSessionRequest
+	MigrateNodeToDeviceSessionResponse
 */
 package ns
 

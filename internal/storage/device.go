@@ -68,9 +68,9 @@ func CreateDevice(db *sqlx.DB, d *Device) error {
 }
 
 // GetDevice returns the device matching the given DevEUI.
-func GetDevice(db *sqlx.DB, devEUI lorawan.EUI64) (Device, error) {
+func GetDevice(db sqlx.Queryer, devEUI lorawan.EUI64) (Device, error) {
 	var d Device
-	err := db.Get(&d, "select * from device where dev_eui = $1", devEUI[:])
+	err := sqlx.Get(db, &d, "select * from device where dev_eui = $1", devEUI[:])
 	if err != nil {
 		return d, handlePSQLError(err, "select error")
 	}
@@ -79,7 +79,7 @@ func GetDevice(db *sqlx.DB, devEUI lorawan.EUI64) (Device, error) {
 }
 
 // UpdateDevice updates the given device.
-func UpdateDevice(db *sqlx.DB, d *Device) error {
+func UpdateDevice(db sqlx.Execer, d *Device) error {
 	d.UpdatedAt = time.Now()
 	res, err := db.Exec(`
 		update device set

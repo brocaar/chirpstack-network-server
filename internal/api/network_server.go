@@ -1129,6 +1129,20 @@ func (n *NetworkServerAPI) GetExtraChannelsForChannelConfigurationID(ctx context
 	return &out, nil
 }
 
+// MigrateNodeToDeviceSession migrates a node-session to device-session.
+// This method is for internal us only.
+func (n *NetworkServerAPI) MigrateNodeToDeviceSession(ctx context.Context, req *ns.MigrateNodeToDeviceSessionRequest) (*ns.MigrateNodeToDeviceSessionResponse, error) {
+	var eui lorawan.EUI64
+	copy(eui[:], req.DevEUI)
+
+	err := storage.MigrateNodeToDeviceSession(common.RedisPool, common.DB, eui)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.MigrateNodeToDeviceSessionResponse{}, nil
+}
+
 func channelConfigurationToResp(cf gateway.ChannelConfiguration) *ns.GetChannelConfigurationResponse {
 	out := ns.GetChannelConfigurationResponse{
 		Id:        cf.ID,
