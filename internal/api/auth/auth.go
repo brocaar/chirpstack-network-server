@@ -39,6 +39,7 @@ func NewJWTValidator(algorithm, secret string) *JWTValidator {
 	}
 }
 
+// GetMAC returns the gateway MAC from the JWT claim.
 func (v JWTValidator) GetMAC(ctx context.Context) (lorawan.EUI64, error) {
 	claims, err := v.getClaims(ctx)
 	if err != nil {
