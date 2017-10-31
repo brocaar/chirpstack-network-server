@@ -68,6 +68,16 @@ func getDeviceAndDeviceProfile(ctx *JoinRequestContext) error {
 	return nil
 }
 
+func validateNonce(ctx *JoinRequestContext) error {
+	// validate that the nonce has not been used yet
+	err := storage.ValidateDevNonce(common.DB, ctx.JoinRequestPayload.AppEUI, ctx.JoinRequestPayload.DevEUI, ctx.JoinRequestPayload.DevNonce)
+	if err != nil {
+		return errors.Wrap(err, "validate dev-nonce error")
+	}
+
+	return nil
+}
+
 func getRandomDevAddr(ctx *JoinRequestContext) error {
 	devAddr, err := storage.GetRandomDevAddr(common.RedisPool, common.NetID)
 	if err != nil {
@@ -162,6 +172,21 @@ func createNodeSession(ctx *JoinRequestContext) error {
 		return fmt.Errorf("flush mac-command queue error: %s", err)
 	}
 
+	return nil
+}
+
+func createDeviceActivation(ctx *JoinRequestContext) error {
+	da := storage.DeviceActivation{
+		DevEUI:   ctx.DeviceSession.DevEUI,
+		JoinEUI:  ctx.DeviceSession.JoinEUI,
+		DevAddr:  ctx.DeviceSession.DevAddr,
+		NwkSKey:  ctx.DeviceSession.NwkSKey,
+		DevNonce: ctx.JoinRequestPayload.DevNonce,
+	}
+	err := storage.CreateDeviceActivation(common.DB, &da)
+	if err != nil {
+		return errors.Wrap(err, "create device-activation error")
+	}
 	return nil
 }
 

@@ -21,13 +21,14 @@ import (
 )
 
 type otaaTestCase struct {
-	Name                     string                 // name of the test
-	RXInfo                   gw.RXInfo              // rx-info of the "received" packet
-	PHYPayload               lorawan.PHYPayload     // received PHYPayload
-	JoinServerJoinReqError   error                  // error returned by the join-req method
-	JoinServerJoinAnsPayload backend.JoinAnsPayload // join-server join-ans payload
-	AppKey                   lorawan.AES128Key      // app-key (used to decrypt the expected PHYPayload)
-	ExtraChannels            []int                  // extra channels for CFList
+	Name                     string                     // name of the test
+	RXInfo                   gw.RXInfo                  // rx-info of the "received" packet
+	PHYPayload               lorawan.PHYPayload         // received PHYPayload
+	JoinServerJoinReqError   error                      // error returned by the join-req method
+	JoinServerJoinAnsPayload backend.JoinAnsPayload     // join-server join-ans payload
+	AppKey                   lorawan.AES128Key          // app-key (used to decrypt the expected PHYPayload)
+	ExtraChannels            []int                      // extra channels for CFList
+	DeviceActivations        []storage.DeviceActivation // existing device-activations
 
 	ExpectedError          error                  // expected error
 	ExpectedJoinReqPayload backend.JoinReqPayload // expected join-request request
@@ -143,6 +144,21 @@ func TestOTAAScenarios(t *testing.T) {
 					PHYPayload:             jrPayload,
 					JoinServerJoinReqError: errors.New("invalid deveui"),
 					ExpectedError:          errors.New("join-request to join-server error: invalid deveui"),
+				},
+				{
+					Name:       "device alreay activated with dev-nonce",
+					RXInfo:     rxInfo,
+					PHYPayload: jrPayload,
+					DeviceActivations: []storage.DeviceActivation{
+						{
+							DevEUI:   d.DevEUI,
+							JoinEUI:  lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+							DevAddr:  lorawan.DevAddr{},
+							NwkSKey:  lorawan.AES128Key{},
+							DevNonce: lorawan.DevNonce{1, 2},
+						},
+					},
+					ExpectedError: errors.New("validate dev-nonce error: object already exists"),
 				},
 				{
 					Name:       "join-request accepted using rx1",
@@ -272,6 +288,11 @@ func runOTAATests(asClient *test.ApplicationClient, jsClient *test.JoinServerCli
 			jsClient.JoinAnsPayload = t.JoinServerJoinAnsPayload
 			jsClient.JoinReqError = t.JoinServerJoinReqError
 
+			// create device-activations
+			for _, da := range t.DeviceActivations {
+				So(storage.CreateDeviceActivation(common.DB, &da), ShouldBeNil)
+			}
+
 			err = uplink.HandleRXPacket(gw.RXPacket{
 				RXInfo:     t.RXInfo,
 				PHYPayload: t.PHYPayload,
@@ -316,6 +337,13 @@ func runOTAATests(asClient *test.ApplicationClient, jsClient *test.JoinServerCli
 				So(ds.DevAddr, ShouldNotEqual, lorawan.DevAddr{})
 				ds.DevAddr = lorawan.DevAddr{}
 				So(ds, ShouldResemble, t.ExpectedDeviceSession)
+			})
+
+			Convey("Then a device-activation record was created", func() {
+				da, err := storage.GetLastDeviceActivationForDevEUI(common.DB, t.ExpectedDeviceSession.DevEUI)
+				So(err, ShouldBeNil)
+				So(da.DevAddr, ShouldNotEqual, lorawan.DevAddr{})
+				So(da.NwkSKey, ShouldEqual, t.ExpectedDeviceSession.NwkSKey)
 			})
 		})
 	}

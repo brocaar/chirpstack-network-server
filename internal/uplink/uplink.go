@@ -19,10 +19,12 @@ var flow = NewFlow().JoinRequest(
 	setContextFromJoinRequestPHYPayload,
 	logJoinRequestFramesCollected,
 	getDeviceAndDeviceProfile,
+	validateNonce,
 	getRandomDevAddr,
 	getJoinAcceptFromAS,
 	logJoinRequestFrame,
 	createNodeSession,
+	createDeviceActivation,
 	sendJoinAcceptDownlink,
 ).DataUp(
 	setContextFromDataPHYPayload,
