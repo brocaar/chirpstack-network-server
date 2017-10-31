@@ -104,10 +104,10 @@ func getJoinAcceptFromAS(ctx *JoinRequestContext) error {
 		DevEUI:     ctx.JoinRequestPayload.DevEUI,
 		DevAddr:    ctx.DevAddr,
 		DLSettings: lorawan.DLSettings{
-			RX2DataRate: uint8(ctx.DeviceProfile.RXDataRate2),
-			RX1DROffset: uint8(ctx.DeviceProfile.RXDROffset1),
+			RX2DataRate: uint8(common.RX2DR),
+			RX1DROffset: uint8(common.RX1DROffset),
 		},
-		RxDelay: ctx.DeviceProfile.RXDelay1,
+		RxDelay: common.RX1Delay,
 		CFList:  common.Band.GetCFList(),
 	}
 
@@ -146,9 +146,9 @@ func createNodeSession(ctx *JoinRequestContext) error {
 		FCntUp:          0,
 		FCntDown:        0,
 		RXWindow:        storage.RX1,
-		RXDelay:         uint8(ctx.DeviceProfile.RXDelay1),
-		RX1DROffset:     uint8(ctx.DeviceProfile.RXDROffset1),
-		RX2DR:           uint8(ctx.DeviceProfile.RXDataRate2),
+		RXDelay:         uint8(common.RX1Delay),
+		RX1DROffset:     uint8(common.RX1DROffset),
+		RX2DR:           uint8(common.RX2DR),
 		EnabledChannels: common.Band.GetUplinkChannels(),
 		LastRXInfoSet:   ctx.RXPacket.RXInfoSet,
 		MaxSupportedDR:  ctx.ServiceProfile.ServiceProfile.DRMax,

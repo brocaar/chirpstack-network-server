@@ -83,3 +83,12 @@ var DefaultApplicationServerID = "6d5db27e-4ce2-4b2b-b5d7-91f069397978"
 
 // InstallationMargin (dB), used by the ADR engine
 var InstallationMargin float64
+
+// RX1Delay holds the RX1 delay for Class-A
+var RX1Delay int
+
+// RX1DROffset holds the RX1 data-rate offset
+var RX1DROffset int
+
+// RX2DR hodsl the RX2 data-rate
+var RX2DR int

@@ -65,8 +65,12 @@ func TestOTAAScenarios(t *testing.T) {
 		So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
 
 		dp := storage.DeviceProfile{
-			CreatedBy:     createdBy,
-			DeviceProfile: backend.DeviceProfile{},
+			CreatedBy: createdBy,
+			DeviceProfile: backend.DeviceProfile{
+				RXDelay1:    3,
+				RXDROffset1: 1,
+				RXDataRate2: 5,
+			},
 		}
 		So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
 
@@ -166,10 +170,10 @@ func TestOTAAScenarios(t *testing.T) {
 						PHYPayload: backend.HEXBytes(jrBytes),
 						DevEUI:     d.DevEUI,
 						DLSettings: lorawan.DLSettings{
-							RX2DataRate: uint8(dp.DeviceProfile.RXDataRate2),
-							RX1DROffset: uint8(dp.DeviceProfile.RXDROffset1),
+							RX2DataRate: uint8(common.RX2DR),
+							RX1DROffset: uint8(common.RX1DROffset),
 						},
-						RxDelay: dp.DeviceProfile.RXDelay1,
+						RxDelay: common.RX1Delay,
 					},
 					ExpectedTXInfo: gw.TXInfo{
 						MAC:       rxInfo.MAC,
@@ -219,10 +223,10 @@ func TestOTAAScenarios(t *testing.T) {
 						PHYPayload: backend.HEXBytes(jrBytes),
 						DevEUI:     d.DevEUI,
 						DLSettings: lorawan.DLSettings{
-							RX2DataRate: uint8(dp.DeviceProfile.RXDataRate2),
-							RX1DROffset: uint8(dp.DeviceProfile.RXDROffset1),
+							RX2DataRate: uint8(common.RX2DR),
+							RX1DROffset: uint8(common.RX1DROffset),
 						},
-						RxDelay: dp.DeviceProfile.RXDelay1,
+						RxDelay: common.RX1Delay,
 						CFList:  &lorawan.CFList{868400000, 868500000, 868600000},
 					},
 					ExpectedTXInfo: gw.TXInfo{

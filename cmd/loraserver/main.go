@@ -67,6 +67,7 @@ func run(c *cli.Context) error {
 		setLogLevel,
 		setNetID,
 		setBandConfig,
+		setRXParameters,
 		setDeduplicationDelay,
 		setGetDownlinkDataDelay,
 		setCreateGatewayOnStats,
@@ -150,6 +151,17 @@ func setBandConfig(c *cli.Context) error {
 	common.Band = bandConfig
 	common.BandName = band.Name(c.String("band"))
 
+	return nil
+}
+
+func setRXParameters(c *cli.Context) error {
+	common.RX1Delay = c.Int("rx1-delay")
+	common.RX1DROffset = c.Int("rx1-dr-offset")
+	if rx2DR := c.Int("rx2-dr"); rx2DR != -1 {
+		common.RX2DR = rx2DR
+	} else {
+		common.RX2DR = common.Band.RX2DataRate
+	}
 	return nil
 }
 
@@ -702,6 +714,24 @@ func main() {
 			Usage:  "installation margin (dB) used by the ADR engine",
 			Value:  10,
 			EnvVar: "INSTALLATION_MARGIN",
+		},
+		cli.IntFlag{
+			Name:   "rx1-delay",
+			Usage:  "class a rx1 delay",
+			Value:  1,
+			EnvVar: "RX1_DELAY",
+		},
+		cli.IntFlag{
+			Name:   "rx1-dr-offset",
+			Usage:  "rx1 data-rate offset (valid options documented in the LoRaWAN Regional Parameters specification)",
+			Value:  0,
+			EnvVar: "RX1_DR_OFFSET",
+		},
+		cli.IntFlag{
+			Name:   "rx2-dr",
+			Usage:  "rx2 data-rate (when set to -1, the default rx2 data-rate will be used)",
+			Value:  -1,
+			EnvVar: "RX2_DR",
 		},
 	}
 	app.Run(os.Args)
