@@ -6,8 +6,6 @@ import (
 
 	"github.com/brocaar/lorawan"
 
-	"github.com/satori/go.uuid"
-
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/test"
 	. "github.com/smartystreets/goconvey/convey"
@@ -25,27 +23,18 @@ func TestDevice(t *testing.T) {
 		test.MustResetDB(common.DB)
 
 		Convey("Given a service, device and routing profile", func() {
-			createdByID := uuid.NewV4().String()
-
-			sp := ServiceProfile{
-				CreatedBy: createdByID,
-			}
+			sp := ServiceProfile{}
 			So(CreateServiceProfile(db, &sp), ShouldBeNil)
 
-			dp := DeviceProfile{
-				CreatedBy: createdByID,
-			}
+			dp := DeviceProfile{}
 			So(CreateDeviceProfile(db, &dp), ShouldBeNil)
 
-			rp := RoutingProfile{
-				CreatedBy: createdByID,
-			}
+			rp := RoutingProfile{}
 			So(CreateRoutingProfile(db, &rp), ShouldBeNil)
 
 			Convey("When creating a device", func() {
 				d := Device{
 					DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-					CreatedBy:        createdByID,
 					ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
 					DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
 					RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
@@ -64,19 +53,13 @@ func TestDevice(t *testing.T) {
 				})
 
 				Convey("Then UpdateDevice updates the device", func() {
-					spNew := ServiceProfile{
-						CreatedBy: createdByID,
-					}
+					spNew := ServiceProfile{}
 					So(CreateServiceProfile(db, &spNew), ShouldBeNil)
 
-					dpNew := DeviceProfile{
-						CreatedBy: createdByID,
-					}
+					dpNew := DeviceProfile{}
 					So(CreateDeviceProfile(db, &dpNew), ShouldBeNil)
 
-					rpNew := RoutingProfile{
-						CreatedBy: createdByID,
-					}
+					rpNew := RoutingProfile{}
 					So(CreateRoutingProfile(db, &rpNew), ShouldBeNil)
 
 					d.ServiceProfileID = spNew.ServiceProfile.ServiceProfileID

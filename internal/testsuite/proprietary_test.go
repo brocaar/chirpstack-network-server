@@ -9,7 +9,6 @@ import (
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan/backend"
-	uuid "github.com/satori/go.uuid"
 
 	"github.com/brocaar/loraserver/api/as"
 
@@ -122,7 +121,6 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 		// the routing profile is needed as the ns will send the proprietary
 		// frame to all application-servers.
 		rp := storage.RoutingProfile{
-			CreatedBy:      uuid.NewV4().String(),
 			RoutingProfile: backend.RoutingProfile{},
 		}
 		So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)

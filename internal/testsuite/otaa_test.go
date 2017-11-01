@@ -9,7 +9,6 @@ import (
 
 	"github.com/brocaar/lorawan/band"
 
-	uuid "github.com/satori/go.uuid"
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/brocaar/loraserver/api/gw"
@@ -58,15 +57,12 @@ func TestOTAAScenarios(t *testing.T) {
 		common.JoinServerPool = test.NewJoinServerPool(jsClient)
 		common.Gateway = test.NewGatewayBackend()
 
-		createdBy := uuid.NewV4().String()
 		sp := storage.ServiceProfile{
-			CreatedBy:      createdBy,
 			ServiceProfile: backend.ServiceProfile{},
 		}
 		So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
 
 		dp := storage.DeviceProfile{
-			CreatedBy: createdBy,
 			DeviceProfile: backend.DeviceProfile{
 				RXDelay1:    3,
 				RXDROffset1: 1,
@@ -76,13 +72,11 @@ func TestOTAAScenarios(t *testing.T) {
 		So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
 
 		rp := storage.RoutingProfile{
-			CreatedBy:      createdBy,
 			RoutingProfile: backend.RoutingProfile{},
 		}
 		So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
 
 		d := storage.Device{
-			CreatedBy:        createdBy,
 			DevEUI:           lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
 			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
 			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,

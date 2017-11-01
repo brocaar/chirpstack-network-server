@@ -17,8 +17,6 @@ import (
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
 
-	"github.com/satori/go.uuid"
-
 	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/gateway"
@@ -286,22 +284,17 @@ func TestNetworkServerAPI(t *testing.T) {
 		})
 
 		Convey("Given a ServiceProfile, RoutingProfile and DeviceProfile", func() {
-			createdBy := uuid.NewV4().String()
-
 			sp := storage.ServiceProfile{
-				CreatedBy:      createdBy,
 				ServiceProfile: backend.ServiceProfile{},
 			}
 			So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
 
 			rp := storage.RoutingProfile{
-				CreatedBy:      createdBy,
 				RoutingProfile: backend.RoutingProfile{},
 			}
 			So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
 
 			dp := storage.DeviceProfile{
-				CreatedBy: createdBy,
 				DeviceProfile: backend.DeviceProfile{
 					FactoryPresetFreqs: []backend.Frequency{
 						868100000,
@@ -382,10 +375,7 @@ func TestNetworkServerAPI(t *testing.T) {
 		})
 
 		Convey("Given a ServiceProfile, RoutingProfile, DeviceProfile and Device", func() {
-			createdBy := uuid.NewV4().String()
-
 			sp := storage.ServiceProfile{
-				CreatedBy: createdBy,
 				ServiceProfile: backend.ServiceProfile{
 					DRMin: 3,
 					DRMax: 6,
@@ -394,13 +384,11 @@ func TestNetworkServerAPI(t *testing.T) {
 			So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
 
 			rp := storage.RoutingProfile{
-				CreatedBy:      createdBy,
 				RoutingProfile: backend.RoutingProfile{},
 			}
 			So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
 
 			dp := storage.DeviceProfile{
-				CreatedBy: createdBy,
 				DeviceProfile: backend.DeviceProfile{
 					FactoryPresetFreqs: []backend.Frequency{
 						868100000,
@@ -416,7 +404,6 @@ func TestNetworkServerAPI(t *testing.T) {
 			So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
 
 			d := storage.Device{
-				CreatedBy:        createdBy,
 				DevEUI:           devEUI,
 				DeviceProfileID:  dp.DeviceProfileID,
 				RoutingProfileID: rp.RoutingProfileID,

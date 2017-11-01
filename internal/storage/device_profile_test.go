@@ -7,7 +7,6 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan/backend"
-	uuid "github.com/satori/go.uuid"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -24,7 +23,6 @@ func TestDeviceProfile(t *testing.T) {
 
 		Convey("When creating a device-profile", func() {
 			dp := DeviceProfile{
-				CreatedBy: uuid.NewV4().String(),
 				DeviceProfile: backend.DeviceProfile{
 					SupportsClassB:     true,
 					ClassBTimeout:      1,

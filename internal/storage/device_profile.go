@@ -14,7 +14,6 @@ import (
 
 // DeviceProfile defines the backend.DeviceProfile with some extra meta-data
 type DeviceProfile struct {
-	CreatedBy string    `db:"created_by"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 	backend.DeviceProfile
@@ -31,7 +30,6 @@ func CreateDeviceProfile(db *sqlx.DB, dp *DeviceProfile) error {
 
 	_, err := db.Exec(`
 		insert into device_profile (
-			created_by,
 			created_at,
 			updated_at,
 
@@ -55,8 +53,7 @@ func CreateDeviceProfile(db *sqlx.DB, dp *DeviceProfile) error {
 			supports_join,
 			rf_region,
 			supports_32bit_fcnt
-		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)`,
-		dp.CreatedBy,
+		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
 		dp.CreatedAt,
 		dp.UpdatedAt,
 		dp.DeviceProfile.DeviceProfileID,
@@ -85,7 +82,6 @@ func CreateDeviceProfile(db *sqlx.DB, dp *DeviceProfile) error {
 	}
 
 	log.WithFields(log.Fields{
-		"created_by":        dp.CreatedBy,
 		"device_profile_id": dp.DeviceProfile.DeviceProfileID,
 	}).Info("device-profile created")
 
@@ -98,7 +94,6 @@ func GetDeviceProfile(db *sqlx.DB, id string) (DeviceProfile, error) {
 
 	row := db.QueryRow(`
 		select
-			created_by,
 			created_at,
 			updated_at,
 
@@ -130,7 +125,6 @@ func GetDeviceProfile(db *sqlx.DB, id string) (DeviceProfile, error) {
 	var factoryPresetFreqs []int64
 
 	err := row.Scan(
-		&dp.CreatedBy,
 		&dp.CreatedAt,
 		&dp.UpdatedAt,
 		&dp.DeviceProfile.DeviceProfileID,

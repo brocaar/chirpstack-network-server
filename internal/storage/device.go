@@ -12,7 +12,6 @@ import (
 // Device defines a LoRaWAN device.
 type Device struct {
 	DevEUI           lorawan.EUI64 `db:"dev_eui"`
-	CreatedBy        string        `db:"created_by"`
 	CreatedAt        time.Time     `db:"created_at"`
 	UpdatedAt        time.Time     `db:"updated_at"`
 	DeviceProfileID  string        `db:"device_profile_id"`
@@ -40,15 +39,13 @@ func CreateDevice(db *sqlx.DB, d *Device) error {
 	_, err := db.Exec(`
 		insert into device (
 			dev_eui,
-			created_by,
 			created_at,
 			updated_at,
 			device_profile_id,
 			service_profile_id,
 			routing_profile_id
-		) values ($1, $2, $3, $4, $5, $6, $7)`,
+		) values ($1, $2, $3, $4, $5, $6)`,
 		d.DevEUI[:],
-		d.CreatedBy,
 		d.CreatedAt,
 		d.UpdatedAt,
 		d.DeviceProfileID,
@@ -60,8 +57,7 @@ func CreateDevice(db *sqlx.DB, d *Device) error {
 	}
 
 	log.WithFields(log.Fields{
-		"created_by": d.CreatedBy,
-		"dev_eui":    d.DevEUI,
+		"dev_eui": d.DevEUI,
 	}).Info("device created")
 
 	return nil

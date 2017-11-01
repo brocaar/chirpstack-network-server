@@ -1,6 +1,5 @@
 -- +migrate Up
 create table device_profile (
-    created_by uuid not null,
     created_at timestamp with time zone not null,
     updated_at timestamp with time zone not null,
 
@@ -26,12 +25,10 @@ create table device_profile (
     supports_32bit_fcnt boolean not null
 );
 
-create index idx_device_profile_created_by on device_profile(created_by);
 create index idx_device_profile_created_at on device_profile(created_at);
 create index idx_device_profile_updated_at on device_profile(updated_at);
 
 create table service_profile (
-    created_by uuid not null,
     created_at timestamp with time zone not null,
     updated_at timestamp with time zone not null,
 
@@ -57,12 +54,10 @@ create table service_profile (
     min_gw_diversity integer not null
 );
 
-create index idx_service_profile_created_by on service_profile(created_by);
 create index idx_service_profile_created_at on service_profile(created_at);
 create index idx_service_profile_updated_at on service_profile(updated_at);
 
 create table routing_profile (
-    created_by uuid not null,
     created_at timestamp with time zone not null,
     updated_at timestamp with time zone not null,
 
@@ -70,13 +65,11 @@ create table routing_profile (
     as_id varchar(255)
 );
 
-create index idx_routing_profile_created_by on routing_profile(created_by);
 create index idx_routing_profile_created_at on routing_profile(created_at);
 create index idx_routing_profile_updated_at on routing_profile(updated_at);
 
 create table device (
     dev_eui bytea primary key,
-    created_by uuid not null,
     created_at timestamp with time zone not null,
     updated_at timestamp with time zone not null,
     device_profile_id uuid not null references device_profile on delete cascade,
@@ -84,7 +77,6 @@ create table device (
     routing_profile_id uuid not null references routing_profile on delete cascade 
 );
 
-create index idx_device_created_by on device(created_by);
 create index idx_device_created_at on device(created_at);
 create index idx_device_updated_at on device(updated_at);
 create index idx_device_device_profile_id on device(device_profile_id);
@@ -118,17 +110,14 @@ drop index idx_device_service_profile_id;
 drop index idx_device_device_profile_id;
 drop table device;
 
-drop index idx_device_profile_created_by;
 drop index idx_device_profile_created_at;
 drop index idx_device_profile_updated_at;
 drop table device_profile;
 
-drop index idx_service_profile_created_by;
 drop index idx_service_profile_created_at;
 drop index idx_service_profile_updated_at;
 drop table service_profile;
 
-drop index idx_routing_profile_created_by;
 drop index idx_routing_profile_created_at;
 drop index idx_routing_profile_updated_at;
 drop table routing_profile;

@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/brocaar/loraserver/api/as"
@@ -87,8 +86,6 @@ func TestUplinkScenarios(t *testing.T) {
 		common.Gateway = test.NewGatewayBackend()
 		common.Controller = test.NewNetworkControllerClient()
 
-		createdBy := uuid.NewV4().String()
-
 		gw1 := gateway.Gateway{
 			MAC:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			Name: "test-gateway",
@@ -101,7 +98,6 @@ func TestUplinkScenarios(t *testing.T) {
 		So(gateway.CreateGateway(db, &gw1), ShouldBeNil)
 
 		sp := storage.ServiceProfile{
-			CreatedBy: createdBy,
 			ServiceProfile: backend.ServiceProfile{
 				AddGWMetadata: true,
 			},
@@ -109,13 +105,11 @@ func TestUplinkScenarios(t *testing.T) {
 		So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
 
 		dp := storage.DeviceProfile{
-			CreatedBy:     createdBy,
 			DeviceProfile: backend.DeviceProfile{},
 		}
 		So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
 
 		rp := storage.RoutingProfile{
-			CreatedBy:      createdBy,
 			RoutingProfile: backend.RoutingProfile{},
 		}
 		So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)

@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/satori/go.uuid"
-
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan/backend"
@@ -25,7 +23,6 @@ func TestServiceProfile(t *testing.T) {
 
 		Convey("When creating a service-profile", func() {
 			sp := ServiceProfile{
-				CreatedBy: uuid.NewV4().String(),
 				ServiceProfile: backend.ServiceProfile{
 					ULRate:                 1,
 					ULBucketSize:           2,

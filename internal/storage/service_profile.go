@@ -12,7 +12,6 @@ import (
 
 // ServiceProfile defines the backend.ServiceProfile with some extra meta-data.
 type ServiceProfile struct {
-	CreatedBy string    `db:"created_by"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 	backend.ServiceProfile
@@ -29,7 +28,6 @@ func CreateServiceProfile(db *sqlx.DB, sp *ServiceProfile) error {
 
 	_, err := db.Exec(`
 		insert into service_profile (
-			created_by,
 			created_at,
 			updated_at,
 
@@ -53,8 +51,7 @@ func CreateServiceProfile(db *sqlx.DB, sp *ServiceProfile) error {
 			nwk_geo_loc,
 			target_per,
 			min_gw_diversity
-		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)`,
-		sp.CreatedBy,
+		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
 		sp.CreatedAt,
 		sp.UpdatedAt,
 		sp.ServiceProfile.ServiceProfileID,
@@ -83,7 +80,6 @@ func CreateServiceProfile(db *sqlx.DB, sp *ServiceProfile) error {
 	}
 
 	log.WithFields(log.Fields{
-		"created_by":         sp.CreatedBy,
 		"service_profile_id": sp.ServiceProfile.ServiceProfileID,
 	}).Info("service-profile created")
 

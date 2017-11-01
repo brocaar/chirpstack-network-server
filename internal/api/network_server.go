@@ -47,19 +47,9 @@ func NewNetworkServerAPI() *NetworkServerAPI {
 	return &NetworkServerAPI{}
 }
 
-func (n *NetworkServerAPI) getRemoteID(ctx context.Context) (string, error) {
-	return common.DefaultApplicationServerID, nil
-}
-
 // CreateServiceProfile creates the given service-profile.
 func (n *NetworkServerAPI) CreateServiceProfile(ctx context.Context, req *ns.CreateServiceProfileRequest) (*ns.CreateServiceProfileResponse, error) {
-	remoteID, err := n.getRemoteID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	sp := storage.ServiceProfile{
-		CreatedBy: remoteID,
 		ServiceProfile: backend.ServiceProfile{
 			ServiceProfileID:       req.ServiceProfile.ServiceProfileID,
 			ULRate:                 int(req.ServiceProfile.UlRate),
@@ -214,13 +204,7 @@ func (n *NetworkServerAPI) DeleteServiceProfile(ctx context.Context, req *ns.Del
 
 // CreateRoutingProfile creates the given routing-profile.
 func (n *NetworkServerAPI) CreateRoutingProfile(ctx context.Context, req *ns.CreateRoutingProfileRequest) (*ns.CreateRoutingProfileResponse, error) {
-	remoteID, err := n.getRemoteID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	rp := storage.RoutingProfile{
-		CreatedBy: remoteID,
 		RoutingProfile: backend.RoutingProfile{
 			RoutingProfileID: req.RoutingProfile.RoutingProfileID,
 			ASID:             req.RoutingProfile.AsID,
@@ -281,18 +265,12 @@ func (n *NetworkServerAPI) DeleteRoutingProfile(ctx context.Context, req *ns.Del
 // CreateDeviceProfile creates the given device-profile.
 // The RFRegion field will get set automatically according to the configured band.
 func (n *NetworkServerAPI) CreateDeviceProfile(ctx context.Context, req *ns.CreateDeviceProfileRequest) (*ns.CreateDeviceProfileResponse, error) {
-	remoteID, err := n.getRemoteID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	var factoryPresetFreqs []backend.Frequency
 	for _, f := range req.DeviceProfile.FactoryPresetFreqs {
 		factoryPresetFreqs = append(factoryPresetFreqs, backend.Frequency(f))
 	}
 
 	dp := storage.DeviceProfile{
-		CreatedBy: remoteID,
 		DeviceProfile: backend.DeviceProfile{
 			DeviceProfileID:    req.DeviceProfile.DeviceProfileID,
 			SupportsClassB:     req.DeviceProfile.SupportsClassB,
@@ -438,17 +416,11 @@ func (n *NetworkServerAPI) DeleteDeviceProfile(ctx context.Context, req *ns.Dele
 
 // CreateDevice creates the given device.
 func (n *NetworkServerAPI) CreateDevice(ctx context.Context, req *ns.CreateDeviceRequest) (*ns.CreateDeviceResponse, error) {
-	remoteID, err := n.getRemoteID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.Device.DevEUI)
 
 	d := storage.Device{
 		DevEUI:           devEUI,
-		CreatedBy:        remoteID,
 		DeviceProfileID:  req.Device.DeviceProfileID,
 		ServiceProfileID: req.Device.ServiceProfileID,
 		RoutingProfileID: req.Device.RoutingProfileID,

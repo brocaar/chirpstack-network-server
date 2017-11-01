@@ -12,7 +12,6 @@ import (
 
 // RoutingProfile defines the backend.RoutingProfile with some extra meta-data.
 type RoutingProfile struct {
-	CreatedBy string    `db:"created_by"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 	backend.RoutingProfile
@@ -29,14 +28,12 @@ func CreateRoutingProfile(db *sqlx.DB, rp *RoutingProfile) error {
 
 	_, err := db.Exec(`
 		insert into routing_profile (
-			created_by,
 			created_at,
 			updated_at,
 
 			routing_profile_id,
 			as_id
-		) values ($1, $2, $3, $4, $5)`,
-		rp.CreatedBy,
+		) values ($1, $2, $3, $4)`,
 		rp.CreatedAt,
 		rp.UpdatedAt,
 		rp.RoutingProfile.RoutingProfileID,
@@ -47,7 +44,6 @@ func CreateRoutingProfile(db *sqlx.DB, rp *RoutingProfile) error {
 	}
 
 	log.WithFields(log.Fields{
-		"created_by":         rp.CreatedBy,
 		"routing_profile_id": rp.RoutingProfile.RoutingProfileID,
 	}).Info("routing-profile created")
 
