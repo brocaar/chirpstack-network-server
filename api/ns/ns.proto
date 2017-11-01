@@ -822,6 +822,10 @@ message GetExtraChannelsForChannelConfigurationIDResponse {
 
 message MigrateNodeToDeviceSessionRequest {
     bytes devEUI = 1;
+
+    bytes joinEUI = 2;
+
+    repeated bytes devNonces = 3;
 }
 
 message MigrateNodeToDeviceSessionResponse {}

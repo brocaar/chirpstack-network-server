@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/gob"
 
+	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/lorawan"
-	"github.com/garyburd/redigo/redis"
-	"github.com/pkg/errors"
 )
 
 // NodeSession contains the information of a node-session (an activated node).
@@ -71,7 +71,7 @@ type NodeSession struct {
 
 // MigrateNodeToDeviceSession migrates the node-session to the device-session
 // given a DevEUI.
-func MigrateNodeToDeviceSession(p *redis.Pool, db sqlx.Ext, devEUI lorawan.EUI64) error {
+func MigrateNodeToDeviceSession(p *redis.Pool, db sqlx.Ext, devEUI, joinEUI lorawan.EUI64, devNonces []lorawan.DevNonce) error {
 	c := p.Get()
 	defer c.Close()
 
@@ -80,11 +80,27 @@ func MigrateNodeToDeviceSession(p *redis.Pool, db sqlx.Ext, devEUI lorawan.EUI64
 		return errors.Wrap(err, "get device error")
 	}
 
+	// migrate nonces
+	for _, n := range devNonces {
+		da := DeviceActivation{
+			DevEUI:   devEUI,
+			JoinEUI:  joinEUI,
+			DevAddr:  lorawan.DevAddr{},   // empty DevAddr, we don't have this information
+			NwkSKey:  lorawan.AES128Key{}, // empty AES key, we don't have this information
+			DevNonce: n,
+		}
+		err = CreateDeviceActivation(db, &da)
+		if err != nil {
+			return errors.Wrap(err, "create device-activation error")
+		}
+	}
+
 	var ns NodeSession
 	val, err := redis.Bytes(c.Do("GET", "lora:ns:session:"+devEUI.String()))
 	if err != nil {
 		if err == redis.ErrNil {
-			return ErrDoesNotExist
+			// the node-session does not exist, nothing to migrate
+			return nil
 		}
 		return errors.Wrap(err, "get error")
 	}

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/jmoiron/sqlx"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -1132,12 +1133,27 @@ func (n *NetworkServerAPI) GetExtraChannelsForChannelConfigurationID(ctx context
 // MigrateNodeToDeviceSession migrates a node-session to device-session.
 // This method is for internal us only.
 func (n *NetworkServerAPI) MigrateNodeToDeviceSession(ctx context.Context, req *ns.MigrateNodeToDeviceSessionRequest) (*ns.MigrateNodeToDeviceSessionResponse, error) {
-	var eui lorawan.EUI64
-	copy(eui[:], req.DevEUI)
+	var devEUI lorawan.EUI64
+	var joinEUI lorawan.EUI64
+	var nonces []lorawan.DevNonce
 
-	err := storage.MigrateNodeToDeviceSession(common.RedisPool, common.DB, eui)
+	copy(devEUI[:], req.DevEUI)
+	copy(joinEUI[:], req.JoinEUI)
+
+	for _, nBytes := range req.DevNonces {
+		var n lorawan.DevNonce
+		copy(n[:], nBytes)
+		nonces = append(nonces, n)
+	}
+	err := storage.Transaction(common.DB, func(tx *sqlx.Tx) error {
+		if err := storage.MigrateNodeToDeviceSession(common.RedisPool, common.DB, devEUI, joinEUI, nonces); err != nil {
+			return errToRPCError(err)
+		}
+
+		return nil
+	})
 	if err != nil {
-		return nil, errToRPCError(err)
+		return nil, err
 	}
 
 	return &ns.MigrateNodeToDeviceSessionResponse{}, nil
