@@ -593,12 +593,6 @@ func main() {
 			EnvVar: "GW_MQTT_CA_CERT",
 		},
 		cli.StringFlag{
-			Name:   "as-server",
-			Usage:  "hostname:port of the application-server api server (optional)",
-			Value:  "127.0.0.1:8001",
-			EnvVar: "AS_SERVER",
-		},
-		cli.StringFlag{
 			Name:   "as-ca-cert",
 			Usage:  "ca certificate used by the application-server client (optional)",
 			EnvVar: "AS_CA_CERT",

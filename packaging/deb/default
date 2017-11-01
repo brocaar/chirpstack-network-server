@@ -34,9 +34,6 @@ GW_MQTT_USERNAME=
 # mqtt password used by the gateway backend (optional)
 GW_MQTT_PASSWORD=
 
-# hostname:port of the application-server api server (optional) (default: "127.0.0.1:8001")
-AS_SERVER=127.0.0.1:8001
-
 # ca certificate used by the application-server client (optional)
 AS_CA_CERT=
 
@@ -100,3 +97,27 @@ GW_SERVER_JWT_SECRET=
 
 # ip:port to bind the gateway api server (default: "0.0.0.0:8002")
 GW_SERVER_BIND=0.0.0.0:8002
+
+# hostname:port of the default join-GW_MQTT_SERVER
+JS_SERVER=http://localhost:8003
+
+# ca certificate used by the default join-server client
+JS_CA_CERT=
+
+# tls certificate used by the default join-server client (optional)
+JS_TLS_CERT=
+
+# tls key used by the default join-server client (optional)
+JS_TLS_KEY=
+
+# installation margin (dB) used by the ADR engine
+INSTALLATION_MARGIN=10
+
+# class a rx1 delay
+RX1_DELAY=1
+
+# rx1 data-rate offset (valid options documented in the LoRaWAN Regional Parameters specification)
+RX1_DR_OFFSET=0
+
+# rx2 data-rate (when set to -1, the default rx2 data-rate will be used)
+RX2_DR=-1

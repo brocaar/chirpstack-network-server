@@ -8,6 +8,50 @@ menu:
 
 ## Changelog
 
+### 0.22.0
+
+**Note:** this release brings many changes! Make sure (as always) to make a
+backup of your PostgreSQL and Redis database before upgrading.
+
+**Changes:**
+
+* Data-model refactor to implement service-profile, device-profile and
+  routing-profile storage as defined in the
+  [LoRaWAN backend interfaces](https://www.lora-alliance.org/lorawan-for-developers).
+
+* LoRa Server now uses the LoRa App Server Join-Server API as specified by the
+  LoRaWAN backend interfaces specification (currently hard-configured endpoint).
+
+* Adaptive data-rate configuration is now globally configured by LoRa Server.
+  See [configuration](https://docs.loraserver.io/loraserver/install/config/).
+
+* OTAA RX configuration (RX1 delay, RX1 data-rate offset and RX2 dat-rate) is
+  now globally configured by LoRa Server.
+  See [configuration](https://docs.loraserver.io/loraserver/install/config/).
+
+**API changes:**
+
+* Service-profile CRUD methods added
+* Device-profile CRUD methods added
+* Routing-profile CRUD methods added
+* Device CRUD methods added
+* Device (de)activation methods added
+* Node-session related methods have been removed
+* `EnqueueDataDownMACCommand` renamed to `EnqueueDownlinkMACCommand`
+* `PushDataDown` renamed to `SendDownlinkData`
+
+#### How to upgrade
+
+**Note:** this release brings many changes! Make sure (as always) to make a
+backup of your PostgreSQL and Redis database before upgrading.
+
+**Note:** When LoRa App Server is running on a different server than LoRa Server,
+make sure to set the `--js-server` / `JS_SERVER` (default `localhost:8003`).
+
+This release depends on the latest LoRa App Server release (0.14). Upgrade
+LoRa Server first, then proceed with upgrading LoRa App Server. See also the
+[LoRa App Server changelog](https://docs.loraserver.io/lora-app-server/overview/changelog/).
+
 ### 0.21.0
 
 **Features:**

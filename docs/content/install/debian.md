@@ -77,6 +77,7 @@ Settings you probably want to set / change:
 * `NET_ID`
 * `DB_AUTOMIGRATE`
 * `TIMEZONE`
+* `GW_SERVER_JWT_SECRET`
 
 ### Starting LoRa Server
 

@@ -11,7 +11,7 @@ menu:
 To list all configuration options, start `loraserver` with the `--help`
 flag. This will display:
 
-```
+```text
 GLOBAL OPTIONS:
    --net-id value                          network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203) [$NET_ID]
    --band value                            ism band configuration to use (options: AS_923, AU_915_928, CN_470_510, CN_779_787, EU_433, EU_863_870, IN_865_867, KR_920_923, US_902_928) [$BAND]
@@ -33,7 +33,6 @@ GLOBAL OPTIONS:
    --gw-mqtt-username value                mqtt username used by the gateway backend (optional) [$GW_MQTT_USERNAME]
    --gw-mqtt-password value                mqtt password used by the gateway backend (optional) [$GW_MQTT_PASSWORD]
    --gw-mqtt-ca-cert value                 mqtt CA certificate file used by the gateway backend (optional) [$GW_MQTT_CA_CERT]
-   --as-server value                       hostname:port of the application-server api server (optional) (default: "127.0.0.1:8001") [$AS_SERVER]
    --as-ca-cert value                      ca certificate used by the application-server client (optional) [$AS_CA_CERT]
    --as-tls-cert value                     tls certificate used by the application-server client (optional) [$AS_TLS_CERT]
    --as-tls-key value                      tls key used by the application-server client (optional) [$AS_TLS_KEY]
@@ -51,6 +50,14 @@ GLOBAL OPTIONS:
    --node-session-ttl value                the ttl after which a node-session expires after no activity (default: 744h0m0s) [$NODE_SESSION_TTL]
    --log-node-frames                       log uplink and downlink frames to the database [$LOG_NODE_FRAMES]
    --log-level value                       debug=5, info=4, warning=3, error=2, fatal=1, panic=0 (default: 4) [$LOG_LEVEL]
+   --js-server value                       hostname:port of the default join-server (default: "http://localhost:8003") [$JS_SERVER]
+   --js-ca-cert value                      ca certificate used by the default join-server client (optional) [$JS_CA_CERT]
+   --js-tls-cert value                     tls certificate used by the default join-server client (optional) [$JS_TLS_CERT]
+   --js-tls-key value                      tls key used by the default join-server client (optional) [$JS_TLS_KEY]
+   --installation-margin value             installation margin (dB) used by the ADR engine (default: 10) [$INSTALLATION_MARGIN]
+   --rx1-delay value                       class a rx1 delay (default: 1) [$RX1_DELAY]
+   --rx1-dr-offset value                   rx1 data-rate offset (valid options documented in the LoRaWAN Regional Parameters specification) (default: 0) [$RX1_DR_OFFSET]
+   --rx2-dr value                          rx2 data-rate (when set to -1, the default rx2 data-rate will be used) (default: -1) [$RX2_DR]
    --help, -h                              show help
    --version, -v                           print the version
 ```
