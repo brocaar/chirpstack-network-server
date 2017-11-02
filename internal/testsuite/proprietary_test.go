@@ -196,7 +196,6 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 
 					if t.ExpectedApplicationHandleProprietaryUp != nil {
 						Convey("Then HandleProprietaryUp was called with the expected data", func() {
-							So(asClient.HandleProprietaryUpChan, ShouldHaveLength, 1)
 							req := <-asClient.HandleProprietaryUpChan
 							So(t.ExpectedApplicationHandleProprietaryUp, ShouldResemble, &req)
 						})
