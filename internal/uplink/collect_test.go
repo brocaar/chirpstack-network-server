@@ -22,6 +22,7 @@ func TestCollectAndCallOnce(t *testing.T) {
 
 	Convey("Given a Redis connection pool", t, func() {
 		test.MustFlushRedis(p)
+		test.MustPrefillRedisPool(p, 3)
 
 		Convey("Given a single LoRaWAN packet", func() {
 			testTable := []struct {

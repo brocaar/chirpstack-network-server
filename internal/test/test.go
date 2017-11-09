@@ -78,6 +78,19 @@ func MustFlushRedis(p *redis.Pool) {
 	}
 }
 
+// MustPrefillRedisPool pre-fills the pool with count connections.
+func MustPrefillRedisPool(p *redis.Pool, count int) {
+	conns := []redis.Conn{}
+
+	for i := 0; i < count; i++ {
+		conns = append(conns, p.Get())
+	}
+
+	for i := range conns {
+		conns[i].Close()
+	}
+}
+
 // MustResetDB re-applies all database migrations.
 func MustResetDB(db *sqlx.DB) {
 	m := &migrate.AssetMigrationSource{
