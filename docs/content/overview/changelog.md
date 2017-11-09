@@ -8,6 +8,13 @@ menu:
 
 ## Changelog
 
+### 0.22.1
+
+**Cleanup:**
+
+* Prefix de-duplication Redis keys with `lora:ns:` instead of `loraserver:`
+  for consistency.
+
 ### 0.22.0
 
 **Note:** this release brings many changes! Make sure (as always) to make a

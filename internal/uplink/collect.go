@@ -17,8 +17,8 @@ import (
 
 // Templates used for generating Redis keys
 const (
-	CollectKeyTempl     = "loraserver:rx:collect:%s"
-	CollectLockKeyTempl = "loraserver:rx:collect:%s:lock"
+	CollectKeyTempl     = "lora:ns:rx:collect:%s"
+	CollectLockKeyTempl = "lora:ns:rx:collect:%s:lock"
 )
 
 // collectAndCallOnce collects the package, sleeps the configured duraction and
