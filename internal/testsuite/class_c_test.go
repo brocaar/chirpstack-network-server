@@ -18,6 +18,7 @@ import (
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
 )
 
 type classCTestCase struct {
@@ -54,13 +55,33 @@ func TestClassCScenarios(t *testing.T) {
 
 		api := api.NewNetworkServerAPI()
 
+		sp := storage.ServiceProfile{
+			ServiceProfile: backend.ServiceProfile{},
+		}
+		So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
+
+		dp := storage.DeviceProfile{
+			DeviceProfile: backend.DeviceProfile{},
+		}
+		So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
+
+		rp := storage.RoutingProfile{
+			RoutingProfile: backend.RoutingProfile{
+				ASID: "as-test:1234",
+			},
+		}
+		So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
+
 		sess := storage.DeviceSession{
-			DevAddr:  lorawan.DevAddr{1, 2, 3, 4},
-			DevEUI:   lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-			JoinEUI:  lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
-			NwkSKey:  lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:   8,
-			FCntDown: 5,
+			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+			DevAddr:          lorawan.DevAddr{1, 2, 3, 4},
+			DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+			JoinEUI:          lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
+			NwkSKey:          lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:           8,
+			FCntDown:         5,
 			LastRXInfoSet: []gw.RXInfo{
 				{MAC: lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}},
 				{MAC: lorawan.EUI64{2, 1, 2, 1, 2, 1, 2, 1}},

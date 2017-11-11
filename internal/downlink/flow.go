@@ -12,6 +12,7 @@ var Flow = newFlow().JoinResponse(
 	logJoinAcceptFrame,
 	sendJoinAcceptResponse,
 ).UplinkResponse(
+	requestDevStatus,
 	getDataTXInfo,
 	setRemainingPayloadSize,
 	getDataDownFromApplicationServer,
@@ -20,6 +21,7 @@ var Flow = newFlow().JoinResponse(
 	sendDataDown,
 	saveDeviceSession,
 ).PushDataDown(
+	requestDevStatus,
 	getDataTXInfoForRX2,
 	setRemainingPayloadSize,
 	getMACCommands,
@@ -31,6 +33,9 @@ var Flow = newFlow().JoinResponse(
 
 // DataContext holds the context of a downlink transmission.
 type DataContext struct {
+	// ServiceProfile of the device.
+	ServiceProfile storage.ServiceProfile
+
 	// DeviceSession holds the device-session of the device for which to send
 	// the downlink data.
 	DeviceSession storage.DeviceSession
@@ -162,11 +167,12 @@ func (f *flow) ProprietaryDown(tasks ...ProprietaryDownTask) *flow {
 }
 
 // RunUplinkResponse runs the uplink response flow.
-func (f *flow) RunUplinkResponse(ds storage.DeviceSession, adr, mustSend, ack bool) error {
+func (f *flow) RunUplinkResponse(sp storage.ServiceProfile, ds storage.DeviceSession, adr, mustSend, ack bool) error {
 	ctx := DataContext{
-		DeviceSession: ds,
-		ACK:           ack,
-		MustSend:      mustSend,
+		ServiceProfile: sp,
+		DeviceSession:  ds,
+		ACK:            ack,
+		MustSend:       mustSend,
 	}
 
 	for _, t := range f.uplinkResponseTasks {
@@ -183,12 +189,13 @@ func (f *flow) RunUplinkResponse(ds storage.DeviceSession, adr, mustSend, ack bo
 }
 
 // RunPushDataDown runs the push data-down flow.
-func (f *flow) RunPushDataDown(ds storage.DeviceSession, confirmed bool, fPort uint8, data []byte) error {
+func (f *flow) RunPushDataDown(sp storage.ServiceProfile, ds storage.DeviceSession, confirmed bool, fPort uint8, data []byte) error {
 	ctx := DataContext{
-		DeviceSession: ds,
-		Confirmed:     confirmed,
-		FPort:         fPort,
-		Data:          data,
+		ServiceProfile: sp,
+		DeviceSession:  ds,
+		Confirmed:      confirmed,
+		FPort:          fPort,
+		Data:           data,
 	}
 
 	for _, t := range f.pushDataDownTasks {

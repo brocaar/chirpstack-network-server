@@ -10,6 +10,11 @@ menu:
 
 ### 0.22.1
 
+**Features:**
+
+* Service-profile `DevStatusReqFreq` option has been implemented
+  (periodical device-status request).
+
 **Cleanup:**
 
 * Prefix de-duplication Redis keys with `lora:ns:` instead of `loraserver:`

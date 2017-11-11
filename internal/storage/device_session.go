@@ -88,6 +88,16 @@ type DeviceSession struct {
 	ChannelFrequencies []int           // frequency of each channel
 	UplinkHistory      []UplinkHistory // contains the last 20 transmissions
 	LastRXInfoSet      []gw.RXInfo     // sorted set (best at index 0)
+
+	// LastDevStatusRequest contains the timestamp when the last device-status
+	// request was made.
+	LastDevStatusRequested time.Time
+
+	// LastDevStatusBattery contains the last received battery status.
+	LastDevStatusBattery uint8
+
+	// LastDevStatusMargin contains the last received margin status.
+	LastDevStatusMargin int8
 }
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list

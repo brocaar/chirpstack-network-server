@@ -27,6 +27,28 @@ func TestLinkCheckReq(t *testing.T) {
 			}
 			So(storage.SaveDeviceSession(common.RedisPool, ds), ShouldBeNil)
 
+			Convey("Test DevStatusAns", func() {
+				block := Block{
+					CID: lorawan.DevStatusAns,
+					MACCommands: MACCommands{
+						lorawan.MACCommand{
+							CID: lorawan.DevStatusAns,
+							Payload: &lorawan.DevStatusAnsPayload{
+								Battery: 200,
+								Margin:  21,
+							},
+						},
+					},
+				}
+
+				So(Handle(&ds, block, nil, models.RXInfoSet{}), ShouldBeNil)
+
+				Convey("Then the dev-status fields on the device-session are updated", func() {
+					So(ds.LastDevStatusBattery, ShouldEqual, 200)
+					So(ds.LastDevStatusMargin, ShouldEqual, 21)
+				})
+			})
+
 			Convey("Test LinkCheckReq", func() {
 				block := Block{
 					CID: lorawan.LinkCheckReq,

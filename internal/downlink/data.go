@@ -20,6 +20,24 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+func requestDevStatus(ctx *DataContext) error {
+	if ctx.ServiceProfile.DevStatusReqFreq == 0 {
+		return nil
+	}
+
+	reqInterval := time.Hour / time.Duration(ctx.ServiceProfile.DevStatusReqFreq)
+	curInterval := time.Now().Sub(ctx.DeviceSession.LastDevStatusRequested)
+
+	if curInterval >= reqInterval {
+		err := maccommand.RequestDevStatus(&ctx.DeviceSession)
+		if err != nil {
+			log.WithError(err).Error("request device-status error")
+		}
+	}
+
+	return nil
+}
+
 func getDataTXInfo(ctx *DataContext) error {
 	if len(ctx.DeviceSession.LastRXInfoSet) == 0 {
 		return ErrNoLastRXInfoSet

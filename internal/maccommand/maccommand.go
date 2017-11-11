@@ -20,6 +20,8 @@ func Handle(ds *storage.DeviceSession, block Block, pending *Block, rxInfoSet mo
 		err = handleLinkADRAns(ds, block, pending)
 	case lorawan.LinkCheckReq:
 		err = handleLinkCheckReq(ds, rxInfoSet)
+	case lorawan.DevStatusAns:
+		err = handleDevStatusAns(ds, block)
 	default:
 		err = fmt.Errorf("undefined CID %d", block.CID)
 
@@ -44,7 +46,7 @@ func handleLinkADRAns(ds *storage.DeviceSession, block Block, pendingBlock *Bloc
 	for i := range block.MACCommands {
 		pl, ok := block.MACCommands[i].Payload.(*lorawan.LinkADRAnsPayload)
 		if !ok {
-			return fmt.Errorf("expected *lorawan.LinkADRAnsPayload, got %T", pl)
+			return fmt.Errorf("expected *lorawan.LinkADRAnsPayload, got %T", block.MACCommands[i].Payload)
 		}
 
 		if !pl.ChannelMaskACK {

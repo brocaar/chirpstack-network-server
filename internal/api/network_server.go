@@ -628,16 +628,21 @@ func (n *NetworkServerAPI) SendDownlinkData(ctx context.Context, req *ns.SendDow
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	sess, err := storage.GetDeviceSession(common.RedisPool, devEUI)
+	ds, err := storage.GetDeviceSession(common.RedisPool, devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if req.FCnt != sess.FCntDown {
-		return nil, grpc.Errorf(codes.InvalidArgument, "invalid FCnt (expected: %d)", sess.FCntDown)
+	sp, err := storage.GetServiceProfile(common.DB, ds.ServiceProfileID)
+	if err != nil {
+		return nil, errToRPCError(err)
 	}
 
-	err = downlink.Flow.RunPushDataDown(sess, req.Confirmed, uint8(req.FPort), req.Data)
+	if req.FCnt != ds.FCntDown {
+		return nil, grpc.Errorf(codes.InvalidArgument, "invalid FCnt (expected: %d)", ds.FCntDown)
+	}
+
+	err = downlink.Flow.RunPushDataDown(sp, ds, req.Confirmed, uint8(req.FPort), req.Data)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}

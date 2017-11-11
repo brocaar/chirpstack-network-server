@@ -110,6 +110,8 @@ message HandleDataUpRequest {
 	bytes data = 5;
 	TXInfo txInfo = 6;
 	repeated RXInfo rxInfo = 7;
+	uint32 deviceStatusBattery = 9;
+	int32  deviceStatusMargin = 10;
 }
 
 message HandleProprietaryUpRequest {

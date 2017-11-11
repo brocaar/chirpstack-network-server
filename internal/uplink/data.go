@@ -214,6 +214,7 @@ func handleDownlink(ctx *DataUpContext) error {
 	// handle downlink (ACK)
 	time.Sleep(common.GetDownlinkDataDelay)
 	if err := downlink.Flow.RunUplinkResponse(
+		ctx.ServiceProfile,
 		ctx.DeviceSession,
 		ctx.MACPayload.FHDR.FCtrl.ADR,
 		ctx.MACPayload.FHDR.FCtrl.ADRACKReq,
@@ -287,6 +288,15 @@ func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession
 				Bitrate:      uint32(rxPacket.RXInfoSet[0].DataRate.BitRate),
 			},
 		},
+	}
+
+	if sp.ServiceProfile.DevStatusReqFreq != 0 {
+		if sp.ServiceProfile.ReportDevStatusBattery {
+			publishDataUpReq.DeviceStatusBattery = uint32(ds.LastDevStatusBattery)
+		}
+		if sp.ServiceProfile.ReportDevStatusMargin {
+			publishDataUpReq.DeviceStatusMargin = int32(ds.LastDevStatusMargin)
+		}
 	}
 
 	if sp.ServiceProfile.AddGWMetadata {
