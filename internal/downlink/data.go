@@ -25,7 +25,7 @@ func requestDevStatus(ctx *DataContext) error {
 		return nil
 	}
 
-	reqInterval := time.Hour / time.Duration(ctx.ServiceProfile.DevStatusReqFreq)
+	reqInterval := 24 * time.Hour / time.Duration(ctx.ServiceProfile.DevStatusReqFreq)
 	curInterval := time.Now().Sub(ctx.DeviceSession.LastDevStatusRequested)
 
 	if curInterval >= reqInterval {

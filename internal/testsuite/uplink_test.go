@@ -2055,13 +2055,13 @@ func TestUplinkScenarios(t *testing.T) {
 		})
 
 		Convey("Given a set of test-scenarios for device-status requests", func() {
-			sp.DevStatusReqFreq = 6
+			sp.DevStatusReqFreq = 24
 			So(storage.UpdateServiceProfile(common.DB, &sp), ShouldBeNil)
 
 			tests := []uplinkTestCase{
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
-						tc.DeviceSession.LastDevStatusRequested = time.Now().Add(-11 * time.Minute)
+						tc.DeviceSession.LastDevStatusRequested = time.Now().Add(-61 * time.Minute)
 						return nil
 					},
 
@@ -2117,7 +2117,7 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
-						tc.DeviceSession.LastDevStatusRequested = time.Now().Add(-9 * time.Minute)
+						tc.DeviceSession.LastDevStatusRequested = time.Now().Add(-59 * time.Minute)
 						return nil
 					},
 
