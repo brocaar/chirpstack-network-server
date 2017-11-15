@@ -262,7 +262,7 @@ func GetDeviceSessionsForDevAddr(p *redis.Pool, devAddr lorawan.DevAddr) ([]Devi
 			log.WithFields(log.Fields{
 				"dev_addr": devAddr,
 				"dev_eui":  devEUI,
-			}).Warning("get device-sessions for dev_addr error: %s", err)
+			}).Warningf("get device-sessions for dev_addr error: %s", err)
 		}
 		items = append(items, s)
 	}
