@@ -539,7 +539,12 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		EnabledChannels:    common.Band.GetUplinkChannels(), // TODO: replace by ServiceProfile.ChannelMask?
 		ChannelFrequencies: channelFrequencies,
 	}
+
 	if err := storage.SaveDeviceSession(common.RedisPool, ds); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	if err := storage.FlushDeviceQueueForDevEUI(common.DB, devEUI); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -556,6 +561,10 @@ func (n *NetworkServerAPI) DeactivateDevice(ctx context.Context, req *ns.Deactiv
 	copy(devEUI[:], req.DevEUI)
 
 	if err := storage.DeleteDeviceSession(common.RedisPool, devEUI); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	if err := storage.FlushDeviceQueueForDevEUI(common.DB, devEUI); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -1134,6 +1143,86 @@ func (n *NetworkServerAPI) MigrateNodeToDeviceSession(ctx context.Context, req *
 	}
 
 	return &ns.MigrateNodeToDeviceSessionResponse{}, nil
+}
+
+// CreateDeviceQueueItem creates the given device-queue item.
+func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.CreateDeviceQueueItemRequest) (*ns.CreateDeviceQueueItemResponse, error) {
+	if req.Item == nil {
+		return nil, grpc.Errorf(codes.InvalidArgument, "item must not be nil")
+	}
+
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], req.Item.DevEUI)
+
+	var emitAt *time.Time
+	if req.Item.EmitAt != "" {
+		t, err := time.Parse(time.RFC3339Nano, req.Item.EmitAt)
+		if err != nil {
+			return nil, errToRPCError(err)
+		}
+		emitAt = &t
+	}
+
+	qi := storage.DeviceQueueItem{
+		DevEUI:     devEUI,
+		FRMPayload: req.Item.FrmPayload,
+		FCnt:       req.Item.FCnt,
+		FPort:      uint8(req.Item.FPort),
+		Confirmed:  req.Item.Confirmed,
+		EmitAt:     emitAt,
+		RetryCount: int(req.Item.RetryCount),
+	}
+	err := storage.CreateDeviceQueueItem(common.DB, &qi)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.CreateDeviceQueueItemResponse{}, nil
+}
+
+// FlushDeviceQueueForDevEUI flushes the device-queue for the given DevEUI.
+func (n *NetworkServerAPI) FlushDeviceQueueForDevEUI(ctx context.Context, req *ns.FlushDeviceQueueForDevEUIRequest) (*ns.FlushDeviceQueueForDevEUIResponse, error) {
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], req.DevEUI)
+
+	err := storage.FlushDeviceQueueForDevEUI(common.DB, devEUI)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.FlushDeviceQueueForDevEUIResponse{}, nil
+}
+
+// GetDeviceQueueItemsForDevEUI returns all device-queue items for the given DevEUI.
+func (n *NetworkServerAPI) GetDeviceQueueItemsForDevEUI(ctx context.Context, req *ns.GetDeviceQueueItemsForDevEUIRequest) (*ns.GetDeviceQueueItemsForDevEUIResponse, error) {
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], req.DevEUI)
+
+	items, err := storage.GetDeviceQueueItemsForDevEUI(common.DB, devEUI)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	var out ns.GetDeviceQueueItemsForDevEUIResponse
+	for i := range items {
+		qi := ns.DeviceQueueItem{
+			DevEUI:     items[i].DevEUI[:],
+			FrmPayload: items[i].FRMPayload,
+			FCnt:       items[i].FCnt,
+			FPort:      uint32(items[i].FPort),
+			Confirmed:  items[i].Confirmed,
+			RetryCount: uint32(items[i].RetryCount),
+		}
+
+		// set emit timestamp when not nil
+		if ts := items[i].EmitAt; ts != nil {
+			qi.EmitAt = ts.Format(time.RFC3339Nano)
+		}
+
+		out.Items = append(out.Items, &qi)
+	}
+
+	return &out, nil
 }
 
 func channelConfigurationToResp(cf gateway.ChannelConfiguration) *ns.GetChannelConfigurationResponse {

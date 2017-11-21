@@ -411,97 +411,180 @@ func TestNetworkServerAPI(t *testing.T) {
 			}
 			So(storage.CreateDevice(common.DB, &d), ShouldBeNil)
 
-			Convey("When calling ActivateDevice", func() {
-				_, err := api.ActivateDevice(ctx, &ns.ActivateDeviceRequest{
-					DevEUI:        devEUI[:],
-					DevAddr:       devAddr[:],
-					NwkSKey:       nwkSKey[:],
-					FCntUp:        10,
-					FCntDown:      11,
-					SkipFCntCheck: true,
+			Convey("Given an item in the device-queue", func() {
+				_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
+					Item: &ns.DeviceQueueItem{
+						DevEUI:     d.DevEUI[:],
+						FrmPayload: []byte{1, 2, 3, 4},
+						FCnt:       10,
+						FPort:      20,
+					},
 				})
 				So(err, ShouldBeNil)
 
-				Convey("Then the device was activated as expected", func() {
-					ds, err := storage.GetDeviceSession(common.RedisPool, devEUI)
-					So(err, ShouldBeNil)
-					So(ds, ShouldResemble, storage.DeviceSession{
-						DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
-						ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
-						RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
-
-						DevAddr:            devAddr,
-						DevEUI:             devEUI,
-						NwkSKey:            nwkSKey,
-						FCntUp:             10,
-						FCntDown:           11,
-						SkipFCntValidation: true,
-						EnabledChannels:    common.Band.GetUplinkChannels(),
-						ChannelFrequencies: []int{868100000, 868300000, 868500000},
-						RXDelay:            3,
-						RX1DROffset:        2,
-						RX2DR:              5,
-						RX2Frequency:       868900000,
-						MaxSupportedDR:     6,
-					})
-				})
-
-				Convey("Then GetDeviceActivation returns the expected response", func() {
-					resp, err := api.GetDeviceActivation(ctx, &ns.GetDeviceActivationRequest{
-						DevEUI: devEUI[:],
-					})
-					So(err, ShouldBeNil)
-					So(resp, ShouldResemble, &ns.GetDeviceActivationResponse{
+				Convey("When calling ActivateDevice", func() {
+					_, err := api.ActivateDevice(ctx, &ns.ActivateDeviceRequest{
+						DevEUI:        devEUI[:],
 						DevAddr:       devAddr[:],
 						NwkSKey:       nwkSKey[:],
 						FCntUp:        10,
 						FCntDown:      11,
 						SkipFCntCheck: true,
 					})
-				})
-
-				Convey("Then DeactivateDevice deactivates the device", func() {
-					_, err := api.DeactivateDevice(ctx, &ns.DeactivateDeviceRequest{
-						DevEUI: devEUI[:],
-					})
 					So(err, ShouldBeNil)
 
-					_, err = api.GetDeviceActivation(ctx, &ns.GetDeviceActivationRequest{
-						DevEUI: devEUI[:],
-					})
-					So(grpc.Code(err), ShouldEqual, codes.NotFound)
-				})
-
-				Convey("When calling EnqueueDownlinkMACCommand", func() {
-					mac := lorawan.MACCommand{
-						CID: lorawan.RXParamSetupReq,
-						Payload: &lorawan.RX2SetupReqPayload{
-							Frequency: 868100000,
-						},
-					}
-					b, err := mac.MarshalBinary()
-					So(err, ShouldBeNil)
-
-					_, err = api.EnqueueDownlinkMACCommand(ctx, &ns.EnqueueDownlinkMACCommandRequest{
-						DevEUI:     devEUI[:],
-						FrmPayload: true,
-						Cid:        uint32(lorawan.RXParamSetupReq),
-						Commands:   [][]byte{b},
-					})
-					So(err, ShouldBeNil)
-
-					Convey("Then the mac-command has been added to the queue", func() {
-						queue, err := maccommand.ReadQueueItems(common.RedisPool, devEUI)
+					Convey("Then the device-queue was flushed", func() {
+						items, err := storage.GetDeviceQueueItemsForDevEUI(common.DB, d.DevEUI)
 						So(err, ShouldBeNil)
-						So(queue, ShouldResemble, []maccommand.Block{
-							{
-								CID:         lorawan.RXParamSetupReq,
-								FRMPayload:  true,
-								External:    true,
-								MACCommands: []lorawan.MACCommand{mac},
-							},
+						So(items, ShouldHaveLength, 0)
+					})
+
+					Convey("Then the device was activated as expected", func() {
+						ds, err := storage.GetDeviceSession(common.RedisPool, devEUI)
+						So(err, ShouldBeNil)
+						So(ds, ShouldResemble, storage.DeviceSession{
+							DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+							ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+							RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+
+							DevAddr:            devAddr,
+							DevEUI:             devEUI,
+							NwkSKey:            nwkSKey,
+							FCntUp:             10,
+							FCntDown:           11,
+							SkipFCntValidation: true,
+							EnabledChannels:    common.Band.GetUplinkChannels(),
+							ChannelFrequencies: []int{868100000, 868300000, 868500000},
+							RXDelay:            3,
+							RX1DROffset:        2,
+							RX2DR:              5,
+							RX2Frequency:       868900000,
+							MaxSupportedDR:     6,
 						})
 					})
+
+					Convey("Then GetDeviceActivation returns the expected response", func() {
+						resp, err := api.GetDeviceActivation(ctx, &ns.GetDeviceActivationRequest{
+							DevEUI: devEUI[:],
+						})
+						So(err, ShouldBeNil)
+						So(resp, ShouldResemble, &ns.GetDeviceActivationResponse{
+							DevAddr:       devAddr[:],
+							NwkSKey:       nwkSKey[:],
+							FCntUp:        10,
+							FCntDown:      11,
+							SkipFCntCheck: true,
+						})
+					})
+
+					Convey("Then DeactivateDevice deactivates the device and flushes the queue", func() {
+						_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
+							Item: &ns.DeviceQueueItem{
+								DevEUI:     d.DevEUI[:],
+								FrmPayload: []byte{1, 2, 3, 4},
+								FCnt:       10,
+								FPort:      20,
+							},
+						})
+						So(err, ShouldBeNil)
+
+						items, err := storage.GetDeviceQueueItemsForDevEUI(common.DB, d.DevEUI)
+						So(err, ShouldBeNil)
+						So(items, ShouldHaveLength, 1)
+
+						_, err = api.DeactivateDevice(ctx, &ns.DeactivateDeviceRequest{
+							DevEUI: devEUI[:],
+						})
+						So(err, ShouldBeNil)
+
+						_, err = api.GetDeviceActivation(ctx, &ns.GetDeviceActivationRequest{
+							DevEUI: devEUI[:],
+						})
+						So(grpc.Code(err), ShouldEqual, codes.NotFound)
+
+						items, err = storage.GetDeviceQueueItemsForDevEUI(common.DB, d.DevEUI)
+						So(err, ShouldBeNil)
+						So(items, ShouldHaveLength, 0)
+					})
+
+					Convey("When calling EnqueueDownlinkMACCommand", func() {
+						mac := lorawan.MACCommand{
+							CID: lorawan.RXParamSetupReq,
+							Payload: &lorawan.RX2SetupReqPayload{
+								Frequency: 868100000,
+							},
+						}
+						b, err := mac.MarshalBinary()
+						So(err, ShouldBeNil)
+
+						_, err = api.EnqueueDownlinkMACCommand(ctx, &ns.EnqueueDownlinkMACCommandRequest{
+							DevEUI:     devEUI[:],
+							FrmPayload: true,
+							Cid:        uint32(lorawan.RXParamSetupReq),
+							Commands:   [][]byte{b},
+						})
+						So(err, ShouldBeNil)
+
+						Convey("Then the mac-command has been added to the queue", func() {
+							queue, err := maccommand.ReadQueueItems(common.RedisPool, devEUI)
+							So(err, ShouldBeNil)
+							So(queue, ShouldResemble, []maccommand.Block{
+								{
+									CID:         lorawan.RXParamSetupReq,
+									FRMPayload:  true,
+									External:    true,
+									MACCommands: []lorawan.MACCommand{mac},
+								},
+							})
+						})
+					})
+				})
+			})
+
+			Convey("When calling CreateDeviceQueueItem", func() {
+				now := time.Now().Truncate(time.Millisecond)
+
+				_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
+					Item: &ns.DeviceQueueItem{
+						DevEUI:     d.DevEUI[:],
+						FrmPayload: []byte{1, 2, 3, 4},
+						FCnt:       10,
+						FPort:      20,
+						Confirmed:  true,
+						EmitAt:     now.Format(time.RFC3339Nano),
+						RetryCount: 3,
+					},
+				})
+				So(err, ShouldBeNil)
+
+				Convey("Then GetDeviceQueueItemsForDevEUI returns the item", func() {
+					resp, err := api.GetDeviceQueueItemsForDevEUI(ctx, &ns.GetDeviceQueueItemsForDevEUIRequest{
+						DevEUI: d.DevEUI[:],
+					})
+					So(err, ShouldBeNil)
+					So(resp.Items, ShouldHaveLength, 1)
+					So(resp.Items[0], ShouldResemble, &ns.DeviceQueueItem{
+						DevEUI:     d.DevEUI[:],
+						FrmPayload: []byte{1, 2, 3, 4},
+						FCnt:       10,
+						FPort:      20,
+						Confirmed:  true,
+						EmitAt:     now.Format(time.RFC3339Nano),
+						RetryCount: 3,
+					})
+				})
+
+				Convey("Then FlushDeviceQueueForDevEUI flushes the device-queue", func() {
+					_, err := api.FlushDeviceQueueForDevEUI(ctx, &ns.FlushDeviceQueueForDevEUIRequest{
+						DevEUI: d.DevEUI[:],
+					})
+					So(err, ShouldBeNil)
+
+					resp, err := api.GetDeviceQueueItemsForDevEUI(ctx, &ns.GetDeviceQueueItemsForDevEUIRequest{
+						DevEUI: d.DevEUI[:],
+					})
+					So(err, ShouldBeNil)
+					So(resp.Items, ShouldHaveLength, 0)
 				})
 			})
 

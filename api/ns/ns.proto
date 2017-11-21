@@ -63,6 +63,15 @@ service NetworkServer {
     // GetDeviceActivation returns the device activation details.
     rpc GetDeviceActivation(GetDeviceActivationRequest) returns (GetDeviceActivationResponse) {}
 
+    // CreateDeviceQueueItem creates the given device-queue item.
+    rpc CreateDeviceQueueItem(CreateDeviceQueueItemRequest) returns (CreateDeviceQueueItemResponse) {}
+
+    // FlushDeviceQueueForDevEUI flushes the device-queue for the given DevEUI.
+    rpc FlushDeviceQueueForDevEUI(FlushDeviceQueueForDevEUIRequest) returns (FlushDeviceQueueForDevEUIResponse) {}
+
+    // GetDeviceQueueItemsForDevEUI returns all device-queue items for the given DevEUI.
+    rpc GetDeviceQueueItemsForDevEUI(GetDeviceQueueItemsForDevEUIRequest) returns (GetDeviceQueueItemsForDevEUIResponse) {}
+
     // GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
     rpc GetRandomDevAddr(GetRandomDevAddrRequest) returns (GetRandomDevAddrResponse) {}
 
@@ -829,3 +838,51 @@ message MigrateNodeToDeviceSessionRequest {
 }
 
 message MigrateNodeToDeviceSessionResponse {}
+
+message DeviceQueueItem {
+    // DevEUI of the device.
+    bytes devEUI = 1;
+
+    // The encrypted FRMPayload bytes.
+    bytes frmPayload = 2;
+
+    // The FCnt of the payload.
+    uint32 fCnt = 3;
+
+    // The FPort of the payload.
+    uint32 fPort = 4;
+
+    // When set to true, LoRa Server will wait for the device to ack the
+    // received frame.
+    bool confirmed = 5;
+
+    // The timestamp (RFC3339Nano) when the frame must be emitted to the device.
+    string emitAt = 6;
+
+    // Used in case of confirmed=true when the device does not (directly) ack
+    // the frame. LoRa Server will try 1 + retryCount, thus when set to 0, the
+    // frame will only be emitted once.
+    uint32 retryCount = 7;
+}
+
+message CreateDeviceQueueItemRequest {
+    DeviceQueueItem item = 1;
+}
+
+message CreateDeviceQueueItemResponse {}
+
+message FlushDeviceQueueForDevEUIRequest {
+    // DevEUI of the device.
+    bytes devEUI = 1;
+}
+
+message FlushDeviceQueueForDevEUIResponse {}
+
+message GetDeviceQueueItemsForDevEUIRequest {
+    // DevEUI of the device.
+    bytes devEUI = 1;
+}
+
+message GetDeviceQueueItemsForDevEUIResponse {
+    repeated DeviceQueueItem items = 1;
+}

@@ -139,6 +139,13 @@ func logJoinRequestFrame(ctx *JoinRequestContext) error {
 	return nil
 }
 
+func flushDeviceQueue(ctx *JoinRequestContext) error {
+	if err := storage.FlushDeviceQueueForDevEUI(common.DB, ctx.Device.DevEUI); err != nil {
+		return errors.Wrap(err, "flush device-queue error")
+	}
+	return nil
+}
+
 func createNodeSession(ctx *JoinRequestContext) error {
 	if ctx.JoinAnsPayload.NwkSKey.KEKLabel != "" {
 		return errors.New("NwkSKey KEKLabel unsupported")
@@ -183,10 +190,11 @@ func createDeviceActivation(ctx *JoinRequestContext) error {
 		NwkSKey:  ctx.DeviceSession.NwkSKey,
 		DevNonce: ctx.JoinRequestPayload.DevNonce,
 	}
-	err := storage.CreateDeviceActivation(common.DB, &da)
-	if err != nil {
+
+	if err := storage.CreateDeviceActivation(common.DB, &da); err != nil {
 		return errors.Wrap(err, "create device-activation error")
 	}
+
 	return nil
 }
 

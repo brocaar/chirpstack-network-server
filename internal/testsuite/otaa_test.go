@@ -28,6 +28,7 @@ type otaaTestCase struct {
 	AppKey                   lorawan.AES128Key          // app-key (used to decrypt the expected PHYPayload)
 	ExtraChannels            []int                      // extra channels for CFList
 	DeviceActivations        []storage.DeviceActivation // existing device-activations
+	DeviceQueueItems         []storage.DeviceQueueItem  // existing device-queue items from a previous activation
 
 	ExpectedError          error                  // expected error
 	ExpectedJoinReqPayload backend.JoinReqPayload // expected join-request request
@@ -168,6 +169,14 @@ func TestOTAAScenarios(t *testing.T) {
 							AESKey: lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 						},
 					},
+					DeviceQueueItems: []storage.DeviceQueueItem{
+						{
+							DevEUI:     lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
+							FRMPayload: []byte{1, 2, 3, 4},
+							FCnt:       10,
+							FPort:      1,
+						},
+					},
 
 					ExpectedJoinReqPayload: backend.JoinReqPayload{
 						BasePayload: backend.BasePayload{
@@ -219,6 +228,14 @@ func TestOTAAScenarios(t *testing.T) {
 						},
 						NwkSKey: &backend.KeyEnvelope{
 							AESKey: lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						},
+					},
+					DeviceQueueItems: []storage.DeviceQueueItem{
+						{
+							DevEUI:     lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
+							FRMPayload: []byte{1, 2, 3, 4},
+							FCnt:       10,
+							FPort:      1,
 						},
 					},
 
@@ -287,6 +304,11 @@ func runOTAATests(asClient *test.ApplicationClient, jsClient *test.JoinServerCli
 				So(storage.CreateDeviceActivation(common.DB, &da), ShouldBeNil)
 			}
 
+			// create device-queue items
+			for _, qi := range t.DeviceQueueItems {
+				So(storage.CreateDeviceQueueItem(common.DB, &qi), ShouldBeNil)
+			}
+
 			err = uplink.HandleRXPacket(gw.RXPacket{
 				RXInfo:     t.RXInfo,
 				PHYPayload: t.PHYPayload,
@@ -296,6 +318,12 @@ func runOTAATests(asClient *test.ApplicationClient, jsClient *test.JoinServerCli
 				return
 			}
 			So(t.ExpectedError, ShouldBeNil)
+
+			Convey("Then the device-queue has been flushed", func() {
+				items, err := storage.GetDeviceQueueItemsForDevEUI(common.DB, lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8})
+				So(err, ShouldBeNil)
+				So(items, ShouldHaveLength, 0)
+			})
 
 			Convey("Then the expected join-request was made to the join-server", func() {
 				So(jsClient.JoinReqPayloadChan, ShouldHaveLength, 1)

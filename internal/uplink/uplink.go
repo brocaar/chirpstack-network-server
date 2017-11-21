@@ -23,6 +23,7 @@ var flow = NewFlow().JoinRequest(
 	getRandomDevAddr,
 	getJoinAcceptFromAS,
 	logJoinRequestFrame,
+	flushDeviceQueue,
 	createNodeSession,
 	createDeviceActivation,
 	sendJoinAcceptDownlink,
