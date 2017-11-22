@@ -193,18 +193,43 @@ func saveNodeSession(ctx *DataUpContext) error {
 }
 
 func handleUplinkACK(ctx *DataUpContext) error {
-	// TODO: only log in case of error?
 	if !ctx.MACPayload.FHDR.FCtrl.ACK {
 		return nil
 	}
 
-	_, err := ctx.ApplicationServerClient.HandleDataDownACK(context.Background(), &as.HandleDataDownACKRequest{
-		AppEUI: ctx.DeviceSession.JoinEUI[:],
-		DevEUI: ctx.DeviceSession.DevEUI[:],
-		FCnt:   ctx.DeviceSession.FCntDown,
+	qi, err := storage.GetNextDeviceQueueItemForDevEUI(common.DB, ctx.DeviceSession.DevEUI)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"dev_eui": ctx.DeviceSession.DevEUI,
+		}).WithError(err).Error("get device-queue item error")
+		return nil
+	}
+	if qi.ForwardedAt == nil {
+		log.WithFields(log.Fields{
+			"dev_eui": ctx.DeviceSession.DevEUI,
+		}).Error("expected pending device-queue item")
+		return nil
+	}
+	if qi.FCnt != ctx.DeviceSession.FCntDown-1 {
+		log.WithFields(log.Fields{
+			"dev_eui":                  ctx.DeviceSession.DevEUI,
+			"device_queue_item_fcnt":   qi.FCnt,
+			"device_session_fcnt_down": ctx.DeviceSession.FCntDown,
+		}).Error("frame-counter of device-queue item out of sync with device-session")
+		return nil
+	}
+
+	if err := storage.DeleteDeviceQueueItem(common.DB, qi.ID); err != nil {
+		return errors.Wrap(err, "delete device-queue item error")
+	}
+
+	_, err = ctx.ApplicationServerClient.HandleDownlinkACK(context.Background(), &as.HandleDownlinkACKRequest{
+		DevEUI:       ctx.DeviceSession.DevEUI[:],
+		FCnt:         qi.FCnt,
+		Acknowledged: true,
 	})
 	if err != nil {
-		return errors.Wrap(err, "error publish downlink data ack to application-server")
+		return errors.Wrap(err, "application-server client error")
 	}
 
 	return nil

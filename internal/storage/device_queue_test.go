@@ -1,11 +1,14 @@
 package storage
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/brocaar/lorawan"
+	"github.com/pkg/errors"
 
+	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/test"
 	. "github.com/smartystreets/goconvey/convey"
@@ -21,6 +24,8 @@ func TestDeviceQueue(t *testing.T) {
 
 	Convey("Given a clean database", t, func() {
 		test.MustResetDB(common.DB)
+		asClient := test.NewApplicationClient()
+		common.ApplicationServerPool = test.NewApplicationServerPool(asClient)
 
 		Convey("Given a service, device and routing profile and device", func() {
 			sp := ServiceProfile{}
@@ -126,6 +131,142 @@ func TestDeviceQueue(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(items, ShouldHaveLength, 2)
 				})
+			})
+
+			Convey("When testing GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt", func() {
+				items := []DeviceQueueItem{
+					{
+						DevEUI:     d.DevEUI,
+						FCnt:       100,
+						FPort:      1,
+						FRMPayload: []byte{1, 2, 3, 4, 5, 6, 7},
+						RetryCount: -1,
+					},
+					{
+						DevEUI:     d.DevEUI,
+						FCnt:       101,
+						FPort:      1,
+						FRMPayload: []byte{1, 2, 3, 4, 5, 6, 7},
+					},
+					{
+						DevEUI:     d.DevEUI,
+						FCnt:       102,
+						FPort:      2,
+						FRMPayload: []byte{1, 2, 3, 4, 5, 6},
+					},
+					{
+						DevEUI:     d.DevEUI,
+						FCnt:       103,
+						FPort:      3,
+						FRMPayload: []byte{1, 2, 3, 4, 5},
+					},
+					{
+						DevEUI:     d.DevEUI,
+						FCnt:       104,
+						FPort:      4,
+						FRMPayload: []byte{1, 2, 3, 4},
+					},
+				}
+				for i := range items {
+					So(CreateDeviceQueueItem(common.DB, &items[i]), ShouldBeNil)
+				}
+
+				tests := []struct {
+					Name          string
+					FCnt          uint32
+					MaxFRMPayload int
+
+					ExpectedDeviceQueueItemID *int64
+					ExpectedHandleError       []as.HandleErrorRequest
+					ExpectedHandleDownlinkACK []as.HandleDownlinkACKRequest
+					ExpectedError             error
+				}{
+					{
+						Name:                      "nACK + first item from the queue (payload size)",
+						FCnt:                      100,
+						MaxFRMPayload:             7,
+						ExpectedDeviceQueueItemID: &items[1].ID,
+						ExpectedHandleDownlinkACK: []as.HandleDownlinkACKRequest{
+							{DevEUI: d.DevEUI[:], FCnt: items[0].FCnt, Acknowledged: false},
+						},
+					},
+					{
+						Name:                      "nACK + first item discarded (payload size)",
+						FCnt:                      100,
+						MaxFRMPayload:             6,
+						ExpectedDeviceQueueItemID: &items[1].ID,
+						ExpectedHandleError: []as.HandleErrorRequest{
+							{DevEUI: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 101},
+						},
+						ExpectedHandleDownlinkACK: []as.HandleDownlinkACKRequest{
+							{DevEUI: d.DevEUI[:], FCnt: items[0].FCnt, Acknowledged: false},
+						},
+					},
+					{
+						Name:                      "nACK + first two items discarded (payload size)",
+						FCnt:                      100,
+						MaxFRMPayload:             5,
+						ExpectedDeviceQueueItemID: &items[1].ID,
+						ExpectedHandleError: []as.HandleErrorRequest{
+							{DevEUI: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 101},
+							{DevEUI: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 102},
+						},
+						ExpectedHandleDownlinkACK: []as.HandleDownlinkACKRequest{
+							{DevEUI: d.DevEUI[:], FCnt: items[0].FCnt, Acknowledged: false},
+						},
+					},
+					{
+						Name:          "nACK + all items discarded (payload size)",
+						FCnt:          101,
+						MaxFRMPayload: 3,
+						ExpectedHandleError: []as.HandleErrorRequest{
+							{DevEUI: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 101},
+							{DevEUI: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 102},
+							{DevEUI: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 103},
+							{DevEUI: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 104},
+						},
+						ExpectedHandleDownlinkACK: []as.HandleDownlinkACKRequest{
+							{DevEUI: d.DevEUI[:], FCnt: items[0].FCnt, Acknowledged: false},
+						},
+						ExpectedError: ErrDoesNotExist,
+					},
+					{
+						Name:                      "nACK + first item discarded (fCnt)",
+						FCnt:                      102,
+						MaxFRMPayload:             7,
+						ExpectedDeviceQueueItemID: &items[1].ID,
+						ExpectedHandleError: []as.HandleErrorRequest{
+							{DevEUI: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_FCNT, Error: "frame-counter exceeds MaxFCntGap", FCnt: 101},
+						},
+						ExpectedHandleDownlinkACK: []as.HandleDownlinkACKRequest{
+							{DevEUI: d.DevEUI[:], FCnt: items[0].FCnt, Acknowledged: false},
+						},
+					},
+				}
+
+				for i, test := range tests {
+					Convey(fmt.Sprintf("Testing: %s [%d]", test.Name, i), func() {
+						qi, err := GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(common.DB, d.DevEUI, test.MaxFRMPayload, test.FCnt, rp.RoutingProfileID)
+						if test.ExpectedHandleError == nil {
+							So(*test.ExpectedDeviceQueueItemID, ShouldEqual, qi.ID)
+							So(err, ShouldBeNil)
+						} else {
+							So(errors.Cause(err), ShouldEqual, test.ExpectedError)
+						}
+
+						So(asClient.HandleErrorChan, ShouldHaveLength, len(test.ExpectedHandleError))
+						for _, err := range test.ExpectedHandleError {
+							req := <-asClient.HandleErrorChan
+							So(req, ShouldResemble, err)
+						}
+
+						So(asClient.HandleDownlinkACKChan, ShouldHaveLength, len(test.ExpectedHandleDownlinkACK))
+						for _, ack := range test.ExpectedHandleDownlinkACK {
+							req := <-asClient.HandleDownlinkACKChan
+							So(req, ShouldResemble, ack)
+						}
+					})
+				}
 			})
 		})
 	})

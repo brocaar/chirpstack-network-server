@@ -208,19 +208,17 @@ func NewApplicationServerPool(client *ApplicationClient) asclient.Pool {
 type ApplicationClient struct {
 	HandleDataUpErr        error
 	HandleProprietaryUpErr error
-	GetDataDownErr         error
+	HandleDownlinkACKErr   error
 
 	HandleDataUpChan        chan as.HandleDataUpRequest
 	HandleProprietaryUpChan chan as.HandleProprietaryUpRequest
-	HandleDataDownACKChan   chan as.HandleDataDownACKRequest
 	HandleErrorChan         chan as.HandleErrorRequest
-	GetDataDownChan         chan as.GetDataDownRequest
+	HandleDownlinkACKChan   chan as.HandleDownlinkACKRequest
 
 	HandleDataUpResponse        as.HandleDataUpResponse
 	HandleProprietaryUpResponse as.HandleProprietaryUpResponse
-	HandleDataDownACKResponse   as.HandleDataDownACKResponse
 	HandleErrorResponse         as.HandleErrorResponse
-	GetDataDownResponse         as.GetDataDownResponse
+	HandleDownlinkACKResponse   as.HandleDownlinkACKResponse
 }
 
 // NewApplicationClient returns a new ApplicationClient.
@@ -228,9 +226,8 @@ func NewApplicationClient() *ApplicationClient {
 	return &ApplicationClient{
 		HandleDataUpChan:        make(chan as.HandleDataUpRequest, 100),
 		HandleProprietaryUpChan: make(chan as.HandleProprietaryUpRequest, 100),
-		HandleDataDownACKChan:   make(chan as.HandleDataDownACKRequest, 100),
 		HandleErrorChan:         make(chan as.HandleErrorRequest, 100),
-		GetDataDownChan:         make(chan as.GetDataDownRequest, 100),
+		HandleDownlinkACKChan:   make(chan as.HandleDownlinkACKRequest, 100),
 	}
 }
 
@@ -252,25 +249,16 @@ func (t *ApplicationClient) HandleProprietaryUp(ctx context.Context, in *as.Hand
 	return &t.HandleProprietaryUpResponse, nil
 }
 
-// GetDataDown method.
-func (t *ApplicationClient) GetDataDown(ctx context.Context, in *as.GetDataDownRequest, opts ...grpc.CallOption) (*as.GetDataDownResponse, error) {
-	if t.GetDataDownErr != nil {
-		return nil, t.GetDataDownErr
-	}
-	t.GetDataDownChan <- *in
-	return &t.GetDataDownResponse, nil
-}
-
-// HandleDataDownACK method.
-func (t *ApplicationClient) HandleDataDownACK(ctx context.Context, in *as.HandleDataDownACKRequest, opts ...grpc.CallOption) (*as.HandleDataDownACKResponse, error) {
-	t.HandleDataDownACKChan <- *in
-	return &t.HandleDataDownACKResponse, nil
-}
-
 // HandleError method.
 func (t *ApplicationClient) HandleError(ctx context.Context, in *as.HandleErrorRequest, opts ...grpc.CallOption) (*as.HandleErrorResponse, error) {
 	t.HandleErrorChan <- *in
 	return &t.HandleErrorResponse, nil
+}
+
+// HandleDownlinkACK method.
+func (t *ApplicationClient) HandleDownlinkACK(ctx context.Context, in *as.HandleDownlinkACKRequest, opts ...grpc.CallOption) (*as.HandleDownlinkACKResponse, error) {
+	t.HandleDownlinkACKChan <- *in
+	return &t.HandleDownlinkACKResponse, nil
 }
 
 // NetworkControllerClient is a network-controller client for testing.

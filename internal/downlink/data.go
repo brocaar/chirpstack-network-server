@@ -1,8 +1,6 @@
 package downlink
 
 import (
-	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -11,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/maccommand"
@@ -85,17 +82,46 @@ func setRemainingPayloadSize(ctx *DataContext) error {
 	return nil
 }
 
-func getDataDownFromApplicationServer(ctx *DataContext) error {
-	txPayload := getDataDownFromApplication(ctx.DeviceSession, ctx.DataRate)
-	if txPayload == nil {
-		return nil
+func getNextDeviceQueueItem(ctx *DataContext) error {
+	qi, err := storage.GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(common.DB, ctx.DeviceSession.DevEUI, ctx.RemainingPayloadSize, ctx.DeviceSession.FCntDown, ctx.DeviceSession.RoutingProfileID)
+	if err != nil {
+		if errors.Cause(err) == storage.ErrDoesNotExist {
+			return nil
+		}
+		return errors.Wrap(err, "get next device-queue item for max payload error")
 	}
 
-	ctx.RemainingPayloadSize = ctx.RemainingPayloadSize - len(txPayload.Data)
-	ctx.Data = txPayload.Data
-	ctx.Confirmed = txPayload.Confirmed
-	ctx.MoreData = txPayload.MoreData
-	ctx.FPort = uint8(txPayload.FPort)
+	ctx.Confirmed = qi.Confirmed
+	ctx.Data = qi.FRMPayload
+	ctx.FPort = qi.FPort
+	ctx.RemainingPayloadSize = ctx.RemainingPayloadSize - len(ctx.Data)
+
+	items, err := storage.GetDeviceQueueItemsForDevEUI(common.DB, ctx.DeviceSession.DevEUI)
+	if err != nil {
+		return errors.Wrap(err, "get device-queue items error")
+	}
+	ctx.MoreData = len(items) > 1 // more than only the current frame
+
+	// Set the device-session fCnt (down). We might have discarded one or
+	// multiple frames (payload size) or the application-server might have
+	// incremented the counter incorrectly. This is important since it is
+	// used for decrypting the payload by the device!!
+	ctx.DeviceSession.FCntDown = qi.FCnt
+
+	// delete when not confirmed
+	if !qi.Confirmed {
+		if err := storage.DeleteDeviceQueueItem(common.DB, qi.ID); err != nil {
+			return errors.Wrap(err, "delete device-queue item error")
+		}
+	} else {
+		// mark as scheduled and decrease retry counter
+		now := time.Now()
+		qi.ForwardedAt = &now
+		qi.RetryCount--
+		if err := storage.UpdateDeviceQueueItem(common.DB, &qi); err != nil {
+			return errors.Wrap(err, "update device-queue item error")
+		}
+	}
 
 	return nil
 }
@@ -277,60 +303,6 @@ func getDataDownTXInfoAndDR(ds storage.DeviceSession, rxInfo gw.RXInfo) (gw.TXIn
 	}
 
 	return txInfo, dr, nil
-}
-
-// getDataDownFromApplication gets the downlink data from the application
-// (if any). On error the error is logged.
-func getDataDownFromApplication(ds storage.DeviceSession, dr int) *as.GetDataDownResponse {
-	rp, err := storage.GetRoutingProfile(common.DB, ds.RoutingProfileID)
-	if err != nil {
-		log.WithError(err).Error("get routing-profile error")
-		return nil
-	}
-
-	asClient, err := common.ApplicationServerPool.Get(rp.ASID)
-	if err != nil {
-		log.WithError(err).Error("get application-server client error")
-		return nil
-	}
-
-	resp, err := asClient.GetDataDown(context.Background(), &as.GetDataDownRequest{
-		AppEUI:         ds.JoinEUI[:],
-		DevEUI:         ds.DevEUI[:],
-		MaxPayloadSize: uint32(common.Band.MaxPayloadSize[dr].N),
-		FCnt:           ds.FCntDown,
-	})
-	if err != nil {
-		log.WithFields(log.Fields{
-			"dev_eui": ds.DevEUI,
-			"fcnt":    ds.FCntDown,
-		}).Errorf("get data down from application error: %s", err)
-		return nil
-	}
-
-	if resp == nil || resp.FPort == 0 {
-		return nil
-	}
-
-	if len(resp.Data) > common.Band.MaxPayloadSize[dr].N {
-		log.WithFields(log.Fields{
-			"dev_eui":          ds.DevEUI,
-			"size":             len(resp.Data),
-			"max_payload_size": common.Band.MaxPayloadSize[dr].N,
-			"dr":               dr,
-		}).Warning("data down from application exceeds max payload size")
-		return nil
-	}
-
-	log.WithFields(log.Fields{
-		"dev_eui":     ds.DevEUI,
-		"fcnt":        ds.FCntDown,
-		"data_base64": base64.StdEncoding.EncodeToString(resp.Data),
-		"confirmed":   resp.Confirmed,
-		"more_data":   resp.MoreData,
-	}).Info("received data down from application")
-
-	return resp
 }
 
 // getAndFilterMACQueueItems returns the mac-commands to send, based on the constraints:

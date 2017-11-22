@@ -15,7 +15,7 @@ var Flow = newFlow().JoinResponse(
 	requestDevStatus,
 	getDataTXInfo,
 	setRemainingPayloadSize,
-	getDataDownFromApplicationServer,
+	getNextDeviceQueueItem,
 	getMACCommands,
 	stopOnNothingToSend,
 	sendDataDown,

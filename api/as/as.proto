@@ -10,14 +10,11 @@ service ApplicationServer {
 	// HandleProprietaryUp handles proprietary uplink payloads.
 	rpc HandleProprietaryUp(HandleProprietaryUpRequest) returns (HandleProprietaryUpResponse) {}
 
-	// GetDataDown gets data from the downlink queue.
-	rpc GetDataDown(GetDataDownRequest) returns (GetDataDownResponse) {}
-
-	// HandleDataDownACK publishes a data-down ack response.
-	rpc HandleDataDownACK(HandleDataDownACKRequest) returns (HandleDataDownACKResponse) {}
-
 	// HandleError publishes an error message.
 	rpc HandleError(HandleErrorRequest) returns (HandleErrorResponse) {}
+
+	// HandleDownlinkACK sends a downlink ACK or nACK response.
+	rpc HandleDownlinkACK(HandleDownlinkACKRequest) returns (HandleDownlinkACKResponse) {}
 }
 
 enum RXWindow {
@@ -30,6 +27,8 @@ enum ErrorType {
 	OTAA = 1;
 	DATA_UP_FCNT = 2;
 	DATA_UP_MIC = 3;
+	DEVICE_QUEUE_ITEM_SIZE = 4;
+	DEVICE_QUEUE_ITEM_FCNT = 5;
 }
 
 message DataRate {
@@ -146,19 +145,31 @@ message GetDataDownResponse {
 
 message HandleDataUpResponse {}
 
-message HandleDataDownACKRequest {
-	bytes devEUI = 1;
-	bytes appEUI = 2;
-	uint32 fCnt = 3;
-}
-
-message HandleDataDownACKResponse {}
-
 message HandleErrorRequest {
+	// DevEUI of the device.
 	bytes devEUI = 1;
-	bytes appEUI = 2;
+
+	// Type of the error.
 	ErrorType type = 3;
+
+	// Error string describing the error.
 	string error = 4;
+
+	// Frame-counter (if applicable) related to the error.
+	uint32 fCnt = 5;
 }
 
 message HandleErrorResponse {}
+
+message HandleDownlinkACKRequest {
+	// DevEUI of the device.
+	bytes devEUI = 1;
+
+	// Downlink frame-counter.
+	uint32 fCnt = 2;
+
+	// Frame was acknowledged?
+	bool acknowledged = 3;
+}
+
+message HandleDownlinkACKResponse {}

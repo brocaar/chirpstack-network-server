@@ -1,12 +1,16 @@
 package storage
 
 import (
+	"context"
 	"time"
+
+	"github.com/brocaar/loraserver/api/as"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/lorawan"
 )
 
@@ -204,4 +208,93 @@ func GetDeviceQueueItemsForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) ([]Devi
 	}
 
 	return items, nil
+}
+
+// GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt returns the next
+// device-queue for the given DevEUI item respecting:
+// * maxPayloadSize: the maximum payload size
+// * fCnt: the current expected frame-counter
+// In case the payload exceeds the max payload size or when the payload
+// frame-counter - the given fCnt > MaxFCntGap, the payload will be removed
+// from the queue and the next one will be retrieved. In such a case, the
+// application-server will be notified.
+func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lorawan.EUI64, maxPayloadSize int, fCnt uint32, routingProfileID string) (DeviceQueueItem, error) {
+	for {
+		qi, err := GetNextDeviceQueueItemForDevEUI(db, devEUI)
+		if err != nil {
+			return DeviceQueueItem{}, errors.Wrap(err, "get next device-queue item error")
+		}
+
+		if qi.FCnt-fCnt > common.Band.MaxFCntGap || len(qi.FRMPayload) > maxPayloadSize || qi.RetryCount < 0 {
+			rp, err := GetRoutingProfile(db, routingProfileID)
+			if err != nil {
+				return DeviceQueueItem{}, errors.Wrap(err, "get routing-profile error")
+			}
+			asClient, err := common.ApplicationServerPool.Get(rp.ASID)
+			if err != nil {
+				return DeviceQueueItem{}, errors.Wrap(err, "get application-server client error")
+			}
+
+			if err := DeleteDeviceQueueItem(db, qi.ID); err != nil {
+				return DeviceQueueItem{}, errors.Wrap(err, "delete device-queue item error")
+			}
+
+			if qi.RetryCount < 0 {
+				// number of re-tries exceeded
+				log.WithFields(log.Fields{
+					"dev_eui":                devEUI,
+					"device_queue_item_fcnt": qi.FCnt,
+				}).Warning("device-queue item discarded due to max number of re-tries")
+
+				_, err = asClient.HandleDownlinkACK(context.Background(), &as.HandleDownlinkACKRequest{
+					DevEUI:       devEUI[:],
+					FCnt:         qi.FCnt,
+					Acknowledged: false,
+				})
+				if err != nil {
+					return DeviceQueueItem{}, errors.Wrap(err, "application-server client error")
+				}
+			} else if qi.FCnt-fCnt > common.Band.MaxFCntGap {
+				// handle frame-counter error
+				log.WithFields(log.Fields{
+					"dev_eui":                devEUI,
+					"device_session_fcnt":    fCnt,
+					"device_queue_item_fcnt": qi.FCnt,
+				}).Warning("device-queue item discarded due to invalid fCnt")
+
+				_, err = asClient.HandleError(context.Background(), &as.HandleErrorRequest{
+					DevEUI: devEUI[:],
+					Type:   as.ErrorType_DEVICE_QUEUE_ITEM_FCNT,
+					FCnt:   qi.FCnt,
+					Error:  "frame-counter exceeds MaxFCntGap",
+				})
+				if err != nil {
+					return DeviceQueueItem{}, errors.Wrap(err, "application-server client error")
+				}
+			} else if len(qi.FRMPayload) > maxPayloadSize {
+				// handle max payload size error
+				log.WithFields(log.Fields{
+					"device_queue_item_fcnt":         qi.FCnt,
+					"dev_eui":                        devEUI,
+					"max_payload_size":               maxPayloadSize,
+					"device_queue_item_payload_size": len(qi.FRMPayload),
+				}).Warning("device-queue item discarded as it exceeds the max payload size")
+
+				_, err = asClient.HandleError(context.Background(), &as.HandleErrorRequest{
+					DevEUI: devEUI[:],
+					Type:   as.ErrorType_DEVICE_QUEUE_ITEM_SIZE,
+					FCnt:   qi.FCnt,
+					Error:  "payload exceeds max payload size",
+				})
+				if err != nil {
+					return DeviceQueueItem{}, errors.Wrap(err, "application-server client error")
+				}
+			}
+
+			// try next frame
+			continue
+		}
+
+		return qi, nil
+	}
 }
