@@ -86,7 +86,7 @@ func TestClassCScenarios(t *testing.T) {
 				{MAC: lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}},
 				{MAC: lorawan.EUI64{2, 1, 2, 1, 2, 1, 2, 1}},
 			},
-			RX2DR: 1,
+			RX2DR: 5,
 		}
 
 		txInfo := gw.TXInfo{
@@ -107,7 +107,7 @@ func TestClassCScenarios(t *testing.T) {
 					DeviceSession: sess,
 					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
 						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Data:      []byte{5, 4, 3, 2, 1},
+						Data:      make([]byte, 242),
 						Confirmed: false,
 						FPort:     10,
 						FCnt:      5,
@@ -129,7 +129,7 @@ func TestClassCScenarios(t *testing.T) {
 							},
 							FPort: &fPortTen,
 							FRMPayload: []lorawan.Payload{
-								&lorawan.DataPayload{Bytes: []byte{5, 4, 3, 2, 1}},
+								&lorawan.DataPayload{Bytes: make([]byte, 242)},
 							},
 						},
 					},

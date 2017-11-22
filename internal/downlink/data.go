@@ -70,6 +70,7 @@ func getDataTXInfoForRX2(ctx *DataContext) error {
 		DataRate:    common.Band.DataRates[int(ctx.DeviceSession.RX2DR)],
 		CodeRate:    "4/5",
 	}
+	ctx.DataRate = int(ctx.DeviceSession.RX2DR)
 
 	return nil
 }

@@ -15,6 +15,11 @@ menu:
 * Service-profile `DevStatusReqFreq` option has been implemented
   (periodical device-status request).
 
+**Bugfixes:**
+
+* RX2 data-rate was set incorrectly, causing *maximum payload size exceeded*
+  errors. (thanks [@maxximal](https://github.com/maxximal))
+
 **Cleanup:**
 
 * Prefix de-duplication Redis keys with `lora:ns:` instead of `loraserver:`
