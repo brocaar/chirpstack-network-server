@@ -1,13 +1,25 @@
 package storage
 
 import (
+	"bytes"
+	"encoding/gob"
+	"fmt"
 	"time"
+
+	"github.com/garyburd/redigo/redis"
+	"github.com/pkg/errors"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/lorawan/backend"
+)
+
+// Templates used for generating Redis keys
+const (
+	ServiceProfileKeyTempl = "lora:ns:sp:%s"
 )
 
 // ServiceProfile defines the backend.ServiceProfile with some extra meta-data.
@@ -86,10 +98,103 @@ func CreateServiceProfile(db *sqlx.DB, sp *ServiceProfile) error {
 	return nil
 }
 
-// GetServiceProfile returns the service-profile matching the given id.
-func GetServiceProfile(db *sqlx.DB, id string) (ServiceProfile, error) {
+// CreateServiceProfileCache caches the given service-profile into the Redis.
+// This is used for faster lookups, but also in case of roaming where we
+// only want to store the service-profile of a roaming device for a finite
+// duration.
+// The TTL of the service-profile is the same as that of the device-sessions.
+func CreateServiceProfileCache(p *redis.Pool, sp ServiceProfile) error {
+	var buf bytes.Buffer
+	if err := gob.NewEncoder(&buf).Encode(sp); err != nil {
+		return errors.Wrap(err, "gob encode service-profile error")
+	}
+
+	c := p.Get()
+	defer c.Close()
+
+	key := fmt.Sprintf(ServiceProfileKeyTempl, sp.ServiceProfileID)
+	exp := int64(common.NodeSessionTTL) / int64(time.Millisecond)
+
+	_, err := c.Do("PSETEX", key, exp, buf.Bytes())
+	if err != nil {
+		return errors.Wrap(err, "set service-profile error")
+	}
+
+	return nil
+}
+
+// GetServiceProfileCache returns a cached service-profile.
+func GetServiceProfileCache(p *redis.Pool, id string) (ServiceProfile, error) {
 	var sp ServiceProfile
-	err := db.Get(&sp, "select * from service_profile where service_profile_id = $1", id)
+	key := fmt.Sprintf(ServiceProfileKeyTempl, id)
+
+	c := p.Get()
+	defer c.Close()
+
+	val, err := redis.Bytes(c.Do("GET", key))
+	if err != nil {
+		if err == redis.ErrNil {
+			return sp, ErrDoesNotExist
+		}
+		return sp, errors.Wrap(err, "get error")
+	}
+
+	err = gob.NewDecoder(bytes.NewReader(val)).Decode(&sp)
+	if err != nil {
+		return sp, errors.Wrap(err, "gob decode error")
+	}
+
+	return sp, nil
+}
+
+// FlushServiceProfileCache deletes a cached service-profile.
+func FlushServiceProfileCache(p *redis.Pool, id string) error {
+	key := fmt.Sprintf(ServiceProfileKeyTempl, id)
+	c := p.Get()
+	defer c.Close()
+
+	_, err := c.Do("DEL", key)
+	if err != nil {
+		return errors.Wrap(err, "delete error")
+	}
+	return nil
+}
+
+// GetAndCacheServiceProfile returns the service-profile from cache in case
+// available, else it will be retrieved from the database and then stored
+// in cache.
+func GetAndCacheServiceProfile(db sqlx.Queryer, p *redis.Pool, id string) (ServiceProfile, error) {
+	sp, err := GetServiceProfileCache(p, id)
+	if err == nil {
+		return sp, nil
+	}
+
+	if err != ErrDoesNotExist {
+		log.WithFields(log.Fields{
+			"service_profile_id": id,
+		}).WithError(err).Error("get service-profile cache error")
+		// we don't return as we can fall-back onto db retrieval
+	}
+
+	sp, err = GetServiceProfile(db, id)
+	if err != nil {
+		return ServiceProfile{}, errors.Wrap(err, "get service-profile-error")
+	}
+
+	err = CreateServiceProfileCache(p, sp)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"service_profile_id": id,
+		}).WithError(err).Error("create service-profile cache error")
+	}
+
+	return sp, nil
+}
+
+// GetServiceProfile returns the service-profile matching the given id.
+func GetServiceProfile(db sqlx.Queryer, id string) (ServiceProfile, error) {
+	var sp ServiceProfile
+	err := sqlx.Get(db, &sp, "select * from service_profile where service_profile_id = $1", id)
 	if err != nil {
 		return sp, handlePSQLError(err, "select error")
 	}
@@ -98,7 +203,7 @@ func GetServiceProfile(db *sqlx.DB, id string) (ServiceProfile, error) {
 }
 
 // UpdateServiceProfile updates the given service-profile.
-func UpdateServiceProfile(db *sqlx.DB, sp *ServiceProfile) error {
+func UpdateServiceProfile(db sqlx.Execer, sp *ServiceProfile) error {
 	sp.UpdatedAt = time.Now()
 
 	res, err := db.Exec(`
@@ -164,7 +269,7 @@ func UpdateServiceProfile(db *sqlx.DB, sp *ServiceProfile) error {
 }
 
 // DeleteServiceProfile deletes the service-profile matching the given id.
-func DeleteServiceProfile(db *sqlx.DB, id string) error {
+func DeleteServiceProfile(db sqlx.Execer, id string) error {
 	res, err := db.Exec("delete from service_profile where service_profile_id = $1", id)
 	if err != nil {
 		return handlePSQLError(err, "delete error")

@@ -7,6 +7,7 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan/backend"
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -17,9 +18,11 @@ func TestServiceProfile(t *testing.T) {
 		t.Fatal(err)
 	}
 	common.DB = db
+	common.RedisPool = common.NewRedisPool(conf.RedisURL)
 
 	Convey("Given a clean database", t, func() {
 		test.MustResetDB(common.DB)
+		test.MustFlushRedis(common.RedisPool)
 
 		Convey("When creating a service-profile", func() {
 			sp := ServiceProfile{
@@ -96,6 +99,27 @@ func TestServiceProfile(t *testing.T) {
 			Convey("Then DeleteServiceProfile deletes the service-profile", func() {
 				So(DeleteServiceProfile(db, sp.ServiceProfile.ServiceProfileID), ShouldBeNil)
 				So(DeleteServiceProfile(db, sp.ServiceProfile.ServiceProfileID), ShouldEqual, ErrDoesNotExist)
+			})
+
+			Convey("Then GetAndCacheServiceProfile reads the service-profile from db and puts it in cache", func() {
+				spGet, err := GetAndCacheServiceProfile(common.DB, common.RedisPool, sp.ServiceProfile.ServiceProfileID)
+				So(err, ShouldBeNil)
+				So(spGet.ServiceProfile.ServiceProfileID, ShouldEqual, sp.ServiceProfile.ServiceProfileID)
+
+				Convey("Then GetServiceProfileCache returns the service-profile", func() {
+					spGet, err := GetServiceProfileCache(common.RedisPool, sp.ServiceProfile.ServiceProfileID)
+					So(err, ShouldBeNil)
+					So(spGet.ServiceProfile.ServiceProfileID, ShouldEqual, sp.ServiceProfile.ServiceProfileID)
+				})
+
+				Convey("Then FlushServiceProfileCache removes the service-profile from cache", func() {
+					err := FlushServiceProfileCache(common.RedisPool, sp.ServiceProfile.ServiceProfileID)
+					So(err, ShouldBeNil)
+
+					_, err = GetServiceProfileCache(common.RedisPool, sp.ServiceProfile.ServiceProfileID)
+					So(err, ShouldNotBeNil)
+					So(errors.Cause(err), ShouldEqual, ErrDoesNotExist)
+				})
 			})
 		})
 	})

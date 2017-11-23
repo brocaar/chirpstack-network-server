@@ -186,6 +186,10 @@ func (n *NetworkServerAPI) UpdateServiceProfile(ctx context.Context, req *ns.Upd
 		sp.ServiceProfile.DLRatePolicy = backend.Drop
 	}
 
+	if err := storage.FlushServiceProfileCache(common.RedisPool, sp.ServiceProfile.ServiceProfileID); err != nil {
+		return nil, errToRPCError(err)
+	}
+
 	if err := storage.UpdateServiceProfile(common.DB, &sp); err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -195,6 +199,10 @@ func (n *NetworkServerAPI) UpdateServiceProfile(ctx context.Context, req *ns.Upd
 
 // DeleteServiceProfile deletes the service-profile matching the given id.
 func (n *NetworkServerAPI) DeleteServiceProfile(ctx context.Context, req *ns.DeleteServiceProfileRequest) (*ns.DeleteServiceProfileResponse, error) {
+	if err := storage.FlushServiceProfileCache(common.RedisPool, req.ServiceProfileID); err != nil {
+		return nil, errToRPCError(err)
+	}
+
 	if err := storage.DeleteServiceProfile(common.DB, req.ServiceProfileID); err != nil {
 		return nil, errToRPCError(err)
 	}

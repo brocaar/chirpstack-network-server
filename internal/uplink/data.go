@@ -42,7 +42,7 @@ func getNodeSessionForDataUp(ctx *DataUpContext) error {
 }
 
 func getServiceProfile(ctx *DataUpContext) error {
-	sp, err := storage.GetServiceProfile(common.DB, ctx.DeviceSession.ServiceProfileID)
+	sp, err := storage.GetAndCacheServiceProfile(common.DB, common.RedisPool, ctx.DeviceSession.ServiceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
