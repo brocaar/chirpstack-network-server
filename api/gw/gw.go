@@ -35,6 +35,8 @@ type RXInfo struct {
 	LoRaSNR   float64       `json:"loRaSNR"`        // LoRa signal-to-noise ratio in dB
 	Size      int           `json:"size"`           // packet payload size
 	DataRate  band.DataRate `json:"dataRate"`       // RX datarate (either LoRa or FSK)
+	Board     int           `json:"board"`          // Concentrator board used for RX
+	Antenna   int           `json:"antenna"`        // Antenna number on which signal has been received
 }
 
 // TXPacket contains the PHYPayload which should be send to the
@@ -61,6 +63,8 @@ type TXInfo struct {
 	DataRate    band.DataRate `json:"dataRate"`    // TX datarate (either LoRa or FSK)
 	CodeRate    string        `json:"codeRate"`    // ECC code rate
 	IPol        *bool         `json:"iPol"`        // when left nil, the gateway-bridge will use the default (true for LoRa modulation)
+	Board       int           `json:"board"`       // Concentrator board used for RX
+	Antenna     int           `json:"antenna"`     // Antenna number on which signal has been received
 }
 
 // GatewayStatsPacket contains the information of a gateway.
