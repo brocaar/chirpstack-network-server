@@ -5,7 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jmoiron/sqlx"
+
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/api/as"
@@ -279,6 +282,160 @@ func TestDeviceQueue(t *testing.T) {
 					})
 				}
 			})
+		})
+	})
+}
+
+func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
+	conf := test.GetConfig()
+	db, err := common.OpenDatabase(conf.PostgresDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	common.DB = db
+
+	Convey("Given a clean database", t, func() {
+		test.MustResetDB(common.DB)
+
+		Convey("Given a service-, class-c device- and routing-profile and two devices", func() {
+			sp := ServiceProfile{}
+			So(CreateServiceProfile(common.DB, &sp), ShouldBeNil)
+
+			rp := RoutingProfile{}
+			So(CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
+
+			dp := DeviceProfile{
+				DeviceProfile: backend.DeviceProfile{
+					SupportsClassC: true,
+				},
+			}
+			So(CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
+
+			devices := []Device{
+				{
+					ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+					DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+					RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+					DevEUI:           lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+				},
+				{
+					ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+					DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+					RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+					DevEUI:           lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2},
+				},
+			}
+			for i := range devices {
+				So(CreateDevice(common.DB, &devices[i]), ShouldBeNil)
+			}
+
+			inOneMinute := time.Now().Add(time.Minute)
+
+			tests := []struct {
+				Name            string
+				GetCallCount    int // the number of Get calls to make, each in a separate db transaction
+				GetCount        int
+				QueueItems      []DeviceQueueItem
+				ExpectedDevEUIs [][]lorawan.EUI64 // slice of EUIs per database transaction
+			}{
+				{
+					Name:         "single queue item",
+					GetCallCount: 2,
+					GetCount:     1,
+					QueueItems: []DeviceQueueItem{
+						{DevEUI: devices[0].DevEUI, FCnt: 1, FPort: 1, FRMPayload: []byte{1, 2, 3}},
+					},
+					ExpectedDevEUIs: [][]lorawan.EUI64{
+						{devices[0].DevEUI},
+						nil,
+					},
+				},
+				{
+					Name:         "single queue item with retry in one minute",
+					GetCallCount: 2,
+					GetCount:     1,
+					QueueItems: []DeviceQueueItem{
+						{DevEUI: devices[0].DevEUI, FCnt: 1, FPort: 1, FRMPayload: []byte{1, 2, 3}, RetryAfter: &inOneMinute},
+					},
+					ExpectedDevEUIs: [][]lorawan.EUI64{
+						nil,
+						nil,
+					},
+				},
+				{
+					Name:         "two queue items, first one with retry in one minute",
+					GetCallCount: 2,
+					GetCount:     1,
+					QueueItems: []DeviceQueueItem{
+						{DevEUI: devices[0].DevEUI, FCnt: 1, FPort: 1, FRMPayload: []byte{1, 2, 3}, RetryAfter: &inOneMinute},
+						{DevEUI: devices[0].DevEUI, FCnt: 2, FPort: 1, FRMPayload: []byte{1, 2, 3}},
+					},
+					ExpectedDevEUIs: [][]lorawan.EUI64{
+						nil,
+						nil,
+					},
+				},
+				{
+					Name:         "two queue items for two devices (limit 1)",
+					GetCallCount: 2,
+					GetCount:     1,
+					QueueItems: []DeviceQueueItem{
+						{DevEUI: devices[0].DevEUI, FCnt: 1, FPort: 1, FRMPayload: []byte{1, 2, 3}},
+						{DevEUI: devices[1].DevEUI, FCnt: 1, FPort: 1, FRMPayload: []byte{1, 2, 3}},
+					},
+					ExpectedDevEUIs: [][]lorawan.EUI64{
+						{devices[0].DevEUI},
+						{devices[1].DevEUI},
+					},
+				},
+				{
+					Name:         "two queue items for two devices (limit 2)",
+					GetCallCount: 2,
+					GetCount:     2,
+					QueueItems: []DeviceQueueItem{
+						{DevEUI: devices[0].DevEUI, FCnt: 1, FPort: 1, FRMPayload: []byte{1, 2, 3}},
+						{DevEUI: devices[1].DevEUI, FCnt: 1, FPort: 1, FRMPayload: []byte{1, 2, 3}},
+					},
+					ExpectedDevEUIs: [][]lorawan.EUI64{
+						{devices[0].DevEUI, devices[1].DevEUI},
+						nil,
+					},
+				},
+			}
+
+			for i, test := range tests {
+				Convey(fmt.Sprintf("testing: %s [%d]", test.Name, i), func() {
+					var transactions []*sqlx.Tx
+					var out [][]lorawan.EUI64
+
+					defer func() {
+						for i := range transactions {
+							transactions[i].Rollback()
+						}
+					}()
+
+					for i := range test.QueueItems {
+						So(CreateDeviceQueueItem(common.DB, &test.QueueItems[i]), ShouldBeNil)
+					}
+
+					for i := 0; i < test.GetCallCount; i++ {
+						tx, err := common.DB.Beginx()
+						So(err, ShouldBeNil)
+						transactions = append(transactions, tx)
+
+						devs, err := GetDevicesWithClassCDeviceQueueItems(tx, test.GetCount)
+						So(err, ShouldBeNil)
+
+						var euis []lorawan.EUI64
+						for i := range devs {
+							euis = append(euis, devs[i].DevEUI)
+						}
+						out = append(out, euis)
+					}
+
+					So(out, ShouldResemble, test.ExpectedDevEUIs)
+				})
+			}
 		})
 	})
 }

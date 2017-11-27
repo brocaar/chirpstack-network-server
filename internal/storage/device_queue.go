@@ -311,3 +311,51 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 		return qi, nil
 	}
 }
+
+// GetDevicesWithClassCDeviceQueueItems returns a slice of devices that qualify
+// for downlink Class-C transmission.
+// The device records will be locked for update so that multiple instances can
+// run this query in parallel without the risk of duplicate scheduling.
+func GetDevicesWithClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Device, error) {
+	var devices []Device
+	err := sqlx.Select(db, &devices, `
+		select
+			d.*
+		from
+			device d
+		inner join device_profile dp
+			on dp.device_profile_id = d.device_profile_id
+		where
+			dp.supports_class_c = true
+			-- we want devices with queue items
+			and exists (
+				select
+					1
+				from
+					device_queue dq
+				where
+					dq.dev_eui = d.dev_eui
+			)
+			-- we don't want device with pending queue items which are not
+			-- due yet for re-transmission
+			and not exists (
+				select
+					1
+				from
+					device_queue dq
+				where
+					dq.dev_eui = d.dev_eui
+					and dq.retry_after > now()
+			)
+		order by
+			d.dev_eui
+		limit $1
+		for update of d skip locked`,
+		count,
+	)
+	if err != nil {
+		return nil, handlePSQLError(err, "select error")
+	}
+
+	return devices, nil
+}
