@@ -16,17 +16,18 @@ import (
 
 // DeviceQueueItem represents an item in the device queue (downlink).
 type DeviceQueueItem struct {
-	ID          int64         `db:"id"`
-	CreatedAt   time.Time     `db:"created_at"`
-	UpdatedAt   time.Time     `db:"updated_at"`
-	DevEUI      lorawan.EUI64 `db:"dev_eui"`
-	FRMPayload  []byte        `db:"frm_payload"`
-	FCnt        uint32        `db:"f_cnt"`
-	FPort       uint8         `db:"f_port"`
-	Confirmed   bool          `db:"confirmed"`
-	EmitAt      *time.Time    `db:"emit_at"`
-	ForwardedAt *time.Time    `db:"forwarded_at"`
-	RetryCount  int           `db:"retry_count"`
+	ID         int64         `db:"id"`
+	CreatedAt  time.Time     `db:"created_at"`
+	UpdatedAt  time.Time     `db:"updated_at"`
+	DevEUI     lorawan.EUI64 `db:"dev_eui"`
+	FRMPayload []byte        `db:"frm_payload"`
+	FCnt       uint32        `db:"f_cnt"`
+	FPort      uint8         `db:"f_port"`
+	Confirmed  bool          `db:"confirmed"`
+	IsPending  bool          `db:"is_pending"`
+	EmitAt     *time.Time    `db:"emit_at"`
+	RetryAfter *time.Time    `db:"retry_after"`
+	RetryCount int           `db:"retry_count"`
 }
 
 // CreateDeviceQueueItem adds the given item to the device queue.
@@ -45,9 +46,10 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
             f_port,
             confirmed,
             emit_at,
-            forwarded_at,
-            retry_count
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            retry_after,
+			retry_count,
+			is_pending
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         returning id`,
 		qi.CreatedAt,
 		qi.UpdatedAt,
@@ -57,8 +59,9 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
 		qi.FPort,
 		qi.Confirmed,
 		qi.EmitAt,
-		qi.ForwardedAt,
+		qi.RetryAfter,
 		qi.RetryCount,
+		qi.IsPending,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -87,17 +90,18 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
 	qi.UpdatedAt = time.Now()
 
 	res, err := db.Exec(`
-        update device_queue
-        set
-            updated_at = $2,
-            dev_eui = $3,
-            frm_payload = $4,
-            f_cnt = $5,
-            f_port = $6,
-            confirmed = $7,
-            emit_at = $8,
-            forwarded_at = $9,
-            retry_count = $10
+		update device_queue
+		set
+			updated_at = $2,
+			dev_eui = $3,
+			frm_payload = $4,
+			f_cnt = $5,
+			f_port = $6,
+			confirmed = $7,
+			emit_at = $8,
+			retry_after = $9,
+			retry_count = $10,
+			is_pending = $11
         where
             id = $1`,
 		qi.ID,
@@ -108,8 +112,9 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
 		qi.FPort,
 		qi.Confirmed,
 		qi.EmitAt,
-		qi.ForwardedAt,
+		qi.RetryAfter,
 		qi.RetryCount,
+		qi.IsPending,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")
@@ -183,6 +188,14 @@ func GetNextDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (Dev
 	)
 	if err != nil {
 		return qi, handlePSQLError(err, "select error")
+	}
+
+	// In case the retry is in the future, return does not exist error.
+	// A retry might happen in the future in case of Class-B or -C confirmed
+	// re-transmission and when a timeout is set (e.g. the application waiting
+	// for a certain time before considering the transmission lost).
+	if qi.RetryAfter != nil && qi.RetryAfter.After(time.Now()) {
+		return DeviceQueueItem{}, ErrDoesNotExist
 	}
 
 	return qi, nil

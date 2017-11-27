@@ -8,20 +8,20 @@ create table device_queue (
     f_cnt int not null,
     f_port int not null,
     confirmed boolean not null,
+    is_pending boolean not null,
     emit_at timestamp with time zone,
-    forwarded_at timestamp with time zone,
+    retry_after timestamp with time zone,
     retry_count int not null
 );
 
 create index idx_device_queue_dev_eui on device_queue(dev_eui);
 create index idx_device_queue_confirmed on device_queue(confirmed);
 create index idx_device_queue_emit_at on device_queue(emit_at);
-create index idx_device_queue_forwarded_at on device_queue(forwarded_at);
+create index idx_device_queue_retry_after on device_queue(retry_after);
 
 -- +migrate Down
-drop index idx_device_queue_forwarded_at;
+drop index idx_device_queue_retry_after;
 drop index idx_device_queue_emit_at;
 drop index idx_device_queue_confirmed;
 drop index idx_device_queue_dev_eui;
-
 drop table device_queue;

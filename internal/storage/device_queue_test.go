@@ -66,12 +66,12 @@ func TestDeviceQueue(t *testing.T) {
 						EmitAt:     &now,
 					},
 					{
-						DevEUI:      d.DevEUI,
-						FRMPayload:  []byte{7, 8, 9},
-						FCnt:        2,
-						FPort:       12,
-						EmitAt:      &inOneHour,
-						ForwardedAt: &now,
+						DevEUI:     d.DevEUI,
+						FRMPayload: []byte{7, 8, 9},
+						FCnt:       2,
+						FPort:      12,
+						EmitAt:     &inOneHour,
+						RetryAfter: &now,
 					},
 				}
 				for i := range items {
@@ -90,16 +90,16 @@ func TestDeviceQueue(t *testing.T) {
 
 				Convey("Then UpdateDeviceQueueItem updates the queue item", func() {
 					items[0].RetryCount = 2
-					items[0].ForwardedAt = &now
+					items[0].RetryAfter = &now
 					So(UpdateDeviceQueueItem(db, &items[0]), ShouldBeNil)
 					items[0].UpdatedAt = items[0].UpdatedAt.UTC().Truncate(time.Millisecond)
 
 					qi, err := GetDeviceQueueItem(db, items[0].ID)
 					So(err, ShouldBeNil)
-					emittedAt := qi.ForwardedAt.UTC()
+					emittedAt := qi.RetryAfter.UTC()
 					qi.CreatedAt = qi.CreatedAt.UTC().Truncate(time.Millisecond)
 					qi.UpdatedAt = qi.UpdatedAt.UTC().Truncate(time.Millisecond)
-					qi.ForwardedAt = &emittedAt
+					qi.RetryAfter = &emittedAt
 					So(qi, ShouldResemble, items[0])
 				})
 
@@ -116,6 +116,17 @@ func TestDeviceQueue(t *testing.T) {
 					qi, err := GetNextDeviceQueueItemForDevEUI(db, d.DevEUI)
 					So(err, ShouldBeNil)
 					So(qi.FCnt, ShouldEqual, 1)
+				})
+
+				Convey("Given the first item in the queue has a retry in the future", func() {
+					ts := time.Now().Add(time.Minute)
+					items[0].RetryAfter = &ts
+					So(UpdateDeviceQueueItem(common.DB, &items[0]), ShouldBeNil)
+
+					Convey("Then GetNextDeviceQueueItemForDevEUI returns does not exist error", func() {
+						_, err := GetNextDeviceQueueItemForDevEUI(common.DB, d.DevEUI)
+						So(err, ShouldEqual, ErrDoesNotExist)
+					})
 				})
 
 				Convey("Then FlushDeviceQueueForDevEUI flushes the queue", func() {

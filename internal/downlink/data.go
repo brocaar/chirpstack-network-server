@@ -114,9 +114,8 @@ func getNextDeviceQueueItem(ctx *DataContext) error {
 			return errors.Wrap(err, "delete device-queue item error")
 		}
 	} else {
-		// mark as scheduled and decrease retry counter
-		now := time.Now()
-		qi.ForwardedAt = &now
+		// mark as pending and decrease retry counter
+		qi.IsPending = true
 		qi.RetryCount--
 		if err := storage.UpdateDeviceQueueItem(common.DB, &qi); err != nil {
 			return errors.Wrap(err, "update device-queue item error")

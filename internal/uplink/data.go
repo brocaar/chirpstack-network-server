@@ -204,7 +204,7 @@ func handleUplinkACK(ctx *DataUpContext) error {
 		}).WithError(err).Error("get device-queue item error")
 		return nil
 	}
-	if qi.ForwardedAt == nil {
+	if !qi.IsPending {
 		log.WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,
 		}).Error("expected pending device-queue item")
