@@ -8,6 +8,39 @@ menu:
 
 ## Changelog
 
+### 0.23.0
+
+**Features:**
+
+* The management of the downlink device-queue has moved to LoRa Server.
+  Based on the device-class (A or C and in the future B), LoRa Server will
+  decide how to schedule the downlink transmission.
+* LoRa Server sends nACK on Class-C confirmed downlink timeout
+  (can be set in the device-profile) to the application-server.
+
+**Changes:**
+
+Working towards a consistent and stable API, the following API changes have
+been made:
+
+Application-server API
+
+* `HandleDataDownACK` renamed to `HandleDownlinkACK`
+* `GetDataDown` has been removed (as LoRa Server is now responsible for the
+  downlink queue)
+
+Network-server API
+
+* Added
+  * `CreateDeviceQueueItem`
+  * `FlushDeviceQueueForDevEUI`
+  * `GetDeviceQueueItemsForDevEUI`
+
+* Removed
+  * `SendDownlinkData`
+
+**Note:** these changes require LoRa App Server 0.15.0 or higher.
+
 ### 0.22.1
 
 **Features:**
