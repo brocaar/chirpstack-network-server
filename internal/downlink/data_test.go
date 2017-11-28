@@ -65,7 +65,6 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 					Confirmed:  true,
 					FCnt:       11,
 					FPort:      1,
-					RetryCount: 2,
 				},
 			}
 			for i := range items {
@@ -109,7 +108,6 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 						FRMPayload: []byte{4, 5, 6, 7},
 						FPort:      1,
 						FCnt:       11,
-						RetryCount: 2,
 						Confirmed:  true,
 					},
 				},
@@ -136,7 +134,7 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 						Confirmed:  true,
 						FPort:      1,
 						FCnt:       11,
-						RetryCount: 1,
+						IsPending:  true,
 					},
 				},
 			}
@@ -157,8 +155,11 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 						So(qi.FRMPayload, ShouldResemble, test.ExpectedNextDeviceQueueItem.FRMPayload)
 						So(qi.FPort, ShouldEqual, test.ExpectedNextDeviceQueueItem.FPort)
 						So(qi.FCnt, ShouldEqual, test.ExpectedNextDeviceQueueItem.FCnt)
-						So(qi.RetryCount, ShouldEqual, test.ExpectedNextDeviceQueueItem.RetryCount)
+						So(qi.IsPending, ShouldEqual, test.ExpectedNextDeviceQueueItem.IsPending)
 						So(qi.Confirmed, ShouldEqual, test.ExpectedNextDeviceQueueItem.Confirmed)
+						if test.ExpectedNextDeviceQueueItem.IsPending {
+							So(qi.TimeoutAfter, ShouldNotBeNil)
+						}
 					}
 				})
 			}

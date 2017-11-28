@@ -1127,23 +1127,12 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.Item.DevEUI)
 
-	var emitAt *time.Time
-	if req.Item.EmitAt != "" {
-		t, err := time.Parse(time.RFC3339Nano, req.Item.EmitAt)
-		if err != nil {
-			return nil, errToRPCError(err)
-		}
-		emitAt = &t
-	}
-
 	qi := storage.DeviceQueueItem{
 		DevEUI:     devEUI,
 		FRMPayload: req.Item.FrmPayload,
 		FCnt:       req.Item.FCnt,
 		FPort:      uint8(req.Item.FPort),
 		Confirmed:  req.Item.Confirmed,
-		EmitAt:     emitAt,
-		RetryCount: int(req.Item.RetryCount),
 	}
 	err := storage.CreateDeviceQueueItem(common.DB, &qi)
 	if err != nil {
@@ -1184,12 +1173,6 @@ func (n *NetworkServerAPI) GetDeviceQueueItemsForDevEUI(ctx context.Context, req
 			FCnt:       items[i].FCnt,
 			FPort:      uint32(items[i].FPort),
 			Confirmed:  items[i].Confirmed,
-			RetryCount: uint32(items[i].RetryCount),
-		}
-
-		// set emit timestamp when not nil
-		if ts := items[i].EmitAt; ts != nil {
-			qi.EmitAt = ts.Format(time.RFC3339Nano)
 		}
 
 		out.Items = append(out.Items, &qi)

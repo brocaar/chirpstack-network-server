@@ -10,17 +10,16 @@ create table device_queue (
     confirmed boolean not null,
     is_pending boolean not null,
     emit_at timestamp with time zone,
-    retry_after timestamp with time zone,
-    retry_count int not null
+    timeout_after timestamp with time zone
 );
 
 create index idx_device_queue_dev_eui on device_queue(dev_eui);
 create index idx_device_queue_confirmed on device_queue(confirmed);
 create index idx_device_queue_emit_at on device_queue(emit_at);
-create index idx_device_queue_retry_after on device_queue(retry_after);
+create index idx_device_queue_timeout_after on device_queue(timeout_after);
 
 -- +migrate Down
-drop index idx_device_queue_retry_after;
+drop index idx_device_queue_timeout_after;
 drop index idx_device_queue_emit_at;
 drop index idx_device_queue_confirmed;
 drop index idx_device_queue_dev_eui;

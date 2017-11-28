@@ -16,18 +16,17 @@ import (
 
 // DeviceQueueItem represents an item in the device queue (downlink).
 type DeviceQueueItem struct {
-	ID         int64         `db:"id"`
-	CreatedAt  time.Time     `db:"created_at"`
-	UpdatedAt  time.Time     `db:"updated_at"`
-	DevEUI     lorawan.EUI64 `db:"dev_eui"`
-	FRMPayload []byte        `db:"frm_payload"`
-	FCnt       uint32        `db:"f_cnt"`
-	FPort      uint8         `db:"f_port"`
-	Confirmed  bool          `db:"confirmed"`
-	IsPending  bool          `db:"is_pending"`
-	EmitAt     *time.Time    `db:"emit_at"`
-	RetryAfter *time.Time    `db:"retry_after"`
-	RetryCount int           `db:"retry_count"`
+	ID           int64         `db:"id"`
+	CreatedAt    time.Time     `db:"created_at"`
+	UpdatedAt    time.Time     `db:"updated_at"`
+	DevEUI       lorawan.EUI64 `db:"dev_eui"`
+	FRMPayload   []byte        `db:"frm_payload"`
+	FCnt         uint32        `db:"f_cnt"`
+	FPort        uint8         `db:"f_port"`
+	Confirmed    bool          `db:"confirmed"`
+	IsPending    bool          `db:"is_pending"`
+	EmitAt       *time.Time    `db:"emit_at"`
+	TimeoutAfter *time.Time    `db:"timeout_after"`
 }
 
 // CreateDeviceQueueItem adds the given item to the device queue.
@@ -46,10 +45,9 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
             f_port,
             confirmed,
             emit_at,
-            retry_after,
-			retry_count,
-			is_pending
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            is_pending,
+            timeout_after
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         returning id`,
 		qi.CreatedAt,
 		qi.UpdatedAt,
@@ -59,9 +57,8 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
 		qi.FPort,
 		qi.Confirmed,
 		qi.EmitAt,
-		qi.RetryAfter,
-		qi.RetryCount,
 		qi.IsPending,
+		qi.TimeoutAfter,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -90,18 +87,17 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
 	qi.UpdatedAt = time.Now()
 
 	res, err := db.Exec(`
-		update device_queue
-		set
-			updated_at = $2,
-			dev_eui = $3,
-			frm_payload = $4,
-			f_cnt = $5,
-			f_port = $6,
-			confirmed = $7,
-			emit_at = $8,
-			retry_after = $9,
-			retry_count = $10,
-			is_pending = $11
+        update device_queue
+        set
+            updated_at = $2,
+            dev_eui = $3,
+            frm_payload = $4,
+            f_cnt = $5,
+            f_port = $6,
+            confirmed = $7,
+            emit_at = $8,
+            is_pending = $9,
+            timeout_after = $10
         where
             id = $1`,
 		qi.ID,
@@ -112,9 +108,8 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
 		qi.FPort,
 		qi.Confirmed,
 		qi.EmitAt,
-		qi.RetryAfter,
-		qi.RetryCount,
 		qi.IsPending,
+		qi.TimeoutAfter,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")
@@ -190,11 +185,9 @@ func GetNextDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (Dev
 		return qi, handlePSQLError(err, "select error")
 	}
 
-	// In case the retry is in the future, return does not exist error.
-	// A retry might happen in the future in case of Class-B or -C confirmed
-	// re-transmission and when a timeout is set (e.g. the application waiting
-	// for a certain time before considering the transmission lost).
-	if qi.RetryAfter != nil && qi.RetryAfter.After(time.Now()) {
+	// In case the transmission is pending and hasn't timed-out yet, do not
+	// return it.
+	if qi.IsPending && qi.TimeoutAfter != nil && qi.TimeoutAfter.After(time.Now()) {
 		return DeviceQueueItem{}, ErrDoesNotExist
 	}
 
@@ -238,7 +231,7 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 			return DeviceQueueItem{}, errors.Wrap(err, "get next device-queue item error")
 		}
 
-		if qi.FCnt-fCnt > common.Band.MaxFCntGap || len(qi.FRMPayload) > maxPayloadSize || qi.RetryCount < 0 {
+		if qi.FCnt-fCnt > common.Band.MaxFCntGap || len(qi.FRMPayload) > maxPayloadSize || (qi.TimeoutAfter != nil && qi.TimeoutAfter.Before(time.Now())) {
 			rp, err := GetRoutingProfile(db, routingProfileID)
 			if err != nil {
 				return DeviceQueueItem{}, errors.Wrap(err, "get routing-profile error")
@@ -252,12 +245,12 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 				return DeviceQueueItem{}, errors.Wrap(err, "delete device-queue item error")
 			}
 
-			if qi.RetryCount < 0 {
-				// number of re-tries exceeded
+			if qi.TimeoutAfter != nil && qi.TimeoutAfter.Before(time.Now()) {
+				// timeout
 				log.WithFields(log.Fields{
 					"dev_eui":                devEUI,
 					"device_queue_item_fcnt": qi.FCnt,
-				}).Warning("device-queue item discarded due to max number of re-tries")
+				}).Warning("device-queue item discarded due to timeout")
 
 				_, err = asClient.HandleDownlinkACK(context.Background(), &as.HandleDownlinkACKRequest{
 					DevEUI:       devEUI[:],
@@ -319,38 +312,39 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 func GetDevicesWithClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Device, error) {
 	var devices []Device
 	err := sqlx.Select(db, &devices, `
-		select
-			d.*
-		from
-			device d
-		inner join device_profile dp
-			on dp.device_profile_id = d.device_profile_id
-		where
-			dp.supports_class_c = true
-			-- we want devices with queue items
-			and exists (
-				select
-					1
-				from
-					device_queue dq
-				where
-					dq.dev_eui = d.dev_eui
-			)
-			-- we don't want device with pending queue items which are not
-			-- due yet for re-transmission
-			and not exists (
-				select
-					1
-				from
-					device_queue dq
-				where
-					dq.dev_eui = d.dev_eui
-					and dq.retry_after > now()
-			)
-		order by
-			d.dev_eui
-		limit $1
-		for update of d skip locked`,
+        select
+            d.*
+        from
+            device d
+        inner join device_profile dp
+            on dp.device_profile_id = d.device_profile_id
+        where
+            dp.supports_class_c = true
+            -- we want devices with queue items
+            and exists (
+                select
+                    1
+                from
+                    device_queue dq
+                where
+                    dq.dev_eui = d.dev_eui
+            )
+            -- we don't want device with pending queue items that did not yet
+            -- timeout
+            and not exists (
+                select
+                    1
+                from
+                    device_queue dq
+                where
+                    dq.dev_eui = d.dev_eui
+                    and is_pending = true
+                    and dq.timeout_after > now()
+            )
+        order by
+            d.dev_eui
+        limit $1
+        for update of d skip locked`,
 		count,
 	)
 	if err != nil {

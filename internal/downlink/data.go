@@ -114,9 +114,17 @@ func getNextDeviceQueueItem(ctx *DataContext) error {
 			return errors.Wrap(err, "delete device-queue item error")
 		}
 	} else {
-		// mark as pending and decrease retry counter
+		// mark as pending and set timeout
+		timeout := time.Now()
+		if ctx.DeviceProfile.SupportsClassC {
+			timeout = timeout.Add(time.Duration(ctx.DeviceProfile.ClassCTimeout) * time.Second)
+		}
+		if ctx.DeviceProfile.SupportsClassB {
+			timeout = timeout.Add(time.Duration(ctx.DeviceProfile.ClassBTimeout) * time.Second)
+		}
 		qi.IsPending = true
-		qi.RetryCount--
+		qi.TimeoutAfter = &timeout
+
 		if err := storage.UpdateDeviceQueueItem(common.DB, &qi); err != nil {
 			return errors.Wrap(err, "update device-queue item error")
 		}

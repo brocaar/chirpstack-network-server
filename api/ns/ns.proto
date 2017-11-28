@@ -832,14 +832,6 @@ message DeviceQueueItem {
     // When set to true, LoRa Server will wait for the device to ack the
     // received frame.
     bool confirmed = 5;
-
-    // The timestamp (RFC3339Nano) when the frame must be emitted to the device.
-    string emitAt = 6;
-
-    // Used in case of confirmed=true when the device does not (directly) ack
-    // the frame. LoRa Server will try 1 + retryCount, thus when set to 0, the
-    // frame will only be emitted once.
-    uint32 retryCount = 7;
 }
 
 message CreateDeviceQueueItemRequest {

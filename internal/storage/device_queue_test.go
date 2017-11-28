@@ -59,7 +59,6 @@ func TestDeviceQueue(t *testing.T) {
 						FCnt:       1,
 						FPort:      10,
 						Confirmed:  true,
-						RetryCount: 3,
 					},
 					{
 						DevEUI:     d.DevEUI,
@@ -74,7 +73,6 @@ func TestDeviceQueue(t *testing.T) {
 						FCnt:       2,
 						FPort:      12,
 						EmitAt:     &inOneHour,
-						RetryAfter: &now,
 					},
 				}
 				for i := range items {
@@ -92,17 +90,17 @@ func TestDeviceQueue(t *testing.T) {
 				})
 
 				Convey("Then UpdateDeviceQueueItem updates the queue item", func() {
-					items[0].RetryCount = 2
-					items[0].RetryAfter = &now
+					items[0].IsPending = true
+					items[0].TimeoutAfter = &inOneHour
 					So(UpdateDeviceQueueItem(db, &items[0]), ShouldBeNil)
 					items[0].UpdatedAt = items[0].UpdatedAt.UTC().Truncate(time.Millisecond)
 
 					qi, err := GetDeviceQueueItem(db, items[0].ID)
 					So(err, ShouldBeNil)
-					emittedAt := qi.RetryAfter.UTC()
 					qi.CreatedAt = qi.CreatedAt.UTC().Truncate(time.Millisecond)
 					qi.UpdatedAt = qi.UpdatedAt.UTC().Truncate(time.Millisecond)
-					qi.RetryAfter = &emittedAt
+					So(qi.TimeoutAfter.Equal(inOneHour), ShouldBeTrue)
+					qi.TimeoutAfter = &inOneHour
 					So(qi, ShouldResemble, items[0])
 				})
 
@@ -121,9 +119,10 @@ func TestDeviceQueue(t *testing.T) {
 					So(qi.FCnt, ShouldEqual, 1)
 				})
 
-				Convey("Given the first item in the queue has a retry in the future", func() {
+				Convey("Given the first item in the queue is pending and has a timeout in the future", func() {
 					ts := time.Now().Add(time.Minute)
-					items[0].RetryAfter = &ts
+					items[0].IsPending = true
+					items[0].TimeoutAfter = &ts
 					So(UpdateDeviceQueueItem(common.DB, &items[0]), ShouldBeNil)
 
 					Convey("Then GetNextDeviceQueueItemForDevEUI returns does not exist error", func() {
@@ -148,13 +147,16 @@ func TestDeviceQueue(t *testing.T) {
 			})
 
 			Convey("When testing GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt", func() {
+				oneMinuteAgo := time.Now().Add(-time.Minute)
+
 				items := []DeviceQueueItem{
 					{
-						DevEUI:     d.DevEUI,
-						FCnt:       100,
-						FPort:      1,
-						FRMPayload: []byte{1, 2, 3, 4, 5, 6, 7},
-						RetryCount: -1,
+						DevEUI:       d.DevEUI,
+						FCnt:         100,
+						FPort:        1,
+						FRMPayload:   []byte{1, 2, 3, 4, 5, 6, 7},
+						IsPending:    true,
+						TimeoutAfter: &oneMinuteAgo,
 					},
 					{
 						DevEUI:     d.DevEUI,
@@ -196,7 +198,7 @@ func TestDeviceQueue(t *testing.T) {
 					ExpectedError             error
 				}{
 					{
-						Name:                      "nACK + first item from the queue (payload size)",
+						Name:                      "nACK + first item from the queue (timeout)",
 						FCnt:                      100,
 						MaxFRMPayload:             7,
 						ExpectedDeviceQueueItemID: &items[1].ID,
@@ -351,11 +353,11 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 					},
 				},
 				{
-					Name:         "single queue item with retry in one minute",
+					Name:         "single pending queue item with timeout in one minute",
 					GetCallCount: 2,
 					GetCount:     1,
 					QueueItems: []DeviceQueueItem{
-						{DevEUI: devices[0].DevEUI, FCnt: 1, FPort: 1, FRMPayload: []byte{1, 2, 3}, RetryAfter: &inOneMinute},
+						{DevEUI: devices[0].DevEUI, FCnt: 1, FPort: 1, FRMPayload: []byte{1, 2, 3}, IsPending: true, TimeoutAfter: &inOneMinute},
 					},
 					ExpectedDevEUIs: [][]lorawan.EUI64{
 						nil,
@@ -363,11 +365,11 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 					},
 				},
 				{
-					Name:         "two queue items, first one with retry in one minute",
+					Name:         "two queue items, first one pending and timeout in one minute",
 					GetCallCount: 2,
 					GetCount:     1,
 					QueueItems: []DeviceQueueItem{
-						{DevEUI: devices[0].DevEUI, FCnt: 1, FPort: 1, FRMPayload: []byte{1, 2, 3}, RetryAfter: &inOneMinute},
+						{DevEUI: devices[0].DevEUI, FCnt: 1, FPort: 1, FRMPayload: []byte{1, 2, 3}, IsPending: true, TimeoutAfter: &inOneMinute},
 						{DevEUI: devices[0].DevEUI, FCnt: 2, FPort: 1, FRMPayload: []byte{1, 2, 3}},
 					},
 					ExpectedDevEUIs: [][]lorawan.EUI64{

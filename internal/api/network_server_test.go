@@ -542,8 +542,6 @@ func TestNetworkServerAPI(t *testing.T) {
 			})
 
 			Convey("When calling CreateDeviceQueueItem", func() {
-				now := time.Now().Truncate(time.Millisecond)
-
 				_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
 					Item: &ns.DeviceQueueItem{
 						DevEUI:     d.DevEUI[:],
@@ -551,8 +549,6 @@ func TestNetworkServerAPI(t *testing.T) {
 						FCnt:       10,
 						FPort:      20,
 						Confirmed:  true,
-						EmitAt:     now.Format(time.RFC3339Nano),
-						RetryCount: 3,
 					},
 				})
 				So(err, ShouldBeNil)
@@ -569,8 +565,6 @@ func TestNetworkServerAPI(t *testing.T) {
 						FCnt:       10,
 						FPort:      20,
 						Confirmed:  true,
-						EmitAt:     now.Format(time.RFC3339Nano),
-						RetryCount: 3,
 					})
 				})
 
