@@ -20,21 +20,28 @@ var Flow = newFlow().JoinResponse(
 	stopOnNothingToSend,
 	sendDataDown,
 	saveDeviceSession,
-).PushDataDown(
+).ProprietaryDown(
+	sendProprietaryDown,
+).ScheduleNextDeviceQueueItem(
+	getDeviceProfile,
+	getServiceProfile,
 	requestDevStatus,
 	getDataTXInfoForRX2,
 	setRemainingPayloadSize,
+	getNextDeviceQueueItem,
 	getMACCommands,
+	stopOnNothingToSend,
 	sendDataDown,
 	saveDeviceSession,
-).ProprietaryDown(
-	sendProprietaryDown,
 )
 
 // DataContext holds the context of a downlink transmission.
 type DataContext struct {
 	// ServiceProfile of the device.
 	ServiceProfile storage.ServiceProfile
+
+	// DeviceProfile of the device.
+	DeviceProfile storage.DeviceProfile
 
 	// DeviceSession holds the device-session of the device for which to send
 	// the downlink data.
@@ -121,21 +128,22 @@ type ProprietaryDownContext struct {
 // UplinkResponseTask is the signature of an uplink response task.
 type UplinkResponseTask func(*DataContext) error
 
-// PushDataDownTask is the signature of a downlink push task.
-type PushDataDownTask func(*DataContext) error
-
 // JoinResponseTask is the signature of a join response task.
 type JoinResponseTask func(*JoinContext) error
 
 // ProprietaryDownTask is the signature of a proprietary down task.
 type ProprietaryDownTask func(*ProprietaryDownContext) error
 
+// ScheduleNextDeviceQueueItemTask is the signature of a schedule next
+// device-queue item task.
+type ScheduleNextDeviceQueueItemTask func(*DataContext) error
+
 // Flow contains one or multiple tasks to execute.
 type flow struct {
-	uplinkResponseTasks  []UplinkResponseTask
-	pushDataDownTasks    []PushDataDownTask
-	joinResponseTasks    []JoinResponseTask
-	proprietaryDownTasks []ProprietaryDownTask
+	uplinkResponseTasks              []UplinkResponseTask
+	joinResponseTasks                []JoinResponseTask
+	proprietaryDownTasks             []ProprietaryDownTask
+	scheduleNextDeviceQueueItemTasks []ScheduleNextDeviceQueueItemTask
 }
 
 func newFlow() *flow {
@@ -145,12 +153,6 @@ func newFlow() *flow {
 // UplinkResponse adds uplink response tasks to the flow.
 func (f *flow) UplinkResponse(tasks ...UplinkResponseTask) *flow {
 	f.uplinkResponseTasks = tasks
-	return f
-}
-
-// PushDataDown adds push data-down tasks to the flow.
-func (f *flow) PushDataDown(tasks ...PushDataDownTask) *flow {
-	f.pushDataDownTasks = tasks
 	return f
 }
 
@@ -166,6 +168,13 @@ func (f *flow) ProprietaryDown(tasks ...ProprietaryDownTask) *flow {
 	return f
 }
 
+// ScheduleNextDeviceQueueItem adds tasks to the schedule next
+// device-queue item flow.
+func (f *flow) ScheduleNextDeviceQueueItem(tasks ...ScheduleNextDeviceQueueItemTask) *flow {
+	f.scheduleNextDeviceQueueItemTasks = tasks
+	return f
+}
+
 // RunUplinkResponse runs the uplink response flow.
 func (f *flow) RunUplinkResponse(sp storage.ServiceProfile, ds storage.DeviceSession, adr, mustSend, ack bool) error {
 	ctx := DataContext{
@@ -176,29 +185,6 @@ func (f *flow) RunUplinkResponse(sp storage.ServiceProfile, ds storage.DeviceSes
 	}
 
 	for _, t := range f.uplinkResponseTasks {
-		if err := t(&ctx); err != nil {
-			if err == ErrAbort {
-				return nil
-			}
-
-			return err
-		}
-	}
-
-	return nil
-}
-
-// RunPushDataDown runs the push data-down flow.
-func (f *flow) RunPushDataDown(sp storage.ServiceProfile, ds storage.DeviceSession, confirmed bool, fPort uint8, data []byte) error {
-	ctx := DataContext{
-		ServiceProfile: sp,
-		DeviceSession:  ds,
-		Confirmed:      confirmed,
-		FPort:          fPort,
-		Data:           data,
-	}
-
-	for _, t := range f.pushDataDownTasks {
 		if err := t(&ctx); err != nil {
 			if err == ErrAbort {
 				return nil
@@ -248,6 +234,24 @@ func (f *flow) RunProprietaryDown(macPayload []byte, mic lorawan.MIC, gwMACs []l
 				return nil
 			}
 
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ScheduleNexDeviceQueueItem.
+func (f *flow) RunScheduleNextDeviceQueueItem(ds storage.DeviceSession) error {
+	ctx := DataContext{
+		DeviceSession: ds,
+	}
+
+	for _, t := range f.scheduleNextDeviceQueueItemTasks {
+		if err := t(&ctx); err != nil {
+			if err == ErrAbort {
+				return nil
+			}
 			return err
 		}
 	}

@@ -632,33 +632,6 @@ func (n *NetworkServerAPI) EnqueueDownlinkMACCommand(ctx context.Context, req *n
 	return &ns.EnqueueDownlinkMACCommandResponse{}, nil
 }
 
-// SendDownlinkData pushes the given downlink payload to the node (only works for Class-C nodes).
-func (n *NetworkServerAPI) SendDownlinkData(ctx context.Context, req *ns.SendDownlinkDataRequest) (*ns.SendDownlinkDataResponse, error) {
-	var devEUI lorawan.EUI64
-	copy(devEUI[:], req.DevEUI)
-
-	ds, err := storage.GetDeviceSession(common.RedisPool, devEUI)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	sp, err := storage.GetServiceProfile(common.DB, ds.ServiceProfileID)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	if req.FCnt != ds.FCntDown {
-		return nil, grpc.Errorf(codes.InvalidArgument, "invalid FCnt (expected: %d)", ds.FCntDown)
-	}
-
-	err = downlink.Flow.RunPushDataDown(sp, ds, req.Confirmed, uint8(req.FPort), req.Data)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	return &ns.SendDownlinkDataResponse{}, nil
-}
-
 // SendProprietaryPayload send a payload using the 'Proprietary' LoRaWAN message-type.
 func (n *NetworkServerAPI) SendProprietaryPayload(ctx context.Context, req *ns.SendProprietaryPayloadRequest) (*ns.SendProprietaryPayloadResponse, error) {
 	var mic lorawan.MIC

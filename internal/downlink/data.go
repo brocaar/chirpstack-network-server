@@ -248,6 +248,26 @@ func saveDeviceSession(ctx *DataContext) error {
 	return nil
 }
 
+// TODO: change to get device-profile from Redis cache
+func getDeviceProfile(ctx *DataContext) error {
+	var err error
+	ctx.DeviceProfile, err = storage.GetDeviceProfile(common.DB, ctx.DeviceSession.DeviceProfileID)
+	if err != nil {
+		return errors.Wrap(err, "get device-profile error")
+	}
+	return nil
+}
+
+// TODO: change to get service-profile from Redis cache
+func getServiceProfile(ctx *DataContext) error {
+	var err error
+	ctx.ServiceProfile, err = storage.GetServiceProfile(common.DB, ctx.DeviceSession.ServiceProfileID)
+	if err != nil {
+		return errors.Wrap(err, "get service-profile error")
+	}
+	return nil
+}
+
 func getDataDownTXInfoAndDR(ds storage.DeviceSession, rxInfo gw.RXInfo) (gw.TXInfo, int, error) {
 	var dr int
 	txInfo := gw.TXInfo{

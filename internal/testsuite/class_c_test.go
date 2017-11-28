@@ -1,19 +1,14 @@
 package testsuite
 
 import (
-	"context"
 	"fmt"
 	"testing"
-
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/api/ns"
-	"github.com/brocaar/loraserver/internal/api"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
@@ -22,11 +17,11 @@ import (
 )
 
 type classCTestCase struct {
-	Name                    string                          // name of the test
-	PreFunc                 func(ns *storage.DeviceSession) // function to call before running the test
-	DeviceSession           storage.DeviceSession           // node-session in the storage
-	SendDownlinkDataRequest ns.SendDownlinkDataRequest      // class-c push data-down request
-	MACCommandQueue         []maccommand.Block              // downlink mac-command queue
+	Name             string                          // name of the test
+	PreFunc          func(ns *storage.DeviceSession) // function to call before running the test
+	DeviceSession    storage.DeviceSession           // node-session in the storage
+	DeviceQueueItems []storage.DeviceQueueItem       // items in the device-queue
+	MACCommandQueue  []maccommand.Block              // downlink mac-command queue
 
 	ExpectedSendDownlinkDataError error // expected error returned
 	ExpectedFCntUp                uint32
@@ -53,15 +48,15 @@ func TestClassCScenarios(t *testing.T) {
 		common.ApplicationServerPool = test.NewApplicationServerPool(asClient)
 		common.Gateway = test.NewGatewayBackend()
 
-		api := api.NewNetworkServerAPI()
-
 		sp := storage.ServiceProfile{
 			ServiceProfile: backend.ServiceProfile{},
 		}
 		So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
 
 		dp := storage.DeviceProfile{
-			DeviceProfile: backend.DeviceProfile{},
+			DeviceProfile: backend.DeviceProfile{
+				SupportsClassC: true,
+			},
 		}
 		So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
 
@@ -72,12 +67,20 @@ func TestClassCScenarios(t *testing.T) {
 		}
 		So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
 
-		sess := storage.DeviceSession{
+		d := storage.Device{
+			DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
 			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
 			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
-			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+		}
+		So(storage.CreateDevice(common.DB, &d), ShouldBeNil)
+
+		sess := storage.DeviceSession{
+			ServiceProfileID: d.ServiceProfileID,
+			RoutingProfileID: d.RoutingProfileID,
+			DeviceProfileID:  d.DeviceProfileID,
+			DevEUI:           d.DevEUI,
 			DevAddr:          lorawan.DevAddr{1, 2, 3, 4},
-			DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 			JoinEUI:          lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
 			NwkSKey:          lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 			FCntUp:           8,
@@ -105,12 +108,8 @@ func TestClassCScenarios(t *testing.T) {
 				{
 					Name:          "unconfirmed data",
 					DeviceSession: sess,
-					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
-						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Data:      make([]byte, 242),
-						Confirmed: false,
-						FPort:     10,
-						FCnt:      5,
+					DeviceQueueItems: []storage.DeviceQueueItem{
+						{DevEUI: sess.DevEUI, FPort: 10, FCnt: 5, FRMPayload: make([]byte, 242)},
 					},
 
 					ExpectedFCntUp:   8,
@@ -137,12 +136,8 @@ func TestClassCScenarios(t *testing.T) {
 				{
 					Name:          "confirmed data",
 					DeviceSession: sess,
-					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
-						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Data:      []byte{5, 4, 3, 2, 1},
-						Confirmed: true,
-						FPort:     10,
-						FCnt:      5,
+					DeviceQueueItems: []storage.DeviceQueueItem{
+						{DevEUI: sess.DevEUI, FPort: 10, FCnt: 5, Confirmed: true, FRMPayload: []byte{5, 4, 3, 2, 1}},
 					},
 
 					ExpectedFCntUp:   8,
@@ -183,12 +178,10 @@ func TestClassCScenarios(t *testing.T) {
 							},
 						},
 					},
-					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
-						DevEUI: []byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Data:   []byte{5, 4, 3, 2, 1},
-						FPort:  10,
-						FCnt:   5,
+					DeviceQueueItems: []storage.DeviceQueueItem{
+						{DevEUI: sess.DevEUI, FPort: 10, FCnt: 5, FRMPayload: []byte{5, 4, 3, 2, 1}},
 					},
+
 					ExpectedFCntUp:   8,
 					ExpectedFCntDown: 6,
 					ExpectedTXInfo:   &txInfo,
@@ -214,90 +207,25 @@ func TestClassCScenarios(t *testing.T) {
 						},
 					},
 				},
-				// errors
+				// nothing scheduled, e.g. the queue item was discarded
 				{
-					Name:          "maximum payload exceeded",
+					Name:          "queue item discarded (e.g. max payload size exceeded, wrong frame-counter, ...)",
 					DeviceSession: sess,
-					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
-						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Data:      make([]byte, 300),
-						Confirmed: false,
-						FPort:     10,
-						FCnt:      5,
+					DeviceQueueItems: []storage.DeviceQueueItem{
+						{DevEUI: d.DevEUI, FPort: 10, FCnt: 10, FRMPayload: make([]byte, 300)},
 					},
-
-					ExpectedSendDownlinkDataError: grpc.Errorf(codes.InvalidArgument, "maximum payload size exceeded"),
-					ExpectedFCntUp:                8,
-					ExpectedFCntDown:              5,
-				},
-				{
-					Name:          "invalid FPort",
-					DeviceSession: sess,
-					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
-						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Data:      []byte{1, 2, 3, 4, 5},
-						Confirmed: false,
-						FPort:     0,
-						FCnt:      5,
-					},
-					ExpectedSendDownlinkDataError: grpc.Errorf(codes.InvalidArgument, "FPort must not be 0"),
-					ExpectedFCntUp:                8,
-					ExpectedFCntDown:              5,
-				},
-				{
-					Name:          "invalid DevEUI",
-					DeviceSession: sess,
-					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
-						DevEUI:    []byte{1, 1, 1, 1, 1, 1, 1, 1, 1},
-						Data:      []byte{1, 2, 3, 4, 5},
-						Confirmed: false,
-						FPort:     10,
-						FCnt:      5,
-					},
-					ExpectedSendDownlinkDataError: grpc.Errorf(codes.NotFound, storage.ErrDoesNotExist.Error()),
-					ExpectedFCntUp:                8,
-					ExpectedFCntDown:              5,
-				},
-				{
-					Name:          "no last RXInfoSet available",
-					DeviceSession: sess,
-					PreFunc: func(ns *storage.DeviceSession) {
-						ns.LastRXInfoSet = []gw.RXInfo{}
-					},
-					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
-						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Data:      []byte{1, 2, 3, 4, 5},
-						Confirmed: false,
-						FPort:     10,
-						FCnt:      5,
-					},
-					ExpectedSendDownlinkDataError: grpc.Errorf(codes.FailedPrecondition, "no last RX-Info set available"),
-					ExpectedFCntUp:                8,
-					ExpectedFCntDown:              5,
-				},
-				{
-					Name:          "given FCnt does not match the FCntDown",
-					DeviceSession: sess,
-					SendDownlinkDataRequest: ns.SendDownlinkDataRequest{
-						DevEUI:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Data:      []byte{1, 2, 3, 4, 5},
-						Confirmed: false,
-						FPort:     10,
-						FCnt:      6,
-					},
-					ExpectedSendDownlinkDataError: grpc.Errorf(codes.InvalidArgument, "invalid FCnt (expected: 5)"),
-					ExpectedFCntUp:                8,
-					ExpectedFCntDown:              5,
+					ExpectedFCntUp:   8,
+					ExpectedFCntDown: 5,
 				},
 			}
 
 			for i, t := range tests {
-				Convey(fmt.Sprintf("When testing: %s [%d]", t.Name, i), func() {
+				Convey(fmt.Sprintf("Testing: %s [%d]", t.Name, i), func() {
 					if t.PreFunc != nil {
 						t.PreFunc(&t.DeviceSession)
 					}
 
-					// create node-session
+					// create device-session
 					So(storage.SaveDeviceSession(common.RedisPool, t.DeviceSession), ShouldBeNil)
 
 					// mac mac-command queue items
@@ -305,9 +233,13 @@ func TestClassCScenarios(t *testing.T) {
 						So(maccommand.AddQueueItem(common.RedisPool, t.DeviceSession.DevEUI, qi), ShouldBeNil)
 					}
 
-					// push the data
-					_, err := api.SendDownlinkData(context.Background(), &t.SendDownlinkDataRequest)
-					So(err, ShouldResemble, t.ExpectedSendDownlinkDataError)
+					// add device-queue items
+					for _, qi := range t.DeviceQueueItems {
+						So(storage.CreateDeviceQueueItem(common.DB, &qi), ShouldBeNil)
+					}
+
+					// run queue scheduler
+					So(downlink.ClassCScheduleBatch(1), ShouldBeNil)
 
 					Convey("Then the frame-counters are as expected", func() {
 						sess, err := storage.GetDeviceSession(common.RedisPool, t.DeviceSession.DevEUI)

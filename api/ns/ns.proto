@@ -78,9 +78,6 @@ service NetworkServer {
     // EnqueueDownlinkMACCommand adds the downlink mac-command to the queue.
     rpc EnqueueDownlinkMACCommand(EnqueueDownlinkMACCommandRequest) returns (EnqueueDownlinkMACCommandResponse) {}
 
-    // SendDownlinkData pushes the given downlink payload to the node (only works for Class-C nodes).
-    rpc SendDownlinkData(SendDownlinkDataRequest) returns (SendDownlinkDataResponse) {}
-
 	// SendProprietaryPayload send a payload using the 'Proprietary' LoRaWAN message-type.
 	rpc SendProprietaryPayload(SendProprietaryPayloadRequest) returns (SendProprietaryPayloadResponse) {}
 
@@ -363,26 +360,6 @@ message EnqueueDownlinkMACCommandRequest {
 }
 
 message EnqueueDownlinkMACCommandResponse {}
-
-message SendDownlinkDataRequest {
-    // DevEUI of the node to which to push the data.
-    bytes devEUI = 1;
-
-    // Data (encrypted with the AppSKey) to push to the node.
-    bytes data = 2;
-
-    // Payload must be acknowledged by the node.
-    bool confirmed = 3;
-
-    // FPort to use for transmitting the payload.
-    uint32 fPort = 4;
-
-    // FCnt used for encrypting the data. When this does not match the FCntDown
-    // of the network-server, an error is returned.
-    uint32 fCnt = 5;
-}
-
-message SendDownlinkDataResponse {}
 
 message SendProprietaryPayloadRequest {
 	// MACPayload of the proprietary LoRaWAN frame.

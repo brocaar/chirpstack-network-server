@@ -55,8 +55,6 @@ It has these top-level messages:
 	GetRandomDevAddrResponse
 	EnqueueDownlinkMACCommandRequest
 	EnqueueDownlinkMACCommandResponse
-	SendDownlinkDataRequest
-	SendDownlinkDataResponse
 	SendProprietaryPayloadRequest
 	SendProprietaryPayloadResponse
 	CreateGatewayRequest

@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/brocaar/loraserver/internal/downlink"
+
 	"github.com/brocaar/loraserver/internal/asclient"
 
 	"github.com/brocaar/loraserver/internal/jsclient"
@@ -90,6 +92,7 @@ func run(c *cli.Context) error {
 		startGatewayAPIServer,
 		startLoRaServer(server),
 		startStatsServer(gwStats),
+		startQueueScheduler,
 	}
 
 	for _, t := range tasks {
@@ -439,6 +442,12 @@ func startStatsServer(gwStats *gateway.StatsHandler) func(*cli.Context) error {
 		}
 		return nil
 	}
+}
+
+func startQueueScheduler(c *cli.Context) error {
+	log.Info("starting downlink device-queue scheduler")
+	go downlink.ClassCSchedulerLoop()
+	return nil
 }
 
 func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCert bool) credentials.TransportCredentials {

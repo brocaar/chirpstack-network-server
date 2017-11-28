@@ -89,3 +89,10 @@ var RX1DROffset int
 
 // RX2DR hodsl the RX2 data-rate
 var RX2DR int
+
+// ClassCScheduleInterval it the interval in which the Class-C scheduler
+// must run.
+var ClassCScheduleInterval = time.Second
+
+// ClassCScheduleBatchSize contains the batch size of the Class-C scheduler
+var ClassCScheduleBatchSize = 100
