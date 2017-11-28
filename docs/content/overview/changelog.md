@@ -26,6 +26,8 @@ been made:
 Application-server API
 
 * `HandleDataDownACK` renamed to `HandleDownlinkACK`
+* `HandleDataUp` renamed to `HandleUplinkData`
+* `HandleProprietaryUp` renamed to `HandleProprietaryUplink`
 * `GetDataDown` has been removed (as LoRa Server is now responsible for the
   downlink queue)
 

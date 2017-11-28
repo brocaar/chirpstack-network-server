@@ -298,7 +298,7 @@ func sendRXInfoPayload(ds storage.DeviceSession, rxPacket models.RXPacket) error
 }
 
 func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession, sp storage.ServiceProfile, rxPacket models.RXPacket, macPL lorawan.MACPayload) error {
-	publishDataUpReq := as.HandleDataUpRequest{
+	publishDataUpReq := as.HandleUplinkDataRequest{
 		AppEUI: ds.JoinEUI[:],
 		DevEUI: ds.DevEUI[:],
 		FCnt:   macPL.FHDR.FCnt,
@@ -374,7 +374,7 @@ func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession
 
 	}
 
-	if _, err := asClient.HandleDataUp(context.Background(), &publishDataUpReq); err != nil {
+	if _, err := asClient.HandleUplinkData(context.Background(), &publishDataUpReq); err != nil {
 		return fmt.Errorf("publish data up to application-server error: %s", err)
 	}
 	return nil

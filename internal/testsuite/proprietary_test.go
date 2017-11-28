@@ -33,7 +33,7 @@ type uplinkProprietaryPHYPayloadTestCase struct {
 	PHYPayload lorawan.PHYPayload
 	RXInfo     gw.RXInfo
 
-	ExpectedApplicationHandleProprietaryUp *as.HandleProprietaryUpRequest
+	ExpectedApplicationHandleProprietaryUp *as.HandleProprietaryUplinkRequest
 }
 
 func TestSendProprietaryPayloadScenarios(t *testing.T) {
@@ -158,7 +158,7 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 						LoRaSNR:   5,
 						DataRate:  common.Band.DataRates[0],
 					},
-					ExpectedApplicationHandleProprietaryUp: &as.HandleProprietaryUpRequest{
+					ExpectedApplicationHandleProprietaryUp: &as.HandleProprietaryUplinkRequest{
 						MacPayload: []byte{1, 2, 3, 4},
 						Mic:        []byte{5, 6, 7, 8},
 						TxInfo: &as.TXInfo{

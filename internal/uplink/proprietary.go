@@ -25,7 +25,7 @@ func setContextFromProprietaryPHYPayload(ctx *ProprietaryUpContext) error {
 }
 
 func sendProprietaryPayloadToApplicationServer(ctx *ProprietaryUpContext) error {
-	handleReq := as.HandleProprietaryUpRequest{
+	handleReq := as.HandleProprietaryUplinkRequest{
 		MacPayload: ctx.DataPayload.Bytes,
 		Mic:        ctx.RXPacket.PHYPayload.MIC[:],
 		TxInfo: &as.TXInfo{
@@ -84,14 +84,14 @@ func sendProprietaryPayloadToApplicationServer(ctx *ProprietaryUpContext) error 
 	}
 
 	for _, rp := range rps {
-		go func(rp storage.RoutingProfile, handleReq as.HandleProprietaryUpRequest) {
+		go func(rp storage.RoutingProfile, handleReq as.HandleProprietaryUplinkRequest) {
 			asClient, err := common.ApplicationServerPool.Get(rp.ASID)
 			if err != nil {
 				log.WithError(err).Error("get application-server client error")
 				return
 			}
 
-			if _, err = asClient.HandleProprietaryUp(context.Background(), &handleReq); err != nil {
+			if _, err = asClient.HandleProprietaryUplink(context.Background(), &handleReq); err != nil {
 				log.WithError(err).Error("handle proprietary up error")
 				return
 			}

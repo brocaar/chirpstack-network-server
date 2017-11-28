@@ -210,13 +210,13 @@ type ApplicationClient struct {
 	HandleProprietaryUpErr error
 	HandleDownlinkACKErr   error
 
-	HandleDataUpChan        chan as.HandleDataUpRequest
-	HandleProprietaryUpChan chan as.HandleProprietaryUpRequest
+	HandleDataUpChan        chan as.HandleUplinkDataRequest
+	HandleProprietaryUpChan chan as.HandleProprietaryUplinkRequest
 	HandleErrorChan         chan as.HandleErrorRequest
 	HandleDownlinkACKChan   chan as.HandleDownlinkACKRequest
 
-	HandleDataUpResponse        as.HandleDataUpResponse
-	HandleProprietaryUpResponse as.HandleProprietaryUpResponse
+	HandleDataUpResponse        as.HandleUplinkDataResponse
+	HandleProprietaryUpResponse as.HandleProprietaryUplinkResponse
 	HandleErrorResponse         as.HandleErrorResponse
 	HandleDownlinkACKResponse   as.HandleDownlinkACKResponse
 }
@@ -224,15 +224,15 @@ type ApplicationClient struct {
 // NewApplicationClient returns a new ApplicationClient.
 func NewApplicationClient() *ApplicationClient {
 	return &ApplicationClient{
-		HandleDataUpChan:        make(chan as.HandleDataUpRequest, 100),
-		HandleProprietaryUpChan: make(chan as.HandleProprietaryUpRequest, 100),
+		HandleDataUpChan:        make(chan as.HandleUplinkDataRequest, 100),
+		HandleProprietaryUpChan: make(chan as.HandleProprietaryUplinkRequest, 100),
 		HandleErrorChan:         make(chan as.HandleErrorRequest, 100),
 		HandleDownlinkACKChan:   make(chan as.HandleDownlinkACKRequest, 100),
 	}
 }
 
-// HandleDataUp method.
-func (t *ApplicationClient) HandleDataUp(ctx context.Context, in *as.HandleDataUpRequest, opts ...grpc.CallOption) (*as.HandleDataUpResponse, error) {
+// HandleUplinkData method.
+func (t *ApplicationClient) HandleUplinkData(ctx context.Context, in *as.HandleUplinkDataRequest, opts ...grpc.CallOption) (*as.HandleUplinkDataResponse, error) {
 	if t.HandleDataUpErr != nil {
 		return nil, t.HandleDataUpErr
 	}
@@ -240,8 +240,8 @@ func (t *ApplicationClient) HandleDataUp(ctx context.Context, in *as.HandleDataU
 	return &t.HandleDataUpResponse, nil
 }
 
-// HandleProprietaryUp method.
-func (t *ApplicationClient) HandleProprietaryUp(ctx context.Context, in *as.HandleProprietaryUpRequest, opts ...grpc.CallOption) (*as.HandleProprietaryUpResponse, error) {
+// HandleProprietaryUplink method.
+func (t *ApplicationClient) HandleProprietaryUplink(ctx context.Context, in *as.HandleProprietaryUplinkRequest, opts ...grpc.CallOption) (*as.HandleProprietaryUplinkResponse, error) {
 	if t.HandleProprietaryUpErr != nil {
 		return nil, t.HandleProprietaryUpErr
 	}

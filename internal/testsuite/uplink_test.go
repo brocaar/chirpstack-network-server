@@ -39,7 +39,7 @@ type uplinkTestCase struct {
 	ExpectedControllerHandleRXInfo            *nc.HandleRXInfoRequest            // expected network-controller publish rxinfo request
 	ExpectedControllerHandleDataUpMACCommands []nc.HandleDataUpMACCommandRequest // expected network-controller publish dataup mac-command requests
 
-	ExpectedASHandleDataUp      *as.HandleDataUpRequest      // expected application-server data up request
+	ExpectedASHandleDataUp      *as.HandleUplinkDataRequest  // expected application-server data up request
 	ExpectedASHandleErrors      []as.HandleErrorRequest      // expected application-server error requests
 	ExpectedASHandleDownlinkACK *as.HandleDownlinkACKRequest // expected application-server datadown ack request
 
@@ -169,7 +169,7 @@ func TestUplinkScenarios(t *testing.T) {
 			},
 		}
 
-		expectedApplicationPushDataUpNoData := &as.HandleDataUpRequest{
+		expectedApplicationPushDataUpNoData := &as.HandleUplinkDataRequest{
 			AppEUI: ds.JoinEUI[:],
 			DevEUI: ds.DevEUI[:],
 			FCnt:   10,
@@ -278,7 +278,7 @@ func TestUplinkScenarios(t *testing.T) {
 		})
 
 		Convey("Given a set of test-scenarios for relax frame-counter mode", func() {
-			expectedApplicationPushDataUpNoData := &as.HandleDataUpRequest{
+			expectedApplicationPushDataUpNoData := &as.HandleUplinkDataRequest{
 				AppEUI: ds.JoinEUI[:],
 				DevEUI: ds.DevEUI[:],
 				FCnt:   0,
@@ -307,7 +307,7 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 			}
 
-			expectedApplicationPushDataUpNoData7 := &as.HandleDataUpRequest{
+			expectedApplicationPushDataUpNoData7 := &as.HandleUplinkDataRequest{
 				AppEUI: ds.JoinEUI[:],
 				DevEUI: ds.DevEUI[:],
 				FCnt:   7,

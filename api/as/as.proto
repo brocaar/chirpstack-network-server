@@ -4,172 +4,113 @@ package as;
 
 // ApplicationServer is the server to be implemented by the application server.
 service ApplicationServer {
-	// HandleDataUp publishes data received from an end-device.
-	rpc HandleDataUp(HandleDataUpRequest) returns (HandleDataUpResponse) {}
+    // HandleUplinkData publishes data received from an end-device.
+    rpc HandleUplinkData(HandleUplinkDataRequest) returns (HandleUplinkDataResponse) {}
 
-	// HandleProprietaryUp handles proprietary uplink payloads.
-	rpc HandleProprietaryUp(HandleProprietaryUpRequest) returns (HandleProprietaryUpResponse) {}
+    // HandleProprietaryUplink handles proprietary uplink payloads.
+    rpc HandleProprietaryUplink(HandleProprietaryUplinkRequest) returns (HandleProprietaryUplinkResponse) {}
 
-	// HandleError publishes an error message.
-	rpc HandleError(HandleErrorRequest) returns (HandleErrorResponse) {}
+    // HandleError publishes an error message.
+    rpc HandleError(HandleErrorRequest) returns (HandleErrorResponse) {}
 
-	// HandleDownlinkACK sends a downlink ACK or nACK response.
-	rpc HandleDownlinkACK(HandleDownlinkACKRequest) returns (HandleDownlinkACKResponse) {}
+    // HandleDownlinkACK sends a downlink ACK or nACK response.
+    rpc HandleDownlinkACK(HandleDownlinkACKRequest) returns (HandleDownlinkACKResponse) {}
 }
 
 enum RXWindow {
-	RX1 = 0;
-	RX2 = 1;
+    RX1 = 0;
+    RX2 = 1;
 }
 
 enum ErrorType {
-	Generic = 0;
-	OTAA = 1;
-	DATA_UP_FCNT = 2;
-	DATA_UP_MIC = 3;
-	DEVICE_QUEUE_ITEM_SIZE = 4;
-	DEVICE_QUEUE_ITEM_FCNT = 5;
+    Generic = 0;
+    OTAA = 1;
+    DATA_UP_FCNT = 2;
+    DATA_UP_MIC = 3;
+    DEVICE_QUEUE_ITEM_SIZE = 4;
+    DEVICE_QUEUE_ITEM_FCNT = 5;
 }
 
 message DataRate {
-	string modulation = 1;
-	uint32 bandWidth = 2;
-	uint32 spreadFactor = 3;
-	uint32 bitrate = 4;
+    string modulation = 1;
+    uint32 bandWidth = 2;
+    uint32 spreadFactor = 3;
+    uint32 bitrate = 4;
 }
 
 message RXInfo {
-	bytes mac = 1;
-	string time = 2;
-	int32 rssi = 3;
-	double loRaSNR = 4;
-	string name = 5;
-	double latitude = 6;
-	double longitude = 7;
-	double altitude = 8;
+    bytes mac = 1;
+    string time = 2;
+    int32 rssi = 3;
+    double loRaSNR = 4;
+    string name = 5;
+    double latitude = 6;
+    double longitude = 7;
+    double altitude = 8;
 }
 
 message TXInfo {
-	int64 frequency = 1;
-	DataRate dataRate = 2;
-	bool adr = 3;
-	string codeRate = 4;
+    int64 frequency = 1;
+    DataRate dataRate = 2;
+    bool adr = 3;
+    string codeRate = 4;
 }
 
-message JoinRequestRequest {
-	// PHYPayload of the join-request.
-	bytes phyPayload = 1;
-
-	// DevAddr assigned by the network-server.
-	bytes devAddr = 2;
-
-	// NetID assigned by the network-server.
-	bytes netID = 3;
-
-	// Custom channels to add to the join-accept response.
-	repeated uint32 cFList = 4;
+message HandleUplinkDataRequest {
+    bytes devEUI = 1;
+    bytes appEUI = 2;
+    uint32 fCnt = 3;
+    uint32 fPort = 4;
+    bytes data = 5;
+    TXInfo txInfo = 6;
+    repeated RXInfo rxInfo = 7;
+    uint32 deviceStatusBattery = 9;
+    int32  deviceStatusMargin = 10;
 }
 
-message JoinRequestResponse {
-	// The encrypted PHYPayload containing the join-accept.
-	bytes phyPayload = 1;
+message HandleProprietaryUplinkRequest {
+    // MACPayload of the proprietary LoRaWAN frame.
+    bytes macPayload = 1;
 
-	// The network-session key (16 bytes).
-	bytes nwkSKey = 2;
+    // MIC of the proprietary LoRaWAN frame.
+    bytes mic = 2;
 
-	// the RX delay value (0 = 1 sec, 1 = 1 sec, 2 = 2 sec ...).
-	uint32 rxDelay = 3;
+    // TXInfo contains the TX related meta-data.
+    TXInfo txInfo = 3;
 
-	// The data-rate offset used for RX1 (see LoRaWAN specs for valid values).
-	uint32 rx1DROffset = 4;
-
-	// The RX window to use for downlink transmissions.
-	RXWindow rxWindow = 6;
-
-	// The data-rate to use for RX2 transmissions.
-	uint32 rx2DR = 7;
-
-	// The data-rate to use for RX2 transmissions.
-	bool disableFCntCheck = 8;
-
-	// The interval (based on frame-counter) on which to calculate the ideal
-	// data-rate and tx-power of the node and if needed, request an adaption.
-	uint32 adrInterval = 9;
-
-	// The installation margin to take into account when calculating the ideal
-	// data-rate and tx-power. The default recommended value is 5dB.
-	double installationMargin = 10;
+    // RXInfo contains the RX related meta-data.
+    repeated RXInfo rxInfo = 4;
 }
 
-message HandleDataUpRequest {
-	bytes devEUI = 1;
-	bytes appEUI = 2;
-	uint32 fCnt = 3;
-	uint32 fPort = 4;
-	bytes data = 5;
-	TXInfo txInfo = 6;
-	repeated RXInfo rxInfo = 7;
-	uint32 deviceStatusBattery = 9;
-	int32  deviceStatusMargin = 10;
-}
+message HandleProprietaryUplinkResponse {}
 
-message HandleProprietaryUpRequest {
-	// MACPayload of the proprietary LoRaWAN frame.
-	bytes macPayload = 1;
-
-	// MIC of the proprietary LoRaWAN frame.
-	bytes mic = 2;
-
-	// TXInfo contains the TX related meta-data.
-	TXInfo txInfo = 3;
-
-	// RXInfo contains the RX related meta-data.
-	repeated RXInfo rxInfo = 4;
-}
-
-message HandleProprietaryUpResponse {}
-
-message GetDataDownRequest {
-	bytes devEUI = 1;
-	bytes appEUI = 2;
-	uint32 maxPayloadSize = 3;
-	uint32 fCnt = 4;
-}
-
-message GetDataDownResponse {
-	bytes data = 1;
-	bool confirmed = 2;
-	uint32 fPort = 3;
-	bool moreData = 4;
-}
-
-message HandleDataUpResponse {}
+message HandleUplinkDataResponse {}
 
 message HandleErrorRequest {
-	// DevEUI of the device.
-	bytes devEUI = 1;
+    // DevEUI of the device.
+    bytes devEUI = 1;
 
-	// Type of the error.
-	ErrorType type = 3;
+    // Type of the error.
+    ErrorType type = 3;
 
-	// Error string describing the error.
-	string error = 4;
+    // Error string describing the error.
+    string error = 4;
 
-	// Frame-counter (if applicable) related to the error.
-	uint32 fCnt = 5;
+    // Frame-counter (if applicable) related to the error.
+    uint32 fCnt = 5;
 }
 
 message HandleErrorResponse {}
 
 message HandleDownlinkACKRequest {
-	// DevEUI of the device.
-	bytes devEUI = 1;
+    // DevEUI of the device.
+    bytes devEUI = 1;
 
-	// Downlink frame-counter.
-	uint32 fCnt = 2;
+    // Downlink frame-counter.
+    uint32 fCnt = 2;
 
-	// Frame was acknowledged?
-	bool acknowledged = 3;
+    // Frame was acknowledged?
+    bool acknowledged = 3;
 }
 
 message HandleDownlinkACKResponse {}
