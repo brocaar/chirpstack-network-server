@@ -106,6 +106,8 @@ It has these top-level messages:
 	FlushDeviceQueueForDevEUIResponse
 	GetDeviceQueueItemsForDevEUIRequest
 	GetDeviceQueueItemsForDevEUIResponse
+	GetNextDownlinkFCntForDevEUIRequest
+	GetNextDownlinkFCntForDevEUIResponse
 */
 package ns
 

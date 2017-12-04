@@ -72,6 +72,10 @@ service NetworkServer {
     // GetDeviceQueueItemsForDevEUI returns all device-queue items for the given DevEUI.
     rpc GetDeviceQueueItemsForDevEUI(GetDeviceQueueItemsForDevEUIRequest) returns (GetDeviceQueueItemsForDevEUIResponse) {}
 
+    // GetNextDownlinkFCntForDevEUI returns the next FCnt that must be used.
+    // This also takes device-queue items for the given DevEUI into consideration.
+    rpc GetNextDownlinkFCntForDevEUI(GetNextDownlinkFCntForDevEUIRequest) returns (GetNextDownlinkFCntForDevEUIResponse) {}
+
     // GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
     rpc GetRandomDevAddr(GetRandomDevAddrRequest) returns (GetRandomDevAddrResponse) {}
 
@@ -854,4 +858,14 @@ message GetDeviceQueueItemsForDevEUIRequest {
 
 message GetDeviceQueueItemsForDevEUIResponse {
     repeated DeviceQueueItem items = 1;
+}
+
+message GetNextDownlinkFCntForDevEUIRequest {
+    // DevEUI of the device.
+    bytes devEUI = 1;
+}
+
+message GetNextDownlinkFCntForDevEUIResponse {
+    // The frame-counter to use.
+    uint32 fCnt = 1;
 }

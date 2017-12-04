@@ -166,7 +166,7 @@ func FlushDeviceQueueForDevEUI(db sqlx.Execer, devEUI lorawan.EUI64) error {
 }
 
 // GetNextDeviceQueueItemForDevEUI returns the next device-queue item for the
-// given DevEUI, sorted by FCnt (asc).
+// given DevEUI, ordered by id (keep in mind FCnt rollover).
 func GetNextDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (DeviceQueueItem, error) {
 	var qi DeviceQueueItem
 	err := sqlx.Get(db, &qi, `
@@ -177,7 +177,7 @@ func GetNextDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (Dev
         where
             dev_eui = $1
         order by
-            f_cnt
+            id
         limit 1`,
 		devEUI[:],
 	)
@@ -195,7 +195,7 @@ func GetNextDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (Dev
 }
 
 // GetDeviceQueueItemsForDevEUI returns all device-queue items for the given
-// DevEUI (sorted by FCnt asc).
+// DevEUI, ordered by id (keep in mind FCnt rollover).
 func GetDeviceQueueItemsForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) ([]DeviceQueueItem, error) {
 	var items []DeviceQueueItem
 	err := sqlx.Select(db, &items, `
@@ -206,7 +206,7 @@ func GetDeviceQueueItemsForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) ([]Devi
         where
             dev_eui = $1
         order by
-            f_cnt`,
+            id`,
 		devEUI,
 	)
 	if err != nil {

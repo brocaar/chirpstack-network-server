@@ -109,8 +109,8 @@ func TestDeviceQueue(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(queueItems, ShouldHaveLength, len(items))
 					So(queueItems[0].FCnt, ShouldEqual, 1)
-					So(queueItems[1].FCnt, ShouldEqual, 2)
-					So(queueItems[2].FCnt, ShouldEqual, 3)
+					So(queueItems[1].FCnt, ShouldEqual, 3)
+					So(queueItems[2].FCnt, ShouldEqual, 2)
 				})
 
 				Convey("Then GetNextDeviceQueueItemForDevEUI returns the first item that should be emitted", func() {

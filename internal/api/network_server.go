@@ -1181,6 +1181,33 @@ func (n *NetworkServerAPI) GetDeviceQueueItemsForDevEUI(ctx context.Context, req
 	return &out, nil
 }
 
+// GetNextDownlinkFCntForDevEUI returns the next FCnt that must be used.
+// This also takes device-queue items for the given DevEUI into consideration.
+// In case the device is not activated, this will return an error as no
+// device-session exists.
+func (n *NetworkServerAPI) GetNextDownlinkFCntForDevEUI(ctx context.Context, req *ns.GetNextDownlinkFCntForDevEUIRequest) (*ns.GetNextDownlinkFCntForDevEUIResponse, error) {
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], req.DevEUI)
+
+	var resp ns.GetNextDownlinkFCntForDevEUIResponse
+
+	ds, err := storage.GetDeviceSession(common.RedisPool, devEUI)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+	resp.FCnt = ds.FCntDown
+
+	items, err := storage.GetDeviceQueueItemsForDevEUI(common.DB, devEUI)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+	if count := len(items); count != 0 {
+		resp.FCnt = items[count-1].FCnt + 1 // we want the next usable frame-counter
+	}
+
+	return &resp, nil
+}
+
 func channelConfigurationToResp(cf gateway.ChannelConfiguration) *ns.GetChannelConfigurationResponse {
 	out := ns.GetChannelConfigurationResponse{
 		Id:        cf.ID,

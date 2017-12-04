@@ -477,6 +477,34 @@ func TestNetworkServerAPI(t *testing.T) {
 						})
 					})
 
+					Convey("Then GetNextDownlinkFCntForDevEUI returns the expected FCnt", func() {
+						resp, err := api.GetNextDownlinkFCntForDevEUI(ctx, &ns.GetNextDownlinkFCntForDevEUIRequest{
+							DevEUI: devEUI[:],
+						})
+						So(err, ShouldBeNil)
+						So(resp.FCnt, ShouldEqual, 11)
+					})
+
+					Convey("Given an item in the device-queue", func() {
+						_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
+							Item: &ns.DeviceQueueItem{
+								DevEUI:     d.DevEUI[:],
+								FrmPayload: []byte{1, 2, 3, 4},
+								FCnt:       11,
+								FPort:      20,
+							},
+						})
+						So(err, ShouldBeNil)
+
+						Convey("Then GetNextDownlinkFCntForDevEUI returns the expected FCnt", func() {
+							resp, err := api.GetNextDownlinkFCntForDevEUI(ctx, &ns.GetNextDownlinkFCntForDevEUIRequest{
+								DevEUI: devEUI[:],
+							})
+							So(err, ShouldBeNil)
+							So(resp.FCnt, ShouldEqual, 12)
+						})
+					})
+
 					Convey("Then DeactivateDevice deactivates the device and flushes the queue", func() {
 						_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
 							Item: &ns.DeviceQueueItem{
