@@ -12,6 +12,7 @@ var Flow = newFlow().JoinResponse(
 	logJoinAcceptFrame,
 	sendJoinAcceptResponse,
 ).UplinkResponse(
+	getDeviceProfile,
 	requestDevStatus,
 	getDataTXInfo,
 	setRemainingPayloadSize,

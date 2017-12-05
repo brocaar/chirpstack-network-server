@@ -66,7 +66,7 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
 
 	log.WithFields(log.Fields{
 		"dev_eui": qi.DevEUI,
-		"id":      qi.ID,
+		"f_cnt":   qi.FCnt,
 	}).Info("device-queue item created")
 
 	return nil
@@ -123,7 +123,7 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
 	}
 
 	log.WithFields(log.Fields{
-		"id":      qi.ID,
+		"f_cnt":   qi.FCnt,
 		"dev_eui": qi.DevEUI,
 	}).Info("device-queue item updated")
 
