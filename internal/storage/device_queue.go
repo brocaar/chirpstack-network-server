@@ -194,6 +194,33 @@ func GetNextDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (Dev
 	return qi, nil
 }
 
+// GetPendingDeviceQueueItemForDevEUI returns the pending device-queue item for the
+// given DevEUI.
+func GetPendingDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (DeviceQueueItem, error) {
+	var qi DeviceQueueItem
+	err := sqlx.Get(db, &qi, `
+        select
+            *
+        from
+            device_queue
+        where
+            dev_eui = $1
+        order by
+            id
+        limit 1`,
+		devEUI[:],
+	)
+	if err != nil {
+		return qi, handlePSQLError(err, "select error")
+	}
+
+	if !qi.IsPending {
+		return qi, ErrDoesNotExist
+	}
+
+	return qi, nil
+}
+
 // GetDeviceQueueItemsForDevEUI returns all device-queue items for the given
 // DevEUI, ordered by id (keep in mind FCnt rollover).
 func GetDeviceQueueItemsForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) ([]DeviceQueueItem, error) {

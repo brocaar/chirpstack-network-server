@@ -197,17 +197,11 @@ func handleUplinkACK(ctx *DataUpContext) error {
 		return nil
 	}
 
-	qi, err := storage.GetNextDeviceQueueItemForDevEUI(common.DB, ctx.DeviceSession.DevEUI)
+	qi, err := storage.GetPendingDeviceQueueItemForDevEUI(common.DB, ctx.DeviceSession.DevEUI)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,
 		}).WithError(err).Error("get device-queue item error")
-		return nil
-	}
-	if !qi.IsPending {
-		log.WithFields(log.Fields{
-			"dev_eui": ctx.DeviceSession.DevEUI,
-		}).Error("expected pending device-queue item")
 		return nil
 	}
 	if qi.FCnt != ctx.DeviceSession.FCntDown-1 {

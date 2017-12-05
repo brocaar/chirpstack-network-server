@@ -401,6 +401,7 @@ func TestUplinkScenarios(t *testing.T) {
 		})
 
 		Convey("Given a set of test-scenarios for basic flows (nothing in the queue)", func() {
+			inTenMinutes := time.Now().Add(10 * time.Minute)
 
 			tests := []uplinkTestCase{
 				{
@@ -441,7 +442,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name: "unconfirmed uplink data with payload + ACK",
 					DeviceQueueItems: []storage.DeviceQueueItem{
-						{DevEUI: d.DevEUI, FRMPayload: []byte{1}, FPort: 1, FCnt: 4, IsPending: true},
+						{DevEUI: d.DevEUI, FRMPayload: []byte{1}, FPort: 1, FCnt: 4, IsPending: true, TimeoutAfter: &inTenMinutes},
 					},
 					DeviceSession: ds,
 					RXInfo:        rxInfo,
