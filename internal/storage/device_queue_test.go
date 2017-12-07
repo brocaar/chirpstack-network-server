@@ -109,8 +109,8 @@ func TestDeviceQueue(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(queueItems, ShouldHaveLength, len(items))
 					So(queueItems[0].FCnt, ShouldEqual, 1)
-					So(queueItems[1].FCnt, ShouldEqual, 3)
-					So(queueItems[2].FCnt, ShouldEqual, 2)
+					So(queueItems[1].FCnt, ShouldEqual, 2)
+					So(queueItems[2].FCnt, ShouldEqual, 3)
 				})
 
 				Convey("Then GetNextDeviceQueueItemForDevEUI returns the first item that should be emitted", func() {
@@ -252,7 +252,7 @@ func TestDeviceQueue(t *testing.T) {
 						MaxFRMPayload:             7,
 						ExpectedDeviceQueueItemID: &items[1].ID,
 						ExpectedHandleError: []as.HandleErrorRequest{
-							{DevEUI: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_FCNT, Error: "frame-counter exceeds MaxFCntGap", FCnt: 101},
+							{DevEUI: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_FCNT, Error: "invalid frame-counter", FCnt: 101},
 						},
 						ExpectedHandleDownlinkACK: []as.HandleDownlinkACKRequest{
 							{DevEUI: d.DevEUI[:], FCnt: items[0].FCnt, Acknowledged: false},

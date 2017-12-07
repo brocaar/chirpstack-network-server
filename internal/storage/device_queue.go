@@ -166,7 +166,7 @@ func FlushDeviceQueueForDevEUI(db sqlx.Execer, devEUI lorawan.EUI64) error {
 }
 
 // GetNextDeviceQueueItemForDevEUI returns the next device-queue item for the
-// given DevEUI, ordered by id (keep in mind FCnt rollover).
+// given DevEUI, ordered by f_cnt (note that the f_cnt should never roll over).
 func GetNextDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (DeviceQueueItem, error) {
 	var qi DeviceQueueItem
 	err := sqlx.Get(db, &qi, `
@@ -177,7 +177,7 @@ func GetNextDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (Dev
         where
             dev_eui = $1
         order by
-            id
+            f_cnt
         limit 1`,
 		devEUI[:],
 	)
@@ -206,7 +206,7 @@ func GetPendingDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (
         where
             dev_eui = $1
         order by
-            id
+            f_cnt
         limit 1`,
 		devEUI[:],
 	)
@@ -233,7 +233,7 @@ func GetDeviceQueueItemsForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) ([]Devi
         where
             dev_eui = $1
         order by
-            id`,
+            f_cnt`,
 		devEUI,
 	)
 	if err != nil {
@@ -248,7 +248,7 @@ func GetDeviceQueueItemsForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) ([]Devi
 // * maxPayloadSize: the maximum payload size
 // * fCnt: the current expected frame-counter
 // In case the payload exceeds the max payload size or when the payload
-// frame-counter - the given fCnt > MaxFCntGap, the payload will be removed
+// frame-counter is behind the actual frame-counter, the payload will be removed
 // from the queue and the next one will be retrieved. In such a case, the
 // application-server will be notified.
 func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lorawan.EUI64, maxPayloadSize int, fCnt uint32, routingProfileID string) (DeviceQueueItem, error) {
@@ -258,7 +258,7 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 			return DeviceQueueItem{}, errors.Wrap(err, "get next device-queue item error")
 		}
 
-		if qi.FCnt-fCnt > common.Band.MaxFCntGap || len(qi.FRMPayload) > maxPayloadSize || (qi.TimeoutAfter != nil && qi.TimeoutAfter.Before(time.Now())) {
+		if qi.FCnt < fCnt || len(qi.FRMPayload) > maxPayloadSize || (qi.TimeoutAfter != nil && qi.TimeoutAfter.Before(time.Now())) {
 			rp, err := GetRoutingProfile(db, routingProfileID)
 			if err != nil {
 				return DeviceQueueItem{}, errors.Wrap(err, "get routing-profile error")
@@ -287,7 +287,7 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 				if err != nil {
 					return DeviceQueueItem{}, errors.Wrap(err, "application-server client error")
 				}
-			} else if qi.FCnt-fCnt > common.Band.MaxFCntGap {
+			} else if qi.FCnt < fCnt {
 				// handle frame-counter error
 				log.WithFields(log.Fields{
 					"dev_eui":                devEUI,
@@ -299,7 +299,7 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 					DevEUI: devEUI[:],
 					Type:   as.ErrorType_DEVICE_QUEUE_ITEM_FCNT,
 					FCnt:   qi.FCnt,
-					Error:  "frame-counter exceeds MaxFCntGap",
+					Error:  "invalid frame-counter",
 				})
 				if err != nil {
 					return DeviceQueueItem{}, errors.Wrap(err, "application-server client error")
