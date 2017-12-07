@@ -7,6 +7,7 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan/backend"
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -17,9 +18,11 @@ func TestDeviceProfile(t *testing.T) {
 		t.Fatal(err)
 	}
 	common.DB = db
+	common.RedisPool = common.NewRedisPool(conf.RedisURL)
 
 	Convey("Given a clean database", t, func() {
 		test.MustResetDB(common.DB)
+		test.MustFlushRedis(common.RedisPool)
 
 		Convey("When creating a device-profile", func() {
 			dp := DeviceProfile{
@@ -62,6 +65,27 @@ func TestDeviceProfile(t *testing.T) {
 			Convey("Then DeleteDeviceProfile deletes the device-profile", func() {
 				So(DeleteDeviceProfile(db, dp.DeviceProfile.DeviceProfileID), ShouldBeNil)
 				So(DeleteDeviceProfile(db, dp.DeviceProfile.DeviceProfileID), ShouldEqual, ErrDoesNotExist)
+			})
+
+			Convey("Then GetAndCacheDeviceProfile reads the device-profile from db and puts it in cache", func() {
+				dpGet, err := GetAndCacheDeviceProfile(common.DB, common.RedisPool, dp.DeviceProfile.DeviceProfileID)
+				So(err, ShouldBeNil)
+				So(dpGet.DeviceProfile.DeviceProfileID, ShouldEqual, dp.DeviceProfile.DeviceProfileID)
+
+				Convey("Then GetDeviceProfileCache returns the device-profile", func() {
+					dpGet, err := GetDeviceProfileCache(common.RedisPool, dp.DeviceProfile.DeviceProfileID)
+					So(err, ShouldBeNil)
+					So(dpGet.DeviceProfile.DeviceProfileID, ShouldEqual, dp.DeviceProfile.DeviceProfileID)
+				})
+
+				Convey("Then FlushDeviceProfileCache removes the device-profile from cache", func() {
+					err := FlushDeviceProfileCache(common.RedisPool, dp.DeviceProfile.DeviceProfileID)
+					So(err, ShouldBeNil)
+
+					_, err = GetDeviceProfileCache(common.RedisPool, dp.DeviceProfile.DeviceProfileID)
+					So(err, ShouldNotBeNil)
+					So(errors.Cause(err), ShouldEqual, ErrDoesNotExist)
+				})
 			})
 
 			Convey("Then UpdateDeviceProfile updates the device-profile", func() {

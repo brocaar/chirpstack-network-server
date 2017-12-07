@@ -256,20 +256,18 @@ func saveDeviceSession(ctx *DataContext) error {
 	return nil
 }
 
-// TODO: change to get device-profile from Redis cache
 func getDeviceProfile(ctx *DataContext) error {
 	var err error
-	ctx.DeviceProfile, err = storage.GetDeviceProfile(common.DB, ctx.DeviceSession.DeviceProfileID)
+	ctx.DeviceProfile, err = storage.GetAndCacheDeviceProfile(common.DB, common.RedisPool, ctx.DeviceSession.DeviceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get device-profile error")
 	}
 	return nil
 }
 
-// TODO: change to get service-profile from Redis cache
 func getServiceProfile(ctx *DataContext) error {
 	var err error
-	ctx.ServiceProfile, err = storage.GetServiceProfile(common.DB, ctx.DeviceSession.ServiceProfileID)
+	ctx.ServiceProfile, err = storage.GetAndCacheServiceProfile(common.DB, common.RedisPool, ctx.DeviceSession.ServiceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}

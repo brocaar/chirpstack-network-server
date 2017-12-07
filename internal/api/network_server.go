@@ -406,6 +406,10 @@ func (n *NetworkServerAPI) UpdateDeviceProfile(ctx context.Context, req *ns.Upda
 		dp.DeviceProfile.RFRegion = backend.RFRegion(common.BandName)
 	}
 
+	if err := storage.FlushDeviceProfileCache(common.RedisPool, dp.DeviceProfile.DeviceProfileID); err != nil {
+		return nil, errToRPCError(err)
+	}
+
 	if err := storage.UpdateDeviceProfile(common.DB, &dp); err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -415,6 +419,10 @@ func (n *NetworkServerAPI) UpdateDeviceProfile(ctx context.Context, req *ns.Upda
 
 // DeleteDeviceProfile deletes the device-profile matching the given id.
 func (n *NetworkServerAPI) DeleteDeviceProfile(ctx context.Context, req *ns.DeleteDeviceProfileRequest) (*ns.DeleteDeviceProfileResponse, error) {
+	if err := storage.FlushDeviceProfileCache(common.RedisPool, req.DeviceProfileID); err != nil {
+		return nil, errToRPCError(err)
+	}
+
 	if err := storage.DeleteDeviceProfile(common.DB, req.DeviceProfileID); err != nil {
 		return nil, errToRPCError(err)
 	}
