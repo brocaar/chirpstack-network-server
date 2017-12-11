@@ -123,9 +123,10 @@ func TestBackend(t *testing.T) {
 				})
 
 				Convey("Given an RXPacket", func() {
+					now := time.Now().UTC()
 					rxPacket := gw.RXPacket{
 						RXInfo: gw.RXInfo{
-							Time: time.Now().UTC(),
+							Time: &now,
 							MAC:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 						},
 						PHYPayload: lorawan.PHYPayload{

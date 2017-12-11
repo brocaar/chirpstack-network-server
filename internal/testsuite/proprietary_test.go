@@ -175,7 +175,6 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 								Mac:       []byte{1, 2, 3, 4, 5, 6, 7, 8},
 								Rssi:      -10,
 								LoRaSNR:   5,
-								Time:      "0001-01-01T00:00:00Z",
 								Name:      "test-gw",
 								Latitude:  1.1234,
 								Longitude: 2.345,
@@ -197,7 +196,7 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 					if t.ExpectedApplicationHandleProprietaryUp != nil {
 						Convey("Then HandleProprietaryUp was called with the expected data", func() {
 							req := <-asClient.HandleProprietaryUpChan
-							So(t.ExpectedApplicationHandleProprietaryUp, ShouldResemble, &req)
+							So(&req, ShouldResemble, t.ExpectedApplicationHandleProprietaryUp)
 						})
 					}
 				})

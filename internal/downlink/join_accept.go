@@ -24,8 +24,10 @@ func getJoinAcceptTXInfo(ctx *JoinContext) error {
 		Power:    common.Band.DefaultTXPower,
 	}
 
+	var timestamp uint32
+
 	if ctx.DeviceSession.RXWindow == storage.RX1 {
-		ctx.TXInfo.Timestamp = rxInfo.Timestamp + uint32(common.Band.JoinAcceptDelay1/time.Microsecond)
+		timestamp = rxInfo.Timestamp + uint32(common.Band.JoinAcceptDelay1/time.Microsecond)
 
 		// get uplink dr
 		uplinkDR, err := common.Band.GetDataRate(rxInfo.DataRate)
@@ -46,12 +48,14 @@ func getJoinAcceptTXInfo(ctx *JoinContext) error {
 			return errors.Wrap(err, "get rx1 frequency error")
 		}
 	} else if ctx.DeviceSession.RXWindow == storage.RX2 {
-		ctx.TXInfo.Timestamp = rxInfo.Timestamp + uint32(common.Band.JoinAcceptDelay2/time.Microsecond)
+		timestamp = rxInfo.Timestamp + uint32(common.Band.JoinAcceptDelay2/time.Microsecond)
 		ctx.TXInfo.DataRate = common.Band.DataRates[common.Band.RX2DataRate]
 		ctx.TXInfo.Frequency = common.Band.RX2Frequency
 	} else {
 		return fmt.Errorf("unknown RXWindow defined %d", ctx.DeviceSession.RXWindow)
 	}
+
+	ctx.TXInfo.Timestamp = &timestamp
 
 	return nil
 }

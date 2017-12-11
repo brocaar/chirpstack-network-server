@@ -282,6 +282,8 @@ func getDataDownTXInfoAndDR(ds storage.DeviceSession, rxInfo gw.RXInfo) (gw.TXIn
 		Power:    common.Band.DefaultTXPower,
 	}
 
+	var timestamp uint32
+
 	if ds.RXWindow == storage.RX1 {
 		uplinkDR, err := common.Band.GetDataRate(rxInfo.DataRate)
 		if err != nil {
@@ -302,9 +304,9 @@ func getDataDownTXInfoAndDR(ds storage.DeviceSession, rxInfo gw.RXInfo) (gw.TXIn
 		}
 
 		// get timestamp
-		txInfo.Timestamp = rxInfo.Timestamp + uint32(common.Band.ReceiveDelay1/time.Microsecond)
+		timestamp = rxInfo.Timestamp + uint32(common.Band.ReceiveDelay1/time.Microsecond)
 		if ds.RXDelay > 0 {
-			txInfo.Timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
+			timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
 		}
 	} else if ds.RXWindow == storage.RX2 {
 		// rx2 dr
@@ -318,14 +320,16 @@ func getDataDownTXInfoAndDR(ds storage.DeviceSession, rxInfo gw.RXInfo) (gw.TXIn
 		txInfo.Frequency = common.Band.RX2Frequency
 
 		// rx2 timestamp (rx1 + 1 sec)
-		txInfo.Timestamp = rxInfo.Timestamp + uint32(common.Band.ReceiveDelay1/time.Microsecond)
+		timestamp = rxInfo.Timestamp + uint32(common.Band.ReceiveDelay1/time.Microsecond)
 		if ds.RXDelay > 0 {
-			txInfo.Timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
+			timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
 		}
-		txInfo.Timestamp = txInfo.Timestamp + uint32(time.Second/time.Microsecond)
+		timestamp = timestamp + uint32(time.Second/time.Microsecond)
 	} else {
 		return txInfo, dr, fmt.Errorf("unknown RXWindow option %d", ds.RXWindow)
 	}
+
+	txInfo.Timestamp = &timestamp
 
 	return txInfo, dr, nil
 }

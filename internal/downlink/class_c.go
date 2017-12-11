@@ -23,6 +23,7 @@ func ClassCSchedulerLoop() {
 	}
 }
 
+// ClassCScheduleBatch schedules a batch of class-c transmissions.
 func ClassCScheduleBatch(size int) error {
 	return storage.Transaction(common.DB, func(tx *sqlx.Tx) error {
 		devices, err := storage.GetDevicesWithClassCDeviceQueueItems(tx, size)

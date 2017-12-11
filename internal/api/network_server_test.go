@@ -767,7 +767,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				rxInfoSet := []gw.RXInfo{
 					{
 						MAC:       lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-						Time:      now,
+						Time:      &now,
 						Timestamp: 1234,
 						Frequency: 868100000,
 						Channel:   1,
@@ -784,10 +784,11 @@ func TestNetworkServerAPI(t *testing.T) {
 						},
 					},
 				}
+				ts := uint32(12345)
 				txInfo := gw.TXInfo{
 					MAC:         lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 					Immediately: true,
-					Timestamp:   12345,
+					Timestamp:   &ts,
 					Frequency:   868100000,
 					Power:       14,
 					CodeRate:    "4/5",

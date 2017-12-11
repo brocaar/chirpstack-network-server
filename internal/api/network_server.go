@@ -879,13 +879,16 @@ func (n *NetworkServerAPI) GetFrameLogsForDevEUI(ctx context.Context, req *ns.Ge
 				Immediately: txInfo.Immediately,
 				Mac:         txInfo.MAC[:],
 				Power:       int32(txInfo.Power),
-				Timestamp:   txInfo.Timestamp,
 				DataRate: &ns.DataRate{
 					Modulation:   string(txInfo.DataRate.Modulation),
 					BandWidth:    uint32(txInfo.DataRate.Bandwidth),
 					SpreadFactor: uint32(txInfo.DataRate.SpreadFactor),
 					Bitrate:      uint32(txInfo.DataRate.BitRate),
 				},
+			}
+
+			if txInfo.Timestamp != nil {
+				fl.TxInfo.Timestamp = *txInfo.Timestamp
 			}
 		}
 

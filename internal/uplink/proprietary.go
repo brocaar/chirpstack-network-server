@@ -60,9 +60,12 @@ func sendProprietaryPayloadToApplicationServer(ctx *ProprietaryUpContext) error 
 
 		asRxInfo := as.RXInfo{
 			Mac:     mac,
-			Time:    rxInfo.Time.Format(time.RFC3339Nano),
 			Rssi:    int32(rxInfo.RSSI),
 			LoRaSNR: rxInfo.LoRaSNR,
+		}
+
+		if rxInfo.Time != nil {
+			asRxInfo.Time = rxInfo.Time.Format(time.RFC3339Nano)
 		}
 
 		if gw, ok := gws[rxInfo.MAC]; ok {

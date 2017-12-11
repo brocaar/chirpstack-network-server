@@ -132,6 +132,8 @@ func TestOTAAScenarios(t *testing.T) {
 		So(jaPHY.DecryptJoinAcceptPayload(appKey), ShouldBeNil)
 
 		Convey("Given a set of test-scenarios", func() {
+			timestamp := rxInfo.Timestamp + 5000000
+
 			tests := []otaaTestCase{
 				{
 					Name:                   "join-server returns an error",
@@ -196,7 +198,7 @@ func TestOTAAScenarios(t *testing.T) {
 					},
 					ExpectedTXInfo: gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 5000000,
+						Timestamp: &timestamp,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -258,7 +260,7 @@ func TestOTAAScenarios(t *testing.T) {
 					},
 					ExpectedTXInfo: gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 5000000,
+						Timestamp: &timestamp,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,

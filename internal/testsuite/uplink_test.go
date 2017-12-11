@@ -138,11 +138,15 @@ func TestUplinkScenarios(t *testing.T) {
 			EnabledChannels: []int{0, 1, 2},
 		}
 
+		now := time.Now().UTC().Truncate(time.Millisecond)
+		timeSinceEpoch := gw.Duration(10 * time.Second)
 		rxInfo := gw.RXInfo{
-			MAC:       [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Frequency: common.Band.UplinkChannels[0].Frequency,
-			DataRate:  common.Band.DataRates[0],
-			LoRaSNR:   7,
+			MAC:               [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Frequency:         common.Band.UplinkChannels[0].Frequency,
+			DataRate:          common.Band.DataRates[0],
+			LoRaSNR:           7,
+			Time:              &now,
+			TimeSinceGPSEpoch: &timeSinceEpoch,
 		}
 
 		var fPortZero uint8
@@ -402,6 +406,10 @@ func TestUplinkScenarios(t *testing.T) {
 
 		Convey("Given a set of test-scenarios for basic flows (nothing in the queue)", func() {
 			inTenMinutes := time.Now().Add(10 * time.Minute)
+			timestamp := rxInfo.Timestamp + 1000000
+			timestamp3S := rxInfo.Timestamp + 3000000
+			timestamp2S := rxInfo.Timestamp + 2000000
+			timestamp6S := rxInfo.Timestamp + 6000000
 
 			tests := []uplinkTestCase{
 				{
@@ -523,7 +531,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -570,7 +578,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -622,7 +630,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 3000000,
+						Timestamp: &timestamp3S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -675,7 +683,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 2000000,
+						Timestamp: &timestamp2S,
 						Frequency: common.Band.RX2Frequency,
 						Power:     14,
 						DataRate:  common.Band.DataRates[3],
@@ -729,7 +737,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 6000000,
+						Timestamp: &timestamp6S,
 						Frequency: common.Band.RX2Frequency,
 						Power:     14,
 						DataRate:  common.Band.DataRates[0],
@@ -892,6 +900,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 		Convey("Given a set of test-scenarios for mac-command queue", func() {
 			var fPortThree uint8 = 3
+			timestamp1S := rxInfo.Timestamp + 1000000
 
 			tests := []uplinkTestCase{
 				{
@@ -941,7 +950,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -1020,7 +1029,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -1103,7 +1112,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -1184,7 +1193,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -1241,6 +1250,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 		Convey("Given a set of test-scenarios for tx-payload queue", func() {
 			var fPortTen uint8 = 10
+			timestamp1S := rxInfo.Timestamp + 1000000
 
 			tests := []uplinkTestCase{
 				{
@@ -1268,7 +1278,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -1322,7 +1332,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -1376,7 +1386,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -1470,7 +1480,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -1515,6 +1525,8 @@ func TestUplinkScenarios(t *testing.T) {
 		})
 
 		Convey("Given a set of test-scenarios for ADR", func() {
+			timestamp1S := rxInfo.Timestamp + 1000000
+
 			tests := []uplinkTestCase{
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
@@ -1548,7 +1560,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -1739,7 +1751,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -1788,7 +1800,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -1922,7 +1934,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -1986,7 +1998,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,
@@ -2030,6 +2042,7 @@ func TestUplinkScenarios(t *testing.T) {
 		Convey("Given a set of test-scenarios for device-status requests", func() {
 			sp.DevStatusReqFreq = 24
 			So(storage.UpdateServiceProfile(common.DB, &sp), ShouldBeNil)
+			timestamp1S := rxInfo.Timestamp + 1000000
 
 			tests := []uplinkTestCase{
 				{
@@ -2060,7 +2073,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
-						Timestamp: rxInfo.Timestamp + 1000000,
+						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
 						Power:     14,
 						DataRate:  rxInfo.DataRate,

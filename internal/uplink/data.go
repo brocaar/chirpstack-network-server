@@ -273,12 +273,18 @@ func sendRXInfoPayload(ds storage.DeviceSession, rxPacket models.RXPacket) error
 		mac := make([]byte, 8)
 		copy(mac, rxInfo.MAC[:])
 
-		rxInfoReq.RxInfo = append(rxInfoReq.RxInfo, &nc.RXInfo{
+		rx := nc.RXInfo{
 			Mac:     mac,
-			Time:    rxInfo.Time.Format(time.RFC3339Nano),
 			Rssi:    int32(rxInfo.RSSI),
 			LoRaSNR: rxInfo.LoRaSNR,
-		})
+		}
+
+		if rxInfo.Time != nil {
+			rx.Time = rxInfo.Time.Format(time.RFC3339Nano)
+		}
+
+		rxInfoReq.RxInfo = append(rxInfoReq.RxInfo, &rx)
+
 	}
 
 	_, err := common.Controller.HandleRXInfo(context.Background(), &rxInfoReq)
@@ -339,9 +345,12 @@ func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession
 
 			asRxInfo := as.RXInfo{
 				Mac:     mac,
-				Time:    rxInfo.Time.Format(time.RFC3339Nano),
 				Rssi:    int32(rxInfo.RSSI),
 				LoRaSNR: rxInfo.LoRaSNR,
+			}
+
+			if rxInfo.Time != nil {
+				asRxInfo.Time = rxInfo.Time.Format(time.RFC3339Nano)
 			}
 
 			if gw, ok := gws[rxInfo.MAC]; ok {
