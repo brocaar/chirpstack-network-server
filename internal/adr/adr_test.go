@@ -344,6 +344,57 @@ func TestADR(t *testing.T) {
 						ExpectedError: nil,
 					},
 					{
+						// this is because we don't have enough uplink history
+						// and the packetloss function returns therefore 0%.
+						Name: "ADR decreasing NbTrans by one",
+						DeviceSession: &storage.DeviceSession{
+							DevAddr:         [4]byte{1, 2, 3, 4},
+							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledChannels: []int{0, 1, 2},
+							DR:              5,
+							TXPowerIndex:    4,
+							NbTrans:         3,
+						},
+						RXPacket: models.RXPacket{
+							PHYPayload: phyPayloadADR,
+							RXInfoSet: models.RXInfoSet{
+								{DataRate: common.Band.DataRates[5], LoRaSNR: -5},
+							},
+						},
+						FullFCnt: 1,
+						ExpectedDeviceSession: storage.DeviceSession{
+							DevAddr: [4]byte{1, 2, 3, 4},
+							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							UplinkHistory: []storage.UplinkHistory{
+								{FCnt: 1, MaxSNR: -5, GatewayCount: 1},
+							},
+							EnabledChannels: []int{0, 1, 2},
+							DR:              5,
+							TXPowerIndex:    4,
+							NbTrans:         3,
+						},
+						ExpectedMACCommandQueue: []maccommand.Block{
+							{
+								CID: lorawan.LinkADRReq,
+								MACCommands: []lorawan.MACCommand{
+									{
+										CID: lorawan.LinkADRReq,
+										Payload: &lorawan.LinkADRReqPayload{
+											DataRate: 5,
+											TXPower:  4,
+											ChMask:   lorawan.ChMask{true, true, true},
+											Redundancy: lorawan.Redundancy{
+												ChMaskCntl: 0,
+												NbRep:      2,
+											},
+										},
+									},
+								},
+							},
+						},
+						ExpectedError: nil,
+					},
+					{
 						Name: "ADR increasing data-rate by one step and tx-power reset due to node changing its data-rate (no CFlist)",
 						DeviceSession: &storage.DeviceSession{
 							DevAddr:         [4]byte{1, 2, 3, 4},

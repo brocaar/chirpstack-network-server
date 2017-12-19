@@ -18,6 +18,9 @@ menu:
 
 * Add missing `nil` pointer check for `Time`
   ([#280](https://github.com/brocaar/loraserver/issues/280))
+* Fix increase of NbTrans (re-transmissions) in case of early packetloss.
+* Fix decreasing NbTrans (this only happened in case of data-rate or TX
+  power change).
 
 ### 0.23.0
 

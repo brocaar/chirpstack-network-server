@@ -21,6 +21,8 @@ const (
 	deviceSessionKeyTempl = "lora:ns:device:%s"  // contains the session of a DevEUI
 )
 
+const UplinkHistorySize = 20
+
 // RXWindow defines the RX window option.
 type RXWindow int8
 
@@ -114,14 +116,21 @@ func (s *DeviceSession) AppendUplinkHistory(up UplinkHistory) {
 	}
 
 	s.UplinkHistory = append(s.UplinkHistory, up)
-	if count := len(s.UplinkHistory); count > 20 {
-		s.UplinkHistory = s.UplinkHistory[count-20 : count]
+	if count := len(s.UplinkHistory); count > UplinkHistorySize {
+		s.UplinkHistory = s.UplinkHistory[count-UplinkHistorySize : count]
 	}
 }
 
 // GetPacketLossPercentage returns the percentage of packet-loss over the
 // records stored in UplinkHistory.
+// Note it returns 0 when the uplink history table hasn't been filled yet
+// to avoid reporting 33% for example when one of the first three uplinks
+// was lost.
 func (s DeviceSession) GetPacketLossPercentage() float64 {
+	if len(s.UplinkHistory) < UplinkHistorySize {
+		return 0
+	}
+
 	var lostPackets uint32
 	var previousFCnt uint32
 

@@ -39,4 +39,4 @@ googleAnalytics = "UA-3512995-9"
     weight = 5
 
 [params]
-    version = "0.23.0"
+    version = "0.23.1"

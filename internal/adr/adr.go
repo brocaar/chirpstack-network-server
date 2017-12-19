@@ -96,7 +96,7 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 	idealNbRep := getNbRep(ds.NbTrans, ds.GetPacketLossPercentage())
 
 	// there is nothing to adjust
-	if ds.TXPowerIndex == idealTXPowerIndex && currentDR == idealDR {
+	if ds.TXPowerIndex == idealTXPowerIndex && currentDR == idealDR && ds.NbTrans == idealNbRep {
 		return nil
 	}
 
