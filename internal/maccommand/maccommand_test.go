@@ -14,7 +14,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestLinkCheckReq(t *testing.T) {
+func TestHandleReq(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {
@@ -92,11 +92,45 @@ func TestLinkCheckReq(t *testing.T) {
 					})
 				})
 			})
+
+			Convey("Test PingSlotInfoReq", func() {
+				block := Block{
+					CID: lorawan.PingSlotInfoReq,
+					MACCommands: []lorawan.MACCommand{
+						{
+							CID: lorawan.PingSlotInfoReq,
+							Payload: &lorawan.PingSlotInfoReqPayload{
+								Periodicity: 3,
+							},
+						},
+					},
+				}
+
+				So(Handle(&ds, block, nil, models.RXPacket{}), ShouldBeNil)
+
+				Convey("Then the ClassB ping-slot periodicity has been set", func() {
+					So(ds.PingSlotPeriodicity, ShouldEqual, 3)
+				})
+
+				Convey("Then the expected response was added to the mac-command queue", func() {
+					items, err := ReadQueueItems(config.C.Redis.Pool, ds.DevEUI)
+					So(err, ShouldBeNil)
+					So(items, ShouldHaveLength, 1)
+					So(items[0], ShouldResemble, Block{
+						CID: lorawan.PingSlotInfoAns,
+						MACCommands: []lorawan.MACCommand{
+							{
+								CID: lorawan.PingSlotInfoAns,
+							},
+						},
+					})
+				})
+			})
 		})
 	})
 }
 
-func TestLinkADRAns(t *testing.T) {
+func TestHandleAns(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {

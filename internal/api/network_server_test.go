@@ -695,7 +695,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					Convey("When calling CreateMACCommandQueueItem", func() {
 						mac := lorawan.MACCommand{
 							CID: lorawan.RXParamSetupReq,
-							Payload: &lorawan.RX2SetupReqPayload{
+							Payload: &lorawan.RXParamSetupReqPayload{
 								Frequency: 868100000,
 							},
 						}
