@@ -344,6 +344,7 @@ func runOTAATests(asClient *test.ApplicationClient, jsClient *test.JoinServerCli
 				So(common.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
 				txPacket := <-common.Gateway.(*test.GatewayBackend).TXPacketChan
 
+				So(txPacket.Token, ShouldNotEqual, 0)
 				So(txPacket.TXInfo, ShouldResemble, t.ExpectedTXInfo)
 			})
 

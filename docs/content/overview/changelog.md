@@ -10,6 +10,10 @@ menu:
 
 ### 0.23.1
 
+**Features:**
+
+* LoRa Server sets a random token for each downlink transmission.
+
 **Bugfixes:**
 
 * Add missing `nil` pointer check for `Time`

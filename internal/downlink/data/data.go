@@ -1,6 +1,8 @@
 package data
 
 import (
+	"crypto/rand"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -18,6 +20,7 @@ import (
 )
 
 var responseTasks = []func(*dataContext) error{
+	setToken,
 	getDeviceProfile,
 	requestDevStatus,
 	getDataTXInfo,
@@ -30,6 +33,7 @@ var responseTasks = []func(*dataContext) error{
 }
 
 var scheduleNextQueueItemTasks = []func(*dataContext) error{
+	setToken,
 	getDeviceProfile,
 	getServiceProfile,
 	requestDevStatus,
@@ -43,6 +47,9 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 }
 
 type dataContext struct {
+	// Token defines a random token.
+	Token uint16
+
 	// ServiceProfile of the device.
 	ServiceProfile storage.ServiceProfile
 
@@ -150,6 +157,16 @@ func HandleScheduleNextQueueItem(ds storage.DeviceSession) error {
 		}
 	}
 
+	return nil
+}
+
+func setToken(ctx *dataContext) error {
+	b := make([]byte, 2)
+	_, err := rand.Read(b)
+	if err != nil {
+		return errors.Wrap(err, "read random error")
+	}
+	ctx.Token = binary.BigEndian.Uint16(b)
 	return nil
 }
 
@@ -373,6 +390,7 @@ func sendDataDown(ctx *dataContext) error {
 
 	// send the packet to the gateway
 	if err := common.Gateway.SendTXPacket(gw.TXPacket{
+		Token:      ctx.Token,
 		TXInfo:     ctx.TXInfo,
 		PHYPayload: phy,
 	}); err != nil {

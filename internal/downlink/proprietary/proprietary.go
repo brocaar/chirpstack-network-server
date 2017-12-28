@@ -1,6 +1,9 @@
 package proprietary
 
 import (
+	"crypto/rand"
+	"encoding/binary"
+
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/api/gw"
@@ -9,10 +12,12 @@ import (
 )
 
 var tasks = []func(*proprietaryContext) error{
+	setToken,
 	sendProprietaryDown,
 }
 
 type proprietaryContext struct {
+	Token       uint16
 	MACPayload  []byte
 	MIC         lorawan.MIC
 	GatewayMACs []lorawan.EUI64
@@ -38,6 +43,16 @@ func Handle(macPayload []byte, mic lorawan.MIC, gwMACs []lorawan.EUI64, iPol boo
 		}
 	}
 
+	return nil
+}
+
+func setToken(ctx *proprietaryContext) error {
+	b := make([]byte, 2)
+	_, err := rand.Read(b)
+	if err != nil {
+		return errors.Wrap(err, "read random erro")
+	}
+	ctx.Token = binary.BigEndian.Uint16(b)
 	return nil
 }
 
@@ -67,6 +82,7 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 		}
 
 		if err := common.Gateway.SendTXPacket(gw.TXPacket{
+			Token:      ctx.Token,
 			TXInfo:     txInfo,
 			PHYPayload: phy,
 		}); err != nil {

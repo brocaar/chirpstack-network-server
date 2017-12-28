@@ -1,6 +1,8 @@
 package join
 
 import (
+	"crypto/rand"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -17,12 +19,14 @@ import (
 )
 
 var tasks = []func(*joinContext) error{
+	setToken,
 	getJoinAcceptTXInfo,
 	logJoinAcceptFrame,
 	sendJoinAcceptResponse,
 }
 
 type joinContext struct {
+	Token         uint16
 	DeviceSession storage.DeviceSession
 	TXInfo        gw.TXInfo
 	PHYPayload    lorawan.PHYPayload
@@ -41,6 +45,16 @@ func Handle(ds storage.DeviceSession, phy lorawan.PHYPayload) error {
 		}
 	}
 
+	return nil
+}
+
+func setToken(ctx *joinContext) error {
+	b := make([]byte, 2)
+	_, err := rand.Read(b)
+	if err != nil {
+		return errors.Wrap(err, "read random error")
+	}
+	ctx.Token = binary.BigEndian.Uint16(b)
 	return nil
 }
 
@@ -100,6 +114,7 @@ func logJoinAcceptFrame(ctx *joinContext) error {
 
 func sendJoinAcceptResponse(ctx *joinContext) error {
 	err := common.Gateway.SendTXPacket(gw.TXPacket{
+		Token:      ctx.Token,
 		TXInfo:     ctx.TXInfo,
 		PHYPayload: ctx.PHYPayload,
 	})
