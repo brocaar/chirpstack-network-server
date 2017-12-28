@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/downlink/data"
 	"github.com/brocaar/loraserver/internal/storage"
 )
 
@@ -38,7 +39,7 @@ func ClassCScheduleBatch(size int) error {
 				continue
 			}
 
-			err = Flow.RunScheduleNextDeviceQueueItem(ds)
+			err = data.HandleScheduleNextQueueItem(ds)
 			if err != nil {
 				log.WithError(err).WithField("dev_eui", d.DevEUI).Error("schedule next device-queue item error")
 			}

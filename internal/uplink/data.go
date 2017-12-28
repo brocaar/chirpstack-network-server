@@ -14,7 +14,7 @@ import (
 	"github.com/brocaar/loraserver/internal/adr"
 	"github.com/brocaar/loraserver/internal/channels"
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/downlink"
+	datadown "github.com/brocaar/loraserver/internal/downlink/data"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
@@ -232,7 +232,7 @@ func handleUplinkACK(ctx *DataUpContext) error {
 func handleDownlink(ctx *DataUpContext) error {
 	// handle downlink (ACK)
 	time.Sleep(common.GetDownlinkDataDelay)
-	if err := downlink.Flow.RunUplinkResponse(
+	if err := datadown.HandleResponse(
 		ctx.ServiceProfile,
 		ctx.DeviceSession,
 		ctx.MACPayload.FHDR.FCtrl.ADR,

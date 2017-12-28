@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/downlink"
+	joindown "github.com/brocaar/loraserver/internal/downlink/join"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
@@ -204,7 +204,7 @@ func sendJoinAcceptDownlink(ctx *JoinRequestContext) error {
 		return errors.Wrap(err, "unmarshal downlink phypayload error")
 	}
 
-	if err := downlink.Flow.RunJoinResponse(ctx.DeviceSession, phy); err != nil {
+	if err := joindown.Handle(ctx.DeviceSession, phy); err != nil {
 		return errors.Wrap(err, "run join-response flow error")
 	}
 

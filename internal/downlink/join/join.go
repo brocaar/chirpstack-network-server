@@ -1,17 +1,50 @@
-package downlink
+package join
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/node"
 	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/lorawan"
 )
 
-func getJoinAcceptTXInfo(ctx *JoinContext) error {
+var tasks = []func(*joinContext) error{
+	getJoinAcceptTXInfo,
+	logJoinAcceptFrame,
+	sendJoinAcceptResponse,
+}
+
+type joinContext struct {
+	DeviceSession storage.DeviceSession
+	TXInfo        gw.TXInfo
+	PHYPayload    lorawan.PHYPayload
+}
+
+// Handle handles a downlink join-response.
+func Handle(ds storage.DeviceSession, phy lorawan.PHYPayload) error {
+	ctx := joinContext{
+		DeviceSession: ds,
+		PHYPayload:    phy,
+	}
+
+	for _, t := range tasks {
+		if err := t(&ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func getJoinAcceptTXInfo(ctx *joinContext) error {
 	if len(ctx.DeviceSession.LastRXInfoSet) == 0 {
 		return errors.New("empty LastRXInfoSet")
 	}
@@ -60,12 +93,12 @@ func getJoinAcceptTXInfo(ctx *JoinContext) error {
 	return nil
 }
 
-func logJoinAcceptFrame(ctx *JoinContext) error {
+func logJoinAcceptFrame(ctx *joinContext) error {
 	logDownlink(common.DB, ctx.DeviceSession.DevEUI, ctx.PHYPayload, ctx.TXInfo)
 	return nil
 }
 
-func sendJoinAcceptResponse(ctx *JoinContext) error {
+func sendJoinAcceptResponse(ctx *joinContext) error {
 	err := common.Gateway.SendTXPacket(gw.TXPacket{
 		TXInfo:     ctx.TXInfo,
 		PHYPayload: ctx.PHYPayload,
@@ -75,4 +108,31 @@ func sendJoinAcceptResponse(ctx *JoinContext) error {
 	}
 
 	return nil
+}
+
+func logDownlink(db *sqlx.DB, devEUI lorawan.EUI64, phy lorawan.PHYPayload, txInfo gw.TXInfo) {
+	if !common.LogNodeFrames {
+		return
+	}
+
+	phyB, err := phy.MarshalBinary()
+	if err != nil {
+		log.Errorf("marshal phypayload to binary error: %s", err)
+		return
+	}
+
+	txB, err := json.Marshal(txInfo)
+	if err != nil {
+		log.Errorf("marshal tx-info to json error: %s", err)
+	}
+
+	fl := node.FrameLog{
+		DevEUI:     devEUI,
+		TXInfo:     &txB,
+		PHYPayload: phyB,
+	}
+	err = node.CreateFrameLog(db, &fl)
+	if err != nil {
+		log.Errorf("create frame-log error: %s", err)
+	}
 }

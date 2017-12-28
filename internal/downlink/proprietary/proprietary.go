@@ -1,4 +1,4 @@
-package downlink
+package proprietary
 
 import (
 	"github.com/pkg/errors"
@@ -8,7 +8,40 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-func sendProprietaryDown(ctx *ProprietaryDownContext) error {
+var tasks = []func(*proprietaryContext) error{
+	sendProprietaryDown,
+}
+
+type proprietaryContext struct {
+	MACPayload  []byte
+	MIC         lorawan.MIC
+	GatewayMACs []lorawan.EUI64
+	IPol        bool
+	Frequency   int
+	DR          int
+}
+
+// Handle handles a proprietary downlink.
+func Handle(macPayload []byte, mic lorawan.MIC, gwMACs []lorawan.EUI64, iPol bool, frequency, dr int) error {
+	ctx := proprietaryContext{
+		MACPayload:  macPayload,
+		MIC:         mic,
+		GatewayMACs: gwMACs,
+		IPol:        iPol,
+		Frequency:   frequency,
+		DR:          dr,
+	}
+
+	for _, t := range tasks {
+		if err := t(&ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func sendProprietaryDown(ctx *proprietaryContext) error {
 	if ctx.DR > len(common.Band.DataRates)-1 {
 		return errors.Wrapf(ErrInvalidDataRate, "dr: %d (max dr: %d)", ctx.DR, len(common.Band.DataRates)-1)
 	}

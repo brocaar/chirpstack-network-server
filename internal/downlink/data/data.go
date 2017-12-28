@@ -1,4 +1,4 @@
-package downlink
+package data
 
 import (
 	"encoding/json"
@@ -17,7 +17,143 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-func requestDevStatus(ctx *DataContext) error {
+var responseTasks = []func(*dataContext) error{
+	getDeviceProfile,
+	requestDevStatus,
+	getDataTXInfo,
+	setRemainingPayloadSize,
+	getNextDeviceQueueItem,
+	getMACCommands,
+	stopOnNothingToSend,
+	sendDataDown,
+	saveDeviceSession,
+}
+
+var scheduleNextQueueItemTasks = []func(*dataContext) error{
+	getDeviceProfile,
+	getServiceProfile,
+	requestDevStatus,
+	getDataTXInfoForRX2,
+	setRemainingPayloadSize,
+	getNextDeviceQueueItem,
+	getMACCommands,
+	stopOnNothingToSend,
+	sendDataDown,
+	saveDeviceSession,
+}
+
+type dataContext struct {
+	// ServiceProfile of the device.
+	ServiceProfile storage.ServiceProfile
+
+	// DeviceProfile of the device.
+	DeviceProfile storage.DeviceProfile
+
+	// DeviceSession holds the device-session of the device for which to send
+	// the downlink data.
+	DeviceSession storage.DeviceSession
+
+	// TXInfo holds the data needed for transmission.
+	TXInfo gw.TXInfo
+
+	// DataRate holds the data-rate for transmission.
+	DataRate int
+
+	// MustSend defines if a frame must be send. In some cases (e.g. ADRACKReq)
+	// the network-server must respond, even when there are no mac-commands or
+	// FRMPayload.
+	MustSend bool
+
+	// The remaining payload size which can be used for mac-commands and / or
+	// FRMPayload.
+	RemainingPayloadSize int
+
+	// ACK defines if ACK must be set to true (e.g. the frame acknowledges
+	// an uplink frame).
+	ACK bool
+
+	// FPort to use for transmission. This must be set to a value != 0 in case
+	// Data is not empty.
+	FPort uint8
+
+	// MACCommands contains the mac-commands to send (if any). Make sure the
+	// total size fits within the FRMPayload or FPort (depending on if
+	// EncryptMACCommands is set to true).
+	MACCommands []lorawan.MACCommand
+
+	// EncryptMACCommands defines if the mac-commands (if any) must be
+	// encrypted and put in the FRMPayload. Note that it is not possible to
+	// send encrypted mac-commands when FPort is set to a value != 0.
+	EncryptMACCommands bool
+
+	// Confirmed defines if the frame must be send as confirmed-data.
+	Confirmed bool
+
+	// MoreData defines if there is more data pending.
+	MoreData bool
+
+	// Data contains the bytes to send. Note that this requires FPort to be a
+	// value other than 0.
+	Data []byte
+}
+
+func (ctx dataContext) Validate() error {
+	if ctx.FPort == 0 && len(ctx.Data) > 0 {
+		return ErrFPortMustNotBeZero
+	}
+
+	if ctx.FPort > 224 {
+		return ErrInvalidAppFPort
+	}
+
+	if ctx.FPort > 0 && ctx.EncryptMACCommands {
+		return ErrFPortMustBeZero
+	}
+
+	return nil
+}
+
+// HandleResponse handles a downlink response.
+func HandleResponse(sp storage.ServiceProfile, ds storage.DeviceSession, adr, mustSend, ack bool) error {
+	ctx := dataContext{
+		ServiceProfile: sp,
+		DeviceSession:  ds,
+		ACK:            ack,
+		MustSend:       mustSend,
+	}
+
+	for _, t := range responseTasks {
+		if err := t(&ctx); err != nil {
+			if err == ErrAbort {
+				return nil
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// HandleScheduleNextQueueItem handles scheduling the next device-queue item.
+func HandleScheduleNextQueueItem(ds storage.DeviceSession) error {
+	ctx := dataContext{
+		DeviceSession: ds,
+	}
+
+	for _, t := range scheduleNextQueueItemTasks {
+		if err := t(&ctx); err != nil {
+			if err == ErrAbort {
+				return nil
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func requestDevStatus(ctx *dataContext) error {
 	if ctx.ServiceProfile.DevStatusReqFreq == 0 {
 		return nil
 	}
@@ -35,7 +171,7 @@ func requestDevStatus(ctx *DataContext) error {
 	return nil
 }
 
-func getDataTXInfo(ctx *DataContext) error {
+func getDataTXInfo(ctx *dataContext) error {
 	if len(ctx.DeviceSession.LastRXInfoSet) == 0 {
 		return ErrNoLastRXInfoSet
 	}
@@ -49,7 +185,7 @@ func getDataTXInfo(ctx *DataContext) error {
 	return nil
 }
 
-func getDataTXInfoForRX2(ctx *DataContext) error {
+func getDataTXInfoForRX2(ctx *dataContext) error {
 	if len(ctx.DeviceSession.LastRXInfoSet) == 0 {
 		return ErrNoLastRXInfoSet
 	}
@@ -72,7 +208,7 @@ func getDataTXInfoForRX2(ctx *DataContext) error {
 	return nil
 }
 
-func setRemainingPayloadSize(ctx *DataContext) error {
+func setRemainingPayloadSize(ctx *dataContext) error {
 	ctx.RemainingPayloadSize = common.Band.MaxPayloadSize[ctx.DataRate].N - len(ctx.Data)
 
 	if ctx.RemainingPayloadSize < 0 {
@@ -82,7 +218,7 @@ func setRemainingPayloadSize(ctx *DataContext) error {
 	return nil
 }
 
-func getNextDeviceQueueItem(ctx *DataContext) error {
+func getNextDeviceQueueItem(ctx *dataContext) error {
 	qi, err := storage.GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(common.DB, ctx.DeviceSession.DevEUI, ctx.RemainingPayloadSize, ctx.DeviceSession.FCntDown, ctx.DeviceSession.RoutingProfileID)
 	if err != nil {
 		if errors.Cause(err) == storage.ErrDoesNotExist {
@@ -133,7 +269,7 @@ func getNextDeviceQueueItem(ctx *DataContext) error {
 	return nil
 }
 
-func getMACCommands(ctx *DataContext) error {
+func getMACCommands(ctx *dataContext) error {
 	allowEncryptedMACCommands := (ctx.FPort == 0)
 
 	macBlocks, encryptMACCommands, pendingMACCommands, err := getAndFilterMACQueueItems(ctx.DeviceSession, allowEncryptedMACCommands, ctx.RemainingPayloadSize)
@@ -167,7 +303,7 @@ func getMACCommands(ctx *DataContext) error {
 	return nil
 }
 
-func stopOnNothingToSend(ctx *DataContext) error {
+func stopOnNothingToSend(ctx *dataContext) error {
 	if ctx.FPort == 0 && len(ctx.MACCommands) == 0 && !ctx.ACK && !ctx.MustSend {
 		// ErrAbort will not be handled as a real error
 		return ErrAbort
@@ -176,7 +312,7 @@ func stopOnNothingToSend(ctx *DataContext) error {
 	return nil
 }
 
-func sendDataDown(ctx *DataContext) error {
+func sendDataDown(ctx *dataContext) error {
 	if err := ctx.Validate(); err != nil {
 		return errors.Wrap(err, "validation error")
 	}
@@ -249,14 +385,14 @@ func sendDataDown(ctx *DataContext) error {
 	return nil
 }
 
-func saveDeviceSession(ctx *DataContext) error {
+func saveDeviceSession(ctx *dataContext) error {
 	if err := storage.SaveDeviceSession(common.RedisPool, ctx.DeviceSession); err != nil {
 		return errors.Wrap(err, "save device-session error")
 	}
 	return nil
 }
 
-func getDeviceProfile(ctx *DataContext) error {
+func getDeviceProfile(ctx *dataContext) error {
 	var err error
 	ctx.DeviceProfile, err = storage.GetAndCacheDeviceProfile(common.DB, common.RedisPool, ctx.DeviceSession.DeviceProfileID)
 	if err != nil {
@@ -265,7 +401,7 @@ func getDeviceProfile(ctx *DataContext) error {
 	return nil
 }
 
-func getServiceProfile(ctx *DataContext) error {
+func getServiceProfile(ctx *dataContext) error {
 	var err error
 	ctx.ServiceProfile, err = storage.GetAndCacheServiceProfile(common.DB, common.RedisPool, ctx.DeviceSession.ServiceProfileID)
 	if err != nil {

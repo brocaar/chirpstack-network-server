@@ -14,7 +14,7 @@ import (
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/downlink"
+	proprietarydown "github.com/brocaar/loraserver/internal/downlink/proprietary"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/node"
@@ -660,7 +660,7 @@ func (n *NetworkServerAPI) SendProprietaryPayload(ctx context.Context, req *ns.S
 		gwMACs = append(gwMACs, mac)
 	}
 
-	err := downlink.Flow.RunProprietaryDown(req.MacPayload, mic, gwMACs, req.IPol, int(req.Frequency), int(req.Dr))
+	err := proprietarydown.Handle(req.MacPayload, mic, gwMACs, req.IPol, int(req.Frequency), int(req.Dr))
 	if err != nil {
 		return nil, errToRPCError(err)
 	}

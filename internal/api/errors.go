@@ -5,17 +5,20 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/brocaar/loraserver/internal/downlink"
+	"github.com/brocaar/loraserver/internal/downlink/data"
+	"github.com/brocaar/loraserver/internal/downlink/proprietary"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/storage"
 )
 
 var errToCode = map[error]codes.Code{
-	downlink.ErrFPortMustNotBeZero:     codes.InvalidArgument,
-	downlink.ErrFPortMustBeZero:        codes.InvalidArgument,
-	downlink.ErrNoLastRXInfoSet:        codes.FailedPrecondition,
-	downlink.ErrInvalidDataRate:        codes.Internal,
-	downlink.ErrMaxPayloadSizeExceeded: codes.InvalidArgument,
+	data.ErrFPortMustNotBeZero:     codes.InvalidArgument,
+	data.ErrFPortMustBeZero:        codes.InvalidArgument,
+	data.ErrNoLastRXInfoSet:        codes.FailedPrecondition,
+	data.ErrInvalidDataRate:        codes.Internal,
+	data.ErrMaxPayloadSizeExceeded: codes.InvalidArgument,
+
+	proprietary.ErrInvalidDataRate: codes.Internal,
 
 	gateway.ErrDoesNotExist:               codes.NotFound,
 	gateway.ErrAlreadyExists:              codes.AlreadyExists,

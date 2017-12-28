@@ -1,4 +1,4 @@
-package downlink
+package data
 
 import (
 	"fmt"
@@ -43,7 +43,7 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 			}
 			So(storage.CreateDevice(db, &d), ShouldBeNil)
 
-			ctx := DataContext{
+			ctx := dataContext{
 				DeviceSession: storage.DeviceSession{
 					RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
 					DevEUI:           d.DevEUI,
@@ -74,7 +74,7 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 			tests := []struct {
 				BeforeFunc                  func()
 				Name                        string
-				ExpectedDataContext         DataContext
+				ExpecteddataContext         dataContext
 				ExpectedNextDeviceQueueItem *storage.DeviceQueueItem
 			}{
 				{
@@ -82,7 +82,7 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 						ctx.DeviceSession.FCntDown = 12 // to skip all queue items
 					},
 					Name: "no queue items",
-					ExpectedDataContext: DataContext{
+					ExpecteddataContext: dataContext{
 						DeviceSession: storage.DeviceSession{
 							RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
 							DevEUI:           d.DevEUI,
@@ -93,7 +93,7 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 				},
 				{
 					Name: "first queue item (unconfirmed)",
-					ExpectedDataContext: DataContext{
+					ExpecteddataContext: dataContext{
 						DeviceSession:        ctx.DeviceSession,
 						RemainingPayloadSize: 242 - len(items[0].FRMPayload),
 						Confirmed:            false,
@@ -116,7 +116,7 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 						ctx.DeviceSession.FCntDown = 11 // skip first queue item
 					},
 					Name: "second queue item (confirmed)",
-					ExpectedDataContext: DataContext{
+					ExpecteddataContext: dataContext{
 						DeviceSession: storage.DeviceSession{
 							RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
 							DevEUI:           d.DevEUI,
@@ -146,7 +146,7 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 					}
 
 					So(getNextDeviceQueueItem(&ctx), ShouldBeNil)
-					So(test.ExpectedDataContext, ShouldResemble, ctx)
+					So(test.ExpecteddataContext, ShouldResemble, ctx)
 
 					if test.ExpectedNextDeviceQueueItem != nil {
 						qi, err := storage.GetNextDeviceQueueItemForDevEUI(common.DB, d.DevEUI)
