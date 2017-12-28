@@ -14,12 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/brocaar/loraserver/internal/downlink"
-
-	"github.com/brocaar/loraserver/internal/asclient"
-
-	"github.com/brocaar/loraserver/internal/jsclient"
-
 	"github.com/codegangsta/cli"
 	"github.com/pkg/errors"
 	migrate "github.com/rubenv/sql-migrate"
@@ -33,9 +27,12 @@ import (
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api"
 	"github.com/brocaar/loraserver/internal/api/auth"
+	"github.com/brocaar/loraserver/internal/api/client/asclient"
+	"github.com/brocaar/loraserver/internal/api/client/jsclient"
 	"github.com/brocaar/loraserver/internal/backend/controller"
 	gwBackend "github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/migrations"
 	// TODO: merge backend/gateway into internal/gateway?
 	"github.com/brocaar/loraserver/internal/gateway"

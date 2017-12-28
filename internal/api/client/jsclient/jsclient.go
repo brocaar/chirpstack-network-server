@@ -38,6 +38,7 @@ func (c *client) JoinReq(pl backend.JoinReqPayload) (backend.JoinAnsPayload, err
 	if err != nil {
 		return ans, errors.Wrap(err, "http post error")
 	}
+	defer resp.Body.Close()
 
 	err = json.NewDecoder(resp.Body).Decode(&ans)
 	if err != nil {
@@ -58,7 +59,7 @@ func NewClient(server, caCert, tlsCert, tlsKey string) (Client, error) {
 		"ca_cert":  caCert,
 		"tls_cert": tlsCert,
 		"tls_key":  tlsKey,
-	}).Info("configuring join-server")
+	}).Info("configuring join-server client")
 
 	if caCert == "" && tlsCert == "" && tlsKey == "" {
 		return &client{
@@ -86,7 +87,6 @@ func NewClient(server, caCert, tlsCert, tlsKey string) (Client, error) {
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      caCertPool,
 	}
-	// tlsConfig.BuildNameToCertificate(uildNameToCertificate()
 
 	return &client{
 		httpClient: &http.Client{

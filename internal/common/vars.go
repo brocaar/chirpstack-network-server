@@ -3,14 +3,15 @@ package common
 import (
 	"time"
 
-	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/internal/asclient"
-	"github.com/brocaar/loraserver/internal/backend"
-	"github.com/brocaar/loraserver/internal/jsclient"
-	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
 	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
+
+	"github.com/brocaar/loraserver/api/nc"
+	"github.com/brocaar/loraserver/internal/api/client/asclient"
+	"github.com/brocaar/loraserver/internal/api/client/jsclient"
+	"github.com/brocaar/loraserver/internal/backend"
+	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 )
 
 // NodeSessionTTL defines the TTL of a node session (will be renewed on each
