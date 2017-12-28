@@ -8,6 +8,13 @@ menu:
 
 ## Changelog
 
+### 0.23.1
+
+**Bugfixes:**
+
+* Add missing `nil` pointer check for `Time`
+  ([#280](https://github.com/brocaar/loraserver/issues/280))
+
 ### 0.23.0
 
 **Features:**

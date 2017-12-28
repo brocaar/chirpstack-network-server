@@ -905,7 +905,6 @@ func (n *NetworkServerAPI) GetFrameLogsForDevEUI(ctx context.Context, req *ns.Ge
 					Frequency: int64(rxInfoSet[i].Frequency),
 					LoRaSNR:   rxInfoSet[i].LoRaSNR,
 					Rssi:      int32(rxInfoSet[i].RSSI),
-					Time:      rxInfoSet[i].Time.Format(time.RFC3339Nano),
 					Timestamp: rxInfoSet[i].Timestamp,
 					DataRate: &ns.DataRate{
 						Modulation:   string(rxInfoSet[i].DataRate.Modulation),
@@ -915,6 +914,11 @@ func (n *NetworkServerAPI) GetFrameLogsForDevEUI(ctx context.Context, req *ns.Ge
 					},
 					Mac: rxInfoSet[i].MAC[:],
 				}
+
+				if rxInfoSet[i].Time != nil {
+					rxInfo.Time = rxInfoSet[i].Time.Format(time.RFC3339Nano)
+				}
+
 				fl.RxInfoSet = append(fl.RxInfoSet, &rxInfo)
 			}
 		}
