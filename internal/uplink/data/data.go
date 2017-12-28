@@ -1,11 +1,13 @@
-package uplink
+package data
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -18,11 +20,55 @@ import (
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
+	"github.com/brocaar/loraserver/internal/node"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
-func setContextFromDataPHYPayload(ctx *DataUpContext) error {
+var tasks = []func(*dataContext) error{
+	setContextFromDataPHYPayload,
+	getDeviceSessionForPHYPayload,
+	getServiceProfile,
+	logDataFramesCollected,
+	getApplicationServerClientForDataUp,
+	decryptFRMPayloadMACCommands,
+	sendRXInfoToNetworkController,
+	handleFOptsMACCommands,
+	handleFRMPayloadMACCommands,
+	sendFRMPayloadToApplicationServer,
+	handleChannelReconfiguration,
+	handleADR,
+	setLastRXInfoSet,
+	syncUplinkFCnt,
+	saveNodeSession,
+	handleUplinkACK,
+	handleDownlink,
+}
+
+type dataContext struct {
+	RXPacket                models.RXPacket
+	MACPayload              *lorawan.MACPayload
+	DeviceSession           storage.DeviceSession
+	ServiceProfile          storage.ServiceProfile
+	ApplicationServerClient as.ApplicationServerClient
+}
+
+// Handle handles an uplink data frame
+func Handle(rxPacket models.RXPacket) error {
+	ctx := dataContext{
+		RXPacket: rxPacket,
+	}
+
+	for _, t := range tasks {
+		if err := t(&ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func setContextFromDataPHYPayload(ctx *dataContext) error {
 	macPL, ok := ctx.RXPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
 	if !ok {
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", ctx.RXPacket.PHYPayload.MACPayload)
@@ -31,7 +77,7 @@ func setContextFromDataPHYPayload(ctx *DataUpContext) error {
 	return nil
 }
 
-func getNodeSessionForDataUp(ctx *DataUpContext) error {
+func getDeviceSessionForPHYPayload(ctx *dataContext) error {
 	ds, err := storage.GetDeviceSessionForPHYPayload(common.RedisPool, ctx.RXPacket.PHYPayload)
 	if err != nil {
 		return errors.Wrap(err, "get device-session error")
@@ -41,7 +87,7 @@ func getNodeSessionForDataUp(ctx *DataUpContext) error {
 	return nil
 }
 
-func getServiceProfile(ctx *DataUpContext) error {
+func getServiceProfile(ctx *dataContext) error {
 	sp, err := storage.GetAndCacheServiceProfile(common.DB, common.RedisPool, ctx.DeviceSession.ServiceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
@@ -51,7 +97,7 @@ func getServiceProfile(ctx *DataUpContext) error {
 	return nil
 }
 
-func logDataFramesCollected(ctx *DataUpContext) error {
+func logDataFramesCollected(ctx *dataContext) error {
 	var macs []string
 	for _, p := range ctx.RXPacket.RXInfoSet {
 		macs = append(macs, p.MAC.String())
@@ -69,7 +115,7 @@ func logDataFramesCollected(ctx *DataUpContext) error {
 	return nil
 }
 
-func getApplicationServerClientForDataUp(ctx *DataUpContext) error {
+func getApplicationServerClientForDataUp(ctx *dataContext) error {
 	rp, err := storage.GetRoutingProfile(common.DB, ctx.DeviceSession.RoutingProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get routing-profile error")
@@ -85,7 +131,7 @@ func getApplicationServerClientForDataUp(ctx *DataUpContext) error {
 	return nil
 }
 
-func decryptFRMPayloadMACCommands(ctx *DataUpContext) error {
+func decryptFRMPayloadMACCommands(ctx *dataContext) error {
 	// only decrypt when FPort is equal to 0
 	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0 {
 		if err := ctx.RXPacket.PHYPayload.DecryptFRMPayload(ctx.DeviceSession.NwkSKey); err != nil {
@@ -96,7 +142,7 @@ func decryptFRMPayloadMACCommands(ctx *DataUpContext) error {
 	return nil
 }
 
-func sendRXInfoToNetworkController(ctx *DataUpContext) error {
+func sendRXInfoToNetworkController(ctx *dataContext) error {
 	// TODO: change so that errors get logged but not returned
 	if err := sendRXInfoPayload(ctx.DeviceSession, ctx.RXPacket); err != nil {
 		return errors.Wrap(err, "send rx-info to network-controller error")
@@ -105,7 +151,7 @@ func sendRXInfoToNetworkController(ctx *DataUpContext) error {
 	return nil
 }
 
-func handleFOptsMACCommands(ctx *DataUpContext) error {
+func handleFOptsMACCommands(ctx *dataContext) error {
 	if len(ctx.MACPayload.FHDR.FOpts) > 0 {
 		if err := handleUplinkMACCommands(&ctx.DeviceSession, false, ctx.MACPayload.FHDR.FOpts, ctx.RXPacket.RXInfoSet); err != nil {
 			log.WithFields(log.Fields{
@@ -118,7 +164,7 @@ func handleFOptsMACCommands(ctx *DataUpContext) error {
 	return nil
 }
 
-func handleFRMPayloadMACCommands(ctx *DataUpContext) error {
+func handleFRMPayloadMACCommands(ctx *dataContext) error {
 	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0 {
 		if len(ctx.MACPayload.FRMPayload) == 0 {
 			return errors.New("expected mac commands, but FRMPayload is empty (FPort=0)")
@@ -143,7 +189,7 @@ func handleFRMPayloadMACCommands(ctx *DataUpContext) error {
 	return nil
 }
 
-func sendFRMPayloadToApplicationServer(ctx *DataUpContext) error {
+func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort > 0 {
 		return publishDataUp(ctx.ApplicationServerClient, ctx.DeviceSession, ctx.ServiceProfile, ctx.RXPacket, *ctx.MACPayload)
 	}
@@ -151,7 +197,7 @@ func sendFRMPayloadToApplicationServer(ctx *DataUpContext) error {
 	return nil
 }
 
-func handleChannelReconfiguration(ctx *DataUpContext) error {
+func handleChannelReconfiguration(ctx *dataContext) error {
 	// handle channel configuration
 	// note that this must come before ADR!
 	if err := channels.HandleChannelReconfigure(ctx.DeviceSession, ctx.RXPacket); err != nil {
@@ -163,7 +209,7 @@ func handleChannelReconfiguration(ctx *DataUpContext) error {
 	return nil
 }
 
-func handleADR(ctx *DataUpContext) error {
+func handleADR(ctx *dataContext) error {
 	// handle ADR (should be executed before saving the node-session)
 	if err := adr.HandleADR(&ctx.DeviceSession, ctx.RXPacket, ctx.MACPayload.FHDR.FCnt); err != nil {
 		log.WithFields(log.Fields{
@@ -175,24 +221,24 @@ func handleADR(ctx *DataUpContext) error {
 	return nil
 }
 
-func setLastRXInfoSet(ctx *DataUpContext) error {
+func setLastRXInfoSet(ctx *dataContext) error {
 	// update the RXInfoSet
 	ctx.DeviceSession.LastRXInfoSet = ctx.RXPacket.RXInfoSet
 	return nil
 }
 
-func syncUplinkFCnt(ctx *DataUpContext) error {
+func syncUplinkFCnt(ctx *dataContext) error {
 	// sync counter with that of the device + 1
 	ctx.DeviceSession.FCntUp = ctx.MACPayload.FHDR.FCnt + 1
 	return nil
 }
 
-func saveNodeSession(ctx *DataUpContext) error {
+func saveNodeSession(ctx *dataContext) error {
 	// save node-session
 	return storage.SaveDeviceSession(common.RedisPool, ctx.DeviceSession)
 }
 
-func handleUplinkACK(ctx *DataUpContext) error {
+func handleUplinkACK(ctx *dataContext) error {
 	if !ctx.MACPayload.FHDR.FCtrl.ACK {
 		return nil
 	}
@@ -229,7 +275,7 @@ func handleUplinkACK(ctx *DataUpContext) error {
 	return nil
 }
 
-func handleDownlink(ctx *DataUpContext) error {
+func handleDownlink(ctx *dataContext) error {
 	// handle downlink (ACK)
 	time.Sleep(common.GetDownlinkDataDelay)
 	if err := datadown.HandleResponse(
@@ -465,4 +511,32 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, frmPayload bool, command
 	}
 
 	return nil
+}
+
+func logUplink(db *sqlx.DB, devEUI lorawan.EUI64, rxPacket models.RXPacket) {
+	if !common.LogNodeFrames {
+		return
+	}
+
+	phyB, err := rxPacket.PHYPayload.MarshalBinary()
+	if err != nil {
+		log.Errorf("marshal phypayload to binary error: %s", err)
+		return
+	}
+
+	rxB, err := json.Marshal(rxPacket.RXInfoSet)
+	if err != nil {
+		log.Errorf("marshal rx-info set to json error: %s", err)
+		return
+	}
+
+	fl := node.FrameLog{
+		DevEUI:     devEUI,
+		RXInfoSet:  &rxB,
+		PHYPayload: phyB,
+	}
+	err = node.CreateFrameLog(db, &fl)
+	if err != nil {
+		log.Errorf("create frame-log error: %s", err)
+	}
 }

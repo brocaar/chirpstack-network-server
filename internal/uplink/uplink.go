@@ -1,53 +1,18 @@
 package uplink
 
 import (
-	"encoding/json"
 	"fmt"
 	"sync"
 
-	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/node"
+	"github.com/brocaar/loraserver/internal/uplink/data"
+	"github.com/brocaar/loraserver/internal/uplink/join"
+	"github.com/brocaar/loraserver/internal/uplink/proprietary"
 	"github.com/brocaar/lorawan"
-)
-
-var flow = NewFlow().JoinRequest(
-	setContextFromJoinRequestPHYPayload,
-	logJoinRequestFramesCollected,
-	getDeviceAndDeviceProfile,
-	validateNonce,
-	getRandomDevAddr,
-	getJoinAcceptFromAS,
-	logJoinRequestFrame,
-	flushDeviceQueue,
-	createNodeSession,
-	createDeviceActivation,
-	sendJoinAcceptDownlink,
-).DataUp(
-	setContextFromDataPHYPayload,
-	getNodeSessionForDataUp,
-	getServiceProfile,
-	logDataFramesCollected,
-	getApplicationServerClientForDataUp,
-	decryptFRMPayloadMACCommands,
-	sendRXInfoToNetworkController,
-	handleFOptsMACCommands,
-	handleFRMPayloadMACCommands,
-	sendFRMPayloadToApplicationServer,
-	handleChannelReconfiguration,
-	handleADR,
-	setLastRXInfoSet,
-	syncUplinkFCnt,
-	saveNodeSession,
-	handleUplinkACK,
-	handleDownlink,
-).ProprietaryUp(
-	setContextFromProprietaryPHYPayload,
-	sendProprietaryPayloadToApplicationServer,
 )
 
 // Server represents a server listening for uplink packets.
@@ -103,34 +68,15 @@ func HandleRXPacket(rxPacket gw.RXPacket) error {
 
 func collectPackets(rxPacket gw.RXPacket) error {
 	return collectAndCallOnce(common.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
-		return flow.Run(rxPacket)
+		switch rxPacket.PHYPayload.MHDR.MType {
+		case lorawan.JoinRequest:
+			return join.Handle(rxPacket)
+		case lorawan.UnconfirmedDataUp, lorawan.ConfirmedDataUp:
+			return data.Handle(rxPacket)
+		case lorawan.Proprietary:
+			return proprietary.Handle(rxPacket)
+		default:
+			return nil
+		}
 	})
-}
-
-func logUplink(db *sqlx.DB, devEUI lorawan.EUI64, rxPacket models.RXPacket) {
-	if !common.LogNodeFrames {
-		return
-	}
-
-	phyB, err := rxPacket.PHYPayload.MarshalBinary()
-	if err != nil {
-		log.Errorf("marshal phypayload to binary error: %s", err)
-		return
-	}
-
-	rxB, err := json.Marshal(rxPacket.RXInfoSet)
-	if err != nil {
-		log.Errorf("marshal rx-info set to json error: %s", err)
-		return
-	}
-
-	fl := node.FrameLog{
-		DevEUI:     devEUI,
-		RXInfoSet:  &rxB,
-		PHYPayload: phyB,
-	}
-	err = node.CreateFrameLog(db, &fl)
-	if err != nil {
-		log.Errorf("create frame-log error: %s", err)
-	}
 }

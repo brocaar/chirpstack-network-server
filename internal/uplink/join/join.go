@@ -1,23 +1,68 @@
-package uplink
+package join
 
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"strings"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/internal/common"
 	joindown "github.com/brocaar/loraserver/internal/downlink/join"
 	"github.com/brocaar/loraserver/internal/maccommand"
+	"github.com/brocaar/loraserver/internal/models"
+	"github.com/brocaar/loraserver/internal/node"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
 )
 
-func setContextFromJoinRequestPHYPayload(ctx *JoinRequestContext) error {
+var tasks = []func(*context) error{
+	setContextFromJoinRequestPHYPayload,
+	logJoinRequestFramesCollected,
+	getDeviceAndDeviceProfile,
+	validateNonce,
+	getRandomDevAddr,
+	getJoinAcceptFromAS,
+	logJoinRequestFrame,
+	flushDeviceQueue,
+	createNodeSession,
+	createDeviceActivation,
+	sendJoinAcceptDownlink,
+}
+
+type context struct {
+	RXPacket           models.RXPacket
+	JoinRequestPayload *lorawan.JoinRequestPayload
+	Device             storage.Device
+	ServiceProfile     storage.ServiceProfile
+	DeviceProfile      storage.DeviceProfile
+	DevAddr            lorawan.DevAddr
+	CFList             []uint32
+	JoinAnsPayload     backend.JoinAnsPayload
+	DeviceSession      storage.DeviceSession
+}
+
+// Handle handles a join-request
+func Handle(rxPacket models.RXPacket) error {
+	ctx := context{
+		RXPacket: rxPacket,
+	}
+
+	for _, t := range tasks {
+		if err := t(&ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func setContextFromJoinRequestPHYPayload(ctx *context) error {
 	jrPL, ok := ctx.RXPacket.PHYPayload.MACPayload.(*lorawan.JoinRequestPayload)
 	if !ok {
 		return fmt.Errorf("expected *lorawan.JoinRequestPayload, got: %T", ctx.RXPacket.PHYPayload.MACPayload)
@@ -27,7 +72,7 @@ func setContextFromJoinRequestPHYPayload(ctx *JoinRequestContext) error {
 	return nil
 }
 
-func logJoinRequestFramesCollected(ctx *JoinRequestContext) error {
+func logJoinRequestFramesCollected(ctx *context) error {
 	var macs []string
 	for _, p := range ctx.RXPacket.RXInfoSet {
 		macs = append(macs, p.MAC.String())
@@ -43,7 +88,7 @@ func logJoinRequestFramesCollected(ctx *JoinRequestContext) error {
 	return nil
 }
 
-func getDeviceAndDeviceProfile(ctx *JoinRequestContext) error {
+func getDeviceAndDeviceProfile(ctx *context) error {
 	var err error
 
 	ctx.Device, err = storage.GetDevice(common.DB, ctx.JoinRequestPayload.DevEUI)
@@ -68,7 +113,7 @@ func getDeviceAndDeviceProfile(ctx *JoinRequestContext) error {
 	return nil
 }
 
-func validateNonce(ctx *JoinRequestContext) error {
+func validateNonce(ctx *context) error {
 	// validate that the nonce has not been used yet
 	err := storage.ValidateDevNonce(common.DB, ctx.JoinRequestPayload.AppEUI, ctx.JoinRequestPayload.DevEUI, ctx.JoinRequestPayload.DevNonce)
 	if err != nil {
@@ -78,7 +123,7 @@ func validateNonce(ctx *JoinRequestContext) error {
 	return nil
 }
 
-func getRandomDevAddr(ctx *JoinRequestContext) error {
+func getRandomDevAddr(ctx *context) error {
 	devAddr, err := storage.GetRandomDevAddr(common.RedisPool, common.NetID)
 	if err != nil {
 		return errors.Wrap(err, "get random DevAddr error")
@@ -88,7 +133,7 @@ func getRandomDevAddr(ctx *JoinRequestContext) error {
 	return nil
 }
 
-func getJoinAcceptFromAS(ctx *JoinRequestContext) error {
+func getJoinAcceptFromAS(ctx *context) error {
 	b, err := ctx.RXPacket.PHYPayload.MarshalBinary()
 	if err != nil {
 		return errors.Wrap(err, "PHYPayload marshal binary error")
@@ -134,19 +179,19 @@ func getJoinAcceptFromAS(ctx *JoinRequestContext) error {
 	return nil
 }
 
-func logJoinRequestFrame(ctx *JoinRequestContext) error {
+func logJoinRequestFrame(ctx *context) error {
 	logUplink(common.DB, ctx.JoinRequestPayload.DevEUI, ctx.RXPacket)
 	return nil
 }
 
-func flushDeviceQueue(ctx *JoinRequestContext) error {
+func flushDeviceQueue(ctx *context) error {
 	if err := storage.FlushDeviceQueueForDevEUI(common.DB, ctx.Device.DevEUI); err != nil {
 		return errors.Wrap(err, "flush device-queue error")
 	}
 	return nil
 }
 
-func createNodeSession(ctx *JoinRequestContext) error {
+func createNodeSession(ctx *context) error {
 	if ctx.JoinAnsPayload.NwkSKey.KEKLabel != "" {
 		return errors.New("NwkSKey KEKLabel unsupported")
 	}
@@ -182,7 +227,7 @@ func createNodeSession(ctx *JoinRequestContext) error {
 	return nil
 }
 
-func createDeviceActivation(ctx *JoinRequestContext) error {
+func createDeviceActivation(ctx *context) error {
 	da := storage.DeviceActivation{
 		DevEUI:   ctx.DeviceSession.DevEUI,
 		JoinEUI:  ctx.DeviceSession.JoinEUI,
@@ -198,7 +243,7 @@ func createDeviceActivation(ctx *JoinRequestContext) error {
 	return nil
 }
 
-func sendJoinAcceptDownlink(ctx *JoinRequestContext) error {
+func sendJoinAcceptDownlink(ctx *context) error {
 	var phy lorawan.PHYPayload
 	if err := phy.UnmarshalBinary(ctx.JoinAnsPayload.PHYPayload[:]); err != nil {
 		return errors.Wrap(err, "unmarshal downlink phypayload error")
@@ -209,4 +254,32 @@ func sendJoinAcceptDownlink(ctx *JoinRequestContext) error {
 	}
 
 	return nil
+}
+
+func logUplink(db *sqlx.DB, devEUI lorawan.EUI64, rxPacket models.RXPacket) {
+	if !common.LogNodeFrames {
+		return
+	}
+
+	phyB, err := rxPacket.PHYPayload.MarshalBinary()
+	if err != nil {
+		log.Errorf("marshal phypayload to binary error: %s", err)
+		return
+	}
+
+	rxB, err := json.Marshal(rxPacket.RXInfoSet)
+	if err != nil {
+		log.Errorf("marshal rx-info set to json error: %s", err)
+		return
+	}
+
+	fl := node.FrameLog{
+		DevEUI:     devEUI,
+		RXInfoSet:  &rxB,
+		PHYPayload: phyB,
+	}
+	err = node.CreateFrameLog(db, &fl)
+	if err != nil {
+		log.Errorf("create frame-log error: %s", err)
+	}
 }

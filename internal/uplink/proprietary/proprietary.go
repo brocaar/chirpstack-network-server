@@ -1,4 +1,4 @@
-package uplink
+package proprietary
 
 import (
 	"context"
@@ -11,11 +11,37 @@ import (
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/gateway"
+	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
-func setContextFromProprietaryPHYPayload(ctx *ProprietaryUpContext) error {
+var tasks = []func(*proprietaryContext) error{
+	setContextFromProprietaryPHYPayload,
+	sendProprietaryPayloadToApplicationServer,
+}
+
+type proprietaryContext struct {
+	RXPacket    models.RXPacket
+	DataPayload *lorawan.DataPayload
+}
+
+// Handle handles a proprietary uplink frame.
+func Handle(rxPacket models.RXPacket) error {
+	ctx := proprietaryContext{
+		RXPacket: rxPacket,
+	}
+
+	for _, t := range tasks {
+		if err := t(&ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func setContextFromProprietaryPHYPayload(ctx *proprietaryContext) error {
 	dataPL, ok := ctx.RXPacket.PHYPayload.MACPayload.(*lorawan.DataPayload)
 	if !ok {
 		return fmt.Errorf("expected *lorawan.DataPayload, got: %T", ctx.RXPacket.PHYPayload.MACPayload)
@@ -24,7 +50,7 @@ func setContextFromProprietaryPHYPayload(ctx *ProprietaryUpContext) error {
 	return nil
 }
 
-func sendProprietaryPayloadToApplicationServer(ctx *ProprietaryUpContext) error {
+func sendProprietaryPayloadToApplicationServer(ctx *proprietaryContext) error {
 	handleReq := as.HandleProprietaryUplinkRequest{
 		MacPayload: ctx.DataPayload.Bytes,
 		Mic:        ctx.RXPacket.PHYPayload.MIC[:],
