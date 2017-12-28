@@ -309,6 +309,7 @@ func GetDeviceSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload) (Devic
 			if s.SkipFCntValidation {
 				fullFCnt = macPL.FHDR.FCnt
 				s.FCntUp = macPL.FHDR.FCnt
+				s.UplinkHistory = []UplinkHistory{}
 
 				// validate if the mic is valid given the FCnt reset
 				micOK, err := phy.ValidateMIC(s.NwkSKey)
