@@ -59,6 +59,11 @@ type Config struct {
 				MinDR     int `mapstructure:"min_dr"`
 				MaxDR     int `mapstructure:"max_dr"`
 			} `mapstructure:"extra_channels"`
+
+			ClassB struct {
+				PingSlotDR        int `mapstructure:"ping_slot_dr"`
+				PingSlotFrequency int `mapstructure:"ping_slot_frequency"`
+			} `mapstructure:"class_b"`
 		} `mapstructure:"network_settings"`
 
 		API struct {

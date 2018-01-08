@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brocaar/lorawan"
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/internal/gps"
+	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/lorawan"
 )
 
 const (
@@ -17,7 +20,9 @@ const (
 	beaconReserved = 2120 * time.Millisecond
 	beaconGuard    = 3 * time.Second
 	beaconWindow   = 122880 * time.Millisecond
-	pingPeriodBase = 4096 // 2^12
+	pingPeriodBase = 1 << 12
+	slotLen        = 30 * time.Millisecond
+	scheduleMargin = 5 * time.Second
 )
 
 // GetBeaconStartForTime returns the beacon start time as a duration
@@ -29,7 +34,11 @@ func GetBeaconStartForTime(ts time.Time) time.Duration {
 }
 
 // GetPingOffset returns the ping offset for the given beacon.
-func GetPingOffset(beacon time.Duration, devAddr lorawan.DevAddr, pingNb int) (time.Duration, error) {
+func GetPingOffset(beacon time.Duration, devAddr lorawan.DevAddr, pingNb int) (int, error) {
+	if pingNb == 0 {
+		return 0, errors.New("pingNb must be > 0")
+	}
+
 	if beacon%beaconPeriod != 0 {
 		return 0, fmt.Errorf("beacon must be a multiple of %s", beaconPeriod)
 	}
@@ -40,7 +49,7 @@ func GetPingOffset(beacon time.Duration, devAddr lorawan.DevAddr, pingNb int) (t
 	}
 
 	pingPeriod := pingPeriodBase / pingNb
-	beaconTime := uint32(int64(beacon/time.Second) % (2 << 31))
+	beaconTime := uint32(int64(beacon/time.Second) % (1 << 32))
 
 	key := lorawan.AES128Key{} // 16 x 0x00
 	block, err := aes.NewCipher(key[:])
@@ -59,5 +68,77 @@ func GetPingOffset(beacon time.Duration, devAddr lorawan.DevAddr, pingNb int) (t
 	copy(b[4:8], devAddrBytes)
 	block.Encrypt(rand, b)
 
-	return time.Duration((int(rand[0])+int(rand[1])*256)%pingPeriod) * time.Millisecond, nil
+	return (int(rand[0]) + int(rand[1])*256) % pingPeriod, nil
+}
+
+// GetNextPingSlotAfter returns the next pingslot occuring after the given gps epoch timestamp.
+func GetNextPingSlotAfter(afterGPSEpochTS time.Duration, devAddr lorawan.DevAddr, pingNb int) (time.Duration, error) {
+	if pingNb == 0 {
+		return 0, errors.New("pingNb must be > 0")
+	}
+	beaconStart := afterGPSEpochTS - (afterGPSEpochTS % beaconPeriod)
+	pingPeriod := pingPeriodBase / pingNb
+
+	for {
+		pingOffset, err := GetPingOffset(beaconStart, devAddr, pingNb)
+		if err != nil {
+			return 0, err
+		}
+
+		for n := 0; n < pingNb; n++ {
+			gpsEpochTime := beaconStart + beaconReserved + (time.Duration(pingOffset+n*pingPeriod) * slotLen)
+
+			if gpsEpochTime > afterGPSEpochTS {
+				log.WithFields(log.Fields{
+					"dev_addr":                    devAddr,
+					"after_gps_epoch_ts":          afterGPSEpochTS,
+					"ping_nb":                     pingNb,
+					"beacon_start_gps_epoch_ts":   beaconStart,
+					"next_ping_slot_gps_epoch_ts": gpsEpochTime,
+				}).Debug("get next ping-slot timestamp")
+				return gpsEpochTime, nil
+			}
+		}
+
+		beaconStart += beaconPeriod
+	}
+}
+
+// ScheduleDeviceQueueToPingSlotsForDevEUI schedules the device-queue for the given
+// DevEUI to Class-B ping slots.
+func ScheduleDeviceQueueToPingSlotsForDevEUI(db sqlx.Ext, dp storage.DeviceProfile, ds storage.DeviceSession) error {
+	queueItems, err := storage.GetDeviceQueueItemsForDevEUI(db, ds.DevEUI)
+	if err != nil {
+		return errors.Wrap(err, "get device-queue items error")
+	}
+
+	scheduleAfterGPSEpochTS := gps.Time(time.Now().Add(scheduleMargin)).TimeSinceGPSEpoch()
+
+	for _, qi := range queueItems {
+		if qi.IsPending {
+			continue
+		}
+
+		gpsEpochTS, err := GetNextPingSlotAfter(scheduleAfterGPSEpochTS, ds.DevAddr, ds.PingSlotNb)
+		if err != nil {
+			return errors.Wrap(err, "get next ping-slot after error")
+		}
+
+		timeoutTime := time.Time(gps.NewFromTimeSinceGPSEpoch(gpsEpochTS)).Add(time.Second * time.Duration(dp.ClassBTimeout))
+		qi.EmitAtTimeSinceGPSEpoch = &gpsEpochTS
+		qi.TimeoutAfter = &timeoutTime
+
+		if err := storage.UpdateDeviceQueueItem(db, &qi); err != nil {
+			return errors.Wrap(err, "update device-queue item error")
+		}
+
+		scheduleAfterGPSEpochTS = gpsEpochTS
+	}
+
+	log.WithFields(log.Fields{
+		"dev_eui": ds.DevEUI,
+		"count":   len(queueItems),
+	}).Info("device-queue items scheduled to ping-slots")
+
+	return nil
 }

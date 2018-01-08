@@ -220,6 +220,19 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   max_dr={{ $element.MaxDR }}
 {{ end }}
 
+  # Class B settings
+  [network_server.network_settings.class_b]
+  # Ping-slot data-rate.
+  #
+  # Set this to -1 to use the device-profile data-rate for Class-B.
+  ping_slot_dr={{ .NetworkServer.NetworkSettings.ClassB.PingSlotDR }}
+
+  # Ping-slot frequency (Hz)
+  #
+  # Set this to -1 to use the device-profile frequency for Class-B.
+  ping_slot_frequency={{ .NetworkServer.NetworkSettings.ClassB.PingSlotFrequency }}
+
+
   # Network-server API
   #
   # This is the network-server API that is used by LoRa App Server or other

@@ -37,7 +37,7 @@ func TestClassBUplink(t *testing.T) {
 	config.C.PostgreSQL.DB = db
 	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
 
-	Convey("Given a clean database", t, func() {
+	Convey("Given a clean database with test-data", t, func() {
 		test.MustFlushRedis(config.C.Redis.Pool)
 		test.MustResetDB(config.C.PostgreSQL.DB)
 
@@ -85,6 +85,30 @@ func TestClassBUplink(t *testing.T) {
 		}
 		So(storage.CreateDevice(config.C.PostgreSQL.DB, &d), ShouldBeNil)
 
+		queueItems := []storage.DeviceQueueItem{
+			{
+				DevEUI:     d.DevEUI,
+				FRMPayload: []byte{1, 2, 3, 4},
+				FPort:      1,
+				FCnt:       1,
+			},
+			{
+				DevEUI:     d.DevEUI,
+				FRMPayload: []byte{1, 2, 3, 4},
+				FPort:      1,
+				FCnt:       2,
+			},
+			{
+				DevEUI:     d.DevEUI,
+				FRMPayload: []byte{1, 2, 3, 4},
+				FPort:      1,
+				FCnt:       3,
+			},
+		}
+		for i := range queueItems {
+			So(storage.CreateDeviceQueueItem(config.C.PostgreSQL.DB, &queueItems[i]), ShouldBeNil)
+		}
+
 		// device-session
 		ds := storage.DeviceSession{
 			DeviceProfileID:  d.DeviceProfileID,
@@ -98,6 +122,7 @@ func TestClassBUplink(t *testing.T) {
 			FCntUp:          8,
 			FCntDown:        5,
 			EnabledChannels: []int{0, 1, 2},
+			PingSlotNb:      1,
 		}
 
 		now := time.Now().UTC().Truncate(time.Millisecond)
@@ -152,12 +177,12 @@ func TestClassBUplink(t *testing.T) {
 								DevAddr: ds.DevAddr,
 								FCnt:    ds.FCntUp,
 								FCtrl: lorawan.FCtrl{
-									ClassB: true,
+									ClassB: false,
 								},
 							},
 						},
 					},
-					ExpectedBeaconLocked: true,
+					ExpectedBeaconLocked: false,
 				},
 			}
 
@@ -183,6 +208,16 @@ func TestClassBUplink(t *testing.T) {
 					ds, err := storage.GetDeviceSession(config.C.Redis.Pool, t.DeviceSession.DevEUI)
 					So(err, ShouldBeNil)
 					So(ds.BeaconLocked, ShouldEqual, t.ExpectedBeaconLocked)
+
+					if t.ExpectedBeaconLocked {
+						queueItems, err := storage.GetDeviceQueueItemsForDevEUI(config.C.PostgreSQL.DB, t.DeviceSession.DevEUI)
+						So(err, ShouldBeNil)
+
+						for _, qi := range queueItems {
+							So(qi.EmitAtTimeSinceGPSEpoch, ShouldNotBeNil)
+							So(qi.TimeoutAfter, ShouldNotBeNil)
+						}
+					}
 				})
 			}
 		})

@@ -19,6 +19,7 @@ import (
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/gateway"
+	"github.com/brocaar/loraserver/internal/gps"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
@@ -550,10 +551,13 @@ func TestNetworkServerAPI(t *testing.T) {
 						868300000,
 						868500000,
 					},
-					RXDelay1:    3,
-					RXDROffset1: 2,
-					RXDataRate2: 5,
-					RXFreq2:     868900000,
+					RXDelay1:       3,
+					RXDROffset1:    2,
+					RXDataRate2:    5,
+					RXFreq2:        868900000,
+					PingSlotPeriod: 32,
+					PingSlotFreq:   868100000,
+					PingSlotDR:     5,
 				},
 			}
 			So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
@@ -617,6 +621,9 @@ func TestNetworkServerAPI(t *testing.T) {
 							MaxSupportedDR:     6,
 
 							LastDevStatusMargin: 127,
+							PingSlotNb:          128,
+							PingSlotDR:          5,
+							PingSlotFrequency:   868100000,
 						})
 					})
 
@@ -719,6 +726,68 @@ func TestNetworkServerAPI(t *testing.T) {
 									MACCommands: []lorawan.MACCommand{mac},
 								},
 							})
+						})
+					})
+				})
+			})
+
+			Convey("Given the device is in Class-B mode", func() {
+				dp.SupportsClassB = true
+				dp.ClassBTimeout = 30
+				So(storage.UpdateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
+
+				ds := storage.DeviceSession{
+					DevEUI:       d.DevEUI,
+					BeaconLocked: true,
+					PingSlotNb:   1,
+				}
+				So(storage.SaveDeviceSession(config.C.Redis.Pool, ds), ShouldBeNil)
+
+				Convey("When calling CreateDeviceQueueItem", func() {
+					_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
+						Item: &ns.DeviceQueueItem{
+							DevEUI:     d.DevEUI[:],
+							FrmPayload: []byte{1, 2, 3, 4},
+							FCnt:       10,
+							FPort:      20,
+							Confirmed:  true,
+						},
+					})
+					So(err, ShouldBeNil)
+
+					Convey("Then the GPS epoch timestamp and timeout are set", func() {
+						queueItems, err := storage.GetDeviceQueueItemsForDevEUI(config.C.PostgreSQL.DB, d.DevEUI)
+						So(err, ShouldBeNil)
+						So(queueItems, ShouldHaveLength, 1)
+
+						So(queueItems[0].EmitAtTimeSinceGPSEpoch, ShouldNotBeNil)
+						So(queueItems[0].TimeoutAfter, ShouldNotBeNil)
+
+						emitAt := time.Time(gps.NewFromTimeSinceGPSEpoch(*queueItems[0].EmitAtTimeSinceGPSEpoch))
+						So(emitAt.After(time.Now()), ShouldBeTrue)
+
+						So(queueItems[0].TimeoutAfter.Equal(emitAt.Add(time.Second*time.Duration(dp.ClassBTimeout))), ShouldBeTrue)
+					})
+
+					Convey("When calling enqueueing a second item", func() {
+						_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
+							Item: &ns.DeviceQueueItem{
+								DevEUI:     d.DevEUI[:],
+								FrmPayload: []byte{1, 2, 3, 4},
+								FCnt:       11,
+								FPort:      20,
+								Confirmed:  true,
+							},
+						})
+						So(err, ShouldBeNil)
+
+						Convey("Then the GPS timestamp occurs after the first queue item", func() {
+							queueItems, err := storage.GetDeviceQueueItemsForDevEUI(config.C.PostgreSQL.DB, d.DevEUI)
+							So(err, ShouldBeNil)
+							So(queueItems, ShouldHaveLength, 2)
+							So(queueItems[0].EmitAtTimeSinceGPSEpoch, ShouldNotBeNil)
+							So(queueItems[1].EmitAtTimeSinceGPSEpoch, ShouldNotBeNil)
+							So(*queueItems[1].EmitAtTimeSinceGPSEpoch, ShouldBeGreaterThan, *queueItems[0].EmitAtTimeSinceGPSEpoch)
 						})
 					})
 				})

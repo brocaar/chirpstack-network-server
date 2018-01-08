@@ -12,6 +12,7 @@ import (
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/config"
 	datadown "github.com/brocaar/loraserver/internal/downlink/data"
+	"github.com/brocaar/loraserver/internal/downlink/data/classb"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
@@ -24,6 +25,7 @@ var tasks = []func(*dataContext) error{
 	setContextFromDataPHYPayload,
 	getDeviceSessionForPHYPayload,
 	logUplinkFrame,
+	getDeviceProfile,
 	getServiceProfile,
 	setADR,
 	setUplinkDataRate,
@@ -46,6 +48,7 @@ type dataContext struct {
 	RXPacket                models.RXPacket
 	MACPayload              *lorawan.MACPayload
 	DeviceSession           storage.DeviceSession
+	DeviceProfile           storage.DeviceProfile
 	ServiceProfile          storage.ServiceProfile
 	ApplicationServerClient as.ApplicationServerClient
 	MACCommandResponses     []storage.MACCommandBlock
@@ -89,6 +92,17 @@ func logUplinkFrame(ctx *dataContext) error {
 	if err := framelog.LogUplinkFrameForDevEUI(ctx.DeviceSession.DevEUI, ctx.RXPacket); err != nil {
 		log.WithError(err).Error("log uplink frame for device error")
 	}
+
+	return nil
+}
+
+func getDeviceProfile(ctx *dataContext) error {
+	dp, err := storage.GetAndCacheDeviceProfile(config.C.PostgreSQL.DB, config.C.Redis.Pool, ctx.DeviceSession.DeviceProfileID)
+	if err != nil {
+		return errors.Wrap(err, "get device-profile error")
+	}
+	ctx.DeviceProfile = dp
+
 	return nil
 }
 
@@ -179,6 +193,10 @@ func setBeaconLocked(ctx *dataContext) error {
 
 	ctx.DeviceSession.BeaconLocked = ctx.MACPayload.FHDR.FCtrl.ClassB
 	if ctx.DeviceSession.BeaconLocked {
+		if err := classb.ScheduleDeviceQueueToPingSlotsForDevEUI(config.C.PostgreSQL.DB, ctx.DeviceProfile, ctx.DeviceSession); err != nil {
+			return errors.Wrap(err, "schedule device-queue to ping-slots error")
+		}
+
 		log.WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,
 		}).Info("class-b beacon locked")

@@ -3,6 +3,8 @@ package api
 import (
 	"time"
 
+	"github.com/brocaar/loraserver/internal/gps"
+
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -14,6 +16,7 @@ import (
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/downlink/data/classb"
 	proprietarydown "github.com/brocaar/loraserver/internal/downlink/proprietary"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/gateway"
@@ -393,6 +396,7 @@ func (n *NetworkServerAPI) UpdateDeviceProfile(ctx context.Context, req *ns.Upda
 	dp.DeviceProfile = backend.DeviceProfile{
 		DeviceProfileID:    dp.DeviceProfile.DeviceProfileID,
 		SupportsClassB:     req.DeviceProfile.SupportsClassB,
+		ClassBTimeout:      int(req.DeviceProfile.ClassBTimeout),
 		PingSlotPeriod:     int(req.DeviceProfile.PingSlotPeriod),
 		PingSlotDR:         int(req.DeviceProfile.PingSlotDR),
 		PingSlotFreq:       backend.Frequency(req.DeviceProfile.PingSlotFreq),
@@ -572,6 +576,12 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 
 		// set to invalid value to indicate we haven't received a status yet
 		LastDevStatusMargin: 127,
+		PingSlotDR:          dp.PingSlotDR,
+		PingSlotFrequency:   int(dp.PingSlotFreq),
+	}
+
+	if dp.PingSlotPeriod != 0 {
+		ds.PingSlotNb = (1 << 12) / dp.PingSlotPeriod
 	}
 
 	if err := storage.SaveDeviceSession(config.C.Redis.Pool, ds); err != nil {
@@ -1158,6 +1168,16 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.Item.DevEUI)
 
+	d, err := storage.GetDevice(config.C.PostgreSQL.DB, devEUI)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	dp, err := storage.GetDeviceProfile(config.C.PostgreSQL.DB, d.DeviceProfileID)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
 	qi := storage.DeviceQueueItem{
 		DevEUI:     devEUI,
 		FRMPayload: req.Item.FrmPayload,
@@ -1165,7 +1185,38 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 		FPort:      uint8(req.Item.FPort),
 		Confirmed:  req.Item.Confirmed,
 	}
-	err := storage.CreateDeviceQueueItem(config.C.PostgreSQL.DB, &qi)
+
+	// When the device is operating in Class-B and has a beacon lock, calculate
+	// the next ping-slot.
+	if dp.SupportsClassB {
+		// check if device is currently active and is operating in Class-B mode
+		ds, err := storage.GetDeviceSession(config.C.Redis.Pool, devEUI)
+		if err != nil && err != storage.ErrDoesNotExist {
+			return nil, errToRPCError(err)
+		}
+
+		if err == nil && ds.BeaconLocked {
+			scheduleAfterGPSEpochTS, err := storage.GetMaxEmitAtTimeSinceGPSEpochForDevEUI(config.C.PostgreSQL.DB, devEUI)
+			if err != nil {
+				return nil, errToRPCError(err)
+			}
+
+			if scheduleAfterGPSEpochTS == 0 {
+				scheduleAfterGPSEpochTS = gps.Time(time.Now()).TimeSinceGPSEpoch()
+			}
+
+			gpsEpochTS, err := classb.GetNextPingSlotAfter(scheduleAfterGPSEpochTS, ds.DevAddr, ds.PingSlotNb)
+			if err != nil {
+				return nil, errToRPCError(err)
+			}
+
+			timeoutTime := time.Time(gps.NewFromTimeSinceGPSEpoch(gpsEpochTS)).Add(time.Second * time.Duration(dp.ClassBTimeout))
+			qi.EmitAtTimeSinceGPSEpoch = &gpsEpochTS
+			qi.TimeoutAfter = &timeoutTime
+		}
+	}
+
+	err = storage.CreateDeviceQueueItem(config.C.PostgreSQL.DB, &qi)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}

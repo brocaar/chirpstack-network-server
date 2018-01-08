@@ -28,7 +28,7 @@ func TestMACCommand(t *testing.T) {
 			MACCommands: []lorawan.MACCommand{
 				{
 					CID:     lorawan.RXParamSetupReq,
-					Payload: &lorawan.RX2SetupReqPayload{Frequency: 868100000},
+					Payload: &lorawan.RXParamSetupReqPayload{Frequency: 868100000},
 				},
 			},
 		},

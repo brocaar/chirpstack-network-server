@@ -252,9 +252,7 @@ func TestClassCScenarios(t *testing.T) {
 					}
 
 					// run queue scheduler
-					for i := 0; i < len(t.DeviceQueueItems); i++ {
-						So(downlink.ClassCScheduleBatch(1), ShouldBeNil)
-					}
+					So(downlink.ScheduleBatch(1), ShouldBeNil)
 
 					Convey("Then the frame-counters are as expected", func() {
 						sess, err := storage.GetDeviceSession(config.C.Redis.Pool, t.DeviceSession.DevEUI)

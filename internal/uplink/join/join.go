@@ -213,6 +213,12 @@ func createNodeSession(ctx *context) error {
 
 		// set to invalid value to indicate we haven't received a status yet
 		LastDevStatusMargin: 127,
+		PingSlotDR:          ctx.DeviceProfile.PingSlotDR,
+		PingSlotFrequency:   int(ctx.DeviceProfile.PingSlotFreq),
+	}
+
+	if ctx.DeviceProfile.PingSlotPeriod != 0 {
+		ctx.DeviceSession.PingSlotNb = (1 << 12) / ctx.DeviceProfile.PingSlotPeriod
 	}
 
 	if err := storage.SaveDeviceSession(config.C.Redis.Pool, ctx.DeviceSession); err != nil {

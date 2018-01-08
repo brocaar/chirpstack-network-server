@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/brocaar/loraserver/internal/gps"
+
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/internal/config"
 
@@ -123,8 +125,11 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
 	}
 
 	log.WithFields(log.Fields{
-		"f_cnt":   qi.FCnt,
-		"dev_eui": qi.DevEUI,
+		"f_cnt":                        qi.FCnt,
+		"dev_eui":                      qi.DevEUI,
+		"is_pending":                   qi.IsPending,
+		"emit_at_time_since_gps_epoch": qi.EmitAtTimeSinceGPSEpoch,
+		"timeout_after":                qi.TimeoutAfter,
 	}).Info("device-queue item updated")
 
 	return nil
@@ -332,11 +337,13 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 	}
 }
 
-// GetDevicesWithClassCDeviceQueueItems returns a slice of devices that qualify
+// GetDevicesWithClassBOrClassCDeviceQueueItems returns a slice of devices that qualify
 // for downlink Class-C transmission.
 // The device records will be locked for update so that multiple instances can
 // run this query in parallel without the risk of duplicate scheduling.
-func GetDevicesWithClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Device, error) {
+func GetDevicesWithClassBOrClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Device, error) {
+	gpsEpochScheduleTime := gps.Time(time.Now().Add(config.ClassCScheduleInterval * 2)).TimeSinceGPSEpoch()
+
 	var devices []Device
 	err := sqlx.Select(db, &devices, `
         select
@@ -345,8 +352,10 @@ func GetDevicesWithClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Device, err
             device d
         inner join device_profile dp
             on dp.device_profile_id = d.device_profile_id
-        where
-            dp.supports_class_c = true
+        where (
+            	dp.supports_class_c = true
+            	or dp.supports_class_b = true
+            )
             -- we want devices with queue items
             and exists (
                 select
@@ -355,6 +364,13 @@ func GetDevicesWithClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Device, err
                     device_queue dq
                 where
                     dq.dev_eui = d.dev_eui
+                    and (
+                    	dp.supports_class_c = true
+                    	or (
+                    		dp.supports_class_b = true
+                    		and dq.emit_at_time_since_gps_epoch <= $2
+                    	)
+                    )
             )
             -- we don't want device with pending queue items that did not yet
             -- timeout
@@ -373,10 +389,31 @@ func GetDevicesWithClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Device, err
         limit $1
         for update of d skip locked`,
 		count,
+		gpsEpochScheduleTime,
 	)
 	if err != nil {
 		return nil, handlePSQLError(err, "select error")
 	}
 
 	return devices, nil
+}
+
+// GetMaxEmitAtTimeSinceGPSEpochForDevEUI returns the maximum / last GPS
+// epoch scheduling timestamp for the given DevEUI.
+func GetMaxEmitAtTimeSinceGPSEpochForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (time.Duration, error) {
+	var timeSinceGPSEpoch time.Duration
+	err := sqlx.Get(db, &timeSinceGPSEpoch, `
+		select
+			coalesce(max(emit_at_time_since_gps_epoch), 0)
+		from
+			device_queue
+		where
+			dev_eui = $1`,
+		devEUI,
+	)
+	if err != nil {
+		return 0, handlePSQLError(err, "select error")
+	}
+
+	return timeSinceGPSEpoch, nil
 }

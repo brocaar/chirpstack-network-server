@@ -108,11 +108,12 @@ type DeviceSession struct {
 
 	// LastDownlinkTX contains the timestamp of the last downlink.
 	LastDownlinkTX time.Time
-	// BeaconLocked defines if device has established a beacon lock.
-	BeaconLocked bool
 
-	// PingSlotPeriodicity holds the ping-slot periodicity.
-	PingSlotPeriodicity int
+	// Class-B related configuration.
+	BeaconLocked      bool
+	PingSlotNb        int
+	PingSlotDR        int
+	PingSlotFrequency int
 }
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list

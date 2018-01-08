@@ -5,14 +5,29 @@ import (
 	"time"
 
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
 
+	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/gps"
+	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/loraserver/internal/test"
 
 	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestGetCurrentBeaconStart(t *testing.T) {
-	Convey("When calling GetCurrentBeaconStart", t, func() {
+	gpsEpochTime := time.Date(1980, time.January, 6, 0, 0, 0, 0, time.UTC)
+
+	Convey("When calling GetCurrentBeaconStart for GPS epoch time", t, func() {
+		d := GetBeaconStartForTime(gpsEpochTime)
+
+		Convey("Then the returned value == 0", func() {
+			So(d, ShouldEqual, 0)
+		})
+	})
+
+	Convey("When calling GetCurrentBeaconStart for time.Now", t, func() {
 		d := GetBeaconStartForTime(time.Now())
 
 		Convey("Then the returned value > 0", func() {
@@ -35,10 +50,7 @@ func TestGetCurrentBeaconStart(t *testing.T) {
 func TestGetPingOffset(t *testing.T) {
 	for k := uint(0); k < 8; k++ {
 		var beacon time.Duration
-		pingNb := 2 << (k - 1)
-		if pingNb == 0 {
-			pingNb = 1
-		}
+		pingNb := 1 << k
 		pingPeriod := pingPeriodBase / pingNb
 
 		for test := 0; test < 100000; test++ {
@@ -47,11 +59,159 @@ func TestGetPingOffset(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if offset > time.Duration(pingPeriod-1)*time.Millisecond {
+			if offset > pingPeriod-1 {
 				t.Errorf("unexpected offset %d at pingNb %d test %d", offset, pingNb, test)
 			}
 
 			beacon += beaconPeriod
 		}
 	}
+}
+
+func TestGetNextPingSlotAfter(t *testing.T) {
+	tests := []struct {
+		After                    time.Duration
+		DevAddr                  lorawan.DevAddr
+		PingNb                   int
+		ExpectedGPSEpochDuration string
+		ExpectedError            error
+	}{
+		{
+			After:   0,
+			DevAddr: lorawan.DevAddr{},
+			PingNb:  1,
+			ExpectedGPSEpochDuration: "1m14.3s",
+		},
+		{
+			After:   2 * time.Minute,
+			DevAddr: lorawan.DevAddr{},
+			PingNb:  1,
+			ExpectedGPSEpochDuration: "3m5.62s",
+		},
+		{
+			After:   0,
+			DevAddr: lorawan.DevAddr{},
+			PingNb:  2,
+			ExpectedGPSEpochDuration: "12.86s",
+		},
+		{
+			After:   13 * time.Second,
+			DevAddr: lorawan.DevAddr{},
+			PingNb:  2,
+			ExpectedGPSEpochDuration: "1m14.3s",
+		},
+		{
+			After:   124 * time.Second,
+			DevAddr: lorawan.DevAddr{},
+			PingNb:  128,
+			ExpectedGPSEpochDuration: "2m4.22s",
+		},
+	}
+
+	for _, test := range tests {
+		var expDuration time.Duration
+
+		if test.ExpectedGPSEpochDuration != "" {
+			var err error
+			expDuration, err = time.ParseDuration(test.ExpectedGPSEpochDuration)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		gpsEpochDuration, err := GetNextPingSlotAfter(test.After, test.DevAddr, test.PingNb)
+		if err != test.ExpectedError {
+			t.Errorf("expected error %s, got: %s", test.ExpectedError, err)
+		}
+
+		if gpsEpochDuration != expDuration {
+			t.Errorf("expected gps epoch duration %s, got %s", test.ExpectedGPSEpochDuration, gpsEpochDuration)
+		}
+	}
+}
+
+func TestScheduleDeviceQueueToPingSlotsForDevEUI(t *testing.T) {
+	conf := test.GetConfig()
+	db, err := common.OpenDatabase(conf.PostgresDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	config.C.PostgreSQL.DB = db
+
+	Convey("Given a clean database", t, func() {
+		test.MustResetDB(config.C.PostgreSQL.DB)
+
+		Convey("Given a device, device-session and three queue items", func() {
+			sp := storage.ServiceProfile{}
+			So(storage.CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
+
+			dp := storage.DeviceProfile{
+				DeviceProfile: backend.DeviceProfile{
+					ClassBTimeout: 30,
+				},
+			}
+			So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
+
+			rp := storage.RoutingProfile{}
+			So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
+
+			d := storage.Device{
+				DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+				RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+				ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+				DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			}
+			So(storage.CreateDevice(config.C.PostgreSQL.DB, &d), ShouldBeNil)
+
+			queueItems := []storage.DeviceQueueItem{
+				{
+					DevEUI:     d.DevEUI,
+					FRMPayload: []byte{1, 2, 3, 4},
+					FPort:      1,
+					FCnt:       1,
+				},
+				{
+					DevEUI:     d.DevEUI,
+					FRMPayload: []byte{1, 2, 3, 4},
+					FPort:      1,
+					FCnt:       2,
+				},
+				{
+					DevEUI:     d.DevEUI,
+					FRMPayload: []byte{1, 2, 3, 4},
+					FPort:      1,
+					FCnt:       3,
+				},
+			}
+			for i := range queueItems {
+				So(storage.CreateDeviceQueueItem(config.C.PostgreSQL.DB, &queueItems[i]), ShouldBeNil)
+			}
+
+			ds := storage.DeviceSession{
+				DevEUI:     d.DevEUI,
+				DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+				PingSlotNb: 32,
+			}
+
+			Convey("When calling ScheduleDeviceQueueToPingSlotsForDevEUI", func() {
+				timeSinceGPSEpochNow := gps.Time(time.Now()).TimeSinceGPSEpoch()
+				So(ScheduleDeviceQueueToPingSlotsForDevEUI(config.C.PostgreSQL.DB, dp, ds), ShouldBeNil)
+
+				Convey("Then each queue-item has a time since GPS epoch emit timestamp", func() {
+					for i := range queueItems {
+						qi, err := storage.GetDeviceQueueItem(config.C.PostgreSQL.DB, queueItems[i].ID)
+						So(err, ShouldBeNil)
+
+						So(qi.EmitAtTimeSinceGPSEpoch, ShouldNotBeNil)
+						So(*qi.EmitAtTimeSinceGPSEpoch, ShouldBeGreaterThan, timeSinceGPSEpochNow)
+
+						emitAt := time.Time(gps.NewFromTimeSinceGPSEpoch(*qi.EmitAtTimeSinceGPSEpoch))
+						So(qi.TimeoutAfter.Equal(emitAt.Add(time.Second*time.Duration(dp.ClassBTimeout))), ShouldBeTrue)
+
+						timeSinceGPSEpochNow = *qi.EmitAtTimeSinceGPSEpoch
+					}
+				})
+			})
+		})
+	})
 }
