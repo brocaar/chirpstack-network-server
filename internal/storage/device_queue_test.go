@@ -48,7 +48,8 @@ func TestDeviceQueue(t *testing.T) {
 			So(CreateDevice(db, &d), ShouldBeNil)
 
 			Convey("Given a set of queue items", func() {
-				now := time.Now().UTC().Truncate(time.Millisecond)
+				gpsEpochTS1 := time.Second * 30
+				gpsEpochTS2 := time.Second * 40
 				inOneHour := time.Now().Add(time.Hour).UTC().Truncate(time.Millisecond)
 
 				items := []DeviceQueueItem{
@@ -64,14 +65,14 @@ func TestDeviceQueue(t *testing.T) {
 						FRMPayload: []byte{4, 5, 6},
 						FCnt:       3,
 						FPort:      11,
-						EmitAt:     &now,
+						EmitAtTimeSinceGPSEpoch: &gpsEpochTS1,
 					},
 					{
 						DevEUI:     d.DevEUI,
 						FRMPayload: []byte{7, 8, 9},
 						FCnt:       2,
 						FPort:      12,
-						EmitAt:     &inOneHour,
+						EmitAtTimeSinceGPSEpoch: &gpsEpochTS2,
 					},
 				}
 				for i := range items {

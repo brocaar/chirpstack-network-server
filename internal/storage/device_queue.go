@@ -16,17 +16,17 @@ import (
 
 // DeviceQueueItem represents an item in the device queue (downlink).
 type DeviceQueueItem struct {
-	ID           int64         `db:"id"`
-	CreatedAt    time.Time     `db:"created_at"`
-	UpdatedAt    time.Time     `db:"updated_at"`
-	DevEUI       lorawan.EUI64 `db:"dev_eui"`
-	FRMPayload   []byte        `db:"frm_payload"`
-	FCnt         uint32        `db:"f_cnt"`
-	FPort        uint8         `db:"f_port"`
-	Confirmed    bool          `db:"confirmed"`
-	IsPending    bool          `db:"is_pending"`
-	EmitAt       *time.Time    `db:"emit_at"`
-	TimeoutAfter *time.Time    `db:"timeout_after"`
+	ID                      int64          `db:"id"`
+	CreatedAt               time.Time      `db:"created_at"`
+	UpdatedAt               time.Time      `db:"updated_at"`
+	DevEUI                  lorawan.EUI64  `db:"dev_eui"`
+	FRMPayload              []byte         `db:"frm_payload"`
+	FCnt                    uint32         `db:"f_cnt"`
+	FPort                   uint8          `db:"f_port"`
+	Confirmed               bool           `db:"confirmed"`
+	IsPending               bool           `db:"is_pending"`
+	EmitAtTimeSinceGPSEpoch *time.Duration `db:"emit_at_time_since_gps_epoch"`
+	TimeoutAfter            *time.Time     `db:"timeout_after"`
 }
 
 // CreateDeviceQueueItem adds the given item to the device queue.
@@ -44,7 +44,7 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
             f_cnt,
             f_port,
             confirmed,
-            emit_at,
+            emit_at_time_since_gps_epoch,
             is_pending,
             timeout_after
         ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -56,7 +56,7 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
 		qi.FCnt,
 		qi.FPort,
 		qi.Confirmed,
-		qi.EmitAt,
+		qi.EmitAtTimeSinceGPSEpoch,
 		qi.IsPending,
 		qi.TimeoutAfter,
 	)
@@ -95,7 +95,7 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
             f_cnt = $5,
             f_port = $6,
             confirmed = $7,
-            emit_at = $8,
+            emit_at_time_since_gps_epoch = $8,
             is_pending = $9,
             timeout_after = $10
         where
@@ -107,7 +107,7 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
 		qi.FCnt,
 		qi.FPort,
 		qi.Confirmed,
-		qi.EmitAt,
+		qi.EmitAtTimeSinceGPSEpoch,
 		qi.IsPending,
 		qi.TimeoutAfter,
 	)
