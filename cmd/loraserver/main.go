@@ -372,8 +372,8 @@ func startAPIServer(c *cli.Context) error {
 	}).Info("starting api server")
 
 	var opts []grpc.ServerOption
-	if c.String("tls-cert") != "" && c.String("tls-key") != "" {
-		creds := mustGetTransportCredentials(c.String("tls-cert"), c.String("tls-key"), c.String("ca-cert"), false)
+	if c.String("ca-cert") != "" && c.String("tls-cert") != "" && c.String("tls-key") != "" {
+		creds := mustGetTransportCredentials(c.String("tls-cert"), c.String("tls-key"), c.String("ca-cert"), true)
 		opts = append(opts, grpc.Creds(creds))
 	}
 	gs := grpc.NewServer(opts...)
@@ -444,7 +444,6 @@ func startQueueScheduler(c *cli.Context) error {
 }
 
 func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCert bool) credentials.TransportCredentials {
-	var caCertPool *x509.CertPool
 	cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -453,20 +452,20 @@ func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCer
 		}).Fatalf("load key-pair error: %s", err)
 	}
 
-	if caCert != "" {
-		rawCaCert, err := ioutil.ReadFile(caCert)
-		if err != nil {
-			log.WithField("ca", caCert).Fatalf("load ca cert error: %s", err)
-		}
+	rawCaCert, err := ioutil.ReadFile(caCert)
+	if err != nil {
+		log.WithField("ca", caCert).Fatalf("load ca cert error: %s", err)
+	}
 
-		caCertPool = x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(rawCaCert)
+	caCertPool := x509.NewCertPool()
+	if !caCertPool.AppendCertsFromPEM(rawCaCert) {
+		log.WithField("ca_cert", caCert).Fatal("append ca certificate error")
 	}
 
 	if verifyClientCert {
 		return credentials.NewTLS(&tls.Config{
 			Certificates: []tls.Certificate{cert},
-			RootCAs:      caCertPool,
+			ClientCAs:    caCertPool,
 			ClientAuth:   tls.RequireAndVerifyClientCert,
 		})
 	}

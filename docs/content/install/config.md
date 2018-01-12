@@ -33,9 +33,6 @@ GLOBAL OPTIONS:
    --gw-mqtt-username value                mqtt username used by the gateway backend (optional) [$GW_MQTT_USERNAME]
    --gw-mqtt-password value                mqtt password used by the gateway backend (optional) [$GW_MQTT_PASSWORD]
    --gw-mqtt-ca-cert value                 mqtt CA certificate file used by the gateway backend (optional) [$GW_MQTT_CA_CERT]
-   --as-ca-cert value                      ca certificate used by the application-server client (optional) [$AS_CA_CERT]
-   --as-tls-cert value                     tls certificate used by the application-server client (optional) [$AS_TLS_CERT]
-   --as-tls-key value                      tls key used by the application-server client (optional) [$AS_TLS_KEY]
    --nc-server value                       hostname:port of the network-controller api server (optional) [$NC_SERVER]
    --nc-ca-cert value                      ca certificate used by the network-controller client (optional) [$NC_CA_CERT]
    --nc-tls-cert value                     tls certificate used by the network-controller client (optional) [$NC_TLS_CERT]
@@ -138,3 +135,16 @@ expects at least `minute`, `day` and `hour` in order to show the graphs.
 In order to make sure that aggregation is working correctly, please make sure
 to set the correct timezone using the `--timezone` flag. If this flag is not
 set, it will fallback on the timezone of your database.
+
+### Securing the network-server API
+
+In order to protect the network-server API (listening on `--bind`) against
+unauthorized access and to encrypt all communication, it is advised to use
+TLS certificates. Once the `--ca-cert`, `--tls-cert` and `--tls-key` are set,
+the API will enforce client certificate validation on all incoming connections.
+This means that when configuring this network-server instance in LoRa App Server,
+you must provide the CA and TLS client certificate. See also LoRa App Server
+[network-server management](https://docs.loraserver.io/lora-app-server/use/network-servers/).
+
+See [https://github.com/brocaar/loraserver-certificates](https://github.com/brocaar/loraserver-certificates)
+for a set of script to generate such certificates.

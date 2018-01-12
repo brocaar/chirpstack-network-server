@@ -34,15 +34,6 @@ GW_MQTT_USERNAME=
 # mqtt password used by the gateway backend (optional)
 GW_MQTT_PASSWORD=
 
-# ca certificate used by the application-server client (optional)
-AS_CA_CERT=
-
-# tls certificate used by the application-server client (optional)
-AS_TLS_CERT=
-
-# tls key used by the application-server client (optional)
-AS_TLS_KEY=
-
 # hostname:port of the network-controller api server (optional)
 NC_SERVER=
 

@@ -8,6 +8,26 @@ menu:
 
 ## Changelog
 
+### 0.23.2
+
+**Features:**
+
+* Implement client certificate validation for incoming API connections.
+* Implement client certificate for API connections to LoRa App Server.
+
+This removes the following CLI options:
+
+* `--as-ca-cert`
+* `--as-tls-cert`
+* `--as-tls-key`
+
+See for more information:
+
+* [LoRa Server configuration](https://docs.loraserver.io/loraserver/install/config/)
+* [LoRa App Server configuration](https://docs.loraserver.io/lora-app-server/install/config/)
+* [LoRa App Server network-server management](https://docs.loraserver.io/lora-app-server/use/network-servers/)
+* [https://github.com/brocaar/loraserver-certificates](https://github.com/brocaar/loraserver-certificates)
+
 ### 0.23.1
 
 **Features:**
