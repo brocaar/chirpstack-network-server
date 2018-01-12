@@ -15,6 +15,9 @@ type RoutingProfile struct {
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 	backend.RoutingProfile
+	CACert  string `db:"ca_cert"`
+	TLSCert string `db:"tls_cert"`
+	TLSKey  string `db:"tls_key"`
 }
 
 // CreateRoutingProfile creates the given routing-profile.
@@ -32,12 +35,18 @@ func CreateRoutingProfile(db sqlx.Execer, rp *RoutingProfile) error {
 			updated_at,
 
 			routing_profile_id,
-			as_id
-		) values ($1, $2, $3, $4)`,
+			as_id,
+			ca_cert,
+			tls_cert,
+			tls_key
+		) values ($1, $2, $3, $4, $5, $6, $7)`,
 		rp.CreatedAt,
 		rp.UpdatedAt,
 		rp.RoutingProfile.RoutingProfileID,
 		rp.RoutingProfile.ASID,
+		rp.CACert,
+		rp.TLSCert,
+		rp.TLSKey,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -67,12 +76,18 @@ func UpdateRoutingProfile(db sqlx.Execer, rp *RoutingProfile) error {
 	res, err := db.Exec(`
 		update routing_profile set
 			updated_at = $2,
-			as_id = $3
+			as_id = $3,
+			ca_cert = $4,
+			tls_cert = $5,
+			tls_key = $6
 		where
 			routing_profile_id = $1`,
 		rp.RoutingProfile.RoutingProfileID,
 		rp.UpdatedAt,
 		rp.RoutingProfile.ASID,
+		rp.CACert,
+		rp.TLSCert,
+		rp.TLSKey,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")

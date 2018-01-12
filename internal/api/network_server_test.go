@@ -182,6 +182,9 @@ func TestNetworkServerAPI(t *testing.T) {
 				RoutingProfile: &ns.RoutingProfile{
 					AsID: "application-server:1234",
 				},
+				CaCert:  "CACERT",
+				TlsCert: "TLSCERT",
+				TlsKey:  "TLSKEY",
 			})
 			So(err, ShouldBeNil)
 			So(resp.RoutingProfileID, ShouldNotEqual, "")
@@ -194,6 +197,8 @@ func TestNetworkServerAPI(t *testing.T) {
 				So(getResp.RoutingProfile, ShouldResemble, &ns.RoutingProfile{
 					AsID: "application-server:1234",
 				})
+				So(getResp.CaCert, ShouldEqual, "CACERT")
+				So(getResp.TlsCert, ShouldEqual, "TLSCERT")
 			})
 
 			Convey("Then UpdateRoutingProifle updates the routing-profile", func() {
@@ -202,6 +207,9 @@ func TestNetworkServerAPI(t *testing.T) {
 						RoutingProfileID: resp.RoutingProfileID,
 						AsID:             "new-application-server:1234",
 					},
+					CaCert:  "CACERT2",
+					TlsCert: "TLSCERT2",
+					TlsKey:  "TLSKEY2",
 				})
 				So(err, ShouldBeNil)
 
@@ -212,6 +220,8 @@ func TestNetworkServerAPI(t *testing.T) {
 				So(getResp.RoutingProfile, ShouldResemble, &ns.RoutingProfile{
 					AsID: "new-application-server:1234",
 				})
+				So(getResp.CaCert, ShouldEqual, "CACERT2")
+				So(getResp.TlsCert, ShouldEqual, "TLSCERT2")
 			})
 
 			Convey("Then DeleteRoutingProfile deletes the routing-profile", func() {

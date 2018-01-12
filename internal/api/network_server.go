@@ -217,6 +217,9 @@ func (n *NetworkServerAPI) CreateRoutingProfile(ctx context.Context, req *ns.Cre
 			RoutingProfileID: req.RoutingProfile.RoutingProfileID,
 			ASID:             req.RoutingProfile.AsID,
 		},
+		CACert:  req.CaCert,
+		TLSCert: req.TlsCert,
+		TLSKey:  req.TlsKey,
 	}
 	if err := storage.CreateRoutingProfile(common.DB, &rp); err != nil {
 		return nil, errToRPCError(err)
@@ -240,6 +243,8 @@ func (n *NetworkServerAPI) GetRoutingProfile(ctx context.Context, req *ns.GetRou
 		RoutingProfile: &ns.RoutingProfile{
 			AsID: rp.RoutingProfile.ASID,
 		},
+		CaCert:  rp.CACert,
+		TlsCert: rp.TLSCert,
 	}, nil
 }
 
@@ -254,6 +259,17 @@ func (n *NetworkServerAPI) UpdateRoutingProfile(ctx context.Context, req *ns.Upd
 		RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
 		ASID:             req.RoutingProfile.AsID,
 	}
+	rp.CACert = req.CaCert
+	rp.TLSCert = req.TlsCert
+
+	if req.TlsKey != "" {
+		rp.TLSKey = req.TlsKey
+	}
+
+	if rp.TLSCert == "" {
+		rp.TLSKey = ""
+	}
+
 	if err := storage.UpdateRoutingProfile(common.DB, &rp); err != nil {
 		return nil, errToRPCError(err)
 	}

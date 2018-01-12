@@ -121,7 +121,7 @@ func getApplicationServerClientForDataUp(ctx *dataContext) error {
 		return errors.Wrap(err, "get routing-profile error")
 	}
 
-	asClient, err := common.ApplicationServerPool.Get(rp.ASID)
+	asClient, err := common.ApplicationServerPool.Get(rp.ASID, []byte(rp.CACert), []byte(rp.TLSCert), []byte(rp.TLSKey))
 	if err != nil {
 		return errors.Wrap(err, "get application-server client error")
 	}

@@ -114,7 +114,7 @@ func sendProprietaryPayloadToApplicationServer(ctx *proprietaryContext) error {
 
 	for _, rp := range rps {
 		go func(rp storage.RoutingProfile, handleReq as.HandleProprietaryUplinkRequest) {
-			asClient, err := common.ApplicationServerPool.Get(rp.ASID)
+			asClient, err := common.ApplicationServerPool.Get(rp.ASID, []byte(rp.CACert), []byte(rp.TLSCert), []byte(rp.TLSKey))
 			if err != nil {
 				log.WithError(err).Error("get application-server client error")
 				return

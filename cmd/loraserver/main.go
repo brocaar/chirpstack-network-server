@@ -296,11 +296,7 @@ func setGatewayBackend(c *cli.Context) error {
 }
 
 func setApplicationServer(c *cli.Context) error {
-	common.ApplicationServerPool = asclient.NewPool(
-		c.String("as-ca-cert"),
-		c.String("as-tls-cert"),
-		c.String("as-tls-key"),
-	)
+	common.ApplicationServerPool = asclient.NewPool()
 	return nil
 }
 
@@ -597,21 +593,6 @@ func main() {
 			Name:   "gw-mqtt-ca-cert",
 			Usage:  "mqtt CA certificate file used by the gateway backend (optional)",
 			EnvVar: "GW_MQTT_CA_CERT",
-		},
-		cli.StringFlag{
-			Name:   "as-ca-cert",
-			Usage:  "ca certificate used by the application-server client (optional)",
-			EnvVar: "AS_CA_CERT",
-		},
-		cli.StringFlag{
-			Name:   "as-tls-cert",
-			Usage:  "tls certificate used by the application-server client (optional)",
-			EnvVar: "AS_TLS_CERT",
-		},
-		cli.StringFlag{
-			Name:   "as-tls-key",
-			Usage:  "tls key used by the application-server client (optional)",
-			EnvVar: "AS_TLS_KEY",
 		},
 		cli.StringFlag{
 			Name:   "nc-server",

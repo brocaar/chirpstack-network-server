@@ -4,21 +4,20 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
 	"github.com/brocaar/loraserver/api/as"
-	"github.com/pkg/errors"
-	"google.golang.org/grpc"
 )
 
 // Pool defines the application-server client pool.
 type Pool interface {
-	Get(hostname string) (as.ApplicationServerClient, error)
+	Get(hostname string, caCert, tlsCert, tlsKey []byte) (as.ApplicationServerClient, error)
 }
 
 type client struct {
@@ -28,36 +27,24 @@ type client struct {
 
 type pool struct {
 	sync.RWMutex
-	caCert  string
-	tlsCert string
-	tlsKey  string
 	clients map[string]client
 }
 
 // NewPool creates a new Pool.
-func NewPool(caCert, tlsCert, tlsKey string) Pool {
-	log.WithFields(log.Fields{
-		"ca_cert":  caCert,
-		"tls_cert": tlsCert,
-		"tls_key":  tlsKey,
-	}).Info("setup application-server client pool")
-
+func NewPool() Pool {
 	return &pool{
-		caCert:  caCert,
-		tlsCert: tlsCert,
-		tlsKey:  tlsKey,
 		clients: make(map[string]client),
 	}
 }
 
 // Get Returns an ApplicationServerClient for the given server (hostname:ip).
-func (p *pool) Get(hostname string) (as.ApplicationServerClient, error) {
+func (p *pool) Get(hostname string, caCert, tlsCert, tlsKey []byte) (as.ApplicationServerClient, error) {
 	defer p.Unlock()
 	p.Lock()
 
 	c, ok := p.clients[hostname]
 	if !ok {
-		asClient, err := p.createClient(hostname)
+		asClient, err := p.createClient(hostname, caCert, tlsCert, tlsKey)
 		if err != nil {
 			return nil, errors.Wrap(err, "create application-server api client error")
 		}
@@ -71,26 +58,23 @@ func (p *pool) Get(hostname string) (as.ApplicationServerClient, error) {
 	return c.client, nil
 }
 
-func (p *pool) createClient(hostname string) (as.ApplicationServerClient, error) {
+func (p *pool) createClient(hostname string, caCert, tlsCert, tlsKey []byte) (as.ApplicationServerClient, error) {
 	asOpts := []grpc.DialOption{
 		grpc.WithBlock(),
 	}
 
-	if p.tlsCert == "" && p.tlsKey == "" && p.caCert == "" {
+	if len(tlsCert) == 0 && len(tlsKey) == 0 && len(caCert) == 0 {
 		asOpts = append(asOpts, grpc.WithInsecure())
+		log.WithField("server", hostname).Warning("creating insecure application-server client")
 	} else {
-		cert, err := tls.LoadX509KeyPair(p.tlsCert, p.tlsKey)
+		log.WithField("server", hostname).Info("creating application-server client")
+		cert, err := tls.X509KeyPair(tlsCert, tlsKey)
 		if err != nil {
 			return nil, errors.Wrap(err, "load x509 keypair error")
 		}
 
-		rawCACert, err := ioutil.ReadFile(p.caCert)
-		if err != nil {
-			return nil, errors.Wrap(err, "load ca cert error")
-		}
-
 		caCertPool := x509.NewCertPool()
-		if !caCertPool.AppendCertsFromPEM(rawCACert) {
+		if !caCertPool.AppendCertsFromPEM(caCert) {
 			return nil, errors.Wrap(err, "append ca cert to pool error")
 		}
 

@@ -191,7 +191,7 @@ type ApplicationServerPool struct {
 }
 
 // Get returns the Client.
-func (p *ApplicationServerPool) Get(hostname string) (as.ApplicationServerClient, error) {
+func (p *ApplicationServerPool) Get(hostname string, caCert, tlsCert, tlsKey []byte) (as.ApplicationServerClient, error) {
 	p.GetHostname = hostname
 	return p.Client, nil
 }

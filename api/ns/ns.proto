@@ -197,6 +197,15 @@ message RoutingProfile {
 
 message CreateRoutingProfileRequest {
     RoutingProfile routingProfile = 1;
+
+    // ca certificate for connecting to lora-app-server
+    string caCert = 2;
+
+    // tls certificate for connecting to lora-app-server
+    string tlsCert = 3;
+
+    // tls key for connecting to lora-app-server
+    string tlsKey = 4;
 }
 
 message CreateRoutingProfileResponse {
@@ -211,10 +220,25 @@ message GetRoutingProfileResponse {
     RoutingProfile routingProfile = 1;
     string createdAt = 2;
     string updatedAt = 3;
+
+    // ca certificate for connecting to lora-app-server
+    string caCert = 4;
+
+    // tls certificate for connecting to lora-app-server
+    string tlsCert = 5;
 }
 
 message UpdateRoutingProfileRequest {
     RoutingProfile routingProfile = 1;
+
+    // ca certificate for connecting to lora-app-server
+    string caCert = 2;
+
+    // tls certificate for connecting to lora-app-server
+    string tlsCert = 3;
+
+    // tls key for connecting to lora-app-server
+    string tlsKey = 4;
 }
 
 message UpdateRoutingProfileResponse {}

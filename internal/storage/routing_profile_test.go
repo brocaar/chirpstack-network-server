@@ -26,6 +26,9 @@ func TestRoutingProfile(t *testing.T) {
 				RoutingProfile: backend.RoutingProfile{
 					ASID: "application-server:1234",
 				},
+				CACert:  "CACERT",
+				TLSCert: "TLSCERT",
+				TLSKey:  "TLSKEY",
 			}
 			So(CreateRoutingProfile(db, &rp), ShouldBeNil)
 			rp.CreatedAt = rp.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -55,6 +58,9 @@ func TestRoutingProfile(t *testing.T) {
 					RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
 					ASID:             "new-application-server:1234",
 				}
+				rp.CACert = "CACERT2"
+				rp.TLSCert = "TLSCERT2"
+				rp.TLSKey = "TLSKEY2"
 				So(UpdateRoutingProfile(db, &rp), ShouldBeNil)
 				rp.UpdatedAt = rp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
