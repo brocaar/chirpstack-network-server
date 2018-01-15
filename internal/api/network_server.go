@@ -1143,7 +1143,7 @@ func (n *NetworkServerAPI) MigrateNodeToDeviceSession(ctx context.Context, req *
 		copy(n[:], nBytes)
 		nonces = append(nonces, n)
 	}
-	err := storage.Transaction(common.DB, func(tx *sqlx.Tx) error {
+	err := storage.Transaction(common.DB, func(tx sqlx.Ext) error {
 		if err := storage.MigrateNodeToDeviceSession(common.RedisPool, common.DB, devEUI, joinEUI, nonces); err != nil {
 			return errToRPCError(err)
 		}

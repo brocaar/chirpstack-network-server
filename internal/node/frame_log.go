@@ -19,7 +19,7 @@ type FrameLog struct {
 }
 
 // CreateFrameLog creates a log entry for the given data.
-func CreateFrameLog(db *sqlx.DB, fl *FrameLog) error {
+func CreateFrameLog(db sqlx.Execer, fl *FrameLog) error {
 	now := time.Now()
 	_, err := db.Exec(`
 		insert into frame_log (
@@ -44,9 +44,9 @@ func CreateFrameLog(db *sqlx.DB, fl *FrameLog) error {
 
 // GetFrameLogCountForDevEUI returns the total number of log items for the
 // given DevEUI.
-func GetFrameLogCountForDevEUI(db *sqlx.DB, devEUI lorawan.EUI64) (int, error) {
+func GetFrameLogCountForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (int, error) {
 	var count int
-	err := db.Get(&count, "select count(*) from frame_log where dev_eui = $1", devEUI[:])
+	err := sqlx.Get(db, &count, "select count(*) from frame_log where dev_eui = $1", devEUI[:])
 	if err != nil {
 		return 0, errors.Wrap(err, "select error")
 	}
@@ -55,9 +55,9 @@ func GetFrameLogCountForDevEUI(db *sqlx.DB, devEUI lorawan.EUI64) (int, error) {
 
 // GetFrameLogsForDevEUI returns the frame logs sorted by timestamp (decending)
 // for the given DevEUI and the given limit and offset.
-func GetFrameLogsForDevEUI(db *sqlx.DB, devEUI lorawan.EUI64, limit, offset int) ([]FrameLog, error) {
+func GetFrameLogsForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64, limit, offset int) ([]FrameLog, error) {
 	var logs []FrameLog
-	err := db.Select(&logs, `
+	err := sqlx.Select(db, &logs, `
 		select *
 		from frame_log
 		where dev_eui = $1

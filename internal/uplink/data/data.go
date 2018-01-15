@@ -513,7 +513,7 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, frmPayload bool, command
 	return nil
 }
 
-func logUplink(db *sqlx.DB, devEUI lorawan.EUI64, rxPacket models.RXPacket) {
+func logUplink(db sqlx.Execer, devEUI lorawan.EUI64, rxPacket models.RXPacket) {
 	if !common.LogNodeFrames {
 		return
 	}

@@ -30,7 +30,7 @@ type ServiceProfile struct {
 }
 
 // CreateServiceProfile creates the given service-profile.
-func CreateServiceProfile(db *sqlx.DB, sp *ServiceProfile) error {
+func CreateServiceProfile(db sqlx.Execer, sp *ServiceProfile) error {
 	now := time.Now()
 	if sp.ServiceProfile.ServiceProfileID == "" {
 		sp.ServiceProfile.ServiceProfileID = uuid.NewV4().String()

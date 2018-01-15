@@ -31,7 +31,7 @@ type DeviceActivation struct {
 }
 
 // CreateDevice creates the given device.
-func CreateDevice(db *sqlx.DB, d *Device) error {
+func CreateDevice(db sqlx.Execer, d *Device) error {
 	now := time.Now()
 	d.CreatedAt = now
 	d.UpdatedAt = now
@@ -107,7 +107,7 @@ func UpdateDevice(db sqlx.Execer, d *Device) error {
 }
 
 // DeleteDevice deletes the device matching the given DevEUI.
-func DeleteDevice(db *sqlx.DB, devEUI lorawan.EUI64) error {
+func DeleteDevice(db sqlx.Execer, devEUI lorawan.EUI64) error {
 	res, err := db.Exec("delete from device where dev_eui = $1", devEUI[:])
 	if err != nil {
 		return handlePSQLError(err, "delete error")

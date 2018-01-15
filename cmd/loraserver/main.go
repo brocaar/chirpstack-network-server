@@ -354,7 +354,7 @@ func runDatabaseMigrations(c *cli.Context) error {
 			AssetDir: migrations.AssetDir,
 			Dir:      "",
 		}
-		n, err := migrate.Exec(common.DB.DB, "postgres", m, migrate.Up)
+		n, err := migrate.Exec(common.DB.DB.DB, "postgres", m, migrate.Up)
 		if err != nil {
 			return errors.Wrap(err, "applying migrations failed")
 		}

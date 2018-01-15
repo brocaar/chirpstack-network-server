@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jmoiron/sqlx"
-
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
 	"github.com/pkg/errors"
@@ -407,7 +405,7 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 
 			for i, test := range tests {
 				Convey(fmt.Sprintf("testing: %s [%d]", test.Name, i), func() {
-					var transactions []*sqlx.Tx
+					var transactions []*common.TxLogger
 					var out [][]lorawan.EUI64
 
 					defer func() {

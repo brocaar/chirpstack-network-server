@@ -125,7 +125,7 @@ func sendJoinAcceptResponse(ctx *joinContext) error {
 	return nil
 }
 
-func logDownlink(db *sqlx.DB, devEUI lorawan.EUI64, phy lorawan.PHYPayload, txInfo gw.TXInfo) {
+func logDownlink(db sqlx.Execer, devEUI lorawan.EUI64, phy lorawan.PHYPayload, txInfo gw.TXInfo) {
 	if !common.LogNodeFrames {
 		return
 	}

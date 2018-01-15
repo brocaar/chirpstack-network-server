@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-	"github.com/jmoiron/sqlx"
 
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/api/client/asclient"
@@ -62,7 +61,7 @@ var GatewayServerJWTSecret string
 var RedisPool *redis.Pool
 
 // DB holds the PostgreSQL database connection.
-var DB *sqlx.DB
+var DB *DBLogger
 
 // NetID contains the LoRaWAN NetID.
 var NetID lorawan.NetID

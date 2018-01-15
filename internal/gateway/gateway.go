@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
@@ -217,7 +217,7 @@ func (c ExtraChannel) Validate() error {
 }
 
 // CreateGateway creates the given gateway.
-func CreateGateway(db *sqlx.DB, gw *Gateway) error {
+func CreateGateway(db sqlx.Execer, gw *Gateway) error {
 	if err := gw.Validate(); err != nil {
 		return errors.Wrap(err, "validate error")
 	}
@@ -266,9 +266,9 @@ func CreateGateway(db *sqlx.DB, gw *Gateway) error {
 }
 
 // GetGateway returns the gateway for the given MAC.
-func GetGateway(db *sqlx.DB, mac lorawan.EUI64) (Gateway, error) {
+func GetGateway(db sqlx.Queryer, mac lorawan.EUI64) (Gateway, error) {
 	var gw Gateway
-	err := db.Get(&gw, "select * from gateway where mac = $1", mac[:])
+	err := sqlx.Get(db, &gw, "select * from gateway where mac = $1", mac[:])
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return gw, ErrDoesNotExist
@@ -279,7 +279,7 @@ func GetGateway(db *sqlx.DB, mac lorawan.EUI64) (Gateway, error) {
 }
 
 // UpdateGateway updates the given gateway.
-func UpdateGateway(db *sqlx.DB, gw *Gateway) error {
+func UpdateGateway(db sqlx.Execer, gw *Gateway) error {
 	if err := gw.Validate(); err != nil {
 		return errors.Wrap(err, "validate error")
 	}
@@ -322,7 +322,7 @@ func UpdateGateway(db *sqlx.DB, gw *Gateway) error {
 }
 
 // DeleteGateway deletes the gateway matching the given MAC.
-func DeleteGateway(db *sqlx.DB, mac lorawan.EUI64) error {
+func DeleteGateway(db sqlx.Execer, mac lorawan.EUI64) error {
 	res, err := db.Exec("delete from gateway where mac = $1", mac[:])
 	if err != nil {
 		return errors.Wrap(err, "delete error")
@@ -339,9 +339,9 @@ func DeleteGateway(db *sqlx.DB, mac lorawan.EUI64) error {
 }
 
 // GetGatewayCount returns the number of gateways.
-func GetGatewayCount(db *sqlx.DB) (int, error) {
+func GetGatewayCount(db sqlx.Queryer) (int, error) {
 	var count int
-	err := db.Get(&count, "select count(*) from gateway")
+	err := sqlx.Get(db, &count, "select count(*) from gateway")
 	if err != nil {
 		return 0, errors.Wrap(err, "select error")
 	}
@@ -350,9 +350,9 @@ func GetGatewayCount(db *sqlx.DB) (int, error) {
 
 // GetGateways returns a slice of gateways, order by mac and respecting the
 // given limit and offset.
-func GetGateways(db *sqlx.DB, limit, offset int) ([]Gateway, error) {
+func GetGateways(db sqlx.Queryer, limit, offset int) ([]Gateway, error) {
 	var gws []Gateway
-	err := db.Select(&gws, "select * from gateway order by mac limit $1 offset $2", limit, offset)
+	err := sqlx.Select(db, &gws, "select * from gateway order by mac limit $1 offset $2", limit, offset)
 	if err != nil {
 		return nil, errors.Wrap(err, "select error")
 	}
@@ -360,7 +360,7 @@ func GetGateways(db *sqlx.DB, limit, offset int) ([]Gateway, error) {
 }
 
 // GetGatewaysForMACs returns a map of gateways given a slice of MACs.
-func GetGatewaysForMACs(db *sqlx.DB, macs []lorawan.EUI64) (map[lorawan.EUI64]Gateway, error) {
+func GetGatewaysForMACs(db sqlx.Queryer, macs []lorawan.EUI64) (map[lorawan.EUI64]Gateway, error) {
 	out := make(map[lorawan.EUI64]Gateway)
 	var macsB [][]byte
 	for i := range macs {
@@ -368,7 +368,7 @@ func GetGatewaysForMACs(db *sqlx.DB, macs []lorawan.EUI64) (map[lorawan.EUI64]Ga
 	}
 
 	var gws []Gateway
-	err := db.Select(&gws, "select * from gateway where mac = any($1)", pq.ByteaArray(macsB))
+	err := sqlx.Select(db, &gws, "select * from gateway where mac = any($1)", pq.ByteaArray(macsB))
 	if err != nil {
 		return nil, errors.Wrap(err, "select error")
 	}
@@ -386,7 +386,7 @@ func GetGatewaysForMACs(db *sqlx.DB, macs []lorawan.EUI64) (map[lorawan.EUI64]Ga
 
 // GetGatewayStats returns the stats for the given gateway.
 // Note that the stats will return a record for each interval.
-func GetGatewayStats(db *sqlx.DB, mac lorawan.EUI64, interval string, start, end time.Time) ([]Stats, error) {
+func GetGatewayStats(db *common.DBLogger, mac lorawan.EUI64, interval string, start, end time.Time) ([]Stats, error) {
 	var valid bool
 	interval = strings.ToUpper(interval)
 
@@ -456,13 +456,13 @@ func GetGatewayStats(db *sqlx.DB, mac lorawan.EUI64, interval string, start, end
 }
 
 // CreateChannelConfiguration creates the given channel-configuration.
-func CreateChannelConfiguration(db *sqlx.DB, cf *ChannelConfiguration) error {
+func CreateChannelConfiguration(db sqlx.Queryer, cf *ChannelConfiguration) error {
 	if err := cf.Validate(); err != nil {
 		return errors.Wrap(err, "validate error")
 	}
 
 	now := time.Now()
-	err := db.Get(&cf.ID, `
+	err := sqlx.Get(db, &cf.ID, `
 		insert into channel_configuration (
 			name,
 			created_at,
@@ -501,9 +501,9 @@ func CreateChannelConfiguration(db *sqlx.DB, cf *ChannelConfiguration) error {
 }
 
 // GetChannelConfiguration returns the channel-configuration for the given ID.
-func GetChannelConfiguration(db *sqlx.DB, id int64) (ChannelConfiguration, error) {
+func GetChannelConfiguration(db sqlx.Queryer, id int64) (ChannelConfiguration, error) {
 	var cf ChannelConfiguration
-	err := db.QueryRow(`
+	err := db.QueryRowx(`
 		select
 			id,
 			name,
@@ -532,7 +532,7 @@ func GetChannelConfiguration(db *sqlx.DB, id int64) (ChannelConfiguration, error
 }
 
 // UpdateChannelConfiguration updates the given channel-configuration.
-func UpdateChannelConfiguration(db *sqlx.DB, cf *ChannelConfiguration) error {
+func UpdateChannelConfiguration(db sqlx.Execer, cf *ChannelConfiguration) error {
 	if err := cf.Validate(); err != nil {
 		return errors.Wrap(err, "validate error")
 	}
@@ -573,7 +573,7 @@ func UpdateChannelConfiguration(db *sqlx.DB, cf *ChannelConfiguration) error {
 
 // DeleteChannelConfiguration deletes the channel-configuration matching the
 // given ID.
-func DeleteChannelConfiguration(db *sqlx.DB, id int64) error {
+func DeleteChannelConfiguration(db sqlx.Execer, id int64) error {
 	res, err := db.Exec("delete from channel_configuration where id = $1", id)
 	if err != nil {
 		return errors.Wrap(err, "delete error")
@@ -591,7 +591,7 @@ func DeleteChannelConfiguration(db *sqlx.DB, id int64) error {
 
 // GetChannelConfigurationsForBand returns all channel-configurations for the
 // given band name.
-func GetChannelConfigurationsForBand(db *sqlx.DB, band string) ([]ChannelConfiguration, error) {
+func GetChannelConfigurationsForBand(db sqlx.Queryer, band string) ([]ChannelConfiguration, error) {
 	var cfs []ChannelConfiguration
 	rows, err := db.Query(`
 		select
@@ -625,13 +625,13 @@ func GetChannelConfigurationsForBand(db *sqlx.DB, band string) ([]ChannelConfigu
 
 // CreateExtraChannel creates the given extra channel.
 // This will also update the UpdatedAt timestamp of the ChannelConfiguration.
-func CreateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
+func CreateExtraChannel(db sqlx.Ext, c *ExtraChannel) error {
 	if err := c.Validate(); err != nil {
 		return errors.Wrap(err, "validate error")
 	}
 
 	now := time.Now()
-	err := db.Get(&c.ID, `
+	err := sqlx.Get(db, &c.ID, `
 		insert into extra_channel (
 			channel_configuration_id,
 			created_at,
@@ -689,9 +689,9 @@ func CreateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
 }
 
 // GetExtraChannel returns the extra channel matching the given id.
-func GetExtraChannel(db *sqlx.DB, id int64) (ExtraChannel, error) {
+func GetExtraChannel(db sqlx.Queryer, id int64) (ExtraChannel, error) {
 	var ec ExtraChannel
-	err := db.QueryRow(`
+	err := db.QueryRowx(`
 		select
 			id,
 			channel_configuration_id,
@@ -726,7 +726,7 @@ func GetExtraChannel(db *sqlx.DB, id int64) (ExtraChannel, error) {
 }
 
 // UpdateExtraChannel updates the given extra channel.
-func UpdateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
+func UpdateExtraChannel(db sqlx.Execer, c *ExtraChannel) error {
 	if err := c.Validate(); err != nil {
 		return errors.Wrap(err, "validate error")
 	}
@@ -783,7 +783,7 @@ func UpdateExtraChannel(db *sqlx.DB, c *ExtraChannel) error {
 }
 
 // DeleteExtraChannel deletes the extra channel matching the given id.
-func DeleteExtraChannel(db *sqlx.DB, id int64) error {
+func DeleteExtraChannel(db sqlx.Execer, id int64) error {
 	res, err := db.Exec("delete from extra_channel where id = $1", id)
 	if err != nil {
 		return errors.Wrap(err, "delete error")
@@ -802,7 +802,7 @@ func DeleteExtraChannel(db *sqlx.DB, id int64) error {
 
 // GetExtraChannelsForChannelConfigurationID returns the extra channels for
 // the given channel-configuration id.
-func GetExtraChannelsForChannelConfigurationID(db *sqlx.DB, id int64) ([]ExtraChannel, error) {
+func GetExtraChannelsForChannelConfigurationID(db sqlx.Queryer, id int64) ([]ExtraChannel, error) {
 	var out []ExtraChannel
 	rows, err := db.Query(`
 		select
@@ -860,7 +860,7 @@ func handleStatsPackets(wg *sync.WaitGroup) {
 }
 
 // handleStatsPacket handles a received stats packet by the gateway.
-func handleStatsPacket(db *sqlx.DB, stats gw.GatewayStatsPacket) error {
+func handleStatsPacket(db *common.DBLogger, stats gw.GatewayStatsPacket) error {
 	var location GPSPoint
 	var altitude float64
 

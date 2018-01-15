@@ -32,7 +32,7 @@ type DeviceProfile struct {
 }
 
 // CreateDeviceProfile creates the given device-profile.
-func CreateDeviceProfile(db *sqlx.DB, dp *DeviceProfile) error {
+func CreateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
 	now := time.Now()
 	if dp.DeviceProfile.DeviceProfileID == "" {
 		dp.DeviceProfile.DeviceProfileID = uuid.NewV4().String()
