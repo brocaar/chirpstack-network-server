@@ -79,7 +79,7 @@ func (v JWTValidator) getClaims(ctx context.Context) (*Claims, error) {
 }
 
 func getTokenFromContext(ctx context.Context) (string, error) {
-	md, ok := metadata.FromContext(ctx)
+	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return "", ErrNoMetadataInContext
 	}

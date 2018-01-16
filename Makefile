@@ -61,16 +61,14 @@ requirements:
 	@go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 	@go get -u github.com/elazarl/go-bindata-assetfs/...
 	@go get -u github.com/jteeuwen/go-bindata/...
+	@go get -u github.com/golang/dep/cmd/dep
+	@dep ensure
 
 # shortcuts for development
 
 serve: build
 	@echo "Starting Lora Server"
 	./build/loraserver
-
-update-vendor:
-	@echo "Updating vendored packages"
-	@govendor update +external
 
 run-compose-test:
 	docker-compose run --rm loraserver make test

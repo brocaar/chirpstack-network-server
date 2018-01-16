@@ -7,6 +7,9 @@ Vagrantfile
 # logs
 *.log
 
+# dependencies
+vendor/
+
 # certs
 certs/
 
