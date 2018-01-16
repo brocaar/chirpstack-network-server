@@ -15,6 +15,9 @@ import (
 	"time"
 
 	"github.com/codegangsta/cli"
+	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/pkg/errors"
 	migrate "github.com/rubenv/sql-migrate"
 	log "github.com/sirupsen/logrus"
@@ -363,6 +366,24 @@ func runDatabaseMigrations(c *cli.Context) error {
 	return nil
 }
 
+func gRPCLoggingServerOptions() []grpc.ServerOption {
+	logrusEntry := log.NewEntry(log.StandardLogger())
+	logrusOpts := []grpc_logrus.Option{
+		grpc_logrus.WithLevels(grpc_logrus.DefaultCodeToLevel),
+	}
+
+	return []grpc.ServerOption{
+		grpc_middleware.WithUnaryServerChain(
+			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_logrus.UnaryServerInterceptor(logrusEntry, logrusOpts...),
+		),
+		grpc_middleware.WithStreamServerChain(
+			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
+			grpc_logrus.StreamServerInterceptor(logrusEntry, logrusOpts...),
+		),
+	}
+}
+
 func startAPIServer(c *cli.Context) error {
 	log.WithFields(log.Fields{
 		"bind":     c.String("bind"),
@@ -371,7 +392,7 @@ func startAPIServer(c *cli.Context) error {
 		"tls-key":  c.String("tls-key"),
 	}).Info("starting api server")
 
-	var opts []grpc.ServerOption
+	opts := gRPCLoggingServerOptions()
 	if c.String("ca-cert") != "" && c.String("tls-cert") != "" && c.String("tls-key") != "" {
 		creds := mustGetTransportCredentials(c.String("tls-cert"), c.String("tls-key"), c.String("ca-cert"), true)
 		opts = append(opts, grpc.Creds(creds))
@@ -403,7 +424,7 @@ func startGatewayAPIServer(c *cli.Context) error {
 		return errors.New("--gw-server-jwt-secret must be set")
 	}
 
-	var opts []grpc.ServerOption
+	opts := gRPCLoggingServerOptions()
 	if c.String("gw-server-tls-cert") != "" && c.String("gw-server-tls-key") != "" {
 		creds := mustGetTransportCredentials(c.String("gw-server-tls-cert"), c.String("gw-server-tls-key"), c.String("gw-server-ca-cert"), false)
 		opts = append(opts, grpc.Creds(creds))

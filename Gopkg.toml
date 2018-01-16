@@ -61,6 +61,11 @@
   name = "google.golang.org/grpc"
   version = "1.9.1"
 
+[[constraint]]
+  branch = "master"
+  name = "github.com/grpc-ecosystem/go-grpc-middleware"
+
+
 [prune]
   non-go = true
   go-tests = true

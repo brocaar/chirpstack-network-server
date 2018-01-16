@@ -45,10 +45,12 @@
   branch = "master"
   name = "github.com/golang/protobuf"
   packages = [
+    "jsonpb",
     "proto",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
+    "ptypes/struct",
     "ptypes/timestamp"
   ]
   revision = "1e59b77b52bf8e4b449a57e6f79f21226d571845"
@@ -58,6 +60,18 @@
   name = "github.com/gopherjs/gopherjs"
   packages = ["js"]
   revision = "444abdf920945de5d4a977b572bcc6c674d1e4eb"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/grpc-ecosystem/go-grpc-middleware"
+  packages = [
+    ".",
+    "logging",
+    "logging/logrus",
+    "tags",
+    "tags/logrus"
+  ]
+  revision = "d0c54e68681ec7999ac17864470f3bee6521ba2b"
 
 [[projects]]
   branch = "master"
@@ -235,6 +249,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cdf199626033f65b4127b4208d84833caa6644aa6c07a5d59152f91090c8cdc3"
+  inputs-digest = "91854ae607abfb57c2b6f984ba3300af8be50f7d93b08500f50bf74abcf9836a"
   solver-name = "gps-cdcl"
   solver-version = 1
