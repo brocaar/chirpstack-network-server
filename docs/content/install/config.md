@@ -33,6 +33,8 @@ GLOBAL OPTIONS:
    --gw-mqtt-username value                mqtt username used by the gateway backend (optional) [$GW_MQTT_USERNAME]
    --gw-mqtt-password value                mqtt password used by the gateway backend (optional) [$GW_MQTT_PASSWORD]
    --gw-mqtt-ca-cert value                 mqtt CA certificate file used by the gateway backend (optional) [$GW_MQTT_CA_CERT]
+   --gw-mqtt-cert value                    mqtt certificate file used by the gateway backend (optional) [$GW_MQTT_CERT]
+   --gw-mqtt-cert-key value                mqtt key file of certificate used by the gateway backend (optional) [$GW_MQTT_CERT_KEY]
    --nc-server value                       hostname:port of the network-controller api server (optional) [$NC_SERVER]
    --nc-ca-cert value                      ca certificate used by the network-controller client (optional) [$NC_CA_CERT]
    --nc-tls-cert value                     tls certificate used by the network-controller client (optional) [$NC_TLS_CERT]

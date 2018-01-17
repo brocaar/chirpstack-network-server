@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/backend"
 	"github.com/brocaar/loraserver/internal/common"
@@ -18,6 +17,7 @@ import (
 	"github.com/eclipse/paho.mqtt.golang"
 	"github.com/garyburd/redigo/redis"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 const rxTopic = "gateway/+/rx"
@@ -34,7 +34,7 @@ type Backend struct {
 }
 
 // NewBackend creates a new Backend.
-func NewBackend(server, username, password, cafile string) (backend.Gateway, error) {
+func NewBackend(server, username, password, cafile, certFile, certKeyFile string) (backend.Gateway, error) {
 	b := Backend{
 		rxPacketChan:    make(chan gw.RXPacket),
 		statsPacketChan: make(chan gw.GatewayStatsPacket),
@@ -47,13 +47,12 @@ func NewBackend(server, username, password, cafile string) (backend.Gateway, err
 	opts.SetOnConnectHandler(b.onConnected)
 	opts.SetConnectionLostHandler(b.onConnectionLost)
 
-	if cafile != "" {
-		tlsconfig, err := newTLSConfig(cafile)
-		if err != nil {
-			log.Fatalf("Error with the mqtt CA certificate: %s", err)
-		} else {
-			opts.SetTLSConfig(tlsconfig)
-		}
+	tlsconfig, err := newTLSConfig(cafile, certFile, certKeyFile)
+	if err != nil {
+		log.Fatalf("Error with the mqtt CA certificate: %s", err)
+	}
+	if tlsconfig != nil {
+		opts.SetTLSConfig(tlsconfig)
 	}
 
 	log.WithField("server", server).Info("backend/gateway: connecting to mqtt broker")
@@ -70,23 +69,47 @@ func NewBackend(server, username, password, cafile string) (backend.Gateway, err
 	return &b, nil
 }
 
-func newTLSConfig(cafile string) (*tls.Config, error) {
-	// Import trusted certificates from CAfile.pem.
-
-	cert, err := ioutil.ReadFile(cafile)
-	if err != nil {
-		log.Errorf("backend: couldn't load cafile: %s", err)
-		return nil, err
+func newTLSConfig(cafile, certFile, certKeyFile string) (*tls.Config, error) {
+	if cafile == "" && (certFile == "" || certKeyFile == "") {
+		log.Info("backend/gateway: TLS config is empty")
+		return nil, nil
 	}
 
-	certpool := x509.NewCertPool()
-	certpool.AppendCertsFromPEM(cert)
+	tlsConfig := &tls.Config{}
 
-	// Create tls.Config with desired tls properties
-	return &tls.Config{
-		// RootCAs = certs used to verify server cert.
-		RootCAs: certpool,
-	}, nil
+	// Import trusted certificates from CAfile.pem.
+	if cafile != "" {
+		cacert, err := ioutil.ReadFile(cafile)
+		if err != nil {
+			log.Errorf("backend: couldn't load cafile: %s", err)
+			return nil, err
+		}
+		certpool := x509.NewCertPool()
+		certpool.AppendCertsFromPEM(cacert)
+
+		tlsConfig.RootCAs = certpool // RootCAs = certs used to verify server cert.
+	}
+
+	// Import certificate and the key
+	if certFile != "" && certKeyFile != "" {
+		cert, err := ioutil.ReadFile(certFile)
+		if err != nil {
+			log.Errorf("backend: couldn't load certFile: %s", err)
+			return nil, err
+		}
+
+		certKey, err := ioutil.ReadFile(certKeyFile)
+		if err != nil {
+			log.Errorf("backend: couldn't load certKeyFile: %s", err)
+			return nil, err
+		}
+
+		kp, err := tls.X509KeyPair(cert, certKey)
+
+		tlsConfig.Certificates = []tls.Certificate{kp}
+	}
+
+	return tlsConfig, nil
 }
 
 // Close closes the backend.
