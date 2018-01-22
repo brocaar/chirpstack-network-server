@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/backend"
 	"github.com/brocaar/loraserver/internal/common"
@@ -18,6 +17,7 @@ import (
 	"github.com/eclipse/paho.mqtt.golang"
 	"github.com/garyburd/redigo/redis"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 const rxTopic = "gateway/+/rx"
@@ -127,6 +127,7 @@ func (b *Backend) SendTXPacket(txPacket gw.TXPacket) error {
 		return errors.Wrap(err, "marshal binary error")
 	}
 	bytes, err := json.Marshal(gw.TXPacketBytes{
+		Token:      txPacket.Token,
 		TXInfo:     txPacket.TXInfo,
 		PHYPayload: phyB,
 	})
