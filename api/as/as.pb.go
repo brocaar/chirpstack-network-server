@@ -249,15 +249,24 @@ func (m *TXInfo) GetCodeRate() string {
 }
 
 type HandleUplinkDataRequest struct {
-	DevEUI              []byte    `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
-	AppEUI              []byte    `protobuf:"bytes,2,opt,name=appEUI,proto3" json:"appEUI,omitempty"`
-	FCnt                uint32    `protobuf:"varint,3,opt,name=fCnt" json:"fCnt,omitempty"`
-	FPort               uint32    `protobuf:"varint,4,opt,name=fPort" json:"fPort,omitempty"`
-	Data                []byte    `protobuf:"bytes,5,opt,name=data,proto3" json:"data,omitempty"`
-	TxInfo              *TXInfo   `protobuf:"bytes,6,opt,name=txInfo" json:"txInfo,omitempty"`
-	RxInfo              []*RXInfo `protobuf:"bytes,7,rep,name=rxInfo" json:"rxInfo,omitempty"`
-	DeviceStatusBattery uint32    `protobuf:"varint,9,opt,name=deviceStatusBattery" json:"deviceStatusBattery,omitempty"`
-	DeviceStatusMargin  int32     `protobuf:"varint,10,opt,name=deviceStatusMargin" json:"deviceStatusMargin,omitempty"`
+	DevEUI []byte    `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	AppEUI []byte    `protobuf:"bytes,2,opt,name=appEUI,proto3" json:"appEUI,omitempty"`
+	FCnt   uint32    `protobuf:"varint,3,opt,name=fCnt" json:"fCnt,omitempty"`
+	FPort  uint32    `protobuf:"varint,4,opt,name=fPort" json:"fPort,omitempty"`
+	Data   []byte    `protobuf:"bytes,5,opt,name=data,proto3" json:"data,omitempty"`
+	TxInfo *TXInfo   `protobuf:"bytes,6,opt,name=txInfo" json:"txInfo,omitempty"`
+	RxInfo []*RXInfo `protobuf:"bytes,7,rep,name=rxInfo" json:"rxInfo,omitempty"`
+	// The device battery status
+	// 0:      The end-device is connected to an external power source
+	// 1..254: The battery level, 1 being at minimum and 254 being at maximum
+	// 255:    The end-device was not able to measure the battery level
+	// Note: in case deviceStatusMargin is set to 127, then the device-status
+	// is not available and must not be interpreted.
+	DeviceStatusBattery uint32 `protobuf:"varint,9,opt,name=deviceStatusBattery" json:"deviceStatusBattery,omitempty"`
+	// The device margin status
+	// -32..32: the demodulation SNR ration in dB
+	// 127:     device-status is not available
+	DeviceStatusMargin int32 `protobuf:"varint,10,opt,name=deviceStatusMargin" json:"deviceStatusMargin,omitempty"`
 }
 
 func (m *HandleUplinkDataRequest) Reset()                    { *m = HandleUplinkDataRequest{} }

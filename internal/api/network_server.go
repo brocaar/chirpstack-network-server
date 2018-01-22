@@ -570,6 +570,9 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 
 		EnabledChannels:    common.Band.GetUplinkChannels(), // TODO: replace by ServiceProfile.ChannelMask?
 		ChannelFrequencies: channelFrequencies,
+
+		// set to invalid value to indicate we haven't received a status yet
+		LastDevStatusMargin: 127,
 	}
 
 	if err := storage.SaveDeviceSession(common.RedisPool, ds); err != nil {
