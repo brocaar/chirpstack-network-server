@@ -100,6 +100,9 @@ type DeviceSession struct {
 
 	// LastDevStatusMargin contains the last received margin status.
 	LastDevStatusMargin int8
+
+	// LastDownlinkTX contains the timestamp of the last downlink.
+	LastDownlinkTX time.Time
 }
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list

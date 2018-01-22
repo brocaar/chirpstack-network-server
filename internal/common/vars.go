@@ -96,3 +96,7 @@ var ClassCScheduleInterval = time.Second
 
 // ClassCScheduleBatchSize contains the batch size of the Class-C scheduler
 var ClassCScheduleBatchSize = 100
+
+// ClassCDownlinkLockDuration contains the duration to lock the downlink
+// Class-C transmissions after a preceeding downlink tx.
+var ClassCDownlinkLockDuration = time.Second * 2

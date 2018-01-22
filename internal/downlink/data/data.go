@@ -36,6 +36,7 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	setToken,
 	getDeviceProfile,
 	getServiceProfile,
+	checkLastDownlinkTimestamp,
 	requestDevStatus,
 	getDataTXInfoForRX2,
 	setRemainingPayloadSize,
@@ -400,6 +401,9 @@ func sendDataDown(ctx *dataContext) error {
 	// increment downlink framecounter
 	ctx.DeviceSession.FCntDown++
 
+	// set last downlink tx timestamp
+	ctx.DeviceSession.LastDownlinkTX = time.Now()
+
 	return nil
 }
 
@@ -425,6 +429,21 @@ func getServiceProfile(ctx *dataContext) error {
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
+	return nil
+}
+
+func checkLastDownlinkTimestamp(ctx *dataContext) error {
+	// in case of Class-C validate that between now and the last downlink
+	// tx timestamp is at least the class-c lock duration
+	if ctx.DeviceProfile.SupportsClassC && time.Now().Sub(ctx.DeviceSession.LastDownlinkTX) < common.ClassCDownlinkLockDuration {
+		log.WithFields(log.Fields{
+			"time":                           time.Now(),
+			"last_downlink_tx_time":          ctx.DeviceSession.LastDownlinkTX,
+			"class_c_downlink_lock_duration": common.ClassCDownlinkLockDuration,
+		}).Debug("skip next downlink queue scheduling dueue to class-c downlink lock")
+		return ErrAbort
+	}
+
 	return nil
 }
 
