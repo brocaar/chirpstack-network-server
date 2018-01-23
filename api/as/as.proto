@@ -69,13 +69,12 @@ message HandleUplinkDataRequest {
     // 0:      The end-device is connected to an external power source
     // 1..254: The battery level, 1 being at minimum and 254 being at maximum
     // 255:    The end-device was not able to measure the battery level
-    // Note: in case deviceStatusMargin is set to 127, then the device-status
-    // is not available and must not be interpreted.
+    // 256:    The device-status is not available.
     uint32 deviceStatusBattery = 9;
 
     // The device margin status
-    // -32..32: the demodulation SNR ration in dB
-    // 127:     device-status is not available
+    // -32..32: The demodulation SNR ration in dB
+    // 256:     The device-status is not available.
     int32  deviceStatusMargin = 10;
 }
 
