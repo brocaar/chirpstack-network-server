@@ -2,15 +2,15 @@
 title: Gateway management
 menu:
     main:
-        parent: use
-        weight: 2
+        parent: features
+        weight: 1
 ---
 
 ## Gateway management
 
 LoRa Server has support for managing gateways. Gateways can be created either
-by setting the `--gw-create-on-stats` / `GW_CREATE_ON_STATS` flag, or by using
-the [api]({{< ref "integrate/api.md" >}}).
+by enabling *create on stats* (see [gateway configuration]({{<ref "install/config.md">}}))
+or by using the [api]({{<ref "integrate/api.md">}}).
 
 ### Gateway location
 
@@ -19,10 +19,10 @@ the gateway is equipped with a GPS, its location will be automatically updated
 after every stats update. Else, it can be manually set when creating or
 updating the gateway.
 
-### Gateway stats
+### Gateway statistics
 
 LoRa Server exposes the gateway statistics on a pre-configured aggregation
-intervals (`--gw-stats-aggregation-intervals` / `GW_STATS_AGGREGATION_INTERVALS`). 
+intervals (see [gateway configuration]({{<ref "install/config.md">}})).
 By default these intervals are configured to: minute, hour and day.
 
 Note that LoRa Server does not implement any retention of the gateway stats.
@@ -39,3 +39,9 @@ delete from gateway_stats where "interval" = 'MINUTE' and "timestamp" < now() - 
 delete from gateway_stats where "interval" = 'HOUR' and "timestamp" < now() - interval '1 week';
 delete from gateway_stats where "interval" = 'DAY' and "timestamp" < now() - interval '1 year';
 ```
+
+### Gateway JWT token
+
+By using the [api]({{<ref "integrate/api.md">}}), it is possible to generate
+a JWT token. This token is used by the [LoRa Channel Manager](https://docs.loraserver.io/lora-channel-manager/)
+component.
