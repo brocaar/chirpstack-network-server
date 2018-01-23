@@ -363,7 +363,7 @@ func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession
 		DeviceStatusMargin:  256,
 	}
 
-	if sp.ServiceProfile.DevStatusReqFreq != 0 || ds.LastDevStatusMargin == 127 {
+	if sp.ServiceProfile.DevStatusReqFreq != 0 && ds.LastDevStatusMargin != 127 {
 		if sp.ServiceProfile.ReportDevStatusBattery {
 			publishDataUpReq.DeviceStatusBattery = uint32(ds.LastDevStatusBattery)
 		}
