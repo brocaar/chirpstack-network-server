@@ -7,7 +7,7 @@ GOARCH ?= amd64
 build: statics
 	@echo "Compiling source for $(GOOS) $(GOARCH)"
 	@mkdir -p build
-	@GOOS=$(GOOS) GOARCH=$(GOARCH) CGO_ENABLED=0 go build -a -installsuffix cgo -ldflags "-X main.version=$(VERSION)" -o build/loraserver$(BINEXT) cmd/loraserver/main.go
+	@GOOS=$(GOOS) GOARCH=$(GOARCH) go build $(GO_EXTRA_BUILD_ARGS) -ldflags "-X main.version=$(VERSION)" -o build/loraserver$(BINEXT) cmd/loraserver/main.go
 
 clean:
 	@echo "Cleaning up workspace"
@@ -62,7 +62,7 @@ requirements:
 	@go get -u github.com/elazarl/go-bindata-assetfs/...
 	@go get -u github.com/jteeuwen/go-bindata/...
 	@go get -u github.com/golang/dep/cmd/dep
-	@dep ensure
+	@dep ensure -v
 
 # shortcuts for development
 
