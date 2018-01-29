@@ -41,7 +41,7 @@ import (
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
+	"github.com/Frankz/lorawan/band"
 )
 
 // grpcLogger implements a wrapper around the logrus Logger to make it
