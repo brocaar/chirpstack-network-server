@@ -74,7 +74,12 @@ func NewBackend(server, username, password, cafile, certFile, certKeyFile string
 }
 
 func newTLSConfig(cafile, certFile, certKeyFile string) (*tls.Config, error) {
-	if cafile == "" && (certFile == "" || certKeyFile == "") {
+	// Here are three valid options:
+	//   - Only CA
+	//   - TLS cert + key
+	//   - CA, TLS cert + key
+
+	if cafile == "" && certFile == "" && certKeyFile == "" {
 		log.Info("backend/gateway: TLS config is empty")
 		return nil, nil
 	}
