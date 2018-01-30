@@ -18,5 +18,5 @@ FROM alpine:latest AS production
 
 WORKDIR /root/
 RUN apk --no-cache add ca-certificates tzdata
-COPY --from=development /go/src/github.com/brocaar/loraserver/build/loraserver .
+COPY --from=development /go/src/github.com/Frankz/loraserver/build/loraserver .
 ENTRYPOINT ["./loraserver"]
