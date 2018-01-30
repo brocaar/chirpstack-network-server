@@ -101,20 +101,11 @@ func newTLSConfig(cafile, certFile, certKeyFile string) (*tls.Config, error) {
 
 	// Import certificate and the key
 	if certFile != "" && certKeyFile != "" {
-		cert, err := ioutil.ReadFile(certFile)
+		kp, err := tls.LoadX509KeyPair(certFile, certKeyFile)
 		if err != nil {
-			log.Errorf("backend: couldn't load certFile: %s", err)
+			log.Errorf("backend: couldn't load MQTT TLS key pair: %s", err)
 			return nil, err
 		}
-
-		certKey, err := ioutil.ReadFile(certKeyFile)
-		if err != nil {
-			log.Errorf("backend: couldn't load certKeyFile: %s", err)
-			return nil, err
-		}
-
-		kp, err := tls.X509KeyPair(cert, certKey)
-
 		tlsConfig.Certificates = []tls.Certificate{kp}
 	}
 
