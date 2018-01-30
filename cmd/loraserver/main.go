@@ -25,22 +25,22 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/api/ns"
-	"github.com/brocaar/loraserver/internal/api"
-	"github.com/brocaar/loraserver/internal/api/auth"
-	"github.com/brocaar/loraserver/internal/api/client/asclient"
-	"github.com/brocaar/loraserver/internal/api/client/jsclient"
-	"github.com/brocaar/loraserver/internal/backend/controller"
-	gwBackend "github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/downlink"
-	"github.com/brocaar/loraserver/internal/migrations"
+	"github.com/Frankz/loraserver/api/gw"
+	"github.com/Frankz/loraserver/api/nc"
+	"github.com/Frankz/loraserver/api/ns"
+	"github.com/Frankz/loraserver/internal/api"
+	"github.com/Frankz/loraserver/internal/api/auth"
+	"github.com/Frankz/loraserver/internal/api/client/asclient"
+	"github.com/Frankz/loraserver/internal/api/client/jsclient"
+	"github.com/Frankz/loraserver/internal/backend/controller"
+	gwBackend "github.com/Frankz/loraserver/internal/backend/gateway"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/loraserver/internal/downlink"
+	"github.com/Frankz/loraserver/internal/migrations"
 	// TODO: merge backend/gateway into internal/gateway?
-	"github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/loraserver/internal/uplink"
-	"github.com/brocaar/lorawan"
+	"github.com/Frankz/loraserver/internal/gateway"
+	"github.com/Frankz/loraserver/internal/uplink"
+	"github.com/Frankz/lorawan"
 	"github.com/Frankz/lorawan/band"
 )
 
@@ -543,7 +543,7 @@ func main() {
 	app.Name = "loraserver"
 	app.Usage = "network-server for LoRaWAN networks"
 	app.Version = version
-	app.Copyright = "See http://github.com/brocaar/loraserver for copyright information"
+	app.Copyright = "See http://github.com/Frankz/loraserver for copyright information"
 	app.Action = run
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
