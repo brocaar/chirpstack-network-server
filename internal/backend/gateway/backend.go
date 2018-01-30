@@ -150,6 +150,7 @@ func (b *Backend) SendTXPacket(txPacket gw.TXPacket) error {
 		return errors.Wrap(err, "marshal binary error")
 	}
 	bytes, err := json.Marshal(gw.TXPacketBytes{
+		Token:      txPacket.Token,
 		TXInfo:     txPacket.TXInfo,
 		PHYPayload: phyB,
 	})

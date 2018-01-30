@@ -201,7 +201,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				So(getResp.TlsCert, ShouldEqual, "TLSCERT")
 			})
 
-			Convey("Then UpdateRoutingProifle updates the routing-profile", func() {
+			Convey("Then UpdateRoutingProfile updates the routing-profile", func() {
 				_, err := api.UpdateRoutingProfile(ctx, &ns.UpdateRoutingProfileRequest{
 					RoutingProfile: &ns.RoutingProfile{
 						RoutingProfileID: resp.RoutingProfileID,
@@ -470,6 +470,8 @@ func TestNetworkServerAPI(t *testing.T) {
 							RX2DR:              5,
 							RX2Frequency:       868900000,
 							MaxSupportedDR:     6,
+
+							LastDevStatusMargin: 127,
 						})
 					})
 

@@ -359,9 +359,11 @@ func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession
 				Bitrate:      uint32(rxPacket.RXInfoSet[0].DataRate.BitRate),
 			},
 		},
+		DeviceStatusBattery: 256,
+		DeviceStatusMargin:  256,
 	}
 
-	if sp.ServiceProfile.DevStatusReqFreq != 0 {
+	if sp.ServiceProfile.DevStatusReqFreq != 0 && ds.LastDevStatusMargin != 127 {
 		if sp.ServiceProfile.ReportDevStatusBattery {
 			publishDataUpReq.DeviceStatusBattery = uint32(ds.LastDevStatusBattery)
 		}

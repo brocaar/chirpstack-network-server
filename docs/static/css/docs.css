@@ -69,3 +69,8 @@ body {
 table {
     width: 100%;
 }
+
+table tbody tr td {
+    vertical-align: top;
+    border-bottom: 1px solid #ddd;
+}

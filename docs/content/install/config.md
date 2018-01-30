@@ -128,7 +128,7 @@ Valid values for sslmode are:
 * verify-ca - Always SSL (verify that the certificate presented by the server was signed by a trusted CA)
 * verify-full - Always SSL (verify that the certification presented by the server was signed by a trusted CA and the server host name matches the one in the certificate)
 
-### Gateway statistics
+### Gateway configuration
 
 Gateway statistics are aggregated on the intervals configured by
 the `--gw-stats-aggregation-intervals` config flag. Note that LoRa App Server
@@ -162,3 +162,15 @@ Also dont forget to change `--js-server` from `http://...` to `https://...`.
 
 See [https://github.com/brocaar/loraserver-certificates](https://github.com/brocaar/loraserver-certificates)
 for a set of scripts to generate such certificates.
+
+### Adaptive data-rate
+
+Set `--installation-margin` to the installation margin that the ADR engine
+must take into account when calculating the ideal data-rate and TX power.
+
+### Channel configuration
+
+If the used ISM band allows configuring extra uplink channels, you can specify the
+frequencies using `--extra-frequencies`.
+
+In order to only enable only a sub-set of channels, use `--enable-uplink-channels`.

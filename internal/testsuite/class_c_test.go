@@ -134,6 +134,35 @@ func TestClassCScenarios(t *testing.T) {
 					},
 				},
 				{
+					Name:          "unconfirmed data (only the first item is emitted because of class-c downlink lock",
+					DeviceSession: sess,
+					DeviceQueueItems: []storage.DeviceQueueItem{
+						{DevEUI: sess.DevEUI, FPort: 10, FCnt: 5, FRMPayload: make([]byte, 242)},
+						{DevEUI: sess.DevEUI, FPort: 10, FCnt: 6, FRMPayload: make([]byte, 242)},
+					},
+
+					ExpectedFCntUp:   8,
+					ExpectedFCntDown: 6,
+					ExpectedTXInfo:   &txInfo,
+					ExpectedPHYPayload: &lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataDown,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: sess.DevAddr,
+								FCnt:    5,
+								FCtrl:   lorawan.FCtrl{},
+							},
+							FPort: &fPortTen,
+							FRMPayload: []lorawan.Payload{
+								&lorawan.DataPayload{Bytes: make([]byte, 242)},
+							},
+						},
+					},
+				},
+				{
 					Name:          "confirmed data",
 					DeviceSession: sess,
 					DeviceQueueItems: []storage.DeviceQueueItem{
@@ -239,7 +268,9 @@ func TestClassCScenarios(t *testing.T) {
 					}
 
 					// run queue scheduler
-					So(downlink.ClassCScheduleBatch(1), ShouldBeNil)
+					for i := 0; i < len(t.DeviceQueueItems); i++ {
+						So(downlink.ClassCScheduleBatch(1), ShouldBeNil)
+					}
 
 					Convey("Then the frame-counters are as expected", func() {
 						sess, err := storage.GetDeviceSession(common.RedisPool, t.DeviceSession.DevEUI)

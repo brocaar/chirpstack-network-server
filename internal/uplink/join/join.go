@@ -214,6 +214,9 @@ func createNodeSession(ctx *context) error {
 		EnabledChannels: common.Band.GetUplinkChannels(),
 		LastRXInfoSet:   ctx.RXPacket.RXInfoSet,
 		MaxSupportedDR:  ctx.ServiceProfile.ServiceProfile.DRMax,
+
+		// set to invalid value to indicate we haven't received a status yet
+		LastDevStatusMargin: 127,
 	}
 
 	if err := storage.SaveDeviceSession(common.RedisPool, ctx.DeviceSession); err != nil {

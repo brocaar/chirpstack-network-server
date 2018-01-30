@@ -18,10 +18,10 @@ googleAnalytics = "UA-3512995-9"
     weight = 2
 
 [[menu.main]]
-    pre = "<i class='fa fa-user'></i>"
-    name = "Use"
-    identifier = "use"
-    url = "/use/"
+    pre = "<i class='fa fa-cogs'></i>"
+    name = "Features"
+    identifier = "features"
+    url = "/features/"
     weight = 3
 
 [[menu.main]]
@@ -39,4 +39,4 @@ googleAnalytics = "UA-3512995-9"
     weight = 5
 
 [params]
-    version = "0.23.2"
+    version = "0.23.3"

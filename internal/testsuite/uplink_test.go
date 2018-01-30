@@ -200,6 +200,8 @@ func TestUplinkScenarios(t *testing.T) {
 					Longitude: gw1.Location.Longitude,
 				},
 			},
+			DeviceStatusBattery: 256,
+			DeviceStatusMargin:  256,
 		}
 
 		Convey("Given a set of test-scenarios for error handling", func() {
@@ -309,6 +311,8 @@ func TestUplinkScenarios(t *testing.T) {
 						Longitude: gw1.Location.Longitude,
 					},
 				},
+				DeviceStatusBattery: 256,
+				DeviceStatusMargin:  256,
 			}
 
 			expectedApplicationPushDataUpNoData7 := &as.HandleUplinkDataRequest{
@@ -338,6 +342,8 @@ func TestUplinkScenarios(t *testing.T) {
 						Longitude: gw1.Location.Longitude,
 					},
 				},
+				DeviceStatusBattery: 256,
+				DeviceStatusMargin:  256,
 			}
 
 			tests := []uplinkTestCase{
@@ -2041,6 +2047,8 @@ func TestUplinkScenarios(t *testing.T) {
 
 		Convey("Given a set of test-scenarios for device-status requests", func() {
 			sp.DevStatusReqFreq = 24
+			sp.ReportDevStatusBattery = true
+			sp.ReportDevStatusMargin = true
 			So(storage.UpdateServiceProfile(common.DB, &sp), ShouldBeNil)
 			timestamp1S := rxInfo.Timestamp + 1000000
 
@@ -2124,6 +2132,48 @@ func TestUplinkScenarios(t *testing.T) {
 					},
 
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
+					ExpectedFCntUp:                 11,
+					ExpectedFCntDown:               5,
+					ExpectedEnabledChannels:        []int{0, 1, 2},
+				},
+				{
+					BeforeFunc: func(tc *uplinkTestCase) error {
+						tc.DeviceSession.LastDevStatusRequested = time.Now()
+						tc.ExpectedASHandleDataUp.Data = []byte{1, 2, 3, 4}
+						tc.ExpectedASHandleDataUp.DeviceStatusBattery = 128
+						tc.ExpectedASHandleDataUp.DeviceStatusMargin = 10
+						return nil
+					},
+
+					Name:          "device reports device-status",
+					DeviceSession: ds,
+					RXInfo:        rxInfo,
+					SetMICKey:     ds.NwkSKey,
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ds.DevAddr,
+								FCnt:    10,
+								FOpts: []lorawan.MACCommand{
+									{
+										CID: lorawan.DevStatusAns,
+										Payload: &lorawan.DevStatusAnsPayload{
+											Battery: 128,
+											Margin:  10,
+										},
+									},
+								},
+							},
+							FPort:      &fPortOne,
+							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+						},
+					},
+					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
+					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               5,
 					ExpectedEnabledChannels:        []int{0, 1, 2},

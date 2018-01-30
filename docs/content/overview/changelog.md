@@ -8,6 +8,26 @@ menu:
 
 ## Changelog
 
+### 0.23.3
+
+**Improvements:**
+
+* Device-status (battery and link margin) returns `256` as value when battery
+  and / or margin status is (yet) not available.
+* Extra logging has been added:
+  * gRPC API calls (to the gRPC server and by the gRPC clients) are logged
+    as `info`
+  * Executed SQL queries are logged as `debug`
+* LoRa Server will wait 2 seconds between scheduling Class-C downlink
+  transmissions to the same device, to avoid that sequential Class-C downlink
+  transmissions collide (in case of running a cluster of LoRa Server instances).
+
+**Internal changes:**
+
+* The project moved to using [dep](https://github.com/golang/dep) as vendoring
+  tool. In case you run into compiling issues, remove the `vendor` folder
+  (which is not part of the repository anymore) and run `make requirements`.
+
 ### 0.23.2
 
 **Features:**
