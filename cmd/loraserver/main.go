@@ -290,7 +290,7 @@ func setPostgreSQLConnection(c *cli.Context) error {
 }
 
 func setGatewayBackend(c *cli.Context) error {
-	gw, err := gwBackend.NewBackend(c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"), c.String("gw-mqtt-ca-cert"), c.String("gw-mqtt-cert"), c.String("gw-mqtt-cert-key"))
+	gw, err := gwBackend.NewBackend(c.String("gw-mqtt-server"), c.String("gw-mqtt-username"), c.String("gw-mqtt-password"), c.String("gw-mqtt-ca-cert"), c.String("gw-mqtt-tls-cert"), c.String("gw-mqtt-tls-key"))
 	if err != nil {
 		return errors.Wrap(err, "gateway-backend setup failed")
 	}
@@ -615,12 +615,12 @@ func main() {
 			EnvVar: "GW_MQTT_CA_CERT",
 		},
 		cli.StringFlag{
-			Name:   "gw-mqtt-cert",
+			Name:   "gw-mqtt-tls-cert",
 			Usage:  "mqtt certificate file used by the gateway backend (optional)",
 			EnvVar: "GW_MQTT_CERT",
 		},
 		cli.StringFlag{
-			Name:   "gw-mqtt-cert-key",
+			Name:   "gw-mqtt-tls-key",
 			Usage:  "mqtt key file of certificate used by the gateway backend (optional)",
 			EnvVar: "GW_MQTT_CERT_KEY",
 		},
