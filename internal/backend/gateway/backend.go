@@ -49,7 +49,11 @@ func NewBackend(server, username, password, cafile, certFile, certKeyFile string
 
 	tlsconfig, err := newTLSConfig(cafile, certFile, certKeyFile)
 	if err != nil {
-		log.Fatalf("Error with the mqtt CA certificate: %s", err)
+		log.WithError(err).WithFields(log.Fields{
+			"ca_cert":  cafile,
+			"tls_cert": certFile,
+			"tls_key":  certKeyFile,
+		}).Fatal("error loading mqtt certificate files")
 	}
 	if tlsconfig != nil {
 		opts.SetTLSConfig(tlsconfig)
