@@ -658,12 +658,12 @@ func main() {
 		cli.StringFlag{
 			Name:   "gw-mqtt-tls-cert",
 			Usage:  "mqtt certificate file used by the gateway backend (optional)",
-			EnvVar: "GW_MQTT_CERT",
+			EnvVar: "GW_MQTT_TLS_CERT",
 		},
 		cli.StringFlag{
 			Name:   "gw-mqtt-tls-key",
 			Usage:  "mqtt key file of certificate used by the gateway backend (optional)",
-			EnvVar: "GW_MQTT_CERT_KEY",
+			EnvVar: "GW_MQTT_TLS_KEY",
 		},
 		cli.StringFlag{
 			Name:   "nc-server",
