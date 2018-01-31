@@ -1,7 +1,7 @@
 package jsclient
 
 import (
-	"github.com/brocaar/lorawan"
+	"github.com/Frankz/lorawan"
 )
 
 // Pool defines the join-server client pool.

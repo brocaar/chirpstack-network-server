@@ -4,7 +4,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/brocaar/loraserver/api/nc"
+	"github.com/Frankz/loraserver/api/nc"
 )
 
 // NopNetworkControllerClient is a dummy network-controller client which is

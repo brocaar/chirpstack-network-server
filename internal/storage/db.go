@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/Frankz/loraserver/internal/common"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 )

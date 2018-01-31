@@ -7,7 +7,7 @@ import (
 	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/lorawan/backend"
+	"github.com/Frankz/lorawan/backend"
 )
 
 // RoutingProfile defines the backend.RoutingProfile with some extra meta-data.

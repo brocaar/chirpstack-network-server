@@ -5,19 +5,19 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/uplink"
-	"github.com/brocaar/lorawan/backend"
+	"github.com/Frankz/loraserver/internal/gateway"
+	"github.com/Frankz/loraserver/internal/storage"
+	"github.com/Frankz/loraserver/internal/uplink"
+	"github.com/Frankz/lorawan/backend"
 
-	"github.com/brocaar/loraserver/api/as"
+	"github.com/Frankz/loraserver/api/as"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/api/ns"
-	"github.com/brocaar/loraserver/internal/api"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/test"
-	"github.com/brocaar/lorawan"
+	"github.com/Frankz/loraserver/api/gw"
+	"github.com/Frankz/loraserver/api/ns"
+	"github.com/Frankz/loraserver/internal/api"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/loraserver/internal/test"
+	"github.com/Frankz/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

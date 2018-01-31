@@ -8,12 +8,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/api/auth"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
+	"github.com/Frankz/loraserver/api/gw"
+	"github.com/Frankz/loraserver/internal/api/auth"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/loraserver/internal/gateway"
+	"github.com/Frankz/lorawan"
+	"github.com/Frankz/lorawan/band"
 )
 
 // GatewayAPI defines the gateway API.

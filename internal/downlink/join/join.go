@@ -11,11 +11,11 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/node"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/lorawan"
+	"github.com/Frankz/loraserver/api/gw"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/loraserver/internal/node"
+	"github.com/Frankz/loraserver/internal/storage"
+	"github.com/Frankz/lorawan"
 )
 
 var tasks = []func(*joinContext) error{

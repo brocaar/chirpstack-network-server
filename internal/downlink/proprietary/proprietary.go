@@ -6,9 +6,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/lorawan"
+	"github.com/Frankz/loraserver/api/gw"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/lorawan"
 )
 
 var tasks = []func(*proprietaryContext) error{

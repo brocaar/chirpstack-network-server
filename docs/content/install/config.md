@@ -146,7 +146,7 @@ This means that when configuring this network-server instance in LoRa App Server
 you must provide the CA and TLS client certificate. See also LoRa App Server
 [network-server management](https://docs.loraserver.io/lora-app-server/use/network-servers/).
 
-See [https://github.com/brocaar/loraserver-certificates](https://github.com/brocaar/loraserver-certificates)
+See [https://github.com/Frankz/loraserver-certificates](https://github.com/Frankz/loraserver-certificates)
 for a set of scripts to generate such certificates.
 
 ### Join-server API configuration
@@ -158,7 +158,7 @@ In case this endpoint is secured using a TLS certificate and expects a client
 certificate, you must set `--js-ca-cert`, `--js-tls-cert` and `--js-tls-key`.
 Also dont forget to change `--js-server` from `http://...` to `https://...`.
 
-See [https://github.com/brocaar/loraserver-certificates](https://github.com/brocaar/loraserver-certificates)
+See [https://github.com/Frankz/loraserver-certificates](https://github.com/Frankz/loraserver-certificates)
 for a set of scripts to generate such certificates.
 
 ### Adaptive data-rate

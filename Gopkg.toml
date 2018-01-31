@@ -3,7 +3,7 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/brocaar/lorawan"
+  name = "github.com/Frankz/lorawan"
 
 [[constraint]]
   name = "github.com/codegangsta/cli"

@@ -5,10 +5,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/brocaar/loraserver/internal/downlink/data"
-	"github.com/brocaar/loraserver/internal/downlink/proprietary"
-	"github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/Frankz/loraserver/internal/downlink/data"
+	"github.com/Frankz/loraserver/internal/downlink/proprietary"
+	"github.com/Frankz/loraserver/internal/gateway"
+	"github.com/Frankz/loraserver/internal/storage"
 )
 
 var errToCode = map[error]codes.Code{

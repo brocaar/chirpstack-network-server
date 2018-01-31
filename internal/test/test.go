@@ -10,16 +10,16 @@ import (
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/internal/api/client/asclient"
-	"github.com/brocaar/loraserver/internal/api/client/jsclient"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/migrations"
-	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
-	"github.com/brocaar/lorawan/band"
+	"github.com/Frankz/loraserver/api/as"
+	"github.com/Frankz/loraserver/api/gw"
+	"github.com/Frankz/loraserver/api/nc"
+	"github.com/Frankz/loraserver/internal/api/client/asclient"
+	"github.com/Frankz/loraserver/internal/api/client/jsclient"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/loraserver/internal/migrations"
+	"github.com/Frankz/lorawan"
+	"github.com/Frankz/lorawan/backend"
+	"github.com/Frankz/lorawan/band"
 )
 
 func init() {

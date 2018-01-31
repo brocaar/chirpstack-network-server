@@ -29,7 +29,7 @@ application-server API has been defined as a [gRPC](https://grpc.io) service
 so that it should be really easy to generate stubs for various programming
 languages. See the [gRPC](https://grpc.io) site for more information about
 the gRPC framework and how to transform `.proto` files into source-code.
-Please see [api/as/as.proto](https://github.com/brocaar/loraserver/blob/master/api/as/as.proto)
+Please see [api/as/as.proto](https://github.com/Frankz/loraserver/blob/master/api/as/as.proto)
 for the application-server API specification.
 
 See also the [api documentation]({{<ref "integrate/api.md">}}) for the

@@ -7,9 +7,9 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/downlink/data"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/loraserver/internal/downlink/data"
+	"github.com/Frankz/loraserver/internal/storage"
 )
 
 // ClassCSchedulerLoop starts an infinit loop calling the Class-C scheduler

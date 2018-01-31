@@ -1,6 +1,6 @@
 package backend
 
-import "github.com/brocaar/loraserver/api/gw"
+import "github.com/Frankz/loraserver/api/gw"
 
 // Gateway is the interface of a gateway backend.
 // A gateway backend is responsible for the communication with the gateway.

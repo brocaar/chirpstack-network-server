@@ -10,9 +10,9 @@ import (
 	"github.com/garyburd/redigo/redis"
 	"github.com/pkg/errors"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/models"
+	"github.com/Frankz/loraserver/api/gw"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/loraserver/internal/models"
 )
 
 // Templates used for generating Redis keys

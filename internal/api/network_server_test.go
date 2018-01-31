@@ -7,25 +7,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/lorawan"
+	"github.com/Frankz/lorawan"
 	jwt "github.com/dgrijalva/jwt-go"
 
 	"google.golang.org/grpc/codes"
 
 	"google.golang.org/grpc"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/api/ns"
+	"github.com/Frankz/loraserver/api/gw"
+	"github.com/Frankz/loraserver/api/ns"
 
-	"github.com/brocaar/loraserver/internal/api/auth"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/loraserver/internal/maccommand"
-	"github.com/brocaar/loraserver/internal/node"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
-	"github.com/brocaar/lorawan/backend"
-	"github.com/brocaar/lorawan/band"
+	"github.com/Frankz/loraserver/internal/api/auth"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/loraserver/internal/gateway"
+	"github.com/Frankz/loraserver/internal/maccommand"
+	"github.com/Frankz/loraserver/internal/node"
+	"github.com/Frankz/loraserver/internal/storage"
+	"github.com/Frankz/loraserver/internal/test"
+	"github.com/Frankz/lorawan/backend"
+	"github.com/Frankz/lorawan/band"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

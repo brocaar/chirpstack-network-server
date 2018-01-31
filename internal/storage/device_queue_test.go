@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
+	"github.com/Frankz/lorawan"
+	"github.com/Frankz/lorawan/backend"
 	"github.com/pkg/errors"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/Frankz/loraserver/api/as"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/loraserver/internal/test"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

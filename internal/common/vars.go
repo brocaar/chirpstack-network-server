@@ -5,12 +5,12 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 
-	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/internal/api/client/asclient"
-	"github.com/brocaar/loraserver/internal/api/client/jsclient"
-	"github.com/brocaar/loraserver/internal/backend"
-	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
+	"github.com/Frankz/loraserver/api/nc"
+	"github.com/Frankz/loraserver/internal/api/client/asclient"
+	"github.com/Frankz/loraserver/internal/api/client/jsclient"
+	"github.com/Frankz/loraserver/internal/backend"
+	"github.com/Frankz/lorawan"
+	"github.com/Frankz/lorawan/band"
 )
 
 // NodeSessionTTL defines the TTL of a node session (will be renewed on each

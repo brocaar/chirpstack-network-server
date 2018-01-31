@@ -6,10 +6,10 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/lorawan"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/loraserver/internal/models"
+	"github.com/Frankz/loraserver/internal/storage"
+	"github.com/Frankz/lorawan"
 )
 
 // Handle handles a MACCommand sent by a node.

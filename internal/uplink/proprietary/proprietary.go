@@ -8,12 +8,12 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/lorawan"
+	"github.com/Frankz/loraserver/api/as"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/loraserver/internal/gateway"
+	"github.com/Frankz/loraserver/internal/models"
+	"github.com/Frankz/loraserver/internal/storage"
+	"github.com/Frankz/lorawan"
 )
 
 var tasks = []func(*proprietaryContext) error{

@@ -8,7 +8,7 @@ menu:
 
 ## LoRa Server source
 
-Source-code can be found at [https://github.com/brocaar/loraserver](https://github.com/brocaar/loraserver).
+Source-code can be found at [https://github.com/Frankz/loraserver](https://github.com/Frankz/loraserver).
 
 ### Building
 
@@ -33,7 +33,7 @@ pre-compiled packages available):
 
 Make sure you have [Go](https://golang.org/) installed (1.8+) and that the LoRa
 App Server repository has been cloned into 
-`$GOPATH/src/github.com/brocaar/loraserver`.
+`$GOPATH/src/github.com/Frankz/loraserver`.
 
 ##### Go protocol buffer support
 

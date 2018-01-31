@@ -14,7 +14,7 @@ component schedule mac-commands for example.
 
 For this to work, the external network-controller must implement the
 `NetworkController` gRPC service as specified in
-[`api/nc/nc.proto`](https://github.com/brocaar/loraserver/blob/master/api/nc/nc.proto).
+[`api/nc/nc.proto`](https://github.com/Frankz/loraserver/blob/master/api/nc/nc.proto).
 Also LoRa Server must be configured so that it connects to this network-controller
 (see [configuration]({{< ref "install/config.md" >}})).
 
@@ -33,15 +33,15 @@ import (
 	"log"
 	"net"
 
-	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/api/ns"
-	"github.com/brocaar/lorawan"
+	"github.com/Frankz/loraserver/api/nc"
+	"github.com/Frankz/loraserver/api/ns"
+	"github.com/Frankz/lorawan"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
 // NetworkControllerAPI implements the NetworkController service.
-// https://github.com/brocaar/loraserver/blob/master/api/nc/nc.proto
+// https://github.com/Frankz/loraserver/blob/master/api/nc/nc.proto
 type NetworkControllerAPI struct {
 	nsClient ns.NetworkServerClient
 }

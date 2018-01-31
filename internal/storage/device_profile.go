@@ -15,8 +15,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/lorawan/backend"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/lorawan/backend"
 )
 
 // Templates used for generating Redis keys

@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/grpc/metadata"
 
-	"github.com/brocaar/lorawan"
+	"github.com/Frankz/lorawan"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"

@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/loraserver/internal/uplink"
+	"github.com/Frankz/loraserver/internal/uplink"
 
-	"github.com/brocaar/lorawan/band"
+	"github.com/Frankz/lorawan/band"
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
-	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
+	"github.com/Frankz/loraserver/api/gw"
+	"github.com/Frankz/loraserver/internal/common"
+	"github.com/Frankz/loraserver/internal/storage"
+	"github.com/Frankz/loraserver/internal/test"
+	"github.com/Frankz/lorawan"
+	"github.com/Frankz/lorawan/backend"
 )
 
 type otaaTestCase struct {
