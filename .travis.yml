@@ -60,7 +60,7 @@ deploy:
     file: "dist/tar/*.tar.gz"
     on:
       tags: true
-      repo: brocaar/loraserver
+      repo: Frankz/loraserver
 
   - provider: s3
     skip_cleanup: true
@@ -73,7 +73,7 @@ deploy:
     region: eu-west-1
     on:
       tags: true
-      repo: brocaar/loraserver
+      repo: Frankz/loraserver
 
   - provider: s3
     skip_cleanup: true
@@ -87,4 +87,4 @@ deploy:
     region: eu-west-1
     on:
       branch: master
-      repo: brocaar/loraserver
+      repo: Frankz/loraserver
