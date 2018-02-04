@@ -7,6 +7,11 @@ After=network-online.target redis.service mosquitto.service
 [Service]
 User=loraserver
 Group=loraserver
+PrivateTmp=true
+PrivateDevices=true
+ProtectHome=true
+ProtectSystem=true
+NoNewPrivileges=true
 EnvironmentFile=/etc/default/loraserver
 ExecStart=/usr/bin/loraserver
 Restart=on-failure
