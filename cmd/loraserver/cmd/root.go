@@ -220,7 +220,7 @@ func initConfig() {
 	} else {
 		viper.SetConfigName("loraserver")
 		viper.AddConfigPath(".")
-		viper.AddConfigPath("$HOME/.config/lora-app-server")
+		viper.AddConfigPath("$HOME/.config/loraserver")
 		viper.AddConfigPath("/etc/loraserver")
 		if err := viper.ReadInConfig(); err != nil {
 			switch err.(type) {
