@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -74,7 +74,7 @@ func sendProprietaryPayloadToApplicationServer(ctx *proprietaryContext) error {
 	}
 
 	// get gateway info
-	gws, err := gateway.GetGatewaysForMACs(common.DB, macs)
+	gws, err := gateway.GetGatewaysForMACs(config.C.PostgreSQL.DB, macs)
 	if err != nil {
 		log.WithField("macs", macs).Warningf("get gateways for macs error: %s", err)
 		gws = make(map[lorawan.EUI64]gateway.Gateway)
@@ -109,14 +109,14 @@ func sendProprietaryPayloadToApplicationServer(ctx *proprietaryContext) error {
 	// send proprietary to all application servers, as the network-server
 	// has know knowledge / state about which application-server is responsible
 	// for this frame
-	rps, err := storage.GetAllRoutingProfiles(common.DB)
+	rps, err := storage.GetAllRoutingProfiles(config.C.PostgreSQL.DB)
 	if err != nil {
 		return errors.Wrap(err, "get all routing-profiles error")
 	}
 
 	for _, rp := range rps {
 		go func(rp storage.RoutingProfile, handleReq as.HandleProprietaryUplinkRequest) {
-			asClient, err := common.ApplicationServerPool.Get(rp.ASID, []byte(rp.CACert), []byte(rp.TLSCert), []byte(rp.TLSKey))
+			asClient, err := config.C.ApplicationServer.Pool.Get(rp.ASID, []byte(rp.CACert), []byte(rp.TLSCert), []byte(rp.TLSKey))
 			if err != nil {
 				log.WithError(err).Error("get application-server client error")
 				return

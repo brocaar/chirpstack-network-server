@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/lorawan"
 )
 
@@ -128,7 +128,7 @@ func MigrateNodeToDeviceSession(p *redis.Pool, db sqlx.Ext, devEUI, joinEUI lora
 		RXDelay:      ns.RXDelay,
 		RX1DROffset:  ns.RX1DROffset,
 		RX2DR:        ns.RX2DR,
-		RX2Frequency: common.Band.RX2Frequency,
+		RX2Frequency: config.C.NetworkServer.Band.Band.RX2Frequency,
 
 		TXPowerIndex: ns.TXPowerIndex,
 		DR:           ns.DR,
@@ -140,8 +140,8 @@ func MigrateNodeToDeviceSession(p *redis.Pool, db sqlx.Ext, devEUI, joinEUI lora
 	}
 
 	for _, c := range ns.EnabledChannels {
-		if c < len(common.Band.UplinkChannels) {
-			ds.ChannelFrequencies = append(ds.ChannelFrequencies, common.Band.UplinkChannels[c].Frequency)
+		if c < len(config.C.NetworkServer.Band.Band.UplinkChannels) {
+			ds.ChannelFrequencies = append(ds.ChannelFrequencies, config.C.NetworkServer.Band.Band.UplinkChannels[c].Frequency)
 		}
 	}
 

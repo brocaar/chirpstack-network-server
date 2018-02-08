@@ -12,6 +12,7 @@ import (
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
@@ -71,18 +72,18 @@ func TestUplinkScenarios(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	common.DB = db
-	common.RedisPool = common.NewRedisPool(conf.RedisURL)
-	common.InstallationMargin = 5
+	config.C.PostgreSQL.DB = db
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+	config.C.NetworkServer.NetworkSettings.InstallationMargin = 5
 
 	Convey("Given a clean database", t, func() {
-		test.MustFlushRedis(common.RedisPool)
-		test.MustResetDB(common.DB)
+		test.MustFlushRedis(config.C.Redis.Pool)
+		test.MustResetDB(config.C.PostgreSQL.DB)
 
 		asClient := test.NewApplicationClient()
-		common.ApplicationServerPool = test.NewApplicationServerPool(asClient)
-		common.Gateway = test.NewGatewayBackend()
-		common.Controller = test.NewNetworkControllerClient()
+		config.C.ApplicationServer.Pool = test.NewApplicationServerPool(asClient)
+		config.C.NetworkServer.Gateway.Backend.Backend = test.NewGatewayBackend()
+		config.C.NetworkController.Client = test.NewNetworkControllerClient()
 
 		gw1 := gateway.Gateway{
 			MAC:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -101,19 +102,19 @@ func TestUplinkScenarios(t *testing.T) {
 				AddGWMetadata: true,
 			},
 		}
-		So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
+		So(storage.CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 		// device-profile
 		dp := storage.DeviceProfile{
 			DeviceProfile: backend.DeviceProfile{},
 		}
-		So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
+		So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
 
 		// routing-profile
 		rp := storage.RoutingProfile{
 			RoutingProfile: backend.RoutingProfile{},
 		}
-		So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
+		So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
 		// device
 		d := storage.Device{
@@ -122,7 +123,7 @@ func TestUplinkScenarios(t *testing.T) {
 			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
 			DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 		}
-		So(storage.CreateDevice(common.DB, &d), ShouldBeNil)
+		So(storage.CreateDevice(config.C.PostgreSQL.DB, &d), ShouldBeNil)
 
 		// device-session
 		ds := storage.DeviceSession{
@@ -143,8 +144,8 @@ func TestUplinkScenarios(t *testing.T) {
 		timeSinceEpoch := gw.Duration(10 * time.Second)
 		rxInfo := gw.RXInfo{
 			MAC:               [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Frequency:         common.Band.UplinkChannels[0].Frequency,
-			DataRate:          common.Band.DataRates[0],
+			Frequency:         config.C.NetworkServer.Band.Band.UplinkChannels[0].Frequency,
+			DataRate:          config.C.NetworkServer.Band.Band.DataRates[0],
 			LoRaSNR:           7,
 			Time:              &now,
 			TimeSinceGPSEpoch: &timeSinceEpoch,
@@ -691,9 +692,9 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp2S,
-						Frequency: common.Band.RX2Frequency,
+						Frequency: config.C.NetworkServer.Band.Band.RX2Frequency,
 						Power:     14,
-						DataRate:  common.Band.DataRates[3],
+						DataRate:  config.C.NetworkServer.Band.Band.DataRates[3],
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -745,9 +746,9 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp6S,
-						Frequency: common.Band.RX2Frequency,
+						Frequency: config.C.NetworkServer.Band.Band.RX2Frequency,
 						Power:     14,
-						DataRate:  common.Band.DataRates[0],
+						DataRate:  config.C.NetworkServer.Band.Band.DataRates[0],
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -873,7 +874,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 						// set add gw meta-data to false
 						sp.ServiceProfile.AddGWMetadata = false
-						return storage.UpdateServiceProfile(common.DB, &sp)
+						return storage.UpdateServiceProfile(config.C.PostgreSQL.DB, &sp)
 					},
 
 					Name:          "unconfirmed uplink data with payload (service-profile: no gateway info)",
@@ -2050,7 +2051,7 @@ func TestUplinkScenarios(t *testing.T) {
 			sp.DevStatusReqFreq = 24
 			sp.ReportDevStatusBattery = true
 			sp.ReportDevStatusMargin = true
-			So(storage.UpdateServiceProfile(common.DB, &sp), ShouldBeNil)
+			So(storage.UpdateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 			timestamp1S := rxInfo.Timestamp + 1000000
 
 			tests := []uplinkTestCase{
@@ -2195,19 +2196,19 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 
 			// create device-queue items
 			for i := range t.DeviceQueueItems {
-				So(storage.CreateDeviceQueueItem(common.DB, &t.DeviceQueueItems[i]), ShouldBeNil)
+				So(storage.CreateDeviceQueueItem(config.C.PostgreSQL.DB, &t.DeviceQueueItems[i]), ShouldBeNil)
 			}
 
 			// set application-server mocks
 			asClient.HandleDataUpErr = t.ASHandleDataUpError
 
 			// populate session and queues
-			So(storage.SaveDeviceSession(common.RedisPool, t.DeviceSession), ShouldBeNil)
+			So(storage.SaveDeviceSession(config.C.Redis.Pool, t.DeviceSession), ShouldBeNil)
 			for _, block := range t.MACCommandQueue {
-				So(maccommand.AddQueueItem(common.RedisPool, t.DeviceSession.DevEUI, block), ShouldBeNil)
+				So(maccommand.AddQueueItem(config.C.Redis.Pool, t.DeviceSession.DevEUI, block), ShouldBeNil)
 			}
 			for _, pending := range t.MACCommandPending {
-				So(maccommand.SetPending(common.RedisPool, t.DeviceSession.DevEUI, pending), ShouldBeNil)
+				So(maccommand.SetPending(config.C.Redis.Pool, t.DeviceSession.DevEUI, pending), ShouldBeNil)
 			}
 
 			// encrypt FRMPayload and set MIC
@@ -2241,18 +2242,18 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 			// network-controller validations
 			if t.ExpectedControllerHandleRXInfo != nil {
 				Convey("Then the expected rx-info is published to the network-controller", func() {
-					So(common.Controller.(*test.NetworkControllerClient).HandleRXInfoChan, ShouldHaveLength, 1)
-					pl := <-common.Controller.(*test.NetworkControllerClient).HandleRXInfoChan
+					So(config.C.NetworkController.Client.(*test.NetworkControllerClient).HandleRXInfoChan, ShouldHaveLength, 1)
+					pl := <-config.C.NetworkController.Client.(*test.NetworkControllerClient).HandleRXInfoChan
 					So(&pl, ShouldResemble, t.ExpectedControllerHandleRXInfo)
 				})
 			} else {
-				So(common.Controller.(*test.NetworkControllerClient).HandleRXInfoChan, ShouldHaveLength, 0)
+				So(config.C.NetworkController.Client.(*test.NetworkControllerClient).HandleRXInfoChan, ShouldHaveLength, 0)
 			}
 
 			Convey("Then the expected mac-commands are received by the network-controller", func() {
-				So(common.Controller.(*test.NetworkControllerClient).HandleDataUpMACCommandChan, ShouldHaveLength, len(t.ExpectedControllerHandleDataUpMACCommands))
+				So(config.C.NetworkController.Client.(*test.NetworkControllerClient).HandleDataUpMACCommandChan, ShouldHaveLength, len(t.ExpectedControllerHandleDataUpMACCommands))
 				for _, expPl := range t.ExpectedControllerHandleDataUpMACCommands {
-					pl := <-common.Controller.(*test.NetworkControllerClient).HandleDataUpMACCommandChan
+					pl := <-config.C.NetworkController.Client.(*test.NetworkControllerClient).HandleDataUpMACCommandChan
 					So(pl, ShouldResemble, expPl)
 				}
 			})
@@ -2289,8 +2290,8 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 			// gateway validations
 			if t.ExpectedTXInfo != nil {
 				Convey("Then the expected downlink txinfo is used", func() {
-					So(common.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
-					txPacket := <-common.Gateway.(*test.GatewayBackend).TXPacketChan
+					So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
+					txPacket := <-config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan
 					So(&txPacket.TXInfo, ShouldResemble, t.ExpectedTXInfo)
 
 					if t.ExpectedPHYPayload != nil {
@@ -2302,12 +2303,12 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 					}
 				})
 			} else {
-				So(common.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 0)
+				So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 0)
 			}
 
 			// node session validations
 			Convey("Then the frame-counters are as expected", func() {
-				ns, err := storage.GetDeviceSession(common.RedisPool, t.DeviceSession.DevEUI)
+				ns, err := storage.GetDeviceSession(config.C.Redis.Pool, t.DeviceSession.DevEUI)
 				So(err, ShouldBeNil)
 				So(ns.FCntDown, ShouldEqual, t.ExpectedFCntDown)
 				So(ns.FCntUp, ShouldEqual, t.ExpectedFCntUp)
@@ -2315,7 +2316,7 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 
 			// ADR variables validations
 			Convey("Then the Channels, TXPower and NbTrans are as expected", func() {
-				ns, err := storage.GetDeviceSession(common.RedisPool, t.DeviceSession.DevEUI)
+				ns, err := storage.GetDeviceSession(config.C.Redis.Pool, t.DeviceSession.DevEUI)
 				So(err, ShouldBeNil)
 				So(ns.TXPowerIndex, ShouldEqual, t.ExpectedTXPowerIndex)
 				So(ns.NbTrans, ShouldEqual, t.ExpectedNbTrans)
@@ -2324,14 +2325,14 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 
 			// queue validations
 			Convey("Then the mac-command queue is as expected", func() {
-				macQueue, err := maccommand.ReadQueueItems(common.RedisPool, t.DeviceSession.DevEUI)
+				macQueue, err := maccommand.ReadQueueItems(config.C.Redis.Pool, t.DeviceSession.DevEUI)
 				So(err, ShouldBeNil)
 				So(macQueue, ShouldResemble, t.ExpectedMACCommandQueue)
 			})
 
 			if t.ExpectedHandleRXPacketError == nil {
 				Convey("Then the expected RXInfoSet has been added to the node-session", func() {
-					ns, err := storage.GetDeviceSession(common.RedisPool, t.DeviceSession.DevEUI)
+					ns, err := storage.GetDeviceSession(config.C.Redis.Pool, t.DeviceSession.DevEUI)
 					So(err, ShouldBeNil)
 					So(ns.LastRXInfoSet, ShouldResemble, models.RXInfoSet{
 						{

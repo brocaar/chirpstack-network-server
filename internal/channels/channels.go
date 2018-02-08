@@ -1,7 +1,7 @@
 package channels
 
 import (
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -14,13 +14,13 @@ import (
 // (e.g. for the US band) or when a reconfiguration of active channels
 // happens.
 func HandleChannelReconfigure(ds storage.DeviceSession, rxPacket models.RXPacket) error {
-	payloads := common.Band.GetLinkADRReqPayloadsForEnabledChannels(ds.EnabledChannels)
+	payloads := config.C.NetworkServer.Band.Band.GetLinkADRReqPayloadsForEnabledChannels(ds.EnabledChannels)
 	if len(payloads) == 0 {
 		return nil
 	}
 
 	// set the current tx-power, data-rate and nbrep on the last payload
-	currentDR, err := common.Band.GetDataRate(rxPacket.TXInfo.DataRate)
+	currentDR, err := config.C.NetworkServer.Band.Band.GetDataRate(rxPacket.TXInfo.DataRate)
 	if err != nil {
 		return errors.Wrap(err, "get data-rate error")
 	}
@@ -48,7 +48,7 @@ func HandleChannelReconfigure(ds storage.DeviceSession, rxPacket models.RXPacket
 		})
 	}
 
-	if err := maccommand.AddQueueItem(common.RedisPool, ds.DevEUI, block); err != nil {
+	if err = maccommand.AddQueueItem(config.C.Redis.Pool, ds.DevEUI, block); err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
 	}
 

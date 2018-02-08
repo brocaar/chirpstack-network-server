@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
@@ -17,13 +18,13 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	common.DB = db
+	config.C.PostgreSQL.DB = db
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(common.DB)
+		test.MustResetDB(config.C.PostgreSQL.DB)
 
 		asClient := test.NewApplicationClient()
-		common.ApplicationServerPool = test.NewApplicationServerPool(asClient)
+		config.C.ApplicationServer.Pool = test.NewApplicationServerPool(asClient)
 
 		Convey("Given a service, device and routing profile and device", func() {
 			sp := storage.ServiceProfile{}
@@ -68,7 +69,7 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 				},
 			}
 			for i := range items {
-				So(storage.CreateDeviceQueueItem(common.DB, &items[i]), ShouldBeNil)
+				So(storage.CreateDeviceQueueItem(config.C.PostgreSQL.DB, &items[i]), ShouldBeNil)
 			}
 
 			tests := []struct {
@@ -149,7 +150,7 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 					So(test.ExpecteddataContext, ShouldResemble, ctx)
 
 					if test.ExpectedNextDeviceQueueItem != nil {
-						qi, err := storage.GetNextDeviceQueueItemForDevEUI(common.DB, d.DevEUI)
+						qi, err := storage.GetNextDeviceQueueItemForDevEUI(config.C.PostgreSQL.DB, d.DevEUI)
 						So(err, ShouldBeNil)
 
 						So(qi.FRMPayload, ShouldResemble, test.ExpectedNextDeviceQueueItem.FRMPayload)

@@ -7,7 +7,6 @@ After=network-online.target redis.service mosquitto.service
 [Service]
 User=loraserver
 Group=loraserver
-EnvironmentFile=/etc/default/loraserver
 ExecStart=/usr/bin/loraserver
 Restart=on-failure
 

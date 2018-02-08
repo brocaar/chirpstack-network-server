@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+NAME=loraserver
 BIN_DIR=/usr/bin
 SCRIPT_DIR=/usr/lib/loraserver/scripts
 LOG_DIR=/var/log/loraserver
@@ -38,14 +39,39 @@ fi
 mkdir -p "$LOG_DIR"
 chown loraserver:loraserver "$LOG_DIR"
 
-# add defaults file, if it doesn't exist
-if [[ ! -f /etc/default/loraserver ]]; then
-	cp $SCRIPT_DIR/default /etc/default/loraserver
-	chown loraserver:loraserver /etc/default/loraserver
-	chmod 640 /etc/default/loraserver
+# create configuration directory
+if [[ ! -d /etc/$NAME ]]; then
+	mkdir /etc/$NAME
+	chown $DAEMON_USER:$DAEMON_GROUP /etc/$NAME
+	chmod 750 /etc/$NAME
+fi
+
+# migrate old environment variable based configuration to new format and
+# path.
+if [[ -f /etc/default/$NAME && ! -f /etc/$NAME/$NAME.toml ]]; then
+	set -a
+	source /etc/default/$NAME
+	loraserver configfile > /etc/$NAME/$NAME.toml
+	chown $DAEMON_USER:$DAEMON_GROUP /etc/$NAME/$NAME.toml
+	chmod 640 /etc/$NAME/$NAME.toml
+	mv /etc/default/$NAME /etc/default/$NAME.backup
+
+	echo -e "\n\n\n"
+	echo "-----------------------------------------------------------------------------------------"
+	echo "Your configuration file has been migrated to a new location and format!"
+	echo "Path: /etc/$NAME/$NAME.toml"
+	echo "-----------------------------------------------------------------------------------------"
+	echo -e "\n\n\n"
+fi
+
+# create example configuration file
+if [[ ! -f /etc/$NAME/$NAME.toml ]]; then
+	loraserver configfile > /etc/$NAME/$NAME.toml
+	chown $DAEMON_USER:$DAEMON_GROUP /etc/$NAME/$NAME.toml
+	chmod 640 /etc/$NAME/$NAME.toml
 	echo -e "\n\n\n"
 	echo "---------------------------------------------------------------------------------"
-	echo "A sample configuration file has been copied to: /etc/default/loraserver"
+	echo "A sample configuration file has been copied to: /etc/$NAME/$NAME.toml"
 	echo "After setting the correct values, run the following command to start LoRa Server:"
 	echo ""
 	which systemctl &>/dev/null

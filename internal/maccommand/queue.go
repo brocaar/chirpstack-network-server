@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/lorawan"
 )
 
@@ -70,7 +70,7 @@ func AddQueueItem(p *redis.Pool, devEUI lorawan.EUI64, block Block) error {
 	c := p.Get()
 	defer c.Close()
 
-	exp := int64(common.NodeSessionTTL) / int64(time.Millisecond)
+	exp := int64(config.C.NetworkServer.DeviceSessionTTL) / int64(time.Millisecond)
 	key := fmt.Sprintf(queueTempl, devEUI)
 
 	c.Send("MULTI")
@@ -196,7 +196,7 @@ func SetPending(p *redis.Pool, devEUI lorawan.EUI64, block Block) error {
 	defer c.Close()
 
 	key := fmt.Sprintf(pendingTempl, devEUI, block.CID)
-	exp := int64(common.NodeSessionTTL) / int64(time.Millisecond)
+	exp := int64(config.C.NetworkServer.DeviceSessionTTL) / int64(time.Millisecond)
 
 	_, err := c.Do("PSETEX", key, exp, buf.Bytes())
 	if err != nil {

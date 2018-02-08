@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
@@ -70,7 +70,7 @@ func handleLinkADRAns(ds *storage.DeviceSession, block Block, pendingBlock *Bloc
 	adrReq := linkADRPayloads[len(linkADRPayloads)-1]
 
 	if channelMaskACK && dataRateACK && powerACK {
-		chans, err := common.Band.GetEnabledChannelsForLinkADRReqPayloads(ds.EnabledChannels, linkADRPayloads)
+		chans, err := config.C.NetworkServer.Band.Band.GetEnabledChannelsForLinkADRReqPayloads(ds.EnabledChannels, linkADRPayloads)
 		if err != nil {
 			return errors.Wrap(err, "get enalbed channels for link_adr_req payloads error")
 		}
@@ -133,7 +133,7 @@ func handleLinkCheckReq(ds *storage.DeviceSession, rxPacket models.RXPacket) err
 		return errors.New("rx info-set contains zero items")
 	}
 
-	requiredSNR, ok := common.SpreadFactorToRequiredSNRTable[rxPacket.TXInfo.DataRate.SpreadFactor]
+	requiredSNR, ok := config.SpreadFactorToRequiredSNRTable[rxPacket.TXInfo.DataRate.SpreadFactor]
 	if !ok {
 		return fmt.Errorf("sf %d not in sf to required snr table", rxPacket.TXInfo.DataRate.SpreadFactor)
 	}
@@ -156,7 +156,7 @@ func handleLinkCheckReq(ds *storage.DeviceSession, rxPacket models.RXPacket) err
 		},
 	}
 
-	if err := AddQueueItem(common.RedisPool, ds.DevEUI, block); err != nil {
+	if err := AddQueueItem(config.C.Redis.Pool, ds.DevEUI, block); err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
 	}
 	return nil

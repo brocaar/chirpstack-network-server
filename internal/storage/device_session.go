@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/lorawan"
 )
@@ -21,6 +21,7 @@ const (
 	deviceSessionKeyTempl = "lora:ns:device:%s"  // contains the session of a DevEUI
 )
 
+// UplinkHistorySize contains the number of frames to store
 const UplinkHistorySize = 20
 
 // RXWindow defines the RX window option.
@@ -173,7 +174,7 @@ func GetRandomDevAddr(p *redis.Pool, netID lorawan.NetID) (lorawan.DevAddr, erro
 func ValidateAndGetFullFCntUp(s DeviceSession, fCntUp uint32) (uint32, bool) {
 	// we need to compare the difference of the 16 LSB
 	gap := uint32(uint16(fCntUp) - uint16(s.FCntUp%65536))
-	if gap < common.Band.MaxFCntGap {
+	if gap < config.C.NetworkServer.Band.Band.MaxFCntGap {
 		return s.FCntUp + gap, true
 	}
 	return 0, false
@@ -189,7 +190,7 @@ func SaveDeviceSession(p *redis.Pool, s DeviceSession) error {
 
 	c := p.Get()
 	defer c.Close()
-	exp := int64(common.NodeSessionTTL) / int64(time.Millisecond)
+	exp := int64(config.C.NetworkServer.DeviceSessionTTL) / int64(time.Millisecond)
 
 	c.Send("MULTI")
 	c.Send("PSETEX", fmt.Sprintf(deviceSessionKeyTempl, s.DevEUI), exp, buf.Bytes())

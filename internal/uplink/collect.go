@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/models"
 )
 
@@ -52,7 +52,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 
 	// this way we can set a really low DeduplicationDelay for testing, without
 	// the risk that the set already expired in redis on read
-	deduplicationTTL := common.DeduplicationDelay * 2
+	deduplicationTTL := config.C.NetworkServer.DeduplicationDelay * 2
 	if deduplicationTTL < time.Millisecond*200 {
 		deduplicationTTL = time.Millisecond * 200
 	}
@@ -78,7 +78,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 
 	// wait the configured amount of time, more packets might be received
 	// from other gateways
-	time.Sleep(common.DeduplicationDelay)
+	time.Sleep(config.C.NetworkServer.DeduplicationDelay)
 
 	// collect all packets from the set
 	payloads, err := redis.ByteSlices(c.Do("SMEMBERS", key))

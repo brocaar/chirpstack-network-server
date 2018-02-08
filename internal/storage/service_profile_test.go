@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan/backend"
 	"github.com/pkg/errors"
@@ -17,12 +18,12 @@ func TestServiceProfile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	common.DB = db
-	common.RedisPool = common.NewRedisPool(conf.RedisURL)
+	config.C.PostgreSQL.DB = db
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(common.DB)
-		test.MustFlushRedis(common.RedisPool)
+		test.MustResetDB(config.C.PostgreSQL.DB)
+		test.MustFlushRedis(config.C.Redis.Pool)
 
 		Convey("When creating a service-profile", func() {
 			sp := ServiceProfile{
@@ -102,21 +103,21 @@ func TestServiceProfile(t *testing.T) {
 			})
 
 			Convey("Then GetAndCacheServiceProfile reads the service-profile from db and puts it in cache", func() {
-				spGet, err := GetAndCacheServiceProfile(common.DB, common.RedisPool, sp.ServiceProfile.ServiceProfileID)
+				spGet, err := GetAndCacheServiceProfile(config.C.PostgreSQL.DB, config.C.Redis.Pool, sp.ServiceProfile.ServiceProfileID)
 				So(err, ShouldBeNil)
 				So(spGet.ServiceProfile.ServiceProfileID, ShouldEqual, sp.ServiceProfile.ServiceProfileID)
 
 				Convey("Then GetServiceProfileCache returns the service-profile", func() {
-					spGet, err := GetServiceProfileCache(common.RedisPool, sp.ServiceProfile.ServiceProfileID)
+					spGet, err := GetServiceProfileCache(config.C.Redis.Pool, sp.ServiceProfile.ServiceProfileID)
 					So(err, ShouldBeNil)
 					So(spGet.ServiceProfile.ServiceProfileID, ShouldEqual, sp.ServiceProfile.ServiceProfileID)
 				})
 
 				Convey("Then FlushServiceProfileCache removes the service-profile from cache", func() {
-					err := FlushServiceProfileCache(common.RedisPool, sp.ServiceProfile.ServiceProfileID)
+					err := FlushServiceProfileCache(config.C.Redis.Pool, sp.ServiceProfile.ServiceProfileID)
 					So(err, ShouldBeNil)
 
-					_, err = GetServiceProfileCache(common.RedisPool, sp.ServiceProfile.ServiceProfileID)
+					_, err = GetServiceProfileCache(config.C.Redis.Pool, sp.ServiceProfile.ServiceProfileID)
 					So(err, ShouldNotBeNil)
 					So(errors.Cause(err), ShouldEqual, ErrDoesNotExist)
 				})

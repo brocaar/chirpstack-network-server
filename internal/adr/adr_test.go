@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -15,7 +16,7 @@ import (
 
 func TestADR(t *testing.T) {
 	conf := test.GetConfig()
-	common.InstallationMargin = 5
+	config.C.NetworkServer.NetworkSettings.InstallationMargin = 5
 
 	Convey("Testing the ADR functions", t, func() {
 		Convey("Given a testtable for getNbRep", func() {
@@ -198,8 +199,8 @@ func TestADR(t *testing.T) {
 		})
 
 		Convey("Given a clean Redis database", func() {
-			common.RedisPool = common.NewRedisPool(conf.RedisURL)
-			test.MustFlushRedis(common.RedisPool)
+			config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+			test.MustFlushRedis(config.C.Redis.Pool)
 
 			Convey("Given a testtable for HandleADR", func() {
 				phyPayloadNoADR := lorawan.PHYPayload{
@@ -278,7 +279,7 @@ func TestADR(t *testing.T) {
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
 							TXInfo: models.TXInfo{
-								DataRate: common.Band.DataRates[2],
+								DataRate: config.C.NetworkServer.Band.Band.DataRates[2],
 							},
 							RXInfoSet: models.RXInfoSet{
 								{LoRaSNR: -7},
@@ -311,7 +312,7 @@ func TestADR(t *testing.T) {
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
 							TXInfo: models.TXInfo{
-								DataRate: common.Band.DataRates[5],
+								DataRate: config.C.NetworkServer.Band.Band.DataRates[5],
 							},
 							RXInfoSet: models.RXInfoSet{
 								{LoRaSNR: 1},
@@ -364,7 +365,7 @@ func TestADR(t *testing.T) {
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
 							TXInfo: models.TXInfo{
-								DataRate: common.Band.DataRates[5],
+								DataRate: config.C.NetworkServer.Band.Band.DataRates[5],
 							},
 							RXInfoSet: models.RXInfoSet{
 								{LoRaSNR: -5},
@@ -415,7 +416,7 @@ func TestADR(t *testing.T) {
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
 							TXInfo: models.TXInfo{
-								DataRate: common.Band.DataRates[2],
+								DataRate: config.C.NetworkServer.Band.Band.DataRates[2],
 							},
 							RXInfoSet: models.RXInfoSet{
 								{LoRaSNR: -7},
@@ -447,7 +448,7 @@ func TestADR(t *testing.T) {
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
 							TXInfo: models.TXInfo{
-								DataRate: common.Band.DataRates[2],
+								DataRate: config.C.NetworkServer.Band.Band.DataRates[2],
 							},
 							RXInfoSet: models.RXInfoSet{
 								{LoRaSNR: -7},
@@ -507,7 +508,7 @@ func TestADR(t *testing.T) {
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
 							TXInfo: models.TXInfo{
-								DataRate: common.Band.DataRates[2],
+								DataRate: config.C.NetworkServer.Band.Band.DataRates[2],
 							},
 							RXInfoSet: models.RXInfoSet{
 								{LoRaSNR: -7},
@@ -537,7 +538,7 @@ func TestADR(t *testing.T) {
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadNoADR,
 							TXInfo: models.TXInfo{
-								DataRate: common.Band.DataRates[2],
+								DataRate: config.C.NetworkServer.Band.Band.DataRates[2],
 							},
 							RXInfoSet: models.RXInfoSet{
 								{LoRaSNR: -7},
@@ -558,10 +559,10 @@ func TestADR(t *testing.T) {
 
 				for i, tst := range testTable {
 					Convey(fmt.Sprintf("Test: %s [%d]", tst.Name, i), func() {
-						So(storage.SaveDeviceSession(common.RedisPool, *tst.DeviceSession), ShouldBeNil)
+						So(storage.SaveDeviceSession(config.C.Redis.Pool, *tst.DeviceSession), ShouldBeNil)
 
 						for _, block := range tst.MACCommandQueue {
-							So(maccommand.AddQueueItem(common.RedisPool, tst.DeviceSession.DevEUI, block), ShouldBeNil)
+							So(maccommand.AddQueueItem(config.C.Redis.Pool, tst.DeviceSession.DevEUI, block), ShouldBeNil)
 						}
 
 						err := HandleADR(tst.DeviceSession, tst.RXPacket, tst.FullFCnt)
@@ -573,7 +574,7 @@ func TestADR(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(tst.DeviceSession, ShouldResemble, &tst.ExpectedDeviceSession)
 
-						macPayloadQueue, err := maccommand.ReadQueueItems(common.RedisPool, tst.DeviceSession.DevEUI)
+						macPayloadQueue, err := maccommand.ReadQueueItems(config.C.Redis.Pool, tst.DeviceSession.DevEUI)
 						So(err, ShouldBeNil)
 						So(macPayloadQueue, ShouldResemble, tst.ExpectedMACCommandQueue)
 					})

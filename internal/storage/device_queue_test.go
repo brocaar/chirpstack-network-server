@@ -11,6 +11,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/test"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -21,12 +22,12 @@ func TestDeviceQueue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	common.DB = db
+	config.C.PostgreSQL.DB = db
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(common.DB)
+		test.MustResetDB(config.C.PostgreSQL.DB)
 		asClient := test.NewApplicationClient()
-		common.ApplicationServerPool = test.NewApplicationServerPool(asClient)
+		config.C.ApplicationServer.Pool = test.NewApplicationServerPool(asClient)
 
 		Convey("Given a service, device and routing profile and device", func() {
 			sp := ServiceProfile{}
@@ -121,10 +122,10 @@ func TestDeviceQueue(t *testing.T) {
 					ts := time.Now().Add(time.Minute)
 					items[0].IsPending = true
 					items[0].TimeoutAfter = &ts
-					So(UpdateDeviceQueueItem(common.DB, &items[0]), ShouldBeNil)
+					So(UpdateDeviceQueueItem(config.C.PostgreSQL.DB, &items[0]), ShouldBeNil)
 
 					Convey("Then GetNextDeviceQueueItemForDevEUI returns does not exist error", func() {
-						_, err := GetNextDeviceQueueItemForDevEUI(common.DB, d.DevEUI)
+						_, err := GetNextDeviceQueueItemForDevEUI(config.C.PostgreSQL.DB, d.DevEUI)
 						So(err, ShouldEqual, ErrDoesNotExist)
 					})
 				})
@@ -182,7 +183,7 @@ func TestDeviceQueue(t *testing.T) {
 					},
 				}
 				for i := range items {
-					So(CreateDeviceQueueItem(common.DB, &items[i]), ShouldBeNil)
+					So(CreateDeviceQueueItem(config.C.PostgreSQL.DB, &items[i]), ShouldBeNil)
 				}
 
 				tests := []struct {
@@ -260,7 +261,7 @@ func TestDeviceQueue(t *testing.T) {
 
 				for i, test := range tests {
 					Convey(fmt.Sprintf("Testing: %s [%d]", test.Name, i), func() {
-						qi, err := GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(common.DB, d.DevEUI, test.MaxFRMPayload, test.FCnt, rp.RoutingProfileID)
+						qi, err := GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(config.C.PostgreSQL.DB, d.DevEUI, test.MaxFRMPayload, test.FCnt, rp.RoutingProfileID)
 						if test.ExpectedHandleError == nil {
 							So(*test.ExpectedDeviceQueueItemID, ShouldEqual, qi.ID)
 							So(err, ShouldBeNil)
@@ -292,24 +293,24 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	common.DB = db
+	config.C.PostgreSQL.DB = db
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(common.DB)
+		test.MustResetDB(config.C.PostgreSQL.DB)
 
 		Convey("Given a service-, class-c device- and routing-profile and two devices", func() {
 			sp := ServiceProfile{}
-			So(CreateServiceProfile(common.DB, &sp), ShouldBeNil)
+			So(CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 			rp := RoutingProfile{}
-			So(CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
+			So(CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
 			dp := DeviceProfile{
 				DeviceProfile: backend.DeviceProfile{
 					SupportsClassC: true,
 				},
 			}
-			So(CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
+			So(CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
 
 			devices := []Device{
 				{
@@ -326,7 +327,7 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 				},
 			}
 			for i := range devices {
-				So(CreateDevice(common.DB, &devices[i]), ShouldBeNil)
+				So(CreateDevice(config.C.PostgreSQL.DB, &devices[i]), ShouldBeNil)
 			}
 
 			inOneMinute := time.Now().Add(time.Minute)
@@ -415,11 +416,11 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 					}()
 
 					for i := range test.QueueItems {
-						So(CreateDeviceQueueItem(common.DB, &test.QueueItems[i]), ShouldBeNil)
+						So(CreateDeviceQueueItem(config.C.PostgreSQL.DB, &test.QueueItems[i]), ShouldBeNil)
 					}
 
 					for i := 0; i < test.GetCallCount; i++ {
-						tx, err := common.DB.Beginx()
+						tx, err := config.C.PostgreSQL.DB.Beginx()
 						So(err, ShouldBeNil)
 						transactions = append(transactions, tx)
 

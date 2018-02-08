@@ -16,6 +16,7 @@ import (
 	"github.com/brocaar/loraserver/internal/api/client/asclient"
 	"github.com/brocaar/loraserver/internal/api/client/jsclient"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/migrations"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
@@ -25,15 +26,19 @@ import (
 func init() {
 	log.SetLevel(log.ErrorLevel)
 
-	common.BandName = band.EU_863_870
-	common.DeduplicationDelay = 5 * time.Millisecond
-	common.GetDownlinkDataDelay = 5 * time.Millisecond
+	config.C.NetworkServer.DeviceSessionTTL = time.Hour
+	config.C.NetworkServer.Band.Name = band.EU_863_870
+	config.C.NetworkServer.Band.Band, _ = band.GetConfig(config.C.NetworkServer.Band.Name, false, lorawan.DwellTimeNoLimit)
 
-	loc, err := time.LoadLocation("Europe/Amsterdam")
+	config.C.NetworkServer.DeduplicationDelay = 5 * time.Millisecond
+	config.C.NetworkServer.GetDownlinkDataDelay = 5 * time.Millisecond
+
+	config.C.NetworkServer.Gateway.Stats.Timezone = "Europe/Amsterdam"
+	loc, err := time.LoadLocation(config.C.NetworkServer.Gateway.Stats.Timezone)
 	if err != nil {
 		panic(err)
 	}
-	common.TimeLocation = loc
+	config.C.NetworkServer.Gateway.Stats.TimezoneLocation = loc
 }
 
 // Config contains the test configuration.
@@ -47,7 +52,7 @@ func GetConfig() *Config {
 	var err error
 	log.SetLevel(log.ErrorLevel)
 
-	common.Band, err = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)
+	config.C.NetworkServer.Band.Band, err = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)
 	if err != nil {
 		panic(err)
 	}

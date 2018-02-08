@@ -10,15 +10,15 @@ func init() {
 	log.SetLevel(log.ErrorLevel)
 }
 
-type config struct {
+type c struct {
 	Server   string
 	Username string
 	Password string
 	RedisURL string
 }
 
-func getConfig() *config {
-	c := &config{
+func getConfig() *c {
+	c := &c{
 		Server:   "tcp://127.0.0.1:1883",
 		RedisURL: "redis://localhost:6379",
 	}

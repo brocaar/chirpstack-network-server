@@ -11,7 +11,7 @@ import (
 	"github.com/brocaar/lorawan"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/pkg/errors"
 )
@@ -44,7 +44,7 @@ type FrameLog struct {
 
 // LogUplinkFrameForGateways logs the given frame to all the gateway pub-sub keys.
 func LogUplinkFrameForGateways(rxPacket models.RXPacket) error {
-	c := common.RedisPool.Get()
+	c := config.C.Redis.Pool.Get()
 	defer c.Close()
 
 	c.Send("MULTI")
@@ -72,7 +72,7 @@ func LogUplinkFrameForGateways(rxPacket models.RXPacket) error {
 
 // LogDownlinkFrameForGateway logs the given frame to the gateway pub-sub key.
 func LogDownlinkFrameForGateway(frame DownlinkFrameLog) error {
-	c := common.RedisPool.Get()
+	c := config.C.Redis.Pool.Get()
 	defer c.Close()
 
 	key := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, frame.TXInfo.MAC)
@@ -90,7 +90,7 @@ func LogDownlinkFrameForGateway(frame DownlinkFrameLog) error {
 
 // LogDownlinkFrameForDevEUI logs the given frame to the device pub-sub key.
 func LogDownlinkFrameForDevEUI(devEUI lorawan.EUI64, frame DownlinkFrameLog) error {
-	c := common.RedisPool.Get()
+	c := config.C.Redis.Pool.Get()
 	defer c.Close()
 
 	key := fmt.Sprintf(deviceFrameLogDownlinkPubSubKeyTempl, devEUI)
@@ -108,7 +108,7 @@ func LogDownlinkFrameForDevEUI(devEUI lorawan.EUI64, frame DownlinkFrameLog) err
 
 // LogUplinkFrameForDevEUI logs the given frame to the pub-sub key of the given DevEUI.
 func LogUplinkFrameForDevEUI(devEUI lorawan.EUI64, rxPacket models.RXPacket) error {
-	c := common.RedisPool.Get()
+	c := config.C.Redis.Pool.Get()
 	defer c.Close()
 
 	frameLog := UplinkFrameLog{
@@ -146,7 +146,7 @@ func GetFrameLogForDevice(ctx context.Context, devEUI lorawan.EUI64, frameLogCha
 }
 
 func getFrameLogs(ctx context.Context, uplinkKey, downlinkKey string, frameLogChan chan FrameLog) error {
-	c := common.RedisPool.Get()
+	c := config.C.Redis.Pool.Get()
 	defer c.Close()
 	var done bool
 

@@ -68,16 +68,16 @@ sudo apt-get install loraserver
 ```
 
 After installation, modify the configuration file which is located at
-`/etc/default/loraserver`.
+`/etc/loraserver/loraserver.toml`.
 
 Settings you probably want to set / change:
 
-* `POSTGRES_DSN`
-* `BAND`
-* `NET_ID`
-* `DB_AUTOMIGRATE`
-* `TIMEZONE`
-* `GW_SERVER_JWT_SECRET`
+* `postgresql.dsn`
+* `postgresql.automigrate`
+* `network_server.net_id`
+* `network_server.band.name`
+* `network_server.gateway.api.jwt_secret`
+* `network_server.gateway.stats.timezone`
 
 ### Starting LoRa Server
 

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan/backend"
 	. "github.com/smartystreets/goconvey/convey"
@@ -16,10 +17,10 @@ func TestRoutingProfile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	common.DB = db
+	config.C.PostgreSQL.DB = db
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(common.DB)
+		test.MustResetDB(config.C.PostgreSQL.DB)
 
 		Convey("When creating a routing-profile", func() {
 			rp := RoutingProfile{

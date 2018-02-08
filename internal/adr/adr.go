@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -39,7 +39,7 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 		MaxSNR:       maxSNR,
 	})
 
-	currentDR, err := common.Band.GetDataRate(rxPacket.TXInfo.DataRate)
+	currentDR, err := config.C.NetworkServer.Band.Band.GetDataRate(rxPacket.TXInfo.DataRate)
 	if err != nil {
 		return errors.Wrap(err, "get data-rate error")
 	}
@@ -81,15 +81,15 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 		return nil
 	}
 
-	if currentDR >= len(common.Band.DataRates) {
+	if currentDR >= len(config.C.NetworkServer.Band.Band.DataRates) {
 		return fmt.Errorf("invalid data-rate: %d", currentDR)
 	}
-	requiredSNR, err := getRequiredSNRForSF(common.Band.DataRates[currentDR].SpreadFactor)
+	requiredSNR, err := getRequiredSNRForSF(config.C.NetworkServer.Band.Band.DataRates[currentDR].SpreadFactor)
 	if err != nil {
 		return err
 	}
 
-	snrMargin := snrM - requiredSNR - common.InstallationMargin
+	snrMargin := snrM - requiredSNR - config.C.NetworkServer.NetworkSettings.InstallationMargin
 	nStep := int(snrMargin / 3)
 
 	maxSupportedDR := getMaxSupportedDRForNode(ds)
@@ -106,7 +106,7 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 	var block *maccommand.Block
 
 	// see if there is already a LinkADRReq commands in the queue
-	block, err = maccommand.GetQueueItemByCID(common.RedisPool, ds.DevEUI, lorawan.LinkADRReq)
+	block, err = maccommand.GetQueueItemByCID(config.C.Redis.Pool, ds.DevEUI, lorawan.LinkADRReq)
 	if err != nil {
 		return errors.Wrap(err, "read pending error")
 	}
@@ -160,7 +160,7 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 		lastMACPl.Redundancy.NbRep = uint8(idealNbRep)
 	}
 
-	err = maccommand.AddQueueItem(common.RedisPool, ds.DevEUI, *block)
+	err = maccommand.AddQueueItem(config.C.Redis.Pool, ds.DevEUI, *block)
 	if err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
 	}
@@ -198,7 +198,7 @@ func getNbRep(currentNbRep uint8, pktLossRate float64) uint8 {
 
 func getMaxTXPowerOffsetIndex() int {
 	var idx int
-	for i, p := range common.Band.TXPowerOffset {
+	for i, p := range config.C.NetworkServer.Band.Band.TXPowerOffset {
 		if p < 0 {
 			idx = i
 		}
@@ -252,7 +252,7 @@ func getIdealTXPowerOffsetAndDR(nStep, txPowerOffsetIndex, dr, maxSupportedTXPow
 }
 
 func getRequiredSNRForSF(sf int) (float64, error) {
-	snr, ok := common.SpreadFactorToRequiredSNRTable[sf]
+	snr, ok := config.SpreadFactorToRequiredSNRTable[sf]
 	if !ok {
 		return 0, fmt.Errorf("sf to required snr for does not exsists (sf: %d)", sf)
 	}
@@ -261,8 +261,8 @@ func getRequiredSNRForSF(sf int) (float64, error) {
 
 func getMaxAllowedDR() int {
 	var maxDR int
-	for _, c := range common.Band.GetEnabledUplinkChannels() {
-		channel := common.Band.UplinkChannels[c]
+	for _, c := range config.C.NetworkServer.Band.Band.GetEnabledUplinkChannels() {
+		channel := config.C.NetworkServer.Band.Band.UplinkChannels[c]
 		if len(channel.DataRates) > 1 && channel.DataRates[len(channel.DataRates)-1] > maxDR {
 			maxDR = channel.DataRates[len(channel.DataRates)-1]
 		}

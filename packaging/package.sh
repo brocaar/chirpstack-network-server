@@ -75,7 +75,6 @@ tar -zxf $DIST_FILE_PATH -C $TMP_WORK_DIR/$BIN_DIR
 # copy scripts
 cp $TARGET/init.sh $TMP_WORK_DIR/$SCRIPT_DIR
 cp $TARGET/$NAME.service $TMP_WORK_DIR/$SCRIPT_DIR
-cp $TARGET/default $TMP_WORK_DIR/$SCRIPT_DIR
 cp $TARGET/logrotate $TMP_WORK_DIR/$LOGROTATE_DIR/$NAME
 
 if [ -n "$DEB_WANTED" ]; then

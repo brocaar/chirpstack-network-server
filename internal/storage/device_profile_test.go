@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan/backend"
 	"github.com/pkg/errors"
@@ -17,12 +18,12 @@ func TestDeviceProfile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	common.DB = db
-	common.RedisPool = common.NewRedisPool(conf.RedisURL)
+	config.C.PostgreSQL.DB = db
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(common.DB)
-		test.MustFlushRedis(common.RedisPool)
+		test.MustResetDB(config.C.PostgreSQL.DB)
+		test.MustFlushRedis(config.C.Redis.Pool)
 
 		Convey("When creating a device-profile", func() {
 			dp := DeviceProfile{
@@ -68,21 +69,21 @@ func TestDeviceProfile(t *testing.T) {
 			})
 
 			Convey("Then GetAndCacheDeviceProfile reads the device-profile from db and puts it in cache", func() {
-				dpGet, err := GetAndCacheDeviceProfile(common.DB, common.RedisPool, dp.DeviceProfile.DeviceProfileID)
+				dpGet, err := GetAndCacheDeviceProfile(config.C.PostgreSQL.DB, config.C.Redis.Pool, dp.DeviceProfile.DeviceProfileID)
 				So(err, ShouldBeNil)
 				So(dpGet.DeviceProfile.DeviceProfileID, ShouldEqual, dp.DeviceProfile.DeviceProfileID)
 
 				Convey("Then GetDeviceProfileCache returns the device-profile", func() {
-					dpGet, err := GetDeviceProfileCache(common.RedisPool, dp.DeviceProfile.DeviceProfileID)
+					dpGet, err := GetDeviceProfileCache(config.C.Redis.Pool, dp.DeviceProfile.DeviceProfileID)
 					So(err, ShouldBeNil)
 					So(dpGet.DeviceProfile.DeviceProfileID, ShouldEqual, dp.DeviceProfile.DeviceProfileID)
 				})
 
 				Convey("Then FlushDeviceProfileCache removes the device-profile from cache", func() {
-					err := FlushDeviceProfileCache(common.RedisPool, dp.DeviceProfile.DeviceProfileID)
+					err := FlushDeviceProfileCache(config.C.Redis.Pool, dp.DeviceProfile.DeviceProfileID)
 					So(err, ShouldBeNil)
 
-					_, err = GetDeviceProfileCache(common.RedisPool, dp.DeviceProfile.DeviceProfileID)
+					_, err = GetDeviceProfileCache(config.C.Redis.Pool, dp.DeviceProfile.DeviceProfileID)
 					So(err, ShouldNotBeNil)
 					So(errors.Cause(err), ShouldEqual, ErrDoesNotExist)
 				})

@@ -7,6 +7,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/eclipse/paho.mqtt.golang"
@@ -15,7 +16,7 @@ import (
 
 func TestBackend(t *testing.T) {
 	conf := getConfig()
-	common.RedisPool = common.NewRedisPool(conf.RedisURL)
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
 
 	Convey("Given a MQTT client", t, func() {
 		opts := mqtt.NewClientOptions().AddBroker(conf.Server).SetUsername(conf.Username).SetPassword(conf.Password)
@@ -25,7 +26,7 @@ func TestBackend(t *testing.T) {
 		So(token.Error(), ShouldBeNil)
 
 		Convey("Given a new Backend", func() {
-			test.MustFlushRedis(common.RedisPool)
+			test.MustFlushRedis(config.C.Redis.Pool)
 			backend, err := NewBackend(conf.Server, conf.Username, conf.Password, "", "", "")
 			So(err, ShouldBeNil)
 			defer backend.Close()

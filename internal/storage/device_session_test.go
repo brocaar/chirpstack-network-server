@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
@@ -136,16 +137,16 @@ func TestDeviceSession(t *testing.T) {
 					FullFCnt   uint32
 					Valid      bool
 				}{
-					{0, 1, 1, true},                                                               // one packet was lost
-					{1, 1, 1, true},                                                               // ideal case, the FCnt has the expected value
-					{2, 1, 0, false},                                                              // old packet received or re-transmission
-					{0, common.Band.MaxFCntGap, 0, false},                                         // gap should be less than MaxFCntGap
-					{0, common.Band.MaxFCntGap - 1, common.Band.MaxFCntGap - 1, true},             // gap is exactly within the allowed MaxFCntGap
-					{65536, common.Band.MaxFCntGap - 1, common.Band.MaxFCntGap - 1 + 65536, true}, // roll-over happened, gap ix exactly within allowed MaxFCntGap
-					{65535, common.Band.MaxFCntGap, 0, false},                                     // roll-over happened, but too many lost frames
-					{65535, 0, 65536, true},                                                       // roll-over happened
-					{65536, 0, 65536, true},                                                       // re-transmission
-					{4294967295, 0, 0, true},                                                      // 32 bit roll-over happened, counter started at 0 again
+					{0, 1, 1, true},                                                                                                         // one packet was lost
+					{1, 1, 1, true},                                                                                                         // ideal case, the FCnt has the expected value
+					{2, 1, 0, false},                                                                                                        // old packet received or re-transmission
+					{0, config.C.NetworkServer.Band.Band.MaxFCntGap, 0, false},                                                              // gap should be less than MaxFCntGap
+					{0, config.C.NetworkServer.Band.Band.MaxFCntGap - 1, config.C.NetworkServer.Band.Band.MaxFCntGap - 1, true},             // gap is exactly within the allowed MaxFCntGap
+					{65536, config.C.NetworkServer.Band.Band.MaxFCntGap - 1, config.C.NetworkServer.Band.Band.MaxFCntGap - 1 + 65536, true}, // roll-over happened, gap ix exactly within allowed MaxFCntGap
+					{65535, config.C.NetworkServer.Band.Band.MaxFCntGap, 0, false},                                                          // roll-over happened, but too many lost frames
+					{65535, 0, 65536, true},                                                                                                 // roll-over happened
+					{65536, 0, 65536, true},                                                                                                 // re-transmission
+					{4294967295, 0, 0, true},                                                                                                // 32 bit roll-over happened, counter started at 0 again
 				}
 
 				for _, test := range testTable {

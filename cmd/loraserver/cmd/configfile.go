@@ -1,74 +1,20 @@
----
-title: Configuration
-menu:
-    main:
-        parent: install
-        weight: 3
----
+package cmd
 
-## Configuration
+import (
+	"html/template"
+	"os"
 
-To list all configuration options, start `loraserver` with the `--help`
-flag. This will display:
+	"github.com/brocaar/loraserver/internal/config"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+)
 
-The `loraserver` binary has the following command-line flags:
-
-```text
-LoRa Server is an open-source network-server, part of the LoRa Server project
-        > documentation & support: https://docs.loraserver.io/loraserver/
-        > source & copyright information: https://github.com/brocaar/loraserver/
-
-Usage:
-  loraserver [flags]
-  loraserver [command]
-
-Available Commands:
-  configfile  Print the LoRa Server configuration file
-  help        Help about any command
-  version     Print the LoRa Server version
-
-Flags:
-  -c, --config string   path to configuration file (optional)
-  -h, --help            help for loraserver
-      --log-level int   debug=5, info=4, error=2, fatal=1, panic=0 (default 4)
-
-Use "loraserver [command] --help" for more information about a command.
-```
-
-### Configuration file
-
-By default `loraserver` will look in the following order for a
-configuration file at the following paths when `--config` is not:
-
-* `loraserver.toml` (current working directory)
-* `$HOME/.config/loraserver/loraserver.toml`
-* `/etc/loraserver/loraserver.toml`
-
-To load configuration from a different location, use the `--config` flag.
-
-To generate a new configuration file `loraserver.toml`, execute the following command:
-
-```bash
-loraserver configfile > loraserver.toml
-```
-
-Note that this configuration file will be pre-filled with the current configuration
-(either loaded from the paths mentioned above, or by using the `--config` flag).
-This makes it possible when new fields get added to upgrade your configuration file
-while preserving your old configuration. Example:
-
-```bash
-loraserver configfile --config loraserver-old.toml > loraserver-new.toml
-```
-
-Example configuration file:
-
-```toml
-[general]
+// when updating this template, don't forget to update config.md!
+const configTemplate = `[general]
 # Log level
 #
 # debug=5, info=4, warning=3, error=2, fatal=1, panic=0
-log_level=4
+log_level={{ .General.LogLevel }}
 
 
 # PostgreSQL settings.
@@ -101,7 +47,7 @@ log_level=4
 # * require - Always SSL (skip verification)
 # * verify-ca - Always SSL (verify that the certificate presented by the server was signed by a trusted CA)
 # * verify-full - Always SSL (verify that the certification presented by the server was signed by a trusted CA and the server host name matches the one in the certificate)
-dsn="postgres://localhost/loraserver_ns?sslmode=disable"
+dsn="{{ .PostgreSQL.DSN }}"
 
 # Automatically apply database migrations.
 #
@@ -110,7 +56,7 @@ dsn="postgres://localhost/loraserver_ns?sslmode=disable"
 # or let LoRa App Server migrate to the latest state automatically, by using
 # this setting. Make sure that you always make a backup when upgrading Lora
 # App Server and / or applying migrations.
-automigrate=true
+automigrate={{ .PostgreSQL.Automigrate }}
 
 
 # Redis settings
@@ -121,13 +67,13 @@ automigrate=true
 #
 # For more information about the Redis URL format, see:
 # https://www.iana.org/assignments/uri-schemes/prov/redis
-url="redis://localhost:6379"
+url="{{ .Redis.URL }}"
 
 
 # Network-server settings.
 [network_server]
 # Network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203)
-net_id="010203"
+net_id="{{ .NetworkServer.NetID }}"
 
 # Time to wait for uplink de-duplication.
 #
@@ -136,14 +82,14 @@ net_id="010203"
 # Please note that this value has influence on the uplink / downlink
 # roundtrip time. Setting this value too high means LoRa Server will be
 # unable to respond to the device within its receive-window.
-deduplication_delay="200ms"
+deduplication_delay="{{ .NetworkServer.DeduplicationDelay }}"
 
 # Device session expiration.
 #
 # The TTL value defines the time after which a device-session expires
 # after no activity. Valid units are 'ms', 's', 'm', 'h'. Note that these
 # values can be combined, e.g. '24h30m15s'.
-device_session_ttl="744h0m0s"
+device_session_ttl="{{ .NetworkServer.DeviceSessionTTL }}"
 
 # Get downlink data delay.
 #
@@ -155,7 +101,7 @@ device_session_ttl="744h0m0s"
 # Please note that this value has influence on the uplink / downlink
 # roundtrip time. Setting this value too high means LoRa Server will be
 # unable to respond to the device within its receive-window.
-get_downlink_data_delay="100ms"
+get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 
 
   # LoRaWAN regional band configuration.
@@ -167,7 +113,7 @@ get_downlink_data_delay="100ms"
   # LoRaWAN band to use.
   #
   # Valid values are:
-  # *   AS_923
+  # *	AS_923
   # * AU_915_928
   # * CN_470_510
   # * CN_779_787
@@ -176,7 +122,7 @@ get_downlink_data_delay="100ms"
   # * IN_865_867
   # * KR_920_923
   # * US_902_928),
-  name="EU_863_870"
+  name="{{ .NetworkServer.Band.Name }}"
 
   # Enforce 400ms dwell time
   #
@@ -185,7 +131,7 @@ get_downlink_data_delay="100ms"
   # dwell time setting must be set to enforce the max payload size
   # given the dwell-time limitation. For band configuration where the dwell-time is
   # always enforced, setting this flag is not required.
-  dwell_time_400ms=false
+  dwell_time_400ms={{ .NetworkServer.Band.DwellTime400ms }}
 
   # Enforce repeater compatibility
   #
@@ -193,7 +139,7 @@ get_downlink_data_delay="100ms"
   # repeater encapsulation layer as for setups where a repeater will never
   # be used. The latter case increases the max payload size for some data-rates.
   # In case a repeater might used, set this flag to true.
-  repeater_compatible=false
+  repeater_compatible={{ .NetworkServer.Band.RepeaterCompatible }}
 
 
   # LoRaWAN network related settings.
@@ -204,35 +150,35 @@ get_downlink_data_delay="100ms"
   # resulting in a lower data-rate but decreasing the chance that the
   # device gets disconnected because it is unable to reach one of the
   # surrounded gateways.
-  installation_margin=10
+  installation_margin={{ .NetworkServer.NetworkSettings.InstallationMargin }}
 
   # Class A RX1 delay
   #
   # 0=1sec, 1=1sec, ... 15=15sec. A higher value means LoRa Server has more
   # time to respond to the device as the delay between the uplink and the
   # first receive-window will be increased.
-  rx1_delay=1
+  rx1_delay={{ .NetworkServer.NetworkSettings.RX1Delay }}
 
   # RX1 data-rate offset
   #
   # Please consult the LoRaWAN Regional Parameters specification for valid
   # options of the configured network_server.band.name.
-  rx1_dr_offset=0
+  rx1_dr_offset={{ .NetworkServer.NetworkSettings.RX1DROffset }}
 
   # RX2 data-rate (when set to -1, the default rx2 data-rate will be used)
   #
   # Please consult the LoRaWAN Regional Parameters specification for valid
   # options of the configured network_server.band.name.
-  rx2_dr=-1
+  rx2_dr={{ .NetworkServer.NetworkSettings.RX2DR }}
 
   # Enable only a given sub-set of channels
   #
   # Use this when ony a sub-set of the by default enabled channels are being
   # used. For example when only using the first 8 channels of the US band.
-  #
+  # 
   # Example:
   # enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7]
-  enabled_uplink_channels=[]
+  enabled_uplink_channels=[{{ range $index, $element := .NetworkServer.NetworkSettings.EnabledUplinkChannels }}{{ if $index }}, {{ end }}{{ $element }}{{ end }}]
 
 
   # Extra channels to use for ISM bands that implement the CFList
@@ -267,7 +213,12 @@ get_downlink_data_delay="100ms"
   # frequency=867900000
   # min_dr=0
   # max_dr=5
-
+{{ range $index, $element := .NetworkServer.NetworkSettings.ExtraChannels }}
+  [[network_server.network_settings.extra_channels]]
+  frequency={{ $element.Frequency }}
+  min_dr={{ $element.MinDR }}
+  max_dr={{ $element.MaxDR }}
+{{ end }}
 
   # Network-server API
   #
@@ -275,36 +226,36 @@ get_downlink_data_delay="100ms"
   # custom components interacting with LoRa Server.
   [network_server.api]
   # ip:port to bind the api server
-  bind="0.0.0.0:8000"
+  bind="{{ .NetworkServer.API.Bind }}"
 
   # ca certificate used by the api server (optional)
-  ca_cert=""
+  ca_cert="{{ .NetworkServer.API.CACert }}"
 
   # tls certificate used by the api server (optional)
-  tls_cert=""
+  tls_cert="{{ .NetworkServer.API.TLSCert }}"
 
   # tls key used by the api server (optional)
-  tls_key=""
+  tls_key="{{ .NetworkServer.API.TLSKey }}"
 
   # Gateway API
-  #
+  # 
   # This API is used by the LoRa Channel Manager component to fetch
   # channel configuration.
   [network_server.gateway.api]
   # ip:port to bind the api server
-  bind="0.0.0.0:8002"
+  bind="{{ .NetworkServer.Gateway.API.Bind }}"
 
   # CA certificate used by the api server (optional)
-  ca_cert=""
+  ca_cert="{{ .NetworkServer.Gateway.API.CACert }}"
 
   # tls certificate used by the api server (optional)
-  tls_cert=""
+  tls_cert="{{ .NetworkServer.Gateway.API.TLSCert }}"
 
   # tls key used by the api server (optional)
-  tls_key=""
+  tls_key="{{ .NetworkServer.Gateway.API.TLSKey }}"
 
   # JWT secret used by the gateway api server for gateway authentication / authorization
-  jwt_secret=""
+  jwt_secret="{{ .NetworkServer.Gateway.API.JWTSecret }}"
 
   # Gateway statistics settings.
   [network_server.gateway.stats]
@@ -312,7 +263,7 @@ get_downlink_data_delay="100ms"
   #
   # When set to true, LoRa Server will create the gateway when it receives
   # statistics for a gateway that does not yet exist.
-  create_gateway_on_stats=false
+  create_gateway_on_stats={{ .NetworkServer.Gateway.Stats.CreateGatewayOnStats }}
 
   # Aggregation timezone
   #
@@ -322,14 +273,14 @@ get_downlink_data_delay="100ms"
   # execute the following SQL query:
   #   select * from pg_timezone_names;
   # When left blank, the default timezone of your database will be used.
-  timezone=""
+  timezone="{{ .NetworkServer.Gateway.Stats.Timezone }}"
 
   # Aggregation intervals to use for aggregating the gateway stats
   #
   # Valid options: second, minute, hour, day, week, month, quarter, year.
   # When left empty, no statistics will be stored in the database.
   # Note, LoRa App Server expects at least "minute", "day", "hour"!
-  aggregation_intervals=["minute", "hour", "day"]
+  aggregation_intervals=[{{ if .NetworkServer.Gateway.Stats.AggregationIntervals|len }}"{{ end }}{{ range $index, $element := .NetworkServer.Gateway.Stats.AggregationIntervals }}{{ if $index }}", "{{ end }}{{ $element }}{{ end }}{{ if .NetworkServer.Gateway.Stats.AggregationIntervals|len }}"{{ end }}]
 
 
   # MQTT gateway backend settings.
@@ -337,26 +288,26 @@ get_downlink_data_delay="100ms"
   # This is the backend communicating with the LoRa gateways over a MQTT broker.
   [network_server.gateway.backend.mqtt]
   # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
-  server="tcp://localhost:1883"
+  server="{{ .NetworkServer.Gateway.Backend.MQTT.Server }}"
 
   # Connect with the given username (optional)
-  username=""
+  username="{{ .NetworkServer.Gateway.Backend.MQTT.Username }}"
 
   # Connect with the given password (optional)
-  password=""
+  password="{{ .NetworkServer.Gateway.Backend.MQTT.Password }}"
 
   # CA certificate file (optional)
   #
   # Use this when setting up a secure connection (when server uses ssl://...)
   # but the certificate used by the server is not trusted by any CA certificate
   # on the server (e.g. when self generated).
-  ca_cert=""
+  ca_cert="{{ .NetworkServer.Gateway.Backend.MQTT.CACert }}"
 
   # TLS certificate file (optional)
-  tls_cert=""
+  tls_cert="{{ .NetworkServer.Gateway.Backend.MQTT.TLSCert }}"
 
   # TLS key file (optional)
-  tls_key=""
+  tls_key="{{ .NetworkServer.Gateway.Backend.MQTT.TLSKey }}"
 
 
 # Default join-server settings.
@@ -364,54 +315,42 @@ get_downlink_data_delay="100ms"
 # hostname:port of the default join-server
 #
 # This API is provided by LoRa App Server.
-server="http://localhost:8003"
+server="{{ .JoinServer.Default.Server }}"
 
 # ca certificate used by the default join-server client (optional)
-ca_cert=""
+ca_cert="{{ .JoinServer.Default.CACert }}"
 
 # tls certificate used by the default join-server client (optional)
-tls_cert=""
+tls_cert="{{ .JoinServer.Default.TLSCert }}"
 
 # tls key used by the default join-server client (optional)
-tls_key=""
+tls_key="{{ .JoinServer.Default.TLSKey }}"
 
 
 # Network-controller configuration.
 [network_contoller]
 # hostname:port of the network-controller api server (optional)
-server=""
+server="{{ .NetworkController.Server }}"
 
 # ca certificate used by the network-controller client (optional)
-ca_cert=""
+ca_cert="{{ .NetworkController.CACert }}"
 
 # tls certificate used by the network-controller client (optional)
-tls_cert=""
+tls_cert="{{ .NetworkController.TLSCert }}"
 
 # tls key used by the network-controller client (optional)
-tls_key=""
-```
+tls_key="{{ .NetworkController.TLSKey }}"
+`
 
-### Securing the network-server API
-
-In order to protect the network-server API (`network_server.api`) against
-unauthorized access and to encrypt all communication, it is advised to use
-TLS certificates. Once the `ca_cert`, `tls_cert` and `tls_key` are set,
-the API will enforce client certificate validation on all incoming connections.
-This means that when configuring this network-server instance in LoRa App Server,
-you must provide the CA and TLS client certificate. See also LoRa App Server
-[network-server management](https://docs.loraserver.io/lora-app-server/use/network-servers/).
-
-See [https://github.com/brocaar/loraserver-certificates](https://github.com/brocaar/loraserver-certificates)
-for a set of scripts to generate such certificates.
-
-### Join-server API configuration
-
-In the current implementation LoRa Server uses a fixed join-server URL
-(provided by LoRa App Server) which is used as a join-server backend (`join_server.default`).
-
-In case this endpoint is secured using a TLS certificate and expects a client
-certificate, you must set `ca_cert`, `tls_cert` and `tls_key`.
-Also dont forget to change `server` from `http://...` to `https://...`.
-
-See [https://github.com/brocaar/loraserver-certificates](https://github.com/brocaar/loraserver-certificates)
-for a set of scripts to generate such certificates.
+var configCmd = &cobra.Command{
+	Use:   "configfile",
+	Short: "Print the LoRa Server configuration file",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		t := template.Must(template.New("config").Parse(configTemplate))
+		err := t.Execute(os.Stdout, &config.C)
+		if err != nil {
+			return errors.Wrap(err, "execute config template error")
+		}
+		return nil
+	},
+}

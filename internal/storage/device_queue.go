@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/brocaar/loraserver/api/as"
+	"github.com/brocaar/loraserver/internal/config"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/lorawan"
 )
 
@@ -263,7 +263,7 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 			if err != nil {
 				return DeviceQueueItem{}, errors.Wrap(err, "get routing-profile error")
 			}
-			asClient, err := common.ApplicationServerPool.Get(rp.ASID, []byte(rp.CACert), []byte(rp.TLSCert), []byte(rp.TLSKey))
+			asClient, err := config.C.ApplicationServer.Pool.Get(rp.ASID, []byte(rp.CACert), []byte(rp.TLSCert), []byte(rp.TLSKey))
 			if err != nil {
 				return DeviceQueueItem{}, errors.Wrap(err, "get application-server client error")
 			}

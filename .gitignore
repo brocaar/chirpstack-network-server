@@ -7,6 +7,9 @@ Vagrantfile
 # logs
 *.log
 
+# configuration
+*.toml
+
 # dependencies
 vendor/
 

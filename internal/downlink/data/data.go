@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
@@ -217,16 +217,16 @@ func getDataTXInfoForRX2(ctx *dataContext) error {
 	}
 	rxInfo := ctx.DeviceSession.LastRXInfoSet[0]
 
-	if int(ctx.DeviceSession.RX2DR) > len(common.Band.DataRates)-1 {
-		return errors.Wrapf(ErrInvalidDataRate, "dr: %d (max dr: %d)", ctx.DeviceSession.RX2DR, len(common.Band.DataRates)-1)
+	if int(ctx.DeviceSession.RX2DR) > len(config.C.NetworkServer.Band.Band.DataRates)-1 {
+		return errors.Wrapf(ErrInvalidDataRate, "dr: %d (max dr: %d)", ctx.DeviceSession.RX2DR, len(config.C.NetworkServer.Band.Band.DataRates)-1)
 	}
 
 	ctx.TXInfo = gw.TXInfo{
 		MAC:         rxInfo.MAC,
 		Immediately: true,
-		Frequency:   int(common.Band.RX2Frequency),
-		Power:       common.Band.DefaultTXPower,
-		DataRate:    common.Band.DataRates[int(ctx.DeviceSession.RX2DR)],
+		Frequency:   int(config.C.NetworkServer.Band.Band.RX2Frequency),
+		Power:       config.C.NetworkServer.Band.Band.DefaultTXPower,
+		DataRate:    config.C.NetworkServer.Band.Band.DataRates[int(ctx.DeviceSession.RX2DR)],
 		CodeRate:    "4/5",
 	}
 	ctx.DataRate = int(ctx.DeviceSession.RX2DR)
@@ -235,7 +235,7 @@ func getDataTXInfoForRX2(ctx *dataContext) error {
 }
 
 func setRemainingPayloadSize(ctx *dataContext) error {
-	ctx.RemainingPayloadSize = common.Band.MaxPayloadSize[ctx.DataRate].N - len(ctx.Data)
+	ctx.RemainingPayloadSize = config.C.NetworkServer.Band.Band.MaxPayloadSize[ctx.DataRate].N - len(ctx.Data)
 
 	if ctx.RemainingPayloadSize < 0 {
 		return ErrMaxPayloadSizeExceeded
@@ -245,7 +245,7 @@ func setRemainingPayloadSize(ctx *dataContext) error {
 }
 
 func getNextDeviceQueueItem(ctx *dataContext) error {
-	qi, err := storage.GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(common.DB, ctx.DeviceSession.DevEUI, ctx.RemainingPayloadSize, ctx.DeviceSession.FCntDown, ctx.DeviceSession.RoutingProfileID)
+	qi, err := storage.GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(config.C.PostgreSQL.DB, ctx.DeviceSession.DevEUI, ctx.RemainingPayloadSize, ctx.DeviceSession.FCntDown, ctx.DeviceSession.RoutingProfileID)
 	if err != nil {
 		if errors.Cause(err) == storage.ErrDoesNotExist {
 			return nil
@@ -258,7 +258,7 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 	ctx.FPort = qi.FPort
 	ctx.RemainingPayloadSize = ctx.RemainingPayloadSize - len(ctx.Data)
 
-	items, err := storage.GetDeviceQueueItemsForDevEUI(common.DB, ctx.DeviceSession.DevEUI)
+	items, err := storage.GetDeviceQueueItemsForDevEUI(config.C.PostgreSQL.DB, ctx.DeviceSession.DevEUI)
 	if err != nil {
 		return errors.Wrap(err, "get device-queue items error")
 	}
@@ -272,7 +272,7 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 
 	// delete when not confirmed
 	if !qi.Confirmed {
-		if err := storage.DeleteDeviceQueueItem(common.DB, qi.ID); err != nil {
+		if err := storage.DeleteDeviceQueueItem(config.C.PostgreSQL.DB, qi.ID); err != nil {
 			return errors.Wrap(err, "delete device-queue item error")
 		}
 	} else {
@@ -287,7 +287,7 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 		qi.IsPending = true
 		qi.TimeoutAfter = &timeout
 
-		if err := storage.UpdateDeviceQueueItem(common.DB, &qi); err != nil {
+		if err := storage.UpdateDeviceQueueItem(config.C.PostgreSQL.DB, &qi); err != nil {
 			return errors.Wrap(err, "update device-queue item error")
 		}
 	}
@@ -317,11 +317,11 @@ func getMACCommands(ctx *dataContext) error {
 	}
 
 	for _, block := range macBlocks {
-		if err = maccommand.SetPending(common.RedisPool, ctx.DeviceSession.DevEUI, block); err != nil {
+		if err = maccommand.SetPending(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, block); err != nil {
 			return errors.Wrap(err, "set mac-command block as pending error")
 		}
 
-		if err = maccommand.DeleteQueueItem(common.RedisPool, ctx.DeviceSession.DevEUI, block); err != nil {
+		if err = maccommand.DeleteQueueItem(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, block); err != nil {
 			return errors.Wrap(err, "delete mac-command block from queue error")
 		}
 	}
@@ -398,7 +398,7 @@ func sendDataDown(ctx *dataContext) error {
 	ctx.PHYPayload = phy
 
 	// send the packet to the gateway
-	if err := common.Gateway.SendTXPacket(gw.TXPacket{
+	if err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(gw.TXPacket{
 		Token:      ctx.Token,
 		TXInfo:     ctx.TXInfo,
 		PHYPayload: phy,
@@ -416,7 +416,7 @@ func sendDataDown(ctx *dataContext) error {
 }
 
 func saveDeviceSession(ctx *dataContext) error {
-	if err := storage.SaveDeviceSession(common.RedisPool, ctx.DeviceSession); err != nil {
+	if err := storage.SaveDeviceSession(config.C.Redis.Pool, ctx.DeviceSession); err != nil {
 		return errors.Wrap(err, "save device-session error")
 	}
 	return nil
@@ -424,7 +424,7 @@ func saveDeviceSession(ctx *dataContext) error {
 
 func getDeviceProfile(ctx *dataContext) error {
 	var err error
-	ctx.DeviceProfile, err = storage.GetAndCacheDeviceProfile(common.DB, common.RedisPool, ctx.DeviceSession.DeviceProfileID)
+	ctx.DeviceProfile, err = storage.GetAndCacheDeviceProfile(config.C.PostgreSQL.DB, config.C.Redis.Pool, ctx.DeviceSession.DeviceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get device-profile error")
 	}
@@ -433,7 +433,7 @@ func getDeviceProfile(ctx *dataContext) error {
 
 func getServiceProfile(ctx *dataContext) error {
 	var err error
-	ctx.ServiceProfile, err = storage.GetAndCacheServiceProfile(common.DB, common.RedisPool, ctx.DeviceSession.ServiceProfileID)
+	ctx.ServiceProfile, err = storage.GetAndCacheServiceProfile(config.C.PostgreSQL.DB, config.C.Redis.Pool, ctx.DeviceSession.ServiceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
@@ -443,11 +443,11 @@ func getServiceProfile(ctx *dataContext) error {
 func checkLastDownlinkTimestamp(ctx *dataContext) error {
 	// in case of Class-C validate that between now and the last downlink
 	// tx timestamp is at least the class-c lock duration
-	if ctx.DeviceProfile.SupportsClassC && time.Now().Sub(ctx.DeviceSession.LastDownlinkTX) < common.ClassCDownlinkLockDuration {
+	if ctx.DeviceProfile.SupportsClassC && time.Now().Sub(ctx.DeviceSession.LastDownlinkTX) < config.ClassCDownlinkLockDuration {
 		log.WithFields(log.Fields{
 			"time":                           time.Now(),
 			"last_downlink_tx_time":          ctx.DeviceSession.LastDownlinkTX,
-			"class_c_downlink_lock_duration": common.ClassCDownlinkLockDuration,
+			"class_c_downlink_lock_duration": config.ClassCDownlinkLockDuration,
 		}).Debug("skip next downlink queue scheduling dueue to class-c downlink lock")
 		return ErrAbort
 	}
@@ -460,48 +460,48 @@ func getDataDownTXInfoAndDR(ds storage.DeviceSession, lastTXInfo models.TXInfo, 
 	txInfo := gw.TXInfo{
 		MAC:      rxInfo.MAC,
 		CodeRate: lastTXInfo.CodeRate,
-		Power:    common.Band.DefaultTXPower,
+		Power:    config.C.NetworkServer.Band.Band.DefaultTXPower,
 	}
 
 	var timestamp uint32
 
 	if ds.RXWindow == storage.RX1 {
-		lastTXDR, err := common.Band.GetDataRate(lastTXInfo.DataRate)
+		uplinkDR, err := config.C.NetworkServer.Band.Band.GetDataRate(lastTXInfo.DataRate)
 		if err != nil {
 			return txInfo, 0, errors.Wrap(err, "get data-rate error")
 		}
 
 		// get rx1 dr
-		dr, err := common.Band.GetRX1DataRate(lastTXDR, int(ds.RX1DROffset))
+		dr, err = config.C.NetworkServer.Band.Band.GetRX1DataRate(uplinkDR, int(ds.RX1DROffset))
 		if err != nil {
 			return txInfo, dr, err
 		}
-		txInfo.DataRate = common.Band.DataRates[dr]
+		txInfo.DataRate = config.C.NetworkServer.Band.Band.DataRates[dr]
 
 		// get rx1 frequency
-		txInfo.Frequency, err = common.Band.GetRX1Frequency(lastTXInfo.Frequency)
+		txInfo.Frequency, err = config.C.NetworkServer.Band.Band.GetRX1Frequency(lastTXInfo.Frequency)
 		if err != nil {
 			return txInfo, dr, err
 		}
 
 		// get timestamp
-		timestamp = rxInfo.Timestamp + uint32(common.Band.ReceiveDelay1/time.Microsecond)
+		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.ReceiveDelay1/time.Microsecond)
 		if ds.RXDelay > 0 {
 			timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
 		}
 	} else if ds.RXWindow == storage.RX2 {
 		// rx2 dr
 		dr = int(ds.RX2DR)
-		if dr > len(common.Band.DataRates)-1 {
-			return txInfo, 0, fmt.Errorf("invalid rx2 dr: %d (max dr: %d)", dr, len(common.Band.DataRates)-1)
+		if dr > len(config.C.NetworkServer.Band.Band.DataRates)-1 {
+			return txInfo, 0, fmt.Errorf("invalid rx2 dr: %d (max dr: %d)", dr, len(config.C.NetworkServer.Band.Band.DataRates)-1)
 		}
-		txInfo.DataRate = common.Band.DataRates[dr]
+		txInfo.DataRate = config.C.NetworkServer.Band.Band.DataRates[dr]
 
 		// rx2 frequency
-		txInfo.Frequency = common.Band.RX2Frequency
+		txInfo.Frequency = config.C.NetworkServer.Band.Band.RX2Frequency
 
 		// rx2 timestamp (rx1 + 1 sec)
-		timestamp = rxInfo.Timestamp + uint32(common.Band.ReceiveDelay1/time.Microsecond)
+		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.ReceiveDelay1/time.Microsecond)
 		if ds.RXDelay > 0 {
 			timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
 		}
@@ -528,7 +528,7 @@ func getAndFilterMACQueueItems(ds storage.DeviceSession, allowEncrypted bool, re
 	var blocks []maccommand.Block
 
 	// read the mac payload queue
-	allBlocks, err := maccommand.ReadQueueItems(common.RedisPool, ds.DevEUI)
+	allBlocks, err := maccommand.ReadQueueItems(config.C.Redis.Pool, ds.DevEUI)
 	if err != nil {
 		return nil, false, false, errors.Wrap(err, "read mac-command queue error")
 	}

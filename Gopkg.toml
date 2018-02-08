@@ -6,10 +6,6 @@
   name = "github.com/brocaar/lorawan"
 
 [[constraint]]
-  name = "github.com/codegangsta/cli"
-  version = "1.20.0"
-
-[[constraint]]
   name = "github.com/dgrijalva/jwt-go"
   version = "3.1.0"
 
@@ -65,6 +61,13 @@
   branch = "master"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
 
+[[constraint]]
+  branch = "master"
+  name = "github.com/spf13/cobra"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/spf13/viper"
 
 [prune]
   non-go = true

@@ -10,6 +10,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/test"
 	. "github.com/smartystreets/goconvey/convey"
@@ -18,13 +19,13 @@ import (
 func TestFrameLog(t *testing.T) {
 	conf := test.GetConfig()
 	p := common.NewRedisPool(conf.RedisURL)
-	common.RedisPool = p
+	config.C.Redis.Pool = p
 
 	mac := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
 	devEUI := lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1}
 
 	Convey("Given a clean Redis database", t, func() {
-		test.MustFlushRedis(common.RedisPool)
+		test.MustFlushRedis(config.C.Redis.Pool)
 
 		Convey("Testing GetFrameLogForGateway", func() {
 			logChannel := make(chan FrameLog, 1)

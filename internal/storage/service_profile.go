@@ -13,7 +13,7 @@ import (
 	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/lorawan/backend"
 )
 
@@ -113,7 +113,7 @@ func CreateServiceProfileCache(p *redis.Pool, sp ServiceProfile) error {
 	defer c.Close()
 
 	key := fmt.Sprintf(ServiceProfileKeyTempl, sp.ServiceProfileID)
-	exp := int64(common.NodeSessionTTL) / int64(time.Millisecond)
+	exp := int64(config.C.NetworkServer.DeviceSessionTTL) / int64(time.Millisecond)
 
 	_, err := c.Do("PSETEX", key, exp, buf.Bytes())
 	if err != nil {

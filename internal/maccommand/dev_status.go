@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
@@ -22,7 +22,7 @@ func RequestDevStatus(ds *storage.DeviceSession) error {
 			},
 		},
 	}
-	if err := AddQueueItem(common.RedisPool, ds.DevEUI, block); err != nil {
+	if err := AddQueueItem(config.C.Redis.Pool, ds.DevEUI, block); err != nil {
 		return errors.Wrap(err, "add mac-command queue item error")
 	}
 	ds.LastDevStatusRequested = time.Now()

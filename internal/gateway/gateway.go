@@ -17,6 +17,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/lorawan"
 )
 
@@ -155,13 +156,13 @@ type ChannelConfiguration struct {
 
 // Validate validates the channel-configuration.
 func (cf ChannelConfiguration) Validate() error {
-	if cf.Band != string(common.BandName) {
+	if cf.Band != string(config.C.NetworkServer.Band.Name) {
 		return ErrInvalidBand
 	}
 
 	// check if the configured channels are defined as uplink channels
 	// for the active band.
-	enabledChannels := common.Band.GetUplinkChannels()
+	enabledChannels := config.C.NetworkServer.Band.Band.GetUplinkChannels()
 	for _, c := range cf.Channels {
 		found := false
 		for _, ec := range enabledChannels {
@@ -407,9 +408,9 @@ func GetGatewayStats(db *common.DBLogger, mac lorawan.EUI64, interval string, st
 	defer tx.Rollback()
 
 	// set the database timezone for this transaction
-	if common.TimeLocation != time.Local {
+	if config.C.NetworkServer.Gateway.Stats.TimezoneLocation != time.Local {
 		// when TimeLocation == time.Local, it would have 'Local' as name
-		_, err = tx.Exec(fmt.Sprintf("set local time zone '%s'", common.TimeLocation.String()))
+		_, err = tx.Exec(fmt.Sprintf("set local time zone '%s'", config.C.NetworkServer.Gateway.Stats.TimezoneLocation.String()))
 		if err != nil {
 			return nil, errors.Wrap(err, "set timezone error")
 		}
@@ -848,11 +849,11 @@ func GetExtraChannelsForChannelConfigurationID(db sqlx.Queryer, id int64) ([]Ext
 
 // handleStatsPackets consumes received stats packets by the gateway.
 func handleStatsPackets(wg *sync.WaitGroup) {
-	for statsPacket := range common.Gateway.StatsPacketChan() {
+	for statsPacket := range config.C.NetworkServer.Gateway.Backend.Backend.StatsPacketChan() {
 		go func(stats gw.GatewayStatsPacket) {
 			wg.Add(1)
 			defer wg.Done()
-			if err := handleStatsPacket(common.DB, stats); err != nil {
+			if err := handleStatsPacket(config.C.PostgreSQL.DB, stats); err != nil {
 				log.Errorf("handle stats packet error: %s", err)
 			}
 		}(statsPacket)
@@ -878,7 +879,7 @@ func handleStatsPacket(db *common.DBLogger, stats gw.GatewayStatsPacket) error {
 	// create or update the gateway
 	gw, err := GetGateway(db, stats.MAC)
 	if err != nil {
-		if err == ErrDoesNotExist && common.CreateGatewayOnStats {
+		if err == ErrDoesNotExist && config.C.NetworkServer.Gateway.Stats.CreateGatewayOnStats {
 			// create the gateway
 			now := time.Now()
 
@@ -928,9 +929,9 @@ func handleStatsPacket(db *common.DBLogger, stats gw.GatewayStatsPacket) error {
 	}()
 
 	// set the database timezone for this transaction
-	if common.TimeLocation != time.Local {
+	if config.C.NetworkServer.Gateway.Stats.TimezoneLocation != time.Local {
 		// when TimeLocation == time.Local, it would have 'Local' as name
-		_, err = tx.Exec(fmt.Sprintf("set local time zone '%s'", common.TimeLocation.String()))
+		_, err = tx.Exec(fmt.Sprintf("set local time zone '%s'", config.C.NetworkServer.Gateway.Stats.TimezoneLocation.String()))
 		if err != nil {
 			return errors.Wrap(err, "set timezone error")
 		}

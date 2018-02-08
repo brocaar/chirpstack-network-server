@@ -7,7 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/uplink/data"
@@ -39,7 +39,7 @@ func (s *Server) Start() error {
 // Stop closes the gateway backend and waits for the server to complete the
 // pending packets.
 func (s *Server) Stop() error {
-	if err := common.Gateway.Close(); err != nil {
+	if err := config.C.NetworkServer.Gateway.Backend.Backend.Close(); err != nil {
 		return fmt.Errorf("close gateway backend error: %s", err)
 	}
 	log.Info("waiting for pending actions to complete")
@@ -50,7 +50,7 @@ func (s *Server) Stop() error {
 // HandleRXPackets consumes received packets by the gateway and handles them
 // in a separate go-routine. Errors are logged.
 func HandleRXPackets(wg *sync.WaitGroup) {
-	for rxPacket := range common.Gateway.RXPacketChan() {
+	for rxPacket := range config.C.NetworkServer.Gateway.Backend.Backend.RXPacketChan() {
 		go func(rxPacket gw.RXPacket) {
 			wg.Add(1)
 			defer wg.Done()
@@ -68,7 +68,7 @@ func HandleRXPacket(rxPacket gw.RXPacket) error {
 }
 
 func collectPackets(rxPacket gw.RXPacket) error {
-	return collectAndCallOnce(common.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
+	return collectAndCallOnce(config.C.Redis.Pool, rxPacket, func(rxPacket models.RXPacket) error {
 		if err := framelog.LogUplinkFrameForGateways(rxPacket); err != nil {
 			log.WithError(err).Error("log uplink frames for gateways error")
 		}

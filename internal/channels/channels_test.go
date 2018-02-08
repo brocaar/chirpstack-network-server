@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -17,12 +18,12 @@ func TestHandleChannelReconfigure(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database and a set of tests", t, func() {
-		common.RedisPool = common.NewRedisPool(conf.RedisURL)
-		test.MustFlushRedis(common.RedisPool)
+		config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+		test.MustFlushRedis(config.C.Redis.Pool)
 
 		rxPacket := models.RXPacket{
 			TXInfo: models.TXInfo{
-				DataRate: common.Band.DataRates[3],
+				DataRate: config.C.NetworkServer.Band.Band.DataRates[3],
 			},
 		}
 
@@ -74,21 +75,21 @@ func TestHandleChannelReconfigure(t *testing.T) {
 		for i, test := range tests {
 			Convey(fmt.Sprintf("test: %s [%d]", test.Name, i), func() {
 				if test.Pending != nil {
-					So(maccommand.SetPending(common.RedisPool, test.DeviceSession.DevEUI, *test.Pending), ShouldBeNil)
+					So(maccommand.SetPending(config.C.Redis.Pool, test.DeviceSession.DevEUI, *test.Pending), ShouldBeNil)
 				}
 
 				So(HandleChannelReconfigure(test.DeviceSession, rxPacket), ShouldBeNil)
 
 				if test.ExpectedPending != nil {
 					Convey("Then the expected mac-command block is set to pending", func() {
-						pending, err := maccommand.ReadPending(common.RedisPool, test.DeviceSession.DevEUI, lorawan.LinkADRReq)
+						pending, err := maccommand.ReadPending(config.C.Redis.Pool, test.DeviceSession.DevEUI, lorawan.LinkADRReq)
 						So(err, ShouldBeNil)
 						So(pending, ShouldResemble, test.ExpectedPending)
 					})
 				}
 
 				Convey("Then the expected mac-commands are in the queue", func() {
-					queue, err := maccommand.ReadQueueItems(common.RedisPool, test.DeviceSession.DevEUI)
+					queue, err := maccommand.ReadQueueItems(config.C.Redis.Pool, test.DeviceSession.DevEUI)
 					So(err, ShouldBeNil)
 					So(test.ExpectedQueue, ShouldResemble, queue)
 				})

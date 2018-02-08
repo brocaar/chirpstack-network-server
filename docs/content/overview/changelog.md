@@ -12,6 +12,8 @@ menu:
 
 **Features:**
 
+* LoRa Server uses a new configuration file format.
+  See [configuration](https://docs.loraserver.io/loraserver/install/config/) for more information.
 * `StreamFrameLogsForGateway` API method has been added to stream frames for a given gateway MAC.
 * `StreamFrameLogsForDevice` API method has been added to stream frames for a given DevEUI.
 * Support MQTT client certificate authentication ([#284](https://github.com/brocaar/loraserver/pull/284)).
@@ -20,6 +22,12 @@ menu:
 
 * `GetFrameLogsForDevEUI` API method has been removed. The `frame_log` table
   will be removed from the database in the next release!
+
+**Upgrade notes:**
+
+When upgrading using the `.deb` package / using `apt` or `apt-get`, your
+configuration will be automatically migrated for you. In any other case,
+please see [configuration](https://docs.loraserver.io/loraserver/install/config/).
 
 ### 0.23.3
 

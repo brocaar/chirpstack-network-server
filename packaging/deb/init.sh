@@ -9,16 +9,12 @@
 ### END INIT INFO
 
 
-# set variables for exporting (needed for DEFAULT_FILE)
-set -a
-
 NAME=loraserver
 DESC="LoRa Server"
 DAEMON_USER=loraserver
 DAEMON_GROUP=loraserver
 DAEMON=/usr/bin/$NAME
 PID_FILE=/var/run/$NAME.pid
-DEFAULT_FILE=/etc/default/$NAME
 
 
 # check root
@@ -38,10 +34,6 @@ fi
 
 if [ -r /etc/default/rcS ]; then
 	. /etc/default/rcS
-fi
-
-if [ -f "$DEFAULT_FILE" ]; then
-	. "$DEFAULT_FILE"
 fi
 
 function do_start {

@@ -7,6 +7,7 @@ import (
 	"github.com/brocaar/lorawan"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/test"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -17,10 +18,10 @@ func TestDevice(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	common.DB = db
+	config.C.PostgreSQL.DB = db
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(common.DB)
+		test.MustResetDB(config.C.PostgreSQL.DB)
 
 		Convey("Given a service, device and routing profile", func() {
 			sp := ServiceProfile{}
@@ -91,7 +92,7 @@ func TestDevice(t *testing.T) {
 						NwkSKey:  lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
 						DevNonce: lorawan.DevNonce{1, 2},
 					}
-					So(CreateDeviceActivation(common.DB, &da), ShouldBeNil)
+					So(CreateDeviceActivation(config.C.PostgreSQL.DB, &da), ShouldBeNil)
 
 					Convey("Then GetLastDeviceActivationForDevEUI returns the most recent device-activation", func() {
 						da2 := DeviceActivation{
@@ -101,21 +102,21 @@ func TestDevice(t *testing.T) {
 							NwkSKey:  lorawan.AES128Key{8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1},
 							DevNonce: lorawan.DevNonce{2, 1},
 						}
-						So(CreateDeviceActivation(common.DB, &da2), ShouldBeNil)
+						So(CreateDeviceActivation(config.C.PostgreSQL.DB, &da2), ShouldBeNil)
 						da2.CreatedAt = da2.CreatedAt.UTC().Truncate(time.Millisecond)
 
-						daGet, err := GetLastDeviceActivationForDevEUI(common.DB, d.DevEUI)
+						daGet, err := GetLastDeviceActivationForDevEUI(config.C.PostgreSQL.DB, d.DevEUI)
 						So(err, ShouldBeNil)
 						daGet.CreatedAt = daGet.CreatedAt.UTC().Truncate(time.Millisecond)
 						So(daGet, ShouldResemble, da2)
 					})
 
 					Convey("Then ValidateDevNonce for an used dev-nonce returns an error", func() {
-						So(ValidateDevNonce(common.DB, joinEUI, d.DevEUI, da.DevNonce), ShouldEqual, ErrAlreadyExists)
+						So(ValidateDevNonce(config.C.PostgreSQL.DB, joinEUI, d.DevEUI, da.DevNonce), ShouldEqual, ErrAlreadyExists)
 					})
 
 					Convey("Then ValidateDevNonce for an unused dev-nonce returns no error", func() {
-						So(ValidateDevNonce(common.DB, joinEUI, d.DevEUI, lorawan.DevNonce{2, 1}), ShouldBeNil)
+						So(ValidateDevNonce(config.C.PostgreSQL.DB, joinEUI, d.DevEUI, lorawan.DevNonce{2, 1}), ShouldBeNil)
 					})
 				})
 			})

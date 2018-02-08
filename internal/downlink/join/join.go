@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -69,35 +69,36 @@ func getJoinAcceptTXInfo(ctx *joinContext) error {
 	ctx.TXInfo = gw.TXInfo{
 		MAC:      rxInfo.MAC,
 		CodeRate: ctx.RXPacket.TXInfo.CodeRate,
-		Power:    common.Band.DefaultTXPower,
+		Power:    config.C.NetworkServer.Band.Band.DefaultTXPower,
 	}
 
 	var timestamp uint32
 
 	if ctx.DeviceSession.RXWindow == storage.RX1 {
-		timestamp = rxInfo.Timestamp + uint32(common.Band.JoinAcceptDelay1/time.Microsecond)
+		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.JoinAcceptDelay1/time.Microsecond)
 
-		dr, err := common.Band.GetDataRate(ctx.RXPacket.TXInfo.DataRate)
+		// get uplink dr
+		uplinkDR, err := config.C.NetworkServer.Band.Band.GetDataRate(ctx.RXPacket.TXInfo.DataRate)
 		if err != nil {
 			return errors.Wrap(err, "get data-rate error")
 		}
 
 		// get RX1 DR
-		rx1DR, err := common.Band.GetRX1DataRate(dr, 0)
+		rx1DR, err := config.C.NetworkServer.Band.Band.GetRX1DataRate(uplinkDR, 0)
 		if err != nil {
 			return errors.Wrap(err, "get rx1 data-rate error")
 		}
-		ctx.TXInfo.DataRate = common.Band.DataRates[rx1DR]
+		ctx.TXInfo.DataRate = config.C.NetworkServer.Band.Band.DataRates[rx1DR]
 
 		// get RX1 frequency
-		ctx.TXInfo.Frequency, err = common.Band.GetRX1Frequency(ctx.RXPacket.TXInfo.Frequency)
+		ctx.TXInfo.Frequency, err = config.C.NetworkServer.Band.Band.GetRX1Frequency(ctx.RXPacket.TXInfo.Frequency)
 		if err != nil {
 			return errors.Wrap(err, "get rx1 frequency error")
 		}
 	} else if ctx.DeviceSession.RXWindow == storage.RX2 {
-		timestamp = rxInfo.Timestamp + uint32(common.Band.JoinAcceptDelay2/time.Microsecond)
-		ctx.TXInfo.DataRate = common.Band.DataRates[common.Band.RX2DataRate]
-		ctx.TXInfo.Frequency = common.Band.RX2Frequency
+		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.JoinAcceptDelay2/time.Microsecond)
+		ctx.TXInfo.DataRate = config.C.NetworkServer.Band.Band.DataRates[config.C.NetworkServer.Band.Band.RX2DataRate]
+		ctx.TXInfo.Frequency = config.C.NetworkServer.Band.Band.RX2Frequency
 	} else {
 		return fmt.Errorf("unknown RXWindow defined %d", ctx.DeviceSession.RXWindow)
 	}
@@ -108,7 +109,7 @@ func getJoinAcceptTXInfo(ctx *joinContext) error {
 }
 
 func sendJoinAcceptResponse(ctx *joinContext) error {
-	err := common.Gateway.SendTXPacket(gw.TXPacket{
+	err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(gw.TXPacket{
 		Token:      ctx.Token,
 		TXInfo:     ctx.TXInfo,
 		PHYPayload: ctx.PHYPayload,

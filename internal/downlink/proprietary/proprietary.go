@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/lorawan"
 )
 
@@ -57,8 +57,8 @@ func setToken(ctx *proprietaryContext) error {
 }
 
 func sendProprietaryDown(ctx *proprietaryContext) error {
-	if ctx.DR > len(common.Band.DataRates)-1 {
-		return errors.Wrapf(ErrInvalidDataRate, "dr: %d (max dr: %d)", ctx.DR, len(common.Band.DataRates)-1)
+	if ctx.DR > len(config.C.NetworkServer.Band.Band.DataRates)-1 {
+		return errors.Wrapf(ErrInvalidDataRate, "dr: %d (max dr: %d)", ctx.DR, len(config.C.NetworkServer.Band.Band.DataRates)-1)
 	}
 
 	phy := lorawan.PHYPayload{
@@ -75,13 +75,13 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 			MAC:         mac,
 			Immediately: true,
 			Frequency:   ctx.Frequency,
-			Power:       common.Band.DefaultTXPower,
-			DataRate:    common.Band.DataRates[ctx.DR],
+			Power:       config.C.NetworkServer.Band.Band.DefaultTXPower,
+			DataRate:    config.C.NetworkServer.Band.Band.DataRates[ctx.DR],
 			CodeRate:    "4/5",
 			IPol:        &ctx.IPol,
 		}
 
-		if err := common.Gateway.SendTXPacket(gw.TXPacket{
+		if err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(gw.TXPacket{
 			Token:      ctx.Token,
 			TXInfo:     txInfo,
 			PHYPayload: phy,

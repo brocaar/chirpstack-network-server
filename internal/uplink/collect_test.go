@@ -8,6 +8,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
@@ -17,8 +18,8 @@ import (
 func TestCollectAndCallOnce(t *testing.T) {
 	conf := test.GetConfig()
 	p := common.NewRedisPool(conf.RedisURL)
-	common.RedisPool = p
-	common.DeduplicationDelay = time.Millisecond * 500
+	config.C.Redis.Pool = p
+	config.C.NetworkServer.DeduplicationDelay = time.Millisecond * 500
 
 	Convey("Given a Redis connection pool", t, func() {
 		test.MustFlushRedis(p)
@@ -92,7 +93,7 @@ func TestCollectAndCallOnce(t *testing.T) {
 						packet := gw.RXPacket{
 							RXInfo: gw.RXInfo{
 								MAC:      g,
-								DataRate: common.Band.DataRates[0],
+								DataRate: config.C.NetworkServer.Band.Band.DataRates[0],
 							},
 							PHYPayload: test.PHYPayload,
 						}

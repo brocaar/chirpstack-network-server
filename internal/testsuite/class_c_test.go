@@ -8,6 +8,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
@@ -38,35 +39,35 @@ func TestClassCScenarios(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	common.DB = db
-	common.RedisPool = common.NewRedisPool(conf.RedisURL)
+	config.C.PostgreSQL.DB = db
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
 
 	Convey("Given a clean state", t, func() {
-		test.MustResetDB(common.DB)
-		test.MustFlushRedis(common.RedisPool)
+		test.MustResetDB(config.C.PostgreSQL.DB)
+		test.MustFlushRedis(config.C.Redis.Pool)
 
 		asClient := test.NewApplicationClient()
-		common.ApplicationServerPool = test.NewApplicationServerPool(asClient)
-		common.Gateway = test.NewGatewayBackend()
+		config.C.ApplicationServer.Pool = test.NewApplicationServerPool(asClient)
+		config.C.NetworkServer.Gateway.Backend.Backend = test.NewGatewayBackend()
 
 		sp := storage.ServiceProfile{
 			ServiceProfile: backend.ServiceProfile{},
 		}
-		So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
+		So(storage.CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 		dp := storage.DeviceProfile{
 			DeviceProfile: backend.DeviceProfile{
 				SupportsClassC: true,
 			},
 		}
-		So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
+		So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
 
 		rp := storage.RoutingProfile{
 			RoutingProfile: backend.RoutingProfile{
 				ASID: "as-test:1234",
 			},
 		}
-		So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
+		So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
 		d := storage.Device{
 			DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
@@ -74,7 +75,7 @@ func TestClassCScenarios(t *testing.T) {
 			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
 			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
 		}
-		So(storage.CreateDevice(common.DB, &d), ShouldBeNil)
+		So(storage.CreateDevice(config.C.PostgreSQL.DB, &d), ShouldBeNil)
 
 		sess := storage.DeviceSession{
 			ServiceProfileID: d.ServiceProfileID,
@@ -96,9 +97,9 @@ func TestClassCScenarios(t *testing.T) {
 		txInfo := gw.TXInfo{
 			MAC:         lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2},
 			Immediately: true,
-			Frequency:   common.Band.RX2Frequency,
-			Power:       common.Band.DefaultTXPower,
-			DataRate:    common.Band.DataRates[sess.RX2DR],
+			Frequency:   config.C.NetworkServer.Band.Band.RX2Frequency,
+			Power:       config.C.NetworkServer.Band.Band.DefaultTXPower,
+			DataRate:    config.C.NetworkServer.Band.Band.DataRates[sess.RX2DR],
 			CodeRate:    "4/5",
 		}
 
@@ -256,16 +257,16 @@ func TestClassCScenarios(t *testing.T) {
 					}
 
 					// create device-session
-					So(storage.SaveDeviceSession(common.RedisPool, t.DeviceSession), ShouldBeNil)
+					So(storage.SaveDeviceSession(config.C.Redis.Pool, t.DeviceSession), ShouldBeNil)
 
 					// mac mac-command queue items
 					for _, qi := range t.MACCommandQueue {
-						So(maccommand.AddQueueItem(common.RedisPool, t.DeviceSession.DevEUI, qi), ShouldBeNil)
+						So(maccommand.AddQueueItem(config.C.Redis.Pool, t.DeviceSession.DevEUI, qi), ShouldBeNil)
 					}
 
 					// add device-queue items
 					for _, qi := range t.DeviceQueueItems {
-						So(storage.CreateDeviceQueueItem(common.DB, &qi), ShouldBeNil)
+						So(storage.CreateDeviceQueueItem(config.C.PostgreSQL.DB, &qi), ShouldBeNil)
 					}
 
 					// run queue scheduler
@@ -274,7 +275,7 @@ func TestClassCScenarios(t *testing.T) {
 					}
 
 					Convey("Then the frame-counters are as expected", func() {
-						sess, err := storage.GetDeviceSession(common.RedisPool, t.DeviceSession.DevEUI)
+						sess, err := storage.GetDeviceSession(config.C.Redis.Pool, t.DeviceSession.DevEUI)
 						So(err, ShouldBeNil)
 						So(sess.FCntUp, ShouldEqual, t.ExpectedFCntUp)
 						So(sess.FCntDown, ShouldEqual, t.ExpectedFCntDown)
@@ -282,17 +283,17 @@ func TestClassCScenarios(t *testing.T) {
 
 					if t.ExpectedTXInfo != nil && t.ExpectedPHYPayload != nil {
 						Convey("Then the expected frame was sent", func() {
-							So(common.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
-							txPacket := <-common.Gateway.(*test.GatewayBackend).TXPacketChan
+							So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
+							txPacket := <-config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan
 							So(txPacket.Token, ShouldNotEqual, 0)
 							So(&txPacket.TXInfo, ShouldResemble, t.ExpectedTXInfo)
 						})
 					} else {
-						So(common.Gateway.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 0)
+						So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 0)
 					}
 
 					Convey("Then the mac-command queue contains the expected items", func() {
-						items, err := maccommand.ReadQueueItems(common.RedisPool, t.DeviceSession.DevEUI)
+						items, err := maccommand.ReadQueueItems(config.C.Redis.Pool, t.DeviceSession.DevEUI)
 						So(err, ShouldBeNil)
 						So(items, ShouldResemble, t.ExpectedMACCommandQueue)
 					})

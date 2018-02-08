@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	joindown "github.com/brocaar/loraserver/internal/downlink/join"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
@@ -93,17 +93,17 @@ func logJoinRequestFramesCollected(ctx *context) error {
 func getDeviceAndDeviceProfile(ctx *context) error {
 	var err error
 
-	ctx.Device, err = storage.GetDevice(common.DB, ctx.JoinRequestPayload.DevEUI)
+	ctx.Device, err = storage.GetDevice(config.C.PostgreSQL.DB, ctx.JoinRequestPayload.DevEUI)
 	if err != nil {
 		return errors.Wrap(err, "get device error")
 	}
 
-	ctx.DeviceProfile, err = storage.GetDeviceProfile(common.DB, ctx.Device.DeviceProfileID)
+	ctx.DeviceProfile, err = storage.GetDeviceProfile(config.C.PostgreSQL.DB, ctx.Device.DeviceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get device-profile error")
 	}
 
-	ctx.ServiceProfile, err = storage.GetServiceProfile(common.DB, ctx.Device.ServiceProfileID)
+	ctx.ServiceProfile, err = storage.GetServiceProfile(config.C.PostgreSQL.DB, ctx.Device.ServiceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
@@ -117,7 +117,7 @@ func getDeviceAndDeviceProfile(ctx *context) error {
 
 func validateNonce(ctx *context) error {
 	// validate that the nonce has not been used yet
-	err := storage.ValidateDevNonce(common.DB, ctx.JoinRequestPayload.AppEUI, ctx.JoinRequestPayload.DevEUI, ctx.JoinRequestPayload.DevNonce)
+	err := storage.ValidateDevNonce(config.C.PostgreSQL.DB, ctx.JoinRequestPayload.AppEUI, ctx.JoinRequestPayload.DevEUI, ctx.JoinRequestPayload.DevNonce)
 	if err != nil {
 		return errors.Wrap(err, "validate dev-nonce error")
 	}
@@ -126,7 +126,7 @@ func validateNonce(ctx *context) error {
 }
 
 func getRandomDevAddr(ctx *context) error {
-	devAddr, err := storage.GetRandomDevAddr(common.RedisPool, common.NetID)
+	devAddr, err := storage.GetRandomDevAddr(config.C.Redis.Pool, config.C.NetworkServer.NetID)
 	if err != nil {
 		return errors.Wrap(err, "get random DevAddr error")
 	}
@@ -151,7 +151,7 @@ func getJoinAcceptFromAS(ctx *context) error {
 	joinReqPL := backend.JoinReqPayload{
 		BasePayload: backend.BasePayload{
 			ProtocolVersion: backend.ProtocolVersion1_0,
-			SenderID:        common.NetID.String(),
+			SenderID:        config.C.NetworkServer.NetID.String(),
 			ReceiverID:      ctx.JoinRequestPayload.AppEUI.String(),
 			TransactionID:   transactionID,
 			MessageType:     backend.JoinReq,
@@ -161,14 +161,14 @@ func getJoinAcceptFromAS(ctx *context) error {
 		DevEUI:     ctx.JoinRequestPayload.DevEUI,
 		DevAddr:    ctx.DevAddr,
 		DLSettings: lorawan.DLSettings{
-			RX2DataRate: uint8(common.RX2DR),
-			RX1DROffset: uint8(common.RX1DROffset),
+			RX2DataRate: uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
+			RX1DROffset: uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
 		},
-		RxDelay: common.RX1Delay,
-		CFList:  common.Band.GetCFList(),
+		RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
+		CFList:  config.C.NetworkServer.Band.Band.GetCFList(),
 	}
 
-	jsClient, err := common.JoinServerPool.Get(ctx.JoinRequestPayload.AppEUI)
+	jsClient, err := config.C.JoinServer.Pool.Get(ctx.JoinRequestPayload.AppEUI)
 	if err != nil {
 		return errors.Wrap(err, "get join-server client error")
 	}
@@ -182,7 +182,7 @@ func getJoinAcceptFromAS(ctx *context) error {
 }
 
 func flushDeviceQueue(ctx *context) error {
-	if err := storage.FlushDeviceQueueForDevEUI(common.DB, ctx.Device.DevEUI); err != nil {
+	if err := storage.FlushDeviceQueueForDevEUI(config.C.PostgreSQL.DB, ctx.Device.DevEUI); err != nil {
 		return errors.Wrap(err, "flush device-queue error")
 	}
 	return nil
@@ -205,10 +205,10 @@ func createNodeSession(ctx *context) error {
 		FCntUp:          0,
 		FCntDown:        0,
 		RXWindow:        storage.RX1,
-		RXDelay:         uint8(common.RX1Delay),
-		RX1DROffset:     uint8(common.RX1DROffset),
-		RX2DR:           uint8(common.RX2DR),
-		EnabledChannels: common.Band.GetUplinkChannels(),
+		RXDelay:         uint8(config.C.NetworkServer.NetworkSettings.RX1Delay),
+		RX1DROffset:     uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
+		RX2DR:           uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
+		EnabledChannels: config.C.NetworkServer.Band.Band.GetUplinkChannels(),
 		LastRXInfoSet:   ctx.RXPacket.RXInfoSet,
 		MaxSupportedDR:  ctx.ServiceProfile.ServiceProfile.DRMax,
 
@@ -216,11 +216,11 @@ func createNodeSession(ctx *context) error {
 		LastDevStatusMargin: 127,
 	}
 
-	if err := storage.SaveDeviceSession(common.RedisPool, ctx.DeviceSession); err != nil {
+	if err := storage.SaveDeviceSession(config.C.Redis.Pool, ctx.DeviceSession); err != nil {
 		return errors.Wrap(err, "save node-session error")
 	}
 
-	if err := maccommand.FlushQueue(common.RedisPool, ctx.DeviceSession.DevEUI); err != nil {
+	if err := maccommand.FlushQueue(config.C.Redis.Pool, ctx.DeviceSession.DevEUI); err != nil {
 		return fmt.Errorf("flush mac-command queue error: %s", err)
 	}
 
@@ -236,7 +236,7 @@ func createDeviceActivation(ctx *context) error {
 		DevNonce: ctx.JoinRequestPayload.DevNonce,
 	}
 
-	if err := storage.CreateDeviceActivation(common.DB, &da); err != nil {
+	if err := storage.CreateDeviceActivation(config.C.PostgreSQL.DB, &da); err != nil {
 		return errors.Wrap(err, "create device-activation error")
 	}
 

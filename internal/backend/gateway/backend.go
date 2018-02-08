@@ -12,7 +12,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/backend"
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/lorawan"
 	"github.com/eclipse/paho.mqtt.golang"
 	"github.com/garyburd/redigo/redis"
@@ -198,7 +198,7 @@ func (b *Backend) rxPacketHandler(c mqtt.Client, msg mqtt.Message) {
 		log.Errorf("backend/gateway: marshal text error: %s", err)
 	}
 	key := fmt.Sprintf("lora:ns:uplink:lock:%s:%s", rxPacketBytes.RXInfo.MAC, string(strB))
-	redisConn := common.RedisPool.Get()
+	redisConn := config.C.Redis.Pool.Get()
 	defer redisConn.Close()
 
 	_, err = redis.String(redisConn.Do("SET", key, "lock", "PX", int64(uplinkLockTTL/time.Millisecond), "NX"))
@@ -235,7 +235,7 @@ func (b *Backend) statsPacketHandler(c mqtt.Client, msg mqtt.Message) {
 	// As an unique id, the gw mac + base64 encoded payload is used. This is because
 	// we can't trust any of the data, as the MIC hasn't been validated yet.
 	key := fmt.Sprintf("lora:ns:stats:lock:%s", statsPacket.MAC)
-	redisConn := common.RedisPool.Get()
+	redisConn := config.C.Redis.Pool.Get()
 	defer redisConn.Close()
 
 	_, err := redis.String(redisConn.Do("SET", key, "lock", "PX", int64(statsLockTTL/time.Millisecond), "NX"))

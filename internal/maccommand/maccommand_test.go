@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
@@ -16,15 +17,15 @@ func TestLinkCheckReq(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {
-		common.RedisPool = common.NewRedisPool(conf.RedisURL)
-		test.MustFlushRedis(common.RedisPool)
+		config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+		test.MustFlushRedis(config.C.Redis.Pool)
 
 		Convey("Given a device-session", func() {
 			ds := storage.DeviceSession{
 				DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				EnabledChannels: []int{0, 1},
 			}
-			So(storage.SaveDeviceSession(common.RedisPool, ds), ShouldBeNil)
+			So(storage.SaveDeviceSession(config.C.Redis.Pool, ds), ShouldBeNil)
 
 			Convey("Test DevStatusAns", func() {
 				block := Block{
@@ -60,7 +61,7 @@ func TestLinkCheckReq(t *testing.T) {
 
 				rxPacket := models.RXPacket{
 					TXInfo: models.TXInfo{
-						DataRate: common.Band.DataRates[2],
+						DataRate: config.C.NetworkServer.Band.Band.DataRates[2],
 					},
 					RXInfoSet: models.RXInfoSet{
 						{
@@ -72,7 +73,7 @@ func TestLinkCheckReq(t *testing.T) {
 				So(Handle(&ds, block, nil, rxPacket), ShouldBeNil)
 
 				Convey("Then the expected response was added to the mac-command queue", func() {
-					items, err := ReadQueueItems(common.RedisPool, ds.DevEUI)
+					items, err := ReadQueueItems(config.C.Redis.Pool, ds.DevEUI)
 					So(err, ShouldBeNil)
 					So(items, ShouldHaveLength, 1)
 					So(items[0], ShouldResemble, Block{
@@ -97,15 +98,15 @@ func TestLinkADRAns(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {
-		common.RedisPool = common.NewRedisPool(conf.RedisURL)
-		test.MustFlushRedis(common.RedisPool)
+		config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+		test.MustFlushRedis(config.C.Redis.Pool)
 
 		Convey("Given a device-session", func() {
 			ds := storage.DeviceSession{
 				DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				EnabledChannels: []int{0, 1},
 			}
-			So(storage.SaveDeviceSession(common.RedisPool, ds), ShouldBeNil)
+			So(storage.SaveDeviceSession(config.C.Redis.Pool, ds), ShouldBeNil)
 
 			Convey("Testing LinkADRAns", func() {
 				testTable := []struct {

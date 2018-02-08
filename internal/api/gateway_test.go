@@ -12,6 +12,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
@@ -34,7 +35,7 @@ func TestGatewayAPI(t *testing.T) {
 		db, err := common.OpenDatabase(conf.PostgresDSN)
 		So(err, ShouldBeNil)
 		test.MustResetDB(db)
-		common.DB = db
+		config.C.PostgreSQL.DB = db
 
 		ctx := context.Background()
 
@@ -70,7 +71,7 @@ func TestGatewayAPI(t *testing.T) {
 				cc := gateway.ChannelConfiguration{
 					Name:     "eu-conf",
 					Channels: []int64{0, 1, 2},
-					Band:     string(common.BandName),
+					Band:     string(config.C.NetworkServer.Band.Name),
 				}
 				So(gateway.CreateChannelConfiguration(db, &cc), ShouldBeNil)
 

@@ -10,7 +10,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/api/auth"
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -42,7 +42,7 @@ func (a *GatewayAPI) GetConfiguration(ctx context.Context, req *gw.GetConfigurat
 		return nil, grpc.Errorf(codes.InvalidArgument, "invalid mac")
 	}
 
-	g, err := gateway.GetGateway(common.DB, mac)
+	g, err := gateway.GetGateway(config.C.PostgreSQL.DB, mac)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -52,12 +52,12 @@ func (a *GatewayAPI) GetConfiguration(ctx context.Context, req *gw.GetConfigurat
 		return &gw.GetConfigurationResponse{}, nil
 	}
 
-	channelConf, err := gateway.GetChannelConfiguration(common.DB, *g.ChannelConfigurationID)
+	channelConf, err := gateway.GetChannelConfiguration(config.C.PostgreSQL.DB, *g.ChannelConfigurationID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	extraChannels, err := gateway.GetExtraChannelsForChannelConfigurationID(common.DB, *g.ChannelConfigurationID)
+	extraChannels, err := gateway.GetExtraChannelsForChannelConfigurationID(config.C.PostgreSQL.DB, *g.ChannelConfigurationID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -67,7 +67,7 @@ func (a *GatewayAPI) GetConfiguration(ctx context.Context, req *gw.GetConfigurat
 	}
 
 	for _, cidx := range channelConf.Channels {
-		if int(cidx) >= len(common.Band.UplinkChannels) {
+		if int(cidx) >= len(config.C.NetworkServer.Band.Band.UplinkChannels) {
 			log.WithFields(log.Fields{
 				"mac": g.MAC,
 				"channel_configuration_id": g.ChannelConfigurationID,
@@ -76,21 +76,21 @@ func (a *GatewayAPI) GetConfiguration(ctx context.Context, req *gw.GetConfigurat
 			return nil, grpc.Errorf(codes.Internal, "invalid channel configuration")
 		}
 
-		channel := common.Band.UplinkChannels[int(cidx)]
+		channel := config.C.NetworkServer.Band.Band.UplinkChannels[int(cidx)]
 		gwChannel := gw.Channel{
 			Frequency: int32(channel.Frequency),
 		}
 
 		for _, dr := range channel.DataRates {
-			gwChannel.Bandwidth = int32(common.Band.DataRates[dr].Bandwidth)
+			gwChannel.Bandwidth = int32(config.C.NetworkServer.Band.Band.DataRates[dr].Bandwidth)
 
-			switch common.Band.DataRates[dr].Modulation {
+			switch config.C.NetworkServer.Band.Band.DataRates[dr].Modulation {
 			case band.LoRaModulation:
 				gwChannel.Modulation = gw.Modulation_LORA
-				gwChannel.SpreadFactors = append(gwChannel.SpreadFactors, int32(common.Band.DataRates[dr].SpreadFactor))
+				gwChannel.SpreadFactors = append(gwChannel.SpreadFactors, int32(config.C.NetworkServer.Band.Band.DataRates[dr].SpreadFactor))
 			case band.FSKModulation:
 				gwChannel.Modulation = gw.Modulation_FSK
-				gwChannel.BitRate = int32(common.Band.DataRates[dr].BitRate)
+				gwChannel.BitRate = int32(config.C.NetworkServer.Band.Band.DataRates[dr].BitRate)
 			}
 		}
 

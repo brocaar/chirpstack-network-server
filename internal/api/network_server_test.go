@@ -16,6 +16,7 @@ import (
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
@@ -32,15 +33,15 @@ func TestNetworkServerAPI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	common.DB = db
-	common.RedisPool = common.NewRedisPool(conf.RedisURL)
-	common.NetID = [3]byte{1, 2, 3}
+	config.C.PostgreSQL.DB = db
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+	config.C.NetworkServer.NetID = [3]byte{1, 2, 3}
 
 	gateway.MustSetStatsAggregationIntervals([]string{"MINUTE"})
 
 	Convey("Given a clean PostgreSQL and Redis database + api instance", t, func() {
 		test.MustResetDB(db)
-		test.MustFlushRedis(common.RedisPool)
+		test.MustFlushRedis(config.C.Redis.Pool)
 
 		grpcServer := grpc.NewServer()
 		apiServer := NewNetworkServerAPI()
@@ -92,7 +93,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				So(framelog.LogDownlinkFrameForGateway(framelog.DownlinkFrameLog{
 					TXInfo: gw.TXInfo{
 						MAC:      mac,
-						DataRate: common.Band.DataRates[0],
+						DataRate: config.C.NetworkServer.Band.Band.DataRates[0],
 					},
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -159,7 +160,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			Convey("When logging a downlink device frame", func() {
 				So(framelog.LogDownlinkFrameForDevEUI(devEUI, framelog.DownlinkFrameLog{
 					TXInfo: gw.TXInfo{
-						DataRate: common.Band.DataRates[0],
+						DataRate: config.C.NetworkServer.Band.Band.DataRates[0],
 					},
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -442,12 +443,12 @@ func TestNetworkServerAPI(t *testing.T) {
 			sp := storage.ServiceProfile{
 				ServiceProfile: backend.ServiceProfile{},
 			}
-			So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
+			So(storage.CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 			rp := storage.RoutingProfile{
 				RoutingProfile: backend.RoutingProfile{},
 			}
-			So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
+			So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
 			dp := storage.DeviceProfile{
 				DeviceProfile: backend.DeviceProfile{
@@ -458,7 +459,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					},
 				},
 			}
-			So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
+			So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
 
 			Convey("When calling CreateDevice", func() {
 				_, err := api.CreateDevice(ctx, &ns.CreateDeviceRequest{
@@ -536,12 +537,12 @@ func TestNetworkServerAPI(t *testing.T) {
 					DRMax: 6,
 				},
 			}
-			So(storage.CreateServiceProfile(common.DB, &sp), ShouldBeNil)
+			So(storage.CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 			rp := storage.RoutingProfile{
 				RoutingProfile: backend.RoutingProfile{},
 			}
-			So(storage.CreateRoutingProfile(common.DB, &rp), ShouldBeNil)
+			So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
 			dp := storage.DeviceProfile{
 				DeviceProfile: backend.DeviceProfile{
@@ -556,7 +557,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					RXFreq2:     868900000,
 				},
 			}
-			So(storage.CreateDeviceProfile(common.DB, &dp), ShouldBeNil)
+			So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
 
 			d := storage.Device{
 				DevEUI:           devEUI,
@@ -564,7 +565,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				RoutingProfileID: rp.RoutingProfileID,
 				ServiceProfileID: sp.ServiceProfileID,
 			}
-			So(storage.CreateDevice(common.DB, &d), ShouldBeNil)
+			So(storage.CreateDevice(config.C.PostgreSQL.DB, &d), ShouldBeNil)
 
 			Convey("Given an item in the device-queue", func() {
 				_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
@@ -589,13 +590,13 @@ func TestNetworkServerAPI(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					Convey("Then the device-queue was flushed", func() {
-						items, err := storage.GetDeviceQueueItemsForDevEUI(common.DB, d.DevEUI)
+						items, err := storage.GetDeviceQueueItemsForDevEUI(config.C.PostgreSQL.DB, d.DevEUI)
 						So(err, ShouldBeNil)
 						So(items, ShouldHaveLength, 0)
 					})
 
 					Convey("Then the device was activated as expected", func() {
-						ds, err := storage.GetDeviceSession(common.RedisPool, devEUI)
+						ds, err := storage.GetDeviceSession(config.C.Redis.Pool, devEUI)
 						So(err, ShouldBeNil)
 						So(ds, ShouldResemble, storage.DeviceSession{
 							DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
@@ -608,7 +609,7 @@ func TestNetworkServerAPI(t *testing.T) {
 							FCntUp:             10,
 							FCntDown:           11,
 							SkipFCntValidation: true,
-							EnabledChannels:    common.Band.GetUplinkChannels(),
+							EnabledChannels:    config.C.NetworkServer.Band.Band.GetUplinkChannels(),
 							ChannelFrequencies: []int{868100000, 868300000, 868500000},
 							RXDelay:            3,
 							RX1DROffset:        2,
@@ -673,7 +674,7 @@ func TestNetworkServerAPI(t *testing.T) {
 						})
 						So(err, ShouldBeNil)
 
-						items, err := storage.GetDeviceQueueItemsForDevEUI(common.DB, d.DevEUI)
+						items, err := storage.GetDeviceQueueItemsForDevEUI(config.C.PostgreSQL.DB, d.DevEUI)
 						So(err, ShouldBeNil)
 						So(items, ShouldHaveLength, 1)
 
@@ -687,7 +688,7 @@ func TestNetworkServerAPI(t *testing.T) {
 						})
 						So(grpc.Code(err), ShouldEqual, codes.NotFound)
 
-						items, err = storage.GetDeviceQueueItemsForDevEUI(common.DB, d.DevEUI)
+						items, err = storage.GetDeviceQueueItemsForDevEUI(config.C.PostgreSQL.DB, d.DevEUI)
 						So(err, ShouldBeNil)
 						So(items, ShouldHaveLength, 0)
 					})
@@ -711,7 +712,7 @@ func TestNetworkServerAPI(t *testing.T) {
 						So(err, ShouldBeNil)
 
 						Convey("Then the mac-command has been added to the queue", func() {
-							queue, err := maccommand.ReadQueueItems(common.RedisPool, devEUI)
+							queue, err := maccommand.ReadQueueItems(config.C.Redis.Pool, devEUI)
 							So(err, ShouldBeNil)
 							So(queue, ShouldResemble, []maccommand.Block{
 								{
@@ -856,7 +857,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			})
 
 			Convey("When calling GenerateGatewayToken", func() {
-				common.GatewayServerJWTSecret = "verysecret"
+				config.C.NetworkServer.Gateway.API.JWTSecret = "verysecret"
 
 				tokenResp, err := api.GenerateGatewayToken(ctx, &ns.GenerateGatewayTokenRequest{
 					Mac: []byte{1, 2, 3, 4, 5, 6, 7, 8},

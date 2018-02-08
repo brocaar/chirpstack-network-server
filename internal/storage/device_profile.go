@@ -15,7 +15,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/lorawan/backend"
 )
 
@@ -115,7 +115,7 @@ func CreateDeviceProfileCache(p *redis.Pool, dp DeviceProfile) error {
 	defer c.Close()
 
 	key := fmt.Sprintf(DeviceProfileKeyTempl, dp.DeviceProfile.DeviceProfileID)
-	exp := int64(common.NodeSessionTTL) / int64(time.Millisecond)
+	exp := int64(config.C.NetworkServer.DeviceSessionTTL) / int64(time.Millisecond)
 
 	_, err := c.Do("PSETEX", key, exp, buf.Bytes())
 	if err != nil {

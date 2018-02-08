@@ -6,6 +6,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/pkg/errors"
@@ -18,17 +19,17 @@ func TestChannelConfiguration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	common.DB = db
+	config.C.PostgreSQL.DB = db
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(common.DB)
+		test.MustResetDB(config.C.PostgreSQL.DB)
 
 		Convey("Creating a channel-configuration with invalid band-name returns an error", func() {
 			cf := ChannelConfiguration{
 				Name: "test-conf",
 				Band: "EU_433",
 			}
-			err := CreateChannelConfiguration(common.DB, &cf)
+			err := CreateChannelConfiguration(config.C.PostgreSQL.DB, &cf)
 			So(err, ShouldNotBeNil)
 			So(errors.Cause(err), ShouldResemble, ErrInvalidBand)
 		})
@@ -36,7 +37,7 @@ func TestChannelConfiguration(t *testing.T) {
 		Convey("Creating a channel-configuration with invalid channels returns an error", func() {
 			cf := ChannelConfiguration{
 				Name:     "test-conf",
-				Band:     string(common.BandName),
+				Band:     string(config.C.NetworkServer.Band.Name),
 				Channels: []int64{0, 1, 2, 3}, // only three channels are defined
 			}
 			err := CreateChannelConfiguration(db, &cf)
@@ -52,17 +53,17 @@ func TestExtraChannel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	common.DB = db
+	config.C.PostgreSQL.DB = db
 
 	Convey("Given a clean database with a channel-configuration", t, func() {
-		test.MustResetDB(common.DB)
+		test.MustResetDB(config.C.PostgreSQL.DB)
 
 		cf := ChannelConfiguration{
 			Name:     "test-conf",
-			Band:     string(common.BandName),
+			Band:     string(config.C.NetworkServer.Band.Name),
 			Channels: []int64{0, 1, 2},
 		}
-		So(CreateChannelConfiguration(common.DB, &cf), ShouldBeNil)
+		So(CreateChannelConfiguration(config.C.PostgreSQL.DB, &cf), ShouldBeNil)
 
 		c := ExtraChannel{
 			ChannelConfigurationID: cf.ID,
@@ -72,7 +73,7 @@ func TestExtraChannel(t *testing.T) {
 
 		Convey("Creating an extra LoRa channel without sf set returns an error", func() {
 			c.Modulation = ChannelModulationLoRa
-			err := CreateExtraChannel(common.DB, &c)
+			err := CreateExtraChannel(config.C.PostgreSQL.DB, &c)
 			So(err, ShouldNotBeNil)
 			So(errors.Cause(err), ShouldResemble, ErrInvalidChannelConfig)
 		})
@@ -81,7 +82,7 @@ func TestExtraChannel(t *testing.T) {
 			c.Modulation = ChannelModulationLoRa
 			c.SpreadFactors = []int64{12}
 			c.BitRate = 50000
-			err := CreateExtraChannel(common.DB, &c)
+			err := CreateExtraChannel(config.C.PostgreSQL.DB, &c)
 			So(err, ShouldNotBeNil)
 			So(errors.Cause(err), ShouldResemble, ErrInvalidChannelConfig)
 		})
@@ -89,7 +90,7 @@ func TestExtraChannel(t *testing.T) {
 		Convey("Creating an extra FSK channel without datarate set returns an error", func() {
 			c.Modulation = ChannelModulationFSK
 			c.SpreadFactors = []int64{12}
-			err := CreateExtraChannel(common.DB, &c)
+			err := CreateExtraChannel(config.C.PostgreSQL.DB, &c)
 			So(err, ShouldNotBeNil)
 			So(errors.Cause(err), ShouldResemble, ErrInvalidChannelConfig)
 		})
@@ -98,7 +99,7 @@ func TestExtraChannel(t *testing.T) {
 			c.Modulation = ChannelModulationFSK
 			c.BitRate = 50000
 			c.SpreadFactors = []int64{12}
-			err := CreateExtraChannel(common.DB, &c)
+			err := CreateExtraChannel(config.C.PostgreSQL.DB, &c)
 			So(err, ShouldNotBeNil)
 			So(errors.Cause(err), ShouldResemble, ErrInvalidChannelConfig)
 		})
@@ -113,12 +114,12 @@ func TestGatewayStatsAggregation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	common.DB = db
+	config.C.PostgreSQL.DB = db
 
 	Convey("Given a clean database", t, func() {
-		common.CreateGatewayOnStats = false
+		config.C.NetworkServer.Gateway.Stats.CreateGatewayOnStats = false
 		So(err, ShouldBeNil)
-		test.MustResetDB(common.DB)
+		test.MustResetDB(config.C.PostgreSQL.DB)
 
 		MustSetStatsAggregationIntervals([]string{"SECOND", "MINUTE"})
 		lat := float64(1.123)
@@ -145,7 +146,7 @@ func TestGatewayStatsAggregation(t *testing.T) {
 		})
 
 		Convey("When CreateGatewayOnStats=true", func() {
-			common.CreateGatewayOnStats = true
+			config.C.NetworkServer.Gateway.Stats.CreateGatewayOnStats = true
 
 			Convey("Then the gateway is created automatically on stats", func() {
 				So(handleStatsPacket(db, stats), ShouldBeNil)
@@ -304,7 +305,7 @@ func TestGatewayFunctions(t *testing.T) {
 			Convey("Given a channel-configuration", func() {
 				cf := ChannelConfiguration{
 					Name:     "test-conf",
-					Band:     string(common.BandName),
+					Band:     string(config.C.NetworkServer.Band.Name),
 					Channels: []int64{0, 1, 2},
 				}
 				So(CreateChannelConfiguration(db, &cf), ShouldBeNil)
@@ -341,7 +342,7 @@ func TestGatewayFunctions(t *testing.T) {
 				})
 
 				Convey("Then the channel-configuration can be listed by band", func() {
-					cfs, err := GetChannelConfigurationsForBand(db, string(common.BandName))
+					cfs, err := GetChannelConfigurationsForBand(db, string(config.C.NetworkServer.Band.Name))
 					So(err, ShouldBeNil)
 					So(cfs, ShouldHaveLength, 1)
 					cfs[0].CreatedAt = cfs[0].CreatedAt.UTC().Truncate(time.Millisecond)
