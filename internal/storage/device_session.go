@@ -11,8 +11,8 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/lorawan"
 )
 
@@ -86,10 +86,10 @@ type DeviceSession struct {
 	// This value is controlled by the ADR engine.
 	NbTrans uint8
 
-	EnabledChannels    []int           // channels that are activated on the node
-	ChannelFrequencies []int           // frequency of each channel
-	UplinkHistory      []UplinkHistory // contains the last 20 transmissions
-	LastRXInfoSet      []gw.RXInfo     // sorted set (best at index 0)
+	EnabledChannels    []int            // channels that are activated on the node
+	ChannelFrequencies []int            // frequency of each channel
+	UplinkHistory      []UplinkHistory  // contains the last 20 transmissions
+	LastRXInfoSet      models.RXInfoSet // sorted set (best at index 0)
 
 	// LastDevStatusRequest contains the timestamp when the last device-status
 	// request was made.

@@ -107,9 +107,6 @@ service NetworkServer {
     // GetGatewayStats returns stats of an existing gateway.
     rpc GetGatewayStats(GetGatewayStatsRequest) returns (GetGatewayStatsResponse) {}
 
-    // GetFrameLogsForDevEUI returns the uplink / downlink frame logs for the given DevEUI.
-    rpc GetFrameLogsForDevEUI(GetFrameLogsForDevEUIRequest) returns (GetFrameLogsResponse) {}
-
     // CreateChannelConfiguration creates the given channel-configuration.
     rpc CreateChannelConfiguration(CreateChannelConfigurationRequest) returns (CreateChannelConfigurationResponse) {}
 
@@ -141,6 +138,13 @@ service NetworkServer {
 
     // MigrateNodeToDeviceSession. This method is for internal us only.
     rpc MigrateNodeToDeviceSession(MigrateNodeToDeviceSessionRequest) returns (MigrateNodeToDeviceSessionResponse) {}
+
+    // StreamFrameLogsForGateway returns a stream of frames seen by the given gateway.
+    rpc StreamFrameLogsForGateway(StreamFrameLogsForGatewayRequest) returns (stream StreamFrameLogsForGatewayResponse) {}
+
+    // StreamFrameLogsForDevice returns a stream of frames seen by the given device.
+    rpc StreamFrameLogsForDevice(StreamFrameLogsForDeviceRequest) returns (stream StreamFrameLogsForDeviceResponse) {}
+
 }
 
 enum RXWindow {
@@ -581,98 +585,6 @@ message GetGatewayStatsResponse {
     repeated GatewayStats result = 1;
 }
 
-message GetFrameLogsForDevEUIRequest {
-    // The device EUI (8 bytes).
-    bytes devEUI = 1;
-
-    // Max number of logs to return in the result-set.
-    int32 limit = 2;
-
-    // Offset in the result-set (for pagination).
-    int32 offset = 3;
-}
-
-message GetFrameLogsResponse {
-    // Total number of logs.
-    int32 totalCount = 1;
-
-    // The result-set.
-    repeated FrameLog result = 2;
-}
-
-message FrameLog {
-    // Timestamp of when the frame was logged.
-    string createdAt = 1;
-
-    // RX-info set (in case of an uplink).
-    repeated RXInfo rxInfoSet = 2;
-
-    // TX-info (in case of a downlink).
-    TXInfo txInfo = 3;
-
-    // LoRaWAN PHYPayload.
-    bytes phyPayload = 4;
-}
-
-message DataRate {
-    string modulation = 1;
-    uint32 bandWidth = 2;
-    uint32 spreadFactor = 3;
-    uint32 bitrate = 4;
-}
-
-message RXInfo {
-    // Channel number on which the frame was received.
-    int32 channel = 1;
-
-    // Code-rate.
-    string codeRate = 2;
-
-    // frequency.
-    int64 frequency = 3;
-
-    // LoRa SNR.
-    double loRaSNR = 4;
-
-    // RSSI / signal strength.
-    int32 rssi = 5;
-
-    // Time (when the gateway has a GPS).
-    string time = 6;
-    
-    // Gateway internal timestamp.
-    uint32 timestamp = 7;
-
-    // Data-rate.
-    DataRate dataRate = 8;
-
-    // Gateway MAC.
-    bytes mac = 9;
-} 
-
-message TXInfo {
-    // Code-rate.
-    string codeRate = 1;
-
-    // Frequency.
-    int64 frequency = 2;
-
-    // Immediately.
-    bool immediately = 3;
-
-    // Gateway MAC.
-    bytes mac = 4;
-
-    // TX power.
-    int32 power = 5;
-
-    // Gateway internal timestamp.
-    uint32 timestamp = 6;
-
-    // Data-rate.
-    DataRate dataRate = 7;
-}
-
 message CreateChannelConfigurationRequest {
     // Name of the channel-configuration.
     string name = 1;
@@ -892,4 +804,136 @@ message GetNextDownlinkFCntForDevEUIRequest {
 message GetNextDownlinkFCntForDevEUIResponse {
     // The frame-counter to use.
     uint32 fCnt = 1;
+}
+
+message StreamFrameLogsForGatewayRequest {
+    // MAC address of the gateway.
+    bytes mac = 1;
+}
+
+message StreamFrameLogsForGatewayResponse {
+    // Contains zero or one uplink frame.
+    repeated UplinkFrameLog uplinkFrames = 1;
+
+    // Contains zero or one downlink frame.
+    repeated DownlinkFrameLog downlinkFrames = 2;
+}
+
+message StreamFrameLogsForDeviceRequest {
+    // DevEUI of the device.
+    bytes devEUI = 1;
+}
+
+message StreamFrameLogsForDeviceResponse {
+    // Contains zero or one uplink frame.
+    repeated UplinkFrameLog uplinkFrames = 1;
+
+    // Contains zero or one downlink frame.
+    repeated DownlinkFrameLog downlinkFrames = 2;
+}
+
+message DataRate {
+    // The used modulation (LORA or FSK).
+    string modulation = 1;
+
+    // Bandwidth (in kHz).
+    uint32 bandwidth = 2;
+
+    // Used spread-factor.
+    uint32 spreadFactor = 3;
+
+    // Bitrate (used for FSK modulation).
+    uint32 bitrate = 4;
+}
+
+
+message UplinkTXInfo {
+    // TX frequency (in Hz).
+    uint32 frequency = 1;
+
+    // Data-rate.
+    DataRate dataRate = 2;
+
+    // Code rate.
+    string codeRate = 3;
+}
+
+message UplinkRXInfo {
+    // Gateway MAC.
+    bytes mac = 1;
+
+    // Time when the frame was received (if available).
+    string time = 2;
+
+    // Time when the frame was received as time since GPS epoch (if available).
+    string timeSinceGPSEpoch = 3;
+
+    // Gateway internal timestamp.
+    uint32 timestamp = 4;
+
+    // RSSI.
+    int32 rssi = 5;
+
+    // LoRa SNR.
+    float loRaSNR = 6;
+
+    // The board identifier that received the uplink frame.
+    uint32 board = 7;
+
+    // THe antenna identifier that received the uplink frame.
+    uint32 antenna = 8;
+}
+
+message UplinkFrameLog {
+    // TX information of the uplink.
+    UplinkTXInfo txInfo = 1;
+
+    // RX information of the uplink.
+    repeated UplinkRXInfo rxInfo = 2;
+
+    // LoRaWAN PHYPayload.
+    bytes phyPayload = 3;
+}
+
+message DownlinkTXInfo {
+    // Gateway MAC.
+    bytes mac = 1;
+
+    // Frame must be sent immediately.
+    bool immediately = 2;
+
+    // Transmit frame at the given time since GPS epoch.
+    string timeSinceGPSEpoch = 3;
+
+    // Transmit the frame at the given gateway internal timestamp.
+    uint32 timestamp = 4;
+
+    // TX frequency (in Hz).
+    uint32 frequency = 5;
+
+    // TX power (in dBm).
+    int32 power = 6;
+
+    // Data-rate.
+    DataRate dataRate = 7;
+
+    // Code rate.
+    string codeRate = 8;
+
+    // Lora modulation polarization inversion.
+    bool iPol = 9;
+
+    // The board identifier that received the uplink frame.
+    uint32 board = 10;
+
+    // THe antenna identifier that received the uplink frame.
+    uint32 antenna = 11;
+}
+
+message DownlinkFrameLog {
+    // TX information of the downlink.
+    DownlinkTXInfo txInfo = 1;
+
+    // LoRaWAN PHYPayload.
+    bytes phyPayload = 2;
 }

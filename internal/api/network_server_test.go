@@ -2,31 +2,28 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"net"
 	"testing"
 	"time"
 
-	"github.com/brocaar/lorawan"
 	jwt "github.com/dgrijalva/jwt-go"
-
-	"google.golang.org/grpc/codes"
-
+	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
-
 	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
-	"github.com/brocaar/loraserver/internal/node"
+	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
-	"github.com/brocaar/lorawan/band"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestNetworkServerAPI(t *testing.T) {
@@ -45,12 +42,160 @@ func TestNetworkServerAPI(t *testing.T) {
 		test.MustResetDB(db)
 		test.MustFlushRedis(common.RedisPool)
 
+		grpcServer := grpc.NewServer()
+		apiServer := NewNetworkServerAPI()
+		ns.RegisterNetworkServerServer(grpcServer, apiServer)
+
+		ln, err := net.Listen("tcp", "localhost:0")
+		So(err, ShouldBeNil)
+		go grpcServer.Serve(ln)
+		defer func() {
+			grpcServer.Stop()
+			ln.Close()
+		}()
+
+		apiClient, err := grpc.Dial(ln.Addr().String(), grpc.WithInsecure(), grpc.WithBlock())
+		So(err, ShouldBeNil)
+
+		defer apiClient.Close()
+
+		api := ns.NewNetworkServerClient(apiClient)
 		ctx := context.Background()
-		api := NetworkServerAPI{}
 
 		devEUI := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}
 		devAddr := [4]byte{6, 2, 3, 4}
 		nwkSKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+
+		Convey("When calling StreamFrameLogsForGateway", func() {
+			mac := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
+			respChan := make(chan *ns.StreamFrameLogsForGatewayResponse)
+
+			client, err := api.StreamFrameLogsForGateway(ctx, &ns.StreamFrameLogsForGatewayRequest{
+				Mac: mac[:],
+			})
+			So(err, ShouldBeNil)
+
+			// some time for subscribing
+			time.Sleep(100 * time.Millisecond)
+
+			go func() {
+				for {
+					resp, err := client.Recv()
+					if err != nil {
+						break
+					}
+					respChan <- resp
+				}
+			}()
+
+			Convey("When logging a downlink gateway frame", func() {
+				So(framelog.LogDownlinkFrameForGateway(framelog.DownlinkFrameLog{
+					TXInfo: gw.TXInfo{
+						MAC:      mac,
+						DataRate: common.Band.DataRates[0],
+					},
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataDown,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{},
+					},
+				}), ShouldBeNil)
+
+				Convey("Then the frame-log was received by the client", func() {
+					resp := <-respChan
+					So(resp.UplinkFrames, ShouldHaveLength, 0)
+					So(resp.DownlinkFrames, ShouldHaveLength, 1)
+				})
+			})
+
+			Convey("When logging an uplink gateway frame", func() {
+				So(framelog.LogUplinkFrameForGateways(models.RXPacket{
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{},
+					},
+					TXInfo: models.TXInfo{},
+					RXInfoSet: []models.RXInfo{
+						{
+							MAC: mac,
+						},
+					},
+				}), ShouldBeNil)
+
+				Convey("Then the frame-log was received by the client", func() {
+					resp := <-respChan
+					So(resp.UplinkFrames, ShouldHaveLength, 1)
+					So(resp.DownlinkFrames, ShouldHaveLength, 0)
+				})
+			})
+		})
+
+		Convey("When calling StreamFrameLogsForDevice", func() {
+			respChan := make(chan *ns.StreamFrameLogsForDeviceResponse)
+
+			client, err := api.StreamFrameLogsForDevice(ctx, &ns.StreamFrameLogsForDeviceRequest{
+				DevEUI: devEUI[:],
+			})
+			So(err, ShouldBeNil)
+
+			// some time for subscribing
+			time.Sleep(100 * time.Millisecond)
+
+			go func() {
+				for {
+					resp, err := client.Recv()
+					if err != nil {
+						break
+					}
+					respChan <- resp
+				}
+			}()
+
+			Convey("When logging a downlink device frame", func() {
+				So(framelog.LogDownlinkFrameForDevEUI(devEUI, framelog.DownlinkFrameLog{
+					TXInfo: gw.TXInfo{
+						DataRate: common.Band.DataRates[0],
+					},
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataDown,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{},
+					},
+				}), ShouldBeNil)
+
+				Convey("Then the frame-log was received by the client", func() {
+					resp := <-respChan
+					So(resp.UplinkFrames, ShouldHaveLength, 0)
+					So(resp.DownlinkFrames, ShouldHaveLength, 1)
+				})
+			})
+
+			Convey("When logging an uplink device frame", func() {
+				So(framelog.LogUplinkFrameForDevEUI(devEUI, models.RXPacket{
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{},
+					},
+					TXInfo: models.TXInfo{},
+				}), ShouldBeNil)
+
+				Convey("Then the frame-log was received by the client", func() {
+					resp := <-respChan
+					So(resp.UplinkFrames, ShouldHaveLength, 1)
+					So(resp.DownlinkFrames, ShouldHaveLength, 0)
+				})
+			})
+		})
 
 		Convey("When calling CreateServiceProfile", func() {
 			resp, err := api.CreateServiceProfile(ctx, &ns.CreateServiceProfileRequest{
@@ -774,248 +919,129 @@ func TestNetworkServerAPI(t *testing.T) {
 				})
 			})
 
-			Convey("Given 20 logs for two different DevEUIs", func() {
-				now := time.Now()
-				rxInfoSet := []gw.RXInfo{
-					{
-						MAC:       lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-						Time:      &now,
-						Timestamp: 1234,
-						Frequency: 868100000,
-						Channel:   1,
-						RFChain:   1,
-						CRCStatus: 1,
-						CodeRate:  "4/5",
-						RSSI:      110,
-						LoRaSNR:   5.5,
-						Size:      10,
-						DataRate: band.DataRate{
-							Modulation:   band.LoRaModulation,
-							SpreadFactor: 12,
-							Bandwidth:    125,
-						},
-					},
-				}
-				ts := uint32(12345)
-				txInfo := gw.TXInfo{
-					MAC:         lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-					Immediately: true,
-					Timestamp:   &ts,
-					Frequency:   868100000,
-					Power:       14,
-					CodeRate:    "4/5",
-					DataRate: band.DataRate{
-						Modulation:   band.LoRaModulation,
-						SpreadFactor: 12,
-						Bandwidth:    125,
-					},
-				}
-				devEUI1 := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
-				devEUI2 := lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1}
-				phy := lorawan.PHYPayload{
-					MHDR: lorawan.MHDR{
-						MType: lorawan.UnconfirmedDataUp,
-						Major: lorawan.LoRaWANR1,
-					},
-					MACPayload: &lorawan.MACPayload{
-						FHDR: lorawan.FHDR{
-							DevAddr: lorawan.DevAddr{1, 2, 3, 4},
-							FCnt:    1,
-						},
-					},
-				}
-
-				rxBytes, err := json.Marshal(rxInfoSet)
+			Convey("When calling CreateChannelConfiguration", func() {
+				cfResp, err := api.CreateChannelConfiguration(ctx, &ns.CreateChannelConfigurationRequest{
+					Name:     "test-config",
+					Channels: []int32{0, 1, 2},
+				})
 				So(err, ShouldBeNil)
-				txBytes, err := json.Marshal(txInfo)
-				So(err, ShouldBeNil)
-				phyBytes, err := phy.MarshalBinary()
-				So(err, ShouldBeNil)
+				So(cfResp.Id, ShouldNotEqual, 0)
 
-				for i := 0; i < 10; i++ {
-					frameLog := node.FrameLog{
-						DevEUI:     devEUI1,
-						RXInfoSet:  &rxBytes,
-						TXInfo:     &txBytes,
-						PHYPayload: phyBytes,
-					}
-					So(node.CreateFrameLog(db, &frameLog), ShouldBeNil)
-
-					frameLog.DevEUI = devEUI2
-					frameLog.TXInfo = nil
-					So(node.CreateFrameLog(db, &frameLog), ShouldBeNil)
-				}
-
-				Convey("Then GetFrameLogsForDevEUI returns the expected logs", func() {
-					resp, err := api.GetFrameLogsForDevEUI(ctx, &ns.GetFrameLogsForDevEUIRequest{
-						DevEUI: devEUI1[:],
-						Limit:  1,
-						Offset: 0,
+				Convey("Then the channel-configuration has been created", func() {
+					cf, err := api.GetChannelConfiguration(ctx, &ns.GetChannelConfigurationRequest{
+						Id: cfResp.Id,
 					})
 					So(err, ShouldBeNil)
-					So(resp.TotalCount, ShouldEqual, 10)
-					So(resp.Result, ShouldHaveLength, 1)
-					So(resp.Result[0].CreatedAt, ShouldNotEqual, "")
-					resp.Result[0].CreatedAt = ""
-					So(resp.Result[0], ShouldResemble, &ns.FrameLog{
-						PhyPayload: phyBytes,
-						TxInfo: &ns.TXInfo{
-							CodeRate:    "4/5",
-							Frequency:   868100000,
-							Immediately: true,
-							Mac:         []byte{1, 2, 3, 4, 5, 6, 7, 8},
-							Power:       14,
-							Timestamp:   12345,
-							DataRate: &ns.DataRate{
-								Modulation:   "LORA",
-								BandWidth:    125,
-								SpreadFactor: 12,
-							},
-						},
-						RxInfoSet: []*ns.RXInfo{
-							{
-								Channel:   1,
-								CodeRate:  "4/5",
-								Frequency: 868100000,
-								LoRaSNR:   5.5,
-								Rssi:      110,
-								Time:      now.Format(time.RFC3339Nano),
-								Timestamp: 1234,
-								Mac:       []byte{1, 2, 3, 4, 5, 6, 7, 8},
-								DataRate: &ns.DataRate{
-									Modulation:   "LORA",
-									BandWidth:    125,
-									SpreadFactor: 12,
-								},
-							},
-						},
+					So(cf.Name, ShouldEqual, "test-config")
+					So(cf.Channels, ShouldResemble, []int32{0, 1, 2})
+					So(cf.CreatedAt, ShouldNotEqual, "")
+					So(cf.UpdatedAt, ShouldNotEqual, "")
+
+					Convey("Then ListChannelConfigurations returns the channel-configuration", func() {
+						cfs, err := api.ListChannelConfigurations(ctx, &ns.ListChannelConfigurationsRequest{})
+						So(err, ShouldBeNil)
+						So(cfs.Result, ShouldHaveLength, 1)
+						So(cfs.Result[0], ShouldResemble, cf)
+					})
+
+					Convey("Then UpdateChannelConfiguration updates the channel-configuration", func() {
+						_, err := api.UpdateChannelConfiguration(ctx, &ns.UpdateChannelConfigurationRequest{
+							Id:       cfResp.Id,
+							Name:     "updated-channel-conf",
+							Channels: []int32{0, 1},
+						})
+						So(err, ShouldBeNil)
+
+						cf2, err := api.GetChannelConfiguration(ctx, &ns.GetChannelConfigurationRequest{
+							Id: cfResp.Id,
+						})
+						So(err, ShouldBeNil)
+						So(cf2.Name, ShouldEqual, "updated-channel-conf")
+						So(cf2.Channels, ShouldResemble, []int32{0, 1})
+						So(cf2.CreatedAt, ShouldEqual, cf.CreatedAt)
+						So(cf2.UpdatedAt, ShouldNotEqual, "")
+						So(cf2.UpdatedAt, ShouldNotEqual, cf.UpdatedAt)
 					})
 				})
 
-				Convey("When calling CreateChannelConfiguration", func() {
-					cfResp, err := api.CreateChannelConfiguration(ctx, &ns.CreateChannelConfigurationRequest{
-						Name:     "test-config",
-						Channels: []int32{0, 1, 2},
+				Convey("Then the channel-configuration can be assigned to the gateway", func() {
+					req := ns.UpdateGatewayRequest{
+						Mac:                    []byte{1, 2, 3, 4, 5, 6, 7, 8},
+						Name:                   "test-gateway-updated",
+						Description:            "garden gateway",
+						Latitude:               1.1235,
+						Longitude:              1.1236,
+						Altitude:               15.7,
+						ChannelConfigurationID: cfResp.Id,
+					}
+					_, err := api.UpdateGateway(ctx, &req)
+					So(err, ShouldBeNil)
+
+					gw, err := api.GetGateway(ctx, &ns.GetGatewayRequest{
+						Mac: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 					})
 					So(err, ShouldBeNil)
-					So(cfResp.Id, ShouldNotEqual, 0)
+					So(gw.ChannelConfigurationID, ShouldEqual, cfResp.Id)
+				})
 
-					Convey("Then the channel-configuration has been created", func() {
-						cf, err := api.GetChannelConfiguration(ctx, &ns.GetChannelConfigurationRequest{
-							Id: cfResp.Id,
-						})
-						So(err, ShouldBeNil)
-						So(cf.Name, ShouldEqual, "test-config")
-						So(cf.Channels, ShouldResemble, []int32{0, 1, 2})
-						So(cf.CreatedAt, ShouldNotEqual, "")
-						So(cf.UpdatedAt, ShouldNotEqual, "")
-
-						Convey("Then ListChannelConfigurations returns the channel-configuration", func() {
-							cfs, err := api.ListChannelConfigurations(ctx, &ns.ListChannelConfigurationsRequest{})
-							So(err, ShouldBeNil)
-							So(cfs.Result, ShouldHaveLength, 1)
-							So(cfs.Result[0], ShouldResemble, cf)
-						})
-
-						Convey("Then UpdateChannelConfiguration updates the channel-configuration", func() {
-							_, err := api.UpdateChannelConfiguration(ctx, &ns.UpdateChannelConfigurationRequest{
-								Id:       cfResp.Id,
-								Name:     "updated-channel-conf",
-								Channels: []int32{0, 1},
-							})
-							So(err, ShouldBeNil)
-
-							cf2, err := api.GetChannelConfiguration(ctx, &ns.GetChannelConfigurationRequest{
-								Id: cfResp.Id,
-							})
-							So(err, ShouldBeNil)
-							So(cf2.Name, ShouldEqual, "updated-channel-conf")
-							So(cf2.Channels, ShouldResemble, []int32{0, 1})
-							So(cf2.CreatedAt, ShouldEqual, cf.CreatedAt)
-							So(cf2.UpdatedAt, ShouldNotEqual, "")
-							So(cf2.UpdatedAt, ShouldNotEqual, cf.UpdatedAt)
-						})
+				Convey("Then DeleteChannelConfiguration deletes the channel-configuration", func() {
+					_, err := api.DeleteChannelConfiguration(ctx, &ns.DeleteChannelConfigurationRequest{
+						Id: cfResp.Id,
 					})
-
-					Convey("Then the channel-configuration can be assigned to the gateway", func() {
-						req := ns.UpdateGatewayRequest{
-							Mac:                    []byte{1, 2, 3, 4, 5, 6, 7, 8},
-							Name:                   "test-gateway-updated",
-							Description:            "garden gateway",
-							Latitude:               1.1235,
-							Longitude:              1.1236,
-							Altitude:               15.7,
-							ChannelConfigurationID: cfResp.Id,
-						}
-						_, err := api.UpdateGateway(ctx, &req)
-						So(err, ShouldBeNil)
-
-						gw, err := api.GetGateway(ctx, &ns.GetGatewayRequest{
-							Mac: []byte{1, 2, 3, 4, 5, 6, 7, 8},
-						})
-						So(err, ShouldBeNil)
-						So(gw.ChannelConfigurationID, ShouldEqual, cfResp.Id)
+					So(err, ShouldBeNil)
+					_, err = api.GetChannelConfiguration(ctx, &ns.GetChannelConfigurationRequest{
+						Id: cfResp.Id,
 					})
+					So(err, ShouldNotBeNil)
+					So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				})
 
-					Convey("Then DeleteChannelConfiguration deletes the channel-configuration", func() {
-						_, err := api.DeleteChannelConfiguration(ctx, &ns.DeleteChannelConfigurationRequest{
-							Id: cfResp.Id,
-						})
-						So(err, ShouldBeNil)
-						_, err = api.GetChannelConfiguration(ctx, &ns.GetChannelConfigurationRequest{
-							Id: cfResp.Id,
-						})
-						So(err, ShouldNotBeNil)
-						So(grpc.Code(err), ShouldEqual, codes.NotFound)
+				Convey("Then CreateExtraChannel creates an extra channel-configuration channel", func() {
+					ecRes, err := api.CreateExtraChannel(ctx, &ns.CreateExtraChannelRequest{
+						ChannelConfigurationID: cfResp.Id,
+						Modulation:             ns.Modulation_LORA,
+						Frequency:              867100000,
+						BandWidth:              125,
+						SpreadFactors:          []int32{0, 1, 2, 3, 4, 5},
 					})
+					So(err, ShouldBeNil)
+					So(ecRes.Id, ShouldNotEqual, 0)
 
-					Convey("Then CreateExtraChannel creates an extra channel-configuration channel", func() {
-						ecRes, err := api.CreateExtraChannel(ctx, &ns.CreateExtraChannelRequest{
+					Convey("Then UpdateExtraChannel updates this extra channel", func() {
+						_, err := api.UpdateExtraChannel(ctx, &ns.UpdateExtraChannelRequest{
+							Id: ecRes.Id,
 							ChannelConfigurationID: cfResp.Id,
 							Modulation:             ns.Modulation_LORA,
-							Frequency:              867100000,
-							BandWidth:              125,
-							SpreadFactors:          []int32{0, 1, 2, 3, 4, 5},
+							Frequency:              867300000,
+							BandWidth:              250,
+							SpreadFactors:          []int32{5},
 						})
 						So(err, ShouldBeNil)
-						So(ecRes.Id, ShouldNotEqual, 0)
 
-						Convey("Then UpdateExtraChannel updates this extra channel", func() {
-							_, err := api.UpdateExtraChannel(ctx, &ns.UpdateExtraChannelRequest{
-								Id: ecRes.Id,
-								ChannelConfigurationID: cfResp.Id,
-								Modulation:             ns.Modulation_LORA,
-								Frequency:              867300000,
-								BandWidth:              250,
-								SpreadFactors:          []int32{5},
-							})
-							So(err, ShouldBeNil)
-
-							extraChans, err := api.GetExtraChannelsForChannelConfigurationID(ctx, &ns.GetExtraChannelsForChannelConfigurationIDRequest{
-								Id: cfResp.Id,
-							})
-							So(err, ShouldBeNil)
-							So(extraChans.Result, ShouldHaveLength, 1)
-							So(extraChans.Result[0].Modulation, ShouldEqual, ns.Modulation_LORA)
-							So(extraChans.Result[0].Frequency, ShouldEqual, 867300000)
-							So(extraChans.Result[0].Bandwidth, ShouldEqual, 250)
-							So(extraChans.Result[0].SpreadFactors, ShouldResemble, []int32{5})
-							So(extraChans.Result[0].CreatedAt, ShouldNotEqual, "")
-							So(extraChans.Result[0].UpdatedAt, ShouldNotEqual, "")
+						extraChans, err := api.GetExtraChannelsForChannelConfigurationID(ctx, &ns.GetExtraChannelsForChannelConfigurationIDRequest{
+							Id: cfResp.Id,
 						})
+						So(err, ShouldBeNil)
+						So(extraChans.Result, ShouldHaveLength, 1)
+						So(extraChans.Result[0].Modulation, ShouldEqual, ns.Modulation_LORA)
+						So(extraChans.Result[0].Frequency, ShouldEqual, 867300000)
+						So(extraChans.Result[0].Bandwidth, ShouldEqual, 250)
+						So(extraChans.Result[0].SpreadFactors, ShouldResemble, []int32{5})
+						So(extraChans.Result[0].CreatedAt, ShouldNotEqual, "")
+						So(extraChans.Result[0].UpdatedAt, ShouldNotEqual, "")
+					})
 
-						Convey("Then DeleteExtraChannel deletes this extra channel", func() {
-							_, err := api.DeleteExtraChannel(ctx, &ns.DeleteExtraChannelRequest{
-								Id: ecRes.Id,
-							})
-							So(err, ShouldBeNil)
-
-							extraChans, err := api.GetExtraChannelsForChannelConfigurationID(ctx, &ns.GetExtraChannelsForChannelConfigurationIDRequest{
-								Id: cfResp.Id,
-							})
-							So(err, ShouldBeNil)
-							So(extraChans.Result, ShouldHaveLength, 0)
+					Convey("Then DeleteExtraChannel deletes this extra channel", func() {
+						_, err := api.DeleteExtraChannel(ctx, &ns.DeleteExtraChannelRequest{
+							Id: ecRes.Id,
 						})
+						So(err, ShouldBeNil)
+
+						extraChans, err := api.GetExtraChannelsForChannelConfigurationID(ctx, &ns.GetExtraChannelsForChannelConfigurationIDRequest{
+							Id: cfResp.Id,
+						})
+						So(err, ShouldBeNil)
+						So(extraChans.Result, ShouldHaveLength, 0)
 					})
 				})
 			})

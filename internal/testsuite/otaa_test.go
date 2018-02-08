@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/uplink"
 
 	"github.com/brocaar/lorawan/band"
@@ -214,7 +215,7 @@ func TestOTAAScenarios(t *testing.T) {
 						NwkSKey:             lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 						RXWindow:            storage.RX1,
 						EnabledChannels:     []int{0, 1, 2},
-						LastRXInfoSet:       []gw.RXInfo{rxInfo},
+						LastRXInfoSet:       []models.RXInfo{{}},
 						LastDevStatusMargin: 127,
 					},
 				},
@@ -277,7 +278,7 @@ func TestOTAAScenarios(t *testing.T) {
 						NwkSKey:             lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 						RXWindow:            storage.RX1,
 						EnabledChannels:     []int{0, 1, 2, 3, 4, 5},
-						LastRXInfoSet:       []gw.RXInfo{rxInfo},
+						LastRXInfoSet:       []models.RXInfo{{}},
 						LastDevStatusMargin: 127,
 					},
 				},

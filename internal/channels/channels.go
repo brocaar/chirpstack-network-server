@@ -1,8 +1,6 @@
 package channels
 
 import (
-	"fmt"
-
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
@@ -22,10 +20,11 @@ func HandleChannelReconfigure(ds storage.DeviceSession, rxPacket models.RXPacket
 	}
 
 	// set the current tx-power, data-rate and nbrep on the last payload
-	currentDR, err := common.Band.GetDataRate(rxPacket.RXInfoSet[0].DataRate)
+	currentDR, err := common.Band.GetDataRate(rxPacket.TXInfo.DataRate)
 	if err != nil {
-		return fmt.Errorf("get data-rate error: %s", err)
+		return errors.Wrap(err, "get data-rate error")
 	}
+
 	payloads[len(payloads)-1].TXPower = uint8(ds.TXPowerIndex)
 	payloads[len(payloads)-1].DataRate = uint8(currentDR)
 	payloads[len(payloads)-1].Redundancy.NbRep = ds.NbTrans
@@ -49,7 +48,7 @@ func HandleChannelReconfigure(ds storage.DeviceSession, rxPacket models.RXPacket
 		})
 	}
 
-	if err = maccommand.AddQueueItem(common.RedisPool, ds.DevEUI, block); err != nil {
+	if err := maccommand.AddQueueItem(common.RedisPool, ds.DevEUI, block); err != nil {
 		return errors.Wrap(err, "add mac-command block to queue error")
 	}
 

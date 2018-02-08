@@ -8,6 +8,19 @@ menu:
 
 ## Changelog
 
+### 0.24.0
+
+**Features:**
+
+* `StreamFrameLogsForGateway` API method has been added to stream frames for a given gateway MAC.
+* `StreamFrameLogsForDevice` API method has been added to stream frames for a given DevEUI.
+* Support MQTT client certificate authentication ([#284](https://github.com/brocaar/loraserver/pull/284)).
+
+**Changes:**
+
+* `GetFrameLogsForDevEUI` API method has been removed. The `frame_log` table
+  will be removed from the database in the next release!
+
 ### 0.23.3
 
 **Improvements:**

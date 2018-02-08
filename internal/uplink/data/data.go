@@ -2,12 +2,9 @@ package data
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -17,10 +14,10 @@ import (
 	"github.com/brocaar/loraserver/internal/channels"
 	"github.com/brocaar/loraserver/internal/common"
 	datadown "github.com/brocaar/loraserver/internal/downlink/data"
+	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/node"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
@@ -28,8 +25,8 @@ import (
 var tasks = []func(*dataContext) error{
 	setContextFromDataPHYPayload,
 	getDeviceSessionForPHYPayload,
+	logUplinkFrame,
 	getServiceProfile,
-	logDataFramesCollected,
 	getApplicationServerClientForDataUp,
 	decryptFRMPayloadMACCommands,
 	sendRXInfoToNetworkController,
@@ -87,30 +84,19 @@ func getDeviceSessionForPHYPayload(ctx *dataContext) error {
 	return nil
 }
 
+func logUplinkFrame(ctx *dataContext) error {
+	if err := framelog.LogUplinkFrameForDevEUI(ctx.DeviceSession.DevEUI, ctx.RXPacket); err != nil {
+		log.WithError(err).Error("log uplink frame for device error")
+	}
+	return nil
+}
+
 func getServiceProfile(ctx *dataContext) error {
 	sp, err := storage.GetAndCacheServiceProfile(common.DB, common.RedisPool, ctx.DeviceSession.ServiceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
 	ctx.ServiceProfile = sp
-
-	return nil
-}
-
-func logDataFramesCollected(ctx *dataContext) error {
-	var macs []string
-	for _, p := range ctx.RXPacket.RXInfoSet {
-		macs = append(macs, p.MAC.String())
-	}
-
-	log.WithFields(log.Fields{
-		"dev_eui":  ctx.DeviceSession.DevEUI,
-		"gw_count": len(macs),
-		"gw_macs":  strings.Join(macs, ", "),
-		"mtype":    ctx.RXPacket.PHYPayload.MHDR.MType,
-	}).Info("packet(s) collected")
-
-	logUplink(common.DB, ctx.DeviceSession.DevEUI, ctx.RXPacket)
 
 	return nil
 }
@@ -153,7 +139,7 @@ func sendRXInfoToNetworkController(ctx *dataContext) error {
 
 func handleFOptsMACCommands(ctx *dataContext) error {
 	if len(ctx.MACPayload.FHDR.FOpts) > 0 {
-		if err := handleUplinkMACCommands(&ctx.DeviceSession, false, ctx.MACPayload.FHDR.FOpts, ctx.RXPacket.RXInfoSet); err != nil {
+		if err := handleUplinkMACCommands(&ctx.DeviceSession, false, ctx.MACPayload.FHDR.FOpts, ctx.RXPacket); err != nil {
 			log.WithFields(log.Fields{
 				"dev_eui": ctx.DeviceSession.DevEUI,
 				"fopts":   ctx.MACPayload.FHDR.FOpts,
@@ -178,7 +164,7 @@ func handleFRMPayloadMACCommands(ctx *dataContext) error {
 			}
 			commands = append(commands, *cmd)
 		}
-		if err := handleUplinkMACCommands(&ctx.DeviceSession, true, commands, ctx.RXPacket.RXInfoSet); err != nil {
+		if err := handleUplinkMACCommands(&ctx.DeviceSession, true, commands, ctx.RXPacket); err != nil {
 			log.WithFields(log.Fields{
 				"dev_eui":  ctx.DeviceSession.DevEUI,
 				"commands": commands,
@@ -279,6 +265,7 @@ func handleDownlink(ctx *dataContext) error {
 	// handle downlink (ACK)
 	time.Sleep(common.GetDownlinkDataDelay)
 	if err := datadown.HandleResponse(
+		ctx.RXPacket,
 		ctx.ServiceProfile,
 		ctx.DeviceSession,
 		ctx.MACPayload.FHDR.FCtrl.ADR,
@@ -298,17 +285,19 @@ func sendRXInfoPayload(ds storage.DeviceSession, rxPacket models.RXPacket) error
 		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
 	}
 
+	dr := rxPacket.TXInfo.DataRate
+
 	rxInfoReq := nc.HandleRXInfoRequest{
 		DevEUI: ds.DevEUI[:],
 		TxInfo: &nc.TXInfo{
-			Frequency: int64(rxPacket.RXInfoSet[0].Frequency),
+			Frequency: int64(rxPacket.TXInfo.Frequency),
 			Adr:       macPL.FHDR.FCtrl.ADR,
-			CodeRate:  rxPacket.RXInfoSet[0].CodeRate,
+			CodeRate:  rxPacket.TXInfo.CodeRate,
 			DataRate: &nc.DataRate{
-				Modulation:   string(rxPacket.RXInfoSet[0].DataRate.Modulation),
-				BandWidth:    uint32(rxPacket.RXInfoSet[0].DataRate.Bandwidth),
-				SpreadFactor: uint32(rxPacket.RXInfoSet[0].DataRate.SpreadFactor),
-				Bitrate:      uint32(rxPacket.RXInfoSet[0].DataRate.BitRate),
+				Modulation:   string(dr.Modulation),
+				BandWidth:    uint32(dr.Bandwidth),
+				SpreadFactor: uint32(dr.SpreadFactor),
+				Bitrate:      uint32(dr.BitRate),
 			},
 		},
 	}
@@ -344,19 +333,21 @@ func sendRXInfoPayload(ds storage.DeviceSession, rxPacket models.RXPacket) error
 }
 
 func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession, sp storage.ServiceProfile, rxPacket models.RXPacket, macPL lorawan.MACPayload) error {
+	dr := rxPacket.TXInfo.DataRate
+
 	publishDataUpReq := as.HandleUplinkDataRequest{
 		AppEUI: ds.JoinEUI[:],
 		DevEUI: ds.DevEUI[:],
 		FCnt:   macPL.FHDR.FCnt,
 		TxInfo: &as.TXInfo{
-			Frequency: int64(rxPacket.RXInfoSet[0].Frequency),
+			Frequency: int64(rxPacket.TXInfo.Frequency),
 			Adr:       macPL.FHDR.FCtrl.ADR,
-			CodeRate:  rxPacket.RXInfoSet[0].CodeRate,
+			CodeRate:  rxPacket.TXInfo.CodeRate,
 			DataRate: &as.DataRate{
-				Modulation:   string(rxPacket.RXInfoSet[0].DataRate.Modulation),
-				BandWidth:    uint32(rxPacket.RXInfoSet[0].DataRate.Bandwidth),
-				SpreadFactor: uint32(rxPacket.RXInfoSet[0].DataRate.SpreadFactor),
-				Bitrate:      uint32(rxPacket.RXInfoSet[0].DataRate.BitRate),
+				Modulation:   string(dr.Modulation),
+				BandWidth:    uint32(dr.Bandwidth),
+				SpreadFactor: uint32(dr.SpreadFactor),
+				Bitrate:      uint32(dr.BitRate),
 			},
 		},
 		DeviceStatusBattery: 256,
@@ -431,7 +422,7 @@ func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession
 	return nil
 }
 
-func handleUplinkMACCommands(ds *storage.DeviceSession, frmPayload bool, commands []lorawan.MACCommand, rxInfoSet models.RXInfoSet) error {
+func handleUplinkMACCommands(ds *storage.DeviceSession, frmPayload bool, commands []lorawan.MACCommand, rxPacket models.RXPacket) error {
 	var cids []lorawan.CID
 	blocks := make(map[lorawan.CID]maccommand.Block)
 
@@ -481,7 +472,7 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, frmPayload bool, command
 
 		// CID >= 0x80 are proprietary mac-commands and are not handled by LoRa Server
 		if block.CID < 0x80 {
-			if err := maccommand.Handle(ds, block, pending, rxInfoSet); err != nil {
+			if err := maccommand.Handle(ds, block, pending, rxPacket); err != nil {
 				log.WithFields(logFields).Errorf("handle mac-command block error: %s", err)
 			}
 		}
@@ -513,32 +504,4 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, frmPayload bool, command
 	}
 
 	return nil
-}
-
-func logUplink(db sqlx.Execer, devEUI lorawan.EUI64, rxPacket models.RXPacket) {
-	if !common.LogNodeFrames {
-		return
-	}
-
-	phyB, err := rxPacket.PHYPayload.MarshalBinary()
-	if err != nil {
-		log.Errorf("marshal phypayload to binary error: %s", err)
-		return
-	}
-
-	rxB, err := json.Marshal(rxPacket.RXInfoSet)
-	if err != nil {
-		log.Errorf("marshal rx-info set to json error: %s", err)
-		return
-	}
-
-	fl := node.FrameLog{
-		DevEUI:     devEUI,
-		RXInfoSet:  &rxB,
-		PHYPayload: phyB,
-	}
-	err = node.CreateFrameLog(db, &fl)
-	if err != nil {
-		log.Errorf("create frame-log error: %s", err)
-	}
 }

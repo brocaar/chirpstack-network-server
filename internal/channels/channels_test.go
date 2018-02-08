@@ -21,8 +21,8 @@ func TestHandleChannelReconfigure(t *testing.T) {
 		test.MustFlushRedis(common.RedisPool)
 
 		rxPacket := models.RXPacket{
-			RXInfoSet: models.RXInfoSet{
-				{DataRate: common.Band.DataRates[3]},
+			TXInfo: models.TXInfo{
+				DataRate: common.Band.DataRates[3],
 			},
 		}
 

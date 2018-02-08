@@ -9,7 +9,6 @@ import (
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -41,7 +40,7 @@ func TestLinkCheckReq(t *testing.T) {
 					},
 				}
 
-				So(Handle(&ds, block, nil, models.RXInfoSet{}), ShouldBeNil)
+				So(Handle(&ds, block, nil, models.RXPacket{}), ShouldBeNil)
 
 				Convey("Then the dev-status fields on the device-session are updated", func() {
 					So(ds.LastDevStatusBattery, ShouldEqual, 200)
@@ -59,16 +58,18 @@ func TestLinkCheckReq(t *testing.T) {
 					},
 				}
 
-				rxInfoSet := models.RXInfoSet{
-					{
-						LoRaSNR: 5,
-						DataRate: band.DataRate{
-							SpreadFactor: 10,
+				rxPacket := models.RXPacket{
+					TXInfo: models.TXInfo{
+						DataRate: common.Band.DataRates[2],
+					},
+					RXInfoSet: models.RXInfoSet{
+						{
+							LoRaSNR: 5,
 						},
 					},
 				}
 
-				So(Handle(&ds, block, nil, rxInfoSet), ShouldBeNil)
+				So(Handle(&ds, block, nil, rxPacket), ShouldBeNil)
 
 				Convey("Then the expected response was added to the mac-command queue", func() {
 					items, err := ReadQueueItems(common.RedisPool, ds.DevEUI)
@@ -252,7 +253,7 @@ func TestLinkADRAns(t *testing.T) {
 							},
 						}
 
-						err := Handle(&tst.DeviceSession, answer, pending, nil)
+						err := Handle(&tst.DeviceSession, answer, pending, models.RXPacket{})
 						Convey("Then the expected error (or nil) was returned", func() {
 							So(err, ShouldResemble, tst.ExpectedError)
 						})

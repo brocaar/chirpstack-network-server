@@ -137,7 +137,6 @@ func MigrateNodeToDeviceSession(p *redis.Pool, db sqlx.Ext, devEUI, joinEUI lora
 		NbTrans:                  ns.NbTrans,
 		EnabledChannels:          ns.EnabledChannels,
 		UplinkHistory:            ns.UplinkHistory,
-		LastRXInfoSet:            ns.LastRXInfoSet,
 	}
 
 	for _, c := range ns.EnabledChannels {

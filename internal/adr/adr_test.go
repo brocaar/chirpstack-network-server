@@ -277,8 +277,11 @@ func TestADR(t *testing.T) {
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
+							TXInfo: models.TXInfo{
+								DataRate: common.Band.DataRates[2],
+							},
 							RXInfoSet: models.RXInfoSet{
-								{DataRate: common.Band.DataRates[2], LoRaSNR: -7},
+								{LoRaSNR: -7},
 							},
 						},
 						FullFCnt: 1,
@@ -307,8 +310,11 @@ func TestADR(t *testing.T) {
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
+							TXInfo: models.TXInfo{
+								DataRate: common.Band.DataRates[5],
+							},
 							RXInfoSet: models.RXInfoSet{
-								{DataRate: common.Band.DataRates[5], LoRaSNR: 1},
+								{LoRaSNR: 1},
 							},
 						},
 						FullFCnt: 1,
@@ -357,8 +363,11 @@ func TestADR(t *testing.T) {
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
+							TXInfo: models.TXInfo{
+								DataRate: common.Band.DataRates[5],
+							},
 							RXInfoSet: models.RXInfoSet{
-								{DataRate: common.Band.DataRates[5], LoRaSNR: -5},
+								{LoRaSNR: -5},
 							},
 						},
 						FullFCnt: 1,
@@ -405,8 +414,11 @@ func TestADR(t *testing.T) {
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
+							TXInfo: models.TXInfo{
+								DataRate: common.Band.DataRates[2],
+							},
 							RXInfoSet: models.RXInfoSet{
-								{DataRate: common.Band.DataRates[2], LoRaSNR: -7},
+								{LoRaSNR: -7},
 							},
 						},
 						FullFCnt: 1,
@@ -434,8 +446,11 @@ func TestADR(t *testing.T) {
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
+							TXInfo: models.TXInfo{
+								DataRate: common.Band.DataRates[2],
+							},
 							RXInfoSet: models.RXInfoSet{
-								{DataRate: common.Band.DataRates[2], LoRaSNR: -7},
+								{LoRaSNR: -7},
 							},
 						},
 						FullFCnt: 1,
@@ -491,8 +506,11 @@ func TestADR(t *testing.T) {
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadADR,
+							TXInfo: models.TXInfo{
+								DataRate: common.Band.DataRates[2],
+							},
 							RXInfoSet: models.RXInfoSet{
-								{DataRate: common.Band.DataRates[2], LoRaSNR: -7},
+								{LoRaSNR: -7},
 							},
 						},
 						FullFCnt: 1,
@@ -518,8 +536,11 @@ func TestADR(t *testing.T) {
 						},
 						RXPacket: models.RXPacket{
 							PHYPayload: phyPayloadNoADR,
+							TXInfo: models.TXInfo{
+								DataRate: common.Band.DataRates[2],
+							},
 							RXInfoSet: models.RXInfoSet{
-								{DataRate: common.Band.DataRates[2], LoRaSNR: -7},
+								{LoRaSNR: -7},
 							},
 						},
 						FullFCnt: 1,

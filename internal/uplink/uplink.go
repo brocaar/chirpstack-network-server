@@ -8,6 +8,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/uplink/data"
 	"github.com/brocaar/loraserver/internal/uplink/join"
@@ -68,6 +69,10 @@ func HandleRXPacket(rxPacket gw.RXPacket) error {
 
 func collectPackets(rxPacket gw.RXPacket) error {
 	return collectAndCallOnce(common.RedisPool, rxPacket, func(rxPacket models.RXPacket) error {
+		if err := framelog.LogUplinkFrameForGateways(rxPacket); err != nil {
+			log.WithError(err).Error("log uplink frames for gateways error")
+		}
+
 		switch rxPacket.PHYPayload.MHDR.MType {
 		case lorawan.JoinRequest:
 			return join.Handle(rxPacket)

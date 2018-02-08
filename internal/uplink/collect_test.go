@@ -91,7 +91,8 @@ func TestCollectAndCallOnce(t *testing.T) {
 						wg.Add(1)
 						packet := gw.RXPacket{
 							RXInfo: gw.RXInfo{
-								MAC: g,
+								MAC:      g,
+								DataRate: common.Band.DataRates[0],
 							},
 							PHYPayload: test.PHYPayload,
 						}

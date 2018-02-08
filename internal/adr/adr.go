@@ -39,9 +39,9 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 		MaxSNR:       maxSNR,
 	})
 
-	currentDR, err := common.Band.GetDataRate(rxPacket.RXInfoSet[0].DataRate)
+	currentDR, err := common.Band.GetDataRate(rxPacket.TXInfo.DataRate)
 	if err != nil {
-		return fmt.Errorf("get data-rate error: %s", err)
+		return errors.Wrap(err, "get data-rate error")
 	}
 
 	// The node changed its data-rate. Possibly the node did also reset its
@@ -81,7 +81,10 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 		return nil
 	}
 
-	requiredSNR, err := getRequiredSNRForSF(rxPacket.RXInfoSet[0].DataRate.SpreadFactor)
+	if currentDR >= len(common.Band.DataRates) {
+		return fmt.Errorf("invalid data-rate: %d", currentDR)
+	}
+	requiredSNR, err := getRequiredSNRForSF(common.Band.DataRates[currentDR].SpreadFactor)
 	if err != nil {
 		return err
 	}

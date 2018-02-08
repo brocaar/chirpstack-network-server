@@ -10,6 +10,7 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/maccommand"
+	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
@@ -85,7 +86,7 @@ func TestClassCScenarios(t *testing.T) {
 			NwkSKey:          lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 			FCntUp:           8,
 			FCntDown:         5,
-			LastRXInfoSet: []gw.RXInfo{
+			LastRXInfoSet: []models.RXInfo{
 				{MAC: lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}},
 				{MAC: lorawan.EUI64{2, 1, 2, 1, 2, 1, 2, 1}},
 			},

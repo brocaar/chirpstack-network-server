@@ -14,6 +14,7 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
+	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
@@ -2329,10 +2330,21 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 			})
 
 			if t.ExpectedHandleRXPacketError == nil {
-				Convey("Then the expected RSInfoSet has been added to the node-session", func() {
+				Convey("Then the expected RXInfoSet has been added to the node-session", func() {
 					ns, err := storage.GetDeviceSession(common.RedisPool, t.DeviceSession.DevEUI)
 					So(err, ShouldBeNil)
-					So(ns.LastRXInfoSet, ShouldResemble, []gw.RXInfo{t.RXInfo})
+					So(ns.LastRXInfoSet, ShouldResemble, models.RXInfoSet{
+						{
+							MAC:               t.RXInfo.MAC,
+							Time:              t.RXInfo.Time,
+							TimeSinceGPSEpoch: t.RXInfo.TimeSinceGPSEpoch,
+							Timestamp:         t.RXInfo.Timestamp,
+							RSSI:              t.RXInfo.RSSI,
+							LoRaSNR:           t.RXInfo.LoRaSNR,
+							Board:             t.RXInfo.Board,
+							Antenna:           t.RXInfo.Antenna,
+						},
+					})
 				})
 			}
 		})
