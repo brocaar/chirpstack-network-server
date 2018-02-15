@@ -37,6 +37,7 @@ const (
 type UplinkHistory struct {
 	FCnt         uint32
 	MaxSNR       float64
+	TXPowerIndex int
 	GatewayCount int
 }
 

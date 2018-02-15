@@ -323,7 +323,7 @@ func TestADR(t *testing.T) {
 							DevAddr: [4]byte{1, 2, 3, 4},
 							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							UplinkHistory: []storage.UplinkHistory{
-								{FCnt: 1, MaxSNR: 1, GatewayCount: 1},
+								{FCnt: 1, MaxSNR: 1, GatewayCount: 1, TXPowerIndex: 3},
 							},
 							EnabledChannels: []int{0, 1, 2},
 							DR:              5,
@@ -376,7 +376,7 @@ func TestADR(t *testing.T) {
 							DevAddr: [4]byte{1, 2, 3, 4},
 							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							UplinkHistory: []storage.UplinkHistory{
-								{FCnt: 1, MaxSNR: -5, GatewayCount: 1},
+								{FCnt: 1, MaxSNR: -5, GatewayCount: 1, TXPowerIndex: 4},
 							},
 							EnabledChannels: []int{0, 1, 2},
 							DR:              5,
@@ -427,7 +427,7 @@ func TestADR(t *testing.T) {
 							DevAddr: [4]byte{1, 2, 3, 4},
 							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							UplinkHistory: []storage.UplinkHistory{
-								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
+								{FCnt: 1, MaxSNR: -7, GatewayCount: 1, TXPowerIndex: 3},
 							},
 							EnabledChannels: []int{0, 1, 2},
 							DR:              2,
@@ -552,6 +552,77 @@ func TestADR(t *testing.T) {
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
 							DR: 2,
+						},
+						ExpectedError: nil,
+					},
+					{
+						Name: "ADR increasing data-rate by one step (through history table)",
+						DeviceSession: &storage.DeviceSession{
+							DevAddr:         [4]byte{1, 2, 3, 4},
+							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledChannels: []int{0, 1, 2},
+							UplinkHistory: []storage.UplinkHistory{
+								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
+							},
+						},
+						RXPacket: models.RXPacket{
+							PHYPayload: phyPayloadADR,
+							TXInfo: models.TXInfo{
+								DataRate: config.C.NetworkServer.Band.Band.DataRates[2],
+							},
+							RXInfoSet: models.RXInfoSet{
+								{LoRaSNR: -15},
+							},
+						},
+						FullFCnt: 1,
+						ExpectedDeviceSession: storage.DeviceSession{
+							DevAddr: [4]byte{1, 2, 3, 4},
+							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							UplinkHistory: []storage.UplinkHistory{
+								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
+							},
+							EnabledChannels: []int{0, 1, 2},
+							DR:              2,
+						},
+						ExpectedMACCommandQueue: []maccommand.Block{
+							macBlock,
+						},
+						ExpectedError: nil,
+					},
+					{
+						Name: "ADR not increasing tx power (as the TX power in the history table does not match)",
+						DeviceSession: &storage.DeviceSession{
+							DevAddr:         [4]byte{1, 2, 3, 4},
+							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledChannels: []int{0, 1, 2},
+							DR:              5,
+							TXPowerIndex:    3,
+							NbTrans:         1,
+							UplinkHistory: []storage.UplinkHistory{
+								{FCnt: 1, MaxSNR: 7, GatewayCount: 1, TXPowerIndex: 0},
+							},
+						},
+						RXPacket: models.RXPacket{
+							PHYPayload: phyPayloadADR,
+							TXInfo: models.TXInfo{
+								DataRate: config.C.NetworkServer.Band.Band.DataRates[5],
+							},
+							RXInfoSet: models.RXInfoSet{
+								{LoRaSNR: -5},
+							},
+						},
+						FullFCnt: 2,
+						ExpectedDeviceSession: storage.DeviceSession{
+							DevAddr: [4]byte{1, 2, 3, 4},
+							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							UplinkHistory: []storage.UplinkHistory{
+								{FCnt: 1, MaxSNR: 7, GatewayCount: 1, TXPowerIndex: 0},
+								{FCnt: 2, MaxSNR: -5, GatewayCount: 1, TXPowerIndex: 3},
+							},
+							EnabledChannels: []int{0, 1, 2},
+							DR:              5,
+							TXPowerIndex:    3,
+							NbTrans:         1,
 						},
 						ExpectedError: nil,
 					},

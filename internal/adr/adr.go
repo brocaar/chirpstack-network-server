@@ -37,6 +37,7 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 		FCnt:         fullFCnt,
 		GatewayCount: len(rxPacket.RXInfoSet),
 		MaxSNR:       maxSNR,
+		TXPowerIndex: ds.TXPowerIndex,
 	})
 
 	currentDR, err := config.C.NetworkServer.Band.Band.GetDataRate(rxPacket.TXInfo.DataRate)
@@ -66,9 +67,9 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 	}
 
 	// get the max SNR from the UplinkHistory
-	var snrM float64
-	for i, uh := range ds.UplinkHistory {
-		if i == 0 || uh.MaxSNR > snrM {
+	snrM := maxSNR
+	for _, uh := range ds.UplinkHistory {
+		if uh.MaxSNR > snrM && uh.TXPowerIndex == ds.TXPowerIndex {
 			snrM = uh.MaxSNR
 		}
 	}
