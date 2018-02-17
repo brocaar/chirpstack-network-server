@@ -8,6 +8,12 @@ menu:
 
 ## Changelog
 
+### 0.24.1
+
+**Bugfixes:**
+
+* Fix basing tx-power value on wrong SNR value (thanks [@x0y1z2](https://github.com/x0y1z2), [#293](https://github.com/brocaar/loraserver/issues/293))
+
 ### 0.24.0
 
 **Features:**
