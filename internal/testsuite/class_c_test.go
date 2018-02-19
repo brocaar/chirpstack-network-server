@@ -10,7 +10,6 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink"
-	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
@@ -23,14 +22,12 @@ type classCTestCase struct {
 	PreFunc          func(ns *storage.DeviceSession) // function to call before running the test
 	DeviceSession    storage.DeviceSession           // node-session in the storage
 	DeviceQueueItems []storage.DeviceQueueItem       // items in the device-queue
-	MACCommandQueue  []maccommand.Block              // downlink mac-command queue
 
 	ExpectedSendDownlinkDataError error // expected error returned
 	ExpectedFCntUp                uint32
 	ExpectedFCntDown              uint32
 	ExpectedTXInfo                *gw.TXInfo
 	ExpectedPHYPayload            *lorawan.PHYPayload
-	ExpectedMACCommandQueue       []maccommand.Block
 }
 
 func TestClassCScenarios(t *testing.T) {
@@ -91,7 +88,8 @@ func TestClassCScenarios(t *testing.T) {
 				{MAC: lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}},
 				{MAC: lorawan.EUI64{2, 1, 2, 1, 2, 1, 2, 1}},
 			},
-			RX2DR: 5,
+			EnabledChannels: []int{0, 1, 2},
+			RX2DR:           5,
 		}
 
 		txInfo := gw.TXInfo{
@@ -193,22 +191,12 @@ func TestClassCScenarios(t *testing.T) {
 					},
 				},
 				{
-					Name:          "mac-commands in the queue",
-					DeviceSession: sess,
-					MACCommandQueue: []maccommand.Block{
-						{
-							CID: lorawan.DevStatusReq,
-						},
-						{
-							CID: lorawan.RXTimingSetupReq,
-							MACCommands: []lorawan.MACCommand{
-								{
-									CID:     lorawan.RXTimingSetupAns,
-									Payload: &lorawan.RXTimingSetupReqPayload{Delay: 3},
-								},
-							},
-						},
+					PreFunc: func(ds *storage.DeviceSession) {
+						sp.ServiceProfile.DevStatusReqFreq = 1
+						So(storage.UpdateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 					},
+					Name:          "with mac-command",
+					DeviceSession: sess,
 					DeviceQueueItems: []storage.DeviceQueueItem{
 						{DevEUI: sess.DevEUI, FPort: 10, FCnt: 5, FRMPayload: []byte{5, 4, 3, 2, 1}},
 					},
@@ -228,7 +216,6 @@ func TestClassCScenarios(t *testing.T) {
 								FCtrl:   lorawan.FCtrl{},
 								FOpts: []lorawan.MACCommand{
 									{CID: lorawan.CID(6)},
-									{CID: lorawan.CID(8), Payload: &lorawan.RXTimingSetupReqPayload{Delay: 3}},
 								},
 							},
 							FPort: &fPortTen,
@@ -259,11 +246,6 @@ func TestClassCScenarios(t *testing.T) {
 					// create device-session
 					So(storage.SaveDeviceSession(config.C.Redis.Pool, t.DeviceSession), ShouldBeNil)
 
-					// mac mac-command queue items
-					for _, qi := range t.MACCommandQueue {
-						So(maccommand.AddQueueItem(config.C.Redis.Pool, t.DeviceSession.DevEUI, qi), ShouldBeNil)
-					}
-
 					// add device-queue items
 					for _, qi := range t.DeviceQueueItems {
 						So(storage.CreateDeviceQueueItem(config.C.PostgreSQL.DB, &qi), ShouldBeNil)
@@ -291,12 +273,6 @@ func TestClassCScenarios(t *testing.T) {
 					} else {
 						So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 0)
 					}
-
-					Convey("Then the mac-command queue contains the expected items", func() {
-						items, err := maccommand.ReadQueueItems(config.C.Redis.Pool, t.DeviceSession.DevEUI)
-						So(err, ShouldBeNil)
-						So(items, ShouldResemble, t.ExpectedMACCommandQueue)
-					})
 				})
 			}
 		})

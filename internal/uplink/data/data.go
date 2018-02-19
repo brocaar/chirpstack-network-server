@@ -10,8 +10,6 @@ import (
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/internal/adr"
-	"github.com/brocaar/loraserver/internal/channels"
 	"github.com/brocaar/loraserver/internal/config"
 	datadown "github.com/brocaar/loraserver/internal/downlink/data"
 	"github.com/brocaar/loraserver/internal/framelog"
@@ -27,14 +25,15 @@ var tasks = []func(*dataContext) error{
 	getDeviceSessionForPHYPayload,
 	logUplinkFrame,
 	getServiceProfile,
+	setADR,
+	setUplinkDataRate,
+	appendMetaDataToUplinkHistory,
 	getApplicationServerClientForDataUp,
 	decryptFRMPayloadMACCommands,
 	sendRXInfoToNetworkController,
 	handleFOptsMACCommands,
 	handleFRMPayloadMACCommands,
 	sendFRMPayloadToApplicationServer,
-	handleChannelReconfiguration,
-	handleADR,
 	setLastRXInfoSet,
 	syncUplinkFCnt,
 	saveNodeSession,
@@ -48,6 +47,7 @@ type dataContext struct {
 	DeviceSession           storage.DeviceSession
 	ServiceProfile          storage.ServiceProfile
 	ApplicationServerClient as.ApplicationServerClient
+	MACCommandResponses     []storage.MACCommandBlock
 }
 
 // Handle handles an uplink data frame
@@ -101,6 +101,47 @@ func getServiceProfile(ctx *dataContext) error {
 	return nil
 }
 
+func setADR(ctx *dataContext) error {
+	ctx.DeviceSession.ADR = ctx.MACPayload.FHDR.FCtrl.ADR
+	return nil
+}
+
+func setUplinkDataRate(ctx *dataContext) error {
+	currentDR, err := config.C.NetworkServer.Band.Band.GetDataRate(ctx.RXPacket.TXInfo.DataRate)
+	if err != nil {
+		return errors.Wrap(err, "get data-rate error")
+	}
+
+	// The node changed its data-rate. Possibly the node did also reset its
+	// tx-power to max power. Because of this, we need to reset the tx-power
+	// at the network-server side too.
+	if ctx.DeviceSession.DR != currentDR {
+		ctx.DeviceSession.TXPowerIndex = 0
+	}
+	ctx.DeviceSession.DR = currentDR
+
+	return nil
+}
+
+func appendMetaDataToUplinkHistory(ctx *dataContext) error {
+	var maxSNR float64
+	for i, rxInfo := range ctx.RXPacket.RXInfoSet {
+		// as the default value is 0 and the LoRaSNR can be negative, we always
+		// set it when i == 0 (the first item from the slice)
+		if i == 0 || rxInfo.LoRaSNR > maxSNR {
+			maxSNR = rxInfo.LoRaSNR
+		}
+	}
+
+	ctx.DeviceSession.AppendUplinkHistory(storage.UplinkHistory{
+		FCnt:         ctx.MACPayload.FHDR.FCnt,
+		GatewayCount: len(ctx.RXPacket.RXInfoSet),
+		MaxSNR:       maxSNR,
+	})
+
+	return nil
+}
+
 func getApplicationServerClientForDataUp(ctx *dataContext) error {
 	rp, err := storage.GetRoutingProfile(config.C.PostgreSQL.DB, ctx.DeviceSession.RoutingProfileID)
 	if err != nil {
@@ -139,11 +180,14 @@ func sendRXInfoToNetworkController(ctx *dataContext) error {
 
 func handleFOptsMACCommands(ctx *dataContext) error {
 	if len(ctx.MACPayload.FHDR.FOpts) > 0 {
-		if err := handleUplinkMACCommands(&ctx.DeviceSession, false, ctx.MACPayload.FHDR.FOpts, ctx.RXPacket); err != nil {
+		blocks, err := handleUplinkMACCommands(&ctx.DeviceSession, ctx.MACPayload.FHDR.FOpts, ctx.RXPacket)
+		if err != nil {
 			log.WithFields(log.Fields{
 				"dev_eui": ctx.DeviceSession.DevEUI,
 				"fopts":   ctx.MACPayload.FHDR.FOpts,
 			}).Errorf("handle FOpts mac commands error: %s", err)
+		} else {
+			ctx.MACCommandResponses = append(ctx.MACCommandResponses, blocks...)
 		}
 	}
 
@@ -164,11 +208,14 @@ func handleFRMPayloadMACCommands(ctx *dataContext) error {
 			}
 			commands = append(commands, *cmd)
 		}
-		if err := handleUplinkMACCommands(&ctx.DeviceSession, true, commands, ctx.RXPacket); err != nil {
+		blocks, err := handleUplinkMACCommands(&ctx.DeviceSession, commands, ctx.RXPacket)
+		if err != nil {
 			log.WithFields(log.Fields{
 				"dev_eui":  ctx.DeviceSession.DevEUI,
 				"commands": commands,
 			}).Errorf("handle FRMPayload mac commands error: %s", err)
+		} else {
+			ctx.MACCommandResponses = append(ctx.MACCommandResponses, blocks...)
 		}
 	}
 
@@ -178,30 +225,6 @@ func handleFRMPayloadMACCommands(ctx *dataContext) error {
 func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort > 0 {
 		return publishDataUp(ctx.ApplicationServerClient, ctx.DeviceSession, ctx.ServiceProfile, ctx.RXPacket, *ctx.MACPayload)
-	}
-
-	return nil
-}
-
-func handleChannelReconfiguration(ctx *dataContext) error {
-	// handle channel configuration
-	// note that this must come before ADR!
-	if err := channels.HandleChannelReconfigure(ctx.DeviceSession, ctx.RXPacket); err != nil {
-		log.WithFields(log.Fields{
-			"dev_eui": ctx.DeviceSession.DevEUI,
-		}).Warningf("handle channel reconfigure error: %s", err)
-	}
-
-	return nil
-}
-
-func handleADR(ctx *dataContext) error {
-	// handle ADR (should be executed before saving the node-session)
-	if err := adr.HandleADR(&ctx.DeviceSession, ctx.RXPacket, ctx.MACPayload.FHDR.FCnt); err != nil {
-		log.WithFields(log.Fields{
-			"dev_eui": ctx.DeviceSession.DevEUI,
-			"fcnt_up": ctx.MACPayload.FHDR.FCnt,
-		}).Warningf("handle adr error: %s", err)
 	}
 
 	return nil
@@ -271,6 +294,7 @@ func handleDownlink(ctx *dataContext) error {
 		ctx.MACPayload.FHDR.FCtrl.ADR,
 		ctx.MACPayload.FHDR.FCtrl.ADRACKReq,
 		ctx.RXPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp,
+		ctx.MACCommandResponses,
 	); err != nil {
 		return errors.Wrap(err, "run uplink response flow error")
 	}
@@ -422,17 +446,17 @@ func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession
 	return nil
 }
 
-func handleUplinkMACCommands(ds *storage.DeviceSession, frmPayload bool, commands []lorawan.MACCommand, rxPacket models.RXPacket) error {
+func handleUplinkMACCommands(ds *storage.DeviceSession, commands []lorawan.MACCommand, rxPacket models.RXPacket) ([]storage.MACCommandBlock, error) {
 	var cids []lorawan.CID
-	blocks := make(map[lorawan.CID]maccommand.Block)
+	var out []storage.MACCommandBlock
+	blocks := make(map[lorawan.CID]storage.MACCommandBlock)
 
 	// group mac-commands by CID
 	for _, cmd := range commands {
 		block, ok := blocks[cmd.CID]
 		if !ok {
-			block = maccommand.Block{
-				CID:        cmd.CID,
-				FRMPayload: frmPayload,
+			block = storage.MACCommandBlock{
+				CID: cmd.CID,
 			}
 			cids = append(cids, cmd.CID)
 		}
@@ -444,16 +468,15 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, frmPayload bool, command
 		block := blocks[cid]
 
 		logFields := log.Fields{
-			"dev_eui":     ds.DevEUI,
-			"cid":         block.CID,
-			"frm_payload": block.FRMPayload,
+			"dev_eui": ds.DevEUI,
+			"cid":     block.CID,
 		}
 
 		// read pending mac-command block for CID. e.g. on case of an ack, the
 		// pending mac-command block contains the request.
 		// we need this pending mac-command block to find out if the command
 		// was scheduled through the API (external).
-		pending, err := maccommand.ReadPending(config.C.Redis.Pool, ds.DevEUI, block.CID)
+		pending, err := storage.GetPendingMACCommand(config.C.Redis.Pool, ds.DevEUI, block.CID)
 		if err != nil {
 			log.WithFields(logFields).Errorf("read pending mac-command error: %s", err)
 			continue
@@ -465,15 +488,18 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, frmPayload bool, command
 
 		// in case the node is requesting a mac-command, there is nothing pending
 		if pending != nil {
-			if err = maccommand.DeletePending(config.C.Redis.Pool, ds.DevEUI, block.CID); err != nil {
+			if err = storage.DeletePendingMACCommand(config.C.Redis.Pool, ds.DevEUI, block.CID); err != nil {
 				log.WithFields(logFields).Errorf("delete pending mac-command error: %s", err)
 			}
 		}
 
 		// CID >= 0x80 are proprietary mac-commands and are not handled by LoRa Server
 		if block.CID < 0x80 {
-			if err := maccommand.Handle(ds, block, pending, rxPacket); err != nil {
+			responseBlocks, err := maccommand.Handle(ds, block, pending, rxPacket)
+			if err != nil {
 				log.WithFields(logFields).Errorf("handle mac-command block error: %s", err)
+			} else {
+				out = append(out, responseBlocks...)
 			}
 		}
 
@@ -490,10 +516,9 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, frmPayload bool, command
 				data = append(data, b)
 			}
 			_, err = config.C.NetworkController.Client.HandleDataUpMACCommand(context.Background(), &nc.HandleDataUpMACCommandRequest{
-				DevEUI:     ds.DevEUI[:],
-				FrmPayload: block.FRMPayload,
-				Cid:        uint32(block.CID),
-				Commands:   data,
+				DevEUI:   ds.DevEUI[:],
+				Cid:      uint32(block.CID),
+				Commands: data,
 			})
 			if err != nil {
 				log.WithFields(logFields).Errorf("send mac-command to network-controller error: %s", err)
@@ -503,5 +528,5 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, frmPayload bool, command
 		}
 	}
 
-	return nil
+	return out, nil
 }

@@ -10,6 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/internal/adr"
+	"github.com/brocaar/loraserver/internal/channels"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/maccommand"
@@ -21,11 +23,15 @@ import (
 var responseTasks = []func(*dataContext) error{
 	setToken,
 	getDeviceProfile,
-	requestDevStatus,
 	getDataTXInfo,
 	setRemainingPayloadSize,
 	getNextDeviceQueueItem,
-	getMACCommands,
+	setMACCommands(
+		requestChannelReconfiguration,
+		requestADRChange,
+		requestDevStatus,
+		getMACCommandsFromQueue,
+	),
 	stopOnNothingToSend,
 	sendDataDown,
 	saveDeviceSession,
@@ -37,11 +43,15 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	getDeviceProfile,
 	getServiceProfile,
 	checkLastDownlinkTimestamp,
-	requestDevStatus,
 	getDataTXInfoForRX2,
 	setRemainingPayloadSize,
 	getNextDeviceQueueItem,
-	getMACCommands,
+	setMACCommands(
+		requestChannelReconfiguration,
+		requestADRChange,
+		requestDevStatus,
+		getMACCommandsFromQueue,
+	),
 	stopOnNothingToSend,
 	sendDataDown,
 	saveDeviceSession,
@@ -88,12 +98,7 @@ type dataContext struct {
 	// MACCommands contains the mac-commands to send (if any). Make sure the
 	// total size fits within the FRMPayload or FPort (depending on if
 	// EncryptMACCommands is set to true).
-	MACCommands []lorawan.MACCommand
-
-	// EncryptMACCommands defines if the mac-commands (if any) must be
-	// encrypted and put in the FRMPayload. Note that it is not possible to
-	// send encrypted mac-commands when FPort is set to a value != 0.
-	EncryptMACCommands bool
+	MACCommands []storage.MACCommandBlock
 
 	// Confirmed defines if the frame must be send as confirmed-data.
 	Confirmed bool
@@ -121,21 +126,18 @@ func (ctx dataContext) Validate() error {
 		return ErrInvalidAppFPort
 	}
 
-	if ctx.FPort > 0 && ctx.EncryptMACCommands {
-		return ErrFPortMustBeZero
-	}
-
 	return nil
 }
 
 // HandleResponse handles a downlink response.
-func HandleResponse(rxPacket models.RXPacket, sp storage.ServiceProfile, ds storage.DeviceSession, adr, mustSend, ack bool) error {
+func HandleResponse(rxPacket models.RXPacket, sp storage.ServiceProfile, ds storage.DeviceSession, adr, mustSend, ack bool, macCommands []storage.MACCommandBlock) error {
 	ctx := dataContext{
 		ServiceProfile: sp,
 		DeviceSession:  ds,
 		ACK:            ack,
 		MustSend:       mustSend,
 		RXPacket:       &rxPacket,
+		MACCommands:    macCommands,
 	}
 
 	for _, t := range responseTasks {
@@ -188,10 +190,7 @@ func requestDevStatus(ctx *dataContext) error {
 	curInterval := time.Now().Sub(ctx.DeviceSession.LastDevStatusRequested)
 
 	if curInterval >= reqInterval {
-		err := maccommand.RequestDevStatus(&ctx.DeviceSession)
-		if err != nil {
-			log.WithError(err).Error("request device-status error")
-		}
+		ctx.MACCommands = append(ctx.MACCommands, maccommand.RequestDevStatus(&ctx.DeviceSession))
 	}
 
 	return nil
@@ -295,35 +294,101 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 	return nil
 }
 
-func getMACCommands(ctx *dataContext) error {
-	allowEncryptedMACCommands := (ctx.FPort == 0)
+func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error {
+	return func(ctx *dataContext) error {
+		// this will set the mac-commands to MACCommands, potentially exceeding the max size
+		for _, f := range funcs {
+			if err := f(ctx); err != nil {
+				return err
+			}
+		}
 
-	macBlocks, encryptMACCommands, pendingMACCommands, err := getAndFilterMACQueueItems(ctx.DeviceSession, allowEncryptedMACCommands, ctx.RemainingPayloadSize)
+		var remainingMACCommandSize int
+
+		if ctx.FPort > 0 {
+			if ctx.RemainingPayloadSize < 15 {
+				remainingMACCommandSize = ctx.RemainingPayloadSize
+			} else {
+				remainingMACCommandSize = 15
+			}
+		} else {
+			remainingMACCommandSize = ctx.RemainingPayloadSize
+		}
+
+		for i, block := range ctx.MACCommands {
+			macSize, err := block.Size()
+			if err != nil {
+				return errors.Wrap(err, "get mac-command block size error")
+			}
+
+			// truncate mac-commands when we exceed the max-size
+			if remainingMACCommandSize-macSize < 0 {
+				ctx.MACCommands = ctx.MACCommands[0:i]
+				ctx.MoreData = true
+				break
+			}
+		}
+
+		for _, block := range ctx.MACCommands {
+			// set mac-command pending
+			if err := storage.SetPendingMACCommand(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, block); err != nil {
+				return errors.Wrap(err, "set mac-command pending error")
+			}
+
+			// delete from queue, if external
+			if block.External {
+				if err := storage.DeleteMACCommandQueueItem(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, block); err != nil {
+					return errors.Wrap(err, "delete mac-command block from queue error")
+				}
+			}
+		}
+
+		return nil
+	}
+}
+
+func requestChannelReconfiguration(ctx *dataContext) error {
+	// handle channel configuration
+	// note that this must come before ADR!
+	blocks, err := channels.HandleChannelReconfigure(ctx.DeviceSession)
 	if err != nil {
-		return errors.Wrap(err, "get mac-commands error")
+		log.WithFields(log.Fields{
+			"dev_eui": ctx.DeviceSession.DevEUI,
+		}).Warningf("handle channel reconfigure error: %s", err)
+	} else {
+		ctx.MACCommands = append(ctx.MACCommands, blocks...)
 	}
 
-	for bi := range macBlocks {
-		for mi := range macBlocks[bi].MACCommands {
-			ctx.MACCommands = append(ctx.MACCommands, macBlocks[bi].MACCommands[mi])
+	return nil
+}
+
+func requestADRChange(ctx *dataContext) error {
+	var linkADRReq *storage.MACCommandBlock
+	for i := range ctx.MACCommands {
+		if ctx.MACCommands[i].CID == lorawan.LinkADRReq {
+			linkADRReq = &ctx.MACCommands[i]
 		}
 	}
 
-	ctx.EncryptMACCommands = encryptMACCommands
-
-	if pendingMACCommands {
-		// note that MoreData might already be true
-		ctx.MoreData = true
+	blocks, err := adr.HandleADR(ctx.DeviceSession, linkADRReq)
+	if err != nil {
+		return errors.Wrap(err, "handle adr error")
 	}
 
-	for _, block := range macBlocks {
-		if err = maccommand.SetPending(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, block); err != nil {
-			return errors.Wrap(err, "set mac-command block as pending error")
-		}
+	if linkADRReq == nil {
+		ctx.MACCommands = append(ctx.MACCommands, blocks...)
+	}
+	return nil
+}
 
-		if err = maccommand.DeleteQueueItem(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, block); err != nil {
-			return errors.Wrap(err, "delete mac-command block from queue error")
-		}
+func getMACCommandsFromQueue(ctx *dataContext) error {
+	blocks, err := storage.GetMACCommandQueueItems(config.C.Redis.Pool, ctx.DeviceSession.DevEUI)
+	if err != nil {
+		return errors.Wrap(err, "get mac-command queue items error")
+	}
+
+	for i := range blocks {
+		ctx.MACCommands = append(ctx.MACCommands, blocks[i])
 	}
 
 	return nil
@@ -343,16 +408,6 @@ func sendDataDown(ctx *dataContext) error {
 		return errors.Wrap(err, "validation error")
 	}
 
-	phy := lorawan.PHYPayload{
-		MHDR: lorawan.MHDR{
-			MType: lorawan.UnconfirmedDataDown,
-			Major: lorawan.LoRaWANR1,
-		},
-	}
-	if ctx.Confirmed {
-		phy.MHDR.MType = lorawan.ConfirmedDataDown
-	}
-
 	macPL := &lorawan.MACPayload{
 		FHDR: lorawan.FHDR{
 			DevAddr: ctx.DeviceSession.DevAddr,
@@ -364,30 +419,57 @@ func sendDataDown(ctx *dataContext) error {
 			FCnt: ctx.DeviceSession.FCntDown,
 		},
 	}
-	phy.MACPayload = macPL
-
-	if len(ctx.MACCommands) > 0 {
-		if ctx.EncryptMACCommands {
-			var frmPayload []lorawan.Payload
-			for i := range ctx.MACCommands {
-				frmPayload = append(frmPayload, &ctx.MACCommands[i])
-			}
-			macPL.FPort = &ctx.FPort
-			macPL.FRMPayload = frmPayload
-
-			// encrypt the FRMPayload with the NwkSKey
-			if err := phy.EncryptFRMPayload(ctx.DeviceSession.NwkSKey); err != nil {
-				return errors.Wrap(err, "encrypt FRMPayload error")
-			}
-		} else {
-			macPL.FHDR.FOpts = ctx.MACCommands
-		}
-	}
 
 	if ctx.FPort > 0 {
 		macPL.FPort = &ctx.FPort
 		macPL.FRMPayload = []lorawan.Payload{
 			&lorawan.DataPayload{Bytes: ctx.Data},
+		}
+	}
+
+	var macCommandSize int
+	var maccommands []lorawan.MACCommand
+
+	for i := range ctx.MACCommands {
+		s, err := ctx.MACCommands[i].Size()
+		if err != nil {
+			return errors.Wrap(err, "get mac-command block size")
+		}
+		macCommandSize += s
+
+		maccommands = append(maccommands, ctx.MACCommands[i].MACCommands...)
+	}
+
+	if macCommandSize > 15 && ctx.FPort == 0 {
+		var frmPayload []lorawan.Payload
+		for i := range maccommands {
+			frmPayload = append(frmPayload, &maccommands[i])
+		}
+		macPL.FPort = &ctx.FPort
+		macPL.FRMPayload = frmPayload
+	} else if macCommandSize <= 15 {
+		macPL.FHDR.FOpts = maccommands
+	} else {
+		// this should not happen, but log it in case it would
+		log.WithFields(log.Fields{
+			"dev_eui": ctx.DeviceSession.DevEUI,
+		}).Error("mac-commands exceeded size!")
+	}
+
+	phy := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.UnconfirmedDataDown,
+			Major: lorawan.LoRaWANR1,
+		},
+		MACPayload: macPL,
+	}
+	if ctx.Confirmed {
+		phy.MHDR.MType = lorawan.ConfirmedDataDown
+	}
+
+	if macCommandSize > 15 && ctx.FPort == 0 {
+		if err := phy.EncryptFRMPayload(ctx.DeviceSession.NwkSKey); err != nil {
+			return errors.Wrap(err, "encrypt frmpayload error")
 		}
 	}
 
@@ -513,52 +595,6 @@ func getDataDownTXInfoAndDR(ds storage.DeviceSession, lastTXInfo models.TXInfo, 
 	txInfo.Timestamp = &timestamp
 
 	return txInfo, dr, nil
-}
-
-// getAndFilterMACQueueItems returns the mac-commands to send, based on the constraints:
-// - allowEncrypted: when set to true, the FRMPayload may be used for
-//   (encrypted) mac-commands, else only FOpt mac-commands will be returned
-// - remainingPayloadSize: the number of bytes that are left for mac-commands
-// It returns:
-// - a slice of mac-command queue items
-// - if the mac-commands must be put into FRMPayload
-// - if there are remaining mac-commands in the queue
-func getAndFilterMACQueueItems(ds storage.DeviceSession, allowEncrypted bool, remainingPayloadSize int) ([]maccommand.Block, bool, bool, error) {
-	var encrypted bool
-	var blocks []maccommand.Block
-
-	// read the mac payload queue
-	allBlocks, err := maccommand.ReadQueueItems(config.C.Redis.Pool, ds.DevEUI)
-	if err != nil {
-		return nil, false, false, errors.Wrap(err, "read mac-command queue error")
-	}
-
-	// nothing to do
-	if len(allBlocks) == 0 {
-		return nil, false, false, nil
-	}
-
-	// encrypted mac-commands are allowed and the first mac-command in the
-	// queue is marked to be encrypted
-	if allowEncrypted && allBlocks[0].FRMPayload {
-		encrypted = true
-		blocks, err = maccommand.FilterItems(allBlocks, true, remainingPayloadSize)
-		if err != nil {
-			return nil, false, false, errors.Wrap(err, "filter mac-command blocks error")
-		}
-	} else {
-		maxFOptsLen := remainingPayloadSize
-		// the LoRaWAN specs define 15 to be the max FOpts size
-		if maxFOptsLen > 15 {
-			maxFOptsLen = 15
-		}
-		blocks, err = maccommand.FilterItems(allBlocks, false, maxFOptsLen)
-		if err != nil {
-			return nil, false, false, errors.Wrap(err, "filter mac-command blocks error")
-		}
-	}
-
-	return blocks, encrypted, len(allBlocks) != len(blocks), nil
 }
 
 func logDownlinkFrame(ctx *dataContext) error {

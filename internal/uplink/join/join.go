@@ -13,7 +13,6 @@ import (
 
 	"github.com/brocaar/loraserver/internal/config"
 	joindown "github.com/brocaar/loraserver/internal/downlink/join"
-	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
@@ -220,7 +219,7 @@ func createNodeSession(ctx *context) error {
 		return errors.Wrap(err, "save node-session error")
 	}
 
-	if err := maccommand.FlushQueue(config.C.Redis.Pool, ctx.DeviceSession.DevEUI); err != nil {
+	if err := storage.FlushMACCommandQueue(config.C.Redis.Pool, ctx.DeviceSession.DevEUI); err != nil {
 		return fmt.Errorf("flush mac-command queue error: %s", err)
 	}
 

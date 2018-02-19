@@ -10,6 +10,7 @@ import (
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
+	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -28,9 +29,9 @@ func TestLinkCheckReq(t *testing.T) {
 			So(storage.SaveDeviceSession(config.C.Redis.Pool, ds), ShouldBeNil)
 
 			Convey("Test DevStatusAns", func() {
-				block := Block{
+				block := storage.MACCommandBlock{
 					CID: lorawan.DevStatusAns,
-					MACCommands: MACCommands{
+					MACCommands: storage.MACCommands{
 						lorawan.MACCommand{
 							CID: lorawan.DevStatusAns,
 							Payload: &lorawan.DevStatusAnsPayload{
@@ -41,7 +42,9 @@ func TestLinkCheckReq(t *testing.T) {
 					},
 				}
 
-				So(Handle(&ds, block, nil, models.RXPacket{}), ShouldBeNil)
+				resp, err := Handle(&ds, block, nil, models.RXPacket{})
+				So(err, ShouldBeNil)
+				So(resp, ShouldHaveLength, 0)
 
 				Convey("Then the dev-status fields on the device-session are updated", func() {
 					So(ds.LastDevStatusBattery, ShouldEqual, 200)
@@ -50,9 +53,9 @@ func TestLinkCheckReq(t *testing.T) {
 			})
 
 			Convey("Test LinkCheckReq", func() {
-				block := Block{
+				block := storage.MACCommandBlock{
 					CID: lorawan.LinkCheckReq,
-					MACCommands: MACCommands{
+					MACCommands: storage.MACCommands{
 						lorawan.MACCommand{
 							CID: lorawan.LinkCheckReq,
 						},
@@ -70,15 +73,14 @@ func TestLinkCheckReq(t *testing.T) {
 					},
 				}
 
-				So(Handle(&ds, block, nil, rxPacket), ShouldBeNil)
+				resp, err := Handle(&ds, block, nil, rxPacket)
+				So(err, ShouldBeNil)
 
-				Convey("Then the expected response was added to the mac-command queue", func() {
-					items, err := ReadQueueItems(config.C.Redis.Pool, ds.DevEUI)
-					So(err, ShouldBeNil)
-					So(items, ShouldHaveLength, 1)
-					So(items[0], ShouldResemble, Block{
+				Convey("Then the expected response was returned", func() {
+					So(resp, ShouldHaveLength, 1)
+					So(resp[0], ShouldResemble, storage.MACCommandBlock{
 						CID: lorawan.LinkCheckAns,
-						MACCommands: MACCommands{
+						MACCommands: storage.MACCommands{
 							{
 								CID: lorawan.LinkCheckAns,
 								Payload: &lorawan.LinkCheckAnsPayload{
@@ -221,7 +223,7 @@ func TestLinkADRAns(t *testing.T) {
 							DataRateACK:    true,
 							PowerACK:       true,
 						},
-						ExpectedError: ErrDoesNotExist,
+						ExpectedError: errors.New("expected pending mac-command"),
 						ExpectedDeviceSession: storage.DeviceSession{
 							EnabledChannels: []int{0, 1},
 						},
@@ -230,10 +232,10 @@ func TestLinkADRAns(t *testing.T) {
 
 				for i, tst := range testTable {
 					Convey(fmt.Sprintf("Testing: %s [%d]", tst.Name, i), func() {
-						var pending *Block
+						var pending *storage.MACCommandBlock
 
 						if tst.LinkADRReqPayload != nil {
-							pending = &Block{
+							pending = &storage.MACCommandBlock{
 								CID: lorawan.LinkADRReq,
 								MACCommands: []lorawan.MACCommand{
 									lorawan.MACCommand{
@@ -244,9 +246,9 @@ func TestLinkADRAns(t *testing.T) {
 							}
 						}
 
-						answer := Block{
+						answer := storage.MACCommandBlock{
 							CID: lorawan.LinkADRAns,
-							MACCommands: MACCommands{
+							MACCommands: storage.MACCommands{
 								lorawan.MACCommand{
 									CID:     lorawan.LinkADRAns,
 									Payload: &tst.LinkADRAnsPayload,
@@ -254,10 +256,15 @@ func TestLinkADRAns(t *testing.T) {
 							},
 						}
 
-						err := Handle(&tst.DeviceSession, answer, pending, models.RXPacket{})
+						resp, err := Handle(&tst.DeviceSession, answer, pending, models.RXPacket{})
 						Convey("Then the expected error (or nil) was returned", func() {
-							So(err, ShouldResemble, tst.ExpectedError)
+							if err != nil && tst.ExpectedError != nil {
+								So(err.Error(), ShouldResemble, tst.ExpectedError.Error())
+							} else {
+								So(err, ShouldResemble, tst.ExpectedError)
+							}
 						})
+						So(resp, ShouldHaveLength, 0)
 
 						Convey("Then the device-session was updated as expected", func() {
 							So(tst.ExpectedDeviceSession, ShouldResemble, tst.DeviceSession)

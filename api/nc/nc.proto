@@ -47,9 +47,6 @@ message HandleDataUpMACCommandRequest {
 	// DevEUI of the node.
 	bytes devEUI = 1;
 
-	// MAC-command was received in the FRMPayload field.
-	bool frmPayload = 3;
-
 	// Command identifier (specified by the LoRaWAN specs).
 	uint32 cid = 5;
 

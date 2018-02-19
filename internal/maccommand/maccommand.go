@@ -13,30 +13,28 @@ import (
 )
 
 // Handle handles a MACCommand sent by a node.
-func Handle(ds *storage.DeviceSession, block Block, pending *Block, rxPacket models.RXPacket) error {
-	var err error
+func Handle(ds *storage.DeviceSession, block storage.MACCommandBlock, pending *storage.MACCommandBlock, rxPacket models.RXPacket) ([]storage.MACCommandBlock, error) {
 	switch block.CID {
 	case lorawan.LinkADRAns:
-		err = handleLinkADRAns(ds, block, pending)
+		return handleLinkADRAns(ds, block, pending)
 	case lorawan.LinkCheckReq:
-		err = handleLinkCheckReq(ds, rxPacket)
+		return handleLinkCheckReq(ds, rxPacket)
 	case lorawan.DevStatusAns:
-		err = handleDevStatusAns(ds, block)
+		return handleDevStatusAns(ds, block)
 	default:
-		err = fmt.Errorf("undefined CID %d", block.CID)
+		return nil, fmt.Errorf("undefined CID %d", block.CID)
 
 	}
-	return err
 }
 
 // handleLinkADRAns handles the ack of an ADR request
-func handleLinkADRAns(ds *storage.DeviceSession, block Block, pendingBlock *Block) error {
+func handleLinkADRAns(ds *storage.DeviceSession, block storage.MACCommandBlock, pendingBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 	if len(block.MACCommands) == 0 {
-		return errors.New("at least 1 mac-command expected, got none")
+		return nil, errors.New("at least 1 mac-command expected, got none")
 	}
 
 	if pendingBlock == nil || len(pendingBlock.MACCommands) == 0 {
-		return ErrDoesNotExist
+		return nil, errors.New("expected pending mac-command")
 	}
 
 	channelMaskACK := true
@@ -46,7 +44,7 @@ func handleLinkADRAns(ds *storage.DeviceSession, block Block, pendingBlock *Bloc
 	for i := range block.MACCommands {
 		pl, ok := block.MACCommands[i].Payload.(*lorawan.LinkADRAnsPayload)
 		if !ok {
-			return fmt.Errorf("expected *lorawan.LinkADRAnsPayload, got %T", block.MACCommands[i].Payload)
+			return nil, fmt.Errorf("expected *lorawan.LinkADRAnsPayload, got %T", block.MACCommands[i].Payload)
 		}
 
 		if !pl.ChannelMaskACK {
@@ -72,7 +70,7 @@ func handleLinkADRAns(ds *storage.DeviceSession, block Block, pendingBlock *Bloc
 	if channelMaskACK && dataRateACK && powerACK {
 		chans, err := config.C.NetworkServer.Band.Band.GetEnabledChannelsForLinkADRReqPayloads(ds.EnabledChannels, linkADRPayloads)
 		if err != nil {
-			return errors.Wrap(err, "get enalbed channels for link_adr_req payloads error")
+			return nil, errors.Wrap(err, "get enalbed channels for link_adr_req payloads error")
 		}
 
 		ds.TXPowerIndex = int(adrReq.TXPower)
@@ -125,17 +123,17 @@ func handleLinkADRAns(ds *storage.DeviceSession, block Block, pendingBlock *Bloc
 		}).Warning("link_adr request not acknowledged")
 	}
 
-	return nil
+	return nil, nil
 }
 
-func handleLinkCheckReq(ds *storage.DeviceSession, rxPacket models.RXPacket) error {
+func handleLinkCheckReq(ds *storage.DeviceSession, rxPacket models.RXPacket) ([]storage.MACCommandBlock, error) {
 	if len(rxPacket.RXInfoSet) == 0 {
-		return errors.New("rx info-set contains zero items")
+		return nil, errors.New("rx info-set contains zero items")
 	}
 
 	requiredSNR, ok := config.SpreadFactorToRequiredSNRTable[rxPacket.TXInfo.DataRate.SpreadFactor]
 	if !ok {
-		return fmt.Errorf("sf %d not in sf to required snr table", rxPacket.TXInfo.DataRate.SpreadFactor)
+		return nil, fmt.Errorf("sf %d not in sf to required snr table", rxPacket.TXInfo.DataRate.SpreadFactor)
 	}
 
 	margin := rxPacket.RXInfoSet[0].LoRaSNR - requiredSNR
@@ -143,9 +141,9 @@ func handleLinkCheckReq(ds *storage.DeviceSession, rxPacket models.RXPacket) err
 		margin = 0
 	}
 
-	block := Block{
+	block := storage.MACCommandBlock{
 		CID: lorawan.LinkCheckAns,
-		MACCommands: MACCommands{
+		MACCommands: storage.MACCommands{
 			{
 				CID: lorawan.LinkCheckAns,
 				Payload: &lorawan.LinkCheckAnsPayload{
@@ -156,8 +154,5 @@ func handleLinkCheckReq(ds *storage.DeviceSession, rxPacket models.RXPacket) err
 		},
 	}
 
-	if err := AddQueueItem(config.C.Redis.Pool, ds.DevEUI, block); err != nil {
-		return errors.Wrap(err, "add mac-command block to queue error")
-	}
-	return nil
+	return []storage.MACCommandBlock{block}, nil
 }

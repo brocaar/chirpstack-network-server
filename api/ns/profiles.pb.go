@@ -53,8 +53,8 @@ It has these top-level messages:
 	GetDeviceActivationResponse
 	GetRandomDevAddrRequest
 	GetRandomDevAddrResponse
-	EnqueueDownlinkMACCommandRequest
-	EnqueueDownlinkMACCommandResponse
+	CreateMACCommandQueueItemRequest
+	CreateMACCommandQueueItemResponse
 	SendProprietaryPayloadRequest
 	SendProprietaryPayloadResponse
 	CreateGatewayRequest

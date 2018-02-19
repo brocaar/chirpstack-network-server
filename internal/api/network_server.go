@@ -17,7 +17,6 @@ import (
 	proprietarydown "github.com/brocaar/loraserver/internal/downlink/proprietary"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
@@ -583,7 +582,7 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		return nil, errToRPCError(err)
 	}
 
-	if err := maccommand.FlushQueue(config.C.Redis.Pool, ds.DevEUI); err != nil {
+	if err := storage.FlushMACCommandQueue(config.C.Redis.Pool, ds.DevEUI); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -637,9 +636,9 @@ func (n *NetworkServerAPI) GetRandomDevAddr(ctx context.Context, req *ns.GetRand
 	}, nil
 }
 
-// EnqueueDownlinkMACCommand adds a data down MAC command to the queue.
+// CreateMACCommandQueueItem adds a data down MAC command to the queue.
 // It replaces already enqueued mac-commands with the same CID.
-func (n *NetworkServerAPI) EnqueueDownlinkMACCommand(ctx context.Context, req *ns.EnqueueDownlinkMACCommandRequest) (*ns.EnqueueDownlinkMACCommandResponse, error) {
+func (n *NetworkServerAPI) CreateMACCommandQueueItem(ctx context.Context, req *ns.CreateMACCommandQueueItemRequest) (*ns.CreateMACCommandQueueItemResponse, error) {
 	var commands []lorawan.MACCommand
 	var devEUI lorawan.EUI64
 
@@ -653,18 +652,17 @@ func (n *NetworkServerAPI) EnqueueDownlinkMACCommand(ctx context.Context, req *n
 		commands = append(commands, mac)
 	}
 
-	block := maccommand.Block{
+	block := storage.MACCommandBlock{
 		CID:         lorawan.CID(req.Cid),
-		FRMPayload:  req.FrmPayload,
 		External:    true,
 		MACCommands: commands,
 	}
 
-	if err := maccommand.AddQueueItem(config.C.Redis.Pool, devEUI, block); err != nil {
+	if err := storage.CreateMACCommandQueueItem(config.C.Redis.Pool, devEUI, block); err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	return &ns.EnqueueDownlinkMACCommandResponse{}, nil
+	return &ns.CreateMACCommandQueueItemResponse{}, nil
 }
 
 // SendProprietaryPayload send a payload using the 'Proprietary' LoRaWAN message-type.

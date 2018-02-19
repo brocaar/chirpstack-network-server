@@ -3,12 +3,9 @@ package adr
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/maccommand"
-	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
@@ -22,9 +19,9 @@ var pktLossRateTable = [][3]uint8{
 
 // HandleADR handles ADR in case requested by the node and configured
 // in the device-session.
-func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uint32) error {
+func HandleADR(ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 	var maxSNR float64
-	for i, rxInfo := range rxPacket.RXInfoSet {
+	for i, rxInfo := range ds.LastRXInfoSet {
 		// as the default value is 0 and the LoRaSNR can be negative, we always
 		// set it when i == 0 (the first item from the slice)
 		if i == 0 || rxInfo.LoRaSNR > maxSNR {
@@ -32,38 +29,12 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 		}
 	}
 
-	// append metadata to the UplinkHistory slice.
-	ds.AppendUplinkHistory(storage.UplinkHistory{
-		FCnt:         fullFCnt,
-		GatewayCount: len(rxPacket.RXInfoSet),
-		MaxSNR:       maxSNR,
-		TXPowerIndex: ds.TXPowerIndex,
-	})
-
-	currentDR, err := config.C.NetworkServer.Band.Band.GetDataRate(rxPacket.TXInfo.DataRate)
-	if err != nil {
-		return errors.Wrap(err, "get data-rate error")
-	}
-
-	// The node changed its data-rate. Possibly the node did also reset its
-	// tx-power to max power. Because of this, we need to reset the tx-power
-	// at the network-server side too.
-	if ds.DR != currentDR {
-		ds.TXPowerIndex = 0
-	}
-
-	// keep track of the last-used data-rate
-	ds.DR = currentDR
-
-	// get the MACPayload
-	macPL, ok := rxPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
-	if !ok {
-		return fmt.Errorf("expected *lorawan.MACPayload, got: %T", rxPacket.PHYPayload.MACPayload)
-	}
-
 	// if the node has ADR disabled
-	if !macPL.FHDR.FCtrl.ADR {
-		return nil
+	if !ds.ADR {
+		if linkADRReqBlock == nil {
+			return nil, nil
+		}
+		return []storage.MACCommandBlock{*linkADRReqBlock}, nil
 	}
 
 	// get the max SNR from the UplinkHistory
@@ -74,20 +45,20 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 		}
 	}
 
-	if currentDR > getMaxAllowedDR() {
+	if ds.DR > getMaxAllowedDR() {
 		log.WithFields(log.Fields{
-			"dr":      currentDR,
+			"dr":      ds.DR,
 			"dev_eui": ds.DevEUI,
 		}).Infof("ADR is only supported up to DR%d", getMaxAllowedDR())
-		return nil
+		return nil, nil
 	}
 
-	if currentDR >= len(config.C.NetworkServer.Band.Band.DataRates) {
-		return fmt.Errorf("invalid data-rate: %d", currentDR)
+	if ds.DR >= len(config.C.NetworkServer.Band.Band.DataRates) {
+		return nil, fmt.Errorf("invalid data-rate: %d", ds.DR)
 	}
-	requiredSNR, err := getRequiredSNRForSF(config.C.NetworkServer.Band.Band.DataRates[currentDR].SpreadFactor)
+	requiredSNR, err := getRequiredSNRForSF(config.C.NetworkServer.Band.Band.DataRates[ds.DR].SpreadFactor)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	snrMargin := snrM - requiredSNR - config.C.NetworkServer.NetworkSettings.InstallationMargin
@@ -96,23 +67,15 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 	maxSupportedDR := getMaxSupportedDRForNode(ds)
 	maxSupportedTXPowerOffsetIndex := getMaxSupportedTXPowerOffsetIndexForNode(ds)
 
-	idealTXPowerIndex, idealDR := getIdealTXPowerOffsetAndDR(nStep, ds.TXPowerIndex, currentDR, maxSupportedTXPowerOffsetIndex, maxSupportedDR)
+	idealTXPowerIndex, idealDR := getIdealTXPowerOffsetAndDR(nStep, ds.TXPowerIndex, ds.DR, maxSupportedTXPowerOffsetIndex, maxSupportedDR)
 	idealNbRep := getNbRep(ds.NbTrans, ds.GetPacketLossPercentage())
 
 	// there is nothing to adjust
-	if ds.TXPowerIndex == idealTXPowerIndex && currentDR == idealDR && ds.NbTrans == idealNbRep {
-		return nil
+	if ds.TXPowerIndex == idealTXPowerIndex && ds.DR == idealDR && ds.NbTrans == idealNbRep {
+		return nil, nil
 	}
 
-	var block *maccommand.Block
-
-	// see if there is already a LinkADRReq commands in the queue
-	block, err = maccommand.GetQueueItemByCID(config.C.Redis.Pool, ds.DevEUI, lorawan.LinkADRReq)
-	if err != nil {
-		return errors.Wrap(err, "read pending error")
-	}
-
-	if block == nil || len(block.MACCommands) == 0 {
+	if linkADRReqBlock == nil || len(linkADRReqBlock.MACCommands) == 0 {
 		// nothing is pending
 		var chMask lorawan.ChMask
 		chMaskCntl := -1
@@ -129,7 +92,7 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 			chMask[c%16] = true
 		}
 
-		block = &maccommand.Block{
+		linkADRReqBlock = &storage.MACCommandBlock{
 			CID: lorawan.LinkADRReq,
 			MACCommands: []lorawan.MACCommand{
 				{
@@ -150,10 +113,10 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 		// there is a pending block of commands in the queue, add the adr parameters
 		// to the last mac-command (as in case there are multiple commands
 		// the node will use the dr, tx power and nb-rep from the last command
-		lastMAC := block.MACCommands[len(block.MACCommands)-1]
+		lastMAC := linkADRReqBlock.MACCommands[len(linkADRReqBlock.MACCommands)-1]
 		lastMACPl, ok := lastMAC.Payload.(*lorawan.LinkADRReqPayload)
 		if !ok {
-			return fmt.Errorf("expected *lorawan.LinkADRReqPayload, got %T", lastMAC.Payload)
+			return nil, fmt.Errorf("expected *lorawan.LinkADRReqPayload, got %T", lastMAC.Payload)
 		}
 
 		lastMACPl.DataRate = uint8(idealDR)
@@ -161,14 +124,9 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 		lastMACPl.Redundancy.NbRep = uint8(idealNbRep)
 	}
 
-	err = maccommand.AddQueueItem(config.C.Redis.Pool, ds.DevEUI, *block)
-	if err != nil {
-		return errors.Wrap(err, "add mac-command block to queue error")
-	}
-
 	log.WithFields(log.Fields{
 		"dev_eui":          ds.DevEUI,
-		"dr":               currentDR,
+		"dr":               ds.DR,
 		"req_dr":           idealDR,
 		"tx_power":         ds.TXPowerIndex,
 		"req_tx_power_idx": idealTXPowerIndex,
@@ -176,7 +134,7 @@ func HandleADR(ds *storage.DeviceSession, rxPacket models.RXPacket, fullFCnt uin
 		"req_nb_trans":     idealNbRep,
 	}).Info("adr request added to mac-command queue")
 
-	return nil
+	return []storage.MACCommandBlock{*linkADRReqBlock}, nil
 }
 
 func getNbRep(currentNbRep uint8, pktLossRate float64) uint8 {
@@ -207,7 +165,7 @@ func getMaxTXPowerOffsetIndex() int {
 	return idx
 }
 
-func getMaxSupportedTXPowerOffsetIndexForNode(ds *storage.DeviceSession) int {
+func getMaxSupportedTXPowerOffsetIndexForNode(ds storage.DeviceSession) int {
 	if ds.MaxSupportedTXPowerIndex != 0 {
 		return ds.MaxSupportedTXPowerIndex
 	}
@@ -271,7 +229,7 @@ func getMaxAllowedDR() int {
 	return maxDR
 }
 
-func getMaxSupportedDRForNode(ds *storage.DeviceSession) int {
+func getMaxSupportedDRForNode(ds storage.DeviceSession) int {
 	if ds.MaxSupportedDR != 0 {
 		return ds.MaxSupportedDR
 	}

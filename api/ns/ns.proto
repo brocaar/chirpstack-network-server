@@ -79,8 +79,8 @@ service NetworkServer {
     // GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
     rpc GetRandomDevAddr(GetRandomDevAddrRequest) returns (GetRandomDevAddrResponse) {}
 
-    // EnqueueDownlinkMACCommand adds the downlink mac-command to the queue.
-    rpc EnqueueDownlinkMACCommand(EnqueueDownlinkMACCommandRequest) returns (EnqueueDownlinkMACCommandResponse) {}
+    // CreateMACCommandQueueItem adds the downlink mac-command to the queue.
+    rpc CreateMACCommandQueueItem(CreateMACCommandQueueItemRequest) returns (CreateMACCommandQueueItemResponse) {}
 
 	// SendProprietaryPayload send a payload using the 'Proprietary' LoRaWAN message-type.
 	rpc SendProprietaryPayload(SendProprietaryPayloadRequest) returns (SendProprietaryPayloadResponse) {}
@@ -376,12 +376,9 @@ message GetRandomDevAddrResponse {
     bytes devAddr = 1;
 }
 
-message EnqueueDownlinkMACCommandRequest {
+message CreateMACCommandQueueItemRequest {
     // DevEUI of the node.
     bytes devEUI = 1;
-
-    // Send the mac-command as FRMPayload (encrypted).
-    bool frmPayload = 2;
 
     // Command identifier (specified by the LoRaWAN specs).
     uint32 cid = 4;
@@ -391,7 +388,7 @@ message EnqueueDownlinkMACCommandRequest {
     repeated bytes commands = 5;
 }
 
-message EnqueueDownlinkMACCommandResponse {}
+message CreateMACCommandQueueItemResponse {}
 
 message SendProprietaryPayloadRequest {
 	// MACPayload of the proprietary LoRaWAN frame.

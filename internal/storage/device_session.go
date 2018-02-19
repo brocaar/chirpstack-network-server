@@ -75,6 +75,9 @@ type DeviceSession struct {
 	// This value is controlled by the ADR engine.
 	DR int
 
+	// ADR defines if the device has ADR enabled.
+	ADR bool
+
 	// MaxSupportedTXPowerIndex defines the maximum supported tx-power index
 	// by the node, or 0 when not set.
 	MaxSupportedTXPowerIndex int

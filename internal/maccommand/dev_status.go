@@ -4,17 +4,15 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
-// RequestDevStatus adds a dev-status request mac-command to the queue.
-func RequestDevStatus(ds *storage.DeviceSession) error {
-	block := Block{
+// RequestDevStatus returns a mac-command block for requesting the device-status.
+func RequestDevStatus(ds *storage.DeviceSession) storage.MACCommandBlock {
+	block := storage.MACCommandBlock{
 		CID: lorawan.DevStatusReq,
 		MACCommands: []lorawan.MACCommand{
 			{
@@ -22,21 +20,21 @@ func RequestDevStatus(ds *storage.DeviceSession) error {
 			},
 		},
 	}
-	if err := AddQueueItem(config.C.Redis.Pool, ds.DevEUI, block); err != nil {
-		return errors.Wrap(err, "add mac-command queue item error")
-	}
 	ds.LastDevStatusRequested = time.Now()
-	return nil
+	log.WithFields(log.Fields{
+		"dev_eui": ds.DevEUI,
+	}).Info("requesting device-status")
+	return block
 }
 
-func handleDevStatusAns(ds *storage.DeviceSession, block Block) error {
+func handleDevStatusAns(ds *storage.DeviceSession, block storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 	if len(block.MACCommands) != 1 {
-		return fmt.Errorf("exactly one mac-command expected, got %d", len(block.MACCommands))
+		return nil, fmt.Errorf("exactly one mac-command expected, got %d", len(block.MACCommands))
 	}
 
 	pl, ok := block.MACCommands[0].Payload.(*lorawan.DevStatusAnsPayload)
 	if !ok {
-		return fmt.Errorf("expected *lorawan.DevStatusAnsPayload, got %T", block.MACCommands[0].Payload)
+		return nil, fmt.Errorf("expected *lorawan.DevStatusAnsPayload, got %T", block.MACCommands[0].Payload)
 	}
 
 	ds.LastDevStatusBattery = pl.Battery
@@ -48,5 +46,5 @@ func handleDevStatusAns(ds *storage.DeviceSession, block Block) error {
 		"margin":  ds.LastDevStatusMargin,
 	}).Info("dev_status_ans answer received")
 
-	return nil
+	return nil, nil
 }

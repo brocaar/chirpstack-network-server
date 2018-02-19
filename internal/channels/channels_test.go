@@ -4,10 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/maccommand"
-	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
@@ -15,24 +11,13 @@ import (
 )
 
 func TestHandleChannelReconfigure(t *testing.T) {
-	conf := test.GetConfig()
+	_ = test.GetConfig()
 
-	Convey("Given a clean Redis database and a set of tests", t, func() {
-		config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
-		test.MustFlushRedis(config.C.Redis.Pool)
-
-		rxPacket := models.RXPacket{
-			TXInfo: models.TXInfo{
-				DataRate: config.C.NetworkServer.Band.Band.DataRates[3],
-			},
-		}
-
+	Convey("Given a set of tests", t, func() {
 		tests := []struct {
-			Name            string
-			DeviceSession   storage.DeviceSession
-			Pending         *maccommand.Block
-			ExpectedQueue   []maccommand.Block
-			ExpectedPending *maccommand.Block
+			Name          string
+			DeviceSession storage.DeviceSession
+			Expected      []storage.MACCommandBlock
 		}{
 			{
 				Name: "no channels to reconfigure",
@@ -41,8 +26,6 @@ func TestHandleChannelReconfigure(t *testing.T) {
 					NbTrans:         2,
 					EnabledChannels: []int{0, 1, 2},
 				},
-				ExpectedQueue:   nil,
-				ExpectedPending: nil,
 			},
 			{
 				Name: "channels to reconfigure",
@@ -50,11 +33,12 @@ func TestHandleChannelReconfigure(t *testing.T) {
 					TXPowerIndex:    1,
 					NbTrans:         2,
 					EnabledChannels: []int{0, 1}, // this is not realistic but good enough for testing
+					DR:              3,
 				},
-				ExpectedQueue: []maccommand.Block{
+				Expected: []storage.MACCommandBlock{
 					{
 						CID: lorawan.LinkADRReq,
-						MACCommands: maccommand.MACCommands{
+						MACCommands: storage.MACCommands{
 							lorawan.MACCommand{
 								CID: lorawan.LinkADRReq,
 								Payload: &lorawan.LinkADRReqPayload{
@@ -74,25 +58,9 @@ func TestHandleChannelReconfigure(t *testing.T) {
 
 		for i, test := range tests {
 			Convey(fmt.Sprintf("test: %s [%d]", test.Name, i), func() {
-				if test.Pending != nil {
-					So(maccommand.SetPending(config.C.Redis.Pool, test.DeviceSession.DevEUI, *test.Pending), ShouldBeNil)
-				}
-
-				So(HandleChannelReconfigure(test.DeviceSession, rxPacket), ShouldBeNil)
-
-				if test.ExpectedPending != nil {
-					Convey("Then the expected mac-command block is set to pending", func() {
-						pending, err := maccommand.ReadPending(config.C.Redis.Pool, test.DeviceSession.DevEUI, lorawan.LinkADRReq)
-						So(err, ShouldBeNil)
-						So(pending, ShouldResemble, test.ExpectedPending)
-					})
-				}
-
-				Convey("Then the expected mac-commands are in the queue", func() {
-					queue, err := maccommand.ReadQueueItems(config.C.Redis.Pool, test.DeviceSession.DevEUI)
-					So(err, ShouldBeNil)
-					So(test.ExpectedQueue, ShouldResemble, queue)
-				})
+				blocks, err := HandleChannelReconfigure(test.DeviceSession)
+				So(err, ShouldBeNil)
+				So(blocks, ShouldResemble, test.Expected)
 			})
 		}
 	})
