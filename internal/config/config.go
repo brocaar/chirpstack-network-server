@@ -79,7 +79,7 @@ type Config struct {
 
 			Stats struct {
 				TimezoneLocation     *time.Location
-				CreateGatewayOnStats bool `mpastructure:"create_gateway_on_stats"`
+				CreateGatewayOnStats bool `mapstructure:"create_gateway_on_stats"`
 				Timezone             string
 				AggregationIntervals []string `mapstructure:"aggregation_intervals"`
 			}
