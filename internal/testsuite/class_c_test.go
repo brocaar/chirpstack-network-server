@@ -120,11 +120,14 @@ func TestClassCScenarios(t *testing.T) {
 							MType: lorawan.UnconfirmedDataDown,
 							Major: lorawan.LoRaWANR1,
 						},
+						MIC: lorawan.MIC{155, 150, 40, 188},
 						MACPayload: &lorawan.MACPayload{
 							FHDR: lorawan.FHDR{
 								DevAddr: sess.DevAddr,
 								FCnt:    5,
-								FCtrl:   lorawan.FCtrl{},
+								FCtrl: lorawan.FCtrl{
+									ADR: true,
+								},
 							},
 							FPort: &fPortTen,
 							FRMPayload: []lorawan.Payload{
@@ -149,11 +152,15 @@ func TestClassCScenarios(t *testing.T) {
 							MType: lorawan.UnconfirmedDataDown,
 							Major: lorawan.LoRaWANR1,
 						},
+						MIC: lorawan.MIC{166, 225, 232, 165},
 						MACPayload: &lorawan.MACPayload{
 							FHDR: lorawan.FHDR{
 								DevAddr: sess.DevAddr,
 								FCnt:    5,
-								FCtrl:   lorawan.FCtrl{},
+								FCtrl: lorawan.FCtrl{
+									ADR:      true,
+									FPending: true,
+								},
 							},
 							FPort: &fPortTen,
 							FRMPayload: []lorawan.Payload{
@@ -177,11 +184,14 @@ func TestClassCScenarios(t *testing.T) {
 							MType: lorawan.ConfirmedDataDown,
 							Major: lorawan.LoRaWANR1,
 						},
+						MIC: lorawan.MIC{212, 125, 174, 208},
 						MACPayload: &lorawan.MACPayload{
 							FHDR: lorawan.FHDR{
 								DevAddr: sess.DevAddr,
 								FCnt:    5,
-								FCtrl:   lorawan.FCtrl{},
+								FCtrl: lorawan.FCtrl{
+									ADR: true,
+								},
 							},
 							FPort: &fPortTen,
 							FRMPayload: []lorawan.Payload{
@@ -209,11 +219,14 @@ func TestClassCScenarios(t *testing.T) {
 							MType: lorawan.UnconfirmedDataDown,
 							Major: lorawan.LoRaWANR1,
 						},
+						MIC: lorawan.MIC{115, 18, 33, 93},
 						MACPayload: &lorawan.MACPayload{
 							FHDR: lorawan.FHDR{
 								DevAddr: sess.DevAddr,
 								FCnt:    5,
-								FCtrl:   lorawan.FCtrl{},
+								FCtrl: lorawan.FCtrl{
+									ADR: true,
+								},
 								FOpts: []lorawan.MACCommand{
 									{CID: lorawan.CID(6)},
 								},
@@ -266,7 +279,8 @@ func TestClassCScenarios(t *testing.T) {
 							So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
 							txPacket := <-config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan
 							So(txPacket.Token, ShouldNotEqual, 0)
-							So(&txPacket.TXInfo, ShouldResemble, t.ExpectedTXInfo)
+							So(txPacket.TXInfo, ShouldResemble, *t.ExpectedTXInfo)
+							So(txPacket.PHYPayload, ShouldResemble, *t.ExpectedPHYPayload)
 						})
 					} else {
 						So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 0)

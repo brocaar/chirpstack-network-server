@@ -9,6 +9,7 @@ import (
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -165,5 +166,154 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 				})
 			}
 		})
+	})
+}
+
+func TestSetMACCommandsSet(t *testing.T) {
+	conf := test.GetConfig()
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+	test.MustFlushRedis(config.C.Redis.Pool)
+
+	Convey("Given a set of tests", t, func() {
+		tests := []struct {
+			BeforeFunc          func() error
+			Name                string
+			Context             dataContext
+			ExpectedMACCommands []storage.MACCommandBlock
+		}{
+			{
+				Name: "trigger channel-reconfiguration",
+				Context: dataContext{
+					RemainingPayloadSize: 200,
+					DeviceSession: storage.DeviceSession{
+						EnabledChannels: []int{0, 1},
+						TXPowerIndex:    2,
+						DR:              5,
+						NbTrans:         2,
+					},
+				},
+				ExpectedMACCommands: []storage.MACCommandBlock{
+					{
+						CID: lorawan.LinkADRReq,
+						MACCommands: storage.MACCommands{
+							{
+								CID: lorawan.LinkADRReq,
+								Payload: &lorawan.LinkADRReqPayload{
+									DataRate: 5,
+									TXPower:  2,
+									ChMask:   [16]bool{true, true, true},
+									Redundancy: lorawan.Redundancy{
+										NbRep: 2,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				Name: "trigger adr request change",
+				Context: dataContext{
+					RemainingPayloadSize: 200,
+					DeviceSession: storage.DeviceSession{
+						ADR: true,
+						DR:  0,
+						UplinkHistory: []storage.UplinkHistory{
+							{FCnt: 0, MaxSNR: 5, TXPowerIndex: 0, GatewayCount: 1},
+						},
+					},
+				},
+				ExpectedMACCommands: []storage.MACCommandBlock{
+					{
+						CID: lorawan.LinkADRReq,
+						MACCommands: storage.MACCommands{
+							{
+								CID: lorawan.LinkADRReq,
+								Payload: &lorawan.LinkADRReqPayload{
+									DataRate: 5,
+									TXPower:  3,
+									ChMask:   [16]bool{true, true, true},
+									Redundancy: lorawan.Redundancy{
+										NbRep: 1,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				Name: "request device-status",
+				Context: dataContext{
+					RemainingPayloadSize: 200,
+					ServiceProfile: storage.ServiceProfile{
+						ServiceProfile: backend.ServiceProfile{
+							DevStatusReqFreq: 1,
+						},
+					},
+					DeviceSession: storage.DeviceSession{
+						EnabledChannels: []int{0, 1, 2},
+					},
+				},
+				ExpectedMACCommands: []storage.MACCommandBlock{
+					{
+						CID: lorawan.DevStatusReq,
+						MACCommands: storage.MACCommands{
+							{
+								CID: lorawan.DevStatusReq,
+							},
+						},
+					},
+				},
+			},
+			{
+				BeforeFunc: func() error {
+					config.C.NetworkServer.NetworkSettings.ClassB.PingSlotDR = 3
+					config.C.NetworkServer.NetworkSettings.ClassB.PingSlotFrequency = 868100000
+					return nil
+				},
+				Name: "trigger ping-slot parameters",
+				Context: dataContext{
+					RemainingPayloadSize: 200,
+					DeviceProfile: storage.DeviceProfile{
+						DeviceProfile: backend.DeviceProfile{
+							SupportsClassB: true,
+						},
+					},
+					DeviceSession: storage.DeviceSession{
+						PingSlotDR:        2,
+						PingSlotFrequency: 868300000,
+						EnabledChannels:   []int{0, 1, 2},
+					},
+				},
+				ExpectedMACCommands: []storage.MACCommandBlock{
+					{
+						CID: lorawan.PingSlotChannelReq,
+						MACCommands: storage.MACCommands{
+							{
+								CID: lorawan.PingSlotChannelReq,
+								Payload: &lorawan.PingSlotChannelReqPayload{
+									Frequency: 868100000,
+									DR:        3,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		for i, test := range tests {
+			Convey(fmt.Sprintf("Testing: %s [%d]", test.Name, i), func() {
+				if test.BeforeFunc != nil {
+					So(test.BeforeFunc(), ShouldBeNil)
+				}
+
+				err := setMACCommandsSet(&test.Context)
+				So(err, ShouldBeNil)
+
+				So(test.Context.MACCommands, ShouldResemble, test.ExpectedMACCommands)
+			})
+		}
 	})
 }

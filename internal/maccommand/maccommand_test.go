@@ -322,7 +322,7 @@ func TestHandleDownlink(t *testing.T) {
 							PingSlotDR:        3,
 						},
 						PingSlotChannelReq: &lorawan.PingSlotChannelReqPayload{
-							Frequency: 868300000 / 100,
+							Frequency: 868300000,
 							DR:        4,
 						},
 						PingSlotChannelAns: lorawan.PingSlotChannelAnsPayload{

@@ -27,19 +27,21 @@ const (
 	classC
 )
 
+var setMACCommandsSet = setMACCommands(
+	requestChannelReconfiguration,
+	requestADRChange,
+	requestDevStatus,
+	setPingSlotParameters,
+	getMACCommandsFromQueue,
+)
+
 var responseTasks = []func(*dataContext) error{
 	setToken,
 	getDeviceProfile,
 	getDataTXInfo,
 	setRemainingPayloadSize,
 	getNextDeviceQueueItem,
-	setMACCommands(
-		requestChannelReconfiguration,
-		requestADRChange,
-		requestDevStatus,
-		setPingSlotParameters,
-		getMACCommandsFromQueue,
-	),
+	setMACCommandsSet,
 	stopOnNothingToSend,
 	sendDataDown,
 	saveDeviceSession,
@@ -51,22 +53,16 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	getDeviceProfile,
 	getServiceProfile,
 	checkLastDownlinkTimestamp,
-	requestDevStatus,
 	forClass(classC,
 		getDataTXInfoForRX2,
 	),
 	forClass(classB,
+		checkBeaconLocked,
 		setTXInfoForClassB,
 	),
 	setRemainingPayloadSize,
 	getNextDeviceQueueItem,
-	setMACCommands(
-		requestChannelReconfiguration,
-		requestADRChange,
-		requestDevStatus,
-		setPingSlotParameters,
-		getMACCommandsFromQueue,
-	),
+	setMACCommandsSet,
 	stopOnNothingToSend,
 	sendDataDown,
 	saveDeviceSession,
@@ -151,11 +147,6 @@ func forClass(class deviceClass, tasks ...func(*dataContext) error) func(*dataCo
 		}
 
 		if class == classB && !ctx.DeviceProfile.SupportsClassB {
-			return nil
-		}
-
-		// in case the device is class-b capable, but has no beacon lock
-		if class == classB && !ctx.DeviceSession.BeaconLocked {
 			return nil
 		}
 
@@ -294,6 +285,13 @@ func getDataTXInfoForRX2(ctx *dataContext) error {
 	}
 	ctx.DataRate = int(ctx.DeviceSession.RX2DR)
 
+	return nil
+}
+
+func checkBeaconLocked(ctx *dataContext) error {
+	if !ctx.DeviceSession.BeaconLocked {
+		return ErrAbort
+	}
 	return nil
 }
 

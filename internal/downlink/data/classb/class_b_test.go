@@ -16,7 +16,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestGetCurrentBeaconStart(t *testing.T) {
+func TestGetBeaconStartForTime(t *testing.T) {
 	gpsEpochTime := time.Date(1980, time.January, 6, 0, 0, 0, 0, time.UTC)
 
 	Convey("When calling GetCurrentBeaconStart for GPS epoch time", t, func() {
@@ -27,7 +27,7 @@ func TestGetCurrentBeaconStart(t *testing.T) {
 		})
 	})
 
-	Convey("When calling GetCurrentBeaconStart for time.Now", t, func() {
+	Convey("When calling GetBeaconStartForTime for time.Now", t, func() {
 		d := GetBeaconStartForTime(time.Now())
 
 		Convey("Then the returned value > 0", func() {

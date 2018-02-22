@@ -22,8 +22,9 @@ func handlePingSlotInfoReq(ds *storage.DeviceSession, block storage.MACCommandBl
 	ds.PingSlotNb = 1 << (7 - pl.Periodicity)
 
 	log.WithFields(log.Fields{
-		"dev_eui":     ds.DevEUI,
-		"periodicity": pl.Periodicity,
+		"dev_eui":      ds.DevEUI,
+		"periodicity":  pl.Periodicity,
+		"ping_slot_nb": ds.PingSlotNb,
 	}).Info("ping_slot_info_req request received")
 
 	return []storage.MACCommandBlock{

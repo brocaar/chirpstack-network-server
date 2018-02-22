@@ -90,12 +90,13 @@ func GetNextPingSlotAfter(afterGPSEpochTS time.Duration, devAddr lorawan.DevAddr
 
 			if gpsEpochTime > afterGPSEpochTS {
 				log.WithFields(log.Fields{
-					"dev_addr":                    devAddr,
-					"after_gps_epoch_ts":          afterGPSEpochTS,
-					"ping_nb":                     pingNb,
-					"beacon_start_gps_epoch_ts":   beaconStart,
-					"next_ping_slot_gps_epoch_ts": gpsEpochTime,
-				}).Debug("get next ping-slot timestamp")
+					"dev_addr":                   devAddr,
+					"beacon_start_time_s":        int(beaconStart / beaconPeriod),
+					"after_beacon_start_time_ms": int((gpsEpochTime - beaconStart) / time.Millisecond),
+					"ping_offset_ms":             pingOffset,
+					"ping_slot_n":                n,
+					"ping_nb":                    pingNb,
+				}).Info("get next ping-slot timestamp")
 				return gpsEpochTime, nil
 			}
 		}

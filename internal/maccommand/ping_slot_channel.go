@@ -19,7 +19,7 @@ func RequestPingSlotChannel(devEUI lorawan.EUI64, dr, freq int) storage.MACComma
 			{
 				CID: lorawan.PingSlotChannelReq,
 				Payload: &lorawan.PingSlotChannelReqPayload{
-					Frequency: uint32(freq / 100),
+					Frequency: uint32(freq),
 					DR:        uint8(dr),
 				},
 			},
@@ -51,7 +51,7 @@ func handlePingSlotChannelAns(ds *storage.DeviceSession, block storage.MACComman
 	}
 
 	ds.PingSlotDR = int(req.DR)
-	ds.PingSlotFrequency = int(req.Frequency) * 100
+	ds.PingSlotFrequency = int(req.Frequency)
 
 	log.WithFields(log.Fields{
 		"channel_frequency": ds.PingSlotFrequency,

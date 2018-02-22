@@ -41,6 +41,10 @@ var rfRegionMapping = map[band.Name]backend.RFRegion{
 // defaultCodeRate defines the default code rate
 const defaultCodeRate = "4/5"
 
+// classBScheduleMargin contains a Class-B scheduling margin to make sure
+// there is enough time between scheduling and the actual Class-B ping-slot.
+const classBScheduleMargin = 5 * time.Second
+
 // NetworkServerAPI defines the nework-server API.
 type NetworkServerAPI struct{}
 
@@ -1204,6 +1208,9 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 			if scheduleAfterGPSEpochTS == 0 {
 				scheduleAfterGPSEpochTS = gps.Time(time.Now()).TimeSinceGPSEpoch()
 			}
+
+			// take some margin into account
+			scheduleAfterGPSEpochTS += classBScheduleMargin
 
 			gpsEpochTS, err := classb.GetNextPingSlotAfter(scheduleAfterGPSEpochTS, ds.DevAddr, ds.PingSlotNb)
 			if err != nil {
