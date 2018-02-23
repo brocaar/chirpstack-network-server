@@ -130,11 +130,11 @@ func TestUplinkScenarios(t *testing.T) {
 			DevEUI:           d.DevEUI,
 			JoinEUI:          lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
 
-			DevAddr:         lorawan.DevAddr{1, 2, 3, 4},
-			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:          8,
-			FCntDown:        5,
-			EnabledChannels: []int{0, 1, 2},
+			DevAddr:               lorawan.DevAddr{1, 2, 3, 4},
+			NwkSKey:               [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:                8,
+			FCntDown:              5,
+			EnabledUplinkChannels: []int{0, 1, 2},
 		}
 
 		now := time.Now().UTC().Truncate(time.Millisecond)
@@ -1548,7 +1548,7 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
-						tc.DeviceSession.EnabledChannels = []int{0, 1, 2, 3, 4, 5, 6, 7}
+						tc.DeviceSession.EnabledUplinkChannels = []int{0, 1, 2, 3, 4, 5, 6, 7}
 						return nil
 					},
 
@@ -1606,7 +1606,7 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
-						tc.DeviceSession.EnabledChannels = []int{0, 1, 2, 3, 4, 5, 6, 7}
+						tc.DeviceSession.EnabledUplinkChannels = []int{0, 1, 2, 3, 4, 5, 6, 7}
 						return nil
 					},
 
@@ -1658,7 +1658,7 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
-						tc.DeviceSession.EnabledChannels = []int{0, 1, 2, 3, 4, 5, 6, 7}
+						tc.DeviceSession.EnabledUplinkChannels = []int{0, 1, 2, 3, 4, 5, 6, 7}
 						return nil
 					},
 
@@ -1743,7 +1743,7 @@ func TestUplinkScenarios(t *testing.T) {
 						tc.ExpectedControllerHandleRXInfo.TxInfo.Adr = true
 
 						tc.DeviceSession.FCntUp = 10
-						tc.DeviceSession.EnabledChannels = []int{0, 1, 2, 3, 4, 5, 6, 7}
+						tc.DeviceSession.EnabledUplinkChannels = []int{0, 1, 2, 3, 4, 5, 6, 7}
 						return nil
 					},
 
@@ -2082,7 +2082,7 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 				So(err, ShouldBeNil)
 				So(ns.TXPowerIndex, ShouldEqual, t.ExpectedTXPowerIndex)
 				So(ns.NbTrans, ShouldEqual, t.ExpectedNbTrans)
-				So(ns.EnabledChannels, ShouldResemble, t.ExpectedEnabledChannels)
+				So(ns.EnabledUplinkChannels, ShouldResemble, t.ExpectedEnabledChannels)
 			})
 
 			if t.ExpectedHandleRXPacketError == nil {

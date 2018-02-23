@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brocaar/lorawan/band"
+
 	jwt "github.com/dgrijalva/jwt-go"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc"
@@ -606,19 +608,20 @@ func TestNetworkServerAPI(t *testing.T) {
 							ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
 							RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
 
-							DevAddr:            devAddr,
-							DevEUI:             devEUI,
-							NwkSKey:            nwkSKey,
-							FCntUp:             10,
-							FCntDown:           11,
-							SkipFCntValidation: true,
-							EnabledChannels:    config.C.NetworkServer.Band.Band.GetUplinkChannels(),
-							ChannelFrequencies: []int{868100000, 868300000, 868500000},
-							RXDelay:            3,
-							RX1DROffset:        2,
-							RX2DR:              5,
-							RX2Frequency:       868900000,
-							MaxSupportedDR:     6,
+							DevAddr:               devAddr,
+							DevEUI:                devEUI,
+							NwkSKey:               nwkSKey,
+							FCntUp:                10,
+							FCntDown:              11,
+							SkipFCntValidation:    true,
+							EnabledUplinkChannels: config.C.NetworkServer.Band.Band.GetUplinkChannels(),
+							ChannelFrequencies:    []int{868100000, 868300000, 868500000},
+							ExtraUplinkChannels:   map[int]band.Channel{},
+							RXDelay:               3,
+							RX1DROffset:           2,
+							RX2DR:                 5,
+							RX2Frequency:          868900000,
+							MaxSupportedDR:        6,
 
 							LastDevStatusMargin: 127,
 							PingSlotNb:          128,

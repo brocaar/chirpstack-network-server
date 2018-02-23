@@ -79,7 +79,7 @@ func HandleADR(ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBloc
 		// nothing is pending
 		var chMask lorawan.ChMask
 		chMaskCntl := -1
-		for _, c := range ds.EnabledChannels {
+		for _, c := range ds.EnabledUplinkChannels {
 			if chMaskCntl != c/16 {
 				if chMaskCntl == -1 {
 					// set the chMaskCntl
@@ -222,8 +222,8 @@ func getMaxAllowedDR() int {
 	var maxDR int
 	for _, c := range config.C.NetworkServer.Band.Band.GetEnabledUplinkChannels() {
 		channel := config.C.NetworkServer.Band.Band.UplinkChannels[c]
-		if len(channel.DataRates) > 1 && channel.DataRates[len(channel.DataRates)-1] > maxDR {
-			maxDR = channel.DataRates[len(channel.DataRates)-1]
+		if channel.MaxDR > maxDR {
+			maxDR = channel.MaxDR
 		}
 	}
 	return maxDR

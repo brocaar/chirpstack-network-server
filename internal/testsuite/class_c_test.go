@@ -88,8 +88,8 @@ func TestClassCScenarios(t *testing.T) {
 				{MAC: lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}},
 				{MAC: lorawan.EUI64{2, 1, 2, 1, 2, 1, 2, 1}},
 			},
-			EnabledChannels: []int{0, 1, 2},
-			RX2DR:           5,
+			EnabledUplinkChannels: []int{0, 1, 2},
+			RX2DR: 5,
 		}
 
 		txInfo := gw.TXInfo{

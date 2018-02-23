@@ -6,17 +6,17 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/brocaar/loraserver/internal/framelog"
-
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/internal/config"
 	joindown "github.com/brocaar/loraserver/internal/downlink/join"
+	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
+	"github.com/brocaar/lorawan/band"
 )
 
 var tasks = []func(*context) error{
@@ -197,24 +197,49 @@ func createNodeSession(ctx *context) error {
 		ServiceProfileID: ctx.Device.ServiceProfileID,
 		RoutingProfileID: ctx.Device.RoutingProfileID,
 
-		DevAddr:         ctx.DevAddr,
-		JoinEUI:         ctx.JoinRequestPayload.AppEUI,
-		DevEUI:          ctx.JoinRequestPayload.DevEUI,
-		NwkSKey:         ctx.JoinAnsPayload.NwkSKey.AESKey,
-		FCntUp:          0,
-		FCntDown:        0,
-		RXWindow:        storage.RX1,
-		RXDelay:         uint8(config.C.NetworkServer.NetworkSettings.RX1Delay),
-		RX1DROffset:     uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
-		RX2DR:           uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
-		EnabledChannels: config.C.NetworkServer.Band.Band.GetUplinkChannels(),
-		LastRXInfoSet:   ctx.RXPacket.RXInfoSet,
-		MaxSupportedDR:  ctx.ServiceProfile.ServiceProfile.DRMax,
+		DevAddr:     ctx.DevAddr,
+		JoinEUI:     ctx.JoinRequestPayload.AppEUI,
+		DevEUI:      ctx.JoinRequestPayload.DevEUI,
+		NwkSKey:     ctx.JoinAnsPayload.NwkSKey.AESKey,
+		FCntUp:      0,
+		FCntDown:    0,
+		RXWindow:    storage.RX1,
+		RXDelay:     uint8(config.C.NetworkServer.NetworkSettings.RX1Delay),
+		RX1DROffset: uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
+		RX2DR:       uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
+		EnabledUplinkChannels: config.C.NetworkServer.Band.Band.GetStandardUplinkChannels(),
+		ExtraUplinkChannels:   make(map[int]band.Channel),
+		LastRXInfoSet:         ctx.RXPacket.RXInfoSet,
+		MaxSupportedDR:        ctx.ServiceProfile.ServiceProfile.DRMax,
 
 		// set to invalid value to indicate we haven't received a status yet
 		LastDevStatusMargin: 127,
 		PingSlotDR:          ctx.DeviceProfile.PingSlotDR,
 		PingSlotFrequency:   int(ctx.DeviceProfile.PingSlotFreq),
+	}
+
+	if cfList := config.C.NetworkServer.Band.Band.GetCFList(); cfList != nil {
+		for _, f := range cfList {
+			if f == 0 {
+				continue
+			}
+
+			i, err := config.C.NetworkServer.Band.Band.GetUplinkChannelNumber(int(f))
+			if err != nil {
+				// if this happens, something is really wrong
+				log.WithError(err).WithFields(log.Fields{
+					"frequency": f,
+				}).Error("unknown fclist frequency")
+				continue
+			}
+
+			// add extra channel to enabled channels
+			ctx.DeviceSession.EnabledUplinkChannels = append(ctx.DeviceSession.EnabledUplinkChannels, i)
+
+			// add extra channel to extra uplink channels, so that we can
+			// keep track on frequency and data-rate changes
+			ctx.DeviceSession.ExtraUplinkChannels[i] = config.C.NetworkServer.Band.Band.UplinkChannels[i]
+		}
 	}
 
 	if ctx.DeviceProfile.PingSlotPeriod != 0 {

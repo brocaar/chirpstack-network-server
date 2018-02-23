@@ -89,7 +89,7 @@ func TestOTAAScenarios(t *testing.T) {
 
 		rxInfo := gw.RXInfo{
 			Frequency: config.C.NetworkServer.Band.Band.UplinkChannels[0].Frequency,
-			DataRate:  config.C.NetworkServer.Band.Band.DataRates[config.C.NetworkServer.Band.Band.UplinkChannels[0].DataRates[0]],
+			DataRate:  config.C.NetworkServer.Band.Band.DataRates[config.C.NetworkServer.Band.Band.UplinkChannels[0].MinDR],
 		}
 
 		jrPayload := lorawan.PHYPayload{
@@ -206,16 +206,17 @@ func TestOTAAScenarios(t *testing.T) {
 					},
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
-						RoutingProfileID:    rp.RoutingProfile.RoutingProfileID,
-						DeviceProfileID:     dp.DeviceProfile.DeviceProfileID,
-						ServiceProfileID:    sp.ServiceProfile.ServiceProfileID,
-						JoinEUI:             lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-						DevEUI:              lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
-						NwkSKey:             lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-						RXWindow:            storage.RX1,
-						EnabledChannels:     []int{0, 1, 2},
-						LastRXInfoSet:       []models.RXInfo{{}},
-						LastDevStatusMargin: 127,
+						RoutingProfileID:      rp.RoutingProfile.RoutingProfileID,
+						DeviceProfileID:       dp.DeviceProfile.DeviceProfileID,
+						ServiceProfileID:      sp.ServiceProfile.ServiceProfileID,
+						JoinEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+						DevEUI:                lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
+						NwkSKey:               lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						RXWindow:              storage.RX1,
+						EnabledUplinkChannels: []int{0, 1, 2},
+						ExtraUplinkChannels:   map[int]band.Channel{},
+						LastRXInfoSet:         []models.RXInfo{{}},
+						LastDevStatusMargin:   127,
 					},
 				},
 				{
@@ -223,7 +224,7 @@ func TestOTAAScenarios(t *testing.T) {
 					RXInfo:        rxInfo,
 					PHYPayload:    jrPayload,
 					AppKey:        appKey,
-					ExtraChannels: []int{868400000, 868500000, 868600000},
+					ExtraChannels: []int{868600000, 868700000, 868800000},
 					JoinServerJoinAnsPayload: backend.JoinAnsPayload{
 						PHYPayload: backend.HEXBytes(jaBytes),
 						Result: backend.Result{
@@ -257,7 +258,7 @@ func TestOTAAScenarios(t *testing.T) {
 							RX1DROffset: uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
 						},
 						RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
-						CFList:  &lorawan.CFList{868400000, 868500000, 868600000},
+						CFList:  &lorawan.CFList{868600000, 868700000, 868800000},
 					},
 					ExpectedTXInfo: gw.TXInfo{
 						MAC:       rxInfo.MAC,
@@ -269,14 +270,19 @@ func TestOTAAScenarios(t *testing.T) {
 					},
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
-						RoutingProfileID:    rp.RoutingProfile.RoutingProfileID,
-						DeviceProfileID:     dp.DeviceProfile.DeviceProfileID,
-						ServiceProfileID:    sp.ServiceProfile.ServiceProfileID,
-						JoinEUI:             lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-						DevEUI:              lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
-						NwkSKey:             lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-						RXWindow:            storage.RX1,
-						EnabledChannels:     []int{0, 1, 2, 3, 4, 5},
+						RoutingProfileID:      rp.RoutingProfile.RoutingProfileID,
+						DeviceProfileID:       dp.DeviceProfile.DeviceProfileID,
+						ServiceProfileID:      sp.ServiceProfile.ServiceProfileID,
+						JoinEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+						DevEUI:                lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
+						NwkSKey:               lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						RXWindow:              storage.RX1,
+						EnabledUplinkChannels: []int{0, 1, 2, 3, 4, 5},
+						ExtraUplinkChannels: map[int]band.Channel{
+							3: band.Channel{Frequency: 868600000, MinDR: 0, MaxDR: 5},
+							4: band.Channel{Frequency: 868700000, MinDR: 0, MaxDR: 5},
+							5: band.Channel{Frequency: 868800000, MinDR: 0, MaxDR: 5},
+						},
 						LastRXInfoSet:       []models.RXInfo{{}},
 						LastDevStatusMargin: 127,
 					},
@@ -296,7 +302,7 @@ func runOTAATests(asClient *test.ApplicationClient, jsClient *test.JoinServerCli
 			config.C.NetworkServer.Band.Band, err = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)
 			So(err, ShouldBeNil)
 			for _, f := range t.ExtraChannels {
-				So(config.C.NetworkServer.Band.Band.AddChannel(f), ShouldBeNil)
+				So(config.C.NetworkServer.Band.Band.AddChannel(f, 0, 5), ShouldBeNil)
 			}
 
 			// set mocks

@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
+
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/brocaar/lorawan/band"
 )
 
 func TestGetRandomDevAddr(t *testing.T) {
@@ -95,8 +97,9 @@ func TestDeviceSession(t *testing.T) {
 
 		Convey("Given a device-session", func() {
 			s := DeviceSession{
-				DevAddr: lorawan.DevAddr{1, 2, 3, 4},
-				DevEUI:  lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+				DevAddr:             lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:              lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+				ExtraUplinkChannels: map[int]band.Channel{},
 			}
 
 			Convey("When getting a non-existing device-session", func() {

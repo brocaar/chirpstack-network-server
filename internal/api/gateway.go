@@ -81,7 +81,7 @@ func (a *GatewayAPI) GetConfiguration(ctx context.Context, req *gw.GetConfigurat
 			Frequency: int32(channel.Frequency),
 		}
 
-		for _, dr := range channel.DataRates {
+		for dr := channel.MinDR; dr <= channel.MaxDR; dr++ {
 			gwChannel.Bandwidth = int32(config.C.NetworkServer.Band.Band.DataRates[dr].Bandwidth)
 
 			switch config.C.NetworkServer.Band.Band.DataRates[dr].Modulation {

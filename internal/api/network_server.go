@@ -575,8 +575,8 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		RX2Frequency:   int(dp.RXFreq2),
 		MaxSupportedDR: sp.ServiceProfile.DRMax,
 
-		EnabledChannels:    config.C.NetworkServer.Band.Band.GetUplinkChannels(), // TODO: replace by ServiceProfile.ChannelMask?
-		ChannelFrequencies: channelFrequencies,
+		EnabledUplinkChannels: config.C.NetworkServer.Band.Band.GetStandardUplinkChannels(), // TODO: replace by ServiceProfile.ChannelMask?
+		ChannelFrequencies:    channelFrequencies,
 
 		// set to invalid value to indicate we haven't received a status yet
 		LastDevStatusMargin: 127,

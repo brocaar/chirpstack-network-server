@@ -14,6 +14,7 @@ import (
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 )
 
 const (
@@ -91,10 +92,12 @@ type DeviceSession struct {
 	// This value is controlled by the ADR engine.
 	NbTrans uint8
 
-	EnabledChannels    []int            // channels that are activated on the node
-	ChannelFrequencies []int            // frequency of each channel
-	UplinkHistory      []UplinkHistory  // contains the last 20 transmissions
-	LastRXInfoSet      models.RXInfoSet // sorted set (best at index 0)
+	EnabledChannels       []int                // deprecated, migrated by GetDeviceSession
+	EnabledUplinkChannels []int                // channels that are activated on the node
+	ExtraUplinkChannels   map[int]band.Channel // extra uplink channels, configured by the user
+	ChannelFrequencies    []int                // frequency of each channel
+	UplinkHistory         []UplinkHistory      // contains the last 20 transmissions
+	LastRXInfoSet         models.RXInfoSet     // sorted set (best at index 0)
 
 	// LastDevStatusRequest contains the timestamp when the last device-status
 	// request was made.
@@ -237,6 +240,16 @@ func GetDeviceSession(p *redis.Pool, devEUI lorawan.EUI64) (DeviceSession, error
 	err = gob.NewDecoder(bytes.NewReader(val)).Decode(&s)
 	if err != nil {
 		return s, errors.Wrap(err, "gob decode error")
+	}
+
+	// make sure the map is initialized
+	if s.ExtraUplinkChannels == nil {
+		s.ExtraUplinkChannels = make(map[int]band.Channel)
+	}
+
+	// migrate the EnabledChannels
+	if len(s.EnabledUplinkChannels) == 0 {
+		s.EnabledUplinkChannels = s.EnabledChannels
 	}
 
 	return s, nil

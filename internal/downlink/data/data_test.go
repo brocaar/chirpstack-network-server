@@ -186,10 +186,10 @@ func TestSetMACCommandsSet(t *testing.T) {
 				Context: dataContext{
 					RemainingPayloadSize: 200,
 					DeviceSession: storage.DeviceSession{
-						EnabledChannels: []int{0, 1},
-						TXPowerIndex:    2,
-						DR:              5,
-						NbTrans:         2,
+						EnabledUplinkChannels: []int{0, 1},
+						TXPowerIndex:          2,
+						DR:                    5,
+						NbTrans:               2,
 					},
 				},
 				ExpectedMACCommands: []storage.MACCommandBlock{
@@ -252,7 +252,7 @@ func TestSetMACCommandsSet(t *testing.T) {
 						},
 					},
 					DeviceSession: storage.DeviceSession{
-						EnabledChannels: []int{0, 1, 2},
+						EnabledUplinkChannels: []int{0, 1, 2},
 					},
 				},
 				ExpectedMACCommands: []storage.MACCommandBlock{
@@ -281,9 +281,9 @@ func TestSetMACCommandsSet(t *testing.T) {
 						},
 					},
 					DeviceSession: storage.DeviceSession{
-						PingSlotDR:        2,
-						PingSlotFrequency: 868300000,
-						EnabledChannels:   []int{0, 1, 2},
+						PingSlotDR:            2,
+						PingSlotFrequency:     868300000,
+						EnabledUplinkChannels: []int{0, 1, 2},
 					},
 				},
 				ExpectedMACCommands: []storage.MACCommandBlock{

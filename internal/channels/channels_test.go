@@ -22,18 +22,18 @@ func TestHandleChannelReconfigure(t *testing.T) {
 			{
 				Name: "no channels to reconfigure",
 				DeviceSession: storage.DeviceSession{
-					TXPowerIndex:    1,
-					NbTrans:         2,
-					EnabledChannels: []int{0, 1, 2},
+					TXPowerIndex:          1,
+					NbTrans:               2,
+					EnabledUplinkChannels: []int{0, 1, 2},
 				},
 			},
 			{
 				Name: "channels to reconfigure",
 				DeviceSession: storage.DeviceSession{
-					TXPowerIndex:    1,
-					NbTrans:         2,
-					EnabledChannels: []int{0, 1}, // this is not realistic but good enough for testing
-					DR:              3,
+					TXPowerIndex:          1,
+					NbTrans:               2,
+					EnabledUplinkChannels: []int{0, 1}, // this is not realistic but good enough for testing
+					DR: 3,
 				},
 				Expected: []storage.MACCommandBlock{
 					{

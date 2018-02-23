@@ -109,7 +109,7 @@ func setBandConfig() error {
 		return errors.Wrap(err, "get band config error")
 	}
 	for _, c := range config.C.NetworkServer.NetworkSettings.ExtraChannels {
-		if err := bandConfig.AddChannel(c.Frequency); err != nil {
+		if err := bandConfig.AddChannel(c.Frequency, c.MinDR, c.MaxDR); err != nil {
 			return errors.Wrap(err, "add channel error")
 		}
 	}

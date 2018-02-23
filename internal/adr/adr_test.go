@@ -248,11 +248,11 @@ func TestADR(t *testing.T) {
 					{
 						Name: "ADR increasing data-rate by one step (no CFlist)",
 						DeviceSession: storage.DeviceSession{
-							DevAddr:         [4]byte{1, 2, 3, 4},
-							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							EnabledChannels: []int{0, 1, 2},
-							DR:              2,
-							ADR:             true,
+							DevAddr:               [4]byte{1, 2, 3, 4},
+							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledUplinkChannels: []int{0, 1, 2},
+							DR:  2,
+							ADR: true,
 							LastRXInfoSet: models.RXInfoSet{
 								{LoRaSNR: -7},
 							},
@@ -263,12 +263,12 @@ func TestADR(t *testing.T) {
 					{
 						Name: "ADR increasing tx-power by one step (no CFlist)",
 						DeviceSession: storage.DeviceSession{
-							DevAddr:         [4]byte{1, 2, 3, 4},
-							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							EnabledChannels: []int{0, 1, 2},
-							DR:              5,
-							TXPowerIndex:    3,
-							ADR:             true,
+							DevAddr:               [4]byte{1, 2, 3, 4},
+							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledUplinkChannels: []int{0, 1, 2},
+							DR:           5,
+							TXPowerIndex: 3,
+							ADR:          true,
 							LastRXInfoSet: models.RXInfoSet{
 								{LoRaSNR: 1},
 							},
@@ -298,13 +298,13 @@ func TestADR(t *testing.T) {
 						// and the packetloss function returns therefore 0%.
 						Name: "ADR decreasing NbTrans by one",
 						DeviceSession: storage.DeviceSession{
-							DevAddr:         [4]byte{1, 2, 3, 4},
-							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							EnabledChannels: []int{0, 1, 2},
-							DR:              5,
-							TXPowerIndex:    4,
-							NbTrans:         3,
-							ADR:             true,
+							DevAddr:               [4]byte{1, 2, 3, 4},
+							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledUplinkChannels: []int{0, 1, 2},
+							DR:           5,
+							TXPowerIndex: 4,
+							NbTrans:      3,
+							ADR:          true,
 							LastRXInfoSet: models.RXInfoSet{
 								{LoRaSNR: -5},
 							},
@@ -332,11 +332,11 @@ func TestADR(t *testing.T) {
 					{
 						Name: "ADR increasing data-rate by one step (no CFlist), updating given LinkADRReq block",
 						DeviceSession: storage.DeviceSession{
-							DevAddr:         [4]byte{1, 2, 3, 4},
-							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							EnabledChannels: []int{0, 1, 2},
-							DR:              2,
-							ADR:             true,
+							DevAddr:               [4]byte{1, 2, 3, 4},
+							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledUplinkChannels: []int{0, 1, 2},
+							DR:  2,
+							ADR: true,
 							LastRXInfoSet: models.RXInfoSet{
 								{LoRaSNR: -7},
 							},
@@ -375,11 +375,11 @@ func TestADR(t *testing.T) {
 					{
 						Name: "ADR increasing data-rate by one step (extra channels added)",
 						DeviceSession: storage.DeviceSession{
-							DevAddr:         [4]byte{1, 2, 3, 4},
-							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							EnabledChannels: []int{0, 1, 2, 3, 4, 6},
-							DR:              2,
-							ADR:             true,
+							DevAddr:               [4]byte{1, 2, 3, 4},
+							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledUplinkChannels: []int{0, 1, 2, 3, 4, 6},
+							DR:  2,
+							ADR: true,
 							LastRXInfoSet: models.RXInfoSet{
 								{LoRaSNR: -7},
 							},
@@ -405,9 +405,9 @@ func TestADR(t *testing.T) {
 					{
 						Name: "ADR increasing data-rate by one step (through history table)",
 						DeviceSession: storage.DeviceSession{
-							DevAddr:         [4]byte{1, 2, 3, 4},
-							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							EnabledChannels: []int{0, 1, 2},
+							DevAddr:               [4]byte{1, 2, 3, 4},
+							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledUplinkChannels: []int{0, 1, 2},
 							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
 							},
@@ -423,12 +423,12 @@ func TestADR(t *testing.T) {
 					{
 						Name: "ADR not increasing tx power (as the TX power in the history table does not match)",
 						DeviceSession: storage.DeviceSession{
-							DevAddr:         [4]byte{1, 2, 3, 4},
-							DevEUI:          [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-							EnabledChannels: []int{0, 1, 2},
-							DR:              5,
-							TXPowerIndex:    3,
-							NbTrans:         1,
+							DevAddr:               [4]byte{1, 2, 3, 4},
+							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledUplinkChannels: []int{0, 1, 2},
+							DR:           5,
+							TXPowerIndex: 3,
+							NbTrans:      1,
 							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 1, MaxSNR: 7, GatewayCount: 1, TXPowerIndex: 0},
 							},

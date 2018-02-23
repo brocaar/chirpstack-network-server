@@ -135,7 +135,7 @@ func MigrateNodeToDeviceSession(p *redis.Pool, db sqlx.Ext, devEUI, joinEUI lora
 		MaxSupportedTXPowerIndex: ns.MaxSupportedTXPowerIndex,
 		MaxSupportedDR:           ns.MaxSupportedDR,
 		NbTrans:                  ns.NbTrans,
-		EnabledChannels:          ns.EnabledChannels,
+		EnabledUplinkChannels:    ns.EnabledChannels,
 		UplinkHistory:            ns.UplinkHistory,
 	}
 

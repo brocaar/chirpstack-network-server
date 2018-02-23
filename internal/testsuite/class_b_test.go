@@ -120,12 +120,12 @@ func TestClassBUplink(t *testing.T) {
 			DevEUI:           d.DevEUI,
 			JoinEUI:          lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
 
-			DevAddr:         lorawan.DevAddr{1, 2, 3, 4},
-			NwkSKey:         [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-			FCntUp:          8,
-			FCntDown:        5,
-			EnabledChannels: []int{0, 1, 2},
-			PingSlotNb:      1,
+			DevAddr:               lorawan.DevAddr{1, 2, 3, 4},
+			NwkSKey:               [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCntUp:                8,
+			FCntDown:              5,
+			EnabledUplinkChannels: []int{0, 1, 2},
+			PingSlotNb:            1,
 		}
 
 		now := time.Now().UTC().Truncate(time.Millisecond)
@@ -298,10 +298,10 @@ func TestClassBDownlink(t *testing.T) {
 				{MAC: lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}},
 				{MAC: lorawan.EUI64{2, 1, 2, 1, 2, 1, 2, 1}},
 			},
-			EnabledChannels:   []int{0, 1, 2},
-			BeaconLocked:      true,
-			PingSlotFrequency: 868300000,
-			PingSlotDR:        2,
+			EnabledUplinkChannels: []int{0, 1, 2},
+			BeaconLocked:          true,
+			PingSlotFrequency:     868300000,
+			PingSlotDR:            2,
 		}
 
 		fPortTen := uint8(10)

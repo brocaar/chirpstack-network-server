@@ -51,7 +51,7 @@ func handleLinkADRAns(ds *storage.DeviceSession, block storage.MACCommandBlock, 
 	adrReq := linkADRPayloads[len(linkADRPayloads)-1]
 
 	if channelMaskACK && dataRateACK && powerACK {
-		chans, err := config.C.NetworkServer.Band.Band.GetEnabledChannelsForLinkADRReqPayloads(ds.EnabledChannels, linkADRPayloads)
+		chans, err := config.C.NetworkServer.Band.Band.GetEnabledChannelsForLinkADRReqPayloads(ds.EnabledUplinkChannels, linkADRPayloads)
 		if err != nil {
 			return nil, errors.Wrap(err, "get enalbed channels for link_adr_req payloads error")
 		}
@@ -59,7 +59,7 @@ func handleLinkADRAns(ds *storage.DeviceSession, block storage.MACCommandBlock, 
 		ds.TXPowerIndex = int(adrReq.TXPower)
 		ds.DR = int(adrReq.DataRate)
 		ds.NbTrans = adrReq.Redundancy.NbRep
-		ds.EnabledChannels = chans
+		ds.EnabledUplinkChannels = chans
 
 		log.WithFields(log.Fields{
 			"dev_eui":          ds.DevEUI,
