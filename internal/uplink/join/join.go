@@ -224,7 +224,7 @@ func createNodeSession(ctx *context) error {
 				continue
 			}
 
-			i, err := config.C.NetworkServer.Band.Band.GetUplinkChannelNumber(int(f))
+			i, err := config.C.NetworkServer.Band.Band.GetUplinkChannelNumber(int(f), false)
 			if err != nil {
 				// if this happens, something is really wrong
 				log.WithError(err).WithFields(log.Fields{

@@ -10,6 +10,7 @@ import (
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
+	"github.com/brocaar/lorawan/band"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -301,10 +302,138 @@ func TestSetMACCommandsSet(t *testing.T) {
 					},
 				},
 			},
+			{
+				Name: "trigger channel-mask reconfiguration",
+				Context: dataContext{
+					RemainingPayloadSize: 200,
+					DeviceSession: storage.DeviceSession{
+						EnabledUplinkChannels: []int{0, 1, 2, 3, 4, 5},
+						ExtraUplinkChannels: map[int]band.Channel{
+							3: band.Channel{},
+							4: band.Channel{},
+							6: band.Channel{},
+						},
+						DR:           5,
+						TXPowerIndex: 3,
+					},
+				},
+				ExpectedMACCommands: []storage.MACCommandBlock{
+					{
+						CID: lorawan.LinkADRReq,
+						MACCommands: storage.MACCommands{
+							{
+								CID: lorawan.LinkADRReq,
+								Payload: &lorawan.LinkADRReqPayload{
+									DataRate: 5,
+									TXPower:  3,
+									ChMask:   lorawan.ChMask{true, true, true},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				BeforeFunc: func() error {
+					config.C.NetworkServer.Band.Band.AddChannel(868600000, 3, 5)
+					config.C.NetworkServer.Band.Band.AddChannel(868700000, 4, 5)
+					config.C.NetworkServer.Band.Band.AddChannel(868800000, 5, 5)
+					return nil
+				},
+				Name: "trigger adding new channel",
+				Context: dataContext{
+					RemainingPayloadSize: 200,
+					DeviceSession: storage.DeviceSession{
+						EnabledUplinkChannels: []int{0, 1, 2},
+					},
+				},
+				ExpectedMACCommands: []storage.MACCommandBlock{
+					{
+						CID: lorawan.NewChannelReq,
+						MACCommands: storage.MACCommands{
+							{
+								CID: lorawan.NewChannelReq,
+								Payload: &lorawan.NewChannelReqPayload{
+									ChIndex: 3,
+									Freq:    868600000,
+									MinDR:   3,
+									MaxDR:   5,
+								},
+							},
+							{
+								CID: lorawan.NewChannelReq,
+								Payload: &lorawan.NewChannelReqPayload{
+									ChIndex: 4,
+									Freq:    868700000,
+									MinDR:   4,
+									MaxDR:   5,
+								},
+							},
+							{
+								CID: lorawan.NewChannelReq,
+								Payload: &lorawan.NewChannelReqPayload{
+									ChIndex: 5,
+									Freq:    868800000,
+									MinDR:   5,
+									MaxDR:   5,
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				BeforeFunc: func() error {
+					config.C.NetworkServer.Band.Band.AddChannel(868600000, 3, 5)
+					config.C.NetworkServer.Band.Band.AddChannel(868700000, 4, 5)
+					config.C.NetworkServer.Band.Band.AddChannel(868800000, 5, 5)
+					return nil
+				},
+				Name: "trigger updating existing channels",
+				Context: dataContext{
+					RemainingPayloadSize: 200,
+					DeviceSession: storage.DeviceSession{
+						EnabledUplinkChannels: []int{0, 1, 2},
+						ExtraUplinkChannels: map[int]band.Channel{
+							3: band.Channel{Frequency: 868550000, MinDR: 3, MaxDR: 5},
+							4: band.Channel{Frequency: 868700000, MinDR: 4, MaxDR: 5},
+							5: band.Channel{Frequency: 868800000, MinDR: 4, MaxDR: 5},
+						},
+					},
+				},
+				ExpectedMACCommands: []storage.MACCommandBlock{
+					{
+						CID: lorawan.NewChannelReq,
+						MACCommands: storage.MACCommands{
+							{
+								CID: lorawan.NewChannelReq,
+								Payload: &lorawan.NewChannelReqPayload{
+									ChIndex: 3,
+									Freq:    868600000,
+									MinDR:   3,
+									MaxDR:   5,
+								},
+							},
+							{
+								CID: lorawan.NewChannelReq,
+								Payload: &lorawan.NewChannelReqPayload{
+									ChIndex: 5,
+									Freq:    868800000,
+									MinDR:   5,
+									MaxDR:   5,
+								},
+							},
+						},
+					},
+				},
+			},
 		}
 
 		for i, test := range tests {
 			Convey(fmt.Sprintf("Testing: %s [%d]", test.Name, i), func() {
+				config.C.NetworkServer.Band.Name = band.EU_863_870
+				config.C.NetworkServer.Band.Band, _ = band.GetConfig(config.C.NetworkServer.Band.Name, false, lorawan.DwellTimeNoLimit)
+
 				if test.BeforeFunc != nil {
 					So(test.BeforeFunc(), ShouldBeNil)
 				}

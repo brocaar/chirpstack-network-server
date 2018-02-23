@@ -18,6 +18,7 @@ import (
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 )
 
 type deviceClass int
@@ -28,7 +29,8 @@ const (
 )
 
 var setMACCommandsSet = setMACCommands(
-	requestChannelReconfiguration,
+	requestCustomChannelReconfiguration,
+	requestChannelMaskReconfiguration,
 	requestADRChange,
 	requestDevStatus,
 	setPingSlotParameters,
@@ -438,7 +440,29 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 	}
 }
 
-func requestChannelReconfiguration(ctx *dataContext) error {
+func requestCustomChannelReconfiguration(ctx *dataContext) error {
+	wantedChannels := make(map[int]band.Channel)
+	for _, i := range config.C.NetworkServer.Band.Band.GetCustomUplinkChannels() {
+		wantedChannels[i] = config.C.NetworkServer.Band.Band.UplinkChannels[i]
+	}
+
+	// cleanup channels that do not exist anydmore
+	// these will be disabled by the LinkADRReq channel-mask reconfiguration
+	for k := range ctx.DeviceSession.ExtraUplinkChannels {
+		if _, ok := wantedChannels[k]; !ok {
+			delete(ctx.DeviceSession.ExtraUplinkChannels, k)
+		}
+	}
+
+	block := maccommand.RequestNewChannels(ctx.DeviceSession.DevEUI, 3, ctx.DeviceSession.ExtraUplinkChannels, wantedChannels)
+	if block != nil {
+		ctx.MACCommands = append(ctx.MACCommands, *block)
+	}
+
+	return nil
+}
+
+func requestChannelMaskReconfiguration(ctx *dataContext) error {
 	// handle channel configuration
 	// note that this must come before ADR!
 	blocks, err := channels.HandleChannelReconfigure(ctx.DeviceSession)
