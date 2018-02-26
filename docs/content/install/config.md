@@ -336,6 +336,19 @@ get_downlink_data_delay="100ms"
   #
   # This is the backend communicating with the LoRa gateways over a MQTT broker.
   [network_server.gateway.backend.mqtt]
+  # MQTT topic templates for the different MQTT topics.
+  #
+  # The meaning of these topics are documented at:
+  # https://docs.loraserver.io/lora-gateway-bridge/use/data/
+  #
+  # The default values match the default expected configuration of the
+  # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
+  # absolutely needed.
+  uplink_topic_template="gateway/+/rx"
+  downlink_topic_template="gateway/{{ .MAC }}/tx"
+  stats_topic_template="gateway/+/stats"
+  ack_topic_template="gateway/+/ack"
+
   # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
   server="tcp://localhost:1883"
 

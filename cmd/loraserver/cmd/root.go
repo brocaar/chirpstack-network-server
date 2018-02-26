@@ -167,7 +167,6 @@ func init() {
 	viper.BindPFlag("network_server.network_settings.rx1_dr_offset", rootCmd.PersistentFlags().Lookup("rx1-dr-offset"))
 	viper.BindPFlag("network_server.network_settings.rx2_dr", rootCmd.PersistentFlags().Lookup("rx2-dr"))
 	viper.BindPFlag("network_server.network_settings.enabled_uplink_channels_legacy", rootCmd.PersistentFlags().Lookup("enable-uplink-channels"))
-	// viper.BindPFlag("network_server.network_settings.extra_channels_legacy", rootCmd.PersistentFlags().Lookup("extra-frequencies"))
 	viper.BindPFlag("network_server.api.bind", rootCmd.PersistentFlags().Lookup("bind"))
 	viper.BindPFlag("network_server.api.ca_cert", rootCmd.PersistentFlags().Lookup("ca-cert"))
 	viper.BindPFlag("network_server.api.tls_cert", rootCmd.PersistentFlags().Lookup("tls-cert"))
@@ -194,6 +193,12 @@ func init() {
 	viper.BindPFlag("network_controller.ca_cert", rootCmd.PersistentFlags().Lookup("nc-ca-cert"))
 	viper.BindPFlag("network_controller.tls_cert", rootCmd.PersistentFlags().Lookup("nc-tls-cert"))
 	viper.BindPFlag("network_controller.tls_key", rootCmd.PersistentFlags().Lookup("nc-tls-key"))
+
+	// default values
+	viper.SetDefault("network_server.gateway.backend.mqtt.uplink_topic_template", "gateway/{{ .MAC }}/rx")
+	viper.SetDefault("network_server.gateway.backend.mqtt.downlink_topic_template", "gateway/{{ .MAC }}/tx")
+	viper.SetDefault("network_server.gateway.backend.mqtt.stats_topic_template", "gateway/{{ .MAC }}/stats")
+	viper.SetDefault("network_server.gateway.backend.mqtt.ack_topic_template", "gateway/{{ .MAC }}/ack")
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(configCmd)

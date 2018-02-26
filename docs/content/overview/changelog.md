@@ -8,6 +8,13 @@ menu:
 
 ## Changelog
 
+### 0.24.2
+
+**Improvements:**
+
+* MQTT topics are now configurable through the configuration file.
+  See [Configuration](https://docs.loraserver.io/loraserver/install/config/).
+
 ### 0.24.1
 
 **Bugfixes:**

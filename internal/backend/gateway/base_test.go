@@ -3,6 +3,7 @@ package gateway
 import (
 	"os"
 
+	"github.com/brocaar/loraserver/internal/config"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -18,6 +19,11 @@ type c struct {
 }
 
 func getConfig() *c {
+	config.C.NetworkServer.Gateway.Backend.MQTT.DownlinkTopicTemplate = "gateway/{{ .MAC }}/tx"
+	config.C.NetworkServer.Gateway.Backend.MQTT.UplinkTopicTemplate = "gateway/+/rx"
+	config.C.NetworkServer.Gateway.Backend.MQTT.StatsTopicTemplate = "gateway/+/stats"
+	config.C.NetworkServer.Gateway.Backend.MQTT.AckTopicTemplate = "gateway/+/ack"
+
 	c := &c{
 		Server:   "tcp://127.0.0.1:1883",
 		RedisURL: "redis://localhost:6379",

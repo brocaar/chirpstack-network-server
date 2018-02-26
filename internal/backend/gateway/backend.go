@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
@@ -8,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"sync"
+	"text/template"
 	"time"
 
 	"github.com/brocaar/loraserver/api/gw"
@@ -20,8 +22,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const rxTopic = "gateway/+/rx"
-const statsTopic = "gateway/+/stats"
 const uplinkLockTTL = time.Millisecond * 500
 const statsLockTTL = time.Millisecond * 500
 
@@ -31,13 +31,27 @@ type Backend struct {
 	rxPacketChan    chan gw.RXPacket
 	statsPacketChan chan gw.GatewayStatsPacket
 	wg              sync.WaitGroup
+
+	uplinkTopic      string
+	statsTopic       string
+	ackTopic         string
+	downlinkTemplate *template.Template
 }
 
 // NewBackend creates a new Backend.
-func NewBackend(server, username, password, cafile, certFile, certKeyFile string) (backend.Gateway, error) {
+func NewBackend(server, username, password, cafile, certFile, certKeyFile, uplinkTopic, downlinkTopic, statsTopic, ackTopic string) (backend.Gateway, error) {
+	var err error
 	b := Backend{
 		rxPacketChan:    make(chan gw.RXPacket),
 		statsPacketChan: make(chan gw.GatewayStatsPacket),
+		uplinkTopic:     uplinkTopic,
+		statsTopic:      statsTopic,
+		ackTopic:        ackTopic,
+	}
+
+	b.downlinkTemplate, err = template.New("downlink").Parse(downlinkTopic)
+	if err != nil {
+		return nil, errors.Wrap(err, "parse downlink template error")
 	}
 
 	opts := mqtt.NewClientOptions()
@@ -118,13 +132,14 @@ func newTLSConfig(cafile, certFile, certKeyFile string) (*tls.Config, error) {
 // still packets to send back to the gateway).
 func (b *Backend) Close() error {
 	log.Info("backend/gateway: closing backend")
-	log.WithField("topic", rxTopic).Info("backend/gateway: unsubscribing from rx topic")
-	if token := b.conn.Unsubscribe(rxTopic); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("backend/gateway: unsubscribe from %s error: %s", rxTopic, token.Error())
+
+	log.WithField("topic", b.uplinkTopic).Info("backend/gateway: unsubscribing from rx topic")
+	if token := b.conn.Unsubscribe(b.uplinkTopic); token.Wait() && token.Error() != nil {
+		return fmt.Errorf("backend/gateway: unsubscribe from %s error: %s", b.uplinkTopic, token.Error())
 	}
-	log.WithField("topic", statsTopic).Info("backend/gateway: unsubscribing from stats topic")
-	if token := b.conn.Unsubscribe(statsTopic); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("backend/gateway: unsubscribe from %s error: %s", statsTopic, token.Error())
+	log.WithField("topic", b.statsTopic).Info("backend/gateway: unsubscribing from stats topic")
+	if token := b.conn.Unsubscribe(b.statsTopic); token.Wait() && token.Error() != nil {
+		return fmt.Errorf("backend/gateway: unsubscribe from %s error: %s", b.statsTopic, token.Error())
 	}
 	log.Info("backend/gateway: handling last messages")
 	b.wg.Wait()
@@ -149,7 +164,7 @@ func (b *Backend) SendTXPacket(txPacket gw.TXPacket) error {
 	if err != nil {
 		return errors.Wrap(err, "marshal binary error")
 	}
-	bytes, err := json.Marshal(gw.TXPacketBytes{
+	bb, err := json.Marshal(gw.TXPacketBytes{
 		Token:      txPacket.Token,
 		TXInfo:     txPacket.TXInfo,
 		PHYPayload: phyB,
@@ -158,10 +173,13 @@ func (b *Backend) SendTXPacket(txPacket gw.TXPacket) error {
 		return fmt.Errorf("backend/gateway: tx packet marshal error: %s", err)
 	}
 
-	topic := fmt.Sprintf("gateway/%s/tx", txPacket.TXInfo.MAC)
-	log.WithField("topic", topic).Info("backend/gateway: publishing tx packet")
+	topic := bytes.NewBuffer(nil)
+	if err := b.downlinkTemplate.Execute(topic, struct{ MAC lorawan.EUI64 }{txPacket.TXInfo.MAC}); err != nil {
+		return errors.Wrap(err, "execute uplink template error")
+	}
+	log.WithField("topic", topic.String()).Info("backend/gateway: publishing tx packet")
 
-	if token := b.conn.Publish(topic, 0, false, bytes); token.Wait() && token.Error() != nil {
+	if token := b.conn.Publish(topic.String(), 0, false, bb); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("backend/gateway: publish tx packet failed: %s", token.Error())
 	}
 	return nil
@@ -254,10 +272,11 @@ func (b *Backend) statsPacketHandler(c mqtt.Client, msg mqtt.Message) {
 
 func (b *Backend) onConnected(c mqtt.Client) {
 	log.Info("backend/gateway: connected to mqtt server")
+
 	for {
-		log.WithField("topic", rxTopic).Info("backend/gateway: subscribing to rx topic")
-		if token := b.conn.Subscribe(rxTopic, 2, b.rxPacketHandler); token.Wait() && token.Error() != nil {
-			log.WithField("topic", rxTopic).Errorf("backend/gateway: subscribe error: %s", token.Error())
+		log.WithField("topic", b.uplinkTopic).Info("backend/gateway: subscribing to rx topic")
+		if token := b.conn.Subscribe(b.uplinkTopic, 0, b.rxPacketHandler); token.Wait() && token.Error() != nil {
+			log.WithField("topic", b.uplinkTopic).Errorf("backend/gateway: subscribe error: %s", token.Error())
 			time.Sleep(time.Second)
 			continue
 		}
@@ -265,9 +284,9 @@ func (b *Backend) onConnected(c mqtt.Client) {
 	}
 
 	for {
-		log.WithField("topic", statsTopic).Info("backend/gateway: subscribing to stats topic")
-		if token := b.conn.Subscribe(statsTopic, 2, b.statsPacketHandler); token.Wait() && token.Error() != nil {
-			log.WithField("topic", statsTopic).Errorf("backend/gateway: subscribe error: %s", token.Error())
+		log.WithField("topic", b.statsTopic).Info("backend/gateway: subscribing to stats topic")
+		if token := b.conn.Subscribe(b.statsTopic, 0, b.statsPacketHandler); token.Wait() && token.Error() != nil {
+			log.WithField("topic", b.statsTopic).Errorf("backend/gateway: subscribe error: %s", token.Error())
 			time.Sleep(time.Second)
 			continue
 		}

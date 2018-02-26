@@ -27,7 +27,16 @@ func TestBackend(t *testing.T) {
 
 		Convey("Given a new Backend", func() {
 			test.MustFlushRedis(config.C.Redis.Pool)
-			backend, err := NewBackend(conf.Server, conf.Username, conf.Password, "", "", "")
+			backend, err := NewBackend(
+				conf.Server,
+				conf.Username,
+				conf.Password,
+				"", "", "",
+				config.C.NetworkServer.Gateway.Backend.MQTT.UplinkTopicTemplate,
+				config.C.NetworkServer.Gateway.Backend.MQTT.DownlinkTopicTemplate,
+				config.C.NetworkServer.Gateway.Backend.MQTT.StatsTopicTemplate,
+				config.C.NetworkServer.Gateway.Backend.MQTT.AckTopicTemplate,
+			)
 			So(err, ShouldBeNil)
 			defer backend.Close()
 			time.Sleep(time.Millisecond * 100) // give the backend some time to subscribe to the topic

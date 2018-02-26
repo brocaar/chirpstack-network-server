@@ -205,6 +205,10 @@ func setGatewayBackend() error {
 		config.C.NetworkServer.Gateway.Backend.MQTT.CACert,
 		config.C.NetworkServer.Gateway.Backend.MQTT.TLSCert,
 		config.C.NetworkServer.Gateway.Backend.MQTT.TLSKey,
+		config.C.NetworkServer.Gateway.Backend.MQTT.UplinkTopicTemplate,
+		config.C.NetworkServer.Gateway.Backend.MQTT.DownlinkTopicTemplate,
+		config.C.NetworkServer.Gateway.Backend.MQTT.StatsTopicTemplate,
+		config.C.NetworkServer.Gateway.Backend.MQTT.AckTopicTemplate,
 	)
 	if err != nil {
 		return errors.Wrap(err, "gateway-backend setup failed")
