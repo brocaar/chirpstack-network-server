@@ -15,6 +15,16 @@ menu:
 * MQTT topics are now configurable through the configuration file.
   See [Configuration](https://docs.loraserver.io/loraserver/install/config/).
 
+* Internal cleanup of mac-command handling.
+  * When issuing mac-commands, they are directly added to the downlink
+    context instead of being stored in Redis and then retrieved.
+  * For API consistency, the gRPC method
+  `EnqueueDownlinkMACCommand` has been renamed to `CreateMACCommandQueueItem`.
+
+**Bugfixes:**
+
+* Fix typo in `create_gateway_on_stats` config mapping. (thanks [@mkiiskila](https://github.com/mkiiskila), [#295](https://github.com/brocaar/loraserver/pull/295))
+
 ### 0.24.1
 
 **Bugfixes:**
