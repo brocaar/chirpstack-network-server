@@ -232,16 +232,8 @@ func setPingSlotParameters(ctx *dataContext) error {
 		return nil
 	}
 
-	dr := ctx.DeviceSession.PingSlotDR
-	freq := ctx.DeviceSession.PingSlotFrequency
-
-	if config.C.NetworkServer.NetworkSettings.ClassB.PingSlotDR != -1 {
-		dr = config.C.NetworkServer.NetworkSettings.ClassB.PingSlotDR
-	}
-
-	if config.C.NetworkServer.NetworkSettings.ClassB.PingSlotFrequency != -1 {
-		freq = config.C.NetworkServer.NetworkSettings.ClassB.PingSlotFrequency
-	}
+	dr := config.C.NetworkServer.NetworkSettings.ClassB.PingSlotDR
+	freq := config.C.NetworkServer.NetworkSettings.ClassB.PingSlotFrequency
 
 	if dr != ctx.DeviceSession.PingSlotDR || freq != ctx.DeviceSession.PingSlotFrequency {
 		block := maccommand.RequestPingSlotChannel(ctx.DeviceSession.DevEUI, dr, freq)
@@ -353,9 +345,18 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 	// used for decrypting the payload by the device!!
 	ctx.DeviceSession.FCntDown = qi.FCnt
 
-	if qi.EmitAtTimeSinceGPSEpoch != nil {
+	// Update TXInfo with Class-B scheduling info
+	if ctx.RXPacket == nil && qi.EmitAtTimeSinceGPSEpoch != nil {
 		gwDuration := gw.Duration(*qi.EmitAtTimeSinceGPSEpoch)
 		ctx.TXInfo.TimeSinceGPSEpoch = &gwDuration
+
+		if ctx.DeviceSession.PingSlotFrequency == 0 {
+			beaconTime := *qi.EmitAtTimeSinceGPSEpoch - (*qi.EmitAtTimeSinceGPSEpoch % (128 * time.Second))
+			ctx.TXInfo.Frequency, err = config.C.NetworkServer.Band.Band.GetPingSlotFrequency(ctx.DeviceSession.DevAddr, beaconTime)
+			if err != nil {
+				return errors.Wrap(err, "get ping-slot frequency error")
+			}
+		}
 	}
 
 	// delete when not confirmed

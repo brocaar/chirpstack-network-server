@@ -2,14 +2,14 @@
 
 
 [[projects]]
-  branch = "master"
+  branch = "class_b"
   name = "github.com/brocaar/lorawan"
   packages = [
     ".",
     "backend",
     "band"
   ]
-  revision = "c2134632a309dd7de391158aeb5c933e9fe48065"
+  revision = "0e4fbd406ee529c017202b25cca02434fa132697"
 
 [[projects]]
   name = "github.com/dgrijalva/jwt-go"

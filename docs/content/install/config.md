@@ -269,6 +269,18 @@ get_downlink_data_delay="100ms"
   # max_dr=5
 
 
+  # Class B settings
+  [network_server.network_settings.class_b]
+  # Ping-slot data-rate.
+  ping_slot_dr=0
+
+  # Ping-slot frequency (Hz)
+  #
+  # Set this to 0 to use the default frequency plan for the configured region
+  # (which could be frequency hopping).
+  ping_slot_frequency=0
+
+
   # Network-server API
   #
   # This is the network-server API that is used by LoRa App Server or other

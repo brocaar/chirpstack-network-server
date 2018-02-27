@@ -393,6 +393,43 @@ func TestClassBDownlink(t *testing.T) {
 				ExpectedFCntUp:   8,
 				ExpectedFCntDown: 5,
 			},
+			{
+				BeforeFunc: func(tc *downlinkClassBTestCase) error {
+					config.C.NetworkServer.NetworkSettings.ClassB.PingSlotFrequency = 0
+
+					tc.DeviceSession.PingSlotFrequency = 0
+					tc.ExpectedTXInfo.Frequency = 869525000
+					return nil
+				},
+				Name:          "class-b downlink, with default band frequency plan",
+				DeviceSession: sess,
+				DeviceQueueItems: []storage.DeviceQueueItem{
+					{DevEUI: sess.DevEUI, FPort: 10, FCnt: 5, FRMPayload: []byte{1, 2, 3}, EmitAtTimeSinceGPSEpoch: &emitTime},
+				},
+				ExpectedFCntUp:   8,
+				ExpectedFCntDown: 6,
+				ExpectedTXInfo:   &txInfo,
+				ExpectedPHYPayload: &lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.UnconfirmedDataDown,
+						Major: lorawan.LoRaWANR1,
+					},
+					MIC: lorawan.MIC{164, 6, 172, 129},
+					MACPayload: &lorawan.MACPayload{
+						FHDR: lorawan.FHDR{
+							DevAddr: sess.DevAddr,
+							FCnt:    5,
+							FCtrl: lorawan.FCtrl{
+								ADR: true,
+							},
+						},
+						FPort: &fPortTen,
+						FRMPayload: []lorawan.Payload{
+							&lorawan.DataPayload{Bytes: []byte{1, 2, 3}},
+						},
+					},
+				},
+			},
 		}
 
 		for i, t := range tests {
