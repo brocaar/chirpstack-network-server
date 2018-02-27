@@ -8,6 +8,12 @@ menu:
 
 ## Changelog
 
+### 0.24.3
+
+**Bugfixes:**
+
+* The uplink, stats and ack topic contained invalid defaults.
+
 ### 0.24.2
 
 **Improvements:**

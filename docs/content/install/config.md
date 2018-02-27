@@ -344,6 +344,7 @@ get_downlink_data_delay="100ms"
   # The default values match the default expected configuration of the
   # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
   # absolutely needed.
+  # Use "{{ .MAC }}" as an substitution for the LoRa gateway MAC.
   uplink_topic_template="gateway/+/rx"
   downlink_topic_template="gateway/{{ .MAC }}/tx"
   stats_topic_template="gateway/+/stats"

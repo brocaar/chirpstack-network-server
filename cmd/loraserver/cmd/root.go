@@ -195,10 +195,10 @@ func init() {
 	viper.BindPFlag("network_controller.tls_key", rootCmd.PersistentFlags().Lookup("nc-tls-key"))
 
 	// default values
-	viper.SetDefault("network_server.gateway.backend.mqtt.uplink_topic_template", "gateway/{{ .MAC }}/rx")
+	viper.SetDefault("network_server.gateway.backend.mqtt.uplink_topic_template", "gateway/+/rx")
 	viper.SetDefault("network_server.gateway.backend.mqtt.downlink_topic_template", "gateway/{{ .MAC }}/tx")
-	viper.SetDefault("network_server.gateway.backend.mqtt.stats_topic_template", "gateway/{{ .MAC }}/stats")
-	viper.SetDefault("network_server.gateway.backend.mqtt.ack_topic_template", "gateway/{{ .MAC }}/ack")
+	viper.SetDefault("network_server.gateway.backend.mqtt.stats_topic_template", "gateway/+/stats")
+	viper.SetDefault("network_server.gateway.backend.mqtt.ack_topic_template", "gateway/+/ack")
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(configCmd)
