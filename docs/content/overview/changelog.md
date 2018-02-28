@@ -8,6 +8,15 @@ menu:
 
 ## Changelog
 
+### 0.25.0
+
+**Features:**
+
+* Class-B support! See [Device classes](https://docs.loraserver.io/loraserver/features/device-classes/)
+  for more information on Class-B.
+  * Class-B configuration can be found under the `network_server.network_settings.class_b`
+   [configuration](https://docs.loraserver.io/loraserver/install/config/) section.
+
 ### 0.24.3
 
 **Bugfixes:**

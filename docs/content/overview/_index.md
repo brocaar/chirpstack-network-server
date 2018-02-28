@@ -22,7 +22,7 @@ feature.
 
 |     |     |
 | --- | --- |
-| **Device classes** | Class-A & Class-C (Class-B supported soon)                 |
+| **Device classes** | Class-A, Class-B & Class-C |
 | **Message types** | (Un)confirmed uplink and downlink, Proprietary uplink and downlink |
 | **Device activation** | Over-the-air (OTAA) and activation by personalization              |
 | **Adaptive data-rate** | Supported for all regions |
