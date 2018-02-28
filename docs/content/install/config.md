@@ -235,12 +235,14 @@ get_downlink_data_delay="100ms"
   enabled_uplink_channels=[]
 
 
-  # Extra channels to use for ISM bands that implement the CFList
+  # Extra channel configuration.
   #
   # Use this for LoRaWAN regions where it is possible to extend the by default
   # available channels with additional channels (e.g. the EU band).
-  # Note: the min_dr and max_dr are currently informative, but will be enforced
-  # in one of the next versions of LoRa Server!
+  # The first 5 channels will be configured as part of the OTAA join-response
+  # (using the CFList field).
+  # The other channels (or channel / data-rate changes) will be (re)configured
+  # using the NewChannelReq mac-command.
   #
   # Example:
   # [[network_server.network_settings.extra_channels]]

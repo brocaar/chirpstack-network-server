@@ -17,6 +17,11 @@ menu:
   * Class-B configuration can be found under the `network_server.network_settings.class_b`
    [configuration](https://docs.loraserver.io/loraserver/install/config/) section.
 
+* Extended support for extra channel configuration using the NewChannelReq mac-command.
+  This makes it possible to:
+  * Configure up to 16 channels in total (if supported by the LoRaWAN region).
+  * Configure the min / max data-rate range for these extra channels.
+
 ### 0.24.3
 
 **Bugfixes:**

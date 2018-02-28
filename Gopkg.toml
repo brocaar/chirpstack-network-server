@@ -2,7 +2,7 @@
 # for detailed Gopkg.toml documentation.
 
 [[constraint]]
-  branch = "refactor_channels"
+  branch = "master"
   name = "github.com/brocaar/lorawan"
 
 [[constraint]]
