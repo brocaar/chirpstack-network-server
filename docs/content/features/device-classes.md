@@ -62,6 +62,19 @@ wait with the transmission of the next downlink Class-B payload.
 the device-profile. This should be set to a value less than the interval between
 two ping-slots.
 
+#### Requirements
+
+##### Device
+
+The device must be able to operate in Class-B mode. This feature has been
+tested against the `class_b` branch of the Semtech [LoRaMac-node](https://github.com/lora-net/LoRaMac-node/tree/feature/class_b)
+source.
+
+##### Gateway
+
+The gateway must have a GNSS based time-source and must use at least
+the Semtech [packet-forwarder](https://github.com/lora-net/packet_forwarder)
+version 4.0.1 or higher.
 
 ### Class-C
 
