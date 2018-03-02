@@ -26,6 +26,9 @@ menu:
   LoRa Server will push the RX2 frequency, RX2 data-rate and RX1 data-rate
   offset for activated devices.
 
+* Implement RXTimingSetup mac-command. After a configuration file change,
+  LoRa Server will push the RX delay for activated devices.
+
 ### 0.24.3
 
 **Bugfixes:**

@@ -27,6 +27,8 @@ func Handle(ds *storage.DeviceSession, block storage.MACCommandBlock, pending *s
 		return handleNewChannelAns(ds, block, pending)
 	case lorawan.RXParamSetupAns:
 		return handleRXParamSetupAns(ds, block, pending)
+	case lorawan.RXTimingSetupAns:
+		return handleRXTimingSetupAns(ds, block, pending)
 	default:
 		return nil, fmt.Errorf("undefined CID %d", block.CID)
 	}

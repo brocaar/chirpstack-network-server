@@ -252,6 +252,11 @@ func setRXParameters(ctx *dataContext) error {
 		ctx.MACCommands = append(ctx.MACCommands, block)
 	}
 
+	if ctx.DeviceSession.RXDelay != uint8(config.C.NetworkServer.NetworkSettings.RX1Delay) {
+		block := maccommand.RequestRXTimingSetup(config.C.NetworkServer.NetworkSettings.RX1Delay)
+		ctx.MACCommands = append(ctx.MACCommands, block)
+	}
+
 	return nil
 }
 

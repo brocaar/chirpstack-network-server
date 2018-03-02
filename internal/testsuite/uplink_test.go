@@ -1974,6 +1974,9 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 				So(storage.SetPendingMACCommand(config.C.Redis.Pool, t.DeviceSession.DevEUI, pending), ShouldBeNil)
 			}
 
+			// update global config to avoid triggering mac-commands
+			config.C.NetworkServer.NetworkSettings.RX1Delay = int(t.DeviceSession.RXDelay)
+
 			// encrypt FRMPayload and set MIC
 			if t.EncryptFRMPayloadKey != nil {
 				So(t.PHYPayload.EncryptFRMPayload(*t.EncryptFRMPayloadKey), ShouldBeNil)

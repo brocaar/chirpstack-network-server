@@ -469,12 +469,44 @@ func TestSetMACCommandsSet(t *testing.T) {
 					},
 				},
 			},
+			{
+				BeforeFunc: func() error {
+					config.C.NetworkServer.NetworkSettings.RX1Delay = 14
+					return nil
+				},
+				Name: "trigger rx timing setup",
+				Context: dataContext{
+					RemainingPayloadSize: 200,
+					DeviceSession: storage.DeviceSession{
+						EnabledUplinkChannels: []int{0, 1, 2},
+						RX2Frequency:          869525000,
+						RXDelay:               1,
+					},
+				},
+				ExpectedMACCommands: []storage.MACCommandBlock{
+					{
+						CID: lorawan.RXTimingSetupReq,
+						MACCommands: []lorawan.MACCommand{
+							{
+								CID: lorawan.RXTimingSetupReq,
+								Payload: &lorawan.RXTimingSetupReqPayload{
+									Delay: 14,
+								},
+							},
+						},
+					},
+				},
+			},
 		}
 
 		for i, test := range tests {
 			Convey(fmt.Sprintf("Testing: %s [%d]", test.Name, i), func() {
 				config.C.NetworkServer.Band.Name = band.EU_863_870
 				config.C.NetworkServer.Band.Band, _ = band.GetConfig(config.C.NetworkServer.Band.Name, false, lorawan.DwellTimeNoLimit)
+				config.C.NetworkServer.NetworkSettings.RX1Delay = 0
+				config.C.NetworkServer.NetworkSettings.RX2Frequency = 869525000
+				config.C.NetworkServer.NetworkSettings.RX2DR = 0
+				config.C.NetworkServer.NetworkSettings.RX1DROffset = 0
 
 				if test.BeforeFunc != nil {
 					So(test.BeforeFunc(), ShouldBeNil)
