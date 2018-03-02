@@ -46,6 +46,7 @@ func TestClassCScenarios(t *testing.T) {
 		asClient := test.NewApplicationClient()
 		config.C.ApplicationServer.Pool = test.NewApplicationServerPool(asClient)
 		config.C.NetworkServer.Gateway.Backend.Backend = test.NewGatewayBackend()
+		config.C.NetworkServer.NetworkSettings.RX2DR = 5
 
 		sp := storage.ServiceProfile{
 			ServiceProfile: backend.ServiceProfile{},
@@ -89,7 +90,8 @@ func TestClassCScenarios(t *testing.T) {
 				{MAC: lorawan.EUI64{2, 1, 2, 1, 2, 1, 2, 1}},
 			},
 			EnabledUplinkChannels: []int{0, 1, 2},
-			RX2DR: 5,
+			RX2DR:        5,
+			RX2Frequency: 869525000,
 		}
 
 		txInfo := gw.TXInfo{

@@ -195,6 +195,7 @@ func init() {
 	viper.BindPFlag("network_controller.tls_key", rootCmd.PersistentFlags().Lookup("nc-tls-key"))
 
 	// default values
+	viper.SetDefault("network_server.network_settings.rx2_frequency", -1)
 	viper.SetDefault("network_server.gateway.backend.mqtt.uplink_topic_template", "gateway/+/rx")
 	viper.SetDefault("network_server.gateway.backend.mqtt.downlink_topic_template", "gateway/{{ .MAC }}/tx")
 	viper.SetDefault("network_server.gateway.backend.mqtt.stats_topic_template", "gateway/+/stats")

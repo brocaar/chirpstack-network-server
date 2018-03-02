@@ -22,6 +22,10 @@ menu:
   * Configure up to 16 channels in total (if supported by the LoRaWAN region).
   * Configure the min / max data-rate range for these extra channels.
 
+* Implement RXParamSetup mac-command. After a configuration file change,
+  LoRa Server will push the RX2 frequency, RX2 data-rate and RX1 data-rate
+  offset for activated devices.
+
 ### 0.24.3
 
 **Bugfixes:**

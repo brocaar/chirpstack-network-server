@@ -57,6 +57,9 @@ func GetConfig() *Config {
 		panic(err)
 	}
 
+	config.C.NetworkServer.NetworkSettings.RX2Frequency = config.C.NetworkServer.Band.Band.RX2Frequency
+	config.C.NetworkServer.NetworkSettings.RX2DR = config.C.NetworkServer.Band.Band.RX2DataRate
+
 	c := &Config{
 		RedisURL:    "redis://localhost:6379",
 		PostgresDSN: "postgres://localhost/loraserver_ns_test?sslmode=disable",

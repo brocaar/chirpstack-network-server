@@ -252,6 +252,11 @@ func GetDeviceSession(p *redis.Pool, devEUI lorawan.EUI64) (DeviceSession, error
 		s.EnabledUplinkChannels = s.EnabledChannels
 	}
 
+	// in older versions, the value was not set
+	if s.RX2Frequency == 0 {
+		s.RX2Frequency = config.C.NetworkServer.Band.Band.RX2Frequency
+	}
+
 	return s, nil
 }
 

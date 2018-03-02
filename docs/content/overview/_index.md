@@ -29,5 +29,5 @@ feature.
 | **Regions supported** | AS 923<br />AU 915-928<br />CN 471-510<br />CN 779-787<br />EU 433<br />EU 863-870<br />IN 865-867<br />KR 920-923<br />US 902-928 |
 | **Frame-counter validation** | Strict (default)<br />Skip frame-counter mode (for debugging **only**) |
 | **Statistics** | Per gateway received / transmitted (configurable aggregation levels) |
-| **Mac-layer handling** | Channel (re)configuration<br />Adaptive data-rate<br />Device-status<br />Link check (initiated by the device) |
+| **Mac-layer handling** | Channel (re)configuration<br />Adaptive data-rate<br />Device-status<br />Link check (initiated by the device)<br />Ping-slot channel configuration<br />Device time<br />RX parameter (re)configuration |
 | **Integration** | gRPC based API to an external application-server and external network-controller (optional) |

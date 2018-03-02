@@ -44,6 +44,7 @@ func handlePingSlotChannelAns(ds *storage.DeviceSession, block storage.MACComman
 
 	if !pl.ChannelFrequencyOK || !pl.DataRateOK {
 		log.WithFields(log.Fields{
+			"dev_eui":              ds.DevEUI,
 			"channel_frequency_ok": pl.ChannelFrequencyOK,
 			"data_rate_ok":         pl.DataRateOK,
 		}).Warning("ping_slot_channel request not acknowledged")
@@ -54,6 +55,7 @@ func handlePingSlotChannelAns(ds *storage.DeviceSession, block storage.MACComman
 	ds.PingSlotFrequency = int(req.Frequency)
 
 	log.WithFields(log.Fields{
+		"dev_eui":           ds.DevEUI,
 		"channel_frequency": ds.PingSlotFrequency,
 		"data_rate":         ds.PingSlotDR,
 	}).Info("ping_slot_channel request acknowledged")

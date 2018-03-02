@@ -100,6 +100,7 @@ func TestDeviceSession(t *testing.T) {
 				DevAddr:             lorawan.DevAddr{1, 2, 3, 4},
 				DevEUI:              lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 				ExtraUplinkChannels: map[int]band.Channel{},
+				RX2Frequency:        869525000,
 			}
 
 			Convey("When getting a non-existing device-session", func() {

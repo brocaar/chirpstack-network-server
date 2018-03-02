@@ -34,6 +34,7 @@ var setMACCommandsSet = setMACCommands(
 	requestADRChange,
 	requestDevStatus,
 	setPingSlotParameters,
+	setRXParameters,
 	getMACCommandsFromQueue,
 )
 
@@ -239,6 +240,15 @@ func setPingSlotParameters(ctx *dataContext) error {
 
 	if dr != ctx.DeviceSession.PingSlotDR || freq != ctx.DeviceSession.PingSlotFrequency {
 		block := maccommand.RequestPingSlotChannel(ctx.DeviceSession.DevEUI, dr, freq)
+		ctx.MACCommands = append(ctx.MACCommands, block)
+	}
+
+	return nil
+}
+
+func setRXParameters(ctx *dataContext) error {
+	if ctx.DeviceSession.RX2Frequency != config.C.NetworkServer.NetworkSettings.RX2Frequency || ctx.DeviceSession.RX2DR != uint8(config.C.NetworkServer.NetworkSettings.RX2DR) || ctx.DeviceSession.RX1DROffset != uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset) {
+		block := maccommand.RequestRXParamSetup(config.C.NetworkServer.NetworkSettings.RX1DROffset, config.C.NetworkServer.NetworkSettings.RX2Frequency, config.C.NetworkServer.NetworkSettings.RX2DR)
 		ctx.MACCommands = append(ctx.MACCommands, block)
 	}
 

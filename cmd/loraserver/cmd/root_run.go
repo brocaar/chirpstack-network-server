@@ -123,6 +123,11 @@ func setRXParameters() error {
 	if config.C.NetworkServer.NetworkSettings.RX2DR == -1 {
 		config.C.NetworkServer.NetworkSettings.RX2DR = config.C.NetworkServer.Band.Band.RX2DataRate
 	}
+
+	if config.C.NetworkServer.NetworkSettings.RX2Frequency == -1 {
+		config.C.NetworkServer.NetworkSettings.RX2Frequency = config.C.NetworkServer.Band.Band.RX2Frequency
+	}
+
 	return nil
 }
 

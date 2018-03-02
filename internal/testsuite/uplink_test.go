@@ -135,6 +135,7 @@ func TestUplinkScenarios(t *testing.T) {
 			FCntUp:                8,
 			FCntDown:              5,
 			EnabledUplinkChannels: []int{0, 1, 2},
+			RX2Frequency:          869525000,
 		}
 
 		now := time.Now().UTC().Truncate(time.Millisecond)
@@ -663,7 +664,7 @@ func TestUplinkScenarios(t *testing.T) {
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
 						tc.DeviceSession.RXWindow = storage.RX2
-						tc.DeviceSession.RX2DR = 3
+						tc.DeviceSession.RX2DR = 0
 						return nil
 					},
 
@@ -691,7 +692,7 @@ func TestUplinkScenarios(t *testing.T) {
 						Timestamp: &timestamp2S,
 						Frequency: config.C.NetworkServer.Band.Band.RX2Frequency,
 						Power:     14,
-						DataRate:  config.C.NetworkServer.Band.Band.DataRates[3],
+						DataRate:  config.C.NetworkServer.Band.Band.DataRates[0],
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{

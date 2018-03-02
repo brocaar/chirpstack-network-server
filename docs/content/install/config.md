@@ -219,11 +219,22 @@ get_downlink_data_delay="100ms"
   # options of the configured network_server.band.name.
   rx1_dr_offset=0
 
-  # RX2 data-rate (when set to -1, the default rx2 data-rate will be used)
+  # RX2 data-rate
+  #
+  # When set to -1, the default RX2 data-rate will be used for the configured
+  # LoRaWAN band.
   #
   # Please consult the LoRaWAN Regional Parameters specification for valid
   # options of the configured network_server.band.name.
   rx2_dr=-1
+
+  # RX2 frequency
+  #
+  # When set to -1, the default RX2 frequency will be used.
+  #
+  # Please consult the LoRaWAN Regional Parameters specification for valid
+  # options of the configured network_server.band.name.
+  rx2_frequency=-1
 
   # Enable only a given sub-set of channels
   #
@@ -326,7 +337,7 @@ get_downlink_data_delay="100ms"
   #
   # When set to true, LoRa Server will create the gateway when it receives
   # statistics for a gateway that does not yet exist.
-  create_gateway_on_stats=false
+  create_gateway_on_stats=true
 
   # Aggregation timezone
   #

@@ -217,6 +217,7 @@ func TestOTAAScenarios(t *testing.T) {
 						ExtraUplinkChannels:   map[int]band.Channel{},
 						LastRXInfoSet:         []models.RXInfo{{}},
 						LastDevStatusMargin:   127,
+						RX2Frequency:          config.C.NetworkServer.Band.Band.RX2Frequency,
 					},
 				},
 				{
@@ -285,6 +286,7 @@ func TestOTAAScenarios(t *testing.T) {
 						},
 						LastRXInfoSet:       []models.RXInfo{{}},
 						LastDevStatusMargin: 127,
+						RX2Frequency:        config.C.NetworkServer.Band.Band.RX2Frequency,
 					},
 				},
 			}

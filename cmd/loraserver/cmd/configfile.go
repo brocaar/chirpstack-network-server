@@ -165,11 +165,22 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # options of the configured network_server.band.name.
   rx1_dr_offset={{ .NetworkServer.NetworkSettings.RX1DROffset }}
 
-  # RX2 data-rate (when set to -1, the default rx2 data-rate will be used)
+  # RX2 data-rate
+  #
+  # When set to -1, the default RX2 data-rate will be used for the configured
+  # LoRaWAN band.
   #
   # Please consult the LoRaWAN Regional Parameters specification for valid
   # options of the configured network_server.band.name.
   rx2_dr={{ .NetworkServer.NetworkSettings.RX2DR }}
+
+  # RX2 frequency
+  #
+  # When set to -1, the default RX2 frequency will be used.
+  #
+  # Please consult the LoRaWAN Regional Parameters specification for valid
+  # options of the configured network_server.band.name.
+  rx2_frequency={{ .NetworkServer.NetworkSettings.RX2Frequency }}
 
   # Enable only a given sub-set of channels
   #

@@ -2,6 +2,7 @@ package maccommand
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -19,7 +20,15 @@ import (
 func RequestNewChannels(devEUI lorawan.EUI64, maxChannels int, currentChannels, wantedChannels map[int]band.Channel) *storage.MACCommandBlock {
 	var out []lorawan.MACCommand
 
-	for i, wanted := range wantedChannels {
+	// sort by channel index
+	var wantedChannelNumbers []int
+	for i := range wantedChannels {
+		wantedChannelNumbers = append(wantedChannelNumbers, i)
+	}
+	sort.Ints(wantedChannelNumbers)
+
+	for _, i := range wantedChannelNumbers {
+		wanted := wantedChannels[i]
 		current, ok := currentChannels[i]
 		if !ok || current.Frequency != wanted.Frequency || current.MinDR != wanted.MinDR || current.MaxDR != wanted.MaxDR {
 			out = append(out, lorawan.MACCommand{

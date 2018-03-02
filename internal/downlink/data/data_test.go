@@ -191,6 +191,7 @@ func TestSetMACCommandsSet(t *testing.T) {
 						TXPowerIndex:          2,
 						DR:                    5,
 						NbTrans:               2,
+						RX2Frequency:          869525000,
 					},
 				},
 				ExpectedMACCommands: []storage.MACCommandBlock{
@@ -222,6 +223,7 @@ func TestSetMACCommandsSet(t *testing.T) {
 						UplinkHistory: []storage.UplinkHistory{
 							{FCnt: 0, MaxSNR: 5, TXPowerIndex: 0, GatewayCount: 1},
 						},
+						RX2Frequency: 869525000,
 					},
 				},
 				ExpectedMACCommands: []storage.MACCommandBlock{
@@ -254,6 +256,7 @@ func TestSetMACCommandsSet(t *testing.T) {
 					},
 					DeviceSession: storage.DeviceSession{
 						EnabledUplinkChannels: []int{0, 1, 2},
+						RX2Frequency:          869525000,
 					},
 				},
 				ExpectedMACCommands: []storage.MACCommandBlock{
@@ -285,6 +288,7 @@ func TestSetMACCommandsSet(t *testing.T) {
 						PingSlotDR:            2,
 						PingSlotFrequency:     868300000,
 						EnabledUplinkChannels: []int{0, 1, 2},
+						RX2Frequency:          869525000,
 					},
 				},
 				ExpectedMACCommands: []storage.MACCommandBlock{
@@ -315,6 +319,7 @@ func TestSetMACCommandsSet(t *testing.T) {
 						},
 						DR:           5,
 						TXPowerIndex: 3,
+						RX2Frequency: 869525000,
 					},
 				},
 				ExpectedMACCommands: []storage.MACCommandBlock{
@@ -345,6 +350,7 @@ func TestSetMACCommandsSet(t *testing.T) {
 					RemainingPayloadSize: 200,
 					DeviceSession: storage.DeviceSession{
 						EnabledUplinkChannels: []int{0, 1, 2},
+						RX2Frequency:          869525000,
 					},
 				},
 				ExpectedMACCommands: []storage.MACCommandBlock{
@@ -399,6 +405,7 @@ func TestSetMACCommandsSet(t *testing.T) {
 							4: band.Channel{Frequency: 868700000, MinDR: 4, MaxDR: 5},
 							5: band.Channel{Frequency: 868800000, MinDR: 4, MaxDR: 5},
 						},
+						RX2Frequency: 869525000,
 					},
 				},
 				ExpectedMACCommands: []storage.MACCommandBlock{
@@ -421,6 +428,41 @@ func TestSetMACCommandsSet(t *testing.T) {
 									Freq:    868800000,
 									MinDR:   5,
 									MaxDR:   5,
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				BeforeFunc: func() error {
+					config.C.NetworkServer.NetworkSettings.RX2Frequency = 868700000
+					config.C.NetworkServer.NetworkSettings.RX2DR = 5
+					config.C.NetworkServer.NetworkSettings.RX1DROffset = 3
+					return nil
+				},
+				Name: "trigger rx param setup",
+				Context: dataContext{
+					RemainingPayloadSize: 200,
+					DeviceSession: storage.DeviceSession{
+						EnabledUplinkChannels: []int{0, 1, 2},
+						RX2Frequency:          868100000,
+						RX2DR:                 1,
+						RX1DROffset:           0,
+					},
+				},
+				ExpectedMACCommands: []storage.MACCommandBlock{
+					{
+						CID: lorawan.RXParamSetupReq,
+						MACCommands: storage.MACCommands{
+							{
+								CID: lorawan.RXParamSetupReq,
+								Payload: &lorawan.RXParamSetupReqPayload{
+									Frequency: 868700000,
+									DLSettings: lorawan.DLSettings{
+										RX2DataRate: 5,
+										RX1DROffset: 3,
+									},
 								},
 							},
 						},

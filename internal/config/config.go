@@ -50,6 +50,7 @@ type Config struct {
 			RX1Delay                    int     `mapstructure:"rx1_delay"`
 			RX1DROffset                 int     `mapstructure:"rx1_dr_offset"`
 			RX2DR                       int     `mapstructure:"rx2_dr"`
+			RX2Frequency                int     `mapstructure:"rx2_frequency"`
 			EnabledUplinkChannels       []int   `mapstructure:"enabled_uplink_channels"`
 			EnabledUplinkChannelsLegacy string  `mapstructure:"enabled_uplink_channels_legacy"`
 			ExtraChannelsLegacy         []int   `mapstructure:"extra_channels_legacy"`
