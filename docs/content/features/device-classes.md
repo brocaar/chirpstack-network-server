@@ -74,7 +74,8 @@ source.
 
 The gateway must have a GNSS based time-source and must use at least
 the Semtech [packet-forwarder](https://github.com/lora-net/packet_forwarder)
-version 4.0.1 or higher.
+version 4.0.1 or higher. It also requires [LoRa Gateway Bridge](https://docs.loraserver.io/lora-gateway-bridge/overview/)
+2.2.0 or higher.
 
 ### Class-C
 

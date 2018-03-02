@@ -16,6 +16,8 @@ menu:
   for more information on Class-B.
   * Class-B configuration can be found under the `network_server.network_settings.class_b`
    [configuration](https://docs.loraserver.io/loraserver/install/config/) section.
+  * **Note:** This requires [LoRa Gateway Bridge](https://docs.loraserver.io/lora-gateway-bridge/overview/)
+    2.2.0 or up.
 
 * Extended support for extra channel configuration using the NewChannelReq mac-command.
   This makes it possible to:
