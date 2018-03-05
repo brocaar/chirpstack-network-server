@@ -8,6 +8,19 @@ menu:
 
 # Changelog
 
+## 0.25.1
+
+**Improvements:**
+
+* Expose the following MQTT options for the MQTT gateway backend:
+  * QoS (quality of service)
+  * Client ID
+  * Clean session on connect
+
+**Bugfixes:**
+
+* Fix `network_contoller` -> `network_controller` typo in configuration ([#302](https://github.com/brocaar/loraserver/issues/302)).
+
 ## 0.25.0
 
 **Features:**
