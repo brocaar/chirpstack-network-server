@@ -19,8 +19,8 @@ import (
 const (
 	gatewayFrameLogUplinkPubSubKeyTempl   = "lora:ns:gw:%s:pubsub:frame:uplink"
 	gatewayFrameLogDownlinkPubSubKeyTempl = "lora:ns:gw:%s:pubsub:frame:downlink"
-	deviceFrameLogUplinkPubSubKeyTempl    = "lora:ns:device:%d:pubsub:frame:uplink"
-	deviceFrameLogDownlinkPubSubKeyTempl  = "lora:ns:device:%d:pubsub:frame:downlink"
+	deviceFrameLogUplinkPubSubKeyTempl    = "lora:ns:device:%s:pubsub:frame:uplink"
+	deviceFrameLogDownlinkPubSubKeyTempl  = "lora:ns:device:%s:pubsub:frame:downlink"
 )
 
 // UplinkFrameLog contains the details of an uplink frame.
