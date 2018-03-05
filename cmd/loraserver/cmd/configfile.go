@@ -367,7 +367,7 @@ tls_key="{{ .JoinServer.Default.TLSKey }}"
 
 
 # Network-controller configuration.
-[network_contoller]
+[network_controller]
 # hostname:port of the network-controller api server (optional)
 server="{{ .NetworkController.Server }}"
 

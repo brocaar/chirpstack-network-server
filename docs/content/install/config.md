@@ -416,7 +416,7 @@ tls_key=""
 
 
 # Network-controller configuration.
-[network_contoller]
+[network_controller]
 # hostname:port of the network-controller api server (optional)
 server=""
 
