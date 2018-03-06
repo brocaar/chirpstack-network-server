@@ -7,8 +7,6 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/eclipse/paho.mqtt.golang"
 	. "github.com/smartystreets/goconvey/convey"
@@ -16,7 +14,7 @@ import (
 
 func TestBackend(t *testing.T) {
 	conf := getConfig()
-	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+	p := common.NewRedisPool(conf.RedisURL)
 
 	Convey("Given a MQTT client", t, func() {
 		opts := mqtt.NewClientOptions().AddBroker(conf.Server).SetUsername(conf.Username).SetPassword(conf.Password)
@@ -26,16 +24,19 @@ func TestBackend(t *testing.T) {
 		So(token.Error(), ShouldBeNil)
 
 		Convey("Given a new Backend", func() {
-			test.MustFlushRedis(config.C.Redis.Pool)
-			backend, err := NewBackend(
-				conf.Server,
-				conf.Username,
-				conf.Password,
-				"", "", "",
-				config.C.NetworkServer.Gateway.Backend.MQTT.UplinkTopicTemplate,
-				config.C.NetworkServer.Gateway.Backend.MQTT.DownlinkTopicTemplate,
-				config.C.NetworkServer.Gateway.Backend.MQTT.StatsTopicTemplate,
-				config.C.NetworkServer.Gateway.Backend.MQTT.AckTopicTemplate,
+			MustFlushRedis(p)
+			backend, err := NewMQTTBackend(
+				p,
+				MQTTBackendConfig{
+					Server:                conf.Server,
+					Username:              conf.Username,
+					Password:              conf.Password,
+					CleanSession:          true,
+					UplinkTopicTemplate:   "gateway/+/rx",
+					DownlinkTopicTemplate: "gateway/{{ .MAC }}/tx",
+					StatsTopicTemplate:    "gateway/+/stats",
+					AckTopicTemplate:      "gateway/+/ack",
+				},
 			)
 			So(err, ShouldBeNil)
 			defer backend.Close()

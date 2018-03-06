@@ -1,12 +1,13 @@
 package cmd
 
 import (
-	"html/template"
 	"os"
+	"text/template"
 
-	"github.com/brocaar/loraserver/internal/config"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+
+	"github.com/brocaar/loraserver/internal/config"
 )
 
 // when updating this template, don't forget to update config.md!
@@ -321,10 +322,10 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
   # absolutely needed.
   # Use "{{ "{{ .MAC }}" }}" as an substitution for the LoRa gateway MAC. 
-  uplink_topic_template="gateway/+/rx"
-  downlink_topic_template="gateway/{{ "{{ .MAC }}" }}/tx"
-  stats_topic_template="gateway/+/stats"
-  ack_topic_template="gateway/+/ack"
+  uplink_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.UplinkTopicTemplate }}"
+  downlink_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.DownlinkTopicTemplate }}"
+  stats_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.StatsTopicTemplate }}"
+  ack_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.AckTopicTemplate }}"
 
   # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
   server="{{ .NetworkServer.Gateway.Backend.MQTT.Server }}"
@@ -334,6 +335,30 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 
   # Connect with the given password (optional)
   password="{{ .NetworkServer.Gateway.Backend.MQTT.Password }}"
+
+  # Quality of service level
+  #
+  # 0: at most once
+  # 1: at least once
+  # 2: exactly once
+  #
+  # Note: an increase of this value will decrease the performance.
+  # For more information: https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels
+  qos={{ .NetworkServer.Gateway.Backend.MQTT.QOS }}
+
+  # Clean session
+  #
+  # Set the "clean session" flag in the connect message when this client
+  # connects to an MQTT broker. By setting this flag you are indicating
+  # that no messages saved by the broker for this client should be delivered.
+  clean_session={{ .NetworkServer.Gateway.Backend.MQTT.CleanSession }}
+
+  # Client ID
+  #
+  # Set the client id to be used by this client when connecting to the MQTT
+  # broker. A client id must be no longer than 23 characters. When left blank,
+  # a random id will be generated. This requires clean_session=true.
+  client_id="{{ .NetworkServer.Gateway.Backend.MQTT.ClientID }}"
 
   # CA certificate file (optional)
   #

@@ -3,7 +3,7 @@ package gateway
 import (
 	"os"
 
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/garyburd/redigo/redis"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,14 +19,9 @@ type c struct {
 }
 
 func getConfig() *c {
-	config.C.NetworkServer.Gateway.Backend.MQTT.DownlinkTopicTemplate = "gateway/{{ .MAC }}/tx"
-	config.C.NetworkServer.Gateway.Backend.MQTT.UplinkTopicTemplate = "gateway/+/rx"
-	config.C.NetworkServer.Gateway.Backend.MQTT.StatsTopicTemplate = "gateway/+/stats"
-	config.C.NetworkServer.Gateway.Backend.MQTT.AckTopicTemplate = "gateway/+/ack"
-
 	c := &c{
 		Server:   "tcp://127.0.0.1:1883",
-		RedisURL: "redis://localhost:6379",
+		RedisURL: "redis://localhost:6379/15",
 	}
 
 	if v := os.Getenv("TEST_MQTT_SERVER"); v != "" {
@@ -46,4 +41,13 @@ func getConfig() *c {
 	}
 
 	return c
+}
+
+// MustFlushRedis flushes the Redis storage.
+func MustFlushRedis(p *redis.Pool) {
+	c := p.Get()
+	defer c.Close()
+	if _, err := c.Do("FLUSHALL"); err != nil {
+		log.Fatal(err)
+	}
 }

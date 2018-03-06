@@ -200,6 +200,7 @@ func init() {
 	viper.SetDefault("network_server.gateway.backend.mqtt.downlink_topic_template", "gateway/{{ .MAC }}/tx")
 	viper.SetDefault("network_server.gateway.backend.mqtt.stats_topic_template", "gateway/+/stats")
 	viper.SetDefault("network_server.gateway.backend.mqtt.ack_topic_template", "gateway/+/ack")
+	viper.SetDefault("network_server.gateway.backend.mqtt.clean_session", true)
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(configCmd)

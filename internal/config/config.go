@@ -9,6 +9,7 @@ import (
 	"github.com/brocaar/loraserver/internal/api/client/asclient"
 	"github.com/brocaar/loraserver/internal/api/client/jsclient"
 	"github.com/brocaar/loraserver/internal/backend"
+	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -92,19 +93,7 @@ type Config struct {
 
 			Backend struct {
 				Backend backend.Gateway
-
-				MQTT struct {
-					Server                string
-					Username              string
-					Password              string
-					CACert                string `mapstructure:"ca_cert"`
-					TLSCert               string `mapstructure:"tls_cert"`
-					TLSKey                string `mapstructure:"tls_key"`
-					UplinkTopicTemplate   string `mapstructure:"uplink_topic_template"`
-					DownlinkTopicTemplate string `mapstructure:"downlink_topic_template"`
-					StatsTopicTemplate    string `mapstructure:"stats_topic_template"`
-					AckTopicTemplate      string `mapstructure:"ack_topic_template"`
-				}
+				MQTT    gateway.MQTTBackendConfig
 			}
 		}
 	} `mapstructure:"network_server"`
