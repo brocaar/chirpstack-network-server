@@ -9,7 +9,7 @@
     "backend",
     "band"
   ]
-  revision = "cfcc1251d4113f7021d281698f80f641c7e3301b"
+  revision = "aa633da9df7c4db93cfc4fd5759ff661ec146fd3"
 
 [[projects]]
   name = "github.com/dgrijalva/jwt-go"

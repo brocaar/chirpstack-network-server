@@ -329,7 +329,7 @@ func setTXInfoForClassB(ctx *dataContext) error {
 }
 
 func setRemainingPayloadSize(ctx *dataContext) error {
-	plSize, err := config.C.NetworkServer.Band.Band.GetMaxPayloadSizeForDataRateIndex(ctx.DataRate)
+	plSize, err := config.C.NetworkServer.Band.Band.GetMaxPayloadSizeForDataRateIndex(ctx.DeviceProfile.DeviceProfile.MACVersion, ctx.DeviceProfile.DeviceProfile.RegParamsRevision, ctx.DataRate)
 	if err != nil {
 		return errors.Wrap(err, "get max-payload size error")
 	}
