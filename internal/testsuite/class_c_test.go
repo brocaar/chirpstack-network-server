@@ -94,12 +94,16 @@ func TestClassCScenarios(t *testing.T) {
 			RX2Frequency: 869525000,
 		}
 
+		defaults := config.C.NetworkServer.Band.Band.GetDefaults()
+		rx2dr, err := config.C.NetworkServer.Band.Band.GetDataRate(int(sess.RX2DR))
+		So(err, ShouldBeNil)
+
 		txInfo := gw.TXInfo{
 			MAC:         lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2},
 			Immediately: true,
-			Frequency:   config.C.NetworkServer.Band.Band.RX2Frequency,
-			Power:       config.C.NetworkServer.Band.Band.DefaultTXPower,
-			DataRate:    config.C.NetworkServer.Band.Band.DataRates[sess.RX2DR],
+			Frequency:   defaults.RX2Frequency,
+			Power:       config.C.NetworkServer.Band.Band.GetDownlinkTXPower(defaults.RX2Frequency),
+			DataRate:    rx2dr,
 			CodeRate:    "4/5",
 		}
 

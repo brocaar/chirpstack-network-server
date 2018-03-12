@@ -7,6 +7,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/config"
@@ -128,7 +129,7 @@ func MigrateNodeToDeviceSession(p *redis.Pool, db sqlx.Ext, devEUI, joinEUI lora
 		RXDelay:      ns.RXDelay,
 		RX1DROffset:  ns.RX1DROffset,
 		RX2DR:        ns.RX2DR,
-		RX2Frequency: config.C.NetworkServer.Band.Band.RX2Frequency,
+		RX2Frequency: config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 
 		TXPowerIndex: ns.TXPowerIndex,
 		DR:           ns.DR,
@@ -139,10 +140,14 @@ func MigrateNodeToDeviceSession(p *redis.Pool, db sqlx.Ext, devEUI, joinEUI lora
 		UplinkHistory:            ns.UplinkHistory,
 	}
 
-	for _, c := range ns.EnabledChannels {
-		if c < len(config.C.NetworkServer.Band.Band.UplinkChannels) {
-			ds.ChannelFrequencies = append(ds.ChannelFrequencies, config.C.NetworkServer.Band.Band.UplinkChannels[c].Frequency)
+	for _, i := range ns.EnabledChannels {
+		c, err := config.C.NetworkServer.Band.Band.GetUplinkChannel(i)
+		if err != nil {
+			log.WithError(err).WithField("channel", i).Warning("ignoring invalid channel")
+			continue
 		}
+
+		ds.ChannelFrequencies = append(ds.ChannelFrequencies, c.Frequency)
 	}
 
 	err = SaveDeviceSession(p, ds)

@@ -92,10 +92,13 @@ func TestNetworkServerAPI(t *testing.T) {
 			}()
 
 			Convey("When logging a downlink gateway frame", func() {
+				dr0, err := config.C.NetworkServer.Band.Band.GetDataRate(0)
+				So(err, ShouldBeNil)
+
 				So(framelog.LogDownlinkFrameForGateway(framelog.DownlinkFrameLog{
 					TXInfo: gw.TXInfo{
 						MAC:      mac,
-						DataRate: config.C.NetworkServer.Band.Band.DataRates[0],
+						DataRate: dr0,
 					},
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -160,9 +163,12 @@ func TestNetworkServerAPI(t *testing.T) {
 			}()
 
 			Convey("When logging a downlink device frame", func() {
+				dr0, err := config.C.NetworkServer.Band.Band.GetDataRate(0)
+				So(err, ShouldBeNil)
+
 				So(framelog.LogDownlinkFrameForDevEUI(devEUI, framelog.DownlinkFrameLog{
 					TXInfo: gw.TXInfo{
-						DataRate: config.C.NetworkServer.Band.Band.DataRates[0],
+						DataRate: dr0,
 					},
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -614,7 +620,7 @@ func TestNetworkServerAPI(t *testing.T) {
 							FCntUp:                10,
 							FCntDown:              11,
 							SkipFCntValidation:    true,
-							EnabledUplinkChannels: config.C.NetworkServer.Band.Band.GetUplinkChannels(),
+							EnabledUplinkChannels: config.C.NetworkServer.Band.Band.GetEnabledUplinkChannelIndices(),
 							ChannelFrequencies:    []int{868100000, 868300000, 868500000},
 							ExtraUplinkChannels:   map[int]band.Channel{},
 							RXDelay:               3,

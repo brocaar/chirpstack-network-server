@@ -57,9 +57,12 @@ func setToken(ctx *proprietaryContext) error {
 }
 
 func sendProprietaryDown(ctx *proprietaryContext) error {
-	if ctx.DR > len(config.C.NetworkServer.Band.Band.DataRates)-1 {
-		return errors.Wrapf(ErrInvalidDataRate, "dr: %d (max dr: %d)", ctx.DR, len(config.C.NetworkServer.Band.Band.DataRates)-1)
+	dr, err := config.C.NetworkServer.Band.Band.GetDataRate(ctx.DR)
+	if err != nil {
+		return errors.Wrap(err, "get data-rate error")
 	}
+
+	txPower := config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.Frequency)
 
 	phy := lorawan.PHYPayload{
 		MHDR: lorawan.MHDR{
@@ -75,8 +78,8 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 			MAC:         mac,
 			Immediately: true,
 			Frequency:   ctx.Frequency,
-			Power:       config.C.NetworkServer.Band.Band.DefaultTXPower,
-			DataRate:    config.C.NetworkServer.Band.Band.DataRates[ctx.DR],
+			Power:       txPower,
+			DataRate:    dr,
 			CodeRate:    "4/5",
 			IPol:        &ctx.IPol,
 		}

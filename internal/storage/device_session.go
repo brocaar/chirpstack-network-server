@@ -187,7 +187,7 @@ func GetRandomDevAddr(p *redis.Pool, netID lorawan.NetID) (lorawan.DevAddr, erro
 func ValidateAndGetFullFCntUp(s DeviceSession, fCntUp uint32) (uint32, bool) {
 	// we need to compare the difference of the 16 LSB
 	gap := uint32(uint16(fCntUp) - uint16(s.FCntUp%65536))
-	if gap < config.C.NetworkServer.Band.Band.MaxFCntGap {
+	if gap < config.C.NetworkServer.Band.Band.GetDefaults().MaxFCntGap {
 		return s.FCntUp + gap, true
 	}
 	return 0, false
@@ -254,7 +254,7 @@ func GetDeviceSession(p *redis.Pool, devEUI lorawan.EUI64) (DeviceSession, error
 
 	// in older versions, the value was not set
 	if s.RX2Frequency == 0 {
-		s.RX2Frequency = config.C.NetworkServer.Band.Band.RX2Frequency
+		s.RX2Frequency = config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency
 	}
 
 	return s, nil

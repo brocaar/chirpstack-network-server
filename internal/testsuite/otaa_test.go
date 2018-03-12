@@ -87,9 +87,15 @@ func TestOTAAScenarios(t *testing.T) {
 
 		appKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
+		c0, err := config.C.NetworkServer.Band.Band.GetDownlinkChannel(0)
+		So(err, ShouldBeNil)
+
+		c0MinDR, err := config.C.NetworkServer.Band.Band.GetDataRate(c0.MinDR)
+		So(err, ShouldBeNil)
+
 		rxInfo := gw.RXInfo{
-			Frequency: config.C.NetworkServer.Band.Band.UplinkChannels[0].Frequency,
-			DataRate:  config.C.NetworkServer.Band.Band.DataRates[config.C.NetworkServer.Band.Band.UplinkChannels[0].MinDR],
+			Frequency: c0.Frequency,
+			DataRate:  c0MinDR,
 		}
 
 		jrPayload := lorawan.PHYPayload{
@@ -217,7 +223,7 @@ func TestOTAAScenarios(t *testing.T) {
 						ExtraUplinkChannels:   map[int]band.Channel{},
 						LastRXInfoSet:         []models.RXInfo{{}},
 						LastDevStatusMargin:   127,
-						RX2Frequency:          config.C.NetworkServer.Band.Band.RX2Frequency,
+						RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 					},
 				},
 				{
@@ -286,7 +292,7 @@ func TestOTAAScenarios(t *testing.T) {
 						},
 						LastRXInfoSet:       []models.RXInfo{{}},
 						LastDevStatusMargin: 127,
-						RX2Frequency:        config.C.NetworkServer.Band.Band.RX2Frequency,
+						RX2Frequency:        config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 					},
 				},
 			}

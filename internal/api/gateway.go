@@ -67,7 +67,8 @@ func (a *GatewayAPI) GetConfiguration(ctx context.Context, req *gw.GetConfigurat
 	}
 
 	for _, cidx := range channelConf.Channels {
-		if int(cidx) >= len(config.C.NetworkServer.Band.Band.UplinkChannels) {
+		channel, err := config.C.NetworkServer.Band.Band.GetUplinkChannel(int(cidx))
+		if err != nil {
 			log.WithFields(log.Fields{
 				"mac": g.MAC,
 				"channel_configuration_id": g.ChannelConfigurationID,
@@ -75,22 +76,25 @@ func (a *GatewayAPI) GetConfiguration(ctx context.Context, req *gw.GetConfigurat
 			}).Error("channel-configuration channel does not exist in band")
 			return nil, grpc.Errorf(codes.Internal, "invalid channel configuration")
 		}
-
-		channel := config.C.NetworkServer.Band.Band.UplinkChannels[int(cidx)]
 		gwChannel := gw.Channel{
 			Frequency: int32(channel.Frequency),
 		}
 
 		for dr := channel.MinDR; dr <= channel.MaxDR; dr++ {
-			gwChannel.Bandwidth = int32(config.C.NetworkServer.Band.Band.DataRates[dr].Bandwidth)
+			dataRate, err := config.C.NetworkServer.Band.Band.GetDataRate(dr)
+			if err != nil {
+				return nil, grpc.Errorf(codes.Internal, "get data-rate error: %s", err)
+			}
 
-			switch config.C.NetworkServer.Band.Band.DataRates[dr].Modulation {
+			gwChannel.Bandwidth = int32(dataRate.Bandwidth)
+
+			switch dataRate.Modulation {
 			case band.LoRaModulation:
 				gwChannel.Modulation = gw.Modulation_LORA
-				gwChannel.SpreadFactors = append(gwChannel.SpreadFactors, int32(config.C.NetworkServer.Band.Band.DataRates[dr].SpreadFactor))
+				gwChannel.SpreadFactors = append(gwChannel.SpreadFactors, int32(dataRate.SpreadFactor))
 			case band.FSKModulation:
 				gwChannel.Modulation = gw.Modulation_FSK
-				gwChannel.BitRate = int32(config.C.NetworkServer.Band.Band.DataRates[dr].BitRate)
+				gwChannel.BitRate = int32(dataRate.BitRate)
 			}
 		}
 

@@ -2,14 +2,14 @@
 
 
 [[projects]]
-  branch = "master"
+  branch = "band_refactor"
   name = "github.com/brocaar/lorawan"
   packages = [
     ".",
     "backend",
     "band"
   ]
-  revision = "33b2e190da53e7b9b86eaad3ba9916c4e866f042"
+  revision = "cfcc1251d4113f7021d281698f80f641c7e3301b"
 
 [[projects]]
   name = "github.com/dgrijalva/jwt-go"
@@ -335,6 +335,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "056888c2a10661462c5abfc3638c4a2f189e3c9ab930dc26214d4fa4c04d84a2"
+  inputs-digest = "b28767ac017d45768f458b9790c44987f11d4ef4c8490cdad551fac132759410"
   solver-name = "gps-cdcl"
   solver-version = 1

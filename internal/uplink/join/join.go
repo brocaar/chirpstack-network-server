@@ -207,8 +207,8 @@ func createNodeSession(ctx *context) error {
 		RXDelay:               uint8(config.C.NetworkServer.NetworkSettings.RX1Delay),
 		RX1DROffset:           uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
 		RX2DR:                 uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
-		RX2Frequency:          config.C.NetworkServer.Band.Band.RX2Frequency,
-		EnabledUplinkChannels: config.C.NetworkServer.Band.Band.GetStandardUplinkChannels(),
+		RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
+		EnabledUplinkChannels: config.C.NetworkServer.Band.Band.GetStandardUplinkChannelIndices(),
 		ExtraUplinkChannels:   make(map[int]band.Channel),
 		LastRXInfoSet:         ctx.RXPacket.RXInfoSet,
 		MaxSupportedDR:        ctx.ServiceProfile.ServiceProfile.DRMax,
@@ -225,7 +225,7 @@ func createNodeSession(ctx *context) error {
 				continue
 			}
 
-			i, err := config.C.NetworkServer.Band.Band.GetUplinkChannelNumber(int(f), false)
+			i, err := config.C.NetworkServer.Band.Band.GetUplinkChannelIndex(int(f), false)
 			if err != nil {
 				// if this happens, something is really wrong
 				log.WithError(err).WithFields(log.Fields{
@@ -239,7 +239,11 @@ func createNodeSession(ctx *context) error {
 
 			// add extra channel to extra uplink channels, so that we can
 			// keep track on frequency and data-rate changes
-			ctx.DeviceSession.ExtraUplinkChannels[i] = config.C.NetworkServer.Band.Band.UplinkChannels[i]
+			c, err := config.C.NetworkServer.Band.Band.GetUplinkChannel(i)
+			if err != nil {
+				return errors.Wrap(err, "get uplink channel error")
+			}
+			ctx.DeviceSession.ExtraUplinkChannels[i] = c
 		}
 	}
 

@@ -130,10 +130,14 @@ func TestClassBUplink(t *testing.T) {
 
 		now := time.Now().UTC().Truncate(time.Millisecond)
 		timeSinceEpoch := gw.Duration(10 * time.Second)
+		dr0, err := config.C.NetworkServer.Band.Band.GetDataRate(0)
+		So(err, ShouldBeNil)
+		c0, err := config.C.NetworkServer.Band.Band.GetUplinkChannel(0)
+		So(err, ShouldBeNil)
 		rxInfo := gw.RXInfo{
 			MAC:               [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Frequency:         config.C.NetworkServer.Band.Band.UplinkChannels[0].Frequency,
-			DataRate:          config.C.NetworkServer.Band.Band.DataRates[0],
+			Frequency:         c0.Frequency,
+			DataRate:          dr0,
 			LoRaSNR:           7,
 			Time:              &now,
 			TimeSinceGPSEpoch: &timeSinceEpoch,
@@ -307,12 +311,14 @@ func TestClassBDownlink(t *testing.T) {
 		fPortTen := uint8(10)
 		emitTime := gps.Time(time.Now()).TimeSinceGPSEpoch()
 		emitTimeGW := gw.Duration(emitTime)
+		dr2, err := config.C.NetworkServer.Band.Band.GetDataRate(2)
+		So(err, ShouldBeNil)
 
 		txInfo := gw.TXInfo{
 			MAC:               lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2},
 			Frequency:         sess.PingSlotFrequency,
-			Power:             config.C.NetworkServer.Band.Band.DefaultTXPower,
-			DataRate:          config.C.NetworkServer.Band.Band.DataRates[2],
+			Power:             config.C.NetworkServer.Band.Band.GetDownlinkTXPower(sess.PingSlotFrequency),
+			DataRate:          dr2,
 			CodeRate:          "4/5",
 			TimeSinceGPSEpoch: &emitTimeGW,
 		}

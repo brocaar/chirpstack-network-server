@@ -280,16 +280,17 @@ func getDataTXInfoForRX2(ctx *dataContext) error {
 	}
 	rxInfo := ctx.DeviceSession.LastRXInfoSet[0]
 
-	if int(ctx.DeviceSession.RX2DR) > len(config.C.NetworkServer.Band.Band.DataRates)-1 {
-		return errors.Wrapf(ErrInvalidDataRate, "dr: %d (max dr: %d)", ctx.DeviceSession.RX2DR, len(config.C.NetworkServer.Band.Band.DataRates)-1)
+	dr, err := config.C.NetworkServer.Band.Band.GetDataRate(int(ctx.DeviceSession.RX2DR))
+	if err != nil {
+		return errors.Wrap(err, "get data-rate error")
 	}
 
 	ctx.TXInfo = gw.TXInfo{
 		MAC:         rxInfo.MAC,
 		Immediately: true,
-		Frequency:   int(config.C.NetworkServer.Band.Band.RX2Frequency),
-		Power:       config.C.NetworkServer.Band.Band.DefaultTXPower,
-		DataRate:    config.C.NetworkServer.Band.Band.DataRates[int(ctx.DeviceSession.RX2DR)],
+		Frequency:   ctx.DeviceSession.RX2Frequency,
+		Power:       config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.DeviceSession.RX2Frequency),
+		DataRate:    dr,
 		CodeRate:    "4/5",
 	}
 	ctx.DataRate = int(ctx.DeviceSession.RX2DR)
@@ -310,15 +311,16 @@ func setTXInfoForClassB(ctx *dataContext) error {
 	}
 	rxInfo := ctx.DeviceSession.LastRXInfoSet[0]
 
-	if len(config.C.NetworkServer.Band.Band.DataRates) <= ctx.DeviceSession.PingSlotDR {
-		return errors.Wrapf(ErrInvalidDataRate, "dr: %d (max dr: %d)", ctx.DeviceSession.PingSlotDR, len(config.C.NetworkServer.Band.Band.DataRates)-1)
+	dr, err := config.C.NetworkServer.Band.Band.GetDataRate(ctx.DeviceSession.PingSlotDR)
+	if err != nil {
+		return errors.Wrap(err, "get data-rate error")
 	}
 
 	ctx.TXInfo = gw.TXInfo{
 		MAC:       rxInfo.MAC,
 		Frequency: ctx.DeviceSession.PingSlotFrequency,
-		Power:     config.C.NetworkServer.Band.Band.DefaultTXPower,
-		DataRate:  config.C.NetworkServer.Band.Band.DataRates[ctx.DeviceSession.PingSlotDR],
+		Power:     config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.DeviceSession.PingSlotFrequency),
+		DataRate:  dr,
 		CodeRate:  "4/5",
 	}
 	ctx.DataRate = ctx.DeviceSession.PingSlotDR
@@ -327,7 +329,12 @@ func setTXInfoForClassB(ctx *dataContext) error {
 }
 
 func setRemainingPayloadSize(ctx *dataContext) error {
-	ctx.RemainingPayloadSize = config.C.NetworkServer.Band.Band.MaxPayloadSize[ctx.DataRate].N - len(ctx.Data)
+	plSize, err := config.C.NetworkServer.Band.Band.GetMaxPayloadSizeForDataRateIndex(ctx.DataRate)
+	if err != nil {
+		return errors.Wrap(err, "get max-payload size error")
+	}
+
+	ctx.RemainingPayloadSize = plSize.N - len(ctx.Data)
 
 	if ctx.RemainingPayloadSize < 0 {
 		return ErrMaxPayloadSizeExceeded
@@ -457,8 +464,12 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 
 func requestCustomChannelReconfiguration(ctx *dataContext) error {
 	wantedChannels := make(map[int]band.Channel)
-	for _, i := range config.C.NetworkServer.Band.Band.GetCustomUplinkChannels() {
-		wantedChannels[i] = config.C.NetworkServer.Band.Band.UplinkChannels[i]
+	for _, i := range config.C.NetworkServer.Band.Band.GetCustomUplinkChannelIndices() {
+		c, err := config.C.NetworkServer.Band.Band.GetUplinkChannel(i)
+		if err != nil {
+			return errors.Wrap(err, "get uplink channel error")
+		}
+		wantedChannels[i] = c
 	}
 
 	// cleanup channels that do not exist anydmore
@@ -672,48 +683,49 @@ func getDataDownTXInfoAndDR(ds storage.DeviceSession, lastTXInfo models.TXInfo, 
 	txInfo := gw.TXInfo{
 		MAC:      rxInfo.MAC,
 		CodeRate: lastTXInfo.CodeRate,
-		Power:    config.C.NetworkServer.Band.Band.DefaultTXPower,
 	}
 
 	var timestamp uint32
 
 	if ds.RXWindow == storage.RX1 {
-		uplinkDR, err := config.C.NetworkServer.Band.Band.GetDataRate(lastTXInfo.DataRate)
+		uplinkDR, err := config.C.NetworkServer.Band.Band.GetDataRateIndex(true, lastTXInfo.DataRate)
 		if err != nil {
-			return txInfo, 0, errors.Wrap(err, "get data-rate error")
+			return txInfo, 0, errors.Wrap(err, "get data-rate index error")
 		}
 
 		// get rx1 dr
-		dr, err = config.C.NetworkServer.Band.Band.GetRX1DataRate(uplinkDR, int(ds.RX1DROffset))
+		dr, err = config.C.NetworkServer.Band.Band.GetRX1DataRateIndex(uplinkDR, int(ds.RX1DROffset))
 		if err != nil {
-			return txInfo, dr, err
+			return txInfo, dr, errors.Wrap(err, "get rx1 data-rate index error")
 		}
-		txInfo.DataRate = config.C.NetworkServer.Band.Band.DataRates[dr]
+		txInfo.DataRate, err = config.C.NetworkServer.Band.Band.GetDataRate(dr)
+		if err != nil {
+			return txInfo, dr, errors.Wrap(err, "get data-rate error")
+		}
 
 		// get rx1 frequency
-		txInfo.Frequency, err = config.C.NetworkServer.Band.Band.GetRX1Frequency(lastTXInfo.Frequency)
+		txInfo.Frequency, err = config.C.NetworkServer.Band.Band.GetRX1FrequencyForUplinkFrequency(lastTXInfo.Frequency)
 		if err != nil {
-			return txInfo, dr, err
+			return txInfo, dr, errors.Wrap(err, "get rx1 frequency for uplink frequency error")
 		}
 
 		// get timestamp
-		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.ReceiveDelay1/time.Microsecond)
+		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().ReceiveDelay1/time.Microsecond)
 		if ds.RXDelay > 0 {
 			timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
 		}
 	} else if ds.RXWindow == storage.RX2 {
-		// rx2 dr
-		dr = int(ds.RX2DR)
-		if dr > len(config.C.NetworkServer.Band.Band.DataRates)-1 {
-			return txInfo, 0, fmt.Errorf("invalid rx2 dr: %d (max dr: %d)", dr, len(config.C.NetworkServer.Band.Band.DataRates)-1)
+		var err error
+		txInfo.DataRate, err = config.C.NetworkServer.Band.Band.GetDataRate(int(ds.RX2DR))
+		if err != nil {
+			return txInfo, 0, fmt.Errorf("get data-rate error")
 		}
-		txInfo.DataRate = config.C.NetworkServer.Band.Band.DataRates[dr]
 
 		// rx2 frequency
-		txInfo.Frequency = config.C.NetworkServer.Band.Band.RX2Frequency
+		txInfo.Frequency = ds.RX2Frequency
 
 		// rx2 timestamp (rx1 + 1 sec)
-		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.ReceiveDelay1/time.Microsecond)
+		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().ReceiveDelay1/time.Microsecond)
 		if ds.RXDelay > 0 {
 			timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
 		}
@@ -723,6 +735,7 @@ func getDataDownTXInfoAndDR(ds storage.DeviceSession, lastTXInfo models.TXInfo, 
 	}
 
 	txInfo.Timestamp = &timestamp
+	txInfo.Power = config.C.NetworkServer.Band.Band.GetDownlinkTXPower(txInfo.Frequency)
 
 	return txInfo, dr, nil
 }

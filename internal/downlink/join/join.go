@@ -69,41 +69,50 @@ func getJoinAcceptTXInfo(ctx *joinContext) error {
 	ctx.TXInfo = gw.TXInfo{
 		MAC:      rxInfo.MAC,
 		CodeRate: ctx.RXPacket.TXInfo.CodeRate,
-		Power:    config.C.NetworkServer.Band.Band.DefaultTXPower,
 	}
 
 	var timestamp uint32
 
 	if ctx.DeviceSession.RXWindow == storage.RX1 {
-		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.JoinAcceptDelay1/time.Microsecond)
+		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().JoinAcceptDelay1/time.Microsecond)
 
 		// get uplink dr
-		uplinkDR, err := config.C.NetworkServer.Band.Band.GetDataRate(ctx.RXPacket.TXInfo.DataRate)
+		uplinkDR, err := config.C.NetworkServer.Band.Band.GetDataRateIndex(true, ctx.RXPacket.TXInfo.DataRate)
+		if err != nil {
+			return errors.Wrap(err, "get data-rate index error")
+		}
+
+		// get RX1 DR
+		rx1DR, err := config.C.NetworkServer.Band.Band.GetRX1DataRateIndex(uplinkDR, 0)
+		if err != nil {
+			return errors.Wrap(err, "get rx1 data-rate index error")
+		}
+		ctx.TXInfo.DataRate, err = config.C.NetworkServer.Band.Band.GetDataRate(rx1DR)
 		if err != nil {
 			return errors.Wrap(err, "get data-rate error")
 		}
 
-		// get RX1 DR
-		rx1DR, err := config.C.NetworkServer.Band.Band.GetRX1DataRate(uplinkDR, 0)
-		if err != nil {
-			return errors.Wrap(err, "get rx1 data-rate error")
-		}
-		ctx.TXInfo.DataRate = config.C.NetworkServer.Band.Band.DataRates[rx1DR]
-
 		// get RX1 frequency
-		ctx.TXInfo.Frequency, err = config.C.NetworkServer.Band.Band.GetRX1Frequency(ctx.RXPacket.TXInfo.Frequency)
+		ctx.TXInfo.Frequency, err = config.C.NetworkServer.Band.Band.GetRX1FrequencyForUplinkFrequency(ctx.RXPacket.TXInfo.Frequency)
 		if err != nil {
 			return errors.Wrap(err, "get rx1 frequency error")
 		}
+
 	} else if ctx.DeviceSession.RXWindow == storage.RX2 {
-		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.JoinAcceptDelay2/time.Microsecond)
-		ctx.TXInfo.DataRate = config.C.NetworkServer.Band.Band.DataRates[config.C.NetworkServer.Band.Band.RX2DataRate]
-		ctx.TXInfo.Frequency = config.C.NetworkServer.Band.Band.RX2Frequency
+		var err error
+
+		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().JoinAcceptDelay2/time.Microsecond)
+		ctx.TXInfo.Frequency = config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency
+		ctx.TXInfo.DataRate, err = config.C.NetworkServer.Band.Band.GetDataRate(config.C.NetworkServer.Band.Band.GetDefaults().RX2DataRate)
+		if err != nil {
+			return errors.Wrap(err, "get data-rate error")
+		}
 	} else {
 		return fmt.Errorf("unknown RXWindow defined %d", ctx.DeviceSession.RXWindow)
 	}
 
 	ctx.TXInfo.Timestamp = &timestamp
+	ctx.TXInfo.Power = config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.TXInfo.Frequency)
 
 	return nil
 }

@@ -162,7 +162,7 @@ func (cf ChannelConfiguration) Validate() error {
 
 	// check if the configured channels are defined as uplink channels
 	// for the active band.
-	enabledChannels := config.C.NetworkServer.Band.Band.GetUplinkChannels()
+	enabledChannels := config.C.NetworkServer.Band.Band.GetUplinkChannelIndices()
 	for _, c := range cf.Channels {
 		found := false
 		for _, ec := range enabledChannels {

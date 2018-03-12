@@ -81,6 +81,9 @@ func TestCollectAndCallOnce(t *testing.T) {
 					var received int
 					var called int
 
+					dr0, err := config.C.NetworkServer.Band.Band.GetDataRate(0)
+					So(err, ShouldBeNil)
+
 					cb := func(packet models.RXPacket) error {
 						called = called + 1
 						received = len(packet.RXInfoSet)
@@ -93,7 +96,7 @@ func TestCollectAndCallOnce(t *testing.T) {
 						packet := gw.RXPacket{
 							RXInfo: gw.RXInfo{
 								MAC:      g,
-								DataRate: config.C.NetworkServer.Band.Band.DataRates[0],
+								DataRate: dr0,
 							},
 							PHYPayload: test.PHYPayload,
 						}

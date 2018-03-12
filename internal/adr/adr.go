@@ -3,6 +3,7 @@ package adr
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/internal/config"
@@ -53,10 +54,12 @@ func HandleADR(ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBloc
 		return nil, nil
 	}
 
-	if ds.DR >= len(config.C.NetworkServer.Band.Band.DataRates) {
-		return nil, fmt.Errorf("invalid data-rate: %d", ds.DR)
+	dr, err := config.C.NetworkServer.Band.Band.GetDataRate(ds.DR)
+	if err != nil {
+		return nil, errors.Wrap(err, "get data-rate error")
 	}
-	requiredSNR, err := getRequiredSNRForSF(config.C.NetworkServer.Band.Band.DataRates[ds.DR].SpreadFactor)
+
+	requiredSNR, err := getRequiredSNRForSF(dr.SpreadFactor)
 	if err != nil {
 		return nil, err
 	}
@@ -157,11 +160,16 @@ func getNbRep(currentNbRep uint8, pktLossRate float64) uint8 {
 
 func getMaxTXPowerOffsetIndex() int {
 	var idx int
-	for i, p := range config.C.NetworkServer.Band.Band.TXPowerOffset {
-		if p < 0 {
+	for i := 0; ; i++ {
+		offset, err := config.C.NetworkServer.Band.Band.GetTXPowerOffset(i)
+		if err != nil {
+			break
+		}
+		if offset != 0 {
 			idx = i
 		}
 	}
+
 	return idx
 }
 
@@ -220,10 +228,10 @@ func getRequiredSNRForSF(sf int) (float64, error) {
 
 func getMaxAllowedDR() int {
 	var maxDR int
-	for _, c := range config.C.NetworkServer.Band.Band.GetEnabledUplinkChannels() {
-		channel := config.C.NetworkServer.Band.Band.UplinkChannels[c]
-		if channel.MaxDR > maxDR {
-			maxDR = channel.MaxDR
+	for _, i := range config.C.NetworkServer.Band.Band.GetEnabledUplinkChannelIndices() {
+		c, _ := config.C.NetworkServer.Band.Band.GetUplinkChannel(i)
+		if c.MaxDR > maxDR {
+			maxDR = c.MaxDR
 		}
 	}
 	return maxDR

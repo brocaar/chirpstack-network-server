@@ -11,7 +11,7 @@ import (
 // (e.g. for the US band) or when a reconfiguration of active channels
 // happens.
 func HandleChannelReconfigure(ds storage.DeviceSession) ([]storage.MACCommandBlock, error) {
-	payloads := config.C.NetworkServer.Band.Band.GetLinkADRReqPayloadsForEnabledChannels(ds.EnabledUplinkChannels)
+	payloads := config.C.NetworkServer.Band.Band.GetLinkADRReqPayloadsForEnabledUplinkChannelIndices(ds.EnabledUplinkChannels)
 	if len(payloads) == 0 {
 		return nil, nil
 	}

@@ -57,8 +57,8 @@ func GetConfig() *Config {
 		panic(err)
 	}
 
-	config.C.NetworkServer.NetworkSettings.RX2Frequency = config.C.NetworkServer.Band.Band.RX2Frequency
-	config.C.NetworkServer.NetworkSettings.RX2DR = config.C.NetworkServer.Band.Band.RX2DataRate
+	config.C.NetworkServer.NetworkSettings.RX2Frequency = config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency
+	config.C.NetworkServer.NetworkSettings.RX2DR = config.C.NetworkServer.Band.Band.GetDefaults().RX2DataRate
 	config.C.NetworkServer.NetworkSettings.RX1Delay = 0
 
 	c := &Config{

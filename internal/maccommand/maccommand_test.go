@@ -53,6 +53,9 @@ func TestHandleUplink(t *testing.T) {
 			})
 
 			Convey("Test LinkCheckReq", func() {
+				dr2, err := config.C.NetworkServer.Band.Band.GetDataRate(2)
+				So(err, ShouldBeNil)
+
 				block := storage.MACCommandBlock{
 					CID: lorawan.LinkCheckReq,
 					MACCommands: storage.MACCommands{
@@ -64,7 +67,7 @@ func TestHandleUplink(t *testing.T) {
 
 				rxPacket := models.RXPacket{
 					TXInfo: models.TXInfo{
-						DataRate: config.C.NetworkServer.Band.Band.DataRates[2],
+						DataRate: dr2,
 					},
 					RXInfoSet: models.RXInfoSet{
 						{

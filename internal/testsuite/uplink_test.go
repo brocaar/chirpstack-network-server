@@ -140,10 +140,14 @@ func TestUplinkScenarios(t *testing.T) {
 
 		now := time.Now().UTC().Truncate(time.Millisecond)
 		timeSinceEpoch := gw.Duration(10 * time.Second)
+		dr0, err := config.C.NetworkServer.Band.Band.GetDataRate(0)
+		So(err, ShouldBeNil)
+		c0, err := config.C.NetworkServer.Band.Band.GetUplinkChannel(0)
+		So(err, ShouldBeNil)
 		rxInfo := gw.RXInfo{
 			MAC:               [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Frequency:         config.C.NetworkServer.Band.Band.UplinkChannels[0].Frequency,
-			DataRate:          config.C.NetworkServer.Band.Band.DataRates[0],
+			Frequency:         c0.Frequency,
+			DataRate:          dr0,
 			LoRaSNR:           7,
 			Time:              &now,
 			TimeSinceGPSEpoch: &timeSinceEpoch,
@@ -690,9 +694,9 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp2S,
-						Frequency: config.C.NetworkServer.Band.Band.RX2Frequency,
+						Frequency: config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 						Power:     14,
-						DataRate:  config.C.NetworkServer.Band.Band.DataRates[0],
+						DataRate:  dr0,
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -744,9 +748,9 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedTXInfo: &gw.TXInfo{
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp6S,
-						Frequency: config.C.NetworkServer.Band.Band.RX2Frequency,
+						Frequency: config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 						Power:     14,
-						DataRate:  config.C.NetworkServer.Band.Band.DataRates[0],
+						DataRate:  dr0,
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{

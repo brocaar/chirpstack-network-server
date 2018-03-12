@@ -122,7 +122,7 @@ func setADR(ctx *dataContext) error {
 }
 
 func setUplinkDataRate(ctx *dataContext) error {
-	currentDR, err := config.C.NetworkServer.Band.Band.GetDataRate(ctx.RXPacket.TXInfo.DataRate)
+	currentDR, err := config.C.NetworkServer.Band.Band.GetDataRateIndex(true, ctx.RXPacket.TXInfo.DataRate)
 	if err != nil {
 		return errors.Wrap(err, "get data-rate error")
 	}

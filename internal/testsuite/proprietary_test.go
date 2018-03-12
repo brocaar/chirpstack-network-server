@@ -53,6 +53,8 @@ func TestSendProprietaryPayloadScenarios(t *testing.T) {
 
 		Convey("Given a set of send proprietary payload tests", func() {
 			trueBool := true
+			dr5, err := config.C.NetworkServer.Band.Band.GetDataRate(5)
+			So(err, ShouldBeNil)
 
 			tests := []sendProprietaryPayloadTestCase{
 				{
@@ -70,7 +72,7 @@ func TestSendProprietaryPayloadScenarios(t *testing.T) {
 						Immediately: true,
 						Frequency:   868100000,
 						Power:       14,
-						DataRate:    config.C.NetworkServer.Band.Band.DataRates[5],
+						DataRate:    dr5,
 						CodeRate:    "4/5",
 						IPol:        &trueBool,
 					},
@@ -139,6 +141,9 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 		So(gateway.CreateGateway(config.C.PostgreSQL.DB, &g), ShouldBeNil)
 
 		Convey("Given a set of testcases", func() {
+			dr0, err := config.C.NetworkServer.Band.Band.GetDataRate(0)
+			So(err, ShouldBeNil)
+
 			tests := []uplinkProprietaryPHYPayloadTestCase{
 				{
 					Name: "Uplink proprietary payload",
@@ -157,7 +162,7 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 						CodeRate:  "4/5",
 						RSSI:      -10,
 						LoRaSNR:   5,
-						DataRate:  config.C.NetworkServer.Band.Band.DataRates[0],
+						DataRate:  dr0,
 					},
 					ExpectedApplicationHandleProprietaryUp: &as.HandleProprietaryUplinkRequest{
 						MacPayload: []byte{1, 2, 3, 4},

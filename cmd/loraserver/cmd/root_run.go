@@ -120,12 +120,14 @@ func setBandConfig() error {
 }
 
 func setRXParameters() error {
+	defaults := config.C.NetworkServer.Band.Band.GetDefaults()
+
 	if config.C.NetworkServer.NetworkSettings.RX2DR == -1 {
-		config.C.NetworkServer.NetworkSettings.RX2DR = config.C.NetworkServer.Band.Band.RX2DataRate
+		config.C.NetworkServer.NetworkSettings.RX2DR = defaults.RX2DataRate
 	}
 
 	if config.C.NetworkServer.NetworkSettings.RX2Frequency == -1 {
-		config.C.NetworkServer.NetworkSettings.RX2Frequency = config.C.NetworkServer.Band.Band.RX2Frequency
+		config.C.NetworkServer.NetworkSettings.RX2Frequency = defaults.RX2Frequency
 	}
 
 	return nil
@@ -170,15 +172,15 @@ func enableUplinkChannels() error {
 	}
 
 	log.Info("disabling all channels")
-	for _, c := range config.C.NetworkServer.Band.Band.GetEnabledUplinkChannels() {
-		if err := config.C.NetworkServer.Band.Band.DisableUplinkChannel(c); err != nil {
+	for _, c := range config.C.NetworkServer.Band.Band.GetEnabledUplinkChannelIndices() {
+		if err := config.C.NetworkServer.Band.Band.DisableUplinkChannelIndex(c); err != nil {
 			return errors.Wrap(err, "disable uplink channel error")
 		}
 	}
 
 	log.WithField("channels", config.C.NetworkServer.NetworkSettings.EnabledUplinkChannels).Info("enabling channels")
 	for _, c := range config.C.NetworkServer.NetworkSettings.EnabledUplinkChannels {
-		if err := config.C.NetworkServer.Band.Band.EnableUplinkChannel(c); err != nil {
+		if err := config.C.NetworkServer.Band.Band.EnableUplinkChannelIndex(c); err != nil {
 			errors.Wrap(err, "enable uplink channel error")
 		}
 	}
