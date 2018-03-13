@@ -10,16 +10,28 @@ menu:
 
 ## 0.25.1
 
+**Features:**
+
+* Add `RU_864_870` as configuration option (thanks [@belovictor](https://github.com/belovictor))
+
 **Improvements:**
 
 * Expose the following MQTT options for the MQTT gateway backend:
   * QoS (quality of service)
   * Client ID
   * Clean session on connect
+* Add `GetVersion` API method returning the LoRa Server version + configured region.
+* Refactor `lorawan/band` package with support for max payload-size per
+  LoRaWAN mac version and Regional Parameters revision.
+  * This avoids packetloss in case a device does not implement the latest
+    LoRaWAN Regional Parameters revision and the max payload-size values
+    have been updated.
 
 **Bugfixes:**
 
-* Fix `network_contoller` -> `network_controller` typo in configuration ([#302](https://github.com/brocaar/loraserver/issues/302)).
+* MQTT topics were hardcoded in configuration file template, this has been fixed.
+* Fix `network_contoller` -> `network_controller` typo ([#302](https://github.com/brocaar/loraserver/issues/302))
+* Fix typo in pubsub key (resulting in ugly Redis keys) ([#296](https://github.com/brocaar/loraserver/pull/296))
 
 ## 0.25.0
 
