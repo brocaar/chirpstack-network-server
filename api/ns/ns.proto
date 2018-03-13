@@ -145,6 +145,8 @@ service NetworkServer {
     // StreamFrameLogsForDevice returns a stream of frames seen by the given device.
     rpc StreamFrameLogsForDevice(StreamFrameLogsForDeviceRequest) returns (stream StreamFrameLogsForDeviceResponse) {}
 
+    // GetVersion returns the LoRa Server version.
+    rpc GetVersion(GetVersionRequest) returns (GetVersionResponse) {}
 }
 
 enum RXWindow {
@@ -161,6 +163,38 @@ enum Modulation {
 
     // FSK
     FSK = 1;
+}
+
+enum Region {
+    // EU868
+    EU868 = 0;
+
+    // US915
+    US915 = 2;
+
+    // CN779
+    CN779 = 3;
+
+    // EU433
+    EU433 = 4;
+
+    // AU915
+    AU915 = 5;
+
+    // CN470
+    CN470 = 6;
+
+    // AS923
+    AS923 = 7;
+
+    // KR920
+    KR920 = 8;
+
+    // IN865
+    IN865 = 9;
+
+    // RU864
+    RU864 = 10;
 }
 
 
@@ -933,4 +967,14 @@ message DownlinkFrameLog {
 
     // LoRaWAN PHYPayload.
     bytes phyPayload = 2;
+}
+
+message GetVersionRequest {}
+
+message GetVersionResponse {
+    // LoRa Server version.
+    string version = 1;
+
+    // Region configured for this network-server.
+    Region region = 2;
 }

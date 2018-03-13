@@ -112,6 +112,8 @@ It has these top-level messages:
 	UplinkFrameLog
 	DownlinkTXInfo
 	DownlinkFrameLog
+	GetVersionRequest
+	GetVersionResponse
 */
 package ns
 

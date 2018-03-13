@@ -1297,6 +1297,33 @@ func (n *NetworkServerAPI) GetNextDownlinkFCntForDevEUI(ctx context.Context, req
 	return &resp, nil
 }
 
+// GetVersion returns the LoRa Server version.
+func (n *NetworkServerAPI) GetVersion(ctx context.Context, req *ns.GetVersionRequest) (*ns.GetVersionResponse, error) {
+	region, ok := map[band.Name]ns.Region{
+		band.AS_923:     ns.Region_AS923,
+		band.AU_915_928: ns.Region_AU915,
+		band.CN_470_510: ns.Region_CN470,
+		band.CN_779_787: ns.Region_CN779,
+		band.EU_433:     ns.Region_EU433,
+		band.EU_863_870: ns.Region_EU868,
+		band.IN_865_867: ns.Region_IN865,
+		band.KR_920_923: ns.Region_KR920,
+		band.RU_864_870: ns.Region_RU864,
+		band.US_902_928: ns.Region_US915,
+	}[config.C.NetworkServer.Band.Name]
+
+	if !ok {
+		log.WithFields(log.Fields{
+			"band_name": config.C.NetworkServer.Band.Name,
+		}).Warning("unknown band to common name mapping")
+	}
+
+	return &ns.GetVersionResponse{
+		Region:  region,
+		Version: config.Version,
+	}, nil
+}
+
 func channelConfigurationToResp(cf gateway.ChannelConfiguration) *ns.GetChannelConfigurationResponse {
 	out := ns.GetChannelConfigurationResponse{
 		Id:        cf.ID,

@@ -1121,6 +1121,17 @@ func TestNetworkServerAPI(t *testing.T) {
 					})
 				})
 			})
+
+			Convey("Then GetVersion returns the expected value", func() {
+				config.Version = "1.2.3"
+
+				resp, err := api.GetVersion(ctx, &ns.GetVersionRequest{})
+				So(err, ShouldBeNil)
+				So(resp, ShouldResemble, &ns.GetVersionResponse{
+					Version: "1.2.3",
+					Region:  ns.Region_EU868,
+				})
+			})
 		})
 	})
 }

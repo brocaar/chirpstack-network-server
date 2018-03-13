@@ -15,6 +15,9 @@ import (
 	"github.com/brocaar/lorawan/band"
 )
 
+// Version defines the LoRa Server version.
+var Version string
+
 // Config defines the configuration structure.
 type Config struct {
 	General struct {

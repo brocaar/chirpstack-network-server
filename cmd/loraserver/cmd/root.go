@@ -216,6 +216,8 @@ func Execute(v string) {
 }
 
 func initConfig() {
+	config.Version = version
+
 	if cfgFile != "" {
 		b, err := ioutil.ReadFile(cfgFile)
 		if err != nil {
