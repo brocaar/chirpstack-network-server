@@ -167,7 +167,7 @@ get_downlink_data_delay="100ms"
   # LoRaWAN band to use.
   #
   # Valid values are:
-  # *   AS_923
+  # * AS_923
   # * AU_915_928
   # * CN_470_510
   # * CN_779_787
@@ -175,7 +175,8 @@ get_downlink_data_delay="100ms"
   # * EU_863_870
   # * IN_865_867
   # * KR_920_923
-  # * US_902_928),
+  # * RU_864_870
+  # * US_902_928
   name="EU_863_870"
 
   # Enforce 400ms dwell time

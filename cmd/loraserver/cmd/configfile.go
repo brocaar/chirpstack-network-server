@@ -122,7 +122,8 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # * EU_863_870
   # * IN_865_867
   # * KR_920_923
-  # * US_902_928),
+  # * RU_864_870
+  # * US_902_928
   name="{{ .NetworkServer.Band.Name }}"
 
   # Enforce 400ms dwell time
