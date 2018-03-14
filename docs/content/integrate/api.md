@@ -6,7 +6,7 @@ menu:
         weight: 1
 ---
 
-## API
+# API
 
 The LoRa Server components are using [gRPC](http://www.grpc.io) for 
 inter-component communication. The definitions of these interfaces can be
@@ -17,7 +17,7 @@ folder of the source repository:
 * `api/as/as.proto`: application-server interface
 * `api/nc/nc.proto`: network-controller interface
 
-### Client / server stubs
+## Client / server stubs
 
 Each subdirectory (e.g. `ns`, `as` or `nc`) provides Go client code and
 server stubs, which means you can import these as packages when using Go.

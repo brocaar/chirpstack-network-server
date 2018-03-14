@@ -6,9 +6,9 @@ menu:
         weight: 1
 ---
 
-## Device activation
+# Device activation
 
-### Over The Air Activation (OTAA)
+## Over The Air Activation (OTAA)
 
 In case of OTAA, LoRa Server will call the join-server configured
 by the [`--js-server`]({{<ref "install/config.md">}}) flag which will
@@ -17,7 +17,7 @@ The join-server API is specified by the [LoRaWAN Backend Interfaces](https://www
 specification. By default [LoRa App Server](https://docs.loraserver.io/lora-app-server/)
 fulfils this role.
 
-### Activation By Personalization (ABP)
+## Activation By Personalization (ABP)
 
 In case of ABP, LoRa Server has support for pre-activating devices through its
 [API]({{<ref "integrate/api.md">}}). Once activated, LoRa Server will handle the

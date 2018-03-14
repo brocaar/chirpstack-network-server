@@ -6,7 +6,7 @@ menu:
         weight: 1
 ---
 
-## RX parameter (re)configuration
+# RX parameter (re)configuration
 
 LoRa Server supports the (re)configuration of the following RX parameters:
 

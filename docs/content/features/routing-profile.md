@@ -6,7 +6,7 @@ menu:
         weight: 1
 ---
 
-## Routing-profile
+# Routing-profile
 
 By associating a routing-profile to a device, LoRa Server is able to forward
 device data to the correct application-server. This allows to let LoRa Server

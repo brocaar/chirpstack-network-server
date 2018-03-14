@@ -6,14 +6,14 @@ menu:
         weight: 1
 ---
 
-## Device-profile
+# Device-profile
 
 The service-profile can be seen as the “contract” between an user and
 the network. It describes the features that are enabled for the user(s)
 of the service-profile and the rate of messages that can be sent over
 the network.
 
-### Fields / options
+## Fields / options
 
 The following fields are described by the
 [LoRaWAN Backend Interfaces specification](https://www.lora-alliance.org/lorawan-for-developers).

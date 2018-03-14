@@ -6,7 +6,7 @@ menu:
         weight: 2
 ---
 
-## Debian / Ubuntu installation
+# Debian / Ubuntu installation
 
 These steps have been tested using:
 
@@ -14,7 +14,7 @@ These steps have been tested using:
 * Ubuntu Trusty (14.04)
 * Ubuntu Xenial (16.04)
 
-### Creating an user and database
+## Creating an user and database
 
 LoRa Server needs its **own** database. To create a new database,
 start the PostgreSQL prompt as the `postgres` user:
@@ -44,7 +44,7 @@ psql -h localhost -U loraserver_ns -W loraserver_ns
 ```
 
 
-### LoRa Server Debian repository
+## LoRa Server Debian repository
 
 The LoRa Server project provides pre-compiled binaries packaged as Debian (.deb)
 packages. In order to activate this repository, execute the following
@@ -59,7 +59,7 @@ sudo echo "deb https://repos.loraserver.io/${DISTRIB_ID,,} ${DISTRIB_CODENAME} t
 sudo apt-get update
 ```
 
-### Install LoRa Server
+## Install LoRa Server
 
 In order to install LoRa Server, execute the following command:
 
@@ -79,24 +79,24 @@ Settings you probably want to set / change:
 * `network_server.gateway.api.jwt_secret`
 * `network_server.gateway.stats.timezone`
 
-### Starting LoRa Server
+## Starting LoRa Server
 
 How you need to (re)start and stop LoRa Server depends on if your
 distribution uses init.d or systemd.
 
-#### init.d
+### init.d
 
 ```bash
 sudo /etc/init.d/loraserver [start|stop|restart|status]
 ```
 
-#### systemd
+### systemd
 
 ```bash
 sudo systemctl [start|stop|restart|status] loraserver
 ```
 
-### LoRa Server log output
+## LoRa Server log output
 
 Now you've setup LoRa Server, it is a good time to verify that LoRa Server
 is actually up-and-running. This can be done by looking at the LoRa Server
@@ -105,7 +105,7 @@ log output.
 Like the previous step, which command you need to use for viewing the
 log output depends on if your distribution uses init.d or systemd.
 
-#### init.d
+### init.d
 
 All logs are written to `/var/log/loraserver/loraserver.log`.
 To view and follow this logfile:
@@ -114,7 +114,7 @@ To view and follow this logfile:
 tail -f /var/log/loraserver/loraserver.log
 ```
 
-#### systemd
+### systemd
 
 ```bash
 journalctl -u loraserver -f -n 50
@@ -143,7 +143,7 @@ INFO[0001] grpc: addrConn.resetTransport failed to create client transport: conn
 INFO[0002] grpc: addrConn.resetTransport failed to create client transport: connection error: desc = "transport: dial tcp 127.0.0.1:8001: getsockopt: connection refused"; Reconnecting to {"127.0.0.1:8001" <nil>}
 ```
 
-### Configuration
+## Configuration
 
 In the example above, we've just touched a few configuration variables.
 Run `loraserver --help` for an overview of all available variables. Note
@@ -152,7 +152,7 @@ variables (which we did in the above example).
 
 See [Configuration]({{< relref "config.md" >}}) for details on each config option.
 
-### Install other components
+## Install other components
 
 A complete LoRa Server setup, requires the setup of the following components:
 

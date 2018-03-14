@@ -6,7 +6,7 @@ menu:
         weight: 2
 ---
 
-## Contribute
+# Contribute
 
 There are a couple of ways to get involved:
 

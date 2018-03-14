@@ -6,7 +6,7 @@ menu:
     weight: 3
 ---
 
-## Network-controller
+# Network-controller
 
 LoRa Server makes it possible to integrate an external network-controller
 to interact with the LoRa Server API. This makes it possible to let an external
@@ -19,7 +19,7 @@ Also LoRa Server must be configured so that it connects to this network-controll
 (see [configuration]({{< ref "install/config.md" >}})).
 
 
-### Code example in Go
+## Code example in Go
 
 The following code illustrates a network-server which will ask the node its
 battery status and link margin, each time an uplink frame is received.

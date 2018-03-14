@@ -6,7 +6,7 @@ menu:
         weight: 1
 ---
 
-## LoRa Server
+# LoRa Server
 
 LoRa Server is an open-source LoRaWAN network-server, part of the
 [LoRa Server](https://docs.loraserver.io/) project. 
@@ -14,7 +14,7 @@ The responsibility of the network-server component is the de-duplication
 and handling of received uplink frames received by the gateway(s), handling
 of the LoRaWAN mac-layer and scheduling of downlink data transmissions.
 
-### Features
+## Features
 
 The table below gives an overview of the features that LoRa Server offers.
 See the **Features** in the left menu for a more detailed overview of each

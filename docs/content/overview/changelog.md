@@ -6,9 +6,9 @@ menu:
         weight: 3
 ---
 
-## Changelog
+# Changelog
 
-### 0.25.0
+## 0.25.0
 
 **Features:**
 
@@ -31,13 +31,13 @@ menu:
 * Implement RXTimingSetup mac-command. After a configuration file change,
   LoRa Server will push the RX delay for activated devices.
 
-### 0.24.3
+## 0.24.3
 
 **Bugfixes:**
 
 * The uplink, stats and ack topic contained invalid defaults.
 
-### 0.24.2
+## 0.24.2
 
 **Improvements:**
 
@@ -54,13 +54,13 @@ menu:
 
 * Fix typo in `create_gateway_on_stats` config mapping. (thanks [@mkiiskila](https://github.com/mkiiskila), [#295](https://github.com/brocaar/loraserver/pull/295))
 
-### 0.24.1
+## 0.24.1
 
 **Bugfixes:**
 
 * Fix basing tx-power value on wrong SNR value (thanks [@x0y1z2](https://github.com/x0y1z2), [#293](https://github.com/brocaar/loraserver/issues/293))
 
-### 0.24.0
+## 0.24.0
 
 **Features:**
 
@@ -81,7 +81,7 @@ When upgrading using the `.deb` package / using `apt` or `apt-get`, your
 configuration will be automatically migrated for you. In any other case,
 please see [configuration](https://docs.loraserver.io/loraserver/install/config/).
 
-### 0.23.3
+## 0.23.3
 
 **Improvements:**
 
@@ -101,7 +101,7 @@ please see [configuration](https://docs.loraserver.io/loraserver/install/config/
   tool. In case you run into compiling issues, remove the `vendor` folder
   (which is not part of the repository anymore) and run `make requirements`.
 
-### 0.23.2
+## 0.23.2
 
 **Features:**
 
@@ -121,7 +121,7 @@ See for more information:
 * [LoRa App Server network-server management](https://docs.loraserver.io/lora-app-server/use/network-servers/)
 * [https://github.com/brocaar/loraserver-certificates](https://github.com/brocaar/loraserver-certificates)
 
-### 0.23.1
+## 0.23.1
 
 **Features:**
 
@@ -135,7 +135,7 @@ See for more information:
 * Fix decreasing NbTrans (this only happened in case of data-rate or TX
   power change).
 
-### 0.23.0
+## 0.23.0
 
 **Features:**
 
@@ -170,7 +170,7 @@ Network-server API
 
 **Note:** these changes require LoRa App Server 0.15.0 or higher.
 
-### 0.22.1
+## 0.22.1
 
 **Features:**
 
@@ -187,7 +187,7 @@ Network-server API
 * Prefix de-duplication Redis keys with `lora:ns:` instead of `loraserver:`
   for consistency.
 
-### 0.22.0
+## 0.22.0
 
 **Note:** this release brings many changes! Make sure (as always) to make a
 backup of your PostgreSQL and Redis database before upgrading.
@@ -219,7 +219,7 @@ backup of your PostgreSQL and Redis database before upgrading.
 * `EnqueueDataDownMACCommand` renamed to `EnqueueDownlinkMACCommand`
 * `PushDataDown` renamed to `SendDownlinkData`
 
-#### How to upgrade
+### How to upgrade
 
 **Note:** this release brings many changes! Make sure (as always) to make a
 backup of your PostgreSQL and Redis database before upgrading.
@@ -231,7 +231,7 @@ This release depends on the latest LoRa App Server release (0.14). Upgrade
 LoRa Server first, then proceed with upgrading LoRa App Server. See also the
 [LoRa App Server changelog](https://docs.loraserver.io/lora-app-server/overview/changelog/).
 
-### 0.21.0
+## 0.21.0
 
 **Features:**
 
@@ -247,7 +247,7 @@ LoRa Server first, then proceed with upgrading LoRa App Server. See also the
 * Various parts of the codebase have been cleaned up in preparation for the
   upcoming LoRaWAN 1.1 changes.
 
-### 0.20.1
+## 0.20.1
 
 **Features:**
 
@@ -270,7 +270,7 @@ LoRa Server first, then proceed with upgrading LoRa App Server. See also the
   regaining connectivity by lowering the data-rate and setting the TXPower
   back to `0`.
 
-### 0.20.0
+## 0.20.0
 
 **Features:**
 
@@ -283,7 +283,7 @@ LoRa Server first, then proceed with upgrading LoRa App Server. See also the
 **Note:** Before upgrading, make sure to configure the `--gw-server-jwt-secret`
 / `GW_SERVER_JWT_SECRET` configuration flag!
 
-### 0.19.2
+## 0.19.2
 
 **Improvements:**
 
@@ -300,7 +300,7 @@ nodes implementing 1.0.2, the ADR engine will now only increase the TX power
 index of the node by one step. This is to avoid that the ADR engine would
 switch a node to an unsupported TX power index.
 
-### 0.19.1
+## 0.19.1
 
 **Improvements:**
 
@@ -314,7 +314,7 @@ switch a node to an unsupported TX power index.
   re-connect the protocol version would be downgraded
   ([paho.mqtt.golang#116](https://github.com/eclipse/paho.mqtt.golang/issues/116)).
 
-### 0.19.0
+## 0.19.0
 
 **Changes:**
 
@@ -336,21 +336,21 @@ documentation.
 * Updated vendored libraries to include MQTT reconnect issue
   ([eclipse/paho.mqtt.golang#96](https://github.com/eclipse/paho.mqtt.golang/issues/96)).
 
-### 0.18.0
+## 0.18.0
 
 **Features:**
 
 * Add configuration option to log all uplink / downlink frames into a database
   (`--log-node-frames` / `LOG_NODE_FRAMES`).
 
-### 0.17.2
+## 0.17.2
 
 **Bugfixes:**
 
 * Do not reset downlink frame-counter in case of relax frame-counter mode as
   this would also reset the downlink counter on a re-transmit.
 
-### 0.17.1
+## 0.17.1
 
 **Features:**
 
@@ -361,7 +361,7 @@ documentation.
 * Relax frame-counter mode has been changed to disable frame-counter check mode
   to deal with different devices ([#133](https://github.com/brocaar/loraserver/issues/133)).
 
-### 0.17.0
+## 0.17.0
 
 **Features:**
 
@@ -371,7 +371,7 @@ documentation.
   configure the uplink channels active on the network.
 * Make adaptive data-rate (ADR) available to every ISM band.
 
-### 0.16.1
+## 0.16.1
 
 **Bugfixes:**
 
@@ -379,7 +379,7 @@ documentation.
   end timestamp (eg. in case of Europe/Amsterdam when changing from CET to
   CEST).
 
-### 0.16.0
+## 0.16.0
 
 **Note:** LoRa Server now requires a PostgreSQL (9.5+) database to persist the
 gateway data. See [getting started](getting-started.md) for more information.
@@ -398,14 +398,14 @@ gateway data. See [getting started](getting-started.md) for more information.
 * LoRa Server will retry to connect to the MQTT broker when it isn't available
   (yet) on startup, instead of failing.
 
-### 0.15.1
+## 0.15.1
 
 **Bugfixes:**
 
 * Fix error handling for creating a node-session that already exists
 * Fix delete node-session regression introduced in 0.15.0
 
-### 0.15.0
+## 0.15.0
 
 **Features:**
 
@@ -417,13 +417,13 @@ gateway data. See [getting started](getting-started.md) for more information.
 is not reversible it is recommended to make a backup of the Redis database before
 upgrading.
 
-### 0.14.1
+## 0.14.1
 
 **Bugfixes:**
 
 * Add mac-commands (if any) to LoRaWAN frame for Class-C transmissions.
 
-### 0.14.0
+## 0.14.0
 
 **Features:**
 
@@ -434,7 +434,7 @@ upgrading.
 
 * RU 864 - 869 band configuration has been updated (see [#113](https://github.com/brocaar/loraserver/issues/113))
 
-### 0.13.3
+## 0.13.3
 
 **Features:**
 
@@ -447,7 +447,7 @@ upgrading.
 * Flags for repeater compatibility configuration and dwell-time limitation
   (400ms) have been added (see [configuration](configuration.md))
 
-### 0.13.2
+## 0.13.2
 
 **Features:**
 
@@ -462,13 +462,13 @@ upgrading.
 * Fix duplicated gateway MAC in application-server and network-controller API
   call
 
-### 0.13.1
+## 0.13.1
 
 **Bugfixes:**
 
 * Fix crash when node has ADR enabled, but it is disabled in LoRa Server
 
-### 0.13.0
+## 0.13.0
 
 **Features:**
 
@@ -484,7 +484,7 @@ upgrading.
 
 * Validate RX2 data-rate (this was causing a panic)
 
-### 0.12.5
+## 0.12.5
 
 **Security:**
 
@@ -493,35 +493,35 @@ upgrading.
   is incremented (uplink `FCnt + 1`) after it has been processed by
   LoRa Server.
 
-### 0.12.4
+## 0.12.4
 
 * Fix regression that caused a FCnt roll-over to result in an invalid MIC
   error. This was caused by validating the MIC before expanding the 16 bit
   FCnt to the full 32 bit value. (thanks @andrepferreira)
 
-### 0.12.3
+## 0.12.3
 
 * Relax frame-counter option.
 
-### 0.12.2
+## 0.12.2
 
 * Implement China 470-510 ISM band.
 * Improve logic to decide which gateway to use for downlink transmission.
 
-### 0.12.1
+## 0.12.1
 
 * Fix multiple LoRa Server instances processing the same gateway payloads
   (resulting in the gateway count multiplied by the number of LoRa Server
   instances).
 
-### 0.12.0
+## 0.12.0
 
 This release decouples the node "inventory" part from LoRa Server. This
 introduces some breaking (API) changes, but in the end this will make it easier
 to integrate LoRa Server into your own platform as you're not limited anymore
 by it's datastructure.
 
-#### API
+### API
 
 Between all LoRa Server project components [gRPC](http://gprc.io) is used
 for communication. Optionally, this can be secured by (client) certificates.
@@ -529,7 +529,7 @@ The RESTful JSON api and api methods to manage channels, applications and nodes
 has been removed from LoRa Server. The node-session api methodds are still
 part of LoRa Server, but are only exposed by gRPC.
 
-#### Application-server
+### Application-server
 
 An application-server component and [API](https://github.com/brocaar/loraserver/blob/master/api/as/as.proto)
 was introduced to be responsible for the "inventory" part. This component is
@@ -540,27 +540,27 @@ The inventory part has been migrated to a new project called
 [LoRa App Server](http://docs.loraserver.io/lora-app-server/). See it's
 changelog for instructions how to migrate.
 
-#### Configuration
+### Configuration
 
 As components have been dropped and introduced, you'll probably need to update
 your LoRa Server configuration. 
 
-#### Important
+### Important
 
 Before upgrading, make sure you have a backup of all data in the PostgreSQL
 and Redis database!
 
-### 0.11.0
+## 0.11.0
 
 * Implement receive window (RX1 or RX2) and RX2 data-rate option in node and
   node-session API (and web-interface).
 
-### 0.10.1
+## 0.10.1
 
 * Fix overwriting existing node-session (owned by different DevEUI)
   (thanks @iBrick)
 
-### 0.10.0
+## 0.10.0
 
 * Implement (optional) JWT token authentication and authorization for the gRPC
   and RESTful JSON API. See [api documentation](https://docs.loraserver.io/loraserver/api/).
@@ -570,15 +570,15 @@ and Redis database!
   served from a different port (defined by `--grpc-insecure-bind`).
 * Fix: delete node-session (if it exists) on node delete
 
-### 0.9.2
+## 0.9.2
 
 * Fix Swagger base path.
 
-### 0.9.1
+## 0.9.1
 
 * Fix `cli.ActionFunc` deprecation warning.
 
-### 0.9.0
+## 0.9.0
 
 **WARNING:** if you're using the JSON-RPC interface, this will be a breaking
 upgrade, as the JSON-RPC API has been replaced by a gRPC API.
@@ -590,7 +590,7 @@ of the gRPC API (using [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gat
 Please refer to the LoRa Server documentation for more information:
 [https://docs.loraserver.io/loraserver/api/](https://docs.loraserver.io/loraserver/api/).
 
-### 0.8.2
+## 0.8.2
 
 * Validate the join-request DevEUI belongs to the given AppEUI
 * Implement `Node.FlushTXPayloadQueue` API method
@@ -598,12 +598,12 @@ Please refer to the LoRa Server documentation for more information:
   be implemented by the lora-gateway-bridge).
 
 
-### 0.8.1
+## 0.8.1
 
 * Bugfix: 'fix unknown channel for frequency' error when using custom-channels (`CFList`)
   (thanks @arjansplit)
 
-### 0.8.0
+## 0.8.0
 
 * Implement network-controller backend
 * Implement support for sending and receiving MAC commands (no support for proprietary commands yet)
@@ -613,7 +613,7 @@ Please refer to the LoRa Server documentation for more information:
 **Note:** You need to update to LoRa Semtech Bridge 2.0.1+ or 1.1.4+ since
 it fixes a mac command related marshaling issue.
 
-### 0.7.0
+## 0.7.0
 
 * Complete join-accept payload with:
     * RXDelay
@@ -623,13 +623,13 @@ it fixes a mac command related marshaling issue.
 
   All values can be set / created throught the API or web-interface
 
-### 0.6.1
+## 0.6.1
 
 * Band configuration must now be specified with the ``--band`` argument
   (no more separate binaries per ism band)
 * RX info notifications (``application/[AppEUI]/node/[DevEUI]/rxinfo``)
 
-### 0.6.0
+## 0.6.0
 
 * Implement various notifications to the application:
     * Node join accept (``application/[AppEUI]/node/[DevEUI]/join``)
@@ -642,12 +642,12 @@ it fixes a mac command related marshaling issue.
     * AU 915-928 band (thanks @Mehradzie for implementing and testing)
 * Fix: use only one receive-window (thanks @gzwsc2007)
 
-### 0.5.1
+## 0.5.1
 
 * Expose RX RSSI (signal strength) to application
 * Provide binaries for multiple platforms
 
-### 0.5.0
+## 0.5.0
 
 Note: this release is incompatible with lora-semtech-bridge <= 1.0.1
 
@@ -657,12 +657,12 @@ Note: this release is incompatible with lora-semtech-bridge <= 1.0.1
 * Source-code re-structure (internal code is now under `internal/...`,
   exported packet related structs are now under `models/...`)
 
-### 0.4.1
+## 0.4.1
 
 * Update mqtt vendor to fix various connection issues
 * Fix shutting down server when mqtt server is unresponsive
 
-### 0.4.0
+## 0.4.0
 
 * Implement confirmed data up
 * Implement (confirmed) data down
@@ -670,25 +670,25 @@ Note: this release is incompatible with lora-semtech-bridge <= 1.0.1
 * Re-subscribe on mqtt connection error (thanks @Magicking)
 * Fix FCnt input bug in web-interface (number was casted to a string, which was rejected by the API)
 
-### 0.3.1
+## 0.3.1
 
 * Bugfix related to ``FCnt`` increment (thanks @ivajloip)
 
-### 0.3.0
+## 0.3.0
 
 * MQTT topics updated (`node/[DevEUI]/rx` is now `application/[AppEUI]/node/[DevEUI]/rx`)
 * Restructured RPC API (per domain)
 * Auto generated API docs (in web-interface)
 
-### 0.2.1
+## 0.2.1
 
 * `lorawan` packet was updated (with MType fix)
 
-### 0.2.0
+## 0.2.0
 
 * Web-interface for application and node management
 * *LoRa Server* is now a single binary with embedded migrations and static files
 
-### 0.1.0
+## 0.1.0
 
 * Initial release

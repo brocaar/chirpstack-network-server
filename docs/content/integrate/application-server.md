@@ -6,7 +6,7 @@ menu:
         weight: 2
 ---
 
-## Application-server
+# Application-server
 
 LoRa Server forwards received uplink frames and acknowledgements to a so called
 application-server component. You can either use LoRa App Server
@@ -17,12 +17,12 @@ LoRa Server supports sending data for different devices to different
 application-servers. See [routing-profile]({{<ref "features/routing-profile.md">}})
 for more information.
 
-### LoRa App Server
+## LoRa App Server
 
 [LoRa App Server](https://docs.loraserver.io/lora-app-server/) is a reference
 implementation of an application-server compatible with LoRa Server.
 
-### Your own application-server
+## Your own application-server
 
 It is also possible to implement your own application-server. The
 application-server API has been defined as a [gRPC](https://grpc.io) service

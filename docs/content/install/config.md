@@ -6,7 +6,7 @@ menu:
         weight: 3
 ---
 
-## Configuration
+# Configuration
 
 To list all configuration options, start `loraserver` with the `--help`
 flag. This will display:
@@ -35,7 +35,7 @@ Flags:
 Use "loraserver [command] --help" for more information about a command.
 ```
 
-### Configuration file
+## Configuration file
 
 By default `loraserver` will look in the following order for a
 configuration file at the following paths when `--config` is not:
@@ -454,7 +454,7 @@ tls_cert=""
 tls_key=""
 ```
 
-### Securing the network-server API
+## Securing the network-server API
 
 In order to protect the network-server API (`network_server.api`) against
 unauthorized access and to encrypt all communication, it is advised to use
@@ -467,7 +467,7 @@ you must provide the CA and TLS client certificate. See also LoRa App Server
 See [https://github.com/brocaar/loraserver-certificates](https://github.com/brocaar/loraserver-certificates)
 for a set of scripts to generate such certificates.
 
-### Join-server API configuration
+## Join-server API configuration
 
 In the current implementation LoRa Server uses a fixed join-server URL
 (provided by LoRa App Server) which is used as a join-server backend (`join_server.default`).

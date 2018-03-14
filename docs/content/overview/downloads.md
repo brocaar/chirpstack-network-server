@@ -6,9 +6,9 @@ menu:
         weight: 2
 ---
 
-## Downloads
+# Downloads
 
-### Precompiled binaries
+## Precompiled binaries
 
 | File name                                                                                                                       | OS      | Arch  |
 | ------------------------------------------------------------------------------------------------------------------------------- | ------- | ----- |
@@ -20,7 +20,7 @@ menu:
 | [loraserver_{{< version >}}_windows_386.tar.gz](https://dl.loraserver.io/tar/loraserver_{{< version >}}_windows_386.tar.gz)     | Windows | 386   |
 | [loraserver_{{< version >}}_windows_amd64.tar.gz](https://dl.loraserver.io/tar/loraserver_{{< version >}}_windows_amd64.tar.gz) | Windows | amd64 |
 
-### Debian / Ubuntu packages
+## Debian / Ubuntu packages
 
 | File name                                                                                                 | OS      | Arch  |
 | ----------------------------------------------------------------------------------------------------------| ------- | ----- |
@@ -29,7 +29,7 @@ menu:
 | [loraserver_{{< version >}}_armhf.deb](https://dl.loraserver.io/deb/loraserver_{{< version >}}_armhf.deb) | Linux   | arm   |
 | [loraserver_{{< version >}}_arm64.deb](https://dl.loraserver.io/deb/loraserver_{{< version >}}_arm64.deb) | Linux   | arm64 |
 
-### Debian Ubuntu repository
+## Debian Ubuntu repository
 
 ```bash
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1CE2AFD36DBCCA00
@@ -40,6 +40,6 @@ sudo echo "deb https://repos.loraserver.io/${DISTRIB_ID,,} ${DISTRIB_CODENAME} t
 sudo apt-get update
 ```
 
-### Docker images
+## Docker images
 
 For Docker images, please refer to https://hub.docker.com/r/loraserver/loraserver/.

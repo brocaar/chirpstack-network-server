@@ -6,13 +6,13 @@ menu:
         weight: 1
 ---
 
-## Service-profile
+# Service-profile
 
 The service-profile defines the features that are enabled for the associated
 devices and the rate of messages that the associated devices can send over
 the network.
 
-### Fields / options
+## Fields / options
 
 The following fields are described by the
 [LoRaWAN Backend Interfaces specification](https://www.lora-alliance.org/lorawan-for-developers).
