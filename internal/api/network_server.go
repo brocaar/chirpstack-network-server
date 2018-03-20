@@ -1426,7 +1426,7 @@ func frameLogToUplinkAndDownlinkFrameLog(fl framelog.FrameLog) (*ns.UplinkFrameL
 					Modulation:   string(fl.DownlinkFrame.TXInfo.DataRate.Modulation),
 					Bandwidth:    uint32(fl.DownlinkFrame.TXInfo.DataRate.Bandwidth),
 					SpreadFactor: uint32(fl.DownlinkFrame.TXInfo.DataRate.SpreadFactor),
-					Bitrate:      uint32(fl.DownlinkFrame.TXInfo.DataRate.Bandwidth),
+					Bitrate:      uint32(fl.DownlinkFrame.TXInfo.DataRate.BitRate),
 				},
 				CodeRate: fl.DownlinkFrame.TXInfo.CodeRate,
 				Board:    uint32(fl.DownlinkFrame.TXInfo.Board),
