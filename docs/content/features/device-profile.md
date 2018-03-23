@@ -19,11 +19,11 @@ The following fields are described by the
 [LoRaWAN Backend Interfaces specification](https://www.lora-alliance.org/lorawan-for-developers).
 Fields marked with an **X** are implemented by LoRa Server.
 
-- [ ] **SupportsClassB** End-Device supports Class B
-- [ ] **ClassBTimeout** Maximum delay for the End-Device to answer a MAC request or a confirmed DL frame (mandatory if class B mode supported)
-- [ ] **PingSlotPeriod** Mandatory if class B mode supported
-- [ ] **PingSlotDR** Mandatory if class B mode supported
-- [ ] **PingSlotFreq** Mandatory if class B mode supported
+- [X] **SupportsClassB** End-Device supports Class B
+- [X] **ClassBTimeout** Maximum delay for the End-Device to answer a MAC request or a confirmed DL frame (mandatory if class B mode supported)
+- [X] **PingSlotPeriod** Mandatory if class B mode supported
+- [X] **PingSlotDR** Mandatory if class B mode supported
+- [X] **PingSlotFreq** Mandatory if class B mode supported
 - [X] **SupportsClassC** End-Device supports Class C
 - [X] **ClassCTimeout** Maximum delay for the End-Device to answer a MAC request or a confirmed DL frame (mandatory if class C mode supported)
 - [X] **MACVersion** Version of the LoRaWAN supported by the End-Device
