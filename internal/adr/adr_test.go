@@ -18,6 +18,16 @@ func TestADR(t *testing.T) {
 	config.C.NetworkServer.NetworkSettings.InstallationMargin = 5
 
 	Convey("Testing the ADR functions", t, func() {
+		Convey("Testing getMaxAllowedDR", func() {
+			Convey("Given an extra channel up to data-rate 7", func() {
+				So(config.C.NetworkServer.Band.Band.AddChannel(868800000, 0, 7), ShouldBeNil)
+
+				Convey("Then getMaxAllowedDR still returns 5", func() {
+					So(getMaxAllowedDR(), ShouldEqual, 5)
+				})
+			})
+		})
+
 		Convey("Given a testtable for getNbRep", func() {
 			testTable := []struct {
 				PktLossRate   float64

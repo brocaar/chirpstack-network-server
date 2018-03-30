@@ -540,6 +540,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp,
 						Frequency: rxInfo.Frequency,
@@ -587,6 +588,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp,
 						Frequency: rxInfo.Frequency,
@@ -639,6 +641,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp3S,
 						Frequency: rxInfo.Frequency,
@@ -692,6 +695,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp2S,
 						Frequency: config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
@@ -746,6 +750,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp6S,
 						Frequency: config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
@@ -943,6 +948,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
@@ -1004,6 +1010,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
@@ -1070,6 +1077,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
@@ -1124,6 +1132,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
@@ -1178,6 +1187,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
@@ -1267,6 +1277,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
@@ -1337,6 +1348,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
@@ -1528,6 +1540,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
@@ -1577,6 +1590,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
@@ -1711,6 +1725,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
@@ -1775,6 +1790,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,
@@ -1852,6 +1868,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedFCntUp:                 11,
 					ExpectedFCntDown:               6,
 					ExpectedTXInfo: &gw.TXInfo{
+						CodeRate:  "4/5",
 						MAC:       rxInfo.MAC,
 						Timestamp: &timestamp1S,
 						Frequency: rxInfo.Frequency,

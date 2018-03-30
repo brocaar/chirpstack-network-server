@@ -28,6 +28,8 @@ const (
 	classC
 )
 
+const defaultCodeRate = "4/5"
+
 var setMACCommandsSet = setMACCommands(
 	requestCustomChannelReconfiguration,
 	requestChannelMaskReconfiguration,
@@ -291,7 +293,7 @@ func getDataTXInfoForRX2(ctx *dataContext) error {
 		Frequency:   ctx.DeviceSession.RX2Frequency,
 		Power:       config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.DeviceSession.RX2Frequency),
 		DataRate:    dr,
-		CodeRate:    "4/5",
+		CodeRate:    defaultCodeRate,
 	}
 	ctx.DataRate = int(ctx.DeviceSession.RX2DR)
 
@@ -321,7 +323,7 @@ func setTXInfoForClassB(ctx *dataContext) error {
 		Frequency: ctx.DeviceSession.PingSlotFrequency,
 		Power:     config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.DeviceSession.PingSlotFrequency),
 		DataRate:  dr,
-		CodeRate:  "4/5",
+		CodeRate:  defaultCodeRate,
 	}
 	ctx.DataRate = ctx.DeviceSession.PingSlotDR
 
@@ -513,7 +515,10 @@ func requestADRChange(ctx *dataContext) error {
 
 	blocks, err := adr.HandleADR(ctx.DeviceSession, linkADRReq)
 	if err != nil {
-		return errors.Wrap(err, "handle adr error")
+		log.WithError(err).WithFields(log.Fields{
+			"dev_eui": ctx.DeviceSession.DevEUI,
+		}).Warning("handle adr error")
+		return nil
 	}
 
 	if linkADRReq == nil {
@@ -736,6 +741,12 @@ func getDataDownTXInfoAndDR(ds storage.DeviceSession, lastTXInfo models.TXInfo, 
 
 	txInfo.Timestamp = &timestamp
 	txInfo.Power = config.C.NetworkServer.Band.Band.GetDownlinkTXPower(txInfo.Frequency)
+
+	// when we received a FSK modulated uplink, and reply using LoRa modulation
+	// we need to set the CodeRate as this is not set on the FSK uplink.
+	if txInfo.DataRate.Modulation == band.LoRaModulation && txInfo.CodeRate == "" {
+		txInfo.CodeRate = defaultCodeRate
+	}
 
 	return txInfo, dr, nil
 }

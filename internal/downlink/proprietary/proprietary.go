@@ -11,6 +11,8 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+const defaultCodeRate = "4/5"
+
 var tasks = []func(*proprietaryContext) error{
 	setToken,
 	sendProprietaryDown,
@@ -80,7 +82,7 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 			Frequency:   ctx.Frequency,
 			Power:       txPower,
 			DataRate:    dr,
-			CodeRate:    "4/5",
+			CodeRate:    defaultCodeRate,
 			IPol:        &ctx.IPol,
 		}
 

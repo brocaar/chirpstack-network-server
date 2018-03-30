@@ -228,10 +228,17 @@ func getRequiredSNRForSF(sf int) (float64, error) {
 
 func getMaxAllowedDR() int {
 	var maxDR int
+	stdChannels := config.C.NetworkServer.Band.Band.GetStandardUplinkChannelIndices()
+
+	// we take the highest data-rate from the enabled standard uplink channels
 	for _, i := range config.C.NetworkServer.Band.Band.GetEnabledUplinkChannelIndices() {
-		c, _ := config.C.NetworkServer.Band.Band.GetUplinkChannel(i)
-		if c.MaxDR > maxDR {
-			maxDR = c.MaxDR
+		for _, stdI := range stdChannels {
+			if i == stdI {
+				c, _ := config.C.NetworkServer.Band.Band.GetUplinkChannel(i)
+				if c.MaxDR > maxDR {
+					maxDR = c.MaxDR
+				}
+			}
 		}
 	}
 	return maxDR
