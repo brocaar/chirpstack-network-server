@@ -5,15 +5,16 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
+	"time"
 
 	"github.com/garyburd/redigo/redis"
-
-	"github.com/brocaar/lorawan"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/models"
-	"github.com/pkg/errors"
+	"github.com/brocaar/lorawan"
 )
 
 const (
@@ -148,34 +149,60 @@ func GetFrameLogForDevice(ctx context.Context, devEUI lorawan.EUI64, frameLogCha
 func getFrameLogs(ctx context.Context, uplinkKey, downlinkKey string, frameLogChan chan FrameLog) error {
 	c := config.C.Redis.Pool.Get()
 	defer c.Close()
-	var done bool
-
-	go func() {
-		done = true
-		<-ctx.Done()
-		c.Close()
-	}()
 
 	psc := redis.PubSubConn{Conn: c}
 	if err := psc.Subscribe(uplinkKey, downlinkKey); err != nil {
 		return errors.Wrap(err, "subscribe error")
 	}
-	for {
-		switch v := psc.Receive().(type) {
-		case redis.Message:
-			fl, err := redisMessageToFrameLog(v, uplinkKey, downlinkKey)
-			if err != nil {
-				return errors.Wrap(err, "decode message error")
-			}
-			frameLogChan <- fl
 
-		case error:
-			if done {
-				return nil
+	done := make(chan error, 1)
+
+	go func() {
+		for {
+			switch v := psc.Receive().(type) {
+			case redis.Message:
+				fl, err := redisMessageToFrameLog(v, uplinkKey, downlinkKey)
+				if err != nil {
+					log.WithError(err).Error("decode message error")
+				} else {
+					frameLogChan <- fl
+				}
+			case redis.Subscription:
+				if v.Count == 0 {
+					done <- nil
+					return
+				}
+			case error:
+				done <- v
+				return
 			}
-			return errors.Wrap(v, "receive error")
+		}
+	}()
+
+	// todo: make this a config value?
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+loop:
+	for {
+		select {
+		case <-ticker.C:
+			if err := psc.Ping(""); err != nil {
+				log.WithError(err).Error("subscription ping error")
+				break loop
+			}
+		case <-ctx.Done():
+			break loop
+		case err := <-done:
+			return err
 		}
 	}
+
+	if err := psc.Unsubscribe(); err != nil {
+		return errors.Wrap(err, "unsubscribe error")
+	}
+
+	return <-done
 }
 
 func redisMessageToFrameLog(msg redis.Message, uplinkKey, downlinkKey string) (FrameLog, error) {

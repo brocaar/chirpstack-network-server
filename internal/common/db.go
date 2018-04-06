@@ -13,8 +13,10 @@ import (
 )
 
 const (
-	redisMaxIdle        = 3
-	redisIdleTimeoutSec = 240
+	redisMaxIdle          = 3
+	redisIdleTimeoutSec   = 240
+	redisDialReadTimeout  = 60 * time.Second
+	redisDialWriteTimeout = 10 * time.Second
 )
 
 // NewRedisPool returns a new Redis connection pool.
@@ -23,7 +25,10 @@ func NewRedisPool(redisURL string) *redis.Pool {
 		MaxIdle:     redisMaxIdle,
 		IdleTimeout: redisIdleTimeoutSec * time.Second,
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.DialURL(redisURL)
+			c, err := redis.DialURL(redisURL,
+				redis.DialReadTimeout(redisDialReadTimeout),
+				redis.DialWriteTimeout(redisDialWriteTimeout),
+			)
 			if err != nil {
 				return nil, fmt.Errorf("redis connection error: %s", err)
 			}
