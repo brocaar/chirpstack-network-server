@@ -1,17 +1,16 @@
 .PHONY: build clean test package serve update-vendor api statics
 PKGS := $(shell go list ./... | grep -v /vendor/ | grep -v loraserver/api | grep -v /migrations | grep -v /static)
 VERSION := $(shell git describe --always)
-GOOS ?= linux
-GOARCH ?= amd64
 
 build: statics
-	@echo "Compiling source for $(GOOS) $(GOARCH)"
+	@echo "Compiling source"
 	@mkdir -p build
-	@GOOS=$(GOOS) GOARCH=$(GOARCH) go build $(GO_EXTRA_BUILD_ARGS) -ldflags "-s -w -X main.version=$(VERSION)" -o build/loraserver$(BINEXT) cmd/loraserver/main.go
+	go build $(GO_EXTRA_BUILD_ARGS) -ldflags "-s -w -X main.version=$(VERSION)" -o build/loraserver cmd/loraserver/main.go
 
 clean:
 	@echo "Cleaning up workspace"
 	@rm -rf build
+	@rm -rf dist
 	@rm -rf docs/public
 
 test: statics
@@ -26,14 +25,13 @@ documentation:
 	@echo "Building documentation"
 	@mkdir -p dist/docs
 	@cd docs && hugo
-	@cd docs/public/ && tar -pczf ../../dist/docs/loraserver.tar.gz .
+	@cd docs/public/ && tar -pczf ../../dist/loraserver-documentation.tar.gz .
 
-package: clean build
-	@echo "Creating package for $(GOOS) $(GOARCH)"
-	@mkdir -p dist/tar/$(VERSION)
-	@cp build/* dist/tar/$(VERSION)
-	@cd dist/tar/$(VERSION) && tar -pczf ../loraserver_$(VERSION)_$(GOOS)_$(GOARCH).tar.gz .
-	@rm -rf dist/tar/$(VERSION)
+dist:
+	@goreleaser
+
+build-snapshot:
+	@goreleaser --snapshot
 
 package-deb:
 	@cd packaging && TARGET=deb ./package.sh
@@ -61,6 +59,7 @@ requirements:
 	@go get -u github.com/elazarl/go-bindata-assetfs/...
 	@go get -u github.com/jteeuwen/go-bindata/...
 	@go get -u github.com/golang/dep/cmd/dep
+	@go get -u github.com/goreleaser/goreleaser
 	@dep ensure -v
 
 # shortcuts for development

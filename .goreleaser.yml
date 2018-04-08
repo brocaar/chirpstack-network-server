@@ -1,0 +1,25 @@
+git:
+  short_hash: true
+
+builds:
+  - main: cmd/loraserver/main.go
+    binary: loraserver
+    goos:
+      - windows
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - 386
+      - arm
+      - arm64
+    goarm:
+      - 5
+      - 6
+      - 7
+    ignore:
+      - goos: darwin
+        goarch: 386
+
+release:
+  draft: true

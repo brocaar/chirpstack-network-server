@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
-# map GOARCH to ARCH
-case $GOARCH in
-	'amd64') ARCH="x86_64"
+# map ARCH to file suffix
+case $PACKAGE_ARCH in
+	'x86_64') ARCH="amd64"
 		;;
-	'386') ARCH="i386"
+	'i386') ARCH="386"
 		;;
-	'arm') ARCH="armhf"
+	'armhf') ARCH="armv6"
 		;;
 	'arm64') ARCH="arm64"
 		;;
 	*)
-		echo "Unknown target $GOARCH"
+		echo "Unknown PACKAGE_ARCH $PACKAGE_ARCH"
 		exit 1
 		;;
 esac
@@ -30,6 +30,7 @@ NAME=loraserver
 BIN_DIR=/usr/bin
 SCRIPT_DIR=/usr/lib/$NAME/scripts
 TMP_WORK_DIR=`mktemp -d`
+TMP_DIR=`mktemp -d`
 LOGROTATE_DIR=/etc/logrotate.d
 
 POSTINSTALL_SCRIPT=$TARGET/post-install.sh
@@ -42,7 +43,7 @@ URL=https://docs.loraserver.io/$NAME/
 MAINTAINER=info@brocaar.com
 VENDOR="LoRa Server project"
 DESCRIPTION="LoRaWAN network-server"
-DIST_FILE_PATH="../dist/tar/${NAME}_${VERSION}_linux_${GOARCH}.tar.gz"
+DIST_FILE_PATH="../dist/${NAME}_${VERSION}_linux_${ARCH}.tar.gz"
 DEB_FILE_PATH="../dist/deb"
 
 COMMON_FPM_ARGS="\
@@ -54,7 +55,7 @@ COMMON_FPM_ARGS="\
 	--after-install $POSTINSTALL_SCRIPT \
 	--before-install $PREINSTALL_SCRIPT \
 	--after-remove $POSTUNINSTALL_SCRIPT \
-	--architecture $ARCH \
+	--architecture $PACKAGE_ARCH \
 	--name $NAME \
 	--version $VERSION"
 
@@ -70,7 +71,8 @@ mkdir -p $TMP_WORK_DIR/$SCRIPT_DIR
 mkdir -p $TMP_WORK_DIR/$LOGROTATE_DIR
 
 # unpack pre-compiled binary
-tar -zxf $DIST_FILE_PATH -C $TMP_WORK_DIR/$BIN_DIR
+tar -zxf $DIST_FILE_PATH -C $TMP_DIR
+cp $TMP_DIR/$NAME $TMP_WORK_DIR/$BIN_DIR
 
 # copy scripts
 cp $TARGET/init.sh $TMP_WORK_DIR/$SCRIPT_DIR
