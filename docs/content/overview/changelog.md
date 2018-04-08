@@ -24,6 +24,10 @@ menu:
 * FSK support when permitted by the LoRaWAN ISM band.
   * Note that the ADR engine will only use the data-rates of the pre-defined multi data-rate channels.
 
+**Bugfixes:**
+
+* Fix leaking Redis connections on pubsub subscriber ([#313](https://github.com/brocaar/loraserver/issues/313).
+
 **Upgrade notes:**
 
 In order to automatically migrate the existing channel-configuration into the
