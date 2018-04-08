@@ -12,6 +12,8 @@ var (
 	ErrAlreadyExists                  = errors.New("object already exists")
 	ErrDoesNotExist                   = errors.New("object does not exist")
 	ErrDoesNotExistOrFCntOrMICInvalid = errors.New("device-session does not exist or invalid fcnt or mic")
+	ErrInvalidAggregationInterval     = errors.New("invalid aggregation interval")
+	ErrInvalidName                    = errors.New("invalid gateway name")
 )
 
 func handlePSQLError(err error, description string) error {

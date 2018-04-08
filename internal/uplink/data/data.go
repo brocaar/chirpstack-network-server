@@ -14,7 +14,6 @@ import (
 	datadown "github.com/brocaar/loraserver/internal/downlink/data"
 	"github.com/brocaar/loraserver/internal/downlink/data/classb"
 	"github.com/brocaar/loraserver/internal/framelog"
-	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -436,10 +435,10 @@ func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession
 		}
 
 		// get gateway info
-		gws, err := gateway.GetGatewaysForMACs(config.C.PostgreSQL.DB, macs)
+		gws, err := storage.GetGatewaysForMACs(config.C.PostgreSQL.DB, macs)
 		if err != nil {
 			log.WithField("macs", macs).Warningf("get gateways for macs error: %s", err)
-			gws = make(map[lorawan.EUI64]gateway.Gateway)
+			gws = make(map[lorawan.EUI64]storage.Gateway)
 		}
 
 		for _, rxInfo := range rxPacket.RXInfoSet {

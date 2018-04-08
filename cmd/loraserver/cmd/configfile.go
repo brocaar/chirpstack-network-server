@@ -114,7 +114,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # LoRaWAN band to use.
   #
   # Valid values are:
-  # *	AS_923
+  # * AS_923
   # * AU_915_928
   # * CN_470_510
   # * CN_779_787
@@ -264,25 +264,6 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # tls key used by the api server (optional)
   tls_key="{{ .NetworkServer.API.TLSKey }}"
 
-  # Gateway API
-  # 
-  # This API is used by the LoRa Channel Manager component to fetch
-  # channel configuration.
-  [network_server.gateway.api]
-  # ip:port to bind the api server
-  bind="{{ .NetworkServer.Gateway.API.Bind }}"
-
-  # CA certificate used by the api server (optional)
-  ca_cert="{{ .NetworkServer.Gateway.API.CACert }}"
-
-  # tls certificate used by the api server (optional)
-  tls_cert="{{ .NetworkServer.Gateway.API.TLSCert }}"
-
-  # tls key used by the api server (optional)
-  tls_key="{{ .NetworkServer.Gateway.API.TLSKey }}"
-
-  # JWT secret used by the gateway api server for gateway authentication / authorization
-  jwt_secret="{{ .NetworkServer.Gateway.API.JWTSecret }}"
 
   # Gateway statistics settings.
   [network_server.gateway.stats]
@@ -327,6 +308,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   downlink_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.DownlinkTopicTemplate }}"
   stats_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.StatsTopicTemplate }}"
   ack_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.AckTopicTemplate }}"
+  config_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.ConfigTopicTemplate }}"
 
   # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
   server="{{ .NetworkServer.Gateway.Backend.MQTT.Server }}"

@@ -8,6 +8,7 @@ import (
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 	"github.com/eclipse/paho.mqtt.golang"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -36,6 +37,7 @@ func TestBackend(t *testing.T) {
 					DownlinkTopicTemplate: "gateway/{{ .MAC }}/tx",
 					StatsTopicTemplate:    "gateway/+/stats",
 					AckTopicTemplate:      "gateway/+/ack",
+					ConfigTopicTemplate:   "gateway/{{ .MAC }}/config",
 				},
 			)
 			So(err, ShouldBeNil)
@@ -45,6 +47,7 @@ func TestBackend(t *testing.T) {
 			Convey("Given the MQTT client is subscribed to gateway/+/tx and gateway/+/stats", func() {
 				statsPacketChan := make(chan gw.GatewayStatsPacket)
 				txPacketChan := make(chan gw.TXPacket)
+				configPacketChan := make(chan gw.GatewayConfigPacket)
 
 				token := c.Subscribe("gateway/+/tx", 0, func(c mqtt.Client, msg mqtt.Message) {
 					var txPacket gw.TXPacket
@@ -52,6 +55,16 @@ func TestBackend(t *testing.T) {
 						t.Fatal(err)
 					}
 					txPacketChan <- txPacket
+				})
+				token.Wait()
+				So(token.Error(), ShouldBeNil)
+
+				token = c.Subscribe("gateway/+/config", 0, func(c mqtt.Client, msg mqtt.Message) {
+					var configPacket gw.GatewayConfigPacket
+					if err := json.Unmarshal(msg.Payload(), &configPacket); err != nil {
+						t.Fatal(err)
+					}
+					configPacketChan <- configPacket
 				})
 				token.Wait()
 				So(token.Error(), ShouldBeNil)
@@ -89,6 +102,30 @@ func TestBackend(t *testing.T) {
 						})
 					})
 
+				})
+
+				Convey("Given a GatewayConfigPacket", func() {
+					configPacket := gw.GatewayConfigPacket{
+						MAC:     lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+						Version: "12345",
+						Channels: []gw.Channel{
+							{
+								Modulation:       band.LoRaModulation,
+								Frequency:        868100000,
+								Bandwidth:        125,
+								SpreadingFactors: []int{10, 11, 12},
+							},
+						},
+					}
+
+					Convey("When sending it from the backend", func() {
+						So(backend.SendGatewayConfigPacket(configPacket), ShouldBeNil)
+
+						Convey("then the same packet has been received", func() {
+							packet := <-configPacketChan
+							So(packet, ShouldResemble, configPacket)
+						})
+					})
 				})
 
 				Convey("Given a GatewayStatsPacket", func() {

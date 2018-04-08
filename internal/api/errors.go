@@ -7,7 +7,6 @@ import (
 
 	"github.com/brocaar/loraserver/internal/downlink/data"
 	"github.com/brocaar/loraserver/internal/downlink/proprietary"
-	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/storage"
 )
 
@@ -20,17 +19,10 @@ var errToCode = map[error]codes.Code{
 
 	proprietary.ErrInvalidDataRate: codes.Internal,
 
-	gateway.ErrDoesNotExist:               codes.NotFound,
-	gateway.ErrAlreadyExists:              codes.AlreadyExists,
-	gateway.ErrInvalidAggregationInterval: codes.InvalidArgument,
-	gateway.ErrInvalidName:                codes.InvalidArgument,
-	gateway.ErrInvalidBand:                codes.InvalidArgument,
-	gateway.ErrInvalidChannel:             codes.InvalidArgument,
-	gateway.ErrInvalidChannelConfig:       codes.InvalidArgument,
-	gateway.ErrInvalidChannelModulation:   codes.InvalidArgument,
-
 	storage.ErrDoesNotExistOrFCntOrMICInvalid: codes.NotFound,
 	storage.ErrDoesNotExist:                   codes.NotFound,
+	storage.ErrInvalidName:                    codes.InvalidArgument,
+	storage.ErrInvalidAggregationInterval:     codes.InvalidArgument,
 }
 
 func errToRPCError(err error) error {

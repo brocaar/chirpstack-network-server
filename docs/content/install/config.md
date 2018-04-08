@@ -312,25 +312,6 @@ get_downlink_data_delay="100ms"
   # tls key used by the api server (optional)
   tls_key=""
 
-  # Gateway API
-  #
-  # This API is used by the LoRa Channel Manager component to fetch
-  # channel configuration.
-  [network_server.gateway.api]
-  # ip:port to bind the api server
-  bind="0.0.0.0:8002"
-
-  # CA certificate used by the api server (optional)
-  ca_cert=""
-
-  # tls certificate used by the api server (optional)
-  tls_cert=""
-
-  # tls key used by the api server (optional)
-  tls_key=""
-
-  # JWT secret used by the gateway api server for gateway authentication / authorization
-  jwt_secret=""
 
   # Gateway statistics settings.
   [network_server.gateway.stats]
@@ -375,6 +356,7 @@ get_downlink_data_delay="100ms"
   downlink_topic_template="gateway/{{ .MAC }}/tx"
   stats_topic_template="gateway/+/stats"
   ack_topic_template="gateway/+/ack"
+  config_topic_template="gateway/{{ .MAC }}/config"
 
   # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
   server="tcp://localhost:1883"

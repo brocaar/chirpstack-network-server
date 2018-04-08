@@ -11,7 +11,6 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink"
-	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/gps"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -48,16 +47,16 @@ func TestClassBUplink(t *testing.T) {
 		config.C.ApplicationServer.Pool = test.NewApplicationServerPool(asClient)
 		config.C.NetworkController.Client = test.NewNetworkControllerClient()
 
-		gw1 := gateway.Gateway{
+		gw1 := storage.Gateway{
 			MAC:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			Name: "test-gateway",
-			Location: gateway.GPSPoint{
+			Location: storage.GPSPoint{
 				Latitude:  1.1234,
 				Longitude: 1.1235,
 			},
 			Altitude: 10.5,
 		}
-		So(gateway.CreateGateway(db, &gw1), ShouldBeNil)
+		So(storage.CreateGateway(db, &gw1), ShouldBeNil)
 
 		// service-profile
 		sp := storage.ServiceProfile{

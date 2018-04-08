@@ -55,11 +55,6 @@ func init() {
 	rootCmd.PersistentFlags().String("tls-cert", "", "")
 	rootCmd.PersistentFlags().String("tls-key", "", "")
 	rootCmd.PersistentFlags().String("bind", "0.0.0.0:8000", "")
-	rootCmd.PersistentFlags().String("gw-server-ca-cert", "", "")
-	rootCmd.PersistentFlags().String("gw-server-tls-cert", "", "")
-	rootCmd.PersistentFlags().String("gw-server-tls-key", "", "")
-	rootCmd.PersistentFlags().String("gw-server-jwt-secret", "", "")
-	rootCmd.PersistentFlags().String("gw-server-bind", "0.0.0.0:8002", "")
 	rootCmd.PersistentFlags().String("redis-url", "redis://localhost:6379", "")
 	rootCmd.PersistentFlags().String("postgres-dsn", "postgres://localhost/loraserver_ns?sslmode=disable", "")
 	rootCmd.PersistentFlags().Bool("db-automigrate", true, "")
@@ -92,8 +87,7 @@ func init() {
 
 	hidden := []string{
 		"net-id", "band", "band-dwell-time-400ms", "band-repeater-compatible", "ca-cert", "tls-cert", "tls-key",
-		"bind", "gw-server-ca-cert", "gw-server-tls-cert", "gw-server-tls-key", "gw-server-jwt-secret", "gw-server-bind",
-		"redis-url", "postgres-dsn", "db-automigrate", "gw-mqtt-server", "gw-mqtt-username", "gw-mqtt-password",
+		"bind", "redis-url", "postgres-dsn", "db-automigrate", "gw-mqtt-server", "gw-mqtt-username", "gw-mqtt-password",
 		"gw-mqtt-ca-cert", "gw-mqtt-tls-cert", "gw-mqtt-tls-key", "nc-server", "nc-ca-cert", "nc-tls-cert",
 		"nc-tls-key", "deduplication-delay", "get-downlink-data-delay", "gw-stats-aggregation-intervals",
 		"timezone", "gw-create-on-stats", "extra-frequencies", "enable-uplink-channels", "node-session-ttl",
@@ -127,11 +121,6 @@ func init() {
 	viper.BindEnv("network_server.api.ca_cert", "CA_CERT")
 	viper.BindEnv("network_server.api.tls_cert", "TLS_CERT")
 	viper.BindEnv("network_server.api.tls_key", "TLS_KEY")
-	viper.BindEnv("network_server.gateway.api.bind", "GW_SERVER_BIND")
-	viper.BindEnv("network_server.gateway.api.ca_cert", "GW_SERVER_CA_CERT")
-	viper.BindEnv("network_server.gateway.api.tls_cert", "GW_SERVER_TLS_CERT")
-	viper.BindEnv("network_server.gateway.api.tls_key", "GW_SERVER_TLS_KEY")
-	viper.BindEnv("network_server.gateway.api.jwt_secret", "GW_SERVER_JWT_SECRET")
 	viper.BindEnv("network_server.gateway.stats.create_gateway_on_stats", "GW_CREATE_ON_STATS")
 	viper.BindEnv("network_server.gateway.stats.timezone", "TIMEZONE")
 	viper.BindEnv("network_server.gateway.stats.aggregation_intervals", "GW_STATS_AGGREGATION_INTERVALS")
@@ -172,11 +161,6 @@ func init() {
 	viper.BindPFlag("network_server.api.ca_cert", rootCmd.PersistentFlags().Lookup("ca-cert"))
 	viper.BindPFlag("network_server.api.tls_cert", rootCmd.PersistentFlags().Lookup("tls-cert"))
 	viper.BindPFlag("network_server.api.tls_key", rootCmd.PersistentFlags().Lookup("tls-key"))
-	viper.BindPFlag("network_server.gateway.api.bind", rootCmd.PersistentFlags().Lookup("gw-server-bind"))
-	viper.BindPFlag("network_server.gateway.api.ca_cert", rootCmd.PersistentFlags().Lookup("gw-server-ca-cert"))
-	viper.BindPFlag("network_server.gateway.api.tls_cert", rootCmd.PersistentFlags().Lookup("gw-server-tls-cert"))
-	viper.BindPFlag("network_server.gateway.api.tls_key", rootCmd.PersistentFlags().Lookup("gw-server-tls-key"))
-	viper.BindPFlag("network_server.gateway.api.jwt_secret", rootCmd.PersistentFlags().Lookup("gw-server-jwt-secret"))
 	viper.BindPFlag("network_server.gateway.stats.create_gateway_on_stats", rootCmd.PersistentFlags().Lookup("gw-create-on-stats"))
 	viper.BindPFlag("network_server.gateway.stats.timezone", rootCmd.PersistentFlags().Lookup("timezone"))
 	viper.BindPFlag("network_server.gateway.stats.aggregation_intervals", rootCmd.PersistentFlags().Lookup("gw-stats-aggregation-intervals"))
@@ -201,6 +185,7 @@ func init() {
 	viper.SetDefault("network_server.gateway.backend.mqtt.downlink_topic_template", "gateway/{{ .MAC }}/tx")
 	viper.SetDefault("network_server.gateway.backend.mqtt.stats_topic_template", "gateway/+/stats")
 	viper.SetDefault("network_server.gateway.backend.mqtt.ack_topic_template", "gateway/+/ack")
+	viper.SetDefault("network_server.gateway.backend.mqtt.config_topic_template", "gateway/{{ .MAC }}/config")
 	viper.SetDefault("network_server.gateway.backend.mqtt.clean_session", true)
 
 	rootCmd.AddCommand(versionCmd)

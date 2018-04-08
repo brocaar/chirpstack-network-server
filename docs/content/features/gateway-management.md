@@ -40,8 +40,16 @@ delete from gateway_stats where "interval" = 'HOUR' and "timestamp" < now() - in
 delete from gateway_stats where "interval" = 'DAY' and "timestamp" < now() - interval '1 year';
 ```
 
-## Gateway JWT token
 
-By using the [api]({{<ref "integrate/api.md">}}), it is possible to generate
-a JWT token. This token is used by the [LoRa Channel Manager](https://docs.loraserver.io/lora-channel-manager/)
-component.
+## Gateway re-configuration
+
+If a [gateway-profile]({{<relref "gateway-profile.md">}}) is assigned
+to the gateway, LoRa Server will push configuration updates to the gateway
+to keep its channel-plan in sync with the configuration of the network.
+This is triggered when LoRa Server receives gateway statistics (which also
+contains the current configuration version of the gateway). If there is new
+version of the configuration available, then it will be pushed by LoRa Server
+to the gateway.
+
+Note that this feature must also be configured in the
+[LoRa Gateway Bridge configuration](/lora-gateway-bridge/install/config/).

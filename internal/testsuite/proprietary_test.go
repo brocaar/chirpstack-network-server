@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan/backend"
@@ -128,17 +127,17 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 		}
 		So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
-		g := gateway.Gateway{
+		g := storage.Gateway{
 			MAC:         lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 			Name:        "test-gw",
 			Description: "test gateway",
-			Location: gateway.GPSPoint{
+			Location: storage.GPSPoint{
 				Latitude:  1.1234,
 				Longitude: 2.345,
 			},
 			Altitude: 10,
 		}
-		So(gateway.CreateGateway(config.C.PostgreSQL.DB, &g), ShouldBeNil)
+		So(storage.CreateGateway(config.C.PostgreSQL.DB, &g), ShouldBeNil)
 
 		Convey("Given a set of testcases", func() {
 			dr0, err := config.C.NetworkServer.Band.Band.GetDataRate(0)

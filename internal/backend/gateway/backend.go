@@ -39,6 +39,7 @@ type MQTTBackendConfig struct {
 	DownlinkTopicTemplate string `mapstructure:"downlink_topic_template"`
 	StatsTopicTemplate    string `mapstructure:"stats_topic_template"`
 	AckTopicTemplate      string `mapstructure:"ack_topic_template"`
+	ConfigTopicTemplate   string `mapstructure:"config_topic_template"`
 }
 
 // MQTTBackend implements a MQTT pub-sub backend.
@@ -50,6 +51,7 @@ type MQTTBackend struct {
 	redisPool        *redis.Pool
 	config           MQTTBackendConfig
 	downlinkTemplate *template.Template
+	configTemplate   *template.Template
 }
 
 // NewMQTTBackend creates a new Backend.
@@ -65,6 +67,11 @@ func NewMQTTBackend(redisPool *redis.Pool, c MQTTBackendConfig) (backend.Gateway
 	b.downlinkTemplate, err = template.New("downlink").Parse(b.config.DownlinkTopicTemplate)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse downlink template error")
+	}
+
+	b.configTemplate, err = template.New("config").Parse(b.config.ConfigTopicTemplate)
+	if err != nil {
+		return nil, errors.Wrap(err, "parse config template error")
 	}
 
 	opts := mqtt.NewClientOptions()
@@ -199,6 +206,29 @@ func (b *MQTTBackend) SendTXPacket(txPacket gw.TXPacket) error {
 	if token := b.conn.Publish(topic.String(), b.config.QOS, false, bb); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("backend/gateway: publish tx packet failed: %s", token.Error())
 	}
+	return nil
+}
+
+// SendGatewayConfigPacket sends the given GatewayConfigPacket to the gateway.
+func (b *MQTTBackend) SendGatewayConfigPacket(configPacket gw.GatewayConfigPacket) error {
+	bb, err := json.Marshal(configPacket)
+	if err != nil {
+		return errors.Wrap(err, "backend/gateway: json marshal error")
+	}
+
+	topic := bytes.NewBuffer(nil)
+	if err := b.configTemplate.Execute(topic, struct{ MAC lorawan.EUI64 }{configPacket.MAC}); err != nil {
+		return errors.Wrap(err, "backend/gateway: execute config template error")
+	}
+	log.WithFields(log.Fields{
+		"topic": topic.String(),
+		"qos":   b.config.QOS,
+	}).Info("backend/gateway: publishing config packet")
+
+	if token := b.conn.Publish(topic.String(), b.config.QOS, false, bb); token.Wait() && token.Error() != nil {
+		return errors.Wrap(err, "backend/gateway: publish config packet error")
+	}
+
 	return nil
 }
 

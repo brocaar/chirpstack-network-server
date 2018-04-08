@@ -94,50 +94,23 @@ service NetworkServer {
     // UpdateGateway updates an existing gateway.
     rpc UpdateGateway(UpdateGatewayRequest) returns (UpdateGatewayResponse) {}
 
-    // ListGateways returns the existing gateways.
-    rpc ListGateways(ListGatewayRequest) returns (ListGatewayResponse) {}
-
     // DeleteGateway deletes a gateway.
     rpc DeleteGateway(DeleteGatewayRequest) returns (DeleteGatewayResponse) {}
 
-    // GenerateGatewayToken issues a JWT token which can be used by the gateway
-    // for authentication.
-    rpc GenerateGatewayToken(GenerateGatewayTokenRequest) returns (GenerateGatewayTokenResponse) {}
+    // CreateGatewayProfile creates the given gateway-profile.
+    rpc CreateGatewayProfile(CreateGatewayProfileRequest) returns (CreateGatewayProfileResponse) {}
+
+    // GetGatewayProfile returns the gateway-profile given an id.
+    rpc GetGatewayProfile(GetGatewayProfileRequest) returns (GetGatewayProfileResponse) {}
+
+    // UpdateGatewayProfile updates the given gateway-profile.
+    rpc UpdateGatewayProfile(UpdateGatewayProfileRequest) returns (UpdateGatewayProfileResponse) {}
+
+    // DeleteGatewayProfile deletes the gateway-profile matching a given id.
+    rpc DeleteGatewayProfile(DeleteGatewayProfileRequest) returns (DeleteGatewayProfileResponse) {}
 
     // GetGatewayStats returns stats of an existing gateway.
     rpc GetGatewayStats(GetGatewayStatsRequest) returns (GetGatewayStatsResponse) {}
-
-    // CreateChannelConfiguration creates the given channel-configuration.
-    rpc CreateChannelConfiguration(CreateChannelConfigurationRequest) returns (CreateChannelConfigurationResponse) {}
-
-    // GetChannelConfiguration returns the channel-configuration for the given ID.
-    rpc GetChannelConfiguration(GetChannelConfigurationRequest) returns (GetChannelConfigurationResponse) {}
-
-    // UpdateChannelConfiguration updates the given channel-configuration.
-    rpc UpdateChannelConfiguration(UpdateChannelConfigurationRequest) returns (UpdateChannelConfigurationResponse) {}
-
-    // DeleteChannelConfiguration deletes the channel-configuration matching the
-    // given ID.
-    rpc DeleteChannelConfiguration(DeleteChannelConfigurationRequest) returns (DeleteChannelConfigurationResponse) {}
-
-    // ListChannelConfigurations returns all channel-configurations.
-    rpc ListChannelConfigurations(ListChannelConfigurationsRequest) returns (ListChannelConfigurationsResponse) {}
-
-    // CreateExtraChannel creates the given extra channel.
-    rpc CreateExtraChannel(CreateExtraChannelRequest) returns (CreateExtraChannelResponse) {}
-
-    // UpdateExtraChannel updates the given extra channel.
-    rpc UpdateExtraChannel(UpdateExtraChannelRequest) returns (UpdateExtraChannelResponse) {}
-
-    // DeleteExtraChannel deletes the extra channel matching the given id.
-    rpc DeleteExtraChannel(DeleteExtraChannelRequest) returns (DeleteExtraChannelResponse) {}
-
-    // GetExtraChannelsForChannelConfigurationID returns the extra channels for
-    // the given channel-configuration id.
-    rpc GetExtraChannelsForChannelConfigurationID(GetExtraChannelsForChannelConfigurationIDRequest) returns (GetExtraChannelsForChannelConfigurationIDResponse) {}
-
-    // MigrateNodeToDeviceSession. This method is for internal us only.
-    rpc MigrateNodeToDeviceSession(MigrateNodeToDeviceSessionRequest) returns (MigrateNodeToDeviceSessionResponse) {}
 
     // StreamFrameLogsForGateway returns a stream of frames seen by the given gateway.
     rpc StreamFrameLogsForGateway(StreamFrameLogsForGatewayRequest) returns (stream StreamFrameLogsForGatewayResponse) {}
@@ -147,6 +120,12 @@ service NetworkServer {
 
     // GetVersion returns the LoRa Server version.
     rpc GetVersion(GetVersionRequest) returns (GetVersionResponse) {}
+
+    // MigrateNodeToDeviceSession. This method is for internal us only.
+    rpc MigrateNodeToDeviceSession(MigrateNodeToDeviceSessionRequest) returns (MigrateNodeToDeviceSessionResponse) {}
+
+    // MigrateChannelConfigurationToGatewayProfile. This method is for internal use only.
+    rpc MigrateChannelConfigurationToGatewayProfile(MigrateChannelConfigurationToGatewayProfileRequest) returns (MigrateChannelConfigurationToGatewayProfileResponse) {}
 }
 
 enum RXWindow {
@@ -466,8 +445,8 @@ message CreateGatewayRequest {
     // Altitude of the gateway.
     double altitude = 6;
 
-    // ID of the channel-configuration (optional).
-    int64 channelConfigurationID = 7;
+    // ID of the gateway-profile (optional).
+    string gatewayProfileID = 8;
 }
 
 message CreateGatewayResponse {}
@@ -508,8 +487,8 @@ message GetGatewayResponse {
     // The timestamp when the gateway was last seen.
     string lastSeenAt = 10;
 
-    // ID of the channel-configuration (optional).
-    int64 channelConfigurationID = 11;
+    // ID of the gateway-profile (optional).
+    string gatewayProfileID = 12;
 }
 
 message UpdateGatewayRequest {
@@ -531,41 +510,15 @@ message UpdateGatewayRequest {
     // Altitude of the gateway.
     double altitude = 6;
 
-    // ID of the channel-configuration (optional).
-    int64 channelConfigurationID = 7;
+    // ID of the gateway-profile.
+    string gatewayProfileID = 8;
 }
 
 message UpdateGatewayResponse {}
 
-message ListGatewayRequest {
-    // Max number of gateways to return in the result-set.
-    int32 limit = 1;
-
-    // Offset in the result-set (for pagination).
-    int32 offset = 2;
-}
-
-message ListGatewayResponse {
-    // Total number of gateways.
-    int32 totalCount = 1;
-
-    // Result-set.
-    repeated GetGatewayResponse result = 2;
-}
-
 message DeleteGatewayRequest {
     // MAC address of the gateway.
     bytes mac = 1;
-}
-
-message GenerateGatewayTokenRequest {
-    // MAC address of the gateway.
-    bytes mac = 1;
-}
-
-message GenerateGatewayTokenResponse {
-    // Generated token.
-    string token = 1;
 }
 
 message DeleteGatewayResponse {}
@@ -615,177 +568,6 @@ message GetGatewayStatsRequest {
 message GetGatewayStatsResponse {
     repeated GatewayStats result = 1;
 }
-
-message CreateChannelConfigurationRequest {
-    // Name of the channel-configuration.
-    string name = 1;
-
-    // Channels active in this configuration. These channel indices must map
-    // to the channel numbers as specified in the LoRaWAN Regional Parameters.
-    repeated int32 channels = 2;
-}
-
-message CreateChannelConfigurationResponse {
-    // ID of the channel-configuration.
-    int64 id = 1;
-}
-
-message GetChannelConfigurationRequest {
-    // ID of the channel-configuration.
-    int64 id = 1;
-}
-
-message GetChannelConfigurationResponse {
-    // ID of the channel-configuration.
-    int64 id = 1;
-
-    // Name of the channel-configuration.
-    string name = 2;
-
-    // Channels active in this configuration. These channel indices must map
-    // to the channel numbers as specified in the LoRaWAN Regional Parameters.
-    repeated int32 channels = 3;
-
-    // The timestamp when the channel-configuration was created.
-    string createdAt = 4;
-
-    // The timestamp when the channel-configuration was last updated.
-    string updatedAt = 5;
-}
-
-message UpdateChannelConfigurationRequest {
-    // ID of the channel-configuration.
-    int64 id = 1;
-
-    // Name of the channel-configuration.
-    string name = 2;
-
-    // Channels active in this configuration. These channel indices must map
-    // to the channel numbers as specified in the LoRaWAN Regional Parameters.
-    repeated int32 channels = 3;
-}
-
-message UpdateChannelConfigurationResponse {}
-
-message DeleteChannelConfigurationRequest {
-    // ID of the channel-configuration.
-    int64 id = 1;
-}
-
-message DeleteChannelConfigurationResponse {}
-
-message ListChannelConfigurationsRequest {}
-
-message ListChannelConfigurationsResponse {
-    // Result-set.
-    repeated GetChannelConfigurationResponse result = 1;
-}
-
-message CreateExtraChannelRequest {
-    // ID of the channel-configuration.
-    int64 channelConfigurationID = 1;
-
-    // Modulation.
-    Modulation modulation = 2;
-
-    // Frequency.
-    int32 frequency = 3;
-
-    // Bandwidth.
-    int32 bandWidth = 4;
-
-    // Bit rate (in case of FSK modulation).
-    int32 bitRate = 5;
-
-    // Spread-factors (in case of LoRa modulation).
-    repeated int32 spreadFactors = 6;
-}
-
-message CreateExtraChannelResponse {
-    // ID of the extra channel.
-    int64 id = 1;
-}
-
-message UpdateExtraChannelRequest {
-    // ID of the extra channel.
-    int64 id = 1;
-
-    // ID of the channel-configuration.
-    int64 channelConfigurationID = 2;
-
-    // Modulation.
-    Modulation modulation = 3;
-
-    // Frequency.
-    int32 frequency = 4;
-
-    // Bandwidth.
-    int32 bandWidth = 5;
-
-    // Bit rate (in case of FSK modulation).
-    int32 bitRate = 6;
-
-    // Spread-factors (in case of LoRa modulation).
-    repeated int32 spreadFactors = 7;
-}
-
-message UpdateExtraChannelResponse {}
-
-message DeleteExtraChannelRequest {
-    // ID of the extra channel.
-    int64 id = 1;
-}
-
-message DeleteExtraChannelResponse {}
-
-message GetExtraChannelResponse {
-    // ID of the extra channel.
-    int64 id = 1;
-
-    // ID of the channel-configuration.
-    int64 channelConfigurationID = 2;
-
-    // Created-at timestamp.
-    string createdAt = 3;
-
-    // Updated-at timestamp.
-    string updatedAt = 4;
-
-    // Modulation.
-    Modulation modulation = 5;
-
-    // Frequency.
-    int32 frequency = 6;
-
-    // Bandwidth.
-    int32 bandwidth = 7;
-
-    // Bit rate (in case of FSK modulation).
-    int32 bitRate = 8;
-
-    // Spread-factors (in case of LoRa modulation).
-    repeated int32 spreadFactors = 9;
-}
-
-message GetExtraChannelsForChannelConfigurationIDRequest {
-    // ID of the channel-configuration.
-    int64 id = 1;
-}
-
-message GetExtraChannelsForChannelConfigurationIDResponse {
-    // Result-set.
-    repeated GetExtraChannelResponse result = 1;
-}
-
-message MigrateNodeToDeviceSessionRequest {
-    bytes devEUI = 1;
-
-    bytes joinEUI = 2;
-
-    repeated bytes devNonces = 3;
-}
-
-message MigrateNodeToDeviceSessionResponse {}
 
 message DeviceQueueItem {
     // DevEUI of the device.
@@ -977,4 +759,93 @@ message GetVersionResponse {
 
     // Region configured for this network-server.
     Region region = 2;
+}
+message GatewayProfile {
+    // ID of the gateway-profile.
+    string gatewayProfileID = 1;
+
+    // Default channels (channels specified by the LoRaWAN Regional Parameters
+    // specification) enabled for this configuration.
+    repeated uint32 channels = 2;
+
+    // Extra channels added to the channel-configuration (in case the LoRaWAN
+    // region supports adding custom channels).
+    repeated GatewayProfileExtraChannel extraChannels = 3;
+}
+
+message GatewayProfileExtraChannel {
+    // Modulation.
+    Modulation modulation = 1;
+
+    // Frequency.
+    uint32 frequency = 2;
+
+    // Bandwidth.
+    uint32 bandwidth = 3;
+
+    // Bitrate (in case of FSK modulation).
+    uint32 bitrate = 4;
+
+    // Spreading factors (in case of LoRa modulation).
+    repeated uint32 spreadingFactors = 5;
+}
+
+message CreateGatewayProfileRequest {
+    GatewayProfile gatewayProfile = 1;
+}
+
+message CreateGatewayProfileResponse {
+    // ID of the create configuration object.
+    string gatewayProfileID = 1;
+}
+
+message GetGatewayProfileRequest {
+    // ID of the gateway-profile.
+    string gatewayProfileID = 1;
+}
+
+message GetGatewayProfileResponse {
+    GatewayProfile gatewayProfile = 1;
+    string createdAt = 2;
+    string updatedAt = 3;
+}
+
+message UpdateGatewayProfileRequest {
+    GatewayProfile gatewayProfile = 1;
+}
+
+message UpdateGatewayProfileResponse {}
+
+message DeleteGatewayProfileRequest {
+    // ID of the gateway-profile.
+    string gatewayProfileID = 1;
+}
+
+message DeleteGatewayProfileResponse {}
+
+message MigrateNodeToDeviceSessionRequest {
+    bytes devEUI = 1;
+
+    bytes joinEUI = 2;
+
+    repeated bytes devNonces = 3;
+}
+
+message MigrateNodeToDeviceSessionResponse {}
+
+message MigrateChannelConfigurationToGatewayProfileRequest {}
+
+message MigrateChannelConfigurationToGatewayProfileResponse {
+    repeated GatewayProfileMigration migrated = 1;
+}
+
+message GatewayProfileMigration {
+    // ID Of the created gateway-profile.
+    string gatewayProfileID = 1;
+
+    // Name of the channel-configuration.
+    string name = 2;
+
+    // Gateway MACs using this gateway-profile.
+    repeated bytes macs = 3;
 }

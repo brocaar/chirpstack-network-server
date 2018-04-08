@@ -107,7 +107,8 @@ type GatewayStatsPacket struct {
 	RXPacketsReceivedOK int                    `json:"rxPacketsReceivedOK"`
 	TXPacketsReceived   int                    `json:"txPacketsReceived"`
 	TXPacketsEmitted    int                    `json:"txPacketsEmitted"`
-	CustomData          map[string]interface{} `json:"customData"` // custom fields defined by alternative packet_forwarder versions (e.g. TTN sends platform, contactEmail, and description)
+	ConfigVersion       string                 `json:"configVersion,omitempty"`
+	CustomData          map[string]interface{} `json:"customData,omitempty"` // custom fields defined by alternative packet_forwarder versions (e.g. TTN sends platform, contactEmail, and description)
 }
 
 // Possible TX errors.
@@ -127,4 +128,21 @@ type TXAck struct {
 	MAC   lorawan.EUI64 `json:"mac"`
 	Token uint16        `json:"token"`
 	Error string        `json:"error,omitempty"`
+}
+
+// GatewayConfigPacket contains the configuration to be pushed
+// to the gateway.
+type GatewayConfigPacket struct {
+	MAC      lorawan.EUI64 `json:"mac"`
+	Version  string        `json:"version"`
+	Channels []Channel     `json:"channels"`
+}
+
+// Channel defines a gateay channel.
+type Channel struct {
+	Modulation       band.Modulation `json:"modulation"`
+	Frequency        int             `json:"frequency"`
+	Bandwidth        int             `json:"bandwidth"`
+	Bitrate          int             `json:"bitrate,omitempty"`          // FSK modulation only
+	SpreadingFactors []int           `json:"spreadingFactors,omitempty"` // LoRa modulation only
 }

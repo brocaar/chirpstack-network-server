@@ -79,14 +79,6 @@ type Config struct {
 		} `mapstructure:"api"`
 
 		Gateway struct {
-			API struct {
-				Bind      string
-				CACert    string `mapstructure:"ca_cert"`
-				TLSCert   string `mapstructure:"tls_cert"`
-				TLSKey    string `mapstructure:"tls_key"`
-				JWTSecret string `mapstructure:"jwt_secret"`
-			} `mapstructure:"api"`
-
 			Stats struct {
 				TimezoneLocation     *time.Location
 				CreateGatewayOnStats bool `mapstructure:"create_gateway_on_stats"`

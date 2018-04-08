@@ -2,25 +2,21 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"testing"
 	"time"
 
 	"github.com/brocaar/lorawan/band"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
-	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
-	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/gps"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -39,7 +35,7 @@ func TestNetworkServerAPI(t *testing.T) {
 	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
 	config.C.NetworkServer.NetID = [3]byte{1, 2, 3}
 
-	gateway.MustSetStatsAggregationIntervals([]string{"MINUTE"})
+	storage.MustSetStatsAggregationIntervals([]string{"MINUTE"})
 
 	Convey("Given a clean PostgreSQL and Redis database + api instance", t, func() {
 		test.MustResetDB(db)
@@ -908,17 +904,6 @@ func TestNetworkServerAPI(t *testing.T) {
 				So(resp.LastSeenAt, ShouldEqual, "")
 			})
 
-			Convey("Then ListGateways returns the gateway", func() {
-				resp, err := api.ListGateways(ctx, &ns.ListGatewayRequest{
-					Limit:  10,
-					Offset: 0,
-				})
-				So(err, ShouldBeNil)
-				So(resp.TotalCount, ShouldEqual, 1)
-				So(resp.Result, ShouldHaveLength, 1)
-				So(resp.Result[0].Mac, ShouldResemble, []byte{1, 2, 3, 4, 5, 6, 7, 8})
-			})
-
 			Convey("Then DeleteGateway deletes the gateway", func() {
 				_, err := api.DeleteGateway(ctx, &ns.DeleteGatewayRequest{
 					Mac: []byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -928,30 +913,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				_, err = api.GetGateway(ctx, &ns.GetGatewayRequest{
 					Mac: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 				})
-				So(err, ShouldResemble, grpc.Errorf(codes.NotFound, "gateway does not exist"))
-			})
-
-			Convey("When calling GenerateGatewayToken", func() {
-				config.C.NetworkServer.Gateway.API.JWTSecret = "verysecret"
-
-				tokenResp, err := api.GenerateGatewayToken(ctx, &ns.GenerateGatewayTokenRequest{
-					Mac: []byte{1, 2, 3, 4, 5, 6, 7, 8},
-				})
-				So(err, ShouldBeNil)
-
-				Convey("Then a valid JWT token has been returned", func() {
-					token, err := jwt.ParseWithClaims(tokenResp.Token, &auth.Claims{}, func(token *jwt.Token) (interface{}, error) {
-						if token.Header["alg"] != "HS256" {
-							return nil, fmt.Errorf("invalid algorithm %s", token.Header["alg"])
-						}
-						return []byte("verysecret"), nil
-					})
-					So(err, ShouldBeNil)
-					So(token.Valid, ShouldBeTrue)
-					claims, ok := token.Claims.(*auth.Claims)
-					So(ok, ShouldBeTrue)
-					So(claims.MAC, ShouldEqual, lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8})
-				})
+				So(err, ShouldResemble, grpc.Errorf(codes.NotFound, "object does not exist"))
 			})
 
 			Convey("Given some stats for this gateway", func() {
@@ -995,130 +957,84 @@ func TestNetworkServerAPI(t *testing.T) {
 				})
 			})
 
-			Convey("When calling CreateChannelConfiguration", func() {
-				cfResp, err := api.CreateChannelConfiguration(ctx, &ns.CreateChannelConfigurationRequest{
-					Name:     "test-config",
-					Channels: []int32{0, 1, 2},
-				})
+			Convey("When creating a gateway-profile object", func() {
+				req := ns.CreateGatewayProfileRequest{
+					GatewayProfile: &ns.GatewayProfile{
+						Channels: []uint32{0, 1, 2},
+						ExtraChannels: []*ns.GatewayProfileExtraChannel{
+							{
+								Modulation:       ns.Modulation_LORA,
+								Frequency:        868700000,
+								Bandwidth:        125,
+								SpreadingFactors: []uint32{10, 11, 12},
+							},
+							{
+								Modulation: ns.Modulation_FSK,
+								Frequency:  868900000,
+								Bandwidth:  125,
+								Bitrate:    50000,
+							},
+						},
+					},
+				}
+				createResp, err := api.CreateGatewayProfile(ctx, &req)
 				So(err, ShouldBeNil)
-				So(cfResp.Id, ShouldNotEqual, 0)
+				So(createResp.GatewayProfileID, ShouldNotEqual, "")
 
-				Convey("Then the channel-configuration has been created", func() {
-					cf, err := api.GetChannelConfiguration(ctx, &ns.GetChannelConfigurationRequest{
-						Id: cfResp.Id,
+				Convey("Then it can be retrieved", func() {
+					req.GatewayProfile.GatewayProfileID = createResp.GatewayProfileID
+
+					getResp, err := api.GetGatewayProfile(ctx, &ns.GetGatewayProfileRequest{
+						GatewayProfileID: createResp.GatewayProfileID,
 					})
 					So(err, ShouldBeNil)
-					So(cf.Name, ShouldEqual, "test-config")
-					So(cf.Channels, ShouldResemble, []int32{0, 1, 2})
-					So(cf.CreatedAt, ShouldNotEqual, "")
-					So(cf.UpdatedAt, ShouldNotEqual, "")
-
-					Convey("Then ListChannelConfigurations returns the channel-configuration", func() {
-						cfs, err := api.ListChannelConfigurations(ctx, &ns.ListChannelConfigurationsRequest{})
-						So(err, ShouldBeNil)
-						So(cfs.Result, ShouldHaveLength, 1)
-						So(cfs.Result[0], ShouldResemble, cf)
-					})
-
-					Convey("Then UpdateChannelConfiguration updates the channel-configuration", func() {
-						_, err := api.UpdateChannelConfiguration(ctx, &ns.UpdateChannelConfigurationRequest{
-							Id:       cfResp.Id,
-							Name:     "updated-channel-conf",
-							Channels: []int32{0, 1},
-						})
-						So(err, ShouldBeNil)
-
-						cf2, err := api.GetChannelConfiguration(ctx, &ns.GetChannelConfigurationRequest{
-							Id: cfResp.Id,
-						})
-						So(err, ShouldBeNil)
-						So(cf2.Name, ShouldEqual, "updated-channel-conf")
-						So(cf2.Channels, ShouldResemble, []int32{0, 1})
-						So(cf2.CreatedAt, ShouldEqual, cf.CreatedAt)
-						So(cf2.UpdatedAt, ShouldNotEqual, "")
-						So(cf2.UpdatedAt, ShouldNotEqual, cf.UpdatedAt)
-					})
+					So(getResp.CreatedAt, ShouldNotEqual, "")
+					So(getResp.UpdatedAt, ShouldNotEqual, "")
+					So(getResp.GatewayProfile, ShouldResemble, req.GatewayProfile)
 				})
 
-				Convey("Then the channel-configuration can be assigned to the gateway", func() {
-					req := ns.UpdateGatewayRequest{
-						Mac:                    []byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Name:                   "test-gateway-updated",
-						Description:            "garden gateway",
-						Latitude:               1.1235,
-						Longitude:              1.1236,
-						Altitude:               15.7,
-						ChannelConfigurationID: cfResp.Id,
+				Convey("Then it can be updated", func() {
+					updateReq := ns.UpdateGatewayProfileRequest{
+						GatewayProfile: &ns.GatewayProfile{
+							GatewayProfileID: createResp.GatewayProfileID,
+							Channels:         []uint32{0, 1},
+							ExtraChannels: []*ns.GatewayProfileExtraChannel{
+								{
+									Modulation: ns.Modulation_FSK,
+									Frequency:  868900000,
+									Bandwidth:  125,
+									Bitrate:    50000,
+								},
+								{
+									Modulation:       ns.Modulation_LORA,
+									Frequency:        868700000,
+									Bandwidth:        125,
+									SpreadingFactors: []uint32{10, 11, 12},
+								},
+							},
+						},
 					}
-					_, err := api.UpdateGateway(ctx, &req)
+					_, err := api.UpdateGatewayProfile(ctx, &updateReq)
 					So(err, ShouldBeNil)
 
-					gw, err := api.GetGateway(ctx, &ns.GetGatewayRequest{
-						Mac: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+					resp, err := api.GetGatewayProfile(ctx, &ns.GetGatewayProfileRequest{
+						GatewayProfileID: createResp.GatewayProfileID,
 					})
 					So(err, ShouldBeNil)
-					So(gw.ChannelConfigurationID, ShouldEqual, cfResp.Id)
+					So(resp.GatewayProfile, ShouldResemble, updateReq.GatewayProfile)
 				})
 
-				Convey("Then DeleteChannelConfiguration deletes the channel-configuration", func() {
-					_, err := api.DeleteChannelConfiguration(ctx, &ns.DeleteChannelConfigurationRequest{
-						Id: cfResp.Id,
+				Convey("Then it can be deleted", func() {
+					_, err := api.DeleteGatewayProfile(ctx, &ns.DeleteGatewayProfileRequest{
+						GatewayProfileID: createResp.GatewayProfileID,
 					})
 					So(err, ShouldBeNil)
-					_, err = api.GetChannelConfiguration(ctx, &ns.GetChannelConfigurationRequest{
-						Id: cfResp.Id,
+
+					_, err = api.DeleteGatewayProfile(ctx, &ns.DeleteGatewayProfileRequest{
+						GatewayProfileID: createResp.GatewayProfileID,
 					})
 					So(err, ShouldNotBeNil)
 					So(grpc.Code(err), ShouldEqual, codes.NotFound)
-				})
-
-				Convey("Then CreateExtraChannel creates an extra channel-configuration channel", func() {
-					ecRes, err := api.CreateExtraChannel(ctx, &ns.CreateExtraChannelRequest{
-						ChannelConfigurationID: cfResp.Id,
-						Modulation:             ns.Modulation_LORA,
-						Frequency:              867100000,
-						BandWidth:              125,
-						SpreadFactors:          []int32{0, 1, 2, 3, 4, 5},
-					})
-					So(err, ShouldBeNil)
-					So(ecRes.Id, ShouldNotEqual, 0)
-
-					Convey("Then UpdateExtraChannel updates this extra channel", func() {
-						_, err := api.UpdateExtraChannel(ctx, &ns.UpdateExtraChannelRequest{
-							Id: ecRes.Id,
-							ChannelConfigurationID: cfResp.Id,
-							Modulation:             ns.Modulation_LORA,
-							Frequency:              867300000,
-							BandWidth:              250,
-							SpreadFactors:          []int32{5},
-						})
-						So(err, ShouldBeNil)
-
-						extraChans, err := api.GetExtraChannelsForChannelConfigurationID(ctx, &ns.GetExtraChannelsForChannelConfigurationIDRequest{
-							Id: cfResp.Id,
-						})
-						So(err, ShouldBeNil)
-						So(extraChans.Result, ShouldHaveLength, 1)
-						So(extraChans.Result[0].Modulation, ShouldEqual, ns.Modulation_LORA)
-						So(extraChans.Result[0].Frequency, ShouldEqual, 867300000)
-						So(extraChans.Result[0].Bandwidth, ShouldEqual, 250)
-						So(extraChans.Result[0].SpreadFactors, ShouldResemble, []int32{5})
-						So(extraChans.Result[0].CreatedAt, ShouldNotEqual, "")
-						So(extraChans.Result[0].UpdatedAt, ShouldNotEqual, "")
-					})
-
-					Convey("Then DeleteExtraChannel deletes this extra channel", func() {
-						_, err := api.DeleteExtraChannel(ctx, &ns.DeleteExtraChannelRequest{
-							Id: ecRes.Id,
-						})
-						So(err, ShouldBeNil)
-
-						extraChans, err := api.GetExtraChannelsForChannelConfigurationID(ctx, &ns.GetExtraChannelsForChannelConfigurationIDRequest{
-							Id: cfResp.Id,
-						})
-						So(err, ShouldBeNil)
-						So(extraChans.Result, ShouldHaveLength, 0)
-					})
 				})
 			})
 

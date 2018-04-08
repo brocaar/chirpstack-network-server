@@ -5,7 +5,6 @@ import (
 
 	"github.com/brocaar/loraserver/internal/gps"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -14,12 +13,10 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/brocaar/loraserver/api/ns"
-	"github.com/brocaar/loraserver/internal/api/auth"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink/data/classb"
 	proprietarydown "github.com/brocaar/loraserver/internal/downlink/proprietary"
 	"github.com/brocaar/loraserver/internal/framelog"
-	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
@@ -704,21 +701,21 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 	var mac lorawan.EUI64
 	copy(mac[:], req.Mac)
 
-	gw := gateway.Gateway{
+	gw := storage.Gateway{
 		MAC:         mac,
 		Name:        req.Name,
 		Description: req.Description,
-		Location: gateway.GPSPoint{
+		Location: storage.GPSPoint{
 			Latitude:  req.Latitude,
 			Longitude: req.Longitude,
 		},
 		Altitude: req.Altitude,
 	}
-	if req.ChannelConfigurationID != 0 {
-		gw.ChannelConfigurationID = &req.ChannelConfigurationID
+	if req.GatewayProfileID != "" {
+		gw.GatewayProfileID = &req.GatewayProfileID
 	}
 
-	err := gateway.CreateGateway(config.C.PostgreSQL.DB, &gw)
+	err := storage.CreateGateway(config.C.PostgreSQL.DB, &gw)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -731,7 +728,7 @@ func (n *NetworkServerAPI) GetGateway(ctx context.Context, req *ns.GetGatewayReq
 	var mac lorawan.EUI64
 	copy(mac[:], req.Mac)
 
-	gw, err := gateway.GetGateway(config.C.PostgreSQL.DB, mac)
+	gw, err := storage.GetGateway(config.C.PostgreSQL.DB, mac)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -744,26 +741,26 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 	var mac lorawan.EUI64
 	copy(mac[:], req.Mac)
 
-	gw, err := gateway.GetGateway(config.C.PostgreSQL.DB, mac)
+	gw, err := storage.GetGateway(config.C.PostgreSQL.DB, mac)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if req.ChannelConfigurationID != 0 {
-		gw.ChannelConfigurationID = &req.ChannelConfigurationID
+	if req.GatewayProfileID != "" {
+		gw.GatewayProfileID = &req.GatewayProfileID
 	} else {
-		gw.ChannelConfigurationID = nil
+		gw.GatewayProfileID = nil
 	}
 
 	gw.Name = req.Name
 	gw.Description = req.Description
-	gw.Location = gateway.GPSPoint{
+	gw.Location = storage.GPSPoint{
 		Latitude:  req.Latitude,
 		Longitude: req.Longitude,
 	}
 	gw.Altitude = req.Altitude
 
-	err = gateway.UpdateGateway(config.C.PostgreSQL.DB, &gw)
+	err = storage.UpdateGateway(config.C.PostgreSQL.DB, &gw)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -771,71 +768,17 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 	return &ns.UpdateGatewayResponse{}, nil
 }
 
-// ListGateways returns the existing gateways.
-func (n *NetworkServerAPI) ListGateways(ctx context.Context, req *ns.ListGatewayRequest) (*ns.ListGatewayResponse, error) {
-	count, err := gateway.GetGatewayCount(config.C.PostgreSQL.DB)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	gws, err := gateway.GetGateways(config.C.PostgreSQL.DB, int(req.Limit), int(req.Offset))
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	resp := ns.ListGatewayResponse{
-		TotalCount: int32(count),
-	}
-
-	for _, gw := range gws {
-		resp.Result = append(resp.Result, gwToResp(gw))
-	}
-
-	return &resp, nil
-}
-
 // DeleteGateway deletes a gateway.
 func (n *NetworkServerAPI) DeleteGateway(ctx context.Context, req *ns.DeleteGatewayRequest) (*ns.DeleteGatewayResponse, error) {
 	var mac lorawan.EUI64
 	copy(mac[:], req.Mac)
 
-	err := gateway.DeleteGateway(config.C.PostgreSQL.DB, mac)
+	err := storage.DeleteGateway(config.C.PostgreSQL.DB, mac)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
 	return &ns.DeleteGatewayResponse{}, nil
-}
-
-// GenerateGatewayToken issues a JWT token which can be used by the gateway
-// for authentication.
-func (n *NetworkServerAPI) GenerateGatewayToken(ctx context.Context, req *ns.GenerateGatewayTokenRequest) (*ns.GenerateGatewayTokenResponse, error) {
-	var mac lorawan.EUI64
-	copy(mac[:], req.Mac)
-
-	// check that the gateway exists
-	_, err := gateway.GetGateway(config.C.PostgreSQL.DB, mac)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, auth.Claims{
-		StandardClaims: jwt.StandardClaims{
-			Audience:  "ns",
-			Issuer:    "ns",
-			NotBefore: time.Now().Unix(),
-			Subject:   "gateway",
-		},
-		MAC: mac,
-	})
-	signedToken, err := token.SignedString([]byte(config.C.NetworkServer.Gateway.API.JWTSecret))
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	return &ns.GenerateGatewayTokenResponse{
-		Token: signedToken,
-	}, nil
 }
 
 // GetGatewayStats returns stats of an existing gateway.
@@ -853,7 +796,7 @@ func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatew
 		return nil, grpc.Errorf(codes.InvalidArgument, "parse end timestamp: %s", err)
 	}
 
-	stats, err := gateway.GetGatewayStats(config.C.PostgreSQL.DB, mac, req.Interval.String(), start, end)
+	stats, err := storage.GetGatewayStats(config.C.PostgreSQL.DB, mac, req.Interval.String(), start, end)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -951,216 +894,141 @@ func (n *NetworkServerAPI) StreamFrameLogsForDevice(req *ns.StreamFrameLogsForDe
 	return nil
 }
 
-// CreateChannelConfiguration creates the given channel-configuration.
-func (n *NetworkServerAPI) CreateChannelConfiguration(ctx context.Context, req *ns.CreateChannelConfigurationRequest) (*ns.CreateChannelConfigurationResponse, error) {
-	cf := gateway.ChannelConfiguration{
-		Name: req.Name,
-		Band: string(config.C.NetworkServer.Band.Name),
-	}
-	for _, c := range req.Channels {
-		cf.Channels = append(cf.Channels, int64(c))
+// CreateGatewayProfile creates the given gateway-profile.
+func (n *NetworkServerAPI) CreateGatewayProfile(ctx context.Context, req *ns.CreateGatewayProfileRequest) (*ns.CreateGatewayProfileResponse, error) {
+	gc := storage.GatewayProfile{
+		GatewayProfileID: req.GatewayProfile.GatewayProfileID,
 	}
 
-	if err := gateway.CreateChannelConfiguration(config.C.PostgreSQL.DB, &cf); err != nil {
-		return nil, errToRPCError(err)
+	for _, c := range req.GatewayProfile.Channels {
+		gc.Channels = append(gc.Channels, int64(c))
 	}
 
-	return &ns.CreateChannelConfigurationResponse{Id: cf.ID}, nil
-}
-
-// GetChannelConfiguration returns the channel-configuration for the given ID.
-func (n *NetworkServerAPI) GetChannelConfiguration(ctx context.Context, req *ns.GetChannelConfigurationRequest) (*ns.GetChannelConfigurationResponse, error) {
-	cf, err := gateway.GetChannelConfiguration(config.C.PostgreSQL.DB, req.Id)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	return channelConfigurationToResp(cf), nil
-}
-
-// UpdateChannelConfiguration updates the given channel-configuration.
-func (n *NetworkServerAPI) UpdateChannelConfiguration(ctx context.Context, req *ns.UpdateChannelConfigurationRequest) (*ns.UpdateChannelConfigurationResponse, error) {
-	cf, err := gateway.GetChannelConfiguration(config.C.PostgreSQL.DB, req.Id)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	cf.Name = req.Name
-	cf.Channels = []int64{}
-	for _, c := range req.Channels {
-		cf.Channels = append(cf.Channels, int64(c))
-	}
-
-	if err = gateway.UpdateChannelConfiguration(config.C.PostgreSQL.DB, &cf); err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	return &ns.UpdateChannelConfigurationResponse{}, nil
-}
-
-// DeleteChannelConfiguration deletes the channel-configuration matching the
-// given ID.
-func (n *NetworkServerAPI) DeleteChannelConfiguration(ctx context.Context, req *ns.DeleteChannelConfigurationRequest) (*ns.DeleteChannelConfigurationResponse, error) {
-	if err := gateway.DeleteChannelConfiguration(config.C.PostgreSQL.DB, req.Id); err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	return &ns.DeleteChannelConfigurationResponse{}, nil
-}
-
-// ListChannelConfigurations returns all channel-configurations.
-func (n *NetworkServerAPI) ListChannelConfigurations(ctx context.Context, req *ns.ListChannelConfigurationsRequest) (*ns.ListChannelConfigurationsResponse, error) {
-	cfs, err := gateway.GetChannelConfigurationsForBand(config.C.PostgreSQL.DB, string(config.C.NetworkServer.Band.Name))
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	var out ns.ListChannelConfigurationsResponse
-
-	for _, cf := range cfs {
-		out.Result = append(out.Result, channelConfigurationToResp(cf))
-	}
-
-	return &out, nil
-}
-
-// CreateExtraChannel creates the given extra channel.
-func (n *NetworkServerAPI) CreateExtraChannel(ctx context.Context, req *ns.CreateExtraChannelRequest) (*ns.CreateExtraChannelResponse, error) {
-	ec := gateway.ExtraChannel{
-		ChannelConfigurationID: req.ChannelConfigurationID,
-		Frequency:              int(req.Frequency),
-		BandWidth:              int(req.BandWidth),
-		BitRate:                int(req.BitRate),
-	}
-
-	switch req.Modulation {
-	case ns.Modulation_LORA:
-		ec.Modulation = gateway.ChannelModulationLoRa
-	case ns.Modulation_FSK:
-		ec.Modulation = gateway.ChannelModulationFSK
-	default:
-		return nil, grpc.Errorf(codes.InvalidArgument, "invalid modulation")
-	}
-
-	for _, sf := range req.SpreadFactors {
-		ec.SpreadFactors = append(ec.SpreadFactors, int64(sf))
-	}
-
-	if err := gateway.CreateExtraChannel(config.C.PostgreSQL.DB, &ec); err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	return &ns.CreateExtraChannelResponse{Id: ec.ID}, nil
-}
-
-// UpdateExtraChannel updates the given extra channel.
-func (n *NetworkServerAPI) UpdateExtraChannel(ctx context.Context, req *ns.UpdateExtraChannelRequest) (*ns.UpdateExtraChannelResponse, error) {
-	ec, err := gateway.GetExtraChannel(config.C.PostgreSQL.DB, req.Id)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	ec.ChannelConfigurationID = req.ChannelConfigurationID
-	ec.Frequency = int(req.Frequency)
-	ec.BandWidth = int(req.BandWidth)
-	ec.BitRate = int(req.BitRate)
-	ec.SpreadFactors = []int64{}
-
-	switch req.Modulation {
-	case ns.Modulation_LORA:
-		ec.Modulation = gateway.ChannelModulationLoRa
-	case ns.Modulation_FSK:
-		ec.Modulation = gateway.ChannelModulationFSK
-	default:
-		return nil, grpc.Errorf(codes.InvalidArgument, "invalid modulation")
-	}
-
-	for _, sf := range req.SpreadFactors {
-		ec.SpreadFactors = append(ec.SpreadFactors, int64(sf))
-	}
-
-	if err = gateway.UpdateExtraChannel(config.C.PostgreSQL.DB, &ec); err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	return &ns.UpdateExtraChannelResponse{}, nil
-}
-
-// DeleteExtraChannel deletes the extra channel matching the given id.
-func (n *NetworkServerAPI) DeleteExtraChannel(ctx context.Context, req *ns.DeleteExtraChannelRequest) (*ns.DeleteExtraChannelResponse, error) {
-	err := gateway.DeleteExtraChannel(config.C.PostgreSQL.DB, req.Id)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	return &ns.DeleteExtraChannelResponse{}, nil
-}
-
-// GetExtraChannelsForChannelConfigurationID returns the extra channels for
-// the given channel-configuration id.
-func (n *NetworkServerAPI) GetExtraChannelsForChannelConfigurationID(ctx context.Context, req *ns.GetExtraChannelsForChannelConfigurationIDRequest) (*ns.GetExtraChannelsForChannelConfigurationIDResponse, error) {
-	chans, err := gateway.GetExtraChannelsForChannelConfigurationID(config.C.PostgreSQL.DB, req.Id)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	var out ns.GetExtraChannelsForChannelConfigurationIDResponse
-
-	for i, c := range chans {
-		out.Result = append(out.Result, &ns.GetExtraChannelResponse{
-			Id: c.ID,
-			ChannelConfigurationID: c.ChannelConfigurationID,
-			CreatedAt:              c.CreatedAt.Format(time.RFC3339Nano),
-			UpdatedAt:              c.UpdatedAt.Format(time.RFC3339Nano),
-			Frequency:              int32(c.Frequency),
-			Bandwidth:              int32(c.BandWidth),
-			BitRate:                int32(c.BitRate),
-		})
-
-		for _, sf := range c.SpreadFactors {
-			out.Result[i].SpreadFactors = append(out.Result[i].SpreadFactors, int32(sf))
+	for _, ec := range req.GatewayProfile.ExtraChannels {
+		c := storage.ExtraChannel{
+			Frequency: int(ec.Frequency),
+			Bandwidth: int(ec.Bandwidth),
+			Bitrate:   int(ec.Bitrate),
 		}
 
-		switch c.Modulation {
-		case gateway.ChannelModulationLoRa:
-			out.Result[i].Modulation = ns.Modulation_LORA
-		case gateway.ChannelModulationFSK:
-			out.Result[i].Modulation = ns.Modulation_FSK
+		switch ec.Modulation {
+		case ns.Modulation_FSK:
+			c.Modulation = storage.ModulationFSK
 		default:
-			return nil, grpc.Errorf(codes.Internal, "invalid modulation")
+			c.Modulation = storage.ModulationLoRa
 		}
+
+		for _, sf := range ec.SpreadingFactors {
+			c.SpreadingFactors = append(c.SpreadingFactors, int64(sf))
+		}
+
+		gc.ExtraChannels = append(gc.ExtraChannels, c)
 	}
 
-	return &out, nil
-}
-
-// MigrateNodeToDeviceSession migrates a node-session to device-session.
-// This method is for internal us only.
-func (n *NetworkServerAPI) MigrateNodeToDeviceSession(ctx context.Context, req *ns.MigrateNodeToDeviceSessionRequest) (*ns.MigrateNodeToDeviceSessionResponse, error) {
-	var devEUI lorawan.EUI64
-	var joinEUI lorawan.EUI64
-	var nonces []lorawan.DevNonce
-
-	copy(devEUI[:], req.DevEUI)
-	copy(joinEUI[:], req.JoinEUI)
-
-	for _, nBytes := range req.DevNonces {
-		var n lorawan.DevNonce
-		copy(n[:], nBytes)
-		nonces = append(nonces, n)
-	}
 	err := storage.Transaction(config.C.PostgreSQL.DB, func(tx sqlx.Ext) error {
-		if err := storage.MigrateNodeToDeviceSession(config.C.Redis.Pool, config.C.PostgreSQL.DB, devEUI, joinEUI, nonces); err != nil {
-			return errToRPCError(err)
-		}
-
-		return nil
+		return storage.CreateGatewayProfile(tx, &gc)
 	})
 	if err != nil {
-		return nil, err
+		return nil, errToRPCError(err)
 	}
 
-	return &ns.MigrateNodeToDeviceSessionResponse{}, nil
+	return &ns.CreateGatewayProfileResponse{GatewayProfileID: gc.GatewayProfileID}, nil
+}
+
+// GetGatewayProfile returns the gateway-profile given an id.
+func (n *NetworkServerAPI) GetGatewayProfile(ctx context.Context, req *ns.GetGatewayProfileRequest) (*ns.GetGatewayProfileResponse, error) {
+	gc, err := storage.GetGatewayProfile(config.C.PostgreSQL.DB, req.GatewayProfileID)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	out := ns.GetGatewayProfileResponse{
+		CreatedAt: gc.CreatedAt.Format(time.RFC3339Nano),
+		UpdatedAt: gc.UpdatedAt.Format(time.RFC3339Nano),
+		GatewayProfile: &ns.GatewayProfile{
+			GatewayProfileID: gc.GatewayProfileID,
+		},
+	}
+
+	for _, c := range gc.Channels {
+		out.GatewayProfile.Channels = append(out.GatewayProfile.Channels, uint32(c))
+	}
+
+	for _, ec := range gc.ExtraChannels {
+		c := ns.GatewayProfileExtraChannel{
+			Frequency: uint32(ec.Frequency),
+			Bandwidth: uint32(ec.Bandwidth),
+			Bitrate:   uint32(ec.Bitrate),
+		}
+
+		switch ec.Modulation {
+		case storage.ModulationFSK:
+			c.Modulation = ns.Modulation_FSK
+		default:
+			c.Modulation = ns.Modulation_LORA
+		}
+
+		for _, sf := range ec.SpreadingFactors {
+			c.SpreadingFactors = append(c.SpreadingFactors, uint32(sf))
+		}
+
+		out.GatewayProfile.ExtraChannels = append(out.GatewayProfile.ExtraChannels, &c)
+	}
+
+	return &out, nil
+}
+
+// UpdateGatewayProfile updates the given gateway-profile.
+func (n *NetworkServerAPI) UpdateGatewayProfile(ctx context.Context, req *ns.UpdateGatewayProfileRequest) (*ns.UpdateGatewayProfileResponse, error) {
+	gc, err := storage.GetGatewayProfile(config.C.PostgreSQL.DB, req.GatewayProfile.GatewayProfileID)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	gc.Channels = []int64{}
+	for _, c := range req.GatewayProfile.Channels {
+		gc.Channels = append(gc.Channels, int64(c))
+	}
+
+	gc.ExtraChannels = []storage.ExtraChannel{}
+	for _, ec := range req.GatewayProfile.ExtraChannels {
+		c := storage.ExtraChannel{
+			Frequency: int(ec.Frequency),
+			Bandwidth: int(ec.Bandwidth),
+			Bitrate:   int(ec.Bitrate),
+		}
+
+		switch ec.Modulation {
+		case ns.Modulation_FSK:
+			c.Modulation = storage.ModulationFSK
+		default:
+			c.Modulation = storage.ModulationLoRa
+		}
+
+		for _, sf := range ec.SpreadingFactors {
+			c.SpreadingFactors = append(c.SpreadingFactors, int64(sf))
+		}
+
+		gc.ExtraChannels = append(gc.ExtraChannels, c)
+	}
+
+	err = storage.Transaction(config.C.PostgreSQL.DB, func(tx sqlx.Ext) error {
+		return storage.UpdateGatewayProfile(tx, &gc)
+	})
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.UpdateGatewayProfileResponse{}, nil
+}
+
+// DeleteGatewayProfile deletes the gateway-profile matching a given id.
+func (n *NetworkServerAPI) DeleteGatewayProfile(ctx context.Context, req *ns.DeleteGatewayProfileRequest) (*ns.DeleteGatewayProfileResponse, error) {
+	if err := storage.DeleteGatewayProfile(config.C.PostgreSQL.DB, req.GatewayProfileID); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.DeleteGatewayProfileResponse{}, nil
 }
 
 // CreateDeviceQueueItem creates the given device-queue item.
@@ -1324,20 +1192,69 @@ func (n *NetworkServerAPI) GetVersion(ctx context.Context, req *ns.GetVersionReq
 	}, nil
 }
 
-func channelConfigurationToResp(cf gateway.ChannelConfiguration) *ns.GetChannelConfigurationResponse {
-	out := ns.GetChannelConfigurationResponse{
-		Id:        cf.ID,
-		Name:      cf.Name,
-		CreatedAt: cf.CreatedAt.Format(time.RFC3339Nano),
-		UpdatedAt: cf.UpdatedAt.Format(time.RFC3339Nano),
+// MigrateNodeToDeviceSession migrates a node-session to device-session.
+// This method is for internal us only.
+func (n *NetworkServerAPI) MigrateNodeToDeviceSession(ctx context.Context, req *ns.MigrateNodeToDeviceSessionRequest) (*ns.MigrateNodeToDeviceSessionResponse, error) {
+	var devEUI lorawan.EUI64
+	var joinEUI lorawan.EUI64
+	var nonces []lorawan.DevNonce
+
+	copy(devEUI[:], req.DevEUI)
+	copy(joinEUI[:], req.JoinEUI)
+
+	for _, nBytes := range req.DevNonces {
+		var n lorawan.DevNonce
+		copy(n[:], nBytes)
+		nonces = append(nonces, n)
 	}
-	for _, c := range cf.Channels {
-		out.Channels = append(out.Channels, int32(c))
+	err := storage.Transaction(config.C.PostgreSQL.DB, func(tx sqlx.Ext) error {
+		if err := storage.MigrateNodeToDeviceSession(config.C.Redis.Pool, config.C.PostgreSQL.DB, devEUI, joinEUI, nonces); err != nil {
+			return errToRPCError(err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-	return &out
+
+	return &ns.MigrateNodeToDeviceSessionResponse{}, nil
 }
 
-func gwToResp(gw gateway.Gateway) *ns.GetGatewayResponse {
+// MigrateChannelConfigurationToGatewayProfile migrates the channel configuration.
+// This method is for internal use only.
+func (n *NetworkServerAPI) MigrateChannelConfigurationToGatewayProfile(ctx context.Context, req *ns.MigrateChannelConfigurationToGatewayProfileRequest) (*ns.MigrateChannelConfigurationToGatewayProfileResponse, error) {
+	var out ns.MigrateChannelConfigurationToGatewayProfileResponse
+
+	err := storage.Transaction(config.C.PostgreSQL.DB, func(tx sqlx.Ext) error {
+		migrated, err := storage.MigrateChannelConfigurationToGatewayProfile(tx)
+		if err != nil {
+			return err
+		}
+
+		for i := range migrated {
+			gpm := ns.GatewayProfileMigration{
+				GatewayProfileID: migrated[i].GatewayProfileID,
+				Name:             migrated[i].Name,
+			}
+
+			for x := range migrated[i].Gateways {
+				gpm.Macs = append(gpm.Macs, migrated[i].Gateways[x][:])
+			}
+
+			out.Migrated = append(out.Migrated, &gpm)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &out, nil
+}
+
+func gwToResp(gw storage.Gateway) *ns.GetGatewayResponse {
 	resp := ns.GetGatewayResponse{
 		Mac:         gw.MAC[:],
 		Name:        gw.Name,
@@ -1357,8 +1274,8 @@ func gwToResp(gw gateway.Gateway) *ns.GetGatewayResponse {
 		resp.LastSeenAt = gw.LastSeenAt.Format(time.RFC3339Nano)
 	}
 
-	if gw.ChannelConfigurationID != nil {
-		resp.ChannelConfigurationID = *gw.ChannelConfigurationID
+	if gw.GatewayProfileID != nil {
+		resp.GatewayProfileID = *gw.GatewayProfileID
 	}
 
 	return &resp

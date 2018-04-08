@@ -8,6 +8,30 @@ menu:
 
 # Changelog
 
+## 0.26.0
+
+**Features:**
+
+* (Gateway) channel-configuration has been refactored into gateway-profiles and
+  configuration updates are now sent over MQTT to the gateway.
+  * This requires [LoRa Gateway Bridge](https://www.loraserver.io/lora-gateway-bridge/) 2.4.0 or up.
+  * This requires [LoRa App Server](https://www.loraserver.io/lora-app-server/) 0.20.0 or up.
+  * This deprecates the [LoRa Channel Manager](https://www.loraserver.io/lora-channel-manager/) service.
+  * This removes the `Gateway` gRPC service (which was running by default on port `8002`).
+  * This removes the channel-configuration related gRPC methods from the `NetworkServer` gRPC service.
+  * This adds gateway-profile related gRPC methods to the `NetworkServer` gRPC service.
+
+* FSK support when permitted by the LoRaWAN ISM band.
+  * Note that the ADR engine will only use the data-rates of the pre-defined multi data-rate channels.
+
+**Upgrade notes:**
+
+In order to automatically migrate the existing channel-configuration into the
+new gateway-profiles, first upgrade LoRa Server and restart it. After upgrading
+LoRa App Server and restarting it, all channel-configurations will be migrated
+and associated to the gateways. As always, it is advised to first make a backup
+of your (PostgreSQL) database.
+
 ## 0.25.1
 
 **Features:**

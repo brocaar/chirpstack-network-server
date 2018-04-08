@@ -116,22 +116,30 @@ func MustResetDB(db *common.DBLogger) {
 
 // GatewayBackend is a test gateway backend.
 type GatewayBackend struct {
-	rxPacketChan    chan gw.RXPacket
-	TXPacketChan    chan gw.TXPacket
-	statsPacketChan chan gw.GatewayStatsPacket
+	rxPacketChan            chan gw.RXPacket
+	TXPacketChan            chan gw.TXPacket
+	GatewayConfigPacketChan chan gw.GatewayConfigPacket
+	statsPacketChan         chan gw.GatewayStatsPacket
 }
 
 // NewGatewayBackend returns a new GatewayBackend.
 func NewGatewayBackend() *GatewayBackend {
 	return &GatewayBackend{
-		rxPacketChan: make(chan gw.RXPacket, 100),
-		TXPacketChan: make(chan gw.TXPacket, 100),
+		rxPacketChan:            make(chan gw.RXPacket, 100),
+		TXPacketChan:            make(chan gw.TXPacket, 100),
+		GatewayConfigPacketChan: make(chan gw.GatewayConfigPacket, 100),
 	}
 }
 
 // SendTXPacket method.
 func (b *GatewayBackend) SendTXPacket(txPacket gw.TXPacket) error {
 	b.TXPacketChan <- txPacket
+	return nil
+}
+
+// SendGatewayConfigPacket method.
+func (b *GatewayBackend) SendGatewayConfigPacket(config gw.GatewayConfigPacket) error {
+	b.GatewayConfigPacketChan <- config
 	return nil
 }
 
