@@ -6,10 +6,6 @@
   name = "github.com/brocaar/lorawan"
 
 [[constraint]]
-  name = "github.com/dgrijalva/jwt-go"
-  version = "3.1.0"
-
-[[constraint]]
   branch = "master"
   name = "github.com/eclipse/paho.mqtt.golang"
 

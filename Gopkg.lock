@@ -12,12 +12,6 @@
   revision = "f359b50e77d1f421e9201846f425986017ffd851"
 
 [[projects]]
-  name = "github.com/dgrijalva/jwt-go"
-  packages = ["."]
-  revision = "dbeaa9332f19a944acb5736b4456cfcc02140e29"
-  version = "v3.1.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/eclipse/paho.mqtt.golang"
   packages = [
@@ -335,6 +329,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "056888c2a10661462c5abfc3638c4a2f189e3c9ab930dc26214d4fa4c04d84a2"
+  inputs-digest = "8b7fe1f7f16f9bac119a7a2fe9b9cf31df8dad83ccb0e7f3b80dd5ea5a613622"
   solver-name = "gps-cdcl"
   solver-version = 1
