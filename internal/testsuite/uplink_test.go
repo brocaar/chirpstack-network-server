@@ -210,32 +210,6 @@ func TestUplinkScenarios(t *testing.T) {
 		Convey("Given a set of test-scenarios for error handling", func() {
 			tests := []uplinkTestCase{
 				{
-					Name:                "the application backend returns an error",
-					ExpectedPHYPayload:  &lorawan.PHYPayload{},
-					DeviceSession:       ds,
-					RXInfo:              rxInfo,
-					SetMICKey:           ds.NwkSKey,
-					ASHandleDataUpError: errors.New("BOOM"),
-					PHYPayload: lorawan.PHYPayload{
-						MHDR: lorawan.MHDR{
-							MType: lorawan.UnconfirmedDataUp,
-							Major: lorawan.LoRaWANR1,
-						},
-						MACPayload: &lorawan.MACPayload{
-							FHDR: lorawan.FHDR{
-								DevAddr: ds.DevAddr,
-								FCnt:    10,
-							},
-							FPort: &fPortOne,
-						},
-					},
-					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
-					ExpectedFCntUp:                 8,
-					ExpectedFCntDown:               5,
-					ExpectedHandleRXPacketError:    errors.New("publish data up to application-server error: BOOM"),
-					ExpectedEnabledChannels:        []int{0, 1, 2},
-				},
-				{
 					Name:          "the frame-counter is invalid",
 					DeviceSession: ds,
 					RXInfo:        rxInfo,

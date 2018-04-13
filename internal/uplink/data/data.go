@@ -20,6 +20,8 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+const applicationClientTimeout = time.Second
+
 var tasks = []func(*dataContext) error{
 	setContextFromDataPHYPayload,
 	getDeviceSessionForPHYPayload,
@@ -264,9 +266,102 @@ func handleFRMPayloadMACCommands(ctx *dataContext) error {
 }
 
 func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
-	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort > 0 {
-		return publishDataUp(ctx.ApplicationServerClient, ctx.DeviceSession, ctx.ServiceProfile, ctx.RXPacket, *ctx.MACPayload)
+	if ctx.MACPayload.FPort == nil || (ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0) {
+		return nil
 	}
+
+	dr := ctx.RXPacket.TXInfo.DataRate
+
+	publishDataUpReq := as.HandleUplinkDataRequest{
+		AppEUI: ctx.DeviceSession.JoinEUI[:],
+		DevEUI: ctx.DeviceSession.DevEUI[:],
+		FCnt:   ctx.MACPayload.FHDR.FCnt,
+		TxInfo: &as.TXInfo{
+			Frequency: int64(ctx.RXPacket.TXInfo.Frequency),
+			Adr:       ctx.MACPayload.FHDR.FCtrl.ADR,
+			CodeRate:  ctx.RXPacket.TXInfo.CodeRate,
+			DataRate: &as.DataRate{
+				Modulation:   string(dr.Modulation),
+				BandWidth:    uint32(dr.Bandwidth),
+				SpreadFactor: uint32(dr.SpreadFactor),
+				Bitrate:      uint32(dr.BitRate),
+			},
+		},
+		DeviceStatusBattery: 256,
+		DeviceStatusMargin:  256,
+	}
+
+	if ctx.ServiceProfile.ServiceProfile.DevStatusReqFreq != 0 && ctx.DeviceSession.LastDevStatusMargin != 127 {
+		if ctx.ServiceProfile.ServiceProfile.ReportDevStatusBattery {
+			publishDataUpReq.DeviceStatusBattery = uint32(ctx.DeviceSession.LastDevStatusBattery)
+		}
+		if ctx.ServiceProfile.ServiceProfile.ReportDevStatusMargin {
+			publishDataUpReq.DeviceStatusMargin = int32(ctx.DeviceSession.LastDevStatusMargin)
+		}
+	}
+
+	if ctx.ServiceProfile.ServiceProfile.AddGWMetadata {
+		var macs []lorawan.EUI64
+		for i := range ctx.RXPacket.RXInfoSet {
+			macs = append(macs, ctx.RXPacket.RXInfoSet[i].MAC)
+		}
+
+		// get gateway info
+		gws, err := storage.GetGatewaysForMACs(config.C.PostgreSQL.DB, macs)
+		if err != nil {
+			log.WithField("macs", macs).Warningf("get gateways for macs error: %s", err)
+			gws = make(map[lorawan.EUI64]storage.Gateway)
+		}
+
+		for _, rxInfo := range ctx.RXPacket.RXInfoSet {
+			// make sure we have a copy of the MAC byte slice, else every RxInfo
+			// slice item will get the same Mac
+			mac := make([]byte, 8)
+			copy(mac, rxInfo.MAC[:])
+
+			asRxInfo := as.RXInfo{
+				Mac:     mac,
+				Rssi:    int32(rxInfo.RSSI),
+				LoRaSNR: rxInfo.LoRaSNR,
+			}
+
+			if rxInfo.Time != nil {
+				asRxInfo.Time = rxInfo.Time.Format(time.RFC3339Nano)
+			}
+
+			if gw, ok := gws[rxInfo.MAC]; ok {
+				asRxInfo.Name = gw.Name
+				asRxInfo.Latitude = gw.Location.Latitude
+				asRxInfo.Longitude = gw.Location.Longitude
+				asRxInfo.Altitude = gw.Altitude
+			}
+
+			publishDataUpReq.RxInfo = append(publishDataUpReq.RxInfo, &asRxInfo)
+		}
+	}
+
+	if ctx.MACPayload.FPort != nil {
+		publishDataUpReq.FPort = uint32(*ctx.MACPayload.FPort)
+	}
+
+	if len(ctx.MACPayload.FRMPayload) == 1 {
+		dataPL, ok := ctx.MACPayload.FRMPayload[0].(*lorawan.DataPayload)
+		if !ok {
+			return fmt.Errorf("expected type *lorawan.DataPayload, got %T", ctx.MACPayload.FRMPayload[0])
+		}
+		publishDataUpReq.Data = dataPL.Bytes
+
+	}
+
+	go func(asClient as.ApplicationServerClient, publishDataUpReq as.HandleUplinkDataRequest) {
+		ctx := context.Background()
+		ctxTimeout, cancel := context.WithTimeout(ctx, applicationClientTimeout)
+		defer cancel()
+
+		if _, err := asClient.HandleUplinkData(ctxTimeout, &publishDataUpReq); err != nil {
+			log.WithError(err).Error("publish uplink data to application-server error")
+		}
+	}(ctx.ApplicationServerClient, publishDataUpReq)
 
 	return nil
 }
@@ -394,96 +489,6 @@ func sendRXInfoPayload(ds storage.DeviceSession, rxPacket models.RXPacket) error
 	log.WithFields(log.Fields{
 		"dev_eui": ds.DevEUI,
 	}).Info("rx info sent to network-controller")
-	return nil
-}
-
-func publishDataUp(asClient as.ApplicationServerClient, ds storage.DeviceSession, sp storage.ServiceProfile, rxPacket models.RXPacket, macPL lorawan.MACPayload) error {
-	dr := rxPacket.TXInfo.DataRate
-
-	publishDataUpReq := as.HandleUplinkDataRequest{
-		AppEUI: ds.JoinEUI[:],
-		DevEUI: ds.DevEUI[:],
-		FCnt:   macPL.FHDR.FCnt,
-		TxInfo: &as.TXInfo{
-			Frequency: int64(rxPacket.TXInfo.Frequency),
-			Adr:       macPL.FHDR.FCtrl.ADR,
-			CodeRate:  rxPacket.TXInfo.CodeRate,
-			DataRate: &as.DataRate{
-				Modulation:   string(dr.Modulation),
-				BandWidth:    uint32(dr.Bandwidth),
-				SpreadFactor: uint32(dr.SpreadFactor),
-				Bitrate:      uint32(dr.BitRate),
-			},
-		},
-		DeviceStatusBattery: 256,
-		DeviceStatusMargin:  256,
-	}
-
-	if sp.ServiceProfile.DevStatusReqFreq != 0 && ds.LastDevStatusMargin != 127 {
-		if sp.ServiceProfile.ReportDevStatusBattery {
-			publishDataUpReq.DeviceStatusBattery = uint32(ds.LastDevStatusBattery)
-		}
-		if sp.ServiceProfile.ReportDevStatusMargin {
-			publishDataUpReq.DeviceStatusMargin = int32(ds.LastDevStatusMargin)
-		}
-	}
-
-	if sp.ServiceProfile.AddGWMetadata {
-		var macs []lorawan.EUI64
-		for i := range rxPacket.RXInfoSet {
-			macs = append(macs, rxPacket.RXInfoSet[i].MAC)
-		}
-
-		// get gateway info
-		gws, err := storage.GetGatewaysForMACs(config.C.PostgreSQL.DB, macs)
-		if err != nil {
-			log.WithField("macs", macs).Warningf("get gateways for macs error: %s", err)
-			gws = make(map[lorawan.EUI64]storage.Gateway)
-		}
-
-		for _, rxInfo := range rxPacket.RXInfoSet {
-			// make sure we have a copy of the MAC byte slice, else every RxInfo
-			// slice item will get the same Mac
-			mac := make([]byte, 8)
-			copy(mac, rxInfo.MAC[:])
-
-			asRxInfo := as.RXInfo{
-				Mac:     mac,
-				Rssi:    int32(rxInfo.RSSI),
-				LoRaSNR: rxInfo.LoRaSNR,
-			}
-
-			if rxInfo.Time != nil {
-				asRxInfo.Time = rxInfo.Time.Format(time.RFC3339Nano)
-			}
-
-			if gw, ok := gws[rxInfo.MAC]; ok {
-				asRxInfo.Name = gw.Name
-				asRxInfo.Latitude = gw.Location.Latitude
-				asRxInfo.Longitude = gw.Location.Longitude
-				asRxInfo.Altitude = gw.Altitude
-			}
-
-			publishDataUpReq.RxInfo = append(publishDataUpReq.RxInfo, &asRxInfo)
-		}
-	}
-
-	if macPL.FPort != nil {
-		publishDataUpReq.FPort = uint32(*macPL.FPort)
-	}
-
-	if len(macPL.FRMPayload) == 1 {
-		dataPL, ok := macPL.FRMPayload[0].(*lorawan.DataPayload)
-		if !ok {
-			return fmt.Errorf("expected type *lorawan.DataPayload, got %T", macPL.FRMPayload[0])
-		}
-		publishDataUpReq.Data = dataPL.Bytes
-
-	}
-
-	if _, err := asClient.HandleUplinkData(context.Background(), &publishDataUpReq); err != nil {
-		return fmt.Errorf("publish data up to application-server error: %s", err)
-	}
 	return nil
 }
 
