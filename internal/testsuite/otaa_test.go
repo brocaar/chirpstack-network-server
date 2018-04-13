@@ -20,6 +20,7 @@ import (
 )
 
 type otaaTestCase struct {
+	BeforeFunc               func(*otaaTestCase) error
 	Name                     string                     // name of the test
 	RXInfo                   gw.RXInfo                  // rx-info of the "received" packet
 	PHYPayload               lorawan.PHYPayload         // received PHYPayload
@@ -227,6 +228,66 @@ func TestOTAAScenarios(t *testing.T) {
 					},
 				},
 				{
+					BeforeFunc: func(tc *otaaTestCase) error {
+						d.SkipFCntCheck = true
+						return storage.UpdateDevice(db, &d)
+					},
+					Name:       "join-request accepted + skip fcnt check",
+					RXInfo:     rxInfo,
+					PHYPayload: jrPayload,
+					AppKey:     appKey,
+					JoinServerJoinAnsPayload: backend.JoinAnsPayload{
+						PHYPayload: backend.HEXBytes(jaBytes),
+						Result: backend.Result{
+							ResultCode: backend.Success,
+						},
+						NwkSKey: &backend.KeyEnvelope{
+							AESKey: lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						},
+					},
+
+					ExpectedJoinReqPayload: backend.JoinReqPayload{
+						BasePayload: backend.BasePayload{
+							ProtocolVersion: backend.ProtocolVersion1_0,
+							SenderID:        "030201",
+							ReceiverID:      "0102030405060708",
+							MessageType:     backend.JoinReq,
+						},
+						MACVersion: dp.DeviceProfile.MACVersion,
+						PHYPayload: backend.HEXBytes(jrBytes),
+						DevEUI:     d.DevEUI,
+						DLSettings: lorawan.DLSettings{
+							RX2DataRate: uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
+							RX1DROffset: uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
+						},
+						RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
+					},
+					ExpectedTXInfo: gw.TXInfo{
+						MAC:       rxInfo.MAC,
+						Timestamp: &timestamp,
+						Frequency: rxInfo.Frequency,
+						Power:     14,
+						DataRate:  rxInfo.DataRate,
+						CodeRate:  rxInfo.CodeRate,
+					},
+					ExpectedPHYPayload: jaPHY,
+					ExpectedDeviceSession: storage.DeviceSession{
+						RoutingProfileID:      rp.RoutingProfile.RoutingProfileID,
+						DeviceProfileID:       dp.DeviceProfile.DeviceProfileID,
+						ServiceProfileID:      sp.ServiceProfile.ServiceProfileID,
+						JoinEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+						DevEUI:                lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
+						NwkSKey:               lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						RXWindow:              storage.RX1,
+						EnabledUplinkChannels: []int{0, 1, 2},
+						ExtraUplinkChannels:   map[int]band.Channel{},
+						LastRXInfoSet:         []models.RXInfo{{}},
+						LastDevStatusMargin:   127,
+						RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
+						SkipFCntValidation:    true,
+					},
+				},
+				{
 					Name:          "join-request using rx1 and CFList",
 					RXInfo:        rxInfo,
 					PHYPayload:    jrPayload,
@@ -305,6 +366,10 @@ func TestOTAAScenarios(t *testing.T) {
 func runOTAATests(asClient *test.ApplicationClient, jsClient *test.JoinServerClient, tests []otaaTestCase) {
 	for i, t := range tests {
 		Convey(fmt.Sprintf("When testing: %s [%d]", t.Name, i), func() {
+			if t.BeforeFunc != nil {
+				So(t.BeforeFunc(&t), ShouldBeNil)
+			}
+
 			// reset band
 			var err error
 			config.C.NetworkServer.Band.Band, err = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)

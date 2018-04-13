@@ -212,6 +212,7 @@ func createNodeSession(ctx *context) error {
 		ExtraUplinkChannels:   make(map[int]band.Channel),
 		LastRXInfoSet:         ctx.RXPacket.RXInfoSet,
 		MaxSupportedDR:        ctx.ServiceProfile.ServiceProfile.DRMax,
+		SkipFCntValidation:    ctx.Device.SkipFCntCheck,
 
 		// set to invalid value to indicate we haven't received a status yet
 		LastDevStatusMargin: 127,

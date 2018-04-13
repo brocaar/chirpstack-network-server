@@ -460,6 +460,7 @@ func (n *NetworkServerAPI) CreateDevice(ctx context.Context, req *ns.CreateDevic
 		DeviceProfileID:  req.Device.DeviceProfileID,
 		ServiceProfileID: req.Device.ServiceProfileID,
 		RoutingProfileID: req.Device.RoutingProfileID,
+		SkipFCntCheck:    req.Device.SkipFCntCheck,
 	}
 	if err := storage.CreateDevice(config.C.PostgreSQL.DB, &d); err != nil {
 		return nil, errToRPCError(err)
@@ -486,6 +487,7 @@ func (n *NetworkServerAPI) GetDevice(ctx context.Context, req *ns.GetDeviceReque
 			DeviceProfileID:  d.DeviceProfileID,
 			ServiceProfileID: d.ServiceProfileID,
 			RoutingProfileID: d.RoutingProfileID,
+			SkipFCntCheck:    d.SkipFCntCheck,
 		},
 	}, nil
 }
@@ -503,6 +505,7 @@ func (n *NetworkServerAPI) UpdateDevice(ctx context.Context, req *ns.UpdateDevic
 	d.DeviceProfileID = req.Device.DeviceProfileID
 	d.ServiceProfileID = req.Device.ServiceProfileID
 	d.RoutingProfileID = req.Device.RoutingProfileID
+	d.SkipFCntCheck = req.Device.SkipFCntCheck
 
 	if err := storage.UpdateDevice(config.C.PostgreSQL.DB, &d); err != nil {
 		return nil, errToRPCError(err)
@@ -563,7 +566,7 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		NwkSKey:            nwkSKey,
 		FCntUp:             req.FCntUp,
 		FCntDown:           req.FCntDown,
-		SkipFCntValidation: req.SkipFCntCheck,
+		SkipFCntValidation: req.SkipFCntCheck || d.SkipFCntCheck,
 
 		RXWindow:       storage.RX1,
 		RXDelay:        uint8(dp.RXDelay1),

@@ -39,6 +39,7 @@ func TestDevice(t *testing.T) {
 					ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
 					DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
 					RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+					SkipFCntCheck:    true,
 				}
 				So(CreateDevice(db, &d), ShouldBeNil)
 				d.CreatedAt = d.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -66,6 +67,7 @@ func TestDevice(t *testing.T) {
 					d.ServiceProfileID = spNew.ServiceProfile.ServiceProfileID
 					d.DeviceProfileID = dpNew.DeviceProfile.DeviceProfileID
 					d.RoutingProfileID = rpNew.RoutingProfile.RoutingProfileID
+					d.SkipFCntCheck = false
 					So(UpdateDevice(db, &d), ShouldBeNil)
 					d.UpdatedAt = d.UpdatedAt.UTC().Truncate(time.Millisecond)
 

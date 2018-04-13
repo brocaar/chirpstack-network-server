@@ -17,6 +17,7 @@ type Device struct {
 	DeviceProfileID  string        `db:"device_profile_id"`
 	ServiceProfileID string        `db:"service_profile_id"`
 	RoutingProfileID string        `db:"routing_profile_id"`
+	SkipFCntCheck    bool          `db:"skip_fcnt_check"`
 }
 
 // DeviceActivation defines the device-activation for a LoRaWAN device.
@@ -43,14 +44,16 @@ func CreateDevice(db sqlx.Execer, d *Device) error {
 			updated_at,
 			device_profile_id,
 			service_profile_id,
-			routing_profile_id
-		) values ($1, $2, $3, $4, $5, $6)`,
+			routing_profile_id,
+			skip_fcnt_check
+		) values ($1, $2, $3, $4, $5, $6, $7)`,
 		d.DevEUI[:],
 		d.CreatedAt,
 		d.UpdatedAt,
 		d.DeviceProfileID,
 		d.ServiceProfileID,
 		d.RoutingProfileID,
+		d.SkipFCntCheck,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -82,7 +85,8 @@ func UpdateDevice(db sqlx.Execer, d *Device) error {
 			updated_at = $2,
 			device_profile_id = $3,
 			service_profile_id = $4,
-			routing_profile_id = $5
+			routing_profile_id = $5,
+			skip_fcnt_check = $6
 		where
 			dev_eui = $1`,
 		d.DevEUI[:],
@@ -90,6 +94,7 @@ func UpdateDevice(db sqlx.Execer, d *Device) error {
 		d.DeviceProfileID,
 		d.ServiceProfileID,
 		d.RoutingProfileID,
+		d.SkipFCntCheck,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")

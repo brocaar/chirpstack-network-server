@@ -472,6 +472,7 @@ func TestNetworkServerAPI(t *testing.T) {
 						DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
 						ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
 						RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+						SkipFCntCheck:    true,
 					},
 				})
 				So(err, ShouldBeNil)
@@ -486,6 +487,7 @@ func TestNetworkServerAPI(t *testing.T) {
 						DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
 						ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
 						RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+						SkipFCntCheck:    true,
 					})
 				})
 
@@ -503,6 +505,7 @@ func TestNetworkServerAPI(t *testing.T) {
 							DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
 							ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
 							RoutingProfileID: rp2Resp.RoutingProfileID,
+							SkipFCntCheck:    true,
 						},
 					})
 					So(err, ShouldBeNil)
@@ -516,6 +519,7 @@ func TestNetworkServerAPI(t *testing.T) {
 						DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
 						ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
 						RoutingProfileID: rp2Resp.RoutingProfileID,
+						SkipFCntCheck:    true,
 					})
 				})
 
@@ -584,6 +588,27 @@ func TestNetworkServerAPI(t *testing.T) {
 					},
 				})
 				So(err, ShouldBeNil)
+
+				Convey("When calling ActivateDevice when the Device has SkipFCntCheck set to true", func() {
+					d.SkipFCntCheck = true
+					So(storage.UpdateDevice(db, &d), ShouldBeNil)
+
+					_, err := api.ActivateDevice(ctx, &ns.ActivateDeviceRequest{
+						DevEUI:        devEUI[:],
+						DevAddr:       devAddr[:],
+						NwkSKey:       nwkSKey[:],
+						FCntUp:        10,
+						FCntDown:      11,
+						SkipFCntCheck: false,
+					})
+					So(err, ShouldBeNil)
+
+					Convey("Then SkipFCntCheck has been enabled in the activation", func() {
+						ds, err := storage.GetDeviceSession(config.C.Redis.Pool, devEUI)
+						So(err, ShouldBeNil)
+						So(ds.SkipFCntValidation, ShouldBeTrue)
+					})
+				})
 
 				Convey("When calling ActivateDevice", func() {
 					_, err := api.ActivateDevice(ctx, &ns.ActivateDeviceRequest{

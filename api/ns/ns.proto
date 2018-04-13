@@ -301,6 +301,7 @@ message Device {
     string deviceProfileID = 2;
     string serviceProfileID = 3;
     string routingProfileID = 4;
+    bool skipFCntCheck = 5;
 }
 
 message CreateDeviceRequest {
