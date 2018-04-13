@@ -19,6 +19,7 @@ var errToCode = map[error]codes.Code{
 
 	proprietary.ErrInvalidDataRate: codes.Internal,
 
+	storage.ErrAlreadyExists:                  codes.AlreadyExists,
 	storage.ErrDoesNotExistOrFCntOrMICInvalid: codes.NotFound,
 	storage.ErrDoesNotExist:                   codes.NotFound,
 	storage.ErrInvalidName:                    codes.InvalidArgument,
