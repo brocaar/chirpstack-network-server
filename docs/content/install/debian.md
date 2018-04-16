@@ -76,7 +76,6 @@ Settings you probably want to set / change:
 * `postgresql.automigrate`
 * `network_server.net_id`
 * `network_server.band.name`
-* `network_server.gateway.api.jwt_secret`
 * `network_server.gateway.stats.timezone`
 
 ## Starting LoRa Server
