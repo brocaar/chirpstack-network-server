@@ -8,6 +8,17 @@ menu:
 
 # Changelog
 
+## 0.26.1
+
+**Improvements:**
+
+* `HandleUplinkData` API call to the application-server is now handled async.
+* Skip frame-counter check can now be set per device (so it can be used for OTAA devices).
+
+**Bugfixes:**
+
+* `storage.ErrAlreadyExists` was not mapped to the correct gRPC API error.
+
 ## 0.26.0
 
 **Features:**
