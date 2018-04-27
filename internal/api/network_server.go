@@ -519,8 +519,19 @@ func (n *NetworkServerAPI) DeleteDevice(ctx context.Context, req *ns.DeleteDevic
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEUI)
 
-	if err := storage.DeleteDevice(config.C.PostgreSQL.DB, devEUI); err != nil {
-		return nil, errToRPCError(err)
+	err := storage.Transaction(config.C.PostgreSQL.DB, func(tx sqlx.Ext) error {
+		if err := storage.DeleteDevice(tx, devEUI); err != nil {
+			return errToRPCError(err)
+		}
+
+		if err := storage.DeleteDeviceSession(config.C.Redis.Pool, devEUI); err != nil && err != storage.ErrDoesNotExist {
+			return errToRPCError(err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return &ns.DeleteDeviceResponse{}, nil
