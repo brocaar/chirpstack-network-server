@@ -593,6 +593,7 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		LastDevStatusMargin: 127,
 		PingSlotDR:          dp.PingSlotDR,
 		PingSlotFrequency:   int(dp.PingSlotFreq),
+		NbTrans:             1,
 	}
 
 	if dp.PingSlotPeriod != 0 {

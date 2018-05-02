@@ -218,6 +218,7 @@ func createNodeSession(ctx *context) error {
 		LastDevStatusMargin: 127,
 		PingSlotDR:          ctx.DeviceProfile.PingSlotDR,
 		PingSlotFrequency:   int(ctx.DeviceProfile.PingSlotFreq),
+		NbTrans:             1,
 	}
 
 	if cfList := config.C.NetworkServer.Band.Band.GetCFList(); cfList != nil {

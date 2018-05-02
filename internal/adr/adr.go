@@ -70,7 +70,7 @@ func HandleADR(ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBloc
 	maxSupportedDR := getMaxSupportedDRForNode(ds)
 	maxSupportedTXPowerOffsetIndex := getMaxSupportedTXPowerOffsetIndexForNode(ds)
 
-	idealTXPowerIndex, idealDR := getIdealTXPowerOffsetAndDR(nStep, ds.TXPowerIndex, ds.DR, maxSupportedTXPowerOffsetIndex, maxSupportedDR)
+	idealTXPowerIndex, idealDR := getIdealTXPowerOffsetAndDR(nStep, ds.TXPowerIndex, ds.DR, ds.MinSupportedTXPowerIndex, maxSupportedTXPowerOffsetIndex, maxSupportedDR)
 	idealNbRep := getNbRep(ds.NbTrans, ds.GetPacketLossPercentage())
 
 	// there is nothing to adjust
@@ -180,7 +180,7 @@ func getMaxSupportedTXPowerOffsetIndexForNode(ds storage.DeviceSession) int {
 	return getMaxTXPowerOffsetIndex()
 }
 
-func getIdealTXPowerOffsetAndDR(nStep, txPowerOffsetIndex, dr, maxSupportedTXPowerOffsetIndex, maxSupportedDR int) (int, int) {
+func getIdealTXPowerOffsetAndDR(nStep, txPowerOffsetIndex, dr, minSupportedTXPowerOffsetIndex, maxSupportedTXPowerOffsetIndex, maxSupportedDR int) (int, int) {
 	if nStep == 0 {
 		return txPowerOffsetIndex, dr
 	}
@@ -207,15 +207,15 @@ func getIdealTXPowerOffsetAndDR(nStep, txPowerOffsetIndex, dr, maxSupportedTXPow
 		}
 
 	} else {
-		if txPowerOffsetIndex > 0 {
+		if txPowerOffsetIndex > minSupportedTXPowerOffsetIndex {
 			txPowerOffsetIndex--
 			nStep++
-		} else {
-			return txPowerOffsetIndex, dr
+		} else if txPowerOffsetIndex <= minSupportedTXPowerOffsetIndex {
+			return minSupportedTXPowerOffsetIndex, dr
 		}
 	}
 
-	return getIdealTXPowerOffsetAndDR(nStep, txPowerOffsetIndex, dr, maxSupportedTXPowerOffsetIndex, maxSupportedDR)
+	return getIdealTXPowerOffsetAndDR(nStep, txPowerOffsetIndex, dr, minSupportedTXPowerOffsetIndex, maxSupportedTXPowerOffsetIndex, maxSupportedDR)
 }
 
 func getRequiredSNRForSF(sf int) (float64, error) {

@@ -89,6 +89,7 @@ func TestADR(t *testing.T) {
 				NStep                    int
 				TXPowerIndex             int
 				MaxSupportedDR           int
+				MinSupportedTXPowerIndex int
 				MaxSupportedTXPowerIndex int
 				DR                       int
 				ExpectedTXPowerIndex     int
@@ -194,12 +195,21 @@ func TestADR(t *testing.T) {
 					ExpectedDR:           4,
 					ExpectedTXPowerIndex: 0,
 				},
+				{
+					Name:                     "10 negative steps, should not adjust anything (as we already reached the min tx-power index)",
+					NStep:                    -10,
+					TXPowerIndex:             1,
+					MinSupportedTXPowerIndex: 1,
+					DR:                   4,
+					ExpectedDR:           4,
+					ExpectedTXPowerIndex: 1,
+				},
 			}
 
 			for i, tst := range testTable {
 				Convey(fmt.Sprintf("Testing '%s' with NStep: %d, TXPowerOffsetIndex: %d, DR: %d [%d]", tst.Name, tst.NStep, tst.TXPowerIndex, tst.DR, i), func() {
 					Convey(fmt.Sprintf("Then the ideal TXPowerOffsetIndex is %d and DR %d", tst.ExpectedTXPowerIndex, tst.ExpectedDR), func() {
-						idealTXPowerIndex, idealDR := getIdealTXPowerOffsetAndDR(tst.NStep, tst.TXPowerIndex, tst.DR, tst.MaxSupportedTXPowerIndex, tst.MaxSupportedDR)
+						idealTXPowerIndex, idealDR := getIdealTXPowerOffsetAndDR(tst.NStep, tst.TXPowerIndex, tst.DR, tst.MinSupportedTXPowerIndex, tst.MaxSupportedTXPowerIndex, tst.MaxSupportedDR)
 						So(idealTXPowerIndex, ShouldEqual, tst.ExpectedTXPowerIndex)
 						So(idealDR, ShouldEqual, tst.ExpectedDR)
 					})

@@ -79,6 +79,10 @@ type DeviceSession struct {
 	// ADR defines if the device has ADR enabled.
 	ADR bool
 
+	// MinSupportedTXPowerIndex defines the minimum supported tx-power index
+	// by the node (default 0).
+	MinSupportedTXPowerIndex int
+
 	// MaxSupportedTXPowerIndex defines the maximum supported tx-power index
 	// by the node, or 0 when not set.
 	MaxSupportedTXPowerIndex int

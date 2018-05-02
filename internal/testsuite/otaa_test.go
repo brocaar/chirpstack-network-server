@@ -225,6 +225,7 @@ func TestOTAAScenarios(t *testing.T) {
 						LastRXInfoSet:         []models.RXInfo{{}},
 						LastDevStatusMargin:   127,
 						RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
+						NbTrans:               1,
 					},
 				},
 				{
@@ -285,6 +286,7 @@ func TestOTAAScenarios(t *testing.T) {
 						LastDevStatusMargin:   127,
 						RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 						SkipFCntValidation:    true,
+						NbTrans:               1,
 					},
 				},
 				{
@@ -354,6 +356,7 @@ func TestOTAAScenarios(t *testing.T) {
 						LastRXInfoSet:       []models.RXInfo{{}},
 						LastDevStatusMargin: 127,
 						RX2Frequency:        config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
+						NbTrans:             1,
 					},
 				},
 			}

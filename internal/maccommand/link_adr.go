@@ -80,6 +80,7 @@ func handleLinkADRAns(ds *storage.DeviceSession, block storage.MACCommandBlock, 
 		// LoRaWAN specs.
 		if !powerACK && adrReq.TXPower == 0 {
 			ds.TXPowerIndex = 1
+			ds.MinSupportedTXPowerIndex = 1
 		}
 
 		// It is possible that the node does not support all TXPower

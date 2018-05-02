@@ -227,7 +227,7 @@ func TestHandleDownlink(t *testing.T) {
 						},
 					},
 					{
-						Name: "pending request and negative tx-power ack on tx-power 0 sets tx-power to 1",
+						Name: "pending request and negative tx-power ack on tx-power 0 sets (min) tx-power to 1",
 						DeviceSession: storage.DeviceSession{
 							EnabledUplinkChannels: []int{0, 1},
 						},
@@ -245,8 +245,9 @@ func TestHandleDownlink(t *testing.T) {
 							PowerACK:       false,
 						},
 						ExpectedDeviceSession: storage.DeviceSession{
-							EnabledUplinkChannels: []int{0, 1},
-							TXPowerIndex:          1,
+							EnabledUplinkChannels:    []int{0, 1},
+							TXPowerIndex:             1,
+							MinSupportedTXPowerIndex: 1,
 						},
 					},
 					{
@@ -303,7 +304,7 @@ func TestHandleDownlink(t *testing.T) {
 						So(resp, ShouldHaveLength, 0)
 
 						Convey("Then the device-session was updated as expected", func() {
-							So(tst.ExpectedDeviceSession, ShouldResemble, tst.DeviceSession)
+							So(tst.DeviceSession, ShouldResemble, tst.ExpectedDeviceSession)
 						})
 					})
 				}

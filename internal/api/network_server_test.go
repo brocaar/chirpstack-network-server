@@ -654,6 +654,7 @@ func TestNetworkServerAPI(t *testing.T) {
 							PingSlotNb:          128,
 							PingSlotDR:          5,
 							PingSlotFrequency:   868100000,
+							NbTrans:             1,
 						})
 					})
 
