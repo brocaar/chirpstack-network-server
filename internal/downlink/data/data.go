@@ -30,6 +30,16 @@ const (
 
 const defaultCodeRate = "4/5"
 
+type incompatibleCIDMapping struct {
+	CID              lorawan.CID
+	IncompatibleCIDs []lorawan.CID
+}
+
+var incompatibleMACCommands = []incompatibleCIDMapping{
+	{CID: lorawan.NewChannelReq, IncompatibleCIDs: []lorawan.CID{lorawan.LinkADRReq}},
+	{CID: lorawan.LinkADRReq, IncompatibleCIDs: []lorawan.CID{lorawan.NewChannelReq}},
+}
+
 var setMACCommandsSet = setMACCommands(
 	requestCustomChannelReconfiguration,
 	requestChannelMaskReconfiguration,
@@ -417,6 +427,27 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 		for _, f := range funcs {
 			if err := f(ctx); err != nil {
 				return err
+			}
+		}
+
+		for _, mapping := range incompatibleMACCommands {
+			var seen bool
+			for _, mac := range ctx.MACCommands {
+				if mapping.CID == mac.CID {
+					seen = true
+				}
+			}
+
+			if seen {
+				for _, conflictingCID := range mapping.IncompatibleCIDs {
+					var deleted int
+					for i := range ctx.MACCommands {
+						j := i - deleted
+						if ctx.MACCommands[j].CID == conflictingCID {
+							ctx.MACCommands = append(ctx.MACCommands[:j], ctx.MACCommands[j+1:]...)
+						}
+					}
+				}
 			}
 		}
 

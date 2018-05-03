@@ -497,6 +497,47 @@ func TestSetMACCommandsSet(t *testing.T) {
 					},
 				},
 			},
+			{
+				// This tests that in case a LinkADRReq -and- a NewChannelReq
+				// is requested, the LinkADRReq is dropped.
+				// The reason is that the NewChannelReq mac-commands adds a new
+				// channel, which can only be added to the channelmask after
+				// an ACK from the device. Without this, the following would happen:
+				// NewChannelReq asks to add channel C
+				// LinkADRReq only enables A, B and disables C (as it does not
+				// know about the new channel C yet).
+				BeforeFunc: func() error {
+					return config.C.NetworkServer.Band.Band.AddChannel(868300000, 6, 6)
+				},
+				Name: "LinkADRReq and NewChannelReq requested at the same time (will drop LinkADRReq)",
+				Context: dataContext{
+					RemainingPayloadSize: 200,
+					DeviceSession: storage.DeviceSession{
+						ADR: true,
+						DR:  0,
+						UplinkHistory: []storage.UplinkHistory{
+							{FCnt: 0, MaxSNR: 5, TXPowerIndex: 0, GatewayCount: 1},
+						},
+						RX2Frequency: 869525000,
+					},
+				},
+				ExpectedMACCommands: []storage.MACCommandBlock{
+					{
+						CID: lorawan.NewChannelReq,
+						MACCommands: storage.MACCommands{
+							{
+								CID: lorawan.NewChannelReq,
+								Payload: &lorawan.NewChannelReqPayload{
+									ChIndex: 3,
+									Freq:    868300000,
+									MaxDR:   6,
+									MinDR:   6,
+								},
+							},
+						},
+					},
+				},
+			},
 		}
 
 		for i, test := range tests {
