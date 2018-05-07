@@ -17,6 +17,12 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the proto package it is being compiled against.
+// A compilation error at this line likely means your copy of the
+// proto package needs to be updated.
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+
 type RXWindow int32
 
 const (
@@ -38,7 +44,9 @@ var RXWindow_value = map[string]int32{
 func (x RXWindow) String() string {
 	return proto.EnumName(RXWindow_name, int32(x))
 }
-func (RXWindow) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (RXWindow) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{0}
+}
 
 type Modulation int32
 
@@ -61,7 +69,9 @@ var Modulation_value = map[string]int32{
 func (x Modulation) String() string {
 	return proto.EnumName(Modulation_name, int32(x))
 }
-func (Modulation) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (Modulation) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{1}
+}
 
 type Region int32
 
@@ -116,7 +126,9 @@ var Region_value = map[string]int32{
 func (x Region) String() string {
 	return proto.EnumName(Region_name, int32(x))
 }
-func (Region) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (Region) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{2}
+}
 
 type AggregationInterval int32
 
@@ -155,16 +167,40 @@ var AggregationInterval_value = map[string]int32{
 func (x AggregationInterval) String() string {
 	return proto.EnumName(AggregationInterval_name, int32(x))
 }
-func (AggregationInterval) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
-
-type CreateServiceProfileRequest struct {
-	ServiceProfile *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile" json:"serviceProfile,omitempty"`
+func (AggregationInterval) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{3}
 }
 
-func (m *CreateServiceProfileRequest) Reset()                    { *m = CreateServiceProfileRequest{} }
-func (m *CreateServiceProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreateServiceProfileRequest) ProtoMessage()               {}
-func (*CreateServiceProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+type CreateServiceProfileRequest struct {
+	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile" json:"serviceProfile,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
+}
+
+func (m *CreateServiceProfileRequest) Reset()         { *m = CreateServiceProfileRequest{} }
+func (m *CreateServiceProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateServiceProfileRequest) ProtoMessage()    {}
+func (*CreateServiceProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{0}
+}
+func (m *CreateServiceProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateServiceProfileRequest.Unmarshal(m, b)
+}
+func (m *CreateServiceProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateServiceProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreateServiceProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateServiceProfileRequest.Merge(dst, src)
+}
+func (m *CreateServiceProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateServiceProfileRequest.Size(m)
+}
+func (m *CreateServiceProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateServiceProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateServiceProfileRequest proto.InternalMessageInfo
 
 func (m *CreateServiceProfileRequest) GetServiceProfile() *ServiceProfile {
 	if m != nil {
@@ -174,13 +210,35 @@ func (m *CreateServiceProfileRequest) GetServiceProfile() *ServiceProfile {
 }
 
 type CreateServiceProfileResponse struct {
-	ServiceProfileID string `protobuf:"bytes,1,opt,name=serviceProfileID" json:"serviceProfileID,omitempty"`
+	ServiceProfileID     string   `protobuf:"bytes,1,opt,name=serviceProfileID" json:"serviceProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateServiceProfileResponse) Reset()                    { *m = CreateServiceProfileResponse{} }
-func (m *CreateServiceProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*CreateServiceProfileResponse) ProtoMessage()               {}
-func (*CreateServiceProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (m *CreateServiceProfileResponse) Reset()         { *m = CreateServiceProfileResponse{} }
+func (m *CreateServiceProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateServiceProfileResponse) ProtoMessage()    {}
+func (*CreateServiceProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{1}
+}
+func (m *CreateServiceProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateServiceProfileResponse.Unmarshal(m, b)
+}
+func (m *CreateServiceProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateServiceProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *CreateServiceProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateServiceProfileResponse.Merge(dst, src)
+}
+func (m *CreateServiceProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_CreateServiceProfileResponse.Size(m)
+}
+func (m *CreateServiceProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateServiceProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateServiceProfileResponse proto.InternalMessageInfo
 
 func (m *CreateServiceProfileResponse) GetServiceProfileID() string {
 	if m != nil {
@@ -190,13 +248,35 @@ func (m *CreateServiceProfileResponse) GetServiceProfileID() string {
 }
 
 type GetServiceProfileRequest struct {
-	ServiceProfileID string `protobuf:"bytes,1,opt,name=serviceProfileID" json:"serviceProfileID,omitempty"`
+	ServiceProfileID     string   `protobuf:"bytes,1,opt,name=serviceProfileID" json:"serviceProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetServiceProfileRequest) Reset()                    { *m = GetServiceProfileRequest{} }
-func (m *GetServiceProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*GetServiceProfileRequest) ProtoMessage()               {}
-func (*GetServiceProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (m *GetServiceProfileRequest) Reset()         { *m = GetServiceProfileRequest{} }
+func (m *GetServiceProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*GetServiceProfileRequest) ProtoMessage()    {}
+func (*GetServiceProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{2}
+}
+func (m *GetServiceProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetServiceProfileRequest.Unmarshal(m, b)
+}
+func (m *GetServiceProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetServiceProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetServiceProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetServiceProfileRequest.Merge(dst, src)
+}
+func (m *GetServiceProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_GetServiceProfileRequest.Size(m)
+}
+func (m *GetServiceProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetServiceProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetServiceProfileRequest proto.InternalMessageInfo
 
 func (m *GetServiceProfileRequest) GetServiceProfileID() string {
 	if m != nil {
@@ -206,15 +286,37 @@ func (m *GetServiceProfileRequest) GetServiceProfileID() string {
 }
 
 type GetServiceProfileResponse struct {
-	ServiceProfile *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile" json:"serviceProfile,omitempty"`
-	CreatedAt      string          `protobuf:"bytes,2,opt,name=createdAt" json:"createdAt,omitempty"`
-	UpdatedAt      string          `protobuf:"bytes,3,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile" json:"serviceProfile,omitempty"`
+	CreatedAt            string          `protobuf:"bytes,2,opt,name=createdAt" json:"createdAt,omitempty"`
+	UpdatedAt            string          `protobuf:"bytes,3,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *GetServiceProfileResponse) Reset()                    { *m = GetServiceProfileResponse{} }
-func (m *GetServiceProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*GetServiceProfileResponse) ProtoMessage()               {}
-func (*GetServiceProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (m *GetServiceProfileResponse) Reset()         { *m = GetServiceProfileResponse{} }
+func (m *GetServiceProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*GetServiceProfileResponse) ProtoMessage()    {}
+func (*GetServiceProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{3}
+}
+func (m *GetServiceProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetServiceProfileResponse.Unmarshal(m, b)
+}
+func (m *GetServiceProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetServiceProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetServiceProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetServiceProfileResponse.Merge(dst, src)
+}
+func (m *GetServiceProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_GetServiceProfileResponse.Size(m)
+}
+func (m *GetServiceProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetServiceProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetServiceProfileResponse proto.InternalMessageInfo
 
 func (m *GetServiceProfileResponse) GetServiceProfile() *ServiceProfile {
 	if m != nil {
@@ -238,13 +340,35 @@ func (m *GetServiceProfileResponse) GetUpdatedAt() string {
 }
 
 type UpdateServiceProfileRequest struct {
-	ServiceProfile *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile" json:"serviceProfile,omitempty"`
+	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile" json:"serviceProfile,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *UpdateServiceProfileRequest) Reset()                    { *m = UpdateServiceProfileRequest{} }
-func (m *UpdateServiceProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*UpdateServiceProfileRequest) ProtoMessage()               {}
-func (*UpdateServiceProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (m *UpdateServiceProfileRequest) Reset()         { *m = UpdateServiceProfileRequest{} }
+func (m *UpdateServiceProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateServiceProfileRequest) ProtoMessage()    {}
+func (*UpdateServiceProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{4}
+}
+func (m *UpdateServiceProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateServiceProfileRequest.Unmarshal(m, b)
+}
+func (m *UpdateServiceProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateServiceProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *UpdateServiceProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateServiceProfileRequest.Merge(dst, src)
+}
+func (m *UpdateServiceProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateServiceProfileRequest.Size(m)
+}
+func (m *UpdateServiceProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateServiceProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateServiceProfileRequest proto.InternalMessageInfo
 
 func (m *UpdateServiceProfileRequest) GetServiceProfile() *ServiceProfile {
 	if m != nil {
@@ -254,21 +378,65 @@ func (m *UpdateServiceProfileRequest) GetServiceProfile() *ServiceProfile {
 }
 
 type UpdateServiceProfileResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdateServiceProfileResponse) Reset()                    { *m = UpdateServiceProfileResponse{} }
-func (m *UpdateServiceProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*UpdateServiceProfileResponse) ProtoMessage()               {}
-func (*UpdateServiceProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
+func (m *UpdateServiceProfileResponse) Reset()         { *m = UpdateServiceProfileResponse{} }
+func (m *UpdateServiceProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*UpdateServiceProfileResponse) ProtoMessage()    {}
+func (*UpdateServiceProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{5}
+}
+func (m *UpdateServiceProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateServiceProfileResponse.Unmarshal(m, b)
+}
+func (m *UpdateServiceProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateServiceProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *UpdateServiceProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateServiceProfileResponse.Merge(dst, src)
+}
+func (m *UpdateServiceProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_UpdateServiceProfileResponse.Size(m)
+}
+func (m *UpdateServiceProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateServiceProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateServiceProfileResponse proto.InternalMessageInfo
 
 type DeleteServiceProfileRequest struct {
-	ServiceProfileID string `protobuf:"bytes,1,opt,name=serviceProfileID" json:"serviceProfileID,omitempty"`
+	ServiceProfileID     string   `protobuf:"bytes,1,opt,name=serviceProfileID" json:"serviceProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteServiceProfileRequest) Reset()                    { *m = DeleteServiceProfileRequest{} }
-func (m *DeleteServiceProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*DeleteServiceProfileRequest) ProtoMessage()               {}
-func (*DeleteServiceProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{6} }
+func (m *DeleteServiceProfileRequest) Reset()         { *m = DeleteServiceProfileRequest{} }
+func (m *DeleteServiceProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteServiceProfileRequest) ProtoMessage()    {}
+func (*DeleteServiceProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{6}
+}
+func (m *DeleteServiceProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteServiceProfileRequest.Unmarshal(m, b)
+}
+func (m *DeleteServiceProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteServiceProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *DeleteServiceProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteServiceProfileRequest.Merge(dst, src)
+}
+func (m *DeleteServiceProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteServiceProfileRequest.Size(m)
+}
+func (m *DeleteServiceProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteServiceProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteServiceProfileRequest proto.InternalMessageInfo
 
 func (m *DeleteServiceProfileRequest) GetServiceProfileID() string {
 	if m != nil {
@@ -278,22 +446,66 @@ func (m *DeleteServiceProfileRequest) GetServiceProfileID() string {
 }
 
 type DeleteServiceProfileResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteServiceProfileResponse) Reset()                    { *m = DeleteServiceProfileResponse{} }
-func (m *DeleteServiceProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*DeleteServiceProfileResponse) ProtoMessage()               {}
-func (*DeleteServiceProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{7} }
+func (m *DeleteServiceProfileResponse) Reset()         { *m = DeleteServiceProfileResponse{} }
+func (m *DeleteServiceProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteServiceProfileResponse) ProtoMessage()    {}
+func (*DeleteServiceProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{7}
+}
+func (m *DeleteServiceProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteServiceProfileResponse.Unmarshal(m, b)
+}
+func (m *DeleteServiceProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteServiceProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *DeleteServiceProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteServiceProfileResponse.Merge(dst, src)
+}
+func (m *DeleteServiceProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_DeleteServiceProfileResponse.Size(m)
+}
+func (m *DeleteServiceProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteServiceProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteServiceProfileResponse proto.InternalMessageInfo
 
 type RoutingProfile struct {
-	RoutingProfileID string `protobuf:"bytes,1,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
-	AsID             string `protobuf:"bytes,2,opt,name=asID" json:"asID,omitempty"`
+	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
+	AsID                 string   `protobuf:"bytes,2,opt,name=asID" json:"asID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *RoutingProfile) Reset()                    { *m = RoutingProfile{} }
-func (m *RoutingProfile) String() string            { return proto.CompactTextString(m) }
-func (*RoutingProfile) ProtoMessage()               {}
-func (*RoutingProfile) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{8} }
+func (m *RoutingProfile) Reset()         { *m = RoutingProfile{} }
+func (m *RoutingProfile) String() string { return proto.CompactTextString(m) }
+func (*RoutingProfile) ProtoMessage()    {}
+func (*RoutingProfile) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{8}
+}
+func (m *RoutingProfile) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_RoutingProfile.Unmarshal(m, b)
+}
+func (m *RoutingProfile) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_RoutingProfile.Marshal(b, m, deterministic)
+}
+func (dst *RoutingProfile) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RoutingProfile.Merge(dst, src)
+}
+func (m *RoutingProfile) XXX_Size() int {
+	return xxx_messageInfo_RoutingProfile.Size(m)
+}
+func (m *RoutingProfile) XXX_DiscardUnknown() {
+	xxx_messageInfo_RoutingProfile.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RoutingProfile proto.InternalMessageInfo
 
 func (m *RoutingProfile) GetRoutingProfileID() string {
 	if m != nil {
@@ -316,13 +528,35 @@ type CreateRoutingProfileRequest struct {
 	// tls certificate for connecting to lora-app-server
 	TlsCert string `protobuf:"bytes,3,opt,name=tlsCert" json:"tlsCert,omitempty"`
 	// tls key for connecting to lora-app-server
-	TlsKey string `protobuf:"bytes,4,opt,name=tlsKey" json:"tlsKey,omitempty"`
+	TlsKey               string   `protobuf:"bytes,4,opt,name=tlsKey" json:"tlsKey,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateRoutingProfileRequest) Reset()                    { *m = CreateRoutingProfileRequest{} }
-func (m *CreateRoutingProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreateRoutingProfileRequest) ProtoMessage()               {}
-func (*CreateRoutingProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{9} }
+func (m *CreateRoutingProfileRequest) Reset()         { *m = CreateRoutingProfileRequest{} }
+func (m *CreateRoutingProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateRoutingProfileRequest) ProtoMessage()    {}
+func (*CreateRoutingProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{9}
+}
+func (m *CreateRoutingProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateRoutingProfileRequest.Unmarshal(m, b)
+}
+func (m *CreateRoutingProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateRoutingProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreateRoutingProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateRoutingProfileRequest.Merge(dst, src)
+}
+func (m *CreateRoutingProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateRoutingProfileRequest.Size(m)
+}
+func (m *CreateRoutingProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateRoutingProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateRoutingProfileRequest proto.InternalMessageInfo
 
 func (m *CreateRoutingProfileRequest) GetRoutingProfile() *RoutingProfile {
 	if m != nil {
@@ -353,13 +587,35 @@ func (m *CreateRoutingProfileRequest) GetTlsKey() string {
 }
 
 type CreateRoutingProfileResponse struct {
-	RoutingProfileID string `protobuf:"bytes,1,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
+	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateRoutingProfileResponse) Reset()                    { *m = CreateRoutingProfileResponse{} }
-func (m *CreateRoutingProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*CreateRoutingProfileResponse) ProtoMessage()               {}
-func (*CreateRoutingProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{10} }
+func (m *CreateRoutingProfileResponse) Reset()         { *m = CreateRoutingProfileResponse{} }
+func (m *CreateRoutingProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateRoutingProfileResponse) ProtoMessage()    {}
+func (*CreateRoutingProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{10}
+}
+func (m *CreateRoutingProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateRoutingProfileResponse.Unmarshal(m, b)
+}
+func (m *CreateRoutingProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateRoutingProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *CreateRoutingProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateRoutingProfileResponse.Merge(dst, src)
+}
+func (m *CreateRoutingProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_CreateRoutingProfileResponse.Size(m)
+}
+func (m *CreateRoutingProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateRoutingProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateRoutingProfileResponse proto.InternalMessageInfo
 
 func (m *CreateRoutingProfileResponse) GetRoutingProfileID() string {
 	if m != nil {
@@ -369,13 +625,35 @@ func (m *CreateRoutingProfileResponse) GetRoutingProfileID() string {
 }
 
 type GetRoutingProfileRequest struct {
-	RoutingProfileID string `protobuf:"bytes,1,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
+	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetRoutingProfileRequest) Reset()                    { *m = GetRoutingProfileRequest{} }
-func (m *GetRoutingProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*GetRoutingProfileRequest) ProtoMessage()               {}
-func (*GetRoutingProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{11} }
+func (m *GetRoutingProfileRequest) Reset()         { *m = GetRoutingProfileRequest{} }
+func (m *GetRoutingProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*GetRoutingProfileRequest) ProtoMessage()    {}
+func (*GetRoutingProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{11}
+}
+func (m *GetRoutingProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetRoutingProfileRequest.Unmarshal(m, b)
+}
+func (m *GetRoutingProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetRoutingProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetRoutingProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetRoutingProfileRequest.Merge(dst, src)
+}
+func (m *GetRoutingProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_GetRoutingProfileRequest.Size(m)
+}
+func (m *GetRoutingProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetRoutingProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetRoutingProfileRequest proto.InternalMessageInfo
 
 func (m *GetRoutingProfileRequest) GetRoutingProfileID() string {
 	if m != nil {
@@ -391,13 +669,35 @@ type GetRoutingProfileResponse struct {
 	// ca certificate for connecting to lora-app-server
 	CaCert string `protobuf:"bytes,4,opt,name=caCert" json:"caCert,omitempty"`
 	// tls certificate for connecting to lora-app-server
-	TlsCert string `protobuf:"bytes,5,opt,name=tlsCert" json:"tlsCert,omitempty"`
+	TlsCert              string   `protobuf:"bytes,5,opt,name=tlsCert" json:"tlsCert,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetRoutingProfileResponse) Reset()                    { *m = GetRoutingProfileResponse{} }
-func (m *GetRoutingProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*GetRoutingProfileResponse) ProtoMessage()               {}
-func (*GetRoutingProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{12} }
+func (m *GetRoutingProfileResponse) Reset()         { *m = GetRoutingProfileResponse{} }
+func (m *GetRoutingProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*GetRoutingProfileResponse) ProtoMessage()    {}
+func (*GetRoutingProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{12}
+}
+func (m *GetRoutingProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetRoutingProfileResponse.Unmarshal(m, b)
+}
+func (m *GetRoutingProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetRoutingProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetRoutingProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetRoutingProfileResponse.Merge(dst, src)
+}
+func (m *GetRoutingProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_GetRoutingProfileResponse.Size(m)
+}
+func (m *GetRoutingProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetRoutingProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetRoutingProfileResponse proto.InternalMessageInfo
 
 func (m *GetRoutingProfileResponse) GetRoutingProfile() *RoutingProfile {
 	if m != nil {
@@ -441,13 +741,35 @@ type UpdateRoutingProfileRequest struct {
 	// tls certificate for connecting to lora-app-server
 	TlsCert string `protobuf:"bytes,3,opt,name=tlsCert" json:"tlsCert,omitempty"`
 	// tls key for connecting to lora-app-server
-	TlsKey string `protobuf:"bytes,4,opt,name=tlsKey" json:"tlsKey,omitempty"`
+	TlsKey               string   `protobuf:"bytes,4,opt,name=tlsKey" json:"tlsKey,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdateRoutingProfileRequest) Reset()                    { *m = UpdateRoutingProfileRequest{} }
-func (m *UpdateRoutingProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*UpdateRoutingProfileRequest) ProtoMessage()               {}
-func (*UpdateRoutingProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{13} }
+func (m *UpdateRoutingProfileRequest) Reset()         { *m = UpdateRoutingProfileRequest{} }
+func (m *UpdateRoutingProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateRoutingProfileRequest) ProtoMessage()    {}
+func (*UpdateRoutingProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{13}
+}
+func (m *UpdateRoutingProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateRoutingProfileRequest.Unmarshal(m, b)
+}
+func (m *UpdateRoutingProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateRoutingProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *UpdateRoutingProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateRoutingProfileRequest.Merge(dst, src)
+}
+func (m *UpdateRoutingProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateRoutingProfileRequest.Size(m)
+}
+func (m *UpdateRoutingProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateRoutingProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateRoutingProfileRequest proto.InternalMessageInfo
 
 func (m *UpdateRoutingProfileRequest) GetRoutingProfile() *RoutingProfile {
 	if m != nil {
@@ -478,21 +800,65 @@ func (m *UpdateRoutingProfileRequest) GetTlsKey() string {
 }
 
 type UpdateRoutingProfileResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdateRoutingProfileResponse) Reset()                    { *m = UpdateRoutingProfileResponse{} }
-func (m *UpdateRoutingProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*UpdateRoutingProfileResponse) ProtoMessage()               {}
-func (*UpdateRoutingProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{14} }
+func (m *UpdateRoutingProfileResponse) Reset()         { *m = UpdateRoutingProfileResponse{} }
+func (m *UpdateRoutingProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*UpdateRoutingProfileResponse) ProtoMessage()    {}
+func (*UpdateRoutingProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{14}
+}
+func (m *UpdateRoutingProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateRoutingProfileResponse.Unmarshal(m, b)
+}
+func (m *UpdateRoutingProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateRoutingProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *UpdateRoutingProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateRoutingProfileResponse.Merge(dst, src)
+}
+func (m *UpdateRoutingProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_UpdateRoutingProfileResponse.Size(m)
+}
+func (m *UpdateRoutingProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateRoutingProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateRoutingProfileResponse proto.InternalMessageInfo
 
 type DeleteRoutingProfileRequest struct {
-	RoutingProfileID string `protobuf:"bytes,1,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
+	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteRoutingProfileRequest) Reset()                    { *m = DeleteRoutingProfileRequest{} }
-func (m *DeleteRoutingProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*DeleteRoutingProfileRequest) ProtoMessage()               {}
-func (*DeleteRoutingProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{15} }
+func (m *DeleteRoutingProfileRequest) Reset()         { *m = DeleteRoutingProfileRequest{} }
+func (m *DeleteRoutingProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteRoutingProfileRequest) ProtoMessage()    {}
+func (*DeleteRoutingProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{15}
+}
+func (m *DeleteRoutingProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteRoutingProfileRequest.Unmarshal(m, b)
+}
+func (m *DeleteRoutingProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteRoutingProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *DeleteRoutingProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteRoutingProfileRequest.Merge(dst, src)
+}
+func (m *DeleteRoutingProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteRoutingProfileRequest.Size(m)
+}
+func (m *DeleteRoutingProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteRoutingProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteRoutingProfileRequest proto.InternalMessageInfo
 
 func (m *DeleteRoutingProfileRequest) GetRoutingProfileID() string {
 	if m != nil {
@@ -502,21 +868,65 @@ func (m *DeleteRoutingProfileRequest) GetRoutingProfileID() string {
 }
 
 type DeleteRoutingProfileResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteRoutingProfileResponse) Reset()                    { *m = DeleteRoutingProfileResponse{} }
-func (m *DeleteRoutingProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*DeleteRoutingProfileResponse) ProtoMessage()               {}
-func (*DeleteRoutingProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{16} }
+func (m *DeleteRoutingProfileResponse) Reset()         { *m = DeleteRoutingProfileResponse{} }
+func (m *DeleteRoutingProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteRoutingProfileResponse) ProtoMessage()    {}
+func (*DeleteRoutingProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{16}
+}
+func (m *DeleteRoutingProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteRoutingProfileResponse.Unmarshal(m, b)
+}
+func (m *DeleteRoutingProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteRoutingProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *DeleteRoutingProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteRoutingProfileResponse.Merge(dst, src)
+}
+func (m *DeleteRoutingProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_DeleteRoutingProfileResponse.Size(m)
+}
+func (m *DeleteRoutingProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteRoutingProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteRoutingProfileResponse proto.InternalMessageInfo
 
 type CreateDeviceProfileRequest struct {
-	DeviceProfile *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile" json:"deviceProfile,omitempty"`
+	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile" json:"deviceProfile,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
 }
 
-func (m *CreateDeviceProfileRequest) Reset()                    { *m = CreateDeviceProfileRequest{} }
-func (m *CreateDeviceProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreateDeviceProfileRequest) ProtoMessage()               {}
-func (*CreateDeviceProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{17} }
+func (m *CreateDeviceProfileRequest) Reset()         { *m = CreateDeviceProfileRequest{} }
+func (m *CreateDeviceProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateDeviceProfileRequest) ProtoMessage()    {}
+func (*CreateDeviceProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{17}
+}
+func (m *CreateDeviceProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateDeviceProfileRequest.Unmarshal(m, b)
+}
+func (m *CreateDeviceProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateDeviceProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreateDeviceProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateDeviceProfileRequest.Merge(dst, src)
+}
+func (m *CreateDeviceProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateDeviceProfileRequest.Size(m)
+}
+func (m *CreateDeviceProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateDeviceProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateDeviceProfileRequest proto.InternalMessageInfo
 
 func (m *CreateDeviceProfileRequest) GetDeviceProfile() *DeviceProfile {
 	if m != nil {
@@ -526,13 +936,35 @@ func (m *CreateDeviceProfileRequest) GetDeviceProfile() *DeviceProfile {
 }
 
 type CreateDeviceProfileResponse struct {
-	DeviceProfileID string `protobuf:"bytes,1,opt,name=deviceProfileID" json:"deviceProfileID,omitempty"`
+	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID" json:"deviceProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateDeviceProfileResponse) Reset()                    { *m = CreateDeviceProfileResponse{} }
-func (m *CreateDeviceProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*CreateDeviceProfileResponse) ProtoMessage()               {}
-func (*CreateDeviceProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{18} }
+func (m *CreateDeviceProfileResponse) Reset()         { *m = CreateDeviceProfileResponse{} }
+func (m *CreateDeviceProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateDeviceProfileResponse) ProtoMessage()    {}
+func (*CreateDeviceProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{18}
+}
+func (m *CreateDeviceProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateDeviceProfileResponse.Unmarshal(m, b)
+}
+func (m *CreateDeviceProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateDeviceProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *CreateDeviceProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateDeviceProfileResponse.Merge(dst, src)
+}
+func (m *CreateDeviceProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_CreateDeviceProfileResponse.Size(m)
+}
+func (m *CreateDeviceProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateDeviceProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateDeviceProfileResponse proto.InternalMessageInfo
 
 func (m *CreateDeviceProfileResponse) GetDeviceProfileID() string {
 	if m != nil {
@@ -542,13 +974,35 @@ func (m *CreateDeviceProfileResponse) GetDeviceProfileID() string {
 }
 
 type GetDeviceProfileRequest struct {
-	DeviceProfileID string `protobuf:"bytes,1,opt,name=deviceProfileID" json:"deviceProfileID,omitempty"`
+	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID" json:"deviceProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetDeviceProfileRequest) Reset()                    { *m = GetDeviceProfileRequest{} }
-func (m *GetDeviceProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*GetDeviceProfileRequest) ProtoMessage()               {}
-func (*GetDeviceProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{19} }
+func (m *GetDeviceProfileRequest) Reset()         { *m = GetDeviceProfileRequest{} }
+func (m *GetDeviceProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*GetDeviceProfileRequest) ProtoMessage()    {}
+func (*GetDeviceProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{19}
+}
+func (m *GetDeviceProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetDeviceProfileRequest.Unmarshal(m, b)
+}
+func (m *GetDeviceProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetDeviceProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetDeviceProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetDeviceProfileRequest.Merge(dst, src)
+}
+func (m *GetDeviceProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_GetDeviceProfileRequest.Size(m)
+}
+func (m *GetDeviceProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetDeviceProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetDeviceProfileRequest proto.InternalMessageInfo
 
 func (m *GetDeviceProfileRequest) GetDeviceProfileID() string {
 	if m != nil {
@@ -558,15 +1012,37 @@ func (m *GetDeviceProfileRequest) GetDeviceProfileID() string {
 }
 
 type GetDeviceProfileResponse struct {
-	DeviceProfile *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile" json:"deviceProfile,omitempty"`
-	CreatedAt     string         `protobuf:"bytes,2,opt,name=createdAt" json:"createdAt,omitempty"`
-	UpdatedAt     string         `protobuf:"bytes,3,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile" json:"deviceProfile,omitempty"`
+	CreatedAt            string         `protobuf:"bytes,2,opt,name=createdAt" json:"createdAt,omitempty"`
+	UpdatedAt            string         `protobuf:"bytes,3,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
 }
 
-func (m *GetDeviceProfileResponse) Reset()                    { *m = GetDeviceProfileResponse{} }
-func (m *GetDeviceProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*GetDeviceProfileResponse) ProtoMessage()               {}
-func (*GetDeviceProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{20} }
+func (m *GetDeviceProfileResponse) Reset()         { *m = GetDeviceProfileResponse{} }
+func (m *GetDeviceProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*GetDeviceProfileResponse) ProtoMessage()    {}
+func (*GetDeviceProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{20}
+}
+func (m *GetDeviceProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetDeviceProfileResponse.Unmarshal(m, b)
+}
+func (m *GetDeviceProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetDeviceProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetDeviceProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetDeviceProfileResponse.Merge(dst, src)
+}
+func (m *GetDeviceProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_GetDeviceProfileResponse.Size(m)
+}
+func (m *GetDeviceProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetDeviceProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetDeviceProfileResponse proto.InternalMessageInfo
 
 func (m *GetDeviceProfileResponse) GetDeviceProfile() *DeviceProfile {
 	if m != nil {
@@ -590,13 +1066,35 @@ func (m *GetDeviceProfileResponse) GetUpdatedAt() string {
 }
 
 type UpdateDeviceProfileRequest struct {
-	DeviceProfile *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile" json:"deviceProfile,omitempty"`
+	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile" json:"deviceProfile,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
 }
 
-func (m *UpdateDeviceProfileRequest) Reset()                    { *m = UpdateDeviceProfileRequest{} }
-func (m *UpdateDeviceProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*UpdateDeviceProfileRequest) ProtoMessage()               {}
-func (*UpdateDeviceProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{21} }
+func (m *UpdateDeviceProfileRequest) Reset()         { *m = UpdateDeviceProfileRequest{} }
+func (m *UpdateDeviceProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateDeviceProfileRequest) ProtoMessage()    {}
+func (*UpdateDeviceProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{21}
+}
+func (m *UpdateDeviceProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateDeviceProfileRequest.Unmarshal(m, b)
+}
+func (m *UpdateDeviceProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateDeviceProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *UpdateDeviceProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateDeviceProfileRequest.Merge(dst, src)
+}
+func (m *UpdateDeviceProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateDeviceProfileRequest.Size(m)
+}
+func (m *UpdateDeviceProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateDeviceProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateDeviceProfileRequest proto.InternalMessageInfo
 
 func (m *UpdateDeviceProfileRequest) GetDeviceProfile() *DeviceProfile {
 	if m != nil {
@@ -606,21 +1104,65 @@ func (m *UpdateDeviceProfileRequest) GetDeviceProfile() *DeviceProfile {
 }
 
 type UpdateDeviceProfileResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdateDeviceProfileResponse) Reset()                    { *m = UpdateDeviceProfileResponse{} }
-func (m *UpdateDeviceProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*UpdateDeviceProfileResponse) ProtoMessage()               {}
-func (*UpdateDeviceProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{22} }
+func (m *UpdateDeviceProfileResponse) Reset()         { *m = UpdateDeviceProfileResponse{} }
+func (m *UpdateDeviceProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*UpdateDeviceProfileResponse) ProtoMessage()    {}
+func (*UpdateDeviceProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{22}
+}
+func (m *UpdateDeviceProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateDeviceProfileResponse.Unmarshal(m, b)
+}
+func (m *UpdateDeviceProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateDeviceProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *UpdateDeviceProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateDeviceProfileResponse.Merge(dst, src)
+}
+func (m *UpdateDeviceProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_UpdateDeviceProfileResponse.Size(m)
+}
+func (m *UpdateDeviceProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateDeviceProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateDeviceProfileResponse proto.InternalMessageInfo
 
 type DeleteDeviceProfileRequest struct {
-	DeviceProfileID string `protobuf:"bytes,1,opt,name=deviceProfileID" json:"deviceProfileID,omitempty"`
+	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID" json:"deviceProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteDeviceProfileRequest) Reset()                    { *m = DeleteDeviceProfileRequest{} }
-func (m *DeleteDeviceProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*DeleteDeviceProfileRequest) ProtoMessage()               {}
-func (*DeleteDeviceProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{23} }
+func (m *DeleteDeviceProfileRequest) Reset()         { *m = DeleteDeviceProfileRequest{} }
+func (m *DeleteDeviceProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteDeviceProfileRequest) ProtoMessage()    {}
+func (*DeleteDeviceProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{23}
+}
+func (m *DeleteDeviceProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteDeviceProfileRequest.Unmarshal(m, b)
+}
+func (m *DeleteDeviceProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteDeviceProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *DeleteDeviceProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteDeviceProfileRequest.Merge(dst, src)
+}
+func (m *DeleteDeviceProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteDeviceProfileRequest.Size(m)
+}
+func (m *DeleteDeviceProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteDeviceProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteDeviceProfileRequest proto.InternalMessageInfo
 
 func (m *DeleteDeviceProfileRequest) GetDeviceProfileID() string {
 	if m != nil {
@@ -630,25 +1172,69 @@ func (m *DeleteDeviceProfileRequest) GetDeviceProfileID() string {
 }
 
 type DeleteDeviceProfileResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteDeviceProfileResponse) Reset()                    { *m = DeleteDeviceProfileResponse{} }
-func (m *DeleteDeviceProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*DeleteDeviceProfileResponse) ProtoMessage()               {}
-func (*DeleteDeviceProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{24} }
+func (m *DeleteDeviceProfileResponse) Reset()         { *m = DeleteDeviceProfileResponse{} }
+func (m *DeleteDeviceProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteDeviceProfileResponse) ProtoMessage()    {}
+func (*DeleteDeviceProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{24}
+}
+func (m *DeleteDeviceProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteDeviceProfileResponse.Unmarshal(m, b)
+}
+func (m *DeleteDeviceProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteDeviceProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *DeleteDeviceProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteDeviceProfileResponse.Merge(dst, src)
+}
+func (m *DeleteDeviceProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_DeleteDeviceProfileResponse.Size(m)
+}
+func (m *DeleteDeviceProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteDeviceProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteDeviceProfileResponse proto.InternalMessageInfo
 
 type Device struct {
-	DevEUI           []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
-	DeviceProfileID  string `protobuf:"bytes,2,opt,name=deviceProfileID" json:"deviceProfileID,omitempty"`
-	ServiceProfileID string `protobuf:"bytes,3,opt,name=serviceProfileID" json:"serviceProfileID,omitempty"`
-	RoutingProfileID string `protobuf:"bytes,4,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
-	SkipFCntCheck    bool   `protobuf:"varint,5,opt,name=skipFCntCheck" json:"skipFCntCheck,omitempty"`
+	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DeviceProfileID      string   `protobuf:"bytes,2,opt,name=deviceProfileID" json:"deviceProfileID,omitempty"`
+	ServiceProfileID     string   `protobuf:"bytes,3,opt,name=serviceProfileID" json:"serviceProfileID,omitempty"`
+	RoutingProfileID     string   `protobuf:"bytes,4,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
+	SkipFCntCheck        bool     `protobuf:"varint,5,opt,name=skipFCntCheck" json:"skipFCntCheck,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Device) Reset()                    { *m = Device{} }
-func (m *Device) String() string            { return proto.CompactTextString(m) }
-func (*Device) ProtoMessage()               {}
-func (*Device) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{25} }
+func (m *Device) Reset()         { *m = Device{} }
+func (m *Device) String() string { return proto.CompactTextString(m) }
+func (*Device) ProtoMessage()    {}
+func (*Device) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{25}
+}
+func (m *Device) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Device.Unmarshal(m, b)
+}
+func (m *Device) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Device.Marshal(b, m, deterministic)
+}
+func (dst *Device) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Device.Merge(dst, src)
+}
+func (m *Device) XXX_Size() int {
+	return xxx_messageInfo_Device.Size(m)
+}
+func (m *Device) XXX_DiscardUnknown() {
+	xxx_messageInfo_Device.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Device proto.InternalMessageInfo
 
 func (m *Device) GetDevEUI() []byte {
 	if m != nil {
@@ -686,13 +1272,35 @@ func (m *Device) GetSkipFCntCheck() bool {
 }
 
 type CreateDeviceRequest struct {
-	Device *Device `protobuf:"bytes,1,opt,name=device" json:"device,omitempty"`
+	Device               *Device  `protobuf:"bytes,1,opt,name=device" json:"device,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateDeviceRequest) Reset()                    { *m = CreateDeviceRequest{} }
-func (m *CreateDeviceRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreateDeviceRequest) ProtoMessage()               {}
-func (*CreateDeviceRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{26} }
+func (m *CreateDeviceRequest) Reset()         { *m = CreateDeviceRequest{} }
+func (m *CreateDeviceRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateDeviceRequest) ProtoMessage()    {}
+func (*CreateDeviceRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{26}
+}
+func (m *CreateDeviceRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateDeviceRequest.Unmarshal(m, b)
+}
+func (m *CreateDeviceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateDeviceRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreateDeviceRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateDeviceRequest.Merge(dst, src)
+}
+func (m *CreateDeviceRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateDeviceRequest.Size(m)
+}
+func (m *CreateDeviceRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateDeviceRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateDeviceRequest proto.InternalMessageInfo
 
 func (m *CreateDeviceRequest) GetDevice() *Device {
 	if m != nil {
@@ -702,21 +1310,65 @@ func (m *CreateDeviceRequest) GetDevice() *Device {
 }
 
 type CreateDeviceResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateDeviceResponse) Reset()                    { *m = CreateDeviceResponse{} }
-func (m *CreateDeviceResponse) String() string            { return proto.CompactTextString(m) }
-func (*CreateDeviceResponse) ProtoMessage()               {}
-func (*CreateDeviceResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{27} }
+func (m *CreateDeviceResponse) Reset()         { *m = CreateDeviceResponse{} }
+func (m *CreateDeviceResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateDeviceResponse) ProtoMessage()    {}
+func (*CreateDeviceResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{27}
+}
+func (m *CreateDeviceResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateDeviceResponse.Unmarshal(m, b)
+}
+func (m *CreateDeviceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateDeviceResponse.Marshal(b, m, deterministic)
+}
+func (dst *CreateDeviceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateDeviceResponse.Merge(dst, src)
+}
+func (m *CreateDeviceResponse) XXX_Size() int {
+	return xxx_messageInfo_CreateDeviceResponse.Size(m)
+}
+func (m *CreateDeviceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateDeviceResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateDeviceResponse proto.InternalMessageInfo
 
 type GetDeviceRequest struct {
-	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetDeviceRequest) Reset()                    { *m = GetDeviceRequest{} }
-func (m *GetDeviceRequest) String() string            { return proto.CompactTextString(m) }
-func (*GetDeviceRequest) ProtoMessage()               {}
-func (*GetDeviceRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{28} }
+func (m *GetDeviceRequest) Reset()         { *m = GetDeviceRequest{} }
+func (m *GetDeviceRequest) String() string { return proto.CompactTextString(m) }
+func (*GetDeviceRequest) ProtoMessage()    {}
+func (*GetDeviceRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{28}
+}
+func (m *GetDeviceRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetDeviceRequest.Unmarshal(m, b)
+}
+func (m *GetDeviceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetDeviceRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetDeviceRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetDeviceRequest.Merge(dst, src)
+}
+func (m *GetDeviceRequest) XXX_Size() int {
+	return xxx_messageInfo_GetDeviceRequest.Size(m)
+}
+func (m *GetDeviceRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetDeviceRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetDeviceRequest proto.InternalMessageInfo
 
 func (m *GetDeviceRequest) GetDevEUI() []byte {
 	if m != nil {
@@ -726,15 +1378,37 @@ func (m *GetDeviceRequest) GetDevEUI() []byte {
 }
 
 type GetDeviceResponse struct {
-	Device    *Device `protobuf:"bytes,1,opt,name=device" json:"device,omitempty"`
-	CreatedAt string  `protobuf:"bytes,2,opt,name=createdAt" json:"createdAt,omitempty"`
-	UpdatedAt string  `protobuf:"bytes,3,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	Device               *Device  `protobuf:"bytes,1,opt,name=device" json:"device,omitempty"`
+	CreatedAt            string   `protobuf:"bytes,2,opt,name=createdAt" json:"createdAt,omitempty"`
+	UpdatedAt            string   `protobuf:"bytes,3,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetDeviceResponse) Reset()                    { *m = GetDeviceResponse{} }
-func (m *GetDeviceResponse) String() string            { return proto.CompactTextString(m) }
-func (*GetDeviceResponse) ProtoMessage()               {}
-func (*GetDeviceResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{29} }
+func (m *GetDeviceResponse) Reset()         { *m = GetDeviceResponse{} }
+func (m *GetDeviceResponse) String() string { return proto.CompactTextString(m) }
+func (*GetDeviceResponse) ProtoMessage()    {}
+func (*GetDeviceResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{29}
+}
+func (m *GetDeviceResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetDeviceResponse.Unmarshal(m, b)
+}
+func (m *GetDeviceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetDeviceResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetDeviceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetDeviceResponse.Merge(dst, src)
+}
+func (m *GetDeviceResponse) XXX_Size() int {
+	return xxx_messageInfo_GetDeviceResponse.Size(m)
+}
+func (m *GetDeviceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetDeviceResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetDeviceResponse proto.InternalMessageInfo
 
 func (m *GetDeviceResponse) GetDevice() *Device {
 	if m != nil {
@@ -758,13 +1432,35 @@ func (m *GetDeviceResponse) GetUpdatedAt() string {
 }
 
 type UpdateDeviceRequest struct {
-	Device *Device `protobuf:"bytes,1,opt,name=device" json:"device,omitempty"`
+	Device               *Device  `protobuf:"bytes,1,opt,name=device" json:"device,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdateDeviceRequest) Reset()                    { *m = UpdateDeviceRequest{} }
-func (m *UpdateDeviceRequest) String() string            { return proto.CompactTextString(m) }
-func (*UpdateDeviceRequest) ProtoMessage()               {}
-func (*UpdateDeviceRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{30} }
+func (m *UpdateDeviceRequest) Reset()         { *m = UpdateDeviceRequest{} }
+func (m *UpdateDeviceRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateDeviceRequest) ProtoMessage()    {}
+func (*UpdateDeviceRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{30}
+}
+func (m *UpdateDeviceRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateDeviceRequest.Unmarshal(m, b)
+}
+func (m *UpdateDeviceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateDeviceRequest.Marshal(b, m, deterministic)
+}
+func (dst *UpdateDeviceRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateDeviceRequest.Merge(dst, src)
+}
+func (m *UpdateDeviceRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateDeviceRequest.Size(m)
+}
+func (m *UpdateDeviceRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateDeviceRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateDeviceRequest proto.InternalMessageInfo
 
 func (m *UpdateDeviceRequest) GetDevice() *Device {
 	if m != nil {
@@ -774,21 +1470,65 @@ func (m *UpdateDeviceRequest) GetDevice() *Device {
 }
 
 type UpdateDeviceResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdateDeviceResponse) Reset()                    { *m = UpdateDeviceResponse{} }
-func (m *UpdateDeviceResponse) String() string            { return proto.CompactTextString(m) }
-func (*UpdateDeviceResponse) ProtoMessage()               {}
-func (*UpdateDeviceResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{31} }
+func (m *UpdateDeviceResponse) Reset()         { *m = UpdateDeviceResponse{} }
+func (m *UpdateDeviceResponse) String() string { return proto.CompactTextString(m) }
+func (*UpdateDeviceResponse) ProtoMessage()    {}
+func (*UpdateDeviceResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{31}
+}
+func (m *UpdateDeviceResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateDeviceResponse.Unmarshal(m, b)
+}
+func (m *UpdateDeviceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateDeviceResponse.Marshal(b, m, deterministic)
+}
+func (dst *UpdateDeviceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateDeviceResponse.Merge(dst, src)
+}
+func (m *UpdateDeviceResponse) XXX_Size() int {
+	return xxx_messageInfo_UpdateDeviceResponse.Size(m)
+}
+func (m *UpdateDeviceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateDeviceResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateDeviceResponse proto.InternalMessageInfo
 
 type DeleteDeviceRequest struct {
-	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteDeviceRequest) Reset()                    { *m = DeleteDeviceRequest{} }
-func (m *DeleteDeviceRequest) String() string            { return proto.CompactTextString(m) }
-func (*DeleteDeviceRequest) ProtoMessage()               {}
-func (*DeleteDeviceRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{32} }
+func (m *DeleteDeviceRequest) Reset()         { *m = DeleteDeviceRequest{} }
+func (m *DeleteDeviceRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteDeviceRequest) ProtoMessage()    {}
+func (*DeleteDeviceRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{32}
+}
+func (m *DeleteDeviceRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteDeviceRequest.Unmarshal(m, b)
+}
+func (m *DeleteDeviceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteDeviceRequest.Marshal(b, m, deterministic)
+}
+func (dst *DeleteDeviceRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteDeviceRequest.Merge(dst, src)
+}
+func (m *DeleteDeviceRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteDeviceRequest.Size(m)
+}
+func (m *DeleteDeviceRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteDeviceRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteDeviceRequest proto.InternalMessageInfo
 
 func (m *DeleteDeviceRequest) GetDevEUI() []byte {
 	if m != nil {
@@ -798,12 +1538,34 @@ func (m *DeleteDeviceRequest) GetDevEUI() []byte {
 }
 
 type DeleteDeviceResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteDeviceResponse) Reset()                    { *m = DeleteDeviceResponse{} }
-func (m *DeleteDeviceResponse) String() string            { return proto.CompactTextString(m) }
-func (*DeleteDeviceResponse) ProtoMessage()               {}
-func (*DeleteDeviceResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{33} }
+func (m *DeleteDeviceResponse) Reset()         { *m = DeleteDeviceResponse{} }
+func (m *DeleteDeviceResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteDeviceResponse) ProtoMessage()    {}
+func (*DeleteDeviceResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{33}
+}
+func (m *DeleteDeviceResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteDeviceResponse.Unmarshal(m, b)
+}
+func (m *DeleteDeviceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteDeviceResponse.Marshal(b, m, deterministic)
+}
+func (dst *DeleteDeviceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteDeviceResponse.Merge(dst, src)
+}
+func (m *DeleteDeviceResponse) XXX_Size() int {
+	return xxx_messageInfo_DeleteDeviceResponse.Size(m)
+}
+func (m *DeleteDeviceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteDeviceResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteDeviceResponse proto.InternalMessageInfo
 
 type ActivateDeviceRequest struct {
 	// Device EUI (8 bytes).
@@ -817,13 +1579,35 @@ type ActivateDeviceRequest struct {
 	// The frame-counter used for the next downlink frame.
 	FCntDown uint32 `protobuf:"varint,5,opt,name=fCntDown" json:"fCntDown,omitempty"`
 	// Skip frame-counter checks (this is insecure, but could be helpful for debugging).
-	SkipFCntCheck bool `protobuf:"varint,6,opt,name=skipFCntCheck" json:"skipFCntCheck,omitempty"`
+	SkipFCntCheck        bool     `protobuf:"varint,6,opt,name=skipFCntCheck" json:"skipFCntCheck,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ActivateDeviceRequest) Reset()                    { *m = ActivateDeviceRequest{} }
-func (m *ActivateDeviceRequest) String() string            { return proto.CompactTextString(m) }
-func (*ActivateDeviceRequest) ProtoMessage()               {}
-func (*ActivateDeviceRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{34} }
+func (m *ActivateDeviceRequest) Reset()         { *m = ActivateDeviceRequest{} }
+func (m *ActivateDeviceRequest) String() string { return proto.CompactTextString(m) }
+func (*ActivateDeviceRequest) ProtoMessage()    {}
+func (*ActivateDeviceRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{34}
+}
+func (m *ActivateDeviceRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ActivateDeviceRequest.Unmarshal(m, b)
+}
+func (m *ActivateDeviceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ActivateDeviceRequest.Marshal(b, m, deterministic)
+}
+func (dst *ActivateDeviceRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ActivateDeviceRequest.Merge(dst, src)
+}
+func (m *ActivateDeviceRequest) XXX_Size() int {
+	return xxx_messageInfo_ActivateDeviceRequest.Size(m)
+}
+func (m *ActivateDeviceRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ActivateDeviceRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ActivateDeviceRequest proto.InternalMessageInfo
 
 func (m *ActivateDeviceRequest) GetDevEUI() []byte {
 	if m != nil {
@@ -868,22 +1652,66 @@ func (m *ActivateDeviceRequest) GetSkipFCntCheck() bool {
 }
 
 type ActivateDeviceResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *ActivateDeviceResponse) Reset()                    { *m = ActivateDeviceResponse{} }
-func (m *ActivateDeviceResponse) String() string            { return proto.CompactTextString(m) }
-func (*ActivateDeviceResponse) ProtoMessage()               {}
-func (*ActivateDeviceResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{35} }
+func (m *ActivateDeviceResponse) Reset()         { *m = ActivateDeviceResponse{} }
+func (m *ActivateDeviceResponse) String() string { return proto.CompactTextString(m) }
+func (*ActivateDeviceResponse) ProtoMessage()    {}
+func (*ActivateDeviceResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{35}
+}
+func (m *ActivateDeviceResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ActivateDeviceResponse.Unmarshal(m, b)
+}
+func (m *ActivateDeviceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ActivateDeviceResponse.Marshal(b, m, deterministic)
+}
+func (dst *ActivateDeviceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ActivateDeviceResponse.Merge(dst, src)
+}
+func (m *ActivateDeviceResponse) XXX_Size() int {
+	return xxx_messageInfo_ActivateDeviceResponse.Size(m)
+}
+func (m *ActivateDeviceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ActivateDeviceResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ActivateDeviceResponse proto.InternalMessageInfo
 
 type DeactivateDeviceRequest struct {
 	// Device EUI (8 bytes).
-	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeactivateDeviceRequest) Reset()                    { *m = DeactivateDeviceRequest{} }
-func (m *DeactivateDeviceRequest) String() string            { return proto.CompactTextString(m) }
-func (*DeactivateDeviceRequest) ProtoMessage()               {}
-func (*DeactivateDeviceRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{36} }
+func (m *DeactivateDeviceRequest) Reset()         { *m = DeactivateDeviceRequest{} }
+func (m *DeactivateDeviceRequest) String() string { return proto.CompactTextString(m) }
+func (*DeactivateDeviceRequest) ProtoMessage()    {}
+func (*DeactivateDeviceRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{36}
+}
+func (m *DeactivateDeviceRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeactivateDeviceRequest.Unmarshal(m, b)
+}
+func (m *DeactivateDeviceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeactivateDeviceRequest.Marshal(b, m, deterministic)
+}
+func (dst *DeactivateDeviceRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeactivateDeviceRequest.Merge(dst, src)
+}
+func (m *DeactivateDeviceRequest) XXX_Size() int {
+	return xxx_messageInfo_DeactivateDeviceRequest.Size(m)
+}
+func (m *DeactivateDeviceRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeactivateDeviceRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeactivateDeviceRequest proto.InternalMessageInfo
 
 func (m *DeactivateDeviceRequest) GetDevEUI() []byte {
 	if m != nil {
@@ -893,22 +1721,66 @@ func (m *DeactivateDeviceRequest) GetDevEUI() []byte {
 }
 
 type DeactivateDeviceResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeactivateDeviceResponse) Reset()                    { *m = DeactivateDeviceResponse{} }
-func (m *DeactivateDeviceResponse) String() string            { return proto.CompactTextString(m) }
-func (*DeactivateDeviceResponse) ProtoMessage()               {}
-func (*DeactivateDeviceResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{37} }
+func (m *DeactivateDeviceResponse) Reset()         { *m = DeactivateDeviceResponse{} }
+func (m *DeactivateDeviceResponse) String() string { return proto.CompactTextString(m) }
+func (*DeactivateDeviceResponse) ProtoMessage()    {}
+func (*DeactivateDeviceResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{37}
+}
+func (m *DeactivateDeviceResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeactivateDeviceResponse.Unmarshal(m, b)
+}
+func (m *DeactivateDeviceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeactivateDeviceResponse.Marshal(b, m, deterministic)
+}
+func (dst *DeactivateDeviceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeactivateDeviceResponse.Merge(dst, src)
+}
+func (m *DeactivateDeviceResponse) XXX_Size() int {
+	return xxx_messageInfo_DeactivateDeviceResponse.Size(m)
+}
+func (m *DeactivateDeviceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeactivateDeviceResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeactivateDeviceResponse proto.InternalMessageInfo
 
 type GetDeviceActivationRequest struct {
 	// Device EUI (8 bytes).
-	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetDeviceActivationRequest) Reset()                    { *m = GetDeviceActivationRequest{} }
-func (m *GetDeviceActivationRequest) String() string            { return proto.CompactTextString(m) }
-func (*GetDeviceActivationRequest) ProtoMessage()               {}
-func (*GetDeviceActivationRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{38} }
+func (m *GetDeviceActivationRequest) Reset()         { *m = GetDeviceActivationRequest{} }
+func (m *GetDeviceActivationRequest) String() string { return proto.CompactTextString(m) }
+func (*GetDeviceActivationRequest) ProtoMessage()    {}
+func (*GetDeviceActivationRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{38}
+}
+func (m *GetDeviceActivationRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetDeviceActivationRequest.Unmarshal(m, b)
+}
+func (m *GetDeviceActivationRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetDeviceActivationRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetDeviceActivationRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetDeviceActivationRequest.Merge(dst, src)
+}
+func (m *GetDeviceActivationRequest) XXX_Size() int {
+	return xxx_messageInfo_GetDeviceActivationRequest.Size(m)
+}
+func (m *GetDeviceActivationRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetDeviceActivationRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetDeviceActivationRequest proto.InternalMessageInfo
 
 func (m *GetDeviceActivationRequest) GetDevEUI() []byte {
 	if m != nil {
@@ -927,13 +1799,35 @@ type GetDeviceActivationResponse struct {
 	// The frame-counter used for the next downlink frame.
 	FCntDown uint32 `protobuf:"varint,4,opt,name=fCntDown" json:"fCntDown,omitempty"`
 	// Skip frame-counter checks (this is insecure, but could be helpful for debugging).
-	SkipFCntCheck bool `protobuf:"varint,5,opt,name=skipFCntCheck" json:"skipFCntCheck,omitempty"`
+	SkipFCntCheck        bool     `protobuf:"varint,5,opt,name=skipFCntCheck" json:"skipFCntCheck,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetDeviceActivationResponse) Reset()                    { *m = GetDeviceActivationResponse{} }
-func (m *GetDeviceActivationResponse) String() string            { return proto.CompactTextString(m) }
-func (*GetDeviceActivationResponse) ProtoMessage()               {}
-func (*GetDeviceActivationResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{39} }
+func (m *GetDeviceActivationResponse) Reset()         { *m = GetDeviceActivationResponse{} }
+func (m *GetDeviceActivationResponse) String() string { return proto.CompactTextString(m) }
+func (*GetDeviceActivationResponse) ProtoMessage()    {}
+func (*GetDeviceActivationResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{39}
+}
+func (m *GetDeviceActivationResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetDeviceActivationResponse.Unmarshal(m, b)
+}
+func (m *GetDeviceActivationResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetDeviceActivationResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetDeviceActivationResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetDeviceActivationResponse.Merge(dst, src)
+}
+func (m *GetDeviceActivationResponse) XXX_Size() int {
+	return xxx_messageInfo_GetDeviceActivationResponse.Size(m)
+}
+func (m *GetDeviceActivationResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetDeviceActivationResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetDeviceActivationResponse proto.InternalMessageInfo
 
 func (m *GetDeviceActivationResponse) GetDevAddr() []byte {
 	if m != nil {
@@ -971,21 +1865,65 @@ func (m *GetDeviceActivationResponse) GetSkipFCntCheck() bool {
 }
 
 type GetRandomDevAddrRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetRandomDevAddrRequest) Reset()                    { *m = GetRandomDevAddrRequest{} }
-func (m *GetRandomDevAddrRequest) String() string            { return proto.CompactTextString(m) }
-func (*GetRandomDevAddrRequest) ProtoMessage()               {}
-func (*GetRandomDevAddrRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{40} }
+func (m *GetRandomDevAddrRequest) Reset()         { *m = GetRandomDevAddrRequest{} }
+func (m *GetRandomDevAddrRequest) String() string { return proto.CompactTextString(m) }
+func (*GetRandomDevAddrRequest) ProtoMessage()    {}
+func (*GetRandomDevAddrRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{40}
+}
+func (m *GetRandomDevAddrRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetRandomDevAddrRequest.Unmarshal(m, b)
+}
+func (m *GetRandomDevAddrRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetRandomDevAddrRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetRandomDevAddrRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetRandomDevAddrRequest.Merge(dst, src)
+}
+func (m *GetRandomDevAddrRequest) XXX_Size() int {
+	return xxx_messageInfo_GetRandomDevAddrRequest.Size(m)
+}
+func (m *GetRandomDevAddrRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetRandomDevAddrRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetRandomDevAddrRequest proto.InternalMessageInfo
 
 type GetRandomDevAddrResponse struct {
-	DevAddr []byte `protobuf:"bytes,1,opt,name=devAddr,proto3" json:"devAddr,omitempty"`
+	DevAddr              []byte   `protobuf:"bytes,1,opt,name=devAddr,proto3" json:"devAddr,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetRandomDevAddrResponse) Reset()                    { *m = GetRandomDevAddrResponse{} }
-func (m *GetRandomDevAddrResponse) String() string            { return proto.CompactTextString(m) }
-func (*GetRandomDevAddrResponse) ProtoMessage()               {}
-func (*GetRandomDevAddrResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{41} }
+func (m *GetRandomDevAddrResponse) Reset()         { *m = GetRandomDevAddrResponse{} }
+func (m *GetRandomDevAddrResponse) String() string { return proto.CompactTextString(m) }
+func (*GetRandomDevAddrResponse) ProtoMessage()    {}
+func (*GetRandomDevAddrResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{41}
+}
+func (m *GetRandomDevAddrResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetRandomDevAddrResponse.Unmarshal(m, b)
+}
+func (m *GetRandomDevAddrResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetRandomDevAddrResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetRandomDevAddrResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetRandomDevAddrResponse.Merge(dst, src)
+}
+func (m *GetRandomDevAddrResponse) XXX_Size() int {
+	return xxx_messageInfo_GetRandomDevAddrResponse.Size(m)
+}
+func (m *GetRandomDevAddrResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetRandomDevAddrResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetRandomDevAddrResponse proto.InternalMessageInfo
 
 func (m *GetRandomDevAddrResponse) GetDevAddr() []byte {
 	if m != nil {
@@ -1001,15 +1939,35 @@ type CreateMACCommandQueueItemRequest struct {
 	Cid uint32 `protobuf:"varint,4,opt,name=cid" json:"cid,omitempty"`
 	// MAC-command(s). In case multiple payloads are defined, then they
 	// are always sent within a single frame.
-	Commands [][]byte `protobuf:"bytes,5,rep,name=commands,proto3" json:"commands,omitempty"`
+	Commands             [][]byte `protobuf:"bytes,5,rep,name=commands,proto3" json:"commands,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *CreateMACCommandQueueItemRequest) Reset()         { *m = CreateMACCommandQueueItemRequest{} }
 func (m *CreateMACCommandQueueItemRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateMACCommandQueueItemRequest) ProtoMessage()    {}
 func (*CreateMACCommandQueueItemRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{42}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{42}
 }
+func (m *CreateMACCommandQueueItemRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateMACCommandQueueItemRequest.Unmarshal(m, b)
+}
+func (m *CreateMACCommandQueueItemRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateMACCommandQueueItemRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreateMACCommandQueueItemRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateMACCommandQueueItemRequest.Merge(dst, src)
+}
+func (m *CreateMACCommandQueueItemRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateMACCommandQueueItemRequest.Size(m)
+}
+func (m *CreateMACCommandQueueItemRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateMACCommandQueueItemRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateMACCommandQueueItemRequest proto.InternalMessageInfo
 
 func (m *CreateMACCommandQueueItemRequest) GetDevEUI() []byte {
 	if m != nil {
@@ -1033,14 +1991,34 @@ func (m *CreateMACCommandQueueItemRequest) GetCommands() [][]byte {
 }
 
 type CreateMACCommandQueueItemResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *CreateMACCommandQueueItemResponse) Reset()         { *m = CreateMACCommandQueueItemResponse{} }
 func (m *CreateMACCommandQueueItemResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateMACCommandQueueItemResponse) ProtoMessage()    {}
 func (*CreateMACCommandQueueItemResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{43}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{43}
 }
+func (m *CreateMACCommandQueueItemResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateMACCommandQueueItemResponse.Unmarshal(m, b)
+}
+func (m *CreateMACCommandQueueItemResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateMACCommandQueueItemResponse.Marshal(b, m, deterministic)
+}
+func (dst *CreateMACCommandQueueItemResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateMACCommandQueueItemResponse.Merge(dst, src)
+}
+func (m *CreateMACCommandQueueItemResponse) XXX_Size() int {
+	return xxx_messageInfo_CreateMACCommandQueueItemResponse.Size(m)
+}
+func (m *CreateMACCommandQueueItemResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateMACCommandQueueItemResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateMACCommandQueueItemResponse proto.InternalMessageInfo
 
 type SendProprietaryPayloadRequest struct {
 	// MACPayload of the proprietary LoRaWAN frame.
@@ -1055,13 +2033,35 @@ type SendProprietaryPayloadRequest struct {
 	// Frequency (Hz) to use for the transmission.
 	Frequency uint32 `protobuf:"varint,5,opt,name=frequency" json:"frequency,omitempty"`
 	// Data-rate to use for the transmission.
-	Dr uint32 `protobuf:"varint,6,opt,name=dr" json:"dr,omitempty"`
+	Dr                   uint32   `protobuf:"varint,6,opt,name=dr" json:"dr,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SendProprietaryPayloadRequest) Reset()                    { *m = SendProprietaryPayloadRequest{} }
-func (m *SendProprietaryPayloadRequest) String() string            { return proto.CompactTextString(m) }
-func (*SendProprietaryPayloadRequest) ProtoMessage()               {}
-func (*SendProprietaryPayloadRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{44} }
+func (m *SendProprietaryPayloadRequest) Reset()         { *m = SendProprietaryPayloadRequest{} }
+func (m *SendProprietaryPayloadRequest) String() string { return proto.CompactTextString(m) }
+func (*SendProprietaryPayloadRequest) ProtoMessage()    {}
+func (*SendProprietaryPayloadRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{44}
+}
+func (m *SendProprietaryPayloadRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SendProprietaryPayloadRequest.Unmarshal(m, b)
+}
+func (m *SendProprietaryPayloadRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SendProprietaryPayloadRequest.Marshal(b, m, deterministic)
+}
+func (dst *SendProprietaryPayloadRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SendProprietaryPayloadRequest.Merge(dst, src)
+}
+func (m *SendProprietaryPayloadRequest) XXX_Size() int {
+	return xxx_messageInfo_SendProprietaryPayloadRequest.Size(m)
+}
+func (m *SendProprietaryPayloadRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SendProprietaryPayloadRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SendProprietaryPayloadRequest proto.InternalMessageInfo
 
 func (m *SendProprietaryPayloadRequest) GetMacPayload() []byte {
 	if m != nil {
@@ -1106,12 +2106,34 @@ func (m *SendProprietaryPayloadRequest) GetDr() uint32 {
 }
 
 type SendProprietaryPayloadResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *SendProprietaryPayloadResponse) Reset()                    { *m = SendProprietaryPayloadResponse{} }
-func (m *SendProprietaryPayloadResponse) String() string            { return proto.CompactTextString(m) }
-func (*SendProprietaryPayloadResponse) ProtoMessage()               {}
-func (*SendProprietaryPayloadResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{45} }
+func (m *SendProprietaryPayloadResponse) Reset()         { *m = SendProprietaryPayloadResponse{} }
+func (m *SendProprietaryPayloadResponse) String() string { return proto.CompactTextString(m) }
+func (*SendProprietaryPayloadResponse) ProtoMessage()    {}
+func (*SendProprietaryPayloadResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{45}
+}
+func (m *SendProprietaryPayloadResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SendProprietaryPayloadResponse.Unmarshal(m, b)
+}
+func (m *SendProprietaryPayloadResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SendProprietaryPayloadResponse.Marshal(b, m, deterministic)
+}
+func (dst *SendProprietaryPayloadResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SendProprietaryPayloadResponse.Merge(dst, src)
+}
+func (m *SendProprietaryPayloadResponse) XXX_Size() int {
+	return xxx_messageInfo_SendProprietaryPayloadResponse.Size(m)
+}
+func (m *SendProprietaryPayloadResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SendProprietaryPayloadResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SendProprietaryPayloadResponse proto.InternalMessageInfo
 
 type CreateGatewayRequest struct {
 	// MAC address of the gateway.
@@ -1127,13 +2149,35 @@ type CreateGatewayRequest struct {
 	// Altitude of the gateway.
 	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude" json:"altitude,omitempty"`
 	// ID of the gateway-profile (optional).
-	GatewayProfileID string `protobuf:"bytes,8,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	GatewayProfileID     string   `protobuf:"bytes,8,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateGatewayRequest) Reset()                    { *m = CreateGatewayRequest{} }
-func (m *CreateGatewayRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreateGatewayRequest) ProtoMessage()               {}
-func (*CreateGatewayRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{46} }
+func (m *CreateGatewayRequest) Reset()         { *m = CreateGatewayRequest{} }
+func (m *CreateGatewayRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateGatewayRequest) ProtoMessage()    {}
+func (*CreateGatewayRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{46}
+}
+func (m *CreateGatewayRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateGatewayRequest.Unmarshal(m, b)
+}
+func (m *CreateGatewayRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateGatewayRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreateGatewayRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateGatewayRequest.Merge(dst, src)
+}
+func (m *CreateGatewayRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateGatewayRequest.Size(m)
+}
+func (m *CreateGatewayRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateGatewayRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateGatewayRequest proto.InternalMessageInfo
 
 func (m *CreateGatewayRequest) GetMac() []byte {
 	if m != nil {
@@ -1185,22 +2229,66 @@ func (m *CreateGatewayRequest) GetGatewayProfileID() string {
 }
 
 type CreateGatewayResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateGatewayResponse) Reset()                    { *m = CreateGatewayResponse{} }
-func (m *CreateGatewayResponse) String() string            { return proto.CompactTextString(m) }
-func (*CreateGatewayResponse) ProtoMessage()               {}
-func (*CreateGatewayResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{47} }
+func (m *CreateGatewayResponse) Reset()         { *m = CreateGatewayResponse{} }
+func (m *CreateGatewayResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateGatewayResponse) ProtoMessage()    {}
+func (*CreateGatewayResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{47}
+}
+func (m *CreateGatewayResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateGatewayResponse.Unmarshal(m, b)
+}
+func (m *CreateGatewayResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateGatewayResponse.Marshal(b, m, deterministic)
+}
+func (dst *CreateGatewayResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateGatewayResponse.Merge(dst, src)
+}
+func (m *CreateGatewayResponse) XXX_Size() int {
+	return xxx_messageInfo_CreateGatewayResponse.Size(m)
+}
+func (m *CreateGatewayResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateGatewayResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateGatewayResponse proto.InternalMessageInfo
 
 type GetGatewayRequest struct {
 	// MAC address of the gateway.
-	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	Mac                  []byte   `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetGatewayRequest) Reset()                    { *m = GetGatewayRequest{} }
-func (m *GetGatewayRequest) String() string            { return proto.CompactTextString(m) }
-func (*GetGatewayRequest) ProtoMessage()               {}
-func (*GetGatewayRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{48} }
+func (m *GetGatewayRequest) Reset()         { *m = GetGatewayRequest{} }
+func (m *GetGatewayRequest) String() string { return proto.CompactTextString(m) }
+func (*GetGatewayRequest) ProtoMessage()    {}
+func (*GetGatewayRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{48}
+}
+func (m *GetGatewayRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetGatewayRequest.Unmarshal(m, b)
+}
+func (m *GetGatewayRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetGatewayRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetGatewayRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetGatewayRequest.Merge(dst, src)
+}
+func (m *GetGatewayRequest) XXX_Size() int {
+	return xxx_messageInfo_GetGatewayRequest.Size(m)
+}
+func (m *GetGatewayRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetGatewayRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetGatewayRequest proto.InternalMessageInfo
 
 func (m *GetGatewayRequest) GetMac() []byte {
 	if m != nil {
@@ -1231,13 +2319,35 @@ type GetGatewayResponse struct {
 	// The timestamp when the gateway was last seen.
 	LastSeenAt string `protobuf:"bytes,10,opt,name=lastSeenAt" json:"lastSeenAt,omitempty"`
 	// ID of the gateway-profile (optional).
-	GatewayProfileID string `protobuf:"bytes,12,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	GatewayProfileID     string   `protobuf:"bytes,12,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetGatewayResponse) Reset()                    { *m = GetGatewayResponse{} }
-func (m *GetGatewayResponse) String() string            { return proto.CompactTextString(m) }
-func (*GetGatewayResponse) ProtoMessage()               {}
-func (*GetGatewayResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{49} }
+func (m *GetGatewayResponse) Reset()         { *m = GetGatewayResponse{} }
+func (m *GetGatewayResponse) String() string { return proto.CompactTextString(m) }
+func (*GetGatewayResponse) ProtoMessage()    {}
+func (*GetGatewayResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{49}
+}
+func (m *GetGatewayResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetGatewayResponse.Unmarshal(m, b)
+}
+func (m *GetGatewayResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetGatewayResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetGatewayResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetGatewayResponse.Merge(dst, src)
+}
+func (m *GetGatewayResponse) XXX_Size() int {
+	return xxx_messageInfo_GetGatewayResponse.Size(m)
+}
+func (m *GetGatewayResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetGatewayResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetGatewayResponse proto.InternalMessageInfo
 
 func (m *GetGatewayResponse) GetMac() []byte {
 	if m != nil {
@@ -1330,13 +2440,35 @@ type UpdateGatewayRequest struct {
 	// Altitude of the gateway.
 	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude" json:"altitude,omitempty"`
 	// ID of the gateway-profile.
-	GatewayProfileID string `protobuf:"bytes,8,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	GatewayProfileID     string   `protobuf:"bytes,8,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdateGatewayRequest) Reset()                    { *m = UpdateGatewayRequest{} }
-func (m *UpdateGatewayRequest) String() string            { return proto.CompactTextString(m) }
-func (*UpdateGatewayRequest) ProtoMessage()               {}
-func (*UpdateGatewayRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{50} }
+func (m *UpdateGatewayRequest) Reset()         { *m = UpdateGatewayRequest{} }
+func (m *UpdateGatewayRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateGatewayRequest) ProtoMessage()    {}
+func (*UpdateGatewayRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{50}
+}
+func (m *UpdateGatewayRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateGatewayRequest.Unmarshal(m, b)
+}
+func (m *UpdateGatewayRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateGatewayRequest.Marshal(b, m, deterministic)
+}
+func (dst *UpdateGatewayRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateGatewayRequest.Merge(dst, src)
+}
+func (m *UpdateGatewayRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateGatewayRequest.Size(m)
+}
+func (m *UpdateGatewayRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateGatewayRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateGatewayRequest proto.InternalMessageInfo
 
 func (m *UpdateGatewayRequest) GetMac() []byte {
 	if m != nil {
@@ -1388,22 +2520,66 @@ func (m *UpdateGatewayRequest) GetGatewayProfileID() string {
 }
 
 type UpdateGatewayResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdateGatewayResponse) Reset()                    { *m = UpdateGatewayResponse{} }
-func (m *UpdateGatewayResponse) String() string            { return proto.CompactTextString(m) }
-func (*UpdateGatewayResponse) ProtoMessage()               {}
-func (*UpdateGatewayResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{51} }
+func (m *UpdateGatewayResponse) Reset()         { *m = UpdateGatewayResponse{} }
+func (m *UpdateGatewayResponse) String() string { return proto.CompactTextString(m) }
+func (*UpdateGatewayResponse) ProtoMessage()    {}
+func (*UpdateGatewayResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{51}
+}
+func (m *UpdateGatewayResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateGatewayResponse.Unmarshal(m, b)
+}
+func (m *UpdateGatewayResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateGatewayResponse.Marshal(b, m, deterministic)
+}
+func (dst *UpdateGatewayResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateGatewayResponse.Merge(dst, src)
+}
+func (m *UpdateGatewayResponse) XXX_Size() int {
+	return xxx_messageInfo_UpdateGatewayResponse.Size(m)
+}
+func (m *UpdateGatewayResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateGatewayResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateGatewayResponse proto.InternalMessageInfo
 
 type DeleteGatewayRequest struct {
 	// MAC address of the gateway.
-	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	Mac                  []byte   `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteGatewayRequest) Reset()                    { *m = DeleteGatewayRequest{} }
-func (m *DeleteGatewayRequest) String() string            { return proto.CompactTextString(m) }
-func (*DeleteGatewayRequest) ProtoMessage()               {}
-func (*DeleteGatewayRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{52} }
+func (m *DeleteGatewayRequest) Reset()         { *m = DeleteGatewayRequest{} }
+func (m *DeleteGatewayRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteGatewayRequest) ProtoMessage()    {}
+func (*DeleteGatewayRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{52}
+}
+func (m *DeleteGatewayRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteGatewayRequest.Unmarshal(m, b)
+}
+func (m *DeleteGatewayRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteGatewayRequest.Marshal(b, m, deterministic)
+}
+func (dst *DeleteGatewayRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteGatewayRequest.Merge(dst, src)
+}
+func (m *DeleteGatewayRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteGatewayRequest.Size(m)
+}
+func (m *DeleteGatewayRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteGatewayRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteGatewayRequest proto.InternalMessageInfo
 
 func (m *DeleteGatewayRequest) GetMac() []byte {
 	if m != nil {
@@ -1413,12 +2589,34 @@ func (m *DeleteGatewayRequest) GetMac() []byte {
 }
 
 type DeleteGatewayResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteGatewayResponse) Reset()                    { *m = DeleteGatewayResponse{} }
-func (m *DeleteGatewayResponse) String() string            { return proto.CompactTextString(m) }
-func (*DeleteGatewayResponse) ProtoMessage()               {}
-func (*DeleteGatewayResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{53} }
+func (m *DeleteGatewayResponse) Reset()         { *m = DeleteGatewayResponse{} }
+func (m *DeleteGatewayResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteGatewayResponse) ProtoMessage()    {}
+func (*DeleteGatewayResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{53}
+}
+func (m *DeleteGatewayResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteGatewayResponse.Unmarshal(m, b)
+}
+func (m *DeleteGatewayResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteGatewayResponse.Marshal(b, m, deterministic)
+}
+func (dst *DeleteGatewayResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteGatewayResponse.Merge(dst, src)
+}
+func (m *DeleteGatewayResponse) XXX_Size() int {
+	return xxx_messageInfo_DeleteGatewayResponse.Size(m)
+}
+func (m *DeleteGatewayResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteGatewayResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteGatewayResponse proto.InternalMessageInfo
 
 type GatewayStats struct {
 	// Timestamp of the (aggregated) measurement.
@@ -1430,13 +2628,35 @@ type GatewayStats struct {
 	// Packets received by the gateway for transmission.
 	TxPacketsReceived int32 `protobuf:"varint,4,opt,name=txPacketsReceived" json:"txPacketsReceived,omitempty"`
 	// Packets transmitted by the gateway.
-	TxPacketsEmitted int32 `protobuf:"varint,5,opt,name=txPacketsEmitted" json:"txPacketsEmitted,omitempty"`
+	TxPacketsEmitted     int32    `protobuf:"varint,5,opt,name=txPacketsEmitted" json:"txPacketsEmitted,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GatewayStats) Reset()                    { *m = GatewayStats{} }
-func (m *GatewayStats) String() string            { return proto.CompactTextString(m) }
-func (*GatewayStats) ProtoMessage()               {}
-func (*GatewayStats) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{54} }
+func (m *GatewayStats) Reset()         { *m = GatewayStats{} }
+func (m *GatewayStats) String() string { return proto.CompactTextString(m) }
+func (*GatewayStats) ProtoMessage()    {}
+func (*GatewayStats) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{54}
+}
+func (m *GatewayStats) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GatewayStats.Unmarshal(m, b)
+}
+func (m *GatewayStats) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GatewayStats.Marshal(b, m, deterministic)
+}
+func (dst *GatewayStats) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GatewayStats.Merge(dst, src)
+}
+func (m *GatewayStats) XXX_Size() int {
+	return xxx_messageInfo_GatewayStats.Size(m)
+}
+func (m *GatewayStats) XXX_DiscardUnknown() {
+	xxx_messageInfo_GatewayStats.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GatewayStats proto.InternalMessageInfo
 
 func (m *GatewayStats) GetTimestamp() string {
 	if m != nil {
@@ -1481,13 +2701,35 @@ type GetGatewayStatsRequest struct {
 	// Timestamp to start from.
 	StartTimestamp string `protobuf:"bytes,3,opt,name=startTimestamp" json:"startTimestamp,omitempty"`
 	// Timestamp until to get from.
-	EndTimestamp string `protobuf:"bytes,4,opt,name=endTimestamp" json:"endTimestamp,omitempty"`
+	EndTimestamp         string   `protobuf:"bytes,4,opt,name=endTimestamp" json:"endTimestamp,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetGatewayStatsRequest) Reset()                    { *m = GetGatewayStatsRequest{} }
-func (m *GetGatewayStatsRequest) String() string            { return proto.CompactTextString(m) }
-func (*GetGatewayStatsRequest) ProtoMessage()               {}
-func (*GetGatewayStatsRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{55} }
+func (m *GetGatewayStatsRequest) Reset()         { *m = GetGatewayStatsRequest{} }
+func (m *GetGatewayStatsRequest) String() string { return proto.CompactTextString(m) }
+func (*GetGatewayStatsRequest) ProtoMessage()    {}
+func (*GetGatewayStatsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{55}
+}
+func (m *GetGatewayStatsRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetGatewayStatsRequest.Unmarshal(m, b)
+}
+func (m *GetGatewayStatsRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetGatewayStatsRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetGatewayStatsRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetGatewayStatsRequest.Merge(dst, src)
+}
+func (m *GetGatewayStatsRequest) XXX_Size() int {
+	return xxx_messageInfo_GetGatewayStatsRequest.Size(m)
+}
+func (m *GetGatewayStatsRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetGatewayStatsRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetGatewayStatsRequest proto.InternalMessageInfo
 
 func (m *GetGatewayStatsRequest) GetMac() []byte {
 	if m != nil {
@@ -1518,13 +2760,35 @@ func (m *GetGatewayStatsRequest) GetEndTimestamp() string {
 }
 
 type GetGatewayStatsResponse struct {
-	Result []*GatewayStats `protobuf:"bytes,1,rep,name=result" json:"result,omitempty"`
+	Result               []*GatewayStats `protobuf:"bytes,1,rep,name=result" json:"result,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *GetGatewayStatsResponse) Reset()                    { *m = GetGatewayStatsResponse{} }
-func (m *GetGatewayStatsResponse) String() string            { return proto.CompactTextString(m) }
-func (*GetGatewayStatsResponse) ProtoMessage()               {}
-func (*GetGatewayStatsResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{56} }
+func (m *GetGatewayStatsResponse) Reset()         { *m = GetGatewayStatsResponse{} }
+func (m *GetGatewayStatsResponse) String() string { return proto.CompactTextString(m) }
+func (*GetGatewayStatsResponse) ProtoMessage()    {}
+func (*GetGatewayStatsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{56}
+}
+func (m *GetGatewayStatsResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetGatewayStatsResponse.Unmarshal(m, b)
+}
+func (m *GetGatewayStatsResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetGatewayStatsResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetGatewayStatsResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetGatewayStatsResponse.Merge(dst, src)
+}
+func (m *GetGatewayStatsResponse) XXX_Size() int {
+	return xxx_messageInfo_GetGatewayStatsResponse.Size(m)
+}
+func (m *GetGatewayStatsResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetGatewayStatsResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetGatewayStatsResponse proto.InternalMessageInfo
 
 func (m *GetGatewayStatsResponse) GetResult() []*GatewayStats {
 	if m != nil {
@@ -1544,13 +2808,35 @@ type DeviceQueueItem struct {
 	FPort uint32 `protobuf:"varint,4,opt,name=fPort" json:"fPort,omitempty"`
 	// When set to true, LoRa Server will wait for the device to ack the
 	// received frame.
-	Confirmed bool `protobuf:"varint,5,opt,name=confirmed" json:"confirmed,omitempty"`
+	Confirmed            bool     `protobuf:"varint,5,opt,name=confirmed" json:"confirmed,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeviceQueueItem) Reset()                    { *m = DeviceQueueItem{} }
-func (m *DeviceQueueItem) String() string            { return proto.CompactTextString(m) }
-func (*DeviceQueueItem) ProtoMessage()               {}
-func (*DeviceQueueItem) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{57} }
+func (m *DeviceQueueItem) Reset()         { *m = DeviceQueueItem{} }
+func (m *DeviceQueueItem) String() string { return proto.CompactTextString(m) }
+func (*DeviceQueueItem) ProtoMessage()    {}
+func (*DeviceQueueItem) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{57}
+}
+func (m *DeviceQueueItem) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeviceQueueItem.Unmarshal(m, b)
+}
+func (m *DeviceQueueItem) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeviceQueueItem.Marshal(b, m, deterministic)
+}
+func (dst *DeviceQueueItem) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeviceQueueItem.Merge(dst, src)
+}
+func (m *DeviceQueueItem) XXX_Size() int {
+	return xxx_messageInfo_DeviceQueueItem.Size(m)
+}
+func (m *DeviceQueueItem) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeviceQueueItem.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeviceQueueItem proto.InternalMessageInfo
 
 func (m *DeviceQueueItem) GetDevEUI() []byte {
 	if m != nil {
@@ -1588,13 +2874,35 @@ func (m *DeviceQueueItem) GetConfirmed() bool {
 }
 
 type CreateDeviceQueueItemRequest struct {
-	Item *DeviceQueueItem `protobuf:"bytes,1,opt,name=item" json:"item,omitempty"`
+	Item                 *DeviceQueueItem `protobuf:"bytes,1,opt,name=item" json:"item,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
+	XXX_unrecognized     []byte           `json:"-"`
+	XXX_sizecache        int32            `json:"-"`
 }
 
-func (m *CreateDeviceQueueItemRequest) Reset()                    { *m = CreateDeviceQueueItemRequest{} }
-func (m *CreateDeviceQueueItemRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreateDeviceQueueItemRequest) ProtoMessage()               {}
-func (*CreateDeviceQueueItemRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{58} }
+func (m *CreateDeviceQueueItemRequest) Reset()         { *m = CreateDeviceQueueItemRequest{} }
+func (m *CreateDeviceQueueItemRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateDeviceQueueItemRequest) ProtoMessage()    {}
+func (*CreateDeviceQueueItemRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{58}
+}
+func (m *CreateDeviceQueueItemRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateDeviceQueueItemRequest.Unmarshal(m, b)
+}
+func (m *CreateDeviceQueueItemRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateDeviceQueueItemRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreateDeviceQueueItemRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateDeviceQueueItemRequest.Merge(dst, src)
+}
+func (m *CreateDeviceQueueItemRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateDeviceQueueItemRequest.Size(m)
+}
+func (m *CreateDeviceQueueItemRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateDeviceQueueItemRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateDeviceQueueItemRequest proto.InternalMessageInfo
 
 func (m *CreateDeviceQueueItemRequest) GetItem() *DeviceQueueItem {
 	if m != nil {
@@ -1604,24 +2912,66 @@ func (m *CreateDeviceQueueItemRequest) GetItem() *DeviceQueueItem {
 }
 
 type CreateDeviceQueueItemResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateDeviceQueueItemResponse) Reset()                    { *m = CreateDeviceQueueItemResponse{} }
-func (m *CreateDeviceQueueItemResponse) String() string            { return proto.CompactTextString(m) }
-func (*CreateDeviceQueueItemResponse) ProtoMessage()               {}
-func (*CreateDeviceQueueItemResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{59} }
+func (m *CreateDeviceQueueItemResponse) Reset()         { *m = CreateDeviceQueueItemResponse{} }
+func (m *CreateDeviceQueueItemResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateDeviceQueueItemResponse) ProtoMessage()    {}
+func (*CreateDeviceQueueItemResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{59}
+}
+func (m *CreateDeviceQueueItemResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateDeviceQueueItemResponse.Unmarshal(m, b)
+}
+func (m *CreateDeviceQueueItemResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateDeviceQueueItemResponse.Marshal(b, m, deterministic)
+}
+func (dst *CreateDeviceQueueItemResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateDeviceQueueItemResponse.Merge(dst, src)
+}
+func (m *CreateDeviceQueueItemResponse) XXX_Size() int {
+	return xxx_messageInfo_CreateDeviceQueueItemResponse.Size(m)
+}
+func (m *CreateDeviceQueueItemResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateDeviceQueueItemResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateDeviceQueueItemResponse proto.InternalMessageInfo
 
 type FlushDeviceQueueForDevEUIRequest struct {
 	// DevEUI of the device.
-	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *FlushDeviceQueueForDevEUIRequest) Reset()         { *m = FlushDeviceQueueForDevEUIRequest{} }
 func (m *FlushDeviceQueueForDevEUIRequest) String() string { return proto.CompactTextString(m) }
 func (*FlushDeviceQueueForDevEUIRequest) ProtoMessage()    {}
 func (*FlushDeviceQueueForDevEUIRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{60}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{60}
 }
+func (m *FlushDeviceQueueForDevEUIRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FlushDeviceQueueForDevEUIRequest.Unmarshal(m, b)
+}
+func (m *FlushDeviceQueueForDevEUIRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FlushDeviceQueueForDevEUIRequest.Marshal(b, m, deterministic)
+}
+func (dst *FlushDeviceQueueForDevEUIRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FlushDeviceQueueForDevEUIRequest.Merge(dst, src)
+}
+func (m *FlushDeviceQueueForDevEUIRequest) XXX_Size() int {
+	return xxx_messageInfo_FlushDeviceQueueForDevEUIRequest.Size(m)
+}
+func (m *FlushDeviceQueueForDevEUIRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_FlushDeviceQueueForDevEUIRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FlushDeviceQueueForDevEUIRequest proto.InternalMessageInfo
 
 func (m *FlushDeviceQueueForDevEUIRequest) GetDevEUI() []byte {
 	if m != nil {
@@ -1631,26 +2981,66 @@ func (m *FlushDeviceQueueForDevEUIRequest) GetDevEUI() []byte {
 }
 
 type FlushDeviceQueueForDevEUIResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *FlushDeviceQueueForDevEUIResponse) Reset()         { *m = FlushDeviceQueueForDevEUIResponse{} }
 func (m *FlushDeviceQueueForDevEUIResponse) String() string { return proto.CompactTextString(m) }
 func (*FlushDeviceQueueForDevEUIResponse) ProtoMessage()    {}
 func (*FlushDeviceQueueForDevEUIResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{61}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{61}
 }
+func (m *FlushDeviceQueueForDevEUIResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FlushDeviceQueueForDevEUIResponse.Unmarshal(m, b)
+}
+func (m *FlushDeviceQueueForDevEUIResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FlushDeviceQueueForDevEUIResponse.Marshal(b, m, deterministic)
+}
+func (dst *FlushDeviceQueueForDevEUIResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FlushDeviceQueueForDevEUIResponse.Merge(dst, src)
+}
+func (m *FlushDeviceQueueForDevEUIResponse) XXX_Size() int {
+	return xxx_messageInfo_FlushDeviceQueueForDevEUIResponse.Size(m)
+}
+func (m *FlushDeviceQueueForDevEUIResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_FlushDeviceQueueForDevEUIResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FlushDeviceQueueForDevEUIResponse proto.InternalMessageInfo
 
 type GetDeviceQueueItemsForDevEUIRequest struct {
 	// DevEUI of the device.
-	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *GetDeviceQueueItemsForDevEUIRequest) Reset()         { *m = GetDeviceQueueItemsForDevEUIRequest{} }
 func (m *GetDeviceQueueItemsForDevEUIRequest) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceQueueItemsForDevEUIRequest) ProtoMessage()    {}
 func (*GetDeviceQueueItemsForDevEUIRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{62}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{62}
 }
+func (m *GetDeviceQueueItemsForDevEUIRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetDeviceQueueItemsForDevEUIRequest.Unmarshal(m, b)
+}
+func (m *GetDeviceQueueItemsForDevEUIRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetDeviceQueueItemsForDevEUIRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetDeviceQueueItemsForDevEUIRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetDeviceQueueItemsForDevEUIRequest.Merge(dst, src)
+}
+func (m *GetDeviceQueueItemsForDevEUIRequest) XXX_Size() int {
+	return xxx_messageInfo_GetDeviceQueueItemsForDevEUIRequest.Size(m)
+}
+func (m *GetDeviceQueueItemsForDevEUIRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetDeviceQueueItemsForDevEUIRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetDeviceQueueItemsForDevEUIRequest proto.InternalMessageInfo
 
 func (m *GetDeviceQueueItemsForDevEUIRequest) GetDevEUI() []byte {
 	if m != nil {
@@ -1660,15 +3050,35 @@ func (m *GetDeviceQueueItemsForDevEUIRequest) GetDevEUI() []byte {
 }
 
 type GetDeviceQueueItemsForDevEUIResponse struct {
-	Items []*DeviceQueueItem `protobuf:"bytes,1,rep,name=items" json:"items,omitempty"`
+	Items                []*DeviceQueueItem `protobuf:"bytes,1,rep,name=items" json:"items,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
 func (m *GetDeviceQueueItemsForDevEUIResponse) Reset()         { *m = GetDeviceQueueItemsForDevEUIResponse{} }
 func (m *GetDeviceQueueItemsForDevEUIResponse) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceQueueItemsForDevEUIResponse) ProtoMessage()    {}
 func (*GetDeviceQueueItemsForDevEUIResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{63}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{63}
 }
+func (m *GetDeviceQueueItemsForDevEUIResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetDeviceQueueItemsForDevEUIResponse.Unmarshal(m, b)
+}
+func (m *GetDeviceQueueItemsForDevEUIResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetDeviceQueueItemsForDevEUIResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetDeviceQueueItemsForDevEUIResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetDeviceQueueItemsForDevEUIResponse.Merge(dst, src)
+}
+func (m *GetDeviceQueueItemsForDevEUIResponse) XXX_Size() int {
+	return xxx_messageInfo_GetDeviceQueueItemsForDevEUIResponse.Size(m)
+}
+func (m *GetDeviceQueueItemsForDevEUIResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetDeviceQueueItemsForDevEUIResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetDeviceQueueItemsForDevEUIResponse proto.InternalMessageInfo
 
 func (m *GetDeviceQueueItemsForDevEUIResponse) GetItems() []*DeviceQueueItem {
 	if m != nil {
@@ -1679,15 +3089,35 @@ func (m *GetDeviceQueueItemsForDevEUIResponse) GetItems() []*DeviceQueueItem {
 
 type GetNextDownlinkFCntForDevEUIRequest struct {
 	// DevEUI of the device.
-	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *GetNextDownlinkFCntForDevEUIRequest) Reset()         { *m = GetNextDownlinkFCntForDevEUIRequest{} }
 func (m *GetNextDownlinkFCntForDevEUIRequest) String() string { return proto.CompactTextString(m) }
 func (*GetNextDownlinkFCntForDevEUIRequest) ProtoMessage()    {}
 func (*GetNextDownlinkFCntForDevEUIRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{64}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{64}
 }
+func (m *GetNextDownlinkFCntForDevEUIRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetNextDownlinkFCntForDevEUIRequest.Unmarshal(m, b)
+}
+func (m *GetNextDownlinkFCntForDevEUIRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetNextDownlinkFCntForDevEUIRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetNextDownlinkFCntForDevEUIRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetNextDownlinkFCntForDevEUIRequest.Merge(dst, src)
+}
+func (m *GetNextDownlinkFCntForDevEUIRequest) XXX_Size() int {
+	return xxx_messageInfo_GetNextDownlinkFCntForDevEUIRequest.Size(m)
+}
+func (m *GetNextDownlinkFCntForDevEUIRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetNextDownlinkFCntForDevEUIRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetNextDownlinkFCntForDevEUIRequest proto.InternalMessageInfo
 
 func (m *GetNextDownlinkFCntForDevEUIRequest) GetDevEUI() []byte {
 	if m != nil {
@@ -1698,15 +3128,35 @@ func (m *GetNextDownlinkFCntForDevEUIRequest) GetDevEUI() []byte {
 
 type GetNextDownlinkFCntForDevEUIResponse struct {
 	// The frame-counter to use.
-	FCnt uint32 `protobuf:"varint,1,opt,name=fCnt" json:"fCnt,omitempty"`
+	FCnt                 uint32   `protobuf:"varint,1,opt,name=fCnt" json:"fCnt,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *GetNextDownlinkFCntForDevEUIResponse) Reset()         { *m = GetNextDownlinkFCntForDevEUIResponse{} }
 func (m *GetNextDownlinkFCntForDevEUIResponse) String() string { return proto.CompactTextString(m) }
 func (*GetNextDownlinkFCntForDevEUIResponse) ProtoMessage()    {}
 func (*GetNextDownlinkFCntForDevEUIResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{65}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{65}
 }
+func (m *GetNextDownlinkFCntForDevEUIResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetNextDownlinkFCntForDevEUIResponse.Unmarshal(m, b)
+}
+func (m *GetNextDownlinkFCntForDevEUIResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetNextDownlinkFCntForDevEUIResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetNextDownlinkFCntForDevEUIResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetNextDownlinkFCntForDevEUIResponse.Merge(dst, src)
+}
+func (m *GetNextDownlinkFCntForDevEUIResponse) XXX_Size() int {
+	return xxx_messageInfo_GetNextDownlinkFCntForDevEUIResponse.Size(m)
+}
+func (m *GetNextDownlinkFCntForDevEUIResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetNextDownlinkFCntForDevEUIResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetNextDownlinkFCntForDevEUIResponse proto.InternalMessageInfo
 
 func (m *GetNextDownlinkFCntForDevEUIResponse) GetFCnt() uint32 {
 	if m != nil {
@@ -1717,15 +3167,35 @@ func (m *GetNextDownlinkFCntForDevEUIResponse) GetFCnt() uint32 {
 
 type StreamFrameLogsForGatewayRequest struct {
 	// MAC address of the gateway.
-	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	Mac                  []byte   `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *StreamFrameLogsForGatewayRequest) Reset()         { *m = StreamFrameLogsForGatewayRequest{} }
 func (m *StreamFrameLogsForGatewayRequest) String() string { return proto.CompactTextString(m) }
 func (*StreamFrameLogsForGatewayRequest) ProtoMessage()    {}
 func (*StreamFrameLogsForGatewayRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{66}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{66}
 }
+func (m *StreamFrameLogsForGatewayRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_StreamFrameLogsForGatewayRequest.Unmarshal(m, b)
+}
+func (m *StreamFrameLogsForGatewayRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_StreamFrameLogsForGatewayRequest.Marshal(b, m, deterministic)
+}
+func (dst *StreamFrameLogsForGatewayRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StreamFrameLogsForGatewayRequest.Merge(dst, src)
+}
+func (m *StreamFrameLogsForGatewayRequest) XXX_Size() int {
+	return xxx_messageInfo_StreamFrameLogsForGatewayRequest.Size(m)
+}
+func (m *StreamFrameLogsForGatewayRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_StreamFrameLogsForGatewayRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StreamFrameLogsForGatewayRequest proto.InternalMessageInfo
 
 func (m *StreamFrameLogsForGatewayRequest) GetMac() []byte {
 	if m != nil {
@@ -1738,15 +3208,35 @@ type StreamFrameLogsForGatewayResponse struct {
 	// Contains zero or one uplink frame.
 	UplinkFrames []*UplinkFrameLog `protobuf:"bytes,1,rep,name=uplinkFrames" json:"uplinkFrames,omitempty"`
 	// Contains zero or one downlink frame.
-	DownlinkFrames []*DownlinkFrameLog `protobuf:"bytes,2,rep,name=downlinkFrames" json:"downlinkFrames,omitempty"`
+	DownlinkFrames       []*DownlinkFrameLog `protobuf:"bytes,2,rep,name=downlinkFrames" json:"downlinkFrames,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
+	XXX_unrecognized     []byte              `json:"-"`
+	XXX_sizecache        int32               `json:"-"`
 }
 
 func (m *StreamFrameLogsForGatewayResponse) Reset()         { *m = StreamFrameLogsForGatewayResponse{} }
 func (m *StreamFrameLogsForGatewayResponse) String() string { return proto.CompactTextString(m) }
 func (*StreamFrameLogsForGatewayResponse) ProtoMessage()    {}
 func (*StreamFrameLogsForGatewayResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{67}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{67}
 }
+func (m *StreamFrameLogsForGatewayResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_StreamFrameLogsForGatewayResponse.Unmarshal(m, b)
+}
+func (m *StreamFrameLogsForGatewayResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_StreamFrameLogsForGatewayResponse.Marshal(b, m, deterministic)
+}
+func (dst *StreamFrameLogsForGatewayResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StreamFrameLogsForGatewayResponse.Merge(dst, src)
+}
+func (m *StreamFrameLogsForGatewayResponse) XXX_Size() int {
+	return xxx_messageInfo_StreamFrameLogsForGatewayResponse.Size(m)
+}
+func (m *StreamFrameLogsForGatewayResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_StreamFrameLogsForGatewayResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StreamFrameLogsForGatewayResponse proto.InternalMessageInfo
 
 func (m *StreamFrameLogsForGatewayResponse) GetUplinkFrames() []*UplinkFrameLog {
 	if m != nil {
@@ -1764,15 +3254,35 @@ func (m *StreamFrameLogsForGatewayResponse) GetDownlinkFrames() []*DownlinkFrame
 
 type StreamFrameLogsForDeviceRequest struct {
 	// DevEUI of the device.
-	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *StreamFrameLogsForDeviceRequest) Reset()         { *m = StreamFrameLogsForDeviceRequest{} }
 func (m *StreamFrameLogsForDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*StreamFrameLogsForDeviceRequest) ProtoMessage()    {}
 func (*StreamFrameLogsForDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{68}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{68}
 }
+func (m *StreamFrameLogsForDeviceRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_StreamFrameLogsForDeviceRequest.Unmarshal(m, b)
+}
+func (m *StreamFrameLogsForDeviceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_StreamFrameLogsForDeviceRequest.Marshal(b, m, deterministic)
+}
+func (dst *StreamFrameLogsForDeviceRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StreamFrameLogsForDeviceRequest.Merge(dst, src)
+}
+func (m *StreamFrameLogsForDeviceRequest) XXX_Size() int {
+	return xxx_messageInfo_StreamFrameLogsForDeviceRequest.Size(m)
+}
+func (m *StreamFrameLogsForDeviceRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_StreamFrameLogsForDeviceRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StreamFrameLogsForDeviceRequest proto.InternalMessageInfo
 
 func (m *StreamFrameLogsForDeviceRequest) GetDevEUI() []byte {
 	if m != nil {
@@ -1785,15 +3295,35 @@ type StreamFrameLogsForDeviceResponse struct {
 	// Contains zero or one uplink frame.
 	UplinkFrames []*UplinkFrameLog `protobuf:"bytes,1,rep,name=uplinkFrames" json:"uplinkFrames,omitempty"`
 	// Contains zero or one downlink frame.
-	DownlinkFrames []*DownlinkFrameLog `protobuf:"bytes,2,rep,name=downlinkFrames" json:"downlinkFrames,omitempty"`
+	DownlinkFrames       []*DownlinkFrameLog `protobuf:"bytes,2,rep,name=downlinkFrames" json:"downlinkFrames,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
+	XXX_unrecognized     []byte              `json:"-"`
+	XXX_sizecache        int32               `json:"-"`
 }
 
 func (m *StreamFrameLogsForDeviceResponse) Reset()         { *m = StreamFrameLogsForDeviceResponse{} }
 func (m *StreamFrameLogsForDeviceResponse) String() string { return proto.CompactTextString(m) }
 func (*StreamFrameLogsForDeviceResponse) ProtoMessage()    {}
 func (*StreamFrameLogsForDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{69}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{69}
 }
+func (m *StreamFrameLogsForDeviceResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_StreamFrameLogsForDeviceResponse.Unmarshal(m, b)
+}
+func (m *StreamFrameLogsForDeviceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_StreamFrameLogsForDeviceResponse.Marshal(b, m, deterministic)
+}
+func (dst *StreamFrameLogsForDeviceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StreamFrameLogsForDeviceResponse.Merge(dst, src)
+}
+func (m *StreamFrameLogsForDeviceResponse) XXX_Size() int {
+	return xxx_messageInfo_StreamFrameLogsForDeviceResponse.Size(m)
+}
+func (m *StreamFrameLogsForDeviceResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_StreamFrameLogsForDeviceResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StreamFrameLogsForDeviceResponse proto.InternalMessageInfo
 
 func (m *StreamFrameLogsForDeviceResponse) GetUplinkFrames() []*UplinkFrameLog {
 	if m != nil {
@@ -1817,13 +3347,35 @@ type DataRate struct {
 	// Used spread-factor.
 	SpreadFactor uint32 `protobuf:"varint,3,opt,name=spreadFactor" json:"spreadFactor,omitempty"`
 	// Bitrate (used for FSK modulation).
-	Bitrate uint32 `protobuf:"varint,4,opt,name=bitrate" json:"bitrate,omitempty"`
+	Bitrate              uint32   `protobuf:"varint,4,opt,name=bitrate" json:"bitrate,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DataRate) Reset()                    { *m = DataRate{} }
-func (m *DataRate) String() string            { return proto.CompactTextString(m) }
-func (*DataRate) ProtoMessage()               {}
-func (*DataRate) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{70} }
+func (m *DataRate) Reset()         { *m = DataRate{} }
+func (m *DataRate) String() string { return proto.CompactTextString(m) }
+func (*DataRate) ProtoMessage()    {}
+func (*DataRate) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{70}
+}
+func (m *DataRate) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DataRate.Unmarshal(m, b)
+}
+func (m *DataRate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DataRate.Marshal(b, m, deterministic)
+}
+func (dst *DataRate) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DataRate.Merge(dst, src)
+}
+func (m *DataRate) XXX_Size() int {
+	return xxx_messageInfo_DataRate.Size(m)
+}
+func (m *DataRate) XXX_DiscardUnknown() {
+	xxx_messageInfo_DataRate.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DataRate proto.InternalMessageInfo
 
 func (m *DataRate) GetModulation() string {
 	if m != nil {
@@ -1859,13 +3411,35 @@ type UplinkTXInfo struct {
 	// Data-rate.
 	DataRate *DataRate `protobuf:"bytes,2,opt,name=dataRate" json:"dataRate,omitempty"`
 	// Code rate.
-	CodeRate string `protobuf:"bytes,3,opt,name=codeRate" json:"codeRate,omitempty"`
+	CodeRate             string   `protobuf:"bytes,3,opt,name=codeRate" json:"codeRate,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UplinkTXInfo) Reset()                    { *m = UplinkTXInfo{} }
-func (m *UplinkTXInfo) String() string            { return proto.CompactTextString(m) }
-func (*UplinkTXInfo) ProtoMessage()               {}
-func (*UplinkTXInfo) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{71} }
+func (m *UplinkTXInfo) Reset()         { *m = UplinkTXInfo{} }
+func (m *UplinkTXInfo) String() string { return proto.CompactTextString(m) }
+func (*UplinkTXInfo) ProtoMessage()    {}
+func (*UplinkTXInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{71}
+}
+func (m *UplinkTXInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UplinkTXInfo.Unmarshal(m, b)
+}
+func (m *UplinkTXInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UplinkTXInfo.Marshal(b, m, deterministic)
+}
+func (dst *UplinkTXInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UplinkTXInfo.Merge(dst, src)
+}
+func (m *UplinkTXInfo) XXX_Size() int {
+	return xxx_messageInfo_UplinkTXInfo.Size(m)
+}
+func (m *UplinkTXInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_UplinkTXInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UplinkTXInfo proto.InternalMessageInfo
 
 func (m *UplinkTXInfo) GetFrequency() uint32 {
 	if m != nil {
@@ -1904,13 +3478,35 @@ type UplinkRXInfo struct {
 	// The board identifier that received the uplink frame.
 	Board uint32 `protobuf:"varint,7,opt,name=board" json:"board,omitempty"`
 	// THe antenna identifier that received the uplink frame.
-	Antenna uint32 `protobuf:"varint,8,opt,name=antenna" json:"antenna,omitempty"`
+	Antenna              uint32   `protobuf:"varint,8,opt,name=antenna" json:"antenna,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UplinkRXInfo) Reset()                    { *m = UplinkRXInfo{} }
-func (m *UplinkRXInfo) String() string            { return proto.CompactTextString(m) }
-func (*UplinkRXInfo) ProtoMessage()               {}
-func (*UplinkRXInfo) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{72} }
+func (m *UplinkRXInfo) Reset()         { *m = UplinkRXInfo{} }
+func (m *UplinkRXInfo) String() string { return proto.CompactTextString(m) }
+func (*UplinkRXInfo) ProtoMessage()    {}
+func (*UplinkRXInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{72}
+}
+func (m *UplinkRXInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UplinkRXInfo.Unmarshal(m, b)
+}
+func (m *UplinkRXInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UplinkRXInfo.Marshal(b, m, deterministic)
+}
+func (dst *UplinkRXInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UplinkRXInfo.Merge(dst, src)
+}
+func (m *UplinkRXInfo) XXX_Size() int {
+	return xxx_messageInfo_UplinkRXInfo.Size(m)
+}
+func (m *UplinkRXInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_UplinkRXInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UplinkRXInfo proto.InternalMessageInfo
 
 func (m *UplinkRXInfo) GetMac() []byte {
 	if m != nil {
@@ -1974,13 +3570,35 @@ type UplinkFrameLog struct {
 	// RX information of the uplink.
 	RxInfo []*UplinkRXInfo `protobuf:"bytes,2,rep,name=rxInfo" json:"rxInfo,omitempty"`
 	// LoRaWAN PHYPayload.
-	PhyPayload []byte `protobuf:"bytes,3,opt,name=phyPayload,proto3" json:"phyPayload,omitempty"`
+	PhyPayload           []byte   `protobuf:"bytes,3,opt,name=phyPayload,proto3" json:"phyPayload,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UplinkFrameLog) Reset()                    { *m = UplinkFrameLog{} }
-func (m *UplinkFrameLog) String() string            { return proto.CompactTextString(m) }
-func (*UplinkFrameLog) ProtoMessage()               {}
-func (*UplinkFrameLog) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{73} }
+func (m *UplinkFrameLog) Reset()         { *m = UplinkFrameLog{} }
+func (m *UplinkFrameLog) String() string { return proto.CompactTextString(m) }
+func (*UplinkFrameLog) ProtoMessage()    {}
+func (*UplinkFrameLog) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{73}
+}
+func (m *UplinkFrameLog) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UplinkFrameLog.Unmarshal(m, b)
+}
+func (m *UplinkFrameLog) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UplinkFrameLog.Marshal(b, m, deterministic)
+}
+func (dst *UplinkFrameLog) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UplinkFrameLog.Merge(dst, src)
+}
+func (m *UplinkFrameLog) XXX_Size() int {
+	return xxx_messageInfo_UplinkFrameLog.Size(m)
+}
+func (m *UplinkFrameLog) XXX_DiscardUnknown() {
+	xxx_messageInfo_UplinkFrameLog.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UplinkFrameLog proto.InternalMessageInfo
 
 func (m *UplinkFrameLog) GetTxInfo() *UplinkTXInfo {
 	if m != nil {
@@ -2025,13 +3643,35 @@ type DownlinkTXInfo struct {
 	// The board identifier that received the uplink frame.
 	Board uint32 `protobuf:"varint,10,opt,name=board" json:"board,omitempty"`
 	// THe antenna identifier that received the uplink frame.
-	Antenna uint32 `protobuf:"varint,11,opt,name=antenna" json:"antenna,omitempty"`
+	Antenna              uint32   `protobuf:"varint,11,opt,name=antenna" json:"antenna,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DownlinkTXInfo) Reset()                    { *m = DownlinkTXInfo{} }
-func (m *DownlinkTXInfo) String() string            { return proto.CompactTextString(m) }
-func (*DownlinkTXInfo) ProtoMessage()               {}
-func (*DownlinkTXInfo) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{74} }
+func (m *DownlinkTXInfo) Reset()         { *m = DownlinkTXInfo{} }
+func (m *DownlinkTXInfo) String() string { return proto.CompactTextString(m) }
+func (*DownlinkTXInfo) ProtoMessage()    {}
+func (*DownlinkTXInfo) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{74}
+}
+func (m *DownlinkTXInfo) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DownlinkTXInfo.Unmarshal(m, b)
+}
+func (m *DownlinkTXInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DownlinkTXInfo.Marshal(b, m, deterministic)
+}
+func (dst *DownlinkTXInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DownlinkTXInfo.Merge(dst, src)
+}
+func (m *DownlinkTXInfo) XXX_Size() int {
+	return xxx_messageInfo_DownlinkTXInfo.Size(m)
+}
+func (m *DownlinkTXInfo) XXX_DiscardUnknown() {
+	xxx_messageInfo_DownlinkTXInfo.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DownlinkTXInfo proto.InternalMessageInfo
 
 func (m *DownlinkTXInfo) GetMac() []byte {
 	if m != nil {
@@ -2114,13 +3754,35 @@ type DownlinkFrameLog struct {
 	// TX information of the downlink.
 	TxInfo *DownlinkTXInfo `protobuf:"bytes,1,opt,name=txInfo" json:"txInfo,omitempty"`
 	// LoRaWAN PHYPayload.
-	PhyPayload []byte `protobuf:"bytes,2,opt,name=phyPayload,proto3" json:"phyPayload,omitempty"`
+	PhyPayload           []byte   `protobuf:"bytes,2,opt,name=phyPayload,proto3" json:"phyPayload,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DownlinkFrameLog) Reset()                    { *m = DownlinkFrameLog{} }
-func (m *DownlinkFrameLog) String() string            { return proto.CompactTextString(m) }
-func (*DownlinkFrameLog) ProtoMessage()               {}
-func (*DownlinkFrameLog) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{75} }
+func (m *DownlinkFrameLog) Reset()         { *m = DownlinkFrameLog{} }
+func (m *DownlinkFrameLog) String() string { return proto.CompactTextString(m) }
+func (*DownlinkFrameLog) ProtoMessage()    {}
+func (*DownlinkFrameLog) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{75}
+}
+func (m *DownlinkFrameLog) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DownlinkFrameLog.Unmarshal(m, b)
+}
+func (m *DownlinkFrameLog) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DownlinkFrameLog.Marshal(b, m, deterministic)
+}
+func (dst *DownlinkFrameLog) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DownlinkFrameLog.Merge(dst, src)
+}
+func (m *DownlinkFrameLog) XXX_Size() int {
+	return xxx_messageInfo_DownlinkFrameLog.Size(m)
+}
+func (m *DownlinkFrameLog) XXX_DiscardUnknown() {
+	xxx_messageInfo_DownlinkFrameLog.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DownlinkFrameLog proto.InternalMessageInfo
 
 func (m *DownlinkFrameLog) GetTxInfo() *DownlinkTXInfo {
 	if m != nil {
@@ -2137,24 +3799,68 @@ func (m *DownlinkFrameLog) GetPhyPayload() []byte {
 }
 
 type GetVersionRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetVersionRequest) Reset()                    { *m = GetVersionRequest{} }
-func (m *GetVersionRequest) String() string            { return proto.CompactTextString(m) }
-func (*GetVersionRequest) ProtoMessage()               {}
-func (*GetVersionRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{76} }
+func (m *GetVersionRequest) Reset()         { *m = GetVersionRequest{} }
+func (m *GetVersionRequest) String() string { return proto.CompactTextString(m) }
+func (*GetVersionRequest) ProtoMessage()    {}
+func (*GetVersionRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{76}
+}
+func (m *GetVersionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetVersionRequest.Unmarshal(m, b)
+}
+func (m *GetVersionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetVersionRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetVersionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetVersionRequest.Merge(dst, src)
+}
+func (m *GetVersionRequest) XXX_Size() int {
+	return xxx_messageInfo_GetVersionRequest.Size(m)
+}
+func (m *GetVersionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetVersionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetVersionRequest proto.InternalMessageInfo
 
 type GetVersionResponse struct {
 	// LoRa Server version.
 	Version string `protobuf:"bytes,1,opt,name=version" json:"version,omitempty"`
 	// Region configured for this network-server.
-	Region Region `protobuf:"varint,2,opt,name=region,enum=ns.Region" json:"region,omitempty"`
+	Region               Region   `protobuf:"varint,2,opt,name=region,enum=ns.Region" json:"region,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetVersionResponse) Reset()                    { *m = GetVersionResponse{} }
-func (m *GetVersionResponse) String() string            { return proto.CompactTextString(m) }
-func (*GetVersionResponse) ProtoMessage()               {}
-func (*GetVersionResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{77} }
+func (m *GetVersionResponse) Reset()         { *m = GetVersionResponse{} }
+func (m *GetVersionResponse) String() string { return proto.CompactTextString(m) }
+func (*GetVersionResponse) ProtoMessage()    {}
+func (*GetVersionResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{77}
+}
+func (m *GetVersionResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetVersionResponse.Unmarshal(m, b)
+}
+func (m *GetVersionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetVersionResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetVersionResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetVersionResponse.Merge(dst, src)
+}
+func (m *GetVersionResponse) XXX_Size() int {
+	return xxx_messageInfo_GetVersionResponse.Size(m)
+}
+func (m *GetVersionResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetVersionResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetVersionResponse proto.InternalMessageInfo
 
 func (m *GetVersionResponse) GetVersion() string {
 	if m != nil {
@@ -2178,13 +3884,35 @@ type GatewayProfile struct {
 	Channels []uint32 `protobuf:"varint,2,rep,packed,name=channels" json:"channels,omitempty"`
 	// Extra channels added to the channel-configuration (in case the LoRaWAN
 	// region supports adding custom channels).
-	ExtraChannels []*GatewayProfileExtraChannel `protobuf:"bytes,3,rep,name=extraChannels" json:"extraChannels,omitempty"`
+	ExtraChannels        []*GatewayProfileExtraChannel `protobuf:"bytes,3,rep,name=extraChannels" json:"extraChannels,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
+	XXX_unrecognized     []byte                        `json:"-"`
+	XXX_sizecache        int32                         `json:"-"`
 }
 
-func (m *GatewayProfile) Reset()                    { *m = GatewayProfile{} }
-func (m *GatewayProfile) String() string            { return proto.CompactTextString(m) }
-func (*GatewayProfile) ProtoMessage()               {}
-func (*GatewayProfile) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{78} }
+func (m *GatewayProfile) Reset()         { *m = GatewayProfile{} }
+func (m *GatewayProfile) String() string { return proto.CompactTextString(m) }
+func (*GatewayProfile) ProtoMessage()    {}
+func (*GatewayProfile) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{78}
+}
+func (m *GatewayProfile) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GatewayProfile.Unmarshal(m, b)
+}
+func (m *GatewayProfile) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GatewayProfile.Marshal(b, m, deterministic)
+}
+func (dst *GatewayProfile) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GatewayProfile.Merge(dst, src)
+}
+func (m *GatewayProfile) XXX_Size() int {
+	return xxx_messageInfo_GatewayProfile.Size(m)
+}
+func (m *GatewayProfile) XXX_DiscardUnknown() {
+	xxx_messageInfo_GatewayProfile.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GatewayProfile proto.InternalMessageInfo
 
 func (m *GatewayProfile) GetGatewayProfileID() string {
 	if m != nil {
@@ -2217,13 +3945,35 @@ type GatewayProfileExtraChannel struct {
 	// Bitrate (in case of FSK modulation).
 	Bitrate uint32 `protobuf:"varint,4,opt,name=bitrate" json:"bitrate,omitempty"`
 	// Spreading factors (in case of LoRa modulation).
-	SpreadingFactors []uint32 `protobuf:"varint,5,rep,packed,name=spreadingFactors" json:"spreadingFactors,omitempty"`
+	SpreadingFactors     []uint32 `protobuf:"varint,5,rep,packed,name=spreadingFactors" json:"spreadingFactors,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GatewayProfileExtraChannel) Reset()                    { *m = GatewayProfileExtraChannel{} }
-func (m *GatewayProfileExtraChannel) String() string            { return proto.CompactTextString(m) }
-func (*GatewayProfileExtraChannel) ProtoMessage()               {}
-func (*GatewayProfileExtraChannel) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{79} }
+func (m *GatewayProfileExtraChannel) Reset()         { *m = GatewayProfileExtraChannel{} }
+func (m *GatewayProfileExtraChannel) String() string { return proto.CompactTextString(m) }
+func (*GatewayProfileExtraChannel) ProtoMessage()    {}
+func (*GatewayProfileExtraChannel) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{79}
+}
+func (m *GatewayProfileExtraChannel) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GatewayProfileExtraChannel.Unmarshal(m, b)
+}
+func (m *GatewayProfileExtraChannel) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GatewayProfileExtraChannel.Marshal(b, m, deterministic)
+}
+func (dst *GatewayProfileExtraChannel) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GatewayProfileExtraChannel.Merge(dst, src)
+}
+func (m *GatewayProfileExtraChannel) XXX_Size() int {
+	return xxx_messageInfo_GatewayProfileExtraChannel.Size(m)
+}
+func (m *GatewayProfileExtraChannel) XXX_DiscardUnknown() {
+	xxx_messageInfo_GatewayProfileExtraChannel.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GatewayProfileExtraChannel proto.InternalMessageInfo
 
 func (m *GatewayProfileExtraChannel) GetModulation() Modulation {
 	if m != nil {
@@ -2261,13 +4011,35 @@ func (m *GatewayProfileExtraChannel) GetSpreadingFactors() []uint32 {
 }
 
 type CreateGatewayProfileRequest struct {
-	GatewayProfile *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile" json:"gatewayProfile,omitempty"`
+	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile" json:"gatewayProfile,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *CreateGatewayProfileRequest) Reset()                    { *m = CreateGatewayProfileRequest{} }
-func (m *CreateGatewayProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*CreateGatewayProfileRequest) ProtoMessage()               {}
-func (*CreateGatewayProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{80} }
+func (m *CreateGatewayProfileRequest) Reset()         { *m = CreateGatewayProfileRequest{} }
+func (m *CreateGatewayProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateGatewayProfileRequest) ProtoMessage()    {}
+func (*CreateGatewayProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{80}
+}
+func (m *CreateGatewayProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateGatewayProfileRequest.Unmarshal(m, b)
+}
+func (m *CreateGatewayProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateGatewayProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *CreateGatewayProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateGatewayProfileRequest.Merge(dst, src)
+}
+func (m *CreateGatewayProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateGatewayProfileRequest.Size(m)
+}
+func (m *CreateGatewayProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateGatewayProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateGatewayProfileRequest proto.InternalMessageInfo
 
 func (m *CreateGatewayProfileRequest) GetGatewayProfile() *GatewayProfile {
 	if m != nil {
@@ -2278,13 +4050,35 @@ func (m *CreateGatewayProfileRequest) GetGatewayProfile() *GatewayProfile {
 
 type CreateGatewayProfileResponse struct {
 	// ID of the create configuration object.
-	GatewayProfileID string `protobuf:"bytes,1,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	GatewayProfileID     string   `protobuf:"bytes,1,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *CreateGatewayProfileResponse) Reset()                    { *m = CreateGatewayProfileResponse{} }
-func (m *CreateGatewayProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*CreateGatewayProfileResponse) ProtoMessage()               {}
-func (*CreateGatewayProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{81} }
+func (m *CreateGatewayProfileResponse) Reset()         { *m = CreateGatewayProfileResponse{} }
+func (m *CreateGatewayProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateGatewayProfileResponse) ProtoMessage()    {}
+func (*CreateGatewayProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{81}
+}
+func (m *CreateGatewayProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateGatewayProfileResponse.Unmarshal(m, b)
+}
+func (m *CreateGatewayProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateGatewayProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *CreateGatewayProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateGatewayProfileResponse.Merge(dst, src)
+}
+func (m *CreateGatewayProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_CreateGatewayProfileResponse.Size(m)
+}
+func (m *CreateGatewayProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateGatewayProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateGatewayProfileResponse proto.InternalMessageInfo
 
 func (m *CreateGatewayProfileResponse) GetGatewayProfileID() string {
 	if m != nil {
@@ -2295,13 +4089,35 @@ func (m *CreateGatewayProfileResponse) GetGatewayProfileID() string {
 
 type GetGatewayProfileRequest struct {
 	// ID of the gateway-profile.
-	GatewayProfileID string `protobuf:"bytes,1,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	GatewayProfileID     string   `protobuf:"bytes,1,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GetGatewayProfileRequest) Reset()                    { *m = GetGatewayProfileRequest{} }
-func (m *GetGatewayProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*GetGatewayProfileRequest) ProtoMessage()               {}
-func (*GetGatewayProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{82} }
+func (m *GetGatewayProfileRequest) Reset()         { *m = GetGatewayProfileRequest{} }
+func (m *GetGatewayProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*GetGatewayProfileRequest) ProtoMessage()    {}
+func (*GetGatewayProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{82}
+}
+func (m *GetGatewayProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetGatewayProfileRequest.Unmarshal(m, b)
+}
+func (m *GetGatewayProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetGatewayProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *GetGatewayProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetGatewayProfileRequest.Merge(dst, src)
+}
+func (m *GetGatewayProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_GetGatewayProfileRequest.Size(m)
+}
+func (m *GetGatewayProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetGatewayProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetGatewayProfileRequest proto.InternalMessageInfo
 
 func (m *GetGatewayProfileRequest) GetGatewayProfileID() string {
 	if m != nil {
@@ -2311,15 +4127,37 @@ func (m *GetGatewayProfileRequest) GetGatewayProfileID() string {
 }
 
 type GetGatewayProfileResponse struct {
-	GatewayProfile *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile" json:"gatewayProfile,omitempty"`
-	CreatedAt      string          `protobuf:"bytes,2,opt,name=createdAt" json:"createdAt,omitempty"`
-	UpdatedAt      string          `protobuf:"bytes,3,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile" json:"gatewayProfile,omitempty"`
+	CreatedAt            string          `protobuf:"bytes,2,opt,name=createdAt" json:"createdAt,omitempty"`
+	UpdatedAt            string          `protobuf:"bytes,3,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *GetGatewayProfileResponse) Reset()                    { *m = GetGatewayProfileResponse{} }
-func (m *GetGatewayProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*GetGatewayProfileResponse) ProtoMessage()               {}
-func (*GetGatewayProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{83} }
+func (m *GetGatewayProfileResponse) Reset()         { *m = GetGatewayProfileResponse{} }
+func (m *GetGatewayProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*GetGatewayProfileResponse) ProtoMessage()    {}
+func (*GetGatewayProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{83}
+}
+func (m *GetGatewayProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetGatewayProfileResponse.Unmarshal(m, b)
+}
+func (m *GetGatewayProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetGatewayProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *GetGatewayProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetGatewayProfileResponse.Merge(dst, src)
+}
+func (m *GetGatewayProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_GetGatewayProfileResponse.Size(m)
+}
+func (m *GetGatewayProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetGatewayProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetGatewayProfileResponse proto.InternalMessageInfo
 
 func (m *GetGatewayProfileResponse) GetGatewayProfile() *GatewayProfile {
 	if m != nil {
@@ -2343,13 +4181,35 @@ func (m *GetGatewayProfileResponse) GetUpdatedAt() string {
 }
 
 type UpdateGatewayProfileRequest struct {
-	GatewayProfile *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile" json:"gatewayProfile,omitempty"`
+	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile" json:"gatewayProfile,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
-func (m *UpdateGatewayProfileRequest) Reset()                    { *m = UpdateGatewayProfileRequest{} }
-func (m *UpdateGatewayProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*UpdateGatewayProfileRequest) ProtoMessage()               {}
-func (*UpdateGatewayProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{84} }
+func (m *UpdateGatewayProfileRequest) Reset()         { *m = UpdateGatewayProfileRequest{} }
+func (m *UpdateGatewayProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*UpdateGatewayProfileRequest) ProtoMessage()    {}
+func (*UpdateGatewayProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{84}
+}
+func (m *UpdateGatewayProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateGatewayProfileRequest.Unmarshal(m, b)
+}
+func (m *UpdateGatewayProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateGatewayProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *UpdateGatewayProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateGatewayProfileRequest.Merge(dst, src)
+}
+func (m *UpdateGatewayProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_UpdateGatewayProfileRequest.Size(m)
+}
+func (m *UpdateGatewayProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateGatewayProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateGatewayProfileRequest proto.InternalMessageInfo
 
 func (m *UpdateGatewayProfileRequest) GetGatewayProfile() *GatewayProfile {
 	if m != nil {
@@ -2359,22 +4219,66 @@ func (m *UpdateGatewayProfileRequest) GetGatewayProfile() *GatewayProfile {
 }
 
 type UpdateGatewayProfileResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *UpdateGatewayProfileResponse) Reset()                    { *m = UpdateGatewayProfileResponse{} }
-func (m *UpdateGatewayProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*UpdateGatewayProfileResponse) ProtoMessage()               {}
-func (*UpdateGatewayProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{85} }
+func (m *UpdateGatewayProfileResponse) Reset()         { *m = UpdateGatewayProfileResponse{} }
+func (m *UpdateGatewayProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*UpdateGatewayProfileResponse) ProtoMessage()    {}
+func (*UpdateGatewayProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{85}
+}
+func (m *UpdateGatewayProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_UpdateGatewayProfileResponse.Unmarshal(m, b)
+}
+func (m *UpdateGatewayProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_UpdateGatewayProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *UpdateGatewayProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateGatewayProfileResponse.Merge(dst, src)
+}
+func (m *UpdateGatewayProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_UpdateGatewayProfileResponse.Size(m)
+}
+func (m *UpdateGatewayProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_UpdateGatewayProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_UpdateGatewayProfileResponse proto.InternalMessageInfo
 
 type DeleteGatewayProfileRequest struct {
 	// ID of the gateway-profile.
-	GatewayProfileID string `protobuf:"bytes,1,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	GatewayProfileID     string   `protobuf:"bytes,1,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteGatewayProfileRequest) Reset()                    { *m = DeleteGatewayProfileRequest{} }
-func (m *DeleteGatewayProfileRequest) String() string            { return proto.CompactTextString(m) }
-func (*DeleteGatewayProfileRequest) ProtoMessage()               {}
-func (*DeleteGatewayProfileRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{86} }
+func (m *DeleteGatewayProfileRequest) Reset()         { *m = DeleteGatewayProfileRequest{} }
+func (m *DeleteGatewayProfileRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteGatewayProfileRequest) ProtoMessage()    {}
+func (*DeleteGatewayProfileRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{86}
+}
+func (m *DeleteGatewayProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteGatewayProfileRequest.Unmarshal(m, b)
+}
+func (m *DeleteGatewayProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteGatewayProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *DeleteGatewayProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteGatewayProfileRequest.Merge(dst, src)
+}
+func (m *DeleteGatewayProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_DeleteGatewayProfileRequest.Size(m)
+}
+func (m *DeleteGatewayProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteGatewayProfileRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteGatewayProfileRequest proto.InternalMessageInfo
 
 func (m *DeleteGatewayProfileRequest) GetGatewayProfileID() string {
 	if m != nil {
@@ -2384,25 +4288,67 @@ func (m *DeleteGatewayProfileRequest) GetGatewayProfileID() string {
 }
 
 type DeleteGatewayProfileResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteGatewayProfileResponse) Reset()                    { *m = DeleteGatewayProfileResponse{} }
-func (m *DeleteGatewayProfileResponse) String() string            { return proto.CompactTextString(m) }
-func (*DeleteGatewayProfileResponse) ProtoMessage()               {}
-func (*DeleteGatewayProfileResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{87} }
+func (m *DeleteGatewayProfileResponse) Reset()         { *m = DeleteGatewayProfileResponse{} }
+func (m *DeleteGatewayProfileResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteGatewayProfileResponse) ProtoMessage()    {}
+func (*DeleteGatewayProfileResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{87}
+}
+func (m *DeleteGatewayProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeleteGatewayProfileResponse.Unmarshal(m, b)
+}
+func (m *DeleteGatewayProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeleteGatewayProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *DeleteGatewayProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteGatewayProfileResponse.Merge(dst, src)
+}
+func (m *DeleteGatewayProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_DeleteGatewayProfileResponse.Size(m)
+}
+func (m *DeleteGatewayProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeleteGatewayProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DeleteGatewayProfileResponse proto.InternalMessageInfo
 
 type MigrateNodeToDeviceSessionRequest struct {
-	DevEUI    []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
-	JoinEUI   []byte   `protobuf:"bytes,2,opt,name=joinEUI,proto3" json:"joinEUI,omitempty"`
-	DevNonces [][]byte `protobuf:"bytes,3,rep,name=devNonces,proto3" json:"devNonces,omitempty"`
+	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	JoinEUI              []byte   `protobuf:"bytes,2,opt,name=joinEUI,proto3" json:"joinEUI,omitempty"`
+	DevNonces            [][]byte `protobuf:"bytes,3,rep,name=devNonces,proto3" json:"devNonces,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *MigrateNodeToDeviceSessionRequest) Reset()         { *m = MigrateNodeToDeviceSessionRequest{} }
 func (m *MigrateNodeToDeviceSessionRequest) String() string { return proto.CompactTextString(m) }
 func (*MigrateNodeToDeviceSessionRequest) ProtoMessage()    {}
 func (*MigrateNodeToDeviceSessionRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{88}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{88}
 }
+func (m *MigrateNodeToDeviceSessionRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MigrateNodeToDeviceSessionRequest.Unmarshal(m, b)
+}
+func (m *MigrateNodeToDeviceSessionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MigrateNodeToDeviceSessionRequest.Marshal(b, m, deterministic)
+}
+func (dst *MigrateNodeToDeviceSessionRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MigrateNodeToDeviceSessionRequest.Merge(dst, src)
+}
+func (m *MigrateNodeToDeviceSessionRequest) XXX_Size() int {
+	return xxx_messageInfo_MigrateNodeToDeviceSessionRequest.Size(m)
+}
+func (m *MigrateNodeToDeviceSessionRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_MigrateNodeToDeviceSessionRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MigrateNodeToDeviceSessionRequest proto.InternalMessageInfo
 
 func (m *MigrateNodeToDeviceSessionRequest) GetDevEUI() []byte {
 	if m != nil {
@@ -2426,16 +4372,39 @@ func (m *MigrateNodeToDeviceSessionRequest) GetDevNonces() [][]byte {
 }
 
 type MigrateNodeToDeviceSessionResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *MigrateNodeToDeviceSessionResponse) Reset()         { *m = MigrateNodeToDeviceSessionResponse{} }
 func (m *MigrateNodeToDeviceSessionResponse) String() string { return proto.CompactTextString(m) }
 func (*MigrateNodeToDeviceSessionResponse) ProtoMessage()    {}
 func (*MigrateNodeToDeviceSessionResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{89}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{89}
+}
+func (m *MigrateNodeToDeviceSessionResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MigrateNodeToDeviceSessionResponse.Unmarshal(m, b)
+}
+func (m *MigrateNodeToDeviceSessionResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MigrateNodeToDeviceSessionResponse.Marshal(b, m, deterministic)
+}
+func (dst *MigrateNodeToDeviceSessionResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MigrateNodeToDeviceSessionResponse.Merge(dst, src)
+}
+func (m *MigrateNodeToDeviceSessionResponse) XXX_Size() int {
+	return xxx_messageInfo_MigrateNodeToDeviceSessionResponse.Size(m)
+}
+func (m *MigrateNodeToDeviceSessionResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MigrateNodeToDeviceSessionResponse.DiscardUnknown(m)
 }
 
+var xxx_messageInfo_MigrateNodeToDeviceSessionResponse proto.InternalMessageInfo
+
 type MigrateChannelConfigurationToGatewayProfileRequest struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *MigrateChannelConfigurationToGatewayProfileRequest) Reset() {
@@ -2446,11 +4415,31 @@ func (m *MigrateChannelConfigurationToGatewayProfileRequest) String() string {
 }
 func (*MigrateChannelConfigurationToGatewayProfileRequest) ProtoMessage() {}
 func (*MigrateChannelConfigurationToGatewayProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{90}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{90}
+}
+func (m *MigrateChannelConfigurationToGatewayProfileRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MigrateChannelConfigurationToGatewayProfileRequest.Unmarshal(m, b)
+}
+func (m *MigrateChannelConfigurationToGatewayProfileRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MigrateChannelConfigurationToGatewayProfileRequest.Marshal(b, m, deterministic)
+}
+func (dst *MigrateChannelConfigurationToGatewayProfileRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MigrateChannelConfigurationToGatewayProfileRequest.Merge(dst, src)
+}
+func (m *MigrateChannelConfigurationToGatewayProfileRequest) XXX_Size() int {
+	return xxx_messageInfo_MigrateChannelConfigurationToGatewayProfileRequest.Size(m)
+}
+func (m *MigrateChannelConfigurationToGatewayProfileRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_MigrateChannelConfigurationToGatewayProfileRequest.DiscardUnknown(m)
 }
 
+var xxx_messageInfo_MigrateChannelConfigurationToGatewayProfileRequest proto.InternalMessageInfo
+
 type MigrateChannelConfigurationToGatewayProfileResponse struct {
-	Migrated []*GatewayProfileMigration `protobuf:"bytes,1,rep,name=migrated" json:"migrated,omitempty"`
+	Migrated             []*GatewayProfileMigration `protobuf:"bytes,1,rep,name=migrated" json:"migrated,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                   `json:"-"`
+	XXX_unrecognized     []byte                     `json:"-"`
+	XXX_sizecache        int32                      `json:"-"`
 }
 
 func (m *MigrateChannelConfigurationToGatewayProfileResponse) Reset() {
@@ -2461,8 +4450,25 @@ func (m *MigrateChannelConfigurationToGatewayProfileResponse) String() string {
 }
 func (*MigrateChannelConfigurationToGatewayProfileResponse) ProtoMessage() {}
 func (*MigrateChannelConfigurationToGatewayProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{91}
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{91}
 }
+func (m *MigrateChannelConfigurationToGatewayProfileResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_MigrateChannelConfigurationToGatewayProfileResponse.Unmarshal(m, b)
+}
+func (m *MigrateChannelConfigurationToGatewayProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_MigrateChannelConfigurationToGatewayProfileResponse.Marshal(b, m, deterministic)
+}
+func (dst *MigrateChannelConfigurationToGatewayProfileResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_MigrateChannelConfigurationToGatewayProfileResponse.Merge(dst, src)
+}
+func (m *MigrateChannelConfigurationToGatewayProfileResponse) XXX_Size() int {
+	return xxx_messageInfo_MigrateChannelConfigurationToGatewayProfileResponse.Size(m)
+}
+func (m *MigrateChannelConfigurationToGatewayProfileResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_MigrateChannelConfigurationToGatewayProfileResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_MigrateChannelConfigurationToGatewayProfileResponse proto.InternalMessageInfo
 
 func (m *MigrateChannelConfigurationToGatewayProfileResponse) GetMigrated() []*GatewayProfileMigration {
 	if m != nil {
@@ -2477,13 +4483,35 @@ type GatewayProfileMigration struct {
 	// Name of the channel-configuration.
 	Name string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
 	// Gateway MACs using this gateway-profile.
-	Macs [][]byte `protobuf:"bytes,3,rep,name=macs,proto3" json:"macs,omitempty"`
+	Macs                 [][]byte `protobuf:"bytes,3,rep,name=macs,proto3" json:"macs,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *GatewayProfileMigration) Reset()                    { *m = GatewayProfileMigration{} }
-func (m *GatewayProfileMigration) String() string            { return proto.CompactTextString(m) }
-func (*GatewayProfileMigration) ProtoMessage()               {}
-func (*GatewayProfileMigration) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{92} }
+func (m *GatewayProfileMigration) Reset()         { *m = GatewayProfileMigration{} }
+func (m *GatewayProfileMigration) String() string { return proto.CompactTextString(m) }
+func (*GatewayProfileMigration) ProtoMessage()    {}
+func (*GatewayProfileMigration) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_e4c7d9afbf4153db, []int{92}
+}
+func (m *GatewayProfileMigration) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GatewayProfileMigration.Unmarshal(m, b)
+}
+func (m *GatewayProfileMigration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GatewayProfileMigration.Marshal(b, m, deterministic)
+}
+func (dst *GatewayProfileMigration) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GatewayProfileMigration.Merge(dst, src)
+}
+func (m *GatewayProfileMigration) XXX_Size() int {
+	return xxx_messageInfo_GatewayProfileMigration.Size(m)
+}
+func (m *GatewayProfileMigration) XXX_DiscardUnknown() {
+	xxx_messageInfo_GatewayProfileMigration.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GatewayProfileMigration proto.InternalMessageInfo
 
 func (m *GatewayProfileMigration) GetGatewayProfileID() string {
 	if m != nil {
@@ -4102,9 +6130,9 @@ var _NetworkServer_serviceDesc = grpc.ServiceDesc{
 	Metadata: "ns.proto",
 }
 
-func init() { proto.RegisterFile("ns.proto", fileDescriptor1) }
+func init() { proto.RegisterFile("ns.proto", fileDescriptor_ns_e4c7d9afbf4153db) }
 
-var fileDescriptor1 = []byte{
+var fileDescriptor_ns_e4c7d9afbf4153db = []byte{
 	// 3004 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x1b, 0x5d, 0x6f, 0xdb, 0xc8,
 	0xd1, 0x94, 0x2c, 0x5b, 0x1e, 0x5b, 0x3a, 0xde, 0x3a, 0xb1, 0x15, 0xc6, 0xb1, 0x1d, 0x26, 0x77,
