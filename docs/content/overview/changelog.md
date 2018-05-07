@@ -5,8 +5,20 @@ menu:
         parent: overview
         weight: 3
 ---
-
 # Changelog
+
+## 0.26.2
+
+**Bugfixes:**
+
+* On decreasing the TXPower index to `0` (nACKed by Microchip RN devices), LoRa Server would keep sending LinkADRReq mac-commands.
+  On a TXPower index `0` nACK, LoRa Server will now set the min TXPower index to `1` as a workaround.
+* On deleting a device, the device-session is now flushed.
+* `NewChannelReq` and `LinkADRReq` mac-commands were sometimes sent together, causing the new channel to be disabled by the `LinkADRReq` channel-mask (not aware yet about the new channel).
+
+**Improvements:**
+
+* `NbTrans` is set to `1` on activation, to avoid transitioning from `0` to `1` (effectively the same).
 
 ## 0.26.1
 
