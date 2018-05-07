@@ -1014,9 +1014,24 @@ func TestNetworkServerAPI(t *testing.T) {
 						GatewayProfileID: createResp.GatewayProfileID,
 					})
 					So(err, ShouldBeNil)
-					So(getResp.CreatedAt, ShouldNotEqual, "")
-					So(getResp.UpdatedAt, ShouldNotEqual, "")
-					So(getResp.GatewayProfile, ShouldResemble, req.GatewayProfile)
+					So(getResp.GatewayProfile, ShouldResemble, &ns.GatewayProfile{
+						GatewayProfileID: createResp.GatewayProfileID,
+						Channels:         []uint32{0, 1, 2},
+						ExtraChannels: []*ns.GatewayProfileExtraChannel{
+							{
+								Modulation:       ns.Modulation_LORA,
+								Frequency:        868700000,
+								Bandwidth:        125,
+								SpreadingFactors: []uint32{10, 11, 12},
+							},
+							{
+								Modulation: ns.Modulation_FSK,
+								Frequency:  868900000,
+								Bandwidth:  125,
+								Bitrate:    50000,
+							},
+						},
+					})
 				})
 
 				Convey("Then it can be updated", func() {
@@ -1047,7 +1062,24 @@ func TestNetworkServerAPI(t *testing.T) {
 						GatewayProfileID: createResp.GatewayProfileID,
 					})
 					So(err, ShouldBeNil)
-					So(resp.GatewayProfile, ShouldResemble, updateReq.GatewayProfile)
+					So(resp.GatewayProfile, ShouldResemble, &ns.GatewayProfile{
+						GatewayProfileID: createResp.GatewayProfileID,
+						Channels:         []uint32{0, 1},
+						ExtraChannels: []*ns.GatewayProfileExtraChannel{
+							{
+								Modulation: ns.Modulation_FSK,
+								Frequency:  868900000,
+								Bandwidth:  125,
+								Bitrate:    50000,
+							},
+							{
+								Modulation:       ns.Modulation_LORA,
+								Frequency:        868700000,
+								Bandwidth:        125,
+								SpreadingFactors: []uint32{10, 11, 12},
+							},
+						},
+					})
 				})
 
 				Convey("Then it can be deleted", func() {
