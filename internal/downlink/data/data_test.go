@@ -561,3 +561,55 @@ func TestSetMACCommandsSet(t *testing.T) {
 		}
 	})
 }
+
+func TestFilterIncompatibleMACCommands(t *testing.T) {
+	Convey("Given a set of testcases", t, func() {
+		tests := []struct {
+			MACCommands []storage.MACCommandBlock
+			Expected    []storage.MACCommandBlock
+		}{
+			{
+				MACCommands: []storage.MACCommandBlock{
+					{CID: lorawan.LinkADRReq},
+				},
+				Expected: []storage.MACCommandBlock{
+					{CID: lorawan.LinkADRReq},
+				},
+			},
+			{
+				MACCommands: []storage.MACCommandBlock{
+					{CID: lorawan.NewChannelReq},
+				},
+				Expected: []storage.MACCommandBlock{
+					{CID: lorawan.NewChannelReq},
+				},
+			},
+			{
+				MACCommands: []storage.MACCommandBlock{
+					{CID: lorawan.NewChannelReq},
+					{CID: lorawan.LinkADRReq},
+				},
+				Expected: []storage.MACCommandBlock{
+					{CID: lorawan.NewChannelReq},
+				},
+			},
+			{
+				MACCommands: []storage.MACCommandBlock{
+					{CID: lorawan.LinkADRReq},
+					{CID: lorawan.NewChannelReq},
+				},
+				Expected: []storage.MACCommandBlock{
+					{CID: lorawan.NewChannelReq},
+				},
+			},
+		}
+
+		for i, test := range tests {
+			Convey(fmt.Sprintf("Test %d", i), func() {
+				out := filterIncompatibleMACCommands(test.MACCommands)
+				So(out, ShouldResemble, test.Expected)
+			})
+		}
+	})
+
+}

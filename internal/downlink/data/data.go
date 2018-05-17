@@ -421,6 +421,29 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 	return nil
 }
 
+func filterIncompatibleMACCommands(macCommands []storage.MACCommandBlock) []storage.MACCommandBlock {
+	for _, mapping := range incompatibleMACCommands {
+		var seen bool
+		for _, mac := range macCommands {
+			if mapping.CID == mac.CID {
+				seen = true
+			}
+		}
+
+		if seen {
+			for _, conflictingCID := range mapping.IncompatibleCIDs {
+				for i := len(macCommands) - 1; i >= 0; i-- {
+					if macCommands[i].CID == conflictingCID {
+						macCommands = append(macCommands[:i], macCommands[i+1:]...)
+					}
+				}
+			}
+		}
+	}
+
+	return macCommands
+}
+
 func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error {
 	return func(ctx *dataContext) error {
 		// this will set the mac-commands to MACCommands, potentially exceeding the max size
@@ -430,26 +453,7 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 			}
 		}
 
-		for _, mapping := range incompatibleMACCommands {
-			var seen bool
-			for _, mac := range ctx.MACCommands {
-				if mapping.CID == mac.CID {
-					seen = true
-				}
-			}
-
-			if seen {
-				for _, conflictingCID := range mapping.IncompatibleCIDs {
-					var deleted int
-					for i := range ctx.MACCommands {
-						j := i - deleted
-						if ctx.MACCommands[j].CID == conflictingCID {
-							ctx.MACCommands = append(ctx.MACCommands[:j], ctx.MACCommands[j+1:]...)
-						}
-					}
-				}
-			}
-		}
+		ctx.MACCommands = filterIncompatibleMACCommands(ctx.MACCommands)
 
 		var remainingMACCommandSize int
 
