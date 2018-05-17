@@ -440,11 +440,9 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 
 			if seen {
 				for _, conflictingCID := range mapping.IncompatibleCIDs {
-					var deleted int
-					for i := range ctx.MACCommands {
-						j := i - deleted
-						if ctx.MACCommands[j].CID == conflictingCID {
-							ctx.MACCommands = append(ctx.MACCommands[:j], ctx.MACCommands[j+1:]...)
+					for i := len(ctx.MACCommands) - 1; i != 0; i-- {
+						if ctx.MACCommands[i].CID == conflictingCID {
+							ctx.MACCommands = append(ctx.MACCommands[:i], ctx.MACCommands[i+1:]...)
 						}
 					}
 				}
