@@ -7,6 +7,12 @@ menu:
 ---
 # Changelog
 
+## 0.26.3
+
+**Bugfixes:**
+
+* Fixes an "index out of range" issue when removing conflicting mac-commands. ([#323](https://github.com/brocaar/loraserver/issues/323))
+
 ## 0.26.2
 
 **Bugfixes:**
