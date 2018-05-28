@@ -127,7 +127,7 @@ url="redis://localhost:6379"
 # Network-server settings.
 [network_server]
 # Network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203)
-net_id="010203"
+net_id="000000"
 
 # Time to wait for uplink de-duplication.
 #

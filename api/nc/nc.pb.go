@@ -476,8 +476,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for NetworkController service
-
+// NetworkControllerClient is the client API for NetworkController service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type NetworkControllerClient interface {
 	// HandleRXInfo publishes rx related meta-data.
 	HandleRXInfo(ctx context.Context, in *HandleRXInfoRequest, opts ...grpc.CallOption) (*HandleRXInfoResponse, error)
@@ -498,7 +499,7 @@ func NewNetworkControllerClient(cc *grpc.ClientConn) NetworkControllerClient {
 
 func (c *networkControllerClient) HandleRXInfo(ctx context.Context, in *HandleRXInfoRequest, opts ...grpc.CallOption) (*HandleRXInfoResponse, error) {
 	out := new(HandleRXInfoResponse)
-	err := grpc.Invoke(ctx, "/nc.NetworkController/HandleRXInfo", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/nc.NetworkController/HandleRXInfo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -507,7 +508,7 @@ func (c *networkControllerClient) HandleRXInfo(ctx context.Context, in *HandleRX
 
 func (c *networkControllerClient) HandleDataUpMACCommand(ctx context.Context, in *HandleDataUpMACCommandRequest, opts ...grpc.CallOption) (*HandleDataUpMACCommandResponse, error) {
 	out := new(HandleDataUpMACCommandResponse)
-	err := grpc.Invoke(ctx, "/nc.NetworkController/HandleDataUpMACCommand", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/nc.NetworkController/HandleDataUpMACCommand", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}

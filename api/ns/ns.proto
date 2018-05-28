@@ -120,12 +120,6 @@ service NetworkServer {
 
     // GetVersion returns the LoRa Server version.
     rpc GetVersion(GetVersionRequest) returns (GetVersionResponse) {}
-
-    // MigrateNodeToDeviceSession. This method is for internal us only.
-    rpc MigrateNodeToDeviceSession(MigrateNodeToDeviceSessionRequest) returns (MigrateNodeToDeviceSessionResponse) {}
-
-    // MigrateChannelConfigurationToGatewayProfile. This method is for internal use only.
-    rpc MigrateChannelConfigurationToGatewayProfile(MigrateChannelConfigurationToGatewayProfileRequest) returns (MigrateChannelConfigurationToGatewayProfileResponse) {}
 }
 
 enum RXWindow {
@@ -823,30 +817,3 @@ message DeleteGatewayProfileRequest {
 }
 
 message DeleteGatewayProfileResponse {}
-
-message MigrateNodeToDeviceSessionRequest {
-    bytes devEUI = 1;
-
-    bytes joinEUI = 2;
-
-    repeated bytes devNonces = 3;
-}
-
-message MigrateNodeToDeviceSessionResponse {}
-
-message MigrateChannelConfigurationToGatewayProfileRequest {}
-
-message MigrateChannelConfigurationToGatewayProfileResponse {
-    repeated GatewayProfileMigration migrated = 1;
-}
-
-message GatewayProfileMigration {
-    // ID Of the created gateway-profile.
-    string gatewayProfileID = 1;
-
-    // Name of the channel-configuration.
-    string name = 2;
-
-    // Gateway MACs using this gateway-profile.
-    repeated bytes macs = 3;
-}

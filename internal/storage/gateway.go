@@ -41,17 +41,16 @@ func (l *GPSPoint) Scan(src interface{}) error {
 
 // Gateway represents a gateway.
 type Gateway struct {
-	MAC                    lorawan.EUI64 `db:"mac"`
-	Name                   string        `db:"name"`
-	Description            string        `db:"description"`
-	CreatedAt              time.Time     `db:"created_at"`
-	UpdatedAt              time.Time     `db:"updated_at"`
-	FirstSeenAt            *time.Time    `db:"first_seen_at"`
-	LastSeenAt             *time.Time    `db:"last_seen_at"`
-	Location               GPSPoint      `db:"location"`
-	Altitude               float64       `db:"altitude"`
-	ChannelConfigurationID *int64        `db:"channel_configuration_id"`
-	GatewayProfileID       *string       `db:"gateway_profile_id"`
+	MAC              lorawan.EUI64 `db:"mac"`
+	Name             string        `db:"name"`
+	Description      string        `db:"description"`
+	CreatedAt        time.Time     `db:"created_at"`
+	UpdatedAt        time.Time     `db:"updated_at"`
+	FirstSeenAt      *time.Time    `db:"first_seen_at"`
+	LastSeenAt       *time.Time    `db:"last_seen_at"`
+	Location         GPSPoint      `db:"location"`
+	Altitude         float64       `db:"altitude"`
+	GatewayProfileID *string       `db:"gateway_profile_id"`
 }
 
 // Validate validates the data of the gateway.
@@ -80,9 +79,8 @@ func CreateGateway(db sqlx.Execer, gw *Gateway) error {
 			last_seen_at,
 			location,
 			altitude,
-			channel_configuration_id,
 			gateway_profile_id
-		) values ($1, $2, $3, $4, $4, $5, $6, $7, $8, $9, $10)`,
+		) values ($1, $2, $3, $4, $4, $5, $6, $7, $8, $9)`,
 		gw.MAC[:],
 		gw.Name,
 		gw.Description,
@@ -91,7 +89,6 @@ func CreateGateway(db sqlx.Execer, gw *Gateway) error {
 		gw.LastSeenAt,
 		gw.Location,
 		gw.Altitude,
-		gw.ChannelConfigurationID,
 		gw.GatewayProfileID,
 	)
 	if err != nil {
@@ -129,8 +126,7 @@ func UpdateGateway(db sqlx.Execer, gw *Gateway) error {
 			last_seen_at = $6,
 			location = $7,
 			altitude = $8,
-			channel_configuration_id = $9,
-			gateway_profile_id = $10
+			gateway_profile_id = $9
 		where mac = $1`,
 		gw.MAC[:],
 		gw.Name,
@@ -140,7 +136,6 @@ func UpdateGateway(db sqlx.Execer, gw *Gateway) error {
 		gw.LastSeenAt,
 		gw.Location,
 		gw.Altitude,
-		gw.ChannelConfigurationID,
 		gw.GatewayProfileID,
 	)
 	if err != nil {

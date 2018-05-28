@@ -5,11 +5,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/pkg/errors"
 	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/brocaar/lorawan"
 )
 
 // Modulations
@@ -254,127 +251,4 @@ func DeleteGatewayProfile(db sqlx.Execer, id string) error {
 	}).Info("gateway-profile deleted")
 
 	return nil
-}
-
-// MigratedGatewayProfile contains the channel-configuration to
-// gateway-profile migration.
-type MigratedGatewayProfile struct {
-	GatewayProfileID string
-	Gateways         []lorawan.EUI64
-	Name             string
-}
-
-// MigrateChannelConfigurationToGatewayProfile migrates the channel configuration.
-func MigrateChannelConfigurationToGatewayProfile(db sqlx.Ext) ([]MigratedGatewayProfile, error) {
-	var out []MigratedGatewayProfile
-	var configMigrate []struct {
-		ID   int64  `db:"id"`
-		Name string `db:"name"`
-	}
-
-	err := sqlx.Select(db, &configMigrate, `
-		select
-			id,
-			name
-		from channel_configuration`)
-	if err != nil {
-		return nil, handlePSQLError(err, "select error")
-	}
-
-	for _, cm := range configMigrate {
-		gp, err := getChannelConfigurationToGatewayProfile(db, cm.ID)
-		if err != nil {
-			return nil, errors.Wrap(err, "get channel-configuration to gateway-profile error")
-		}
-
-		if err := CreateGatewayProfile(db, &gp); err != nil {
-			return nil, errors.Wrap(err, "create gateway-profile error")
-		}
-
-		_, err = db.Exec(`
-			update gateway
-			set
-				gateway_profile_id = $2,
-				channel_configuration_id = null
-			where
-				channel_configuration_id = $1`,
-			cm.ID,
-			gp.GatewayProfileID,
-		)
-		if err != nil {
-			return nil, handlePSQLError(err, "update error")
-		}
-
-		var gateways []lorawan.EUI64
-		err = sqlx.Select(db, &gateways, `
-			select
-				mac
-			from
-				gateway
-			where
-				gateway_profile_id = $1`,
-			gp.GatewayProfileID,
-		)
-		if err != nil {
-			return nil, handlePSQLError(err, "select error")
-		}
-
-		out = append(out, MigratedGatewayProfile{
-			Gateways:         gateways,
-			GatewayProfileID: gp.GatewayProfileID,
-			Name:             cm.Name,
-		})
-	}
-
-	return out, nil
-}
-
-func getChannelConfigurationToGatewayProfile(db sqlx.Queryer, id int64) (GatewayProfile, error) {
-	var gp GatewayProfile
-	err := db.QueryRowx(`
-		select
-			channels
-		from channel_configuration
-		where
-			id = $1`,
-		id,
-	).Scan(pq.Array(&gp.Channels))
-	if err != nil {
-		return gp, handlePSQLError(err, "select error")
-	}
-
-	rows, err := db.Query(`
-		select
-			modulation,
-			frequency,
-			bandwidth,
-			bit_rate,
-			spread_factors
-		from extra_channel
-		where
-			channel_configuration_id = $1
-		order by id`,
-		id,
-	)
-	if err != nil {
-		return gp, handlePSQLError(err, "select error")
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var ec ExtraChannel
-		err := rows.Scan(
-			&ec.Modulation,
-			&ec.Frequency,
-			&ec.Bandwidth,
-			&ec.Bitrate,
-			pq.Array(&ec.SpreadingFactors),
-		)
-		if err != nil {
-			return gp, handlePSQLError(err, "scan error")
-		}
-		gp.ExtraChannels = append(gp.ExtraChannels, ec)
-	}
-
-	return gp, nil
 }

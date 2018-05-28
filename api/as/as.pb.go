@@ -742,8 +742,9 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for ApplicationServer service
-
+// ApplicationServerClient is the client API for ApplicationServer service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type ApplicationServerClient interface {
 	// HandleUplinkData publishes data received from an end-device.
 	HandleUplinkData(ctx context.Context, in *HandleUplinkDataRequest, opts ...grpc.CallOption) (*HandleUplinkDataResponse, error)
@@ -765,7 +766,7 @@ func NewApplicationServerClient(cc *grpc.ClientConn) ApplicationServerClient {
 
 func (c *applicationServerClient) HandleUplinkData(ctx context.Context, in *HandleUplinkDataRequest, opts ...grpc.CallOption) (*HandleUplinkDataResponse, error) {
 	out := new(HandleUplinkDataResponse)
-	err := grpc.Invoke(ctx, "/as.ApplicationServer/HandleUplinkData", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/as.ApplicationServer/HandleUplinkData", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -774,7 +775,7 @@ func (c *applicationServerClient) HandleUplinkData(ctx context.Context, in *Hand
 
 func (c *applicationServerClient) HandleProprietaryUplink(ctx context.Context, in *HandleProprietaryUplinkRequest, opts ...grpc.CallOption) (*HandleProprietaryUplinkResponse, error) {
 	out := new(HandleProprietaryUplinkResponse)
-	err := grpc.Invoke(ctx, "/as.ApplicationServer/HandleProprietaryUplink", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/as.ApplicationServer/HandleProprietaryUplink", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -783,7 +784,7 @@ func (c *applicationServerClient) HandleProprietaryUplink(ctx context.Context, i
 
 func (c *applicationServerClient) HandleError(ctx context.Context, in *HandleErrorRequest, opts ...grpc.CallOption) (*HandleErrorResponse, error) {
 	out := new(HandleErrorResponse)
-	err := grpc.Invoke(ctx, "/as.ApplicationServer/HandleError", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/as.ApplicationServer/HandleError", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -792,7 +793,7 @@ func (c *applicationServerClient) HandleError(ctx context.Context, in *HandleErr
 
 func (c *applicationServerClient) HandleDownlinkACK(ctx context.Context, in *HandleDownlinkACKRequest, opts ...grpc.CallOption) (*HandleDownlinkACKResponse, error) {
 	out := new(HandleDownlinkACKResponse)
-	err := grpc.Invoke(ctx, "/as.ApplicationServer/HandleDownlinkACK", in, out, c.cc, opts...)
+	err := c.cc.Invoke(ctx, "/as.ApplicationServer/HandleDownlinkACK", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,27 @@ menu:
 ---
 # Changelog
 
+## v1.0.0
+
+This marks the first stable release! 
+
+### Upgrade notes
+
+* First make sure you have v0.26.3 installed and running.
+* Then ugrade to v1.0.0.
+
+See [Downloads](https://www.loraserver.io/loraserver/overview/downloads/)
+for pre-compiled binaries or instructions how to setup the Debian / Ubuntu
+repository for v1.x.
+
+### Changes
+
+* Code to remain backwards compatible with environment-variable based
+  configuration has been removed.
+* Code to migrate node- to device-sessions has been removed.
+* Code to migrate channel-configuration to gateway-profiles has been removed.
+* Old unused tables (kept for upgrade migration code) have been removed from db.
+
 ## 0.26.3
 
 **Bugfixes:**

@@ -53,7 +53,7 @@ commands:
 ```bash
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1CE2AFD36DBCCA00
 
-sudo echo "deb https://artifacts.loraserver.io/packages/0.x/deb testing main" | sudo tee /etc/apt/sources.list.d/loraserver.list
+sudo echo "deb https://artifacts.loraserver.io/packages/1.x/deb stable main" | sudo tee /etc/apt/sources.list.d/loraserver.list
 sudo apt-get update
 ```
 

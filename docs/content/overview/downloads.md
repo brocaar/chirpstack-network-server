@@ -31,12 +31,29 @@ menu:
 | [loraserver_{{< version >}}_armhf.deb](https://artifacts.loraserver.io/downloads/loraserver/loraserver_{{< version >}}_armhf.deb) | Linux   | arm   |
 | [loraserver_{{< version >}}_arm64.deb](https://artifacts.loraserver.io/downloads/loraserver/loraserver_{{< version >}}_arm64.deb) | Linux   | arm64 |
 
-## Debian Ubuntu repository
+## Debian / Ubuntu repository
+
+As all packages are signed using a PGP key, you first need to import this key:
 
 ```bash
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1CE2AFD36DBCCA00
+```
 
-sudo echo "deb https://artifacts.loraserver.io/packages/0.x/deb testing main" | sudo tee /etc/apt/sources.list.d/loraserver.list
+### Testing
+
+The testing distribution contains the latest (test) releases.
+
+```bash
+sudo echo "deb https://artifacts.loraserver.io/packages/1.x/deb testing main" | sudo tee /etc/apt/sources.list.d/loraserver.list
+sudo apt-get update
+```
+
+### Stable
+
+The stable distribution contains releases that are considered stable.
+
+```bash
+sudo echo "deb https://artifacts.loraserver.io/packages/1.x/deb stable main" | sudo tee /etc/apt/sources.list.d/loraserver.list
 sudo apt-get update
 ```
 

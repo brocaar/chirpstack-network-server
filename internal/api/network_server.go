@@ -1207,68 +1207,6 @@ func (n *NetworkServerAPI) GetVersion(ctx context.Context, req *ns.GetVersionReq
 	}, nil
 }
 
-// MigrateNodeToDeviceSession migrates a node-session to device-session.
-// This method is for internal us only.
-func (n *NetworkServerAPI) MigrateNodeToDeviceSession(ctx context.Context, req *ns.MigrateNodeToDeviceSessionRequest) (*ns.MigrateNodeToDeviceSessionResponse, error) {
-	var devEUI lorawan.EUI64
-	var joinEUI lorawan.EUI64
-	var nonces []lorawan.DevNonce
-
-	copy(devEUI[:], req.DevEUI)
-	copy(joinEUI[:], req.JoinEUI)
-
-	for _, nBytes := range req.DevNonces {
-		var n lorawan.DevNonce
-		copy(n[:], nBytes)
-		nonces = append(nonces, n)
-	}
-	err := storage.Transaction(config.C.PostgreSQL.DB, func(tx sqlx.Ext) error {
-		if err := storage.MigrateNodeToDeviceSession(config.C.Redis.Pool, config.C.PostgreSQL.DB, devEUI, joinEUI, nonces); err != nil {
-			return errToRPCError(err)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &ns.MigrateNodeToDeviceSessionResponse{}, nil
-}
-
-// MigrateChannelConfigurationToGatewayProfile migrates the channel configuration.
-// This method is for internal use only.
-func (n *NetworkServerAPI) MigrateChannelConfigurationToGatewayProfile(ctx context.Context, req *ns.MigrateChannelConfigurationToGatewayProfileRequest) (*ns.MigrateChannelConfigurationToGatewayProfileResponse, error) {
-	var out ns.MigrateChannelConfigurationToGatewayProfileResponse
-
-	err := storage.Transaction(config.C.PostgreSQL.DB, func(tx sqlx.Ext) error {
-		migrated, err := storage.MigrateChannelConfigurationToGatewayProfile(tx)
-		if err != nil {
-			return err
-		}
-
-		for i := range migrated {
-			gpm := ns.GatewayProfileMigration{
-				GatewayProfileID: migrated[i].GatewayProfileID,
-				Name:             migrated[i].Name,
-			}
-
-			for x := range migrated[i].Gateways {
-				gpm.Macs = append(gpm.Macs, migrated[i].Gateways[x][:])
-			}
-
-			out.Migrated = append(out.Migrated, &gpm)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
-	return &out, nil
-}
-
 func gwToResp(gw storage.Gateway) *ns.GetGatewayResponse {
 	resp := ns.GetGatewayResponse{
 		Mac:         gw.MAC[:],
