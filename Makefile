@@ -1,6 +1,6 @@
 .PHONY: build clean test package serve update-vendor api statics
 PKGS := $(shell go list ./... | grep -v /vendor/ | grep -v loraserver/api | grep -v /migrations | grep -v /static)
-VERSION := $(shell git describe --always)
+VERSION := $(shell git describe --always |sed -e "s/^v//")
 
 build: statics
 	@echo "Compiling source"
