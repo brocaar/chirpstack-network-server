@@ -13,7 +13,7 @@ This marks the first stable release!
 
 ### Upgrade notes
 
-* First make sure you have v0.26.3 installed and running.
+* First make sure you have v0.26.3 installed and running (including LoRa App Server v21.1).
 * Then ugrade to v1.0.0.
 
 See [Downloads](https://www.loraserver.io/loraserver/overview/downloads/)
