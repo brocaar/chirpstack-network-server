@@ -266,7 +266,7 @@ func handleFRMPayloadMACCommands(ctx *dataContext) error {
 }
 
 func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
-	if ctx.MACPayload.FPort == nil || (ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0) {
+	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0 {
 		return nil
 	}
 
