@@ -56,6 +56,7 @@ type Config struct {
 			RX2DR                       int     `mapstructure:"rx2_dr"`
 			RX2Frequency                int     `mapstructure:"rx2_frequency"`
 			EnabledUplinkChannels       []int   `mapstructure:"enabled_uplink_channels"`
+			DisableMACCommands          bool    `mapstructure:"disable_mac_commands"`
 			EnabledUplinkChannelsLegacy string  `mapstructure:"enabled_uplink_channels_legacy"`
 			ExtraChannelsLegacy         []int   `mapstructure:"extra_channels_legacy"`
 

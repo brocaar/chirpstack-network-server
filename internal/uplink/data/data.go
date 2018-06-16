@@ -222,6 +222,10 @@ func sendRXInfoToNetworkController(ctx *dataContext) error {
 }
 
 func handleFOptsMACCommands(ctx *dataContext) error {
+	if config.C.NetworkServer.NetworkSettings.DisableMACCommands {
+		return nil
+	}
+
 	if len(ctx.MACPayload.FHDR.FOpts) > 0 {
 		blocks, err := handleUplinkMACCommands(&ctx.DeviceSession, ctx.MACPayload.FHDR.FOpts, ctx.RXPacket)
 		if err != nil {
@@ -238,6 +242,10 @@ func handleFOptsMACCommands(ctx *dataContext) error {
 }
 
 func handleFRMPayloadMACCommands(ctx *dataContext) error {
+	if config.C.NetworkServer.NetworkSettings.DisableMACCommands {
+		return nil
+	}
+
 	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0 {
 		if len(ctx.MACPayload.FRMPayload) == 0 {
 			return errors.New("expected mac commands, but FRMPayload is empty (FPort=0)")

@@ -446,6 +446,10 @@ func filterIncompatibleMACCommands(macCommands []storage.MACCommandBlock) []stor
 
 func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error {
 	return func(ctx *dataContext) error {
+		if config.C.NetworkServer.NetworkSettings.DisableMACCommands {
+			return nil
+		}
+
 		// this will set the mac-commands to MACCommands, potentially exceeding the max size
 		for _, f := range funcs {
 			if err := f(ctx); err != nil {

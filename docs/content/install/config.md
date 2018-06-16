@@ -237,6 +237,12 @@ get_downlink_data_delay="100ms"
   # options of the configured network_server.band.name.
   rx2_frequency=-1
 
+  # Disable mac-commands
+  #
+  # When set, uplink mac-commands are ignored and the network-server will not
+  # send mac-commands to the devices. This is intended for testing only.
+  disable_mac_commands=false
+
   # Enable only a given sub-set of channels
   #
   # Use this when ony a sub-set of the by default enabled channels are being

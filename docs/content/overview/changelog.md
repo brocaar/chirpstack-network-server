@@ -7,6 +7,12 @@ menu:
 ---
 # Changelog
 
+## v1.0.1
+
+### Features
+
+* Config option added to disable mac-commands (for testing).
+
 ## v1.0.0
 
 This marks the first stable release! 
