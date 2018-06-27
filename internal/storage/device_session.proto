@@ -1,0 +1,175 @@
+syntax  = "proto3";
+
+package storage;
+
+message DeviceSessionPBChannel {
+    // Frequency (Hz).
+    uint32 frequency = 1;
+
+    // Min. data-rate.
+    uint32 min_dr = 2;
+
+    // Max. data-rate.
+    uint32 max_dr = 3;
+}
+
+message DeviceSessionPBUplinkADRHistory {
+    // Uplink frame-counter.
+    uint32 f_cnt = 1;
+
+    // Max SNR (of deduplicated frames received by one or multiple gateways).
+    float max_snr = 2;
+
+    // TX Power (as known by the network-server).
+    uint32 tx_power_index = 3;
+
+    // Number of receiving gateways.
+    uint32 gateway_count = 4;
+}
+
+message DeviceSessionPBUplinkGatewayHistory {
+}
+
+message DeviceSessionPB {
+    // ID of the device-profile.
+    string device_profile_id = 1;
+
+    // ID of the service-profile.
+    string service_profile_id = 2;
+
+    // ID of the routing-profile.
+    string routing_profile_id = 3;
+
+    // Device address.
+    bytes dev_addr = 4;
+
+    // Device EUI.
+    bytes dev_eui = 5;
+
+    // Join EUI.
+    bytes join_eui = 6;
+
+    // FNwkSIntKey.
+    bytes f_nwk_s_int_key = 7;
+
+    // SNwkSIntKey.
+    bytes s_nwk_s_int_key = 8;
+
+    // NwkSEncKey.
+    bytes nwk_s_enc_key = 9;
+
+    // Uplink frame-counter.
+    uint32 f_cnt_up = 10;
+
+    // Downlink frame-counter (network-server).
+    uint32 n_f_cnt_down = 11;
+
+    // Uplink frame-counter (application-server).
+    // Note: this frame-counter is managed by the application-server.
+    uint32 a_f_cnt_down = 12;
+    
+    // Frame-counter holding the last confirmed downlink frame (n_f_cnt_down or a_f_cnt_down).
+    uint32 conf_f_cnt = 39;
+
+    // Skip uplink frame-counter validation.
+    bool skip_f_cnt_check = 13;
+
+    // RX Delay.
+    uint32 rx_delay = 14;
+
+    // RX1 data-rate offset.
+    uint32 rx1_dr_offset = 15;
+
+    // RX2 data-rate.
+    uint32 rx2_dr = 16;
+
+    // RX2 frequency.
+    uint32 rx2_frequency = 17;
+
+	// TXPowerIndex which the node is using. The possible values are defined
+	// by the lorawan/band package and are region specific. By default it is
+	// assumed that the node is using TXPower 0. This value is controlled by
+    // the ADR engine.
+    uint32 tx_power_index = 18;
+
+	// DR defines the (last known) data-rate at which the node is operating.
+    // This value is controlled by the ADR engine.
+    uint32 dr = 19;
+
+    // ADR defines if the device has ADR enabled.
+    bool adr = 20;
+
+	// MaxSupportedTXPowerIndex defines the maximum supported tx-power index
+    // by the node, or 0 when not set.
+    uint32 max_supported_tx_power_index = 21;
+
+	// MaxSupportedDR defines the maximum supported DR index by the node,
+    // or 0 when not set.
+    uint32 max_supported_dr = 22;
+
+	// NbTrans defines the number of transmissions for each unconfirmed uplink
+	// frame. In case of 0, the default value is used.
+    // This value is controlled by the ADR engine.
+    uint32 nb_trans = 23;
+
+    // Channels that are activated on the device.
+    repeated uint32 enabled_uplink_channels = 24;
+
+    // Extra uplink channels, configured by the user.
+    map<uint32, DeviceSessionPBChannel> extra_uplink_channels = 25;
+
+    // Frequency of each channel.
+    repeated uint32 channel_frequencies = 26;
+
+    // Uplink history for ADR (last 20 uplink transmissions).
+    repeated DeviceSessionPBUplinkADRHistory uplink_adr_history = 27;
+
+    // Uplink gateway history (for Class B / C).
+    // Note that as bytes are not supported in a Protobuf map, the gateway ID is HEX encoded.
+    map<string, DeviceSessionPBUplinkGatewayHistory> uplink_gateway_history = 28;
+
+    // Last device-status requested timestamp (Unix ns)
+    int64 last_device_status_request_time_unix_ns = 29;
+
+    // Last downlink timestamp (Unix ns).
+    int64 last_downlink_tx_timestamp_unix_ns = 32;
+
+    // Class-B beacon is locked.
+    bool beacon_locked = 33;
+
+    // Class-B ping-slot nb.
+    uint32 ping_slot_nb = 34;
+
+    // Class-B ping-slot data-rate.
+    uint32 ping_slot_dr = 35;
+
+    // Class-B ping-slot tx frequency.
+    uint32 ping_slot_frequency = 36;
+
+    // LoRaWAN mac-version.
+    string mac_version = 37;
+
+	// MinSupportedTXPowerIndex defines the minimum supported tx-power index
+    // by the node (default 0).
+    uint32 min_supported_tx_power_index = 38;
+
+    // RejoinRequestEnabled defines if the rejoin-request is enabled on the
+    // device.
+    bool rejoin_request_enabled = 44;
+
+	// RejoinRequestMaxCountN defines the 2^(C+4) uplink message interval for
+    // the rejoin-request.
+    uint32 rejoin_request_max_count_n = 40;
+
+	// RejoinRequestMaxTimeN defines the 2^(T+10) time interval (seconds)
+    // for the rejoin-request.
+    uint32 rejoin_request_max_time_n = 41;
+
+    // Rejoin counter (RJCount0).
+    // This counter is reset to 0 after each successful join-accept.
+    uint32 rejoin_count_0 = 42;
+
+    // Pending rejoin device-session contains a device-session which has not
+    // yet been activated by the device (by sending a first uplink).
+    bytes pending_rejoin_device_session = 43;
+}

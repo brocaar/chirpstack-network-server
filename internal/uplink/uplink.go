@@ -13,6 +13,7 @@ import (
 	"github.com/brocaar/loraserver/internal/uplink/data"
 	"github.com/brocaar/loraserver/internal/uplink/join"
 	"github.com/brocaar/loraserver/internal/uplink/proprietary"
+	"github.com/brocaar/loraserver/internal/uplink/rejoin"
 	"github.com/brocaar/lorawan"
 )
 
@@ -76,6 +77,8 @@ func collectPackets(rxPacket gw.RXPacket) error {
 		switch rxPacket.PHYPayload.MHDR.MType {
 		case lorawan.JoinRequest:
 			return join.Handle(rxPacket)
+		case lorawan.RejoinRequest:
+			return rejoin.Handle(rxPacket)
 		case lorawan.UnconfirmedDataUp, lorawan.ConfirmedDataUp:
 			return data.Handle(rxPacket)
 		case lorawan.Proprietary:

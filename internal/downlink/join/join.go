@@ -60,11 +60,10 @@ func setToken(ctx *joinContext) error {
 }
 
 func getJoinAcceptTXInfo(ctx *joinContext) error {
-	if len(ctx.DeviceSession.LastRXInfoSet) == 0 {
-		return errors.New("empty LastRXInfoSet")
+	if len(ctx.RXPacket.RXInfoSet) == 0 {
+		return errors.New("empty RXInfoSet")
 	}
-
-	rxInfo := ctx.DeviceSession.LastRXInfoSet[0]
+	rxInfo := ctx.RXPacket.RXInfoSet[0]
 
 	ctx.TXInfo = gw.TXInfo{
 		MAC:      rxInfo.MAC,

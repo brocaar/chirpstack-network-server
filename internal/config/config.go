@@ -70,6 +70,12 @@ type Config struct {
 				PingSlotDR        int `mapstructure:"ping_slot_dr"`
 				PingSlotFrequency int `mapstructure:"ping_slot_frequency"`
 			} `mapstructure:"class_b"`
+
+			RejoinRequest struct {
+				Enabled   bool `mapstructure:"enabled"`
+				MaxCountN int  `mapstructure:"max_count_n"`
+				MaxTimeN  int  `mapstructure:"max_time_n"`
+			} `mapstructure:"rejoin_request"`
 		} `mapstructure:"network_settings"`
 
 		API struct {

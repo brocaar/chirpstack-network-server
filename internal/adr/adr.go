@@ -21,15 +21,6 @@ var pktLossRateTable = [][3]uint8{
 // HandleADR handles ADR in case requested by the node and configured
 // in the device-session.
 func HandleADR(ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
-	var maxSNR float64
-	for i, rxInfo := range ds.LastRXInfoSet {
-		// as the default value is 0 and the LoRaSNR can be negative, we always
-		// set it when i == 0 (the first item from the slice)
-		if i == 0 || rxInfo.LoRaSNR > maxSNR {
-			maxSNR = rxInfo.LoRaSNR
-		}
-	}
-
 	// if the node has ADR disabled
 	if !ds.ADR {
 		if linkADRReqBlock == nil {
@@ -39,7 +30,7 @@ func HandleADR(ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBloc
 	}
 
 	// get the max SNR from the UplinkHistory
-	snrM := maxSNR
+	var snrM float64 = -999
 	for _, uh := range ds.UplinkHistory {
 		if uh.MaxSNR > snrM && uh.TXPowerIndex == ds.TXPowerIndex {
 			snrM = uh.MaxSNR

@@ -24,10 +24,10 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type DataRate struct {
-	Modulation           string   `protobuf:"bytes,1,opt,name=modulation" json:"modulation,omitempty"`
-	BandWidth            uint32   `protobuf:"varint,2,opt,name=bandWidth" json:"bandWidth,omitempty"`
-	SpreadFactor         uint32   `protobuf:"varint,3,opt,name=spreadFactor" json:"spreadFactor,omitempty"`
-	Bitrate              uint32   `protobuf:"varint,4,opt,name=bitrate" json:"bitrate,omitempty"`
+	Modulation           string   `protobuf:"bytes,1,opt,name=modulation,proto3" json:"modulation,omitempty"`
+	BandWidth            uint32   `protobuf:"varint,2,opt,name=bandWidth,proto3" json:"bandWidth,omitempty"`
+	SpreadFactor         uint32   `protobuf:"varint,3,opt,name=spreadFactor,proto3" json:"spreadFactor,omitempty"`
+	Bitrate              uint32   `protobuf:"varint,4,opt,name=bitrate,proto3" json:"bitrate,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -87,9 +87,9 @@ func (m *DataRate) GetBitrate() uint32 {
 
 type RXInfo struct {
 	Mac                  []byte   `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
-	Time                 string   `protobuf:"bytes,2,opt,name=time" json:"time,omitempty"`
-	Rssi                 int32    `protobuf:"varint,3,opt,name=rssi" json:"rssi,omitempty"`
-	LoRaSNR              float64  `protobuf:"fixed64,4,opt,name=loRaSNR" json:"loRaSNR,omitempty"`
+	Time                 string   `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
+	Rssi                 int32    `protobuf:"varint,3,opt,name=rssi,proto3" json:"rssi,omitempty"`
+	LoRaSNR              float64  `protobuf:"fixed64,4,opt,name=loRaSNR,proto3" json:"loRaSNR,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -148,10 +148,10 @@ func (m *RXInfo) GetLoRaSNR() float64 {
 }
 
 type TXInfo struct {
-	Frequency            int64     `protobuf:"varint,1,opt,name=frequency" json:"frequency,omitempty"`
-	DataRate             *DataRate `protobuf:"bytes,2,opt,name=dataRate" json:"dataRate,omitempty"`
-	Adr                  bool      `protobuf:"varint,3,opt,name=adr" json:"adr,omitempty"`
-	CodeRate             string    `protobuf:"bytes,4,opt,name=codeRate" json:"codeRate,omitempty"`
+	Frequency            int64     `protobuf:"varint,1,opt,name=frequency,proto3" json:"frequency,omitempty"`
+	DataRate             *DataRate `protobuf:"bytes,2,opt,name=dataRate,proto3" json:"dataRate,omitempty"`
+	Adr                  bool      `protobuf:"varint,3,opt,name=adr,proto3" json:"adr,omitempty"`
+	CodeRate             string    `protobuf:"bytes,4,opt,name=codeRate,proto3" json:"codeRate,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
@@ -211,8 +211,8 @@ func (m *TXInfo) GetCodeRate() string {
 
 type HandleRXInfoRequest struct {
 	DevEUI               []byte    `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
-	TxInfo               *TXInfo   `protobuf:"bytes,3,opt,name=txInfo" json:"txInfo,omitempty"`
-	RxInfo               []*RXInfo `protobuf:"bytes,4,rep,name=rxInfo" json:"rxInfo,omitempty"`
+	TxInfo               *TXInfo   `protobuf:"bytes,3,opt,name=txInfo,proto3" json:"txInfo,omitempty"`
+	RxInfo               []*RXInfo `protobuf:"bytes,4,rep,name=rxInfo,proto3" json:"rxInfo,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
@@ -297,7 +297,7 @@ type HandleDataUpMACCommandRequest struct {
 	// DevEUI of the node.
 	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
 	// Command identifier (specified by the LoRaWAN specs).
-	Cid uint32 `protobuf:"varint,5,opt,name=cid" json:"cid,omitempty"`
+	Cid uint32 `protobuf:"varint,5,opt,name=cid,proto3" json:"cid,omitempty"`
 	// MAC-command payload(s).
 	Commands             [][]byte `protobuf:"bytes,6,rep,name=commands,proto3" json:"commands,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -382,7 +382,7 @@ var xxx_messageInfo_HandleDataUpMACCommandResponse proto.InternalMessageInfo
 
 type HandleErrorRequest struct {
 	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
-	Error                string   `protobuf:"bytes,3,opt,name=error" json:"error,omitempty"`
+	Error                string   `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -515,8 +515,7 @@ func (c *networkControllerClient) HandleDataUpMACCommand(ctx context.Context, in
 	return out, nil
 }
 
-// Server API for NetworkController service
-
+// NetworkControllerServer is the server API for NetworkController service.
 type NetworkControllerServer interface {
 	// HandleRXInfo publishes rx related meta-data.
 	HandleRXInfo(context.Context, *HandleRXInfoRequest) (*HandleRXInfoResponse, error)

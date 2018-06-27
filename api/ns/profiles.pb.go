@@ -44,26 +44,26 @@ func (RatePolicy) EnumDescriptor() ([]byte, []int) {
 }
 
 type ServiceProfile struct {
-	ServiceProfileID       string     `protobuf:"bytes,1,opt,name=serviceProfileID" json:"serviceProfileID,omitempty"`
-	UlRate                 uint32     `protobuf:"varint,2,opt,name=ulRate" json:"ulRate,omitempty"`
-	UlBucketSize           uint32     `protobuf:"varint,3,opt,name=ulBucketSize" json:"ulBucketSize,omitempty"`
-	UlRatePolicy           RatePolicy `protobuf:"varint,4,opt,name=ulRatePolicy,enum=ns.RatePolicy" json:"ulRatePolicy,omitempty"`
-	DlRate                 uint32     `protobuf:"varint,5,opt,name=dlRate" json:"dlRate,omitempty"`
-	DlBucketSize           uint32     `protobuf:"varint,6,opt,name=dlBucketSize" json:"dlBucketSize,omitempty"`
-	DlRatePolicy           RatePolicy `protobuf:"varint,7,opt,name=dlRatePolicy,enum=ns.RatePolicy" json:"dlRatePolicy,omitempty"`
-	AddGWMetadata          bool       `protobuf:"varint,8,opt,name=addGWMetadata" json:"addGWMetadata,omitempty"`
-	DevStatusReqFreq       uint32     `protobuf:"varint,9,opt,name=devStatusReqFreq" json:"devStatusReqFreq,omitempty"`
-	ReportDevStatusBattery bool       `protobuf:"varint,10,opt,name=reportDevStatusBattery" json:"reportDevStatusBattery,omitempty"`
-	ReportDevStatusMargin  bool       `protobuf:"varint,11,opt,name=reportDevStatusMargin" json:"reportDevStatusMargin,omitempty"`
-	DrMin                  uint32     `protobuf:"varint,12,opt,name=drMin" json:"drMin,omitempty"`
-	DrMax                  uint32     `protobuf:"varint,13,opt,name=drMax" json:"drMax,omitempty"`
+	ServiceProfileID       string     `protobuf:"bytes,1,opt,name=serviceProfileID,proto3" json:"serviceProfileID,omitempty"`
+	UlRate                 uint32     `protobuf:"varint,2,opt,name=ulRate,proto3" json:"ulRate,omitempty"`
+	UlBucketSize           uint32     `protobuf:"varint,3,opt,name=ulBucketSize,proto3" json:"ulBucketSize,omitempty"`
+	UlRatePolicy           RatePolicy `protobuf:"varint,4,opt,name=ulRatePolicy,proto3,enum=ns.RatePolicy" json:"ulRatePolicy,omitempty"`
+	DlRate                 uint32     `protobuf:"varint,5,opt,name=dlRate,proto3" json:"dlRate,omitempty"`
+	DlBucketSize           uint32     `protobuf:"varint,6,opt,name=dlBucketSize,proto3" json:"dlBucketSize,omitempty"`
+	DlRatePolicy           RatePolicy `protobuf:"varint,7,opt,name=dlRatePolicy,proto3,enum=ns.RatePolicy" json:"dlRatePolicy,omitempty"`
+	AddGWMetadata          bool       `protobuf:"varint,8,opt,name=addGWMetadata,proto3" json:"addGWMetadata,omitempty"`
+	DevStatusReqFreq       uint32     `protobuf:"varint,9,opt,name=devStatusReqFreq,proto3" json:"devStatusReqFreq,omitempty"`
+	ReportDevStatusBattery bool       `protobuf:"varint,10,opt,name=reportDevStatusBattery,proto3" json:"reportDevStatusBattery,omitempty"`
+	ReportDevStatusMargin  bool       `protobuf:"varint,11,opt,name=reportDevStatusMargin,proto3" json:"reportDevStatusMargin,omitempty"`
+	DrMin                  uint32     `protobuf:"varint,12,opt,name=drMin,proto3" json:"drMin,omitempty"`
+	DrMax                  uint32     `protobuf:"varint,13,opt,name=drMax,proto3" json:"drMax,omitempty"`
 	ChannelMask            []byte     `protobuf:"bytes,14,opt,name=channelMask,proto3" json:"channelMask,omitempty"`
-	PrAllowed              bool       `protobuf:"varint,15,opt,name=prAllowed" json:"prAllowed,omitempty"`
-	HrAllowed              bool       `protobuf:"varint,16,opt,name=hrAllowed" json:"hrAllowed,omitempty"`
-	RaAllowed              bool       `protobuf:"varint,17,opt,name=raAllowed" json:"raAllowed,omitempty"`
-	NwkGeoLoc              bool       `protobuf:"varint,18,opt,name=nwkGeoLoc" json:"nwkGeoLoc,omitempty"`
-	TargetPER              uint32     `protobuf:"varint,19,opt,name=targetPER" json:"targetPER,omitempty"`
-	MinGWDiversity         uint32     `protobuf:"varint,20,opt,name=minGWDiversity" json:"minGWDiversity,omitempty"`
+	PrAllowed              bool       `protobuf:"varint,15,opt,name=prAllowed,proto3" json:"prAllowed,omitempty"`
+	HrAllowed              bool       `protobuf:"varint,16,opt,name=hrAllowed,proto3" json:"hrAllowed,omitempty"`
+	RaAllowed              bool       `protobuf:"varint,17,opt,name=raAllowed,proto3" json:"raAllowed,omitempty"`
+	NwkGeoLoc              bool       `protobuf:"varint,18,opt,name=nwkGeoLoc,proto3" json:"nwkGeoLoc,omitempty"`
+	TargetPER              uint32     `protobuf:"varint,19,opt,name=targetPER,proto3" json:"targetPER,omitempty"`
+	MinGWDiversity         uint32     `protobuf:"varint,20,opt,name=minGWDiversity,proto3" json:"minGWDiversity,omitempty"`
 	XXX_NoUnkeyedLiteral   struct{}   `json:"-"`
 	XXX_unrecognized       []byte     `json:"-"`
 	XXX_sizecache          int32      `json:"-"`
@@ -234,26 +234,26 @@ func (m *ServiceProfile) GetMinGWDiversity() uint32 {
 }
 
 type DeviceProfile struct {
-	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID" json:"deviceProfileID,omitempty"`
-	SupportsClassB       bool     `protobuf:"varint,2,opt,name=supportsClassB" json:"supportsClassB,omitempty"`
-	ClassBTimeout        uint32   `protobuf:"varint,3,opt,name=classBTimeout" json:"classBTimeout,omitempty"`
-	PingSlotPeriod       uint32   `protobuf:"varint,4,opt,name=pingSlotPeriod" json:"pingSlotPeriod,omitempty"`
-	PingSlotDR           uint32   `protobuf:"varint,5,opt,name=pingSlotDR" json:"pingSlotDR,omitempty"`
-	PingSlotFreq         uint32   `protobuf:"varint,6,opt,name=pingSlotFreq" json:"pingSlotFreq,omitempty"`
-	SupportsClassC       bool     `protobuf:"varint,7,opt,name=supportsClassC" json:"supportsClassC,omitempty"`
-	ClassCTimeout        uint32   `protobuf:"varint,8,opt,name=classCTimeout" json:"classCTimeout,omitempty"`
-	MacVersion           string   `protobuf:"bytes,9,opt,name=macVersion" json:"macVersion,omitempty"`
-	RegParamsRevision    string   `protobuf:"bytes,10,opt,name=regParamsRevision" json:"regParamsRevision,omitempty"`
-	RxDelay1             uint32   `protobuf:"varint,11,opt,name=rxDelay1" json:"rxDelay1,omitempty"`
-	RxDROffset1          uint32   `protobuf:"varint,12,opt,name=rxDROffset1" json:"rxDROffset1,omitempty"`
-	RxDataRate2          uint32   `protobuf:"varint,13,opt,name=rxDataRate2" json:"rxDataRate2,omitempty"`
-	RxFreq2              uint32   `protobuf:"varint,14,opt,name=rxFreq2" json:"rxFreq2,omitempty"`
-	FactoryPresetFreqs   []uint32 `protobuf:"varint,15,rep,packed,name=factoryPresetFreqs" json:"factoryPresetFreqs,omitempty"`
-	MaxEIRP              uint32   `protobuf:"varint,16,opt,name=maxEIRP" json:"maxEIRP,omitempty"`
-	MaxDutyCycle         uint32   `protobuf:"varint,17,opt,name=maxDutyCycle" json:"maxDutyCycle,omitempty"`
-	SupportsJoin         bool     `protobuf:"varint,18,opt,name=supportsJoin" json:"supportsJoin,omitempty"`
-	RfRegion             string   `protobuf:"bytes,19,opt,name=rfRegion" json:"rfRegion,omitempty"`
-	Supports32BitFCnt    bool     `protobuf:"varint,20,opt,name=supports32bitFCnt" json:"supports32bitFCnt,omitempty"`
+	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID,proto3" json:"deviceProfileID,omitempty"`
+	SupportsClassB       bool     `protobuf:"varint,2,opt,name=supportsClassB,proto3" json:"supportsClassB,omitempty"`
+	ClassBTimeout        uint32   `protobuf:"varint,3,opt,name=classBTimeout,proto3" json:"classBTimeout,omitempty"`
+	PingSlotPeriod       uint32   `protobuf:"varint,4,opt,name=pingSlotPeriod,proto3" json:"pingSlotPeriod,omitempty"`
+	PingSlotDR           uint32   `protobuf:"varint,5,opt,name=pingSlotDR,proto3" json:"pingSlotDR,omitempty"`
+	PingSlotFreq         uint32   `protobuf:"varint,6,opt,name=pingSlotFreq,proto3" json:"pingSlotFreq,omitempty"`
+	SupportsClassC       bool     `protobuf:"varint,7,opt,name=supportsClassC,proto3" json:"supportsClassC,omitempty"`
+	ClassCTimeout        uint32   `protobuf:"varint,8,opt,name=classCTimeout,proto3" json:"classCTimeout,omitempty"`
+	MacVersion           string   `protobuf:"bytes,9,opt,name=macVersion,proto3" json:"macVersion,omitempty"`
+	RegParamsRevision    string   `protobuf:"bytes,10,opt,name=regParamsRevision,proto3" json:"regParamsRevision,omitempty"`
+	RxDelay1             uint32   `protobuf:"varint,11,opt,name=rxDelay1,proto3" json:"rxDelay1,omitempty"`
+	RxDROffset1          uint32   `protobuf:"varint,12,opt,name=rxDROffset1,proto3" json:"rxDROffset1,omitempty"`
+	RxDataRate2          uint32   `protobuf:"varint,13,opt,name=rxDataRate2,proto3" json:"rxDataRate2,omitempty"`
+	RxFreq2              uint32   `protobuf:"varint,14,opt,name=rxFreq2,proto3" json:"rxFreq2,omitempty"`
+	FactoryPresetFreqs   []uint32 `protobuf:"varint,15,rep,packed,name=factoryPresetFreqs,proto3" json:"factoryPresetFreqs,omitempty"`
+	MaxEIRP              uint32   `protobuf:"varint,16,opt,name=maxEIRP,proto3" json:"maxEIRP,omitempty"`
+	MaxDutyCycle         uint32   `protobuf:"varint,17,opt,name=maxDutyCycle,proto3" json:"maxDutyCycle,omitempty"`
+	SupportsJoin         bool     `protobuf:"varint,18,opt,name=supportsJoin,proto3" json:"supportsJoin,omitempty"`
+	RfRegion             string   `protobuf:"bytes,19,opt,name=rfRegion,proto3" json:"rfRegion,omitempty"`
+	Supports32BitFCnt    bool     `protobuf:"varint,20,opt,name=supports32bitFCnt,proto3" json:"supports32bitFCnt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`

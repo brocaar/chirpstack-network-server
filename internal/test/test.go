@@ -182,15 +182,19 @@ func (p *JoinServerPool) Get(joinEUI lorawan.EUI64) (jsclient.Client, error) {
 
 // JoinServerClient is a join-server client for testing.
 type JoinServerClient struct {
-	JoinReqPayloadChan chan backend.JoinReqPayload
-	JoinReqError       error
-	JoinAnsPayload     backend.JoinAnsPayload
+	JoinReqPayloadChan   chan backend.JoinReqPayload
+	RejoinReqPayloadChan chan backend.RejoinReqPayload
+	JoinReqError         error
+	RejoinReqError       error
+	JoinAnsPayload       backend.JoinAnsPayload
+	RejoinAnsPayload     backend.RejoinAnsPayload
 }
 
 // NewJoinServerClient creates a new join-server client.
 func NewJoinServerClient() *JoinServerClient {
 	return &JoinServerClient{
-		JoinReqPayloadChan: make(chan backend.JoinReqPayload, 100),
+		JoinReqPayloadChan:   make(chan backend.JoinReqPayload, 100),
+		RejoinReqPayloadChan: make(chan backend.RejoinReqPayload, 100),
 	}
 }
 
@@ -198,6 +202,12 @@ func NewJoinServerClient() *JoinServerClient {
 func (c *JoinServerClient) JoinReq(pl backend.JoinReqPayload) (backend.JoinAnsPayload, error) {
 	c.JoinReqPayloadChan <- pl
 	return c.JoinAnsPayload, c.JoinReqError
+}
+
+// RejoinReq method.
+func (c *JoinServerClient) RejoinReq(pl backend.RejoinReqPayload) (backend.RejoinAnsPayload, error) {
+	c.RejoinReqPayloadChan <- pl
+	return c.RejoinAnsPayload, c.RejoinReqError
 }
 
 // ApplicationServerPool is an application-server pool for testing.
@@ -225,16 +235,19 @@ type ApplicationClient struct {
 	HandleDataUpErr        error
 	HandleProprietaryUpErr error
 	HandleDownlinkACKErr   error
+	SetDeviceStatusError   error
 
 	HandleDataUpChan        chan as.HandleUplinkDataRequest
 	HandleProprietaryUpChan chan as.HandleProprietaryUplinkRequest
 	HandleErrorChan         chan as.HandleErrorRequest
 	HandleDownlinkACKChan   chan as.HandleDownlinkACKRequest
+	SetDeviceStatusChan     chan as.SetDeviceStatusRequest
 
 	HandleDataUpResponse        as.HandleUplinkDataResponse
 	HandleProprietaryUpResponse as.HandleProprietaryUplinkResponse
 	HandleErrorResponse         as.HandleErrorResponse
 	HandleDownlinkACKResponse   as.HandleDownlinkACKResponse
+	SetDeviceStatusResponse     as.SetDeviceStatusResponse
 }
 
 // NewApplicationClient returns a new ApplicationClient.
@@ -244,6 +257,7 @@ func NewApplicationClient() *ApplicationClient {
 		HandleProprietaryUpChan: make(chan as.HandleProprietaryUplinkRequest, 100),
 		HandleErrorChan:         make(chan as.HandleErrorRequest, 100),
 		HandleDownlinkACKChan:   make(chan as.HandleDownlinkACKRequest, 100),
+		SetDeviceStatusChan:     make(chan as.SetDeviceStatusRequest, 100),
 	}
 }
 
@@ -275,6 +289,12 @@ func (t *ApplicationClient) HandleError(ctx context.Context, in *as.HandleErrorR
 func (t *ApplicationClient) HandleDownlinkACK(ctx context.Context, in *as.HandleDownlinkACKRequest, opts ...grpc.CallOption) (*as.HandleDownlinkACKResponse, error) {
 	t.HandleDownlinkACKChan <- *in
 	return &t.HandleDownlinkACKResponse, nil
+}
+
+// SetDeviceStatus method.
+func (t *ApplicationClient) SetDeviceStatus(ctx context.Context, in *as.SetDeviceStatusRequest, opts ...grpc.CallOption) (*as.SetDeviceStatusResponse, error) {
+	t.SetDeviceStatusChan <- *in
+	return &t.SetDeviceStatusResponse, t.SetDeviceStatusError
 }
 
 // NetworkControllerClient is a network-controller client for testing.

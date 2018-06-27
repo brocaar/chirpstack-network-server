@@ -1,3 +1,5 @@
+//go:generate protoc -I . --go_out=plugins=grpc:. device_session.proto
+
 package storage
 
 import (
@@ -5,14 +7,15 @@ import (
 	"crypto/rand"
 	"encoding/gob"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	proto "github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 )
@@ -42,20 +45,31 @@ type UplinkHistory struct {
 	GatewayCount int
 }
 
+// UplinkGatewayHistory contains the uplink gateway history meta-data.
+// This is used for Class-B and Class-C downlinks.
+type UplinkGatewayHistory struct{}
+
 // DeviceSession defines a device-session.
 type DeviceSession struct {
+	// MAC version
+	MACVersion string
+
 	// profile ids
 	DeviceProfileID  string
 	ServiceProfileID string
 	RoutingProfileID string
 
 	// session data
-	DevAddr  lorawan.DevAddr
-	DevEUI   lorawan.EUI64
-	JoinEUI  lorawan.EUI64 // TODO: remove?
-	NwkSKey  lorawan.AES128Key
-	FCntUp   uint32
-	FCntDown uint32
+	DevAddr     lorawan.DevAddr
+	DevEUI      lorawan.EUI64
+	JoinEUI     lorawan.EUI64
+	FNwkSIntKey lorawan.AES128Key
+	SNwkSIntKey lorawan.AES128Key
+	NwkSEncKey  lorawan.AES128Key
+	FCntUp      uint32
+	NFCntDown   uint32
+	AFCntDown   uint32
+	ConfFCnt    uint32
 
 	// Only used by ABP activation
 	SkipFCntValidation bool
@@ -101,17 +115,11 @@ type DeviceSession struct {
 	ExtraUplinkChannels   map[int]band.Channel // extra uplink channels, configured by the user
 	ChannelFrequencies    []int                // frequency of each channel
 	UplinkHistory         []UplinkHistory      // contains the last 20 transmissions
-	LastRXInfoSet         models.RXInfoSet     // sorted set (best at index 0)
+	UplinkGatewayHistory  map[lorawan.EUI64]UplinkGatewayHistory
 
 	// LastDevStatusRequest contains the timestamp when the last device-status
 	// request was made.
 	LastDevStatusRequested time.Time
-
-	// LastDevStatusBattery contains the last received battery status.
-	LastDevStatusBattery uint8
-
-	// LastDevStatusMargin contains the last received margin status.
-	LastDevStatusMargin int8
 
 	// LastDownlinkTX contains the timestamp of the last downlink.
 	LastDownlinkTX time.Time
@@ -121,6 +129,21 @@ type DeviceSession struct {
 	PingSlotNb        int
 	PingSlotDR        int
 	PingSlotFrequency int
+
+	// RejoinRequestEnabled defines if the rejoin-request is enabled on the
+	// device.
+	RejoinRequestEnabled bool
+
+	// RejoinRequestMaxCountN defines the 2^(C+4) uplink message interval for
+	// the rejoin-request.
+	RejoinRequestMaxCountN int
+
+	// RejoinRequestMaxTimeN defines the 2^(T+10) time interval (seconds)
+	// for the rejoin-request.
+	RejoinRequestMaxTimeN int
+
+	RejoinCount0               uint16
+	PendingRejoinDeviceSession *DeviceSession
 }
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list
@@ -167,8 +190,58 @@ func (s DeviceSession) GetPacketLossPercentage() float64 {
 	return float64(lostPackets) / float64(len(s.UplinkHistory)) * 100
 }
 
-// GetRandomDevAddr returns a random free DevAddr. Note that the 7 MSB will be
-// set to the NwkID (based on the configured NetID).
+// GetMACVersion returns the LoRaWAN mac version.
+func (s DeviceSession) GetMACVersion() lorawan.MACVersion {
+	if strings.HasPrefix(s.MACVersion, "1.1") {
+		return lorawan.LoRaWAN1_1
+	}
+
+	return lorawan.LoRaWAN1_0
+}
+
+// ResetToBootParameters resets the device-session to the device boo
+// parameters as defined by the given device-profile.
+func (s *DeviceSession) ResetToBootParameters(dp DeviceProfile) {
+	if dp.SupportsJoin {
+		return
+	}
+
+	var channelFrequencies []int
+	for _, f := range dp.FactoryPresetFreqs {
+		channelFrequencies = append(channelFrequencies, int(f))
+	}
+
+	s.TXPowerIndex = 0
+	s.MinSupportedTXPowerIndex = 0
+	s.MaxSupportedTXPowerIndex = 0
+	s.ExtraUplinkChannels = make(map[int]band.Channel)
+	s.RXDelay = uint8(dp.RXDelay1)
+	s.RX1DROffset = uint8(dp.RXDROffset1)
+	s.RX2DR = uint8(dp.RXDataRate2)
+	s.RX2Frequency = int(dp.RXFreq2)
+	s.EnabledUplinkChannels = config.C.NetworkServer.Band.Band.GetStandardUplinkChannelIndices() // TODO: replace by ServiceProfile.ChannelMask?
+	s.ChannelFrequencies = channelFrequencies
+	s.PingSlotDR = dp.PingSlotDR
+	s.PingSlotFrequency = int(dp.PingSlotFreq)
+	s.NbTrans = 1
+
+	if dp.PingSlotPeriod != 0 {
+		s.PingSlotNb = (1 << 12) / dp.PingSlotPeriod
+	}
+}
+
+// GetDownlinkGatewayMAC returns the gateway MAC of the gateway close to the
+// device.
+func (s DeviceSession) GetDownlinkGatewayMAC() (lorawan.EUI64, error) {
+	for mac := range s.UplinkGatewayHistory {
+		return mac, nil
+	}
+
+	return lorawan.EUI64{}, errors.New("uplink gateway-history is empty")
+}
+
+// GetRandomDevAddr returns a random DevAddr, prefixed with NwkID based on the
+// given NetID.
 func GetRandomDevAddr(p *redis.Pool, netID lorawan.NetID) (lorawan.DevAddr, error) {
 	var d lorawan.DevAddr
 	b := make([]byte, len(d))
@@ -176,8 +249,7 @@ func GetRandomDevAddr(p *redis.Pool, netID lorawan.NetID) (lorawan.DevAddr, erro
 		return d, errors.Wrap(err, "read random bytes error")
 	}
 	copy(d[:], b)
-	d[0] = d[0] & 1                    // zero out 7 msb
-	d[0] = d[0] ^ (netID.NwkID() << 1) // set 7 msb to NwkID
+	d.SetAddrPrefix(netID)
 
 	return d, nil
 }
@@ -200,9 +272,10 @@ func ValidateAndGetFullFCntUp(s DeviceSession, fCntUp uint32) (uint32, bool) {
 // SaveDeviceSession saves the device-session. In case it doesn't exist yet
 // it will be created.
 func SaveDeviceSession(p *redis.Pool, s DeviceSession) error {
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(s); err != nil {
-		return errors.Wrap(err, "gob encode error")
+	dsPB := deviceSessionToDeviceSessionPB(s)
+	b, err := proto.Marshal(&dsPB)
+	if err != nil {
+		return errors.Wrap(err, "protobuf encode error")
 	}
 
 	c := p.Get()
@@ -210,10 +283,13 @@ func SaveDeviceSession(p *redis.Pool, s DeviceSession) error {
 	exp := int64(config.C.NetworkServer.DeviceSessionTTL) / int64(time.Millisecond)
 
 	c.Send("MULTI")
-	c.Send("PSETEX", fmt.Sprintf(deviceSessionKeyTempl, s.DevEUI), exp, buf.Bytes())
+	c.Send("PSETEX", fmt.Sprintf(deviceSessionKeyTempl, s.DevEUI), exp, b)
 	c.Send("SADD", fmt.Sprintf(devAddrKeyTempl, s.DevAddr), s.DevEUI[:])
 	c.Send("PEXPIRE", fmt.Sprintf(devAddrKeyTempl, s.DevAddr), exp)
-
+	if s.PendingRejoinDeviceSession != nil {
+		c.Send("SADD", fmt.Sprintf(devAddrKeyTempl, s.PendingRejoinDeviceSession.DevAddr), s.DevEUI[:])
+		c.Send("PEXPIRE", fmt.Sprintf(devAddrKeyTempl, s.PendingRejoinDeviceSession.DevAddr), exp)
+	}
 	if _, err := c.Do("EXEC"); err != nil {
 		return errors.Wrap(err, "exec error")
 	}
@@ -228,7 +304,7 @@ func SaveDeviceSession(p *redis.Pool, s DeviceSession) error {
 
 // GetDeviceSession returns the device-session for the given DevEUI.
 func GetDeviceSession(p *redis.Pool, devEUI lorawan.EUI64) (DeviceSession, error) {
-	var s DeviceSession
+	var dsPB DeviceSessionPB
 
 	c := p.Get()
 	defer c.Close()
@@ -236,32 +312,24 @@ func GetDeviceSession(p *redis.Pool, devEUI lorawan.EUI64) (DeviceSession, error
 	val, err := redis.Bytes(c.Do("GET", fmt.Sprintf(deviceSessionKeyTempl, devEUI)))
 	if err != nil {
 		if err == redis.ErrNil {
-			return s, ErrDoesNotExist
+			return DeviceSession{}, ErrDoesNotExist
 		}
-		return s, errors.Wrap(err, "get error")
+		return DeviceSession{}, errors.Wrap(err, "get error")
 	}
 
-	err = gob.NewDecoder(bytes.NewReader(val)).Decode(&s)
+	err = proto.Unmarshal(val, &dsPB)
 	if err != nil {
-		return s, errors.Wrap(err, "gob decode error")
+		// fallback on old gob encoding
+		var dsOld DeviceSessionOld
+		err = gob.NewDecoder(bytes.NewReader(val)).Decode(&dsOld)
+		if err != nil {
+			return DeviceSession{}, errors.Wrap(err, "gob decode error")
+		}
+
+		return migrateDeviceSessionOld(dsOld), nil
 	}
 
-	// make sure the map is initialized
-	if s.ExtraUplinkChannels == nil {
-		s.ExtraUplinkChannels = make(map[int]band.Channel)
-	}
-
-	// migrate the EnabledChannels
-	if len(s.EnabledUplinkChannels) == 0 {
-		s.EnabledUplinkChannels = s.EnabledChannels
-	}
-
-	// in older versions, the value was not set
-	if s.RX2Frequency == 0 {
-		s.RX2Frequency = config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency
-	}
-
-	return s, nil
+	return deviceSessionPBToDeviceSession(dsPB), nil
 }
 
 // DeleteDeviceSession deletes the device-session matching the given DevEUI.
@@ -309,7 +377,19 @@ func GetDeviceSessionsForDevAddr(p *redis.Pool, devAddr lorawan.DevAddr) ([]Devi
 				"dev_eui":  devEUI,
 			}).Warningf("get device-sessions for dev_addr error: %s", err)
 		}
-		items = append(items, s)
+
+		// It is possible that the "main" device-session maps to a different
+		// devAddr as the PendingRejoinDeviceSession is set (using the devAddr
+		// that is used for the lookup).
+		if s.DevAddr == devAddr {
+			items = append(items, s)
+		}
+
+		// When a pending rejoin device-session context is set and it has
+		// the given devAddr, add it to the items list.
+		if s.PendingRejoinDeviceSession != nil && s.PendingRejoinDeviceSession.DevAddr == devAddr {
+			items = append(items, *s.PendingRejoinDeviceSession)
+		}
 	}
 
 	return items, nil
@@ -318,7 +398,7 @@ func GetDeviceSessionsForDevAddr(p *redis.Pool, devAddr lorawan.DevAddr) ([]Devi
 // GetDeviceSessionForPHYPayload returns the device-session matching the given
 // PHYPayload. This will fetch all device-sessions associated with the used
 // DevAddr and based on FCnt and MIC decide which one to use.
-func GetDeviceSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload) (DeviceSession, error) {
+func GetDeviceSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload, txDR, txCh int) (DeviceSession, error) {
 	macPL, ok := phy.MACPayload.(*lorawan.MACPayload)
 	if !ok {
 		return DeviceSession{}, fmt.Errorf("expected *lorawan.MACPayload, got: %T", phy.MACPayload)
@@ -348,7 +428,9 @@ func GetDeviceSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload) (Devic
 				s.UplinkHistory = []UplinkHistory{}
 
 				// validate if the mic is valid given the FCnt reset
-				micOK, err := phy.ValidateMIC(s.NwkSKey)
+				// note that we can always set the ConfFCnt as the validation
+				// function will only use it when the ACK bit is set
+				micOK, err := phy.ValidateUplinkDataMIC(s.GetMACVersion(), s.ConfFCnt, uint8(txDR), uint8(txCh), s.FNwkSIntKey, s.SNwkSIntKey)
 				if err != nil {
 					return DeviceSession{}, errors.Wrap(err, "validate mic error")
 				}
@@ -371,7 +453,7 @@ func GetDeviceSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload) (Devic
 
 		// the FCnt is valid, validate the MIC
 		macPL.FHDR.FCnt = fullFCnt
-		micOK, err := phy.ValidateMIC(s.NwkSKey)
+		micOK, err := phy.ValidateUplinkDataMIC(s.GetMACVersion(), s.AFCntDown, uint8(txDR), uint8(txCh), s.FNwkSIntKey, s.SNwkSIntKey)
 		if err != nil {
 			return DeviceSession{}, errors.Wrap(err, "validate mic error")
 		}
@@ -396,4 +478,201 @@ func DeviceSessionExists(p *redis.Pool, devEUI lorawan.EUI64) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+func deviceSessionToDeviceSessionPB(d DeviceSession) DeviceSessionPB {
+	out := DeviceSessionPB{
+		MacVersion: d.MACVersion,
+
+		DeviceProfileId:  d.DeviceProfileID,
+		ServiceProfileId: d.ServiceProfileID,
+		RoutingProfileId: d.RoutingProfileID,
+
+		DevAddr:     d.DevAddr[:],
+		DevEui:      d.DevEUI[:],
+		JoinEui:     d.JoinEUI[:],
+		FNwkSIntKey: d.FNwkSIntKey[:],
+		SNwkSIntKey: d.SNwkSIntKey[:],
+		NwkSEncKey:  d.NwkSEncKey[:],
+
+		FCntUp:        d.FCntUp,
+		NFCntDown:     d.NFCntDown,
+		AFCntDown:     d.AFCntDown,
+		ConfFCnt:      d.ConfFCnt,
+		SkipFCntCheck: d.SkipFCntValidation,
+
+		RxDelay:      uint32(d.RXDelay),
+		Rx1DrOffset:  uint32(d.RX1DROffset),
+		Rx2Dr:        uint32(d.RX2DR),
+		Rx2Frequency: uint32(d.RX2Frequency),
+		TxPowerIndex: uint32(d.TXPowerIndex),
+
+		Dr:  uint32(d.DR),
+		Adr: d.ADR,
+		MinSupportedTxPowerIndex: uint32(d.MinSupportedTXPowerIndex),
+		MaxSupportedTxPowerIndex: uint32(d.MaxSupportedTXPowerIndex),
+		MaxSupportedDr:           uint32(d.MaxSupportedDR),
+		NbTrans:                  uint32(d.NbTrans),
+
+		ExtraUplinkChannels:  make(map[uint32]*DeviceSessionPBChannel),
+		UplinkGatewayHistory: make(map[string]*DeviceSessionPBUplinkGatewayHistory),
+
+		LastDeviceStatusRequestTimeUnixNs: d.LastDevStatusRequested.UnixNano(),
+
+		LastDownlinkTxTimestampUnixNs: d.LastDownlinkTX.UnixNano(),
+		BeaconLocked:                  d.BeaconLocked,
+		PingSlotNb:                    uint32(d.PingSlotNb),
+		PingSlotDr:                    uint32(d.PingSlotDR),
+		PingSlotFrequency:             uint32(d.PingSlotFrequency),
+
+		RejoinRequestEnabled:   d.RejoinRequestEnabled,
+		RejoinRequestMaxCountN: uint32(d.RejoinRequestMaxCountN),
+		RejoinRequestMaxTimeN:  uint32(d.RejoinRequestMaxTimeN),
+
+		RejoinCount_0: uint32(d.RejoinCount0),
+	}
+
+	for _, c := range d.EnabledUplinkChannels {
+		out.EnabledUplinkChannels = append(out.EnabledUplinkChannels, uint32(c))
+	}
+
+	for i, c := range d.ExtraUplinkChannels {
+		out.ExtraUplinkChannels[uint32(i)] = &DeviceSessionPBChannel{
+			Frequency: uint32(c.Frequency),
+			MinDr:     uint32(c.MinDR),
+			MaxDr:     uint32(c.MaxDR),
+		}
+	}
+
+	for _, c := range d.ChannelFrequencies {
+		out.ChannelFrequencies = append(out.ChannelFrequencies, uint32(c))
+	}
+
+	for _, h := range d.UplinkHistory {
+		out.UplinkAdrHistory = append(out.UplinkAdrHistory, &DeviceSessionPBUplinkADRHistory{
+			FCnt:         h.FCnt,
+			MaxSnr:       float32(h.MaxSNR),
+			TxPowerIndex: uint32(h.TXPowerIndex),
+			GatewayCount: uint32(h.GatewayCount),
+		})
+	}
+
+	for mac := range d.UplinkGatewayHistory {
+		out.UplinkGatewayHistory[mac.String()] = nil
+	}
+
+	if d.PendingRejoinDeviceSession != nil {
+		dsPB := deviceSessionToDeviceSessionPB(*d.PendingRejoinDeviceSession)
+		b, err := proto.Marshal(&dsPB)
+		if err != nil {
+			log.WithField("dev_eui", d.DevEUI).WithError(err).Error("protobuf encode error")
+		}
+
+		out.PendingRejoinDeviceSession = b
+	}
+
+	return out
+}
+
+func deviceSessionPBToDeviceSession(d DeviceSessionPB) DeviceSession {
+	out := DeviceSession{
+		MACVersion: d.MacVersion,
+
+		DeviceProfileID:  d.DeviceProfileId,
+		ServiceProfileID: d.ServiceProfileId,
+		RoutingProfileID: d.RoutingProfileId,
+
+		FCntUp:             d.FCntUp,
+		NFCntDown:          d.NFCntDown,
+		AFCntDown:          d.AFCntDown,
+		ConfFCnt:           d.ConfFCnt,
+		SkipFCntValidation: d.SkipFCntCheck,
+
+		RXDelay:      uint8(d.RxDelay),
+		RX1DROffset:  uint8(d.Rx1DrOffset),
+		RX2DR:        uint8(d.Rx2Dr),
+		RX2Frequency: int(d.Rx2Frequency),
+		TXPowerIndex: int(d.TxPowerIndex),
+
+		DR:  int(d.Dr),
+		ADR: d.Adr,
+		MinSupportedTXPowerIndex: int(d.MinSupportedTxPowerIndex),
+		MaxSupportedTXPowerIndex: int(d.MaxSupportedTxPowerIndex),
+		MaxSupportedDR:           int(d.MaxSupportedDr),
+		NbTrans:                  uint8(d.NbTrans),
+
+		ExtraUplinkChannels:  make(map[int]band.Channel),
+		UplinkGatewayHistory: make(map[lorawan.EUI64]UplinkGatewayHistory),
+
+		BeaconLocked:      d.BeaconLocked,
+		PingSlotNb:        int(d.PingSlotNb),
+		PingSlotDR:        int(d.PingSlotDr),
+		PingSlotFrequency: int(d.PingSlotFrequency),
+
+		RejoinRequestEnabled:   d.RejoinRequestEnabled,
+		RejoinRequestMaxCountN: int(d.RejoinRequestMaxCountN),
+		RejoinRequestMaxTimeN:  int(d.RejoinRequestMaxTimeN),
+
+		RejoinCount0: uint16(d.RejoinCount_0),
+	}
+
+	if d.LastDeviceStatusRequestTimeUnixNs > 0 {
+		out.LastDevStatusRequested = time.Unix(0, d.LastDeviceStatusRequestTimeUnixNs)
+	}
+
+	if d.LastDownlinkTxTimestampUnixNs > 0 {
+		out.LastDownlinkTX = time.Unix(0, d.LastDownlinkTxTimestampUnixNs)
+	}
+
+	copy(out.DevAddr[:], d.DevAddr)
+	copy(out.DevEUI[:], d.DevEui)
+	copy(out.JoinEUI[:], d.JoinEui)
+	copy(out.FNwkSIntKey[:], d.FNwkSIntKey)
+	copy(out.SNwkSIntKey[:], d.SNwkSIntKey)
+	copy(out.NwkSEncKey[:], d.NwkSEncKey)
+
+	for _, c := range d.EnabledUplinkChannels {
+		out.EnabledUplinkChannels = append(out.EnabledUplinkChannels, int(c))
+	}
+
+	for i, c := range d.ExtraUplinkChannels {
+		out.ExtraUplinkChannels[int(i)] = band.Channel{
+			Frequency: int(c.Frequency),
+			MinDR:     int(c.MinDr),
+			MaxDR:     int(c.MaxDr),
+		}
+	}
+
+	for _, c := range d.ChannelFrequencies {
+		out.ChannelFrequencies = append(out.ChannelFrequencies, int(c))
+	}
+
+	for _, h := range d.UplinkAdrHistory {
+		out.UplinkHistory = append(out.UplinkHistory, UplinkHistory{
+			FCnt:         h.FCnt,
+			MaxSNR:       float64(h.MaxSnr),
+			TXPowerIndex: int(h.TxPowerIndex),
+			GatewayCount: int(h.GatewayCount),
+		})
+	}
+
+	for macStr := range d.UplinkGatewayHistory {
+		var mac lorawan.EUI64
+		if err := mac.UnmarshalText([]byte(macStr)); err != nil {
+			continue
+		}
+		out.UplinkGatewayHistory[mac] = UplinkGatewayHistory{}
+	}
+
+	if len(d.PendingRejoinDeviceSession) != 0 {
+		var dsPB DeviceSessionPB
+		if err := proto.Unmarshal(d.PendingRejoinDeviceSession, &dsPB); err != nil {
+			log.WithField("dev_eui", out.DevEUI).WithError(err).Error("decode pending rejoin device-session error")
+		} else {
+			ds := deviceSessionPBToDeviceSession(dsPB)
+			out.PendingRejoinDeviceSession = &ds
+		}
+	}
+
+	return out
 }

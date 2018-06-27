@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/lorawan/band"
-
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -23,6 +21,7 @@ import (
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
+	"github.com/brocaar/lorawan/band"
 )
 
 func TestNetworkServerAPI(t *testing.T) {
@@ -63,7 +62,9 @@ func TestNetworkServerAPI(t *testing.T) {
 
 		devEUI := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}
 		devAddr := [4]byte{6, 2, 3, 4}
-		nwkSKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+		sNwkSIntKey := [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+		fNwkSIntKey := [16]byte{2, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+		nwkSEncKey := [16]byte{3, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 		Convey("When calling StreamFrameLogsForGateway", func() {
 			mac := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
@@ -566,6 +567,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					PingSlotPeriod: 32,
 					PingSlotFreq:   868100000,
 					PingSlotDR:     5,
+					MACVersion:     "1.0.2",
 				},
 			}
 			So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
@@ -596,9 +598,12 @@ func TestNetworkServerAPI(t *testing.T) {
 					_, err := api.ActivateDevice(ctx, &ns.ActivateDeviceRequest{
 						DevEUI:        devEUI[:],
 						DevAddr:       devAddr[:],
-						NwkSKey:       nwkSKey[:],
+						SNwkSIntKey:   sNwkSIntKey[:],
+						FNwkSIntKey:   fNwkSIntKey[:],
+						NwkSEncKey:    nwkSEncKey[:],
 						FCntUp:        10,
-						FCntDown:      11,
+						NFCntDown:     11,
+						AFCntDown:     12,
 						SkipFCntCheck: false,
 					})
 					So(err, ShouldBeNil)
@@ -614,9 +619,12 @@ func TestNetworkServerAPI(t *testing.T) {
 					_, err := api.ActivateDevice(ctx, &ns.ActivateDeviceRequest{
 						DevEUI:        devEUI[:],
 						DevAddr:       devAddr[:],
-						NwkSKey:       nwkSKey[:],
+						SNwkSIntKey:   sNwkSIntKey[:],
+						FNwkSIntKey:   fNwkSIntKey[:],
+						NwkSEncKey:    nwkSEncKey[:],
 						FCntUp:        10,
-						FCntDown:      11,
+						NFCntDown:     11,
+						AFCntDown:     12,
 						SkipFCntCheck: true,
 					})
 					So(err, ShouldBeNil)
@@ -637,9 +645,12 @@ func TestNetworkServerAPI(t *testing.T) {
 
 							DevAddr:               devAddr,
 							DevEUI:                devEUI,
-							NwkSKey:               nwkSKey,
+							SNwkSIntKey:           sNwkSIntKey,
+							FNwkSIntKey:           fNwkSIntKey,
+							NwkSEncKey:            nwkSEncKey,
 							FCntUp:                10,
-							FCntDown:              11,
+							NFCntDown:             11,
+							AFCntDown:             12,
 							SkipFCntValidation:    true,
 							EnabledUplinkChannels: config.C.NetworkServer.Band.Band.GetEnabledUplinkChannelIndices(),
 							ChannelFrequencies:    []int{868100000, 868300000, 868500000},
@@ -649,12 +660,12 @@ func TestNetworkServerAPI(t *testing.T) {
 							RX2DR:                 5,
 							RX2Frequency:          868900000,
 							MaxSupportedDR:        6,
-
-							LastDevStatusMargin: 127,
-							PingSlotNb:          128,
-							PingSlotDR:          5,
-							PingSlotFrequency:   868100000,
-							NbTrans:             1,
+							UplinkGatewayHistory:  make(map[lorawan.EUI64]storage.UplinkGatewayHistory),
+							PingSlotNb:            128,
+							PingSlotDR:            5,
+							PingSlotFrequency:     868100000,
+							NbTrans:               1,
+							MACVersion:            "1.0.2",
 						})
 					})
 
@@ -665,19 +676,40 @@ func TestNetworkServerAPI(t *testing.T) {
 						So(err, ShouldBeNil)
 						So(resp, ShouldResemble, &ns.GetDeviceActivationResponse{
 							DevAddr:       devAddr[:],
-							NwkSKey:       nwkSKey[:],
+							FNwkSIntKey:   fNwkSIntKey[:],
+							SNwkSIntKey:   sNwkSIntKey[:],
+							NwkSEncKey:    nwkSEncKey[:],
 							FCntUp:        10,
-							FCntDown:      11,
+							NFCntDown:     11,
+							AFCntDown:     12,
 							SkipFCntCheck: true,
 						})
 					})
 
-					Convey("Then GetNextDownlinkFCntForDevEUI returns the expected FCnt", func() {
-						resp, err := api.GetNextDownlinkFCntForDevEUI(ctx, &ns.GetNextDownlinkFCntForDevEUIRequest{
-							DevEUI: devEUI[:],
+					Convey("For LoRaWAN 1.0", func() {
+						Convey("Then GetNextDownlinkFCntForDevEUI returns the expected FCnt", func() {
+							resp, err := api.GetNextDownlinkFCntForDevEUI(ctx, &ns.GetNextDownlinkFCntForDevEUIRequest{
+								DevEUI: devEUI[:],
+							})
+							So(err, ShouldBeNil)
+							So(resp.FCnt, ShouldEqual, 11)
 						})
-						So(err, ShouldBeNil)
-						So(resp.FCnt, ShouldEqual, 11)
+					})
+
+					Convey("For LoRaWAN 1.1", func() {
+						Convey("Then GetNextDownlinkFCntForDevEUI returns the expected FCnt", func() {
+							ds, err := storage.GetDeviceSession(config.C.Redis.Pool, devEUI)
+							So(err, ShouldBeNil)
+
+							ds.MACVersion = "1.1.0"
+							So(storage.SaveDeviceSession(config.C.Redis.Pool, ds), ShouldBeNil)
+
+							resp, err := api.GetNextDownlinkFCntForDevEUI(ctx, &ns.GetNextDownlinkFCntForDevEUIRequest{
+								DevEUI: devEUI[:],
+							})
+							So(err, ShouldBeNil)
+							So(resp.FCnt, ShouldEqual, 12)
+						})
 					})
 
 					Convey("Given an item in the device-queue", func() {

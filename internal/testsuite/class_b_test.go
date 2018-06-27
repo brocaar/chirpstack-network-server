@@ -12,7 +12,6 @@ import (
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/gps"
-	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
@@ -120,11 +119,14 @@ func TestClassBUplink(t *testing.T) {
 			JoinEUI:          lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
 
 			DevAddr:               lorawan.DevAddr{1, 2, 3, 4},
-			NwkSKey:               [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			SNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			NwkSEncKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 			FCntUp:                8,
-			FCntDown:              5,
+			NFCntDown:             5,
 			EnabledUplinkChannels: []int{0, 1, 2},
 			PingSlotNb:            1,
+			RX2Frequency:          869525000,
 		}
 
 		now := time.Now().UTC().Truncate(time.Millisecond)
@@ -202,7 +204,7 @@ func TestClassBUplink(t *testing.T) {
 					So(storage.SaveDeviceSession(config.C.Redis.Pool, t.DeviceSession), ShouldBeNil)
 
 					// set MIC
-					So(t.PHYPayload.SetMIC(t.DeviceSession.NwkSKey), ShouldBeNil)
+					So(t.PHYPayload.SetUplinkDataMIC(lorawan.LoRaWAN1_0, 0, 0, 0, t.DeviceSession.FNwkSIntKey, t.DeviceSession.SNwkSIntKey), ShouldBeNil)
 
 					// create RXPacket and call HandleRXPacket
 					rxPacket := gw.RXPacket{
@@ -294,17 +296,19 @@ func TestClassBDownlink(t *testing.T) {
 			DevEUI:           d.DevEUI,
 			DevAddr:          lorawan.DevAddr{1, 2, 3, 4},
 			JoinEUI:          lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
-			NwkSKey:          lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FNwkSIntKey:      lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			SNwkSIntKey:      lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			NwkSEncKey:       lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 			FCntUp:           8,
-			FCntDown:         5,
-			LastRXInfoSet: []models.RXInfo{
-				{MAC: lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}},
-				{MAC: lorawan.EUI64{2, 1, 2, 1, 2, 1, 2, 1}},
+			NFCntDown:        5,
+			UplinkGatewayHistory: map[lorawan.EUI64]storage.UplinkGatewayHistory{
+				lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}: storage.UplinkGatewayHistory{},
 			},
 			EnabledUplinkChannels: []int{0, 1, 2},
 			BeaconLocked:          true,
 			PingSlotFrequency:     868300000,
 			PingSlotDR:            2,
+			RX2Frequency:          869525000,
 		}
 
 		fPortTen := uint8(10)
@@ -455,7 +459,7 @@ func TestClassBDownlink(t *testing.T) {
 					sess, err := storage.GetDeviceSession(config.C.Redis.Pool, t.DeviceSession.DevEUI)
 					So(err, ShouldBeNil)
 					So(sess.FCntUp, ShouldEqual, t.ExpectedFCntUp)
-					So(sess.FCntDown, ShouldEqual, t.ExpectedFCntDown)
+					So(sess.NFCntDown, ShouldEqual, t.ExpectedFCntDown)
 				})
 
 				if t.ExpectedTXInfo != nil && t.ExpectedPHYPayload != nil {

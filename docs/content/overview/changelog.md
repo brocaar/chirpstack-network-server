@@ -7,6 +7,25 @@ menu:
 ---
 # Changelog
 
+## v2.0.0 (in development)
+
+### Upgrade nodes
+
+Before upgrading to v2, first make sure you have the latest v1 installed and running
+(including LoRa App Server). As always, it is recommended to make a backup
+first :-)
+
+### Features
+
+* LoRaWAN 1.1 support!
+
+### Changes
+
+* LoRa Server calls the `SetDeviceStatus` API method of LoRa App Server
+  when it receives a `DevStatusAns` mac-command.
+* Device-sessions are stored using Protobuf encoding in Redis
+  (more compact storage).
+
 ## v1.0.1
 
 ### Features

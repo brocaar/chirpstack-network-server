@@ -45,7 +45,7 @@ func (x RXWindow) String() string {
 	return proto.EnumName(RXWindow_name, int32(x))
 }
 func (RXWindow) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{0}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{0}
 }
 
 type Modulation int32
@@ -70,7 +70,7 @@ func (x Modulation) String() string {
 	return proto.EnumName(Modulation_name, int32(x))
 }
 func (Modulation) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{1}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{1}
 }
 
 type Region int32
@@ -127,7 +127,7 @@ func (x Region) String() string {
 	return proto.EnumName(Region_name, int32(x))
 }
 func (Region) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{2}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{2}
 }
 
 type AggregationInterval int32
@@ -168,11 +168,11 @@ func (x AggregationInterval) String() string {
 	return proto.EnumName(AggregationInterval_name, int32(x))
 }
 func (AggregationInterval) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{3}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{3}
 }
 
 type CreateServiceProfileRequest struct {
-	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile" json:"serviceProfile,omitempty"`
+	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile,proto3" json:"serviceProfile,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -182,7 +182,7 @@ func (m *CreateServiceProfileRequest) Reset()         { *m = CreateServiceProfil
 func (m *CreateServiceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateServiceProfileRequest) ProtoMessage()    {}
 func (*CreateServiceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{0}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{0}
 }
 func (m *CreateServiceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateServiceProfileRequest.Unmarshal(m, b)
@@ -210,7 +210,7 @@ func (m *CreateServiceProfileRequest) GetServiceProfile() *ServiceProfile {
 }
 
 type CreateServiceProfileResponse struct {
-	ServiceProfileID     string   `protobuf:"bytes,1,opt,name=serviceProfileID" json:"serviceProfileID,omitempty"`
+	ServiceProfileID     string   `protobuf:"bytes,1,opt,name=serviceProfileID,proto3" json:"serviceProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -220,7 +220,7 @@ func (m *CreateServiceProfileResponse) Reset()         { *m = CreateServiceProfi
 func (m *CreateServiceProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateServiceProfileResponse) ProtoMessage()    {}
 func (*CreateServiceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{1}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{1}
 }
 func (m *CreateServiceProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateServiceProfileResponse.Unmarshal(m, b)
@@ -248,7 +248,7 @@ func (m *CreateServiceProfileResponse) GetServiceProfileID() string {
 }
 
 type GetServiceProfileRequest struct {
-	ServiceProfileID     string   `protobuf:"bytes,1,opt,name=serviceProfileID" json:"serviceProfileID,omitempty"`
+	ServiceProfileID     string   `protobuf:"bytes,1,opt,name=serviceProfileID,proto3" json:"serviceProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -258,7 +258,7 @@ func (m *GetServiceProfileRequest) Reset()         { *m = GetServiceProfileReque
 func (m *GetServiceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*GetServiceProfileRequest) ProtoMessage()    {}
 func (*GetServiceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{2}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{2}
 }
 func (m *GetServiceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetServiceProfileRequest.Unmarshal(m, b)
@@ -286,9 +286,9 @@ func (m *GetServiceProfileRequest) GetServiceProfileID() string {
 }
 
 type GetServiceProfileResponse struct {
-	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile" json:"serviceProfile,omitempty"`
-	CreatedAt            string          `protobuf:"bytes,2,opt,name=createdAt" json:"createdAt,omitempty"`
-	UpdatedAt            string          `protobuf:"bytes,3,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile,proto3" json:"serviceProfile,omitempty"`
+	CreatedAt            string          `protobuf:"bytes,2,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	UpdatedAt            string          `protobuf:"bytes,3,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -298,7 +298,7 @@ func (m *GetServiceProfileResponse) Reset()         { *m = GetServiceProfileResp
 func (m *GetServiceProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*GetServiceProfileResponse) ProtoMessage()    {}
 func (*GetServiceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{3}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{3}
 }
 func (m *GetServiceProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetServiceProfileResponse.Unmarshal(m, b)
@@ -340,7 +340,7 @@ func (m *GetServiceProfileResponse) GetUpdatedAt() string {
 }
 
 type UpdateServiceProfileRequest struct {
-	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile" json:"serviceProfile,omitempty"`
+	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile,proto3" json:"serviceProfile,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -350,7 +350,7 @@ func (m *UpdateServiceProfileRequest) Reset()         { *m = UpdateServiceProfil
 func (m *UpdateServiceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateServiceProfileRequest) ProtoMessage()    {}
 func (*UpdateServiceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{4}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{4}
 }
 func (m *UpdateServiceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateServiceProfileRequest.Unmarshal(m, b)
@@ -387,7 +387,7 @@ func (m *UpdateServiceProfileResponse) Reset()         { *m = UpdateServiceProfi
 func (m *UpdateServiceProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateServiceProfileResponse) ProtoMessage()    {}
 func (*UpdateServiceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{5}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{5}
 }
 func (m *UpdateServiceProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateServiceProfileResponse.Unmarshal(m, b)
@@ -408,7 +408,7 @@ func (m *UpdateServiceProfileResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_UpdateServiceProfileResponse proto.InternalMessageInfo
 
 type DeleteServiceProfileRequest struct {
-	ServiceProfileID     string   `protobuf:"bytes,1,opt,name=serviceProfileID" json:"serviceProfileID,omitempty"`
+	ServiceProfileID     string   `protobuf:"bytes,1,opt,name=serviceProfileID,proto3" json:"serviceProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -418,7 +418,7 @@ func (m *DeleteServiceProfileRequest) Reset()         { *m = DeleteServiceProfil
 func (m *DeleteServiceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteServiceProfileRequest) ProtoMessage()    {}
 func (*DeleteServiceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{6}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{6}
 }
 func (m *DeleteServiceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteServiceProfileRequest.Unmarshal(m, b)
@@ -455,7 +455,7 @@ func (m *DeleteServiceProfileResponse) Reset()         { *m = DeleteServiceProfi
 func (m *DeleteServiceProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteServiceProfileResponse) ProtoMessage()    {}
 func (*DeleteServiceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{7}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{7}
 }
 func (m *DeleteServiceProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteServiceProfileResponse.Unmarshal(m, b)
@@ -476,8 +476,8 @@ func (m *DeleteServiceProfileResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_DeleteServiceProfileResponse proto.InternalMessageInfo
 
 type RoutingProfile struct {
-	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
-	AsID                 string   `protobuf:"bytes,2,opt,name=asID" json:"asID,omitempty"`
+	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID,proto3" json:"routingProfileID,omitempty"`
+	AsID                 string   `protobuf:"bytes,2,opt,name=asID,proto3" json:"asID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -487,7 +487,7 @@ func (m *RoutingProfile) Reset()         { *m = RoutingProfile{} }
 func (m *RoutingProfile) String() string { return proto.CompactTextString(m) }
 func (*RoutingProfile) ProtoMessage()    {}
 func (*RoutingProfile) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{8}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{8}
 }
 func (m *RoutingProfile) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RoutingProfile.Unmarshal(m, b)
@@ -522,13 +522,13 @@ func (m *RoutingProfile) GetAsID() string {
 }
 
 type CreateRoutingProfileRequest struct {
-	RoutingProfile *RoutingProfile `protobuf:"bytes,1,opt,name=routingProfile" json:"routingProfile,omitempty"`
+	RoutingProfile *RoutingProfile `protobuf:"bytes,1,opt,name=routingProfile,proto3" json:"routingProfile,omitempty"`
 	// ca certificate for connecting to lora-app-server
-	CaCert string `protobuf:"bytes,2,opt,name=caCert" json:"caCert,omitempty"`
+	CaCert string `protobuf:"bytes,2,opt,name=caCert,proto3" json:"caCert,omitempty"`
 	// tls certificate for connecting to lora-app-server
-	TlsCert string `protobuf:"bytes,3,opt,name=tlsCert" json:"tlsCert,omitempty"`
+	TlsCert string `protobuf:"bytes,3,opt,name=tlsCert,proto3" json:"tlsCert,omitempty"`
 	// tls key for connecting to lora-app-server
-	TlsKey               string   `protobuf:"bytes,4,opt,name=tlsKey" json:"tlsKey,omitempty"`
+	TlsKey               string   `protobuf:"bytes,4,opt,name=tlsKey,proto3" json:"tlsKey,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -538,7 +538,7 @@ func (m *CreateRoutingProfileRequest) Reset()         { *m = CreateRoutingProfil
 func (m *CreateRoutingProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateRoutingProfileRequest) ProtoMessage()    {}
 func (*CreateRoutingProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{9}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{9}
 }
 func (m *CreateRoutingProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateRoutingProfileRequest.Unmarshal(m, b)
@@ -587,7 +587,7 @@ func (m *CreateRoutingProfileRequest) GetTlsKey() string {
 }
 
 type CreateRoutingProfileResponse struct {
-	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
+	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID,proto3" json:"routingProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -597,7 +597,7 @@ func (m *CreateRoutingProfileResponse) Reset()         { *m = CreateRoutingProfi
 func (m *CreateRoutingProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateRoutingProfileResponse) ProtoMessage()    {}
 func (*CreateRoutingProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{10}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{10}
 }
 func (m *CreateRoutingProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateRoutingProfileResponse.Unmarshal(m, b)
@@ -625,7 +625,7 @@ func (m *CreateRoutingProfileResponse) GetRoutingProfileID() string {
 }
 
 type GetRoutingProfileRequest struct {
-	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
+	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID,proto3" json:"routingProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -635,7 +635,7 @@ func (m *GetRoutingProfileRequest) Reset()         { *m = GetRoutingProfileReque
 func (m *GetRoutingProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*GetRoutingProfileRequest) ProtoMessage()    {}
 func (*GetRoutingProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{11}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{11}
 }
 func (m *GetRoutingProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetRoutingProfileRequest.Unmarshal(m, b)
@@ -663,13 +663,13 @@ func (m *GetRoutingProfileRequest) GetRoutingProfileID() string {
 }
 
 type GetRoutingProfileResponse struct {
-	RoutingProfile *RoutingProfile `protobuf:"bytes,1,opt,name=routingProfile" json:"routingProfile,omitempty"`
-	CreatedAt      string          `protobuf:"bytes,2,opt,name=createdAt" json:"createdAt,omitempty"`
-	UpdatedAt      string          `protobuf:"bytes,3,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	RoutingProfile *RoutingProfile `protobuf:"bytes,1,opt,name=routingProfile,proto3" json:"routingProfile,omitempty"`
+	CreatedAt      string          `protobuf:"bytes,2,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	UpdatedAt      string          `protobuf:"bytes,3,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
 	// ca certificate for connecting to lora-app-server
-	CaCert string `protobuf:"bytes,4,opt,name=caCert" json:"caCert,omitempty"`
+	CaCert string `protobuf:"bytes,4,opt,name=caCert,proto3" json:"caCert,omitempty"`
 	// tls certificate for connecting to lora-app-server
-	TlsCert              string   `protobuf:"bytes,5,opt,name=tlsCert" json:"tlsCert,omitempty"`
+	TlsCert              string   `protobuf:"bytes,5,opt,name=tlsCert,proto3" json:"tlsCert,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -679,7 +679,7 @@ func (m *GetRoutingProfileResponse) Reset()         { *m = GetRoutingProfileResp
 func (m *GetRoutingProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*GetRoutingProfileResponse) ProtoMessage()    {}
 func (*GetRoutingProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{12}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{12}
 }
 func (m *GetRoutingProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetRoutingProfileResponse.Unmarshal(m, b)
@@ -735,13 +735,13 @@ func (m *GetRoutingProfileResponse) GetTlsCert() string {
 }
 
 type UpdateRoutingProfileRequest struct {
-	RoutingProfile *RoutingProfile `protobuf:"bytes,1,opt,name=routingProfile" json:"routingProfile,omitempty"`
+	RoutingProfile *RoutingProfile `protobuf:"bytes,1,opt,name=routingProfile,proto3" json:"routingProfile,omitempty"`
 	// ca certificate for connecting to lora-app-server
-	CaCert string `protobuf:"bytes,2,opt,name=caCert" json:"caCert,omitempty"`
+	CaCert string `protobuf:"bytes,2,opt,name=caCert,proto3" json:"caCert,omitempty"`
 	// tls certificate for connecting to lora-app-server
-	TlsCert string `protobuf:"bytes,3,opt,name=tlsCert" json:"tlsCert,omitempty"`
+	TlsCert string `protobuf:"bytes,3,opt,name=tlsCert,proto3" json:"tlsCert,omitempty"`
 	// tls key for connecting to lora-app-server
-	TlsKey               string   `protobuf:"bytes,4,opt,name=tlsKey" json:"tlsKey,omitempty"`
+	TlsKey               string   `protobuf:"bytes,4,opt,name=tlsKey,proto3" json:"tlsKey,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -751,7 +751,7 @@ func (m *UpdateRoutingProfileRequest) Reset()         { *m = UpdateRoutingProfil
 func (m *UpdateRoutingProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateRoutingProfileRequest) ProtoMessage()    {}
 func (*UpdateRoutingProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{13}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{13}
 }
 func (m *UpdateRoutingProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateRoutingProfileRequest.Unmarshal(m, b)
@@ -809,7 +809,7 @@ func (m *UpdateRoutingProfileResponse) Reset()         { *m = UpdateRoutingProfi
 func (m *UpdateRoutingProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateRoutingProfileResponse) ProtoMessage()    {}
 func (*UpdateRoutingProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{14}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{14}
 }
 func (m *UpdateRoutingProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateRoutingProfileResponse.Unmarshal(m, b)
@@ -830,7 +830,7 @@ func (m *UpdateRoutingProfileResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_UpdateRoutingProfileResponse proto.InternalMessageInfo
 
 type DeleteRoutingProfileRequest struct {
-	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
+	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID,proto3" json:"routingProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -840,7 +840,7 @@ func (m *DeleteRoutingProfileRequest) Reset()         { *m = DeleteRoutingProfil
 func (m *DeleteRoutingProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteRoutingProfileRequest) ProtoMessage()    {}
 func (*DeleteRoutingProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{15}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{15}
 }
 func (m *DeleteRoutingProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteRoutingProfileRequest.Unmarshal(m, b)
@@ -877,7 +877,7 @@ func (m *DeleteRoutingProfileResponse) Reset()         { *m = DeleteRoutingProfi
 func (m *DeleteRoutingProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteRoutingProfileResponse) ProtoMessage()    {}
 func (*DeleteRoutingProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{16}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{16}
 }
 func (m *DeleteRoutingProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteRoutingProfileResponse.Unmarshal(m, b)
@@ -898,7 +898,7 @@ func (m *DeleteRoutingProfileResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_DeleteRoutingProfileResponse proto.InternalMessageInfo
 
 type CreateDeviceProfileRequest struct {
-	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile" json:"deviceProfile,omitempty"`
+	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile,proto3" json:"deviceProfile,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
 	XXX_sizecache        int32          `json:"-"`
@@ -908,7 +908,7 @@ func (m *CreateDeviceProfileRequest) Reset()         { *m = CreateDeviceProfileR
 func (m *CreateDeviceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateDeviceProfileRequest) ProtoMessage()    {}
 func (*CreateDeviceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{17}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{17}
 }
 func (m *CreateDeviceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDeviceProfileRequest.Unmarshal(m, b)
@@ -936,7 +936,7 @@ func (m *CreateDeviceProfileRequest) GetDeviceProfile() *DeviceProfile {
 }
 
 type CreateDeviceProfileResponse struct {
-	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID" json:"deviceProfileID,omitempty"`
+	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID,proto3" json:"deviceProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -946,7 +946,7 @@ func (m *CreateDeviceProfileResponse) Reset()         { *m = CreateDeviceProfile
 func (m *CreateDeviceProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateDeviceProfileResponse) ProtoMessage()    {}
 func (*CreateDeviceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{18}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{18}
 }
 func (m *CreateDeviceProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDeviceProfileResponse.Unmarshal(m, b)
@@ -974,7 +974,7 @@ func (m *CreateDeviceProfileResponse) GetDeviceProfileID() string {
 }
 
 type GetDeviceProfileRequest struct {
-	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID" json:"deviceProfileID,omitempty"`
+	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID,proto3" json:"deviceProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -984,7 +984,7 @@ func (m *GetDeviceProfileRequest) Reset()         { *m = GetDeviceProfileRequest
 func (m *GetDeviceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceProfileRequest) ProtoMessage()    {}
 func (*GetDeviceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{19}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{19}
 }
 func (m *GetDeviceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceProfileRequest.Unmarshal(m, b)
@@ -1012,9 +1012,9 @@ func (m *GetDeviceProfileRequest) GetDeviceProfileID() string {
 }
 
 type GetDeviceProfileResponse struct {
-	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile" json:"deviceProfile,omitempty"`
-	CreatedAt            string         `protobuf:"bytes,2,opt,name=createdAt" json:"createdAt,omitempty"`
-	UpdatedAt            string         `protobuf:"bytes,3,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile,proto3" json:"deviceProfile,omitempty"`
+	CreatedAt            string         `protobuf:"bytes,2,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	UpdatedAt            string         `protobuf:"bytes,3,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
 	XXX_sizecache        int32          `json:"-"`
@@ -1024,7 +1024,7 @@ func (m *GetDeviceProfileResponse) Reset()         { *m = GetDeviceProfileRespon
 func (m *GetDeviceProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceProfileResponse) ProtoMessage()    {}
 func (*GetDeviceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{20}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{20}
 }
 func (m *GetDeviceProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceProfileResponse.Unmarshal(m, b)
@@ -1066,7 +1066,7 @@ func (m *GetDeviceProfileResponse) GetUpdatedAt() string {
 }
 
 type UpdateDeviceProfileRequest struct {
-	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile" json:"deviceProfile,omitempty"`
+	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile,proto3" json:"deviceProfile,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
 	XXX_sizecache        int32          `json:"-"`
@@ -1076,7 +1076,7 @@ func (m *UpdateDeviceProfileRequest) Reset()         { *m = UpdateDeviceProfileR
 func (m *UpdateDeviceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateDeviceProfileRequest) ProtoMessage()    {}
 func (*UpdateDeviceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{21}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{21}
 }
 func (m *UpdateDeviceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateDeviceProfileRequest.Unmarshal(m, b)
@@ -1113,7 +1113,7 @@ func (m *UpdateDeviceProfileResponse) Reset()         { *m = UpdateDeviceProfile
 func (m *UpdateDeviceProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateDeviceProfileResponse) ProtoMessage()    {}
 func (*UpdateDeviceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{22}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{22}
 }
 func (m *UpdateDeviceProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateDeviceProfileResponse.Unmarshal(m, b)
@@ -1134,7 +1134,7 @@ func (m *UpdateDeviceProfileResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_UpdateDeviceProfileResponse proto.InternalMessageInfo
 
 type DeleteDeviceProfileRequest struct {
-	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID" json:"deviceProfileID,omitempty"`
+	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID,proto3" json:"deviceProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1144,7 +1144,7 @@ func (m *DeleteDeviceProfileRequest) Reset()         { *m = DeleteDeviceProfileR
 func (m *DeleteDeviceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteDeviceProfileRequest) ProtoMessage()    {}
 func (*DeleteDeviceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{23}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{23}
 }
 func (m *DeleteDeviceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteDeviceProfileRequest.Unmarshal(m, b)
@@ -1181,7 +1181,7 @@ func (m *DeleteDeviceProfileResponse) Reset()         { *m = DeleteDeviceProfile
 func (m *DeleteDeviceProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteDeviceProfileResponse) ProtoMessage()    {}
 func (*DeleteDeviceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{24}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{24}
 }
 func (m *DeleteDeviceProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteDeviceProfileResponse.Unmarshal(m, b)
@@ -1203,10 +1203,10 @@ var xxx_messageInfo_DeleteDeviceProfileResponse proto.InternalMessageInfo
 
 type Device struct {
 	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
-	DeviceProfileID      string   `protobuf:"bytes,2,opt,name=deviceProfileID" json:"deviceProfileID,omitempty"`
-	ServiceProfileID     string   `protobuf:"bytes,3,opt,name=serviceProfileID" json:"serviceProfileID,omitempty"`
-	RoutingProfileID     string   `protobuf:"bytes,4,opt,name=routingProfileID" json:"routingProfileID,omitempty"`
-	SkipFCntCheck        bool     `protobuf:"varint,5,opt,name=skipFCntCheck" json:"skipFCntCheck,omitempty"`
+	DeviceProfileID      string   `protobuf:"bytes,2,opt,name=deviceProfileID,proto3" json:"deviceProfileID,omitempty"`
+	ServiceProfileID     string   `protobuf:"bytes,3,opt,name=serviceProfileID,proto3" json:"serviceProfileID,omitempty"`
+	RoutingProfileID     string   `protobuf:"bytes,4,opt,name=routingProfileID,proto3" json:"routingProfileID,omitempty"`
+	SkipFCntCheck        bool     `protobuf:"varint,5,opt,name=skipFCntCheck,proto3" json:"skipFCntCheck,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1216,7 +1216,7 @@ func (m *Device) Reset()         { *m = Device{} }
 func (m *Device) String() string { return proto.CompactTextString(m) }
 func (*Device) ProtoMessage()    {}
 func (*Device) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{25}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{25}
 }
 func (m *Device) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Device.Unmarshal(m, b)
@@ -1272,7 +1272,7 @@ func (m *Device) GetSkipFCntCheck() bool {
 }
 
 type CreateDeviceRequest struct {
-	Device               *Device  `protobuf:"bytes,1,opt,name=device" json:"device,omitempty"`
+	Device               *Device  `protobuf:"bytes,1,opt,name=device,proto3" json:"device,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1282,7 +1282,7 @@ func (m *CreateDeviceRequest) Reset()         { *m = CreateDeviceRequest{} }
 func (m *CreateDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateDeviceRequest) ProtoMessage()    {}
 func (*CreateDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{26}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{26}
 }
 func (m *CreateDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDeviceRequest.Unmarshal(m, b)
@@ -1319,7 +1319,7 @@ func (m *CreateDeviceResponse) Reset()         { *m = CreateDeviceResponse{} }
 func (m *CreateDeviceResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateDeviceResponse) ProtoMessage()    {}
 func (*CreateDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{27}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{27}
 }
 func (m *CreateDeviceResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDeviceResponse.Unmarshal(m, b)
@@ -1350,7 +1350,7 @@ func (m *GetDeviceRequest) Reset()         { *m = GetDeviceRequest{} }
 func (m *GetDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceRequest) ProtoMessage()    {}
 func (*GetDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{28}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{28}
 }
 func (m *GetDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceRequest.Unmarshal(m, b)
@@ -1378,9 +1378,9 @@ func (m *GetDeviceRequest) GetDevEUI() []byte {
 }
 
 type GetDeviceResponse struct {
-	Device               *Device  `protobuf:"bytes,1,opt,name=device" json:"device,omitempty"`
-	CreatedAt            string   `protobuf:"bytes,2,opt,name=createdAt" json:"createdAt,omitempty"`
-	UpdatedAt            string   `protobuf:"bytes,3,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	Device               *Device  `protobuf:"bytes,1,opt,name=device,proto3" json:"device,omitempty"`
+	CreatedAt            string   `protobuf:"bytes,2,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	UpdatedAt            string   `protobuf:"bytes,3,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1390,7 +1390,7 @@ func (m *GetDeviceResponse) Reset()         { *m = GetDeviceResponse{} }
 func (m *GetDeviceResponse) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceResponse) ProtoMessage()    {}
 func (*GetDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{29}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{29}
 }
 func (m *GetDeviceResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceResponse.Unmarshal(m, b)
@@ -1432,7 +1432,7 @@ func (m *GetDeviceResponse) GetUpdatedAt() string {
 }
 
 type UpdateDeviceRequest struct {
-	Device               *Device  `protobuf:"bytes,1,opt,name=device" json:"device,omitempty"`
+	Device               *Device  `protobuf:"bytes,1,opt,name=device,proto3" json:"device,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1442,7 +1442,7 @@ func (m *UpdateDeviceRequest) Reset()         { *m = UpdateDeviceRequest{} }
 func (m *UpdateDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateDeviceRequest) ProtoMessage()    {}
 func (*UpdateDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{30}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{30}
 }
 func (m *UpdateDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateDeviceRequest.Unmarshal(m, b)
@@ -1479,7 +1479,7 @@ func (m *UpdateDeviceResponse) Reset()         { *m = UpdateDeviceResponse{} }
 func (m *UpdateDeviceResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateDeviceResponse) ProtoMessage()    {}
 func (*UpdateDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{31}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{31}
 }
 func (m *UpdateDeviceResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateDeviceResponse.Unmarshal(m, b)
@@ -1510,7 +1510,7 @@ func (m *DeleteDeviceRequest) Reset()         { *m = DeleteDeviceRequest{} }
 func (m *DeleteDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteDeviceRequest) ProtoMessage()    {}
 func (*DeleteDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{32}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{32}
 }
 func (m *DeleteDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteDeviceRequest.Unmarshal(m, b)
@@ -1547,7 +1547,7 @@ func (m *DeleteDeviceResponse) Reset()         { *m = DeleteDeviceResponse{} }
 func (m *DeleteDeviceResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteDeviceResponse) ProtoMessage()    {}
 func (*DeleteDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{33}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{33}
 }
 func (m *DeleteDeviceResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteDeviceResponse.Unmarshal(m, b)
@@ -1572,14 +1572,20 @@ type ActivateDeviceRequest struct {
 	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
 	// The address of the device (4 bytes).
 	DevAddr []byte `protobuf:"bytes,2,opt,name=devAddr,proto3" json:"devAddr,omitempty"`
-	// The network-session key (16 bytes).
-	NwkSKey []byte `protobuf:"bytes,3,opt,name=nwkSKey,proto3" json:"nwkSKey,omitempty"`
+	// SNwkSIntKey (serving network-server session integrity key).
+	SNwkSIntKey []byte `protobuf:"bytes,3,opt,name=sNwkSIntKey,proto3" json:"sNwkSIntKey,omitempty"`
+	// FNwkSIntKey (forwarding network-server session integrity key).
+	FNwkSIntKey []byte `protobuf:"bytes,7,opt,name=fNwkSIntKey,proto3" json:"fNwkSIntKey,omitempty"`
+	// NwkSEncKey (network-server session encryption key).
+	NwkSEncKey []byte `protobuf:"bytes,8,opt,name=nwkSEncKey,proto3" json:"nwkSEncKey,omitempty"`
 	// The next expected uplink frame-counter.
-	FCntUp uint32 `protobuf:"varint,4,opt,name=fCntUp" json:"fCntUp,omitempty"`
-	// The frame-counter used for the next downlink frame.
-	FCntDown uint32 `protobuf:"varint,5,opt,name=fCntDown" json:"fCntDown,omitempty"`
+	FCntUp uint32 `protobuf:"varint,4,opt,name=fCntUp,proto3" json:"fCntUp,omitempty"`
+	// The network frame-counter used for the next downlink frame.
+	NFCntDown uint32 `protobuf:"varint,5,opt,name=nFCntDown,proto3" json:"nFCntDown,omitempty"`
+	// The application frame-counter used for the next downlink frame (LoRaWAN 1.1).
+	AFCntDown uint32 `protobuf:"varint,9,opt,name=aFCntDown,proto3" json:"aFCntDown,omitempty"`
 	// Skip frame-counter checks (this is insecure, but could be helpful for debugging).
-	SkipFCntCheck        bool     `protobuf:"varint,6,opt,name=skipFCntCheck" json:"skipFCntCheck,omitempty"`
+	SkipFCntCheck        bool     `protobuf:"varint,6,opt,name=skipFCntCheck,proto3" json:"skipFCntCheck,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1589,7 +1595,7 @@ func (m *ActivateDeviceRequest) Reset()         { *m = ActivateDeviceRequest{} }
 func (m *ActivateDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*ActivateDeviceRequest) ProtoMessage()    {}
 func (*ActivateDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{34}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{34}
 }
 func (m *ActivateDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ActivateDeviceRequest.Unmarshal(m, b)
@@ -1623,9 +1629,23 @@ func (m *ActivateDeviceRequest) GetDevAddr() []byte {
 	return nil
 }
 
-func (m *ActivateDeviceRequest) GetNwkSKey() []byte {
+func (m *ActivateDeviceRequest) GetSNwkSIntKey() []byte {
 	if m != nil {
-		return m.NwkSKey
+		return m.SNwkSIntKey
+	}
+	return nil
+}
+
+func (m *ActivateDeviceRequest) GetFNwkSIntKey() []byte {
+	if m != nil {
+		return m.FNwkSIntKey
+	}
+	return nil
+}
+
+func (m *ActivateDeviceRequest) GetNwkSEncKey() []byte {
+	if m != nil {
+		return m.NwkSEncKey
 	}
 	return nil
 }
@@ -1637,9 +1657,16 @@ func (m *ActivateDeviceRequest) GetFCntUp() uint32 {
 	return 0
 }
 
-func (m *ActivateDeviceRequest) GetFCntDown() uint32 {
+func (m *ActivateDeviceRequest) GetNFCntDown() uint32 {
 	if m != nil {
-		return m.FCntDown
+		return m.NFCntDown
+	}
+	return 0
+}
+
+func (m *ActivateDeviceRequest) GetAFCntDown() uint32 {
+	if m != nil {
+		return m.AFCntDown
 	}
 	return 0
 }
@@ -1661,7 +1688,7 @@ func (m *ActivateDeviceResponse) Reset()         { *m = ActivateDeviceResponse{}
 func (m *ActivateDeviceResponse) String() string { return proto.CompactTextString(m) }
 func (*ActivateDeviceResponse) ProtoMessage()    {}
 func (*ActivateDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{35}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{35}
 }
 func (m *ActivateDeviceResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ActivateDeviceResponse.Unmarshal(m, b)
@@ -1693,7 +1720,7 @@ func (m *DeactivateDeviceRequest) Reset()         { *m = DeactivateDeviceRequest
 func (m *DeactivateDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*DeactivateDeviceRequest) ProtoMessage()    {}
 func (*DeactivateDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{36}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{36}
 }
 func (m *DeactivateDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeactivateDeviceRequest.Unmarshal(m, b)
@@ -1730,7 +1757,7 @@ func (m *DeactivateDeviceResponse) Reset()         { *m = DeactivateDeviceRespon
 func (m *DeactivateDeviceResponse) String() string { return proto.CompactTextString(m) }
 func (*DeactivateDeviceResponse) ProtoMessage()    {}
 func (*DeactivateDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{37}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{37}
 }
 func (m *DeactivateDeviceResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeactivateDeviceResponse.Unmarshal(m, b)
@@ -1762,7 +1789,7 @@ func (m *GetDeviceActivationRequest) Reset()         { *m = GetDeviceActivationR
 func (m *GetDeviceActivationRequest) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceActivationRequest) ProtoMessage()    {}
 func (*GetDeviceActivationRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{38}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{38}
 }
 func (m *GetDeviceActivationRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceActivationRequest.Unmarshal(m, b)
@@ -1792,14 +1819,20 @@ func (m *GetDeviceActivationRequest) GetDevEUI() []byte {
 type GetDeviceActivationResponse struct {
 	// The address of the device (4 bytes).
 	DevAddr []byte `protobuf:"bytes,1,opt,name=devAddr,proto3" json:"devAddr,omitempty"`
-	// The network-session key (16 bytes).
-	NwkSKey []byte `protobuf:"bytes,2,opt,name=nwkSKey,proto3" json:"nwkSKey,omitempty"`
+	// SNwkSIntKey (serving network-server session integrity key).
+	SNwkSIntKey []byte `protobuf:"bytes,2,opt,name=sNwkSIntKey,proto3" json:"sNwkSIntKey,omitempty"`
+	// FNwkSIntKey (forwarding network-server session integrity key).
+	FNwkSIntKey []byte `protobuf:"bytes,6,opt,name=fNwkSIntKey,proto3" json:"fNwkSIntKey,omitempty"`
+	// NwkSEncKey (network-server session encryption key).
+	NwkSEncKey []byte `protobuf:"bytes,7,opt,name=nwkSEncKey,proto3" json:"nwkSEncKey,omitempty"`
 	// The next expected uplink frame-counter.
-	FCntUp uint32 `protobuf:"varint,3,opt,name=fCntUp" json:"fCntUp,omitempty"`
-	// The frame-counter used for the next downlink frame.
-	FCntDown uint32 `protobuf:"varint,4,opt,name=fCntDown" json:"fCntDown,omitempty"`
+	FCntUp uint32 `protobuf:"varint,3,opt,name=fCntUp,proto3" json:"fCntUp,omitempty"`
+	// The network frame-counter used for the next downlink frame.
+	NFCntDown uint32 `protobuf:"varint,4,opt,name=nFCntDown,proto3" json:"nFCntDown,omitempty"`
+	// The application frame-counter used for the next downlink frame (LoRaWAN 1.1).
+	AFCntDown uint32 `protobuf:"varint,8,opt,name=aFCntDown,proto3" json:"aFCntDown,omitempty"`
 	// Skip frame-counter checks (this is insecure, but could be helpful for debugging).
-	SkipFCntCheck        bool     `protobuf:"varint,5,opt,name=skipFCntCheck" json:"skipFCntCheck,omitempty"`
+	SkipFCntCheck        bool     `protobuf:"varint,5,opt,name=skipFCntCheck,proto3" json:"skipFCntCheck,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1809,7 +1842,7 @@ func (m *GetDeviceActivationResponse) Reset()         { *m = GetDeviceActivation
 func (m *GetDeviceActivationResponse) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceActivationResponse) ProtoMessage()    {}
 func (*GetDeviceActivationResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{39}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{39}
 }
 func (m *GetDeviceActivationResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceActivationResponse.Unmarshal(m, b)
@@ -1836,9 +1869,23 @@ func (m *GetDeviceActivationResponse) GetDevAddr() []byte {
 	return nil
 }
 
-func (m *GetDeviceActivationResponse) GetNwkSKey() []byte {
+func (m *GetDeviceActivationResponse) GetSNwkSIntKey() []byte {
 	if m != nil {
-		return m.NwkSKey
+		return m.SNwkSIntKey
+	}
+	return nil
+}
+
+func (m *GetDeviceActivationResponse) GetFNwkSIntKey() []byte {
+	if m != nil {
+		return m.FNwkSIntKey
+	}
+	return nil
+}
+
+func (m *GetDeviceActivationResponse) GetNwkSEncKey() []byte {
+	if m != nil {
+		return m.NwkSEncKey
 	}
 	return nil
 }
@@ -1850,9 +1897,16 @@ func (m *GetDeviceActivationResponse) GetFCntUp() uint32 {
 	return 0
 }
 
-func (m *GetDeviceActivationResponse) GetFCntDown() uint32 {
+func (m *GetDeviceActivationResponse) GetNFCntDown() uint32 {
 	if m != nil {
-		return m.FCntDown
+		return m.NFCntDown
+	}
+	return 0
+}
+
+func (m *GetDeviceActivationResponse) GetAFCntDown() uint32 {
+	if m != nil {
+		return m.AFCntDown
 	}
 	return 0
 }
@@ -1874,7 +1928,7 @@ func (m *GetRandomDevAddrRequest) Reset()         { *m = GetRandomDevAddrRequest
 func (m *GetRandomDevAddrRequest) String() string { return proto.CompactTextString(m) }
 func (*GetRandomDevAddrRequest) ProtoMessage()    {}
 func (*GetRandomDevAddrRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{40}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{40}
 }
 func (m *GetRandomDevAddrRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetRandomDevAddrRequest.Unmarshal(m, b)
@@ -1905,7 +1959,7 @@ func (m *GetRandomDevAddrResponse) Reset()         { *m = GetRandomDevAddrRespon
 func (m *GetRandomDevAddrResponse) String() string { return proto.CompactTextString(m) }
 func (*GetRandomDevAddrResponse) ProtoMessage()    {}
 func (*GetRandomDevAddrResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{41}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{41}
 }
 func (m *GetRandomDevAddrResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetRandomDevAddrResponse.Unmarshal(m, b)
@@ -1936,7 +1990,7 @@ type CreateMACCommandQueueItemRequest struct {
 	// DevEUI of the node.
 	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
 	// Command identifier (specified by the LoRaWAN specs).
-	Cid uint32 `protobuf:"varint,4,opt,name=cid" json:"cid,omitempty"`
+	Cid uint32 `protobuf:"varint,4,opt,name=cid,proto3" json:"cid,omitempty"`
 	// MAC-command(s). In case multiple payloads are defined, then they
 	// are always sent within a single frame.
 	Commands             [][]byte `protobuf:"bytes,5,rep,name=commands,proto3" json:"commands,omitempty"`
@@ -1949,7 +2003,7 @@ func (m *CreateMACCommandQueueItemRequest) Reset()         { *m = CreateMACComma
 func (m *CreateMACCommandQueueItemRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateMACCommandQueueItemRequest) ProtoMessage()    {}
 func (*CreateMACCommandQueueItemRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{42}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{42}
 }
 func (m *CreateMACCommandQueueItemRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateMACCommandQueueItemRequest.Unmarshal(m, b)
@@ -2000,7 +2054,7 @@ func (m *CreateMACCommandQueueItemResponse) Reset()         { *m = CreateMACComm
 func (m *CreateMACCommandQueueItemResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateMACCommandQueueItemResponse) ProtoMessage()    {}
 func (*CreateMACCommandQueueItemResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{43}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{43}
 }
 func (m *CreateMACCommandQueueItemResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateMACCommandQueueItemResponse.Unmarshal(m, b)
@@ -2029,11 +2083,11 @@ type SendProprietaryPayloadRequest struct {
 	GatewayMACs [][]byte `protobuf:"bytes,3,rep,name=gatewayMACs,proto3" json:"gatewayMACs,omitempty"`
 	// Set to true for sending as a gateway, or false for sending as a node.
 	// In the latter case the frame will be received by other gateways.
-	IPol bool `protobuf:"varint,4,opt,name=iPol" json:"iPol,omitempty"`
+	IPol bool `protobuf:"varint,4,opt,name=iPol,proto3" json:"iPol,omitempty"`
 	// Frequency (Hz) to use for the transmission.
-	Frequency uint32 `protobuf:"varint,5,opt,name=frequency" json:"frequency,omitempty"`
+	Frequency uint32 `protobuf:"varint,5,opt,name=frequency,proto3" json:"frequency,omitempty"`
 	// Data-rate to use for the transmission.
-	Dr                   uint32   `protobuf:"varint,6,opt,name=dr" json:"dr,omitempty"`
+	Dr                   uint32   `protobuf:"varint,6,opt,name=dr,proto3" json:"dr,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2043,7 +2097,7 @@ func (m *SendProprietaryPayloadRequest) Reset()         { *m = SendProprietaryPa
 func (m *SendProprietaryPayloadRequest) String() string { return proto.CompactTextString(m) }
 func (*SendProprietaryPayloadRequest) ProtoMessage()    {}
 func (*SendProprietaryPayloadRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{44}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{44}
 }
 func (m *SendProprietaryPayloadRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SendProprietaryPayloadRequest.Unmarshal(m, b)
@@ -2115,7 +2169,7 @@ func (m *SendProprietaryPayloadResponse) Reset()         { *m = SendProprietaryP
 func (m *SendProprietaryPayloadResponse) String() string { return proto.CompactTextString(m) }
 func (*SendProprietaryPayloadResponse) ProtoMessage()    {}
 func (*SendProprietaryPayloadResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{45}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{45}
 }
 func (m *SendProprietaryPayloadResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SendProprietaryPayloadResponse.Unmarshal(m, b)
@@ -2139,17 +2193,17 @@ type CreateGatewayRequest struct {
 	// MAC address of the gateway.
 	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
 	// Name of the gateway.
-	Name string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Description for the gateway.
-	Description string `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	// Latitude of the gateway.
-	Latitude float64 `protobuf:"fixed64,4,opt,name=latitude" json:"latitude,omitempty"`
+	Latitude float64 `protobuf:"fixed64,4,opt,name=latitude,proto3" json:"latitude,omitempty"`
 	// Longitude of the gateway.
-	Longitude float64 `protobuf:"fixed64,5,opt,name=longitude" json:"longitude,omitempty"`
+	Longitude float64 `protobuf:"fixed64,5,opt,name=longitude,proto3" json:"longitude,omitempty"`
 	// Altitude of the gateway.
-	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude" json:"altitude,omitempty"`
+	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude,proto3" json:"altitude,omitempty"`
 	// ID of the gateway-profile (optional).
-	GatewayProfileID     string   `protobuf:"bytes,8,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	GatewayProfileID     string   `protobuf:"bytes,8,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2159,7 +2213,7 @@ func (m *CreateGatewayRequest) Reset()         { *m = CreateGatewayRequest{} }
 func (m *CreateGatewayRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateGatewayRequest) ProtoMessage()    {}
 func (*CreateGatewayRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{46}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{46}
 }
 func (m *CreateGatewayRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateGatewayRequest.Unmarshal(m, b)
@@ -2238,7 +2292,7 @@ func (m *CreateGatewayResponse) Reset()         { *m = CreateGatewayResponse{} }
 func (m *CreateGatewayResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateGatewayResponse) ProtoMessage()    {}
 func (*CreateGatewayResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{47}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{47}
 }
 func (m *CreateGatewayResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateGatewayResponse.Unmarshal(m, b)
@@ -2270,7 +2324,7 @@ func (m *GetGatewayRequest) Reset()         { *m = GetGatewayRequest{} }
 func (m *GetGatewayRequest) String() string { return proto.CompactTextString(m) }
 func (*GetGatewayRequest) ProtoMessage()    {}
 func (*GetGatewayRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{48}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{48}
 }
 func (m *GetGatewayRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetGatewayRequest.Unmarshal(m, b)
@@ -2301,25 +2355,25 @@ type GetGatewayResponse struct {
 	// MAC address of the gateway.
 	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
 	// Name of the gateway.
-	Name string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Description for the gateway.
-	Description string `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	// Latitude of the gateway.
-	Latitude float64 `protobuf:"fixed64,4,opt,name=latitude" json:"latitude,omitempty"`
+	Latitude float64 `protobuf:"fixed64,4,opt,name=latitude,proto3" json:"latitude,omitempty"`
 	// Longitude of the gateway.
-	Longitude float64 `protobuf:"fixed64,5,opt,name=longitude" json:"longitude,omitempty"`
+	Longitude float64 `protobuf:"fixed64,5,opt,name=longitude,proto3" json:"longitude,omitempty"`
 	// Altitude of the gateway.
-	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude" json:"altitude,omitempty"`
+	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude,proto3" json:"altitude,omitempty"`
 	// The timestamp when the gateway was created.
-	CreatedAt string `protobuf:"bytes,7,opt,name=createdAt" json:"createdAt,omitempty"`
+	CreatedAt string `protobuf:"bytes,7,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
 	// The timestamp when the gateway was last updated.
-	UpdatedAt string `protobuf:"bytes,8,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	UpdatedAt string `protobuf:"bytes,8,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
 	// The timestamp when the gateway was first seen.
-	FirstSeenAt string `protobuf:"bytes,9,opt,name=firstSeenAt" json:"firstSeenAt,omitempty"`
+	FirstSeenAt string `protobuf:"bytes,9,opt,name=firstSeenAt,proto3" json:"firstSeenAt,omitempty"`
 	// The timestamp when the gateway was last seen.
-	LastSeenAt string `protobuf:"bytes,10,opt,name=lastSeenAt" json:"lastSeenAt,omitempty"`
+	LastSeenAt string `protobuf:"bytes,10,opt,name=lastSeenAt,proto3" json:"lastSeenAt,omitempty"`
 	// ID of the gateway-profile (optional).
-	GatewayProfileID     string   `protobuf:"bytes,12,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	GatewayProfileID     string   `protobuf:"bytes,12,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2329,7 +2383,7 @@ func (m *GetGatewayResponse) Reset()         { *m = GetGatewayResponse{} }
 func (m *GetGatewayResponse) String() string { return proto.CompactTextString(m) }
 func (*GetGatewayResponse) ProtoMessage()    {}
 func (*GetGatewayResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{49}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{49}
 }
 func (m *GetGatewayResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetGatewayResponse.Unmarshal(m, b)
@@ -2430,17 +2484,17 @@ type UpdateGatewayRequest struct {
 	// MAC address of the gateway.
 	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
 	// Name of the gateway.
-	Name string `protobuf:"bytes,2,opt,name=name" json:"name,omitempty"`
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Description for the gateway.
-	Description string `protobuf:"bytes,3,opt,name=description" json:"description,omitempty"`
+	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	// Latitude of the gateway.
-	Latitude float64 `protobuf:"fixed64,4,opt,name=latitude" json:"latitude,omitempty"`
+	Latitude float64 `protobuf:"fixed64,4,opt,name=latitude,proto3" json:"latitude,omitempty"`
 	// Longitude of the gateway.
-	Longitude float64 `protobuf:"fixed64,5,opt,name=longitude" json:"longitude,omitempty"`
+	Longitude float64 `protobuf:"fixed64,5,opt,name=longitude,proto3" json:"longitude,omitempty"`
 	// Altitude of the gateway.
-	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude" json:"altitude,omitempty"`
+	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude,proto3" json:"altitude,omitempty"`
 	// ID of the gateway-profile.
-	GatewayProfileID     string   `protobuf:"bytes,8,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	GatewayProfileID     string   `protobuf:"bytes,8,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2450,7 +2504,7 @@ func (m *UpdateGatewayRequest) Reset()         { *m = UpdateGatewayRequest{} }
 func (m *UpdateGatewayRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateGatewayRequest) ProtoMessage()    {}
 func (*UpdateGatewayRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{50}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{50}
 }
 func (m *UpdateGatewayRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateGatewayRequest.Unmarshal(m, b)
@@ -2529,7 +2583,7 @@ func (m *UpdateGatewayResponse) Reset()         { *m = UpdateGatewayResponse{} }
 func (m *UpdateGatewayResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateGatewayResponse) ProtoMessage()    {}
 func (*UpdateGatewayResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{51}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{51}
 }
 func (m *UpdateGatewayResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateGatewayResponse.Unmarshal(m, b)
@@ -2561,7 +2615,7 @@ func (m *DeleteGatewayRequest) Reset()         { *m = DeleteGatewayRequest{} }
 func (m *DeleteGatewayRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteGatewayRequest) ProtoMessage()    {}
 func (*DeleteGatewayRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{52}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{52}
 }
 func (m *DeleteGatewayRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteGatewayRequest.Unmarshal(m, b)
@@ -2598,7 +2652,7 @@ func (m *DeleteGatewayResponse) Reset()         { *m = DeleteGatewayResponse{} }
 func (m *DeleteGatewayResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteGatewayResponse) ProtoMessage()    {}
 func (*DeleteGatewayResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{53}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{53}
 }
 func (m *DeleteGatewayResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteGatewayResponse.Unmarshal(m, b)
@@ -2620,15 +2674,15 @@ var xxx_messageInfo_DeleteGatewayResponse proto.InternalMessageInfo
 
 type GatewayStats struct {
 	// Timestamp of the (aggregated) measurement.
-	Timestamp string `protobuf:"bytes,1,opt,name=timestamp" json:"timestamp,omitempty"`
+	Timestamp string `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Packets received by the gateway.
-	RxPacketsReceived int32 `protobuf:"varint,2,opt,name=rxPacketsReceived" json:"rxPacketsReceived,omitempty"`
+	RxPacketsReceived int32 `protobuf:"varint,2,opt,name=rxPacketsReceived,proto3" json:"rxPacketsReceived,omitempty"`
 	// Packets received by the gateway that passed the CRC check.
-	RxPacketsReceivedOK int32 `protobuf:"varint,3,opt,name=rxPacketsReceivedOK" json:"rxPacketsReceivedOK,omitempty"`
+	RxPacketsReceivedOK int32 `protobuf:"varint,3,opt,name=rxPacketsReceivedOK,proto3" json:"rxPacketsReceivedOK,omitempty"`
 	// Packets received by the gateway for transmission.
-	TxPacketsReceived int32 `protobuf:"varint,4,opt,name=txPacketsReceived" json:"txPacketsReceived,omitempty"`
+	TxPacketsReceived int32 `protobuf:"varint,4,opt,name=txPacketsReceived,proto3" json:"txPacketsReceived,omitempty"`
 	// Packets transmitted by the gateway.
-	TxPacketsEmitted     int32    `protobuf:"varint,5,opt,name=txPacketsEmitted" json:"txPacketsEmitted,omitempty"`
+	TxPacketsEmitted     int32    `protobuf:"varint,5,opt,name=txPacketsEmitted,proto3" json:"txPacketsEmitted,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2638,7 +2692,7 @@ func (m *GatewayStats) Reset()         { *m = GatewayStats{} }
 func (m *GatewayStats) String() string { return proto.CompactTextString(m) }
 func (*GatewayStats) ProtoMessage()    {}
 func (*GatewayStats) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{54}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{54}
 }
 func (m *GatewayStats) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GatewayStats.Unmarshal(m, b)
@@ -2697,11 +2751,11 @@ type GetGatewayStatsRequest struct {
 	// MAC address of the gateway.
 	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
 	// Aggregation interval.
-	Interval AggregationInterval `protobuf:"varint,2,opt,name=interval,enum=ns.AggregationInterval" json:"interval,omitempty"`
+	Interval AggregationInterval `protobuf:"varint,2,opt,name=interval,proto3,enum=ns.AggregationInterval" json:"interval,omitempty"`
 	// Timestamp to start from.
-	StartTimestamp string `protobuf:"bytes,3,opt,name=startTimestamp" json:"startTimestamp,omitempty"`
+	StartTimestamp string `protobuf:"bytes,3,opt,name=startTimestamp,proto3" json:"startTimestamp,omitempty"`
 	// Timestamp until to get from.
-	EndTimestamp         string   `protobuf:"bytes,4,opt,name=endTimestamp" json:"endTimestamp,omitempty"`
+	EndTimestamp         string   `protobuf:"bytes,4,opt,name=endTimestamp,proto3" json:"endTimestamp,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2711,7 +2765,7 @@ func (m *GetGatewayStatsRequest) Reset()         { *m = GetGatewayStatsRequest{}
 func (m *GetGatewayStatsRequest) String() string { return proto.CompactTextString(m) }
 func (*GetGatewayStatsRequest) ProtoMessage()    {}
 func (*GetGatewayStatsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{55}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{55}
 }
 func (m *GetGatewayStatsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetGatewayStatsRequest.Unmarshal(m, b)
@@ -2760,7 +2814,7 @@ func (m *GetGatewayStatsRequest) GetEndTimestamp() string {
 }
 
 type GetGatewayStatsResponse struct {
-	Result               []*GatewayStats `protobuf:"bytes,1,rep,name=result" json:"result,omitempty"`
+	Result               []*GatewayStats `protobuf:"bytes,1,rep,name=result,proto3" json:"result,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -2770,7 +2824,7 @@ func (m *GetGatewayStatsResponse) Reset()         { *m = GetGatewayStatsResponse
 func (m *GetGatewayStatsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetGatewayStatsResponse) ProtoMessage()    {}
 func (*GetGatewayStatsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{56}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{56}
 }
 func (m *GetGatewayStatsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetGatewayStatsResponse.Unmarshal(m, b)
@@ -2803,12 +2857,12 @@ type DeviceQueueItem struct {
 	// The encrypted FRMPayload bytes.
 	FrmPayload []byte `protobuf:"bytes,2,opt,name=frmPayload,proto3" json:"frmPayload,omitempty"`
 	// The FCnt of the payload.
-	FCnt uint32 `protobuf:"varint,3,opt,name=fCnt" json:"fCnt,omitempty"`
+	FCnt uint32 `protobuf:"varint,3,opt,name=fCnt,proto3" json:"fCnt,omitempty"`
 	// The FPort of the payload.
-	FPort uint32 `protobuf:"varint,4,opt,name=fPort" json:"fPort,omitempty"`
+	FPort uint32 `protobuf:"varint,4,opt,name=fPort,proto3" json:"fPort,omitempty"`
 	// When set to true, LoRa Server will wait for the device to ack the
 	// received frame.
-	Confirmed            bool     `protobuf:"varint,5,opt,name=confirmed" json:"confirmed,omitempty"`
+	Confirmed            bool     `protobuf:"varint,5,opt,name=confirmed,proto3" json:"confirmed,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2818,7 +2872,7 @@ func (m *DeviceQueueItem) Reset()         { *m = DeviceQueueItem{} }
 func (m *DeviceQueueItem) String() string { return proto.CompactTextString(m) }
 func (*DeviceQueueItem) ProtoMessage()    {}
 func (*DeviceQueueItem) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{57}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{57}
 }
 func (m *DeviceQueueItem) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeviceQueueItem.Unmarshal(m, b)
@@ -2874,7 +2928,7 @@ func (m *DeviceQueueItem) GetConfirmed() bool {
 }
 
 type CreateDeviceQueueItemRequest struct {
-	Item                 *DeviceQueueItem `protobuf:"bytes,1,opt,name=item" json:"item,omitempty"`
+	Item                 *DeviceQueueItem `protobuf:"bytes,1,opt,name=item,proto3" json:"item,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}         `json:"-"`
 	XXX_unrecognized     []byte           `json:"-"`
 	XXX_sizecache        int32            `json:"-"`
@@ -2884,7 +2938,7 @@ func (m *CreateDeviceQueueItemRequest) Reset()         { *m = CreateDeviceQueueI
 func (m *CreateDeviceQueueItemRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateDeviceQueueItemRequest) ProtoMessage()    {}
 func (*CreateDeviceQueueItemRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{58}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{58}
 }
 func (m *CreateDeviceQueueItemRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDeviceQueueItemRequest.Unmarshal(m, b)
@@ -2921,7 +2975,7 @@ func (m *CreateDeviceQueueItemResponse) Reset()         { *m = CreateDeviceQueue
 func (m *CreateDeviceQueueItemResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateDeviceQueueItemResponse) ProtoMessage()    {}
 func (*CreateDeviceQueueItemResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{59}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{59}
 }
 func (m *CreateDeviceQueueItemResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDeviceQueueItemResponse.Unmarshal(m, b)
@@ -2953,7 +3007,7 @@ func (m *FlushDeviceQueueForDevEUIRequest) Reset()         { *m = FlushDeviceQue
 func (m *FlushDeviceQueueForDevEUIRequest) String() string { return proto.CompactTextString(m) }
 func (*FlushDeviceQueueForDevEUIRequest) ProtoMessage()    {}
 func (*FlushDeviceQueueForDevEUIRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{60}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{60}
 }
 func (m *FlushDeviceQueueForDevEUIRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FlushDeviceQueueForDevEUIRequest.Unmarshal(m, b)
@@ -2990,7 +3044,7 @@ func (m *FlushDeviceQueueForDevEUIResponse) Reset()         { *m = FlushDeviceQu
 func (m *FlushDeviceQueueForDevEUIResponse) String() string { return proto.CompactTextString(m) }
 func (*FlushDeviceQueueForDevEUIResponse) ProtoMessage()    {}
 func (*FlushDeviceQueueForDevEUIResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{61}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{61}
 }
 func (m *FlushDeviceQueueForDevEUIResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FlushDeviceQueueForDevEUIResponse.Unmarshal(m, b)
@@ -3022,7 +3076,7 @@ func (m *GetDeviceQueueItemsForDevEUIRequest) Reset()         { *m = GetDeviceQu
 func (m *GetDeviceQueueItemsForDevEUIRequest) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceQueueItemsForDevEUIRequest) ProtoMessage()    {}
 func (*GetDeviceQueueItemsForDevEUIRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{62}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{62}
 }
 func (m *GetDeviceQueueItemsForDevEUIRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceQueueItemsForDevEUIRequest.Unmarshal(m, b)
@@ -3050,7 +3104,7 @@ func (m *GetDeviceQueueItemsForDevEUIRequest) GetDevEUI() []byte {
 }
 
 type GetDeviceQueueItemsForDevEUIResponse struct {
-	Items                []*DeviceQueueItem `protobuf:"bytes,1,rep,name=items" json:"items,omitempty"`
+	Items                []*DeviceQueueItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
 	XXX_sizecache        int32              `json:"-"`
@@ -3060,7 +3114,7 @@ func (m *GetDeviceQueueItemsForDevEUIResponse) Reset()         { *m = GetDeviceQ
 func (m *GetDeviceQueueItemsForDevEUIResponse) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceQueueItemsForDevEUIResponse) ProtoMessage()    {}
 func (*GetDeviceQueueItemsForDevEUIResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{63}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{63}
 }
 func (m *GetDeviceQueueItemsForDevEUIResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceQueueItemsForDevEUIResponse.Unmarshal(m, b)
@@ -3099,7 +3153,7 @@ func (m *GetNextDownlinkFCntForDevEUIRequest) Reset()         { *m = GetNextDown
 func (m *GetNextDownlinkFCntForDevEUIRequest) String() string { return proto.CompactTextString(m) }
 func (*GetNextDownlinkFCntForDevEUIRequest) ProtoMessage()    {}
 func (*GetNextDownlinkFCntForDevEUIRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{64}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{64}
 }
 func (m *GetNextDownlinkFCntForDevEUIRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetNextDownlinkFCntForDevEUIRequest.Unmarshal(m, b)
@@ -3128,7 +3182,7 @@ func (m *GetNextDownlinkFCntForDevEUIRequest) GetDevEUI() []byte {
 
 type GetNextDownlinkFCntForDevEUIResponse struct {
 	// The frame-counter to use.
-	FCnt                 uint32   `protobuf:"varint,1,opt,name=fCnt" json:"fCnt,omitempty"`
+	FCnt                 uint32   `protobuf:"varint,1,opt,name=fCnt,proto3" json:"fCnt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3138,7 +3192,7 @@ func (m *GetNextDownlinkFCntForDevEUIResponse) Reset()         { *m = GetNextDow
 func (m *GetNextDownlinkFCntForDevEUIResponse) String() string { return proto.CompactTextString(m) }
 func (*GetNextDownlinkFCntForDevEUIResponse) ProtoMessage()    {}
 func (*GetNextDownlinkFCntForDevEUIResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{65}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{65}
 }
 func (m *GetNextDownlinkFCntForDevEUIResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetNextDownlinkFCntForDevEUIResponse.Unmarshal(m, b)
@@ -3177,7 +3231,7 @@ func (m *StreamFrameLogsForGatewayRequest) Reset()         { *m = StreamFrameLog
 func (m *StreamFrameLogsForGatewayRequest) String() string { return proto.CompactTextString(m) }
 func (*StreamFrameLogsForGatewayRequest) ProtoMessage()    {}
 func (*StreamFrameLogsForGatewayRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{66}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{66}
 }
 func (m *StreamFrameLogsForGatewayRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StreamFrameLogsForGatewayRequest.Unmarshal(m, b)
@@ -3206,9 +3260,9 @@ func (m *StreamFrameLogsForGatewayRequest) GetMac() []byte {
 
 type StreamFrameLogsForGatewayResponse struct {
 	// Contains zero or one uplink frame.
-	UplinkFrames []*UplinkFrameLog `protobuf:"bytes,1,rep,name=uplinkFrames" json:"uplinkFrames,omitempty"`
+	UplinkFrames []*UplinkFrameLog `protobuf:"bytes,1,rep,name=uplinkFrames,proto3" json:"uplinkFrames,omitempty"`
 	// Contains zero or one downlink frame.
-	DownlinkFrames       []*DownlinkFrameLog `protobuf:"bytes,2,rep,name=downlinkFrames" json:"downlinkFrames,omitempty"`
+	DownlinkFrames       []*DownlinkFrameLog `protobuf:"bytes,2,rep,name=downlinkFrames,proto3" json:"downlinkFrames,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
 	XXX_unrecognized     []byte              `json:"-"`
 	XXX_sizecache        int32               `json:"-"`
@@ -3218,7 +3272,7 @@ func (m *StreamFrameLogsForGatewayResponse) Reset()         { *m = StreamFrameLo
 func (m *StreamFrameLogsForGatewayResponse) String() string { return proto.CompactTextString(m) }
 func (*StreamFrameLogsForGatewayResponse) ProtoMessage()    {}
 func (*StreamFrameLogsForGatewayResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{67}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{67}
 }
 func (m *StreamFrameLogsForGatewayResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StreamFrameLogsForGatewayResponse.Unmarshal(m, b)
@@ -3264,7 +3318,7 @@ func (m *StreamFrameLogsForDeviceRequest) Reset()         { *m = StreamFrameLogs
 func (m *StreamFrameLogsForDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*StreamFrameLogsForDeviceRequest) ProtoMessage()    {}
 func (*StreamFrameLogsForDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{68}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{68}
 }
 func (m *StreamFrameLogsForDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StreamFrameLogsForDeviceRequest.Unmarshal(m, b)
@@ -3293,9 +3347,9 @@ func (m *StreamFrameLogsForDeviceRequest) GetDevEUI() []byte {
 
 type StreamFrameLogsForDeviceResponse struct {
 	// Contains zero or one uplink frame.
-	UplinkFrames []*UplinkFrameLog `protobuf:"bytes,1,rep,name=uplinkFrames" json:"uplinkFrames,omitempty"`
+	UplinkFrames []*UplinkFrameLog `protobuf:"bytes,1,rep,name=uplinkFrames,proto3" json:"uplinkFrames,omitempty"`
 	// Contains zero or one downlink frame.
-	DownlinkFrames       []*DownlinkFrameLog `protobuf:"bytes,2,rep,name=downlinkFrames" json:"downlinkFrames,omitempty"`
+	DownlinkFrames       []*DownlinkFrameLog `protobuf:"bytes,2,rep,name=downlinkFrames,proto3" json:"downlinkFrames,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
 	XXX_unrecognized     []byte              `json:"-"`
 	XXX_sizecache        int32               `json:"-"`
@@ -3305,7 +3359,7 @@ func (m *StreamFrameLogsForDeviceResponse) Reset()         { *m = StreamFrameLog
 func (m *StreamFrameLogsForDeviceResponse) String() string { return proto.CompactTextString(m) }
 func (*StreamFrameLogsForDeviceResponse) ProtoMessage()    {}
 func (*StreamFrameLogsForDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{69}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{69}
 }
 func (m *StreamFrameLogsForDeviceResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StreamFrameLogsForDeviceResponse.Unmarshal(m, b)
@@ -3341,13 +3395,13 @@ func (m *StreamFrameLogsForDeviceResponse) GetDownlinkFrames() []*DownlinkFrameL
 
 type DataRate struct {
 	// The used modulation (LORA or FSK).
-	Modulation string `protobuf:"bytes,1,opt,name=modulation" json:"modulation,omitempty"`
+	Modulation string `protobuf:"bytes,1,opt,name=modulation,proto3" json:"modulation,omitempty"`
 	// Bandwidth (in kHz).
-	Bandwidth uint32 `protobuf:"varint,2,opt,name=bandwidth" json:"bandwidth,omitempty"`
+	Bandwidth uint32 `protobuf:"varint,2,opt,name=bandwidth,proto3" json:"bandwidth,omitempty"`
 	// Used spread-factor.
-	SpreadFactor uint32 `protobuf:"varint,3,opt,name=spreadFactor" json:"spreadFactor,omitempty"`
+	SpreadFactor uint32 `protobuf:"varint,3,opt,name=spreadFactor,proto3" json:"spreadFactor,omitempty"`
 	// Bitrate (used for FSK modulation).
-	Bitrate              uint32   `protobuf:"varint,4,opt,name=bitrate" json:"bitrate,omitempty"`
+	Bitrate              uint32   `protobuf:"varint,4,opt,name=bitrate,proto3" json:"bitrate,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3357,7 +3411,7 @@ func (m *DataRate) Reset()         { *m = DataRate{} }
 func (m *DataRate) String() string { return proto.CompactTextString(m) }
 func (*DataRate) ProtoMessage()    {}
 func (*DataRate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{70}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{70}
 }
 func (m *DataRate) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DataRate.Unmarshal(m, b)
@@ -3407,11 +3461,11 @@ func (m *DataRate) GetBitrate() uint32 {
 
 type UplinkTXInfo struct {
 	// TX frequency (in Hz).
-	Frequency uint32 `protobuf:"varint,1,opt,name=frequency" json:"frequency,omitempty"`
+	Frequency uint32 `protobuf:"varint,1,opt,name=frequency,proto3" json:"frequency,omitempty"`
 	// Data-rate.
-	DataRate *DataRate `protobuf:"bytes,2,opt,name=dataRate" json:"dataRate,omitempty"`
+	DataRate *DataRate `protobuf:"bytes,2,opt,name=dataRate,proto3" json:"dataRate,omitempty"`
 	// Code rate.
-	CodeRate             string   `protobuf:"bytes,3,opt,name=codeRate" json:"codeRate,omitempty"`
+	CodeRate             string   `protobuf:"bytes,3,opt,name=codeRate,proto3" json:"codeRate,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3421,7 +3475,7 @@ func (m *UplinkTXInfo) Reset()         { *m = UplinkTXInfo{} }
 func (m *UplinkTXInfo) String() string { return proto.CompactTextString(m) }
 func (*UplinkTXInfo) ProtoMessage()    {}
 func (*UplinkTXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{71}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{71}
 }
 func (m *UplinkTXInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UplinkTXInfo.Unmarshal(m, b)
@@ -3466,19 +3520,19 @@ type UplinkRXInfo struct {
 	// Gateway MAC.
 	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
 	// Time when the frame was received (if available).
-	Time string `protobuf:"bytes,2,opt,name=time" json:"time,omitempty"`
+	Time string `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
 	// Time when the frame was received as time since GPS epoch (if available).
-	TimeSinceGPSEpoch string `protobuf:"bytes,3,opt,name=timeSinceGPSEpoch" json:"timeSinceGPSEpoch,omitempty"`
+	TimeSinceGPSEpoch string `protobuf:"bytes,3,opt,name=timeSinceGPSEpoch,proto3" json:"timeSinceGPSEpoch,omitempty"`
 	// Gateway internal timestamp.
-	Timestamp uint32 `protobuf:"varint,4,opt,name=timestamp" json:"timestamp,omitempty"`
+	Timestamp uint32 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// RSSI.
-	Rssi int32 `protobuf:"varint,5,opt,name=rssi" json:"rssi,omitempty"`
+	Rssi int32 `protobuf:"varint,5,opt,name=rssi,proto3" json:"rssi,omitempty"`
 	// LoRa SNR.
-	LoRaSNR float32 `protobuf:"fixed32,6,opt,name=loRaSNR" json:"loRaSNR,omitempty"`
+	LoRaSNR float32 `protobuf:"fixed32,6,opt,name=loRaSNR,proto3" json:"loRaSNR,omitempty"`
 	// The board identifier that received the uplink frame.
-	Board uint32 `protobuf:"varint,7,opt,name=board" json:"board,omitempty"`
+	Board uint32 `protobuf:"varint,7,opt,name=board,proto3" json:"board,omitempty"`
 	// THe antenna identifier that received the uplink frame.
-	Antenna              uint32   `protobuf:"varint,8,opt,name=antenna" json:"antenna,omitempty"`
+	Antenna              uint32   `protobuf:"varint,8,opt,name=antenna,proto3" json:"antenna,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3488,7 +3542,7 @@ func (m *UplinkRXInfo) Reset()         { *m = UplinkRXInfo{} }
 func (m *UplinkRXInfo) String() string { return proto.CompactTextString(m) }
 func (*UplinkRXInfo) ProtoMessage()    {}
 func (*UplinkRXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{72}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{72}
 }
 func (m *UplinkRXInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UplinkRXInfo.Unmarshal(m, b)
@@ -3566,9 +3620,9 @@ func (m *UplinkRXInfo) GetAntenna() uint32 {
 
 type UplinkFrameLog struct {
 	// TX information of the uplink.
-	TxInfo *UplinkTXInfo `protobuf:"bytes,1,opt,name=txInfo" json:"txInfo,omitempty"`
+	TxInfo *UplinkTXInfo `protobuf:"bytes,1,opt,name=txInfo,proto3" json:"txInfo,omitempty"`
 	// RX information of the uplink.
-	RxInfo []*UplinkRXInfo `protobuf:"bytes,2,rep,name=rxInfo" json:"rxInfo,omitempty"`
+	RxInfo []*UplinkRXInfo `protobuf:"bytes,2,rep,name=rxInfo,proto3" json:"rxInfo,omitempty"`
 	// LoRaWAN PHYPayload.
 	PhyPayload           []byte   `protobuf:"bytes,3,opt,name=phyPayload,proto3" json:"phyPayload,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -3580,7 +3634,7 @@ func (m *UplinkFrameLog) Reset()         { *m = UplinkFrameLog{} }
 func (m *UplinkFrameLog) String() string { return proto.CompactTextString(m) }
 func (*UplinkFrameLog) ProtoMessage()    {}
 func (*UplinkFrameLog) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{73}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{73}
 }
 func (m *UplinkFrameLog) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UplinkFrameLog.Unmarshal(m, b)
@@ -3625,25 +3679,25 @@ type DownlinkTXInfo struct {
 	// Gateway MAC.
 	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
 	// Frame must be sent immediately.
-	Immediately bool `protobuf:"varint,2,opt,name=immediately" json:"immediately,omitempty"`
+	Immediately bool `protobuf:"varint,2,opt,name=immediately,proto3" json:"immediately,omitempty"`
 	// Transmit frame at the given time since GPS epoch.
-	TimeSinceGPSEpoch string `protobuf:"bytes,3,opt,name=timeSinceGPSEpoch" json:"timeSinceGPSEpoch,omitempty"`
+	TimeSinceGPSEpoch string `protobuf:"bytes,3,opt,name=timeSinceGPSEpoch,proto3" json:"timeSinceGPSEpoch,omitempty"`
 	// Transmit the frame at the given gateway internal timestamp.
-	Timestamp uint32 `protobuf:"varint,4,opt,name=timestamp" json:"timestamp,omitempty"`
+	Timestamp uint32 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// TX frequency (in Hz).
-	Frequency uint32 `protobuf:"varint,5,opt,name=frequency" json:"frequency,omitempty"`
+	Frequency uint32 `protobuf:"varint,5,opt,name=frequency,proto3" json:"frequency,omitempty"`
 	// TX power (in dBm).
-	Power int32 `protobuf:"varint,6,opt,name=power" json:"power,omitempty"`
+	Power int32 `protobuf:"varint,6,opt,name=power,proto3" json:"power,omitempty"`
 	// Data-rate.
-	DataRate *DataRate `protobuf:"bytes,7,opt,name=dataRate" json:"dataRate,omitempty"`
+	DataRate *DataRate `protobuf:"bytes,7,opt,name=dataRate,proto3" json:"dataRate,omitempty"`
 	// Code rate.
-	CodeRate string `protobuf:"bytes,8,opt,name=codeRate" json:"codeRate,omitempty"`
+	CodeRate string `protobuf:"bytes,8,opt,name=codeRate,proto3" json:"codeRate,omitempty"`
 	// Lora modulation polarization inversion.
-	IPol bool `protobuf:"varint,9,opt,name=iPol" json:"iPol,omitempty"`
+	IPol bool `protobuf:"varint,9,opt,name=iPol,proto3" json:"iPol,omitempty"`
 	// The board identifier that received the uplink frame.
-	Board uint32 `protobuf:"varint,10,opt,name=board" json:"board,omitempty"`
+	Board uint32 `protobuf:"varint,10,opt,name=board,proto3" json:"board,omitempty"`
 	// THe antenna identifier that received the uplink frame.
-	Antenna              uint32   `protobuf:"varint,11,opt,name=antenna" json:"antenna,omitempty"`
+	Antenna              uint32   `protobuf:"varint,11,opt,name=antenna,proto3" json:"antenna,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3653,7 +3707,7 @@ func (m *DownlinkTXInfo) Reset()         { *m = DownlinkTXInfo{} }
 func (m *DownlinkTXInfo) String() string { return proto.CompactTextString(m) }
 func (*DownlinkTXInfo) ProtoMessage()    {}
 func (*DownlinkTXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{74}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{74}
 }
 func (m *DownlinkTXInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DownlinkTXInfo.Unmarshal(m, b)
@@ -3752,7 +3806,7 @@ func (m *DownlinkTXInfo) GetAntenna() uint32 {
 
 type DownlinkFrameLog struct {
 	// TX information of the downlink.
-	TxInfo *DownlinkTXInfo `protobuf:"bytes,1,opt,name=txInfo" json:"txInfo,omitempty"`
+	TxInfo *DownlinkTXInfo `protobuf:"bytes,1,opt,name=txInfo,proto3" json:"txInfo,omitempty"`
 	// LoRaWAN PHYPayload.
 	PhyPayload           []byte   `protobuf:"bytes,2,opt,name=phyPayload,proto3" json:"phyPayload,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -3764,7 +3818,7 @@ func (m *DownlinkFrameLog) Reset()         { *m = DownlinkFrameLog{} }
 func (m *DownlinkFrameLog) String() string { return proto.CompactTextString(m) }
 func (*DownlinkFrameLog) ProtoMessage()    {}
 func (*DownlinkFrameLog) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{75}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{75}
 }
 func (m *DownlinkFrameLog) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DownlinkFrameLog.Unmarshal(m, b)
@@ -3808,7 +3862,7 @@ func (m *GetVersionRequest) Reset()         { *m = GetVersionRequest{} }
 func (m *GetVersionRequest) String() string { return proto.CompactTextString(m) }
 func (*GetVersionRequest) ProtoMessage()    {}
 func (*GetVersionRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{76}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{76}
 }
 func (m *GetVersionRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetVersionRequest.Unmarshal(m, b)
@@ -3830,9 +3884,9 @@ var xxx_messageInfo_GetVersionRequest proto.InternalMessageInfo
 
 type GetVersionResponse struct {
 	// LoRa Server version.
-	Version string `protobuf:"bytes,1,opt,name=version" json:"version,omitempty"`
+	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	// Region configured for this network-server.
-	Region               Region   `protobuf:"varint,2,opt,name=region,enum=ns.Region" json:"region,omitempty"`
+	Region               Region   `protobuf:"varint,2,opt,name=region,proto3,enum=ns.Region" json:"region,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3842,7 +3896,7 @@ func (m *GetVersionResponse) Reset()         { *m = GetVersionResponse{} }
 func (m *GetVersionResponse) String() string { return proto.CompactTextString(m) }
 func (*GetVersionResponse) ProtoMessage()    {}
 func (*GetVersionResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{77}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{77}
 }
 func (m *GetVersionResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetVersionResponse.Unmarshal(m, b)
@@ -3878,13 +3932,13 @@ func (m *GetVersionResponse) GetRegion() Region {
 
 type GatewayProfile struct {
 	// ID of the gateway-profile.
-	GatewayProfileID string `protobuf:"bytes,1,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	GatewayProfileID string `protobuf:"bytes,1,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
 	// Default channels (channels specified by the LoRaWAN Regional Parameters
 	// specification) enabled for this configuration.
-	Channels []uint32 `protobuf:"varint,2,rep,packed,name=channels" json:"channels,omitempty"`
+	Channels []uint32 `protobuf:"varint,2,rep,packed,name=channels,proto3" json:"channels,omitempty"`
 	// Extra channels added to the channel-configuration (in case the LoRaWAN
 	// region supports adding custom channels).
-	ExtraChannels        []*GatewayProfileExtraChannel `protobuf:"bytes,3,rep,name=extraChannels" json:"extraChannels,omitempty"`
+	ExtraChannels        []*GatewayProfileExtraChannel `protobuf:"bytes,3,rep,name=extraChannels,proto3" json:"extraChannels,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
 	XXX_unrecognized     []byte                        `json:"-"`
 	XXX_sizecache        int32                         `json:"-"`
@@ -3894,7 +3948,7 @@ func (m *GatewayProfile) Reset()         { *m = GatewayProfile{} }
 func (m *GatewayProfile) String() string { return proto.CompactTextString(m) }
 func (*GatewayProfile) ProtoMessage()    {}
 func (*GatewayProfile) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{78}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{78}
 }
 func (m *GatewayProfile) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GatewayProfile.Unmarshal(m, b)
@@ -3937,15 +3991,15 @@ func (m *GatewayProfile) GetExtraChannels() []*GatewayProfileExtraChannel {
 
 type GatewayProfileExtraChannel struct {
 	// Modulation.
-	Modulation Modulation `protobuf:"varint,1,opt,name=modulation,enum=ns.Modulation" json:"modulation,omitempty"`
+	Modulation Modulation `protobuf:"varint,1,opt,name=modulation,proto3,enum=ns.Modulation" json:"modulation,omitempty"`
 	// Frequency.
-	Frequency uint32 `protobuf:"varint,2,opt,name=frequency" json:"frequency,omitempty"`
+	Frequency uint32 `protobuf:"varint,2,opt,name=frequency,proto3" json:"frequency,omitempty"`
 	// Bandwidth.
-	Bandwidth uint32 `protobuf:"varint,3,opt,name=bandwidth" json:"bandwidth,omitempty"`
+	Bandwidth uint32 `protobuf:"varint,3,opt,name=bandwidth,proto3" json:"bandwidth,omitempty"`
 	// Bitrate (in case of FSK modulation).
-	Bitrate uint32 `protobuf:"varint,4,opt,name=bitrate" json:"bitrate,omitempty"`
+	Bitrate uint32 `protobuf:"varint,4,opt,name=bitrate,proto3" json:"bitrate,omitempty"`
 	// Spreading factors (in case of LoRa modulation).
-	SpreadingFactors     []uint32 `protobuf:"varint,5,rep,packed,name=spreadingFactors" json:"spreadingFactors,omitempty"`
+	SpreadingFactors     []uint32 `protobuf:"varint,5,rep,packed,name=spreadingFactors,proto3" json:"spreadingFactors,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3955,7 +4009,7 @@ func (m *GatewayProfileExtraChannel) Reset()         { *m = GatewayProfileExtraC
 func (m *GatewayProfileExtraChannel) String() string { return proto.CompactTextString(m) }
 func (*GatewayProfileExtraChannel) ProtoMessage()    {}
 func (*GatewayProfileExtraChannel) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{79}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{79}
 }
 func (m *GatewayProfileExtraChannel) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GatewayProfileExtraChannel.Unmarshal(m, b)
@@ -4011,7 +4065,7 @@ func (m *GatewayProfileExtraChannel) GetSpreadingFactors() []uint32 {
 }
 
 type CreateGatewayProfileRequest struct {
-	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile" json:"gatewayProfile,omitempty"`
+	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile,proto3" json:"gatewayProfile,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -4021,7 +4075,7 @@ func (m *CreateGatewayProfileRequest) Reset()         { *m = CreateGatewayProfil
 func (m *CreateGatewayProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateGatewayProfileRequest) ProtoMessage()    {}
 func (*CreateGatewayProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{80}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{80}
 }
 func (m *CreateGatewayProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateGatewayProfileRequest.Unmarshal(m, b)
@@ -4050,7 +4104,7 @@ func (m *CreateGatewayProfileRequest) GetGatewayProfile() *GatewayProfile {
 
 type CreateGatewayProfileResponse struct {
 	// ID of the create configuration object.
-	GatewayProfileID     string   `protobuf:"bytes,1,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	GatewayProfileID     string   `protobuf:"bytes,1,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -4060,7 +4114,7 @@ func (m *CreateGatewayProfileResponse) Reset()         { *m = CreateGatewayProfi
 func (m *CreateGatewayProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateGatewayProfileResponse) ProtoMessage()    {}
 func (*CreateGatewayProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{81}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{81}
 }
 func (m *CreateGatewayProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateGatewayProfileResponse.Unmarshal(m, b)
@@ -4089,7 +4143,7 @@ func (m *CreateGatewayProfileResponse) GetGatewayProfileID() string {
 
 type GetGatewayProfileRequest struct {
 	// ID of the gateway-profile.
-	GatewayProfileID     string   `protobuf:"bytes,1,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	GatewayProfileID     string   `protobuf:"bytes,1,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -4099,7 +4153,7 @@ func (m *GetGatewayProfileRequest) Reset()         { *m = GetGatewayProfileReque
 func (m *GetGatewayProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*GetGatewayProfileRequest) ProtoMessage()    {}
 func (*GetGatewayProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{82}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{82}
 }
 func (m *GetGatewayProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetGatewayProfileRequest.Unmarshal(m, b)
@@ -4127,9 +4181,9 @@ func (m *GetGatewayProfileRequest) GetGatewayProfileID() string {
 }
 
 type GetGatewayProfileResponse struct {
-	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile" json:"gatewayProfile,omitempty"`
-	CreatedAt            string          `protobuf:"bytes,2,opt,name=createdAt" json:"createdAt,omitempty"`
-	UpdatedAt            string          `protobuf:"bytes,3,opt,name=updatedAt" json:"updatedAt,omitempty"`
+	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile,proto3" json:"gatewayProfile,omitempty"`
+	CreatedAt            string          `protobuf:"bytes,2,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
+	UpdatedAt            string          `protobuf:"bytes,3,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -4139,7 +4193,7 @@ func (m *GetGatewayProfileResponse) Reset()         { *m = GetGatewayProfileResp
 func (m *GetGatewayProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*GetGatewayProfileResponse) ProtoMessage()    {}
 func (*GetGatewayProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{83}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{83}
 }
 func (m *GetGatewayProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetGatewayProfileResponse.Unmarshal(m, b)
@@ -4181,7 +4235,7 @@ func (m *GetGatewayProfileResponse) GetUpdatedAt() string {
 }
 
 type UpdateGatewayProfileRequest struct {
-	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile" json:"gatewayProfile,omitempty"`
+	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile,proto3" json:"gatewayProfile,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -4191,7 +4245,7 @@ func (m *UpdateGatewayProfileRequest) Reset()         { *m = UpdateGatewayProfil
 func (m *UpdateGatewayProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateGatewayProfileRequest) ProtoMessage()    {}
 func (*UpdateGatewayProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{84}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{84}
 }
 func (m *UpdateGatewayProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateGatewayProfileRequest.Unmarshal(m, b)
@@ -4228,7 +4282,7 @@ func (m *UpdateGatewayProfileResponse) Reset()         { *m = UpdateGatewayProfi
 func (m *UpdateGatewayProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*UpdateGatewayProfileResponse) ProtoMessage()    {}
 func (*UpdateGatewayProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{85}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{85}
 }
 func (m *UpdateGatewayProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateGatewayProfileResponse.Unmarshal(m, b)
@@ -4250,7 +4304,7 @@ var xxx_messageInfo_UpdateGatewayProfileResponse proto.InternalMessageInfo
 
 type DeleteGatewayProfileRequest struct {
 	// ID of the gateway-profile.
-	GatewayProfileID     string   `protobuf:"bytes,1,opt,name=gatewayProfileID" json:"gatewayProfileID,omitempty"`
+	GatewayProfileID     string   `protobuf:"bytes,1,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -4260,7 +4314,7 @@ func (m *DeleteGatewayProfileRequest) Reset()         { *m = DeleteGatewayProfil
 func (m *DeleteGatewayProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteGatewayProfileRequest) ProtoMessage()    {}
 func (*DeleteGatewayProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{86}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{86}
 }
 func (m *DeleteGatewayProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteGatewayProfileRequest.Unmarshal(m, b)
@@ -4297,7 +4351,7 @@ func (m *DeleteGatewayProfileResponse) Reset()         { *m = DeleteGatewayProfi
 func (m *DeleteGatewayProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*DeleteGatewayProfileResponse) ProtoMessage()    {}
 func (*DeleteGatewayProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_770bce08f57c8931, []int{87}
+	return fileDescriptor_ns_516b99e4b39d9522, []int{87}
 }
 func (m *DeleteGatewayProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteGatewayProfileResponse.Unmarshal(m, b)
@@ -4899,8 +4953,7 @@ func (c *networkServerClient) GetVersion(ctx context.Context, in *GetVersionRequ
 	return out, nil
 }
 
-// Server API for NetworkServer service
-
+// NetworkServerServer is the server API for NetworkServer service.
 type NetworkServerServer interface {
 	// CreateServiceProfile creates the given service-profile.
 	CreateServiceProfile(context.Context, *CreateServiceProfileRequest) (*CreateServiceProfileResponse, error)
@@ -5839,186 +5892,190 @@ var _NetworkServer_serviceDesc = grpc.ServiceDesc{
 	Metadata: "ns.proto",
 }
 
-func init() { proto.RegisterFile("ns.proto", fileDescriptor_ns_770bce08f57c8931) }
+func init() { proto.RegisterFile("ns.proto", fileDescriptor_ns_516b99e4b39d9522) }
 
-var fileDescriptor_ns_770bce08f57c8931 = []byte{
-	// 2846 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x1a, 0x4d, 0x6f, 0xdb, 0xc8,
-	0xd5, 0x94, 0x2c, 0x5b, 0x7e, 0xb6, 0xb4, 0xdc, 0x71, 0xe2, 0xc8, 0x8a, 0x3f, 0x14, 0x26, 0xdb,
-	0x75, 0x8d, 0x36, 0xc8, 0x3a, 0xde, 0x24, 0x0e, 0xba, 0x07, 0x41, 0xb2, 0xbd, 0x6e, 0x12, 0xdb,
-	0x3b, 0xb2, 0xba, 0x59, 0x04, 0x58, 0x80, 0x11, 0xc7, 0x36, 0x6b, 0x89, 0x54, 0x49, 0xda, 0x4e,
-	0xce, 0x2d, 0x7a, 0x2d, 0x8a, 0x5e, 0xda, 0x4b, 0x2f, 0x3d, 0xf6, 0xdc, 0x63, 0x8f, 0x05, 0x7a,
-	0xda, 0x5f, 0x50, 0x14, 0x3d, 0xf5, 0x77, 0x14, 0xf3, 0x41, 0x72, 0x48, 0x0d, 0x29, 0xbb, 0x0e,
-	0xd0, 0x45, 0x6f, 0x9c, 0xf7, 0xde, 0xbc, 0x79, 0x5f, 0xf3, 0xe6, 0xcd, 0x3c, 0x42, 0xd9, 0xf1,
-	0x1f, 0x0e, 0x3d, 0x37, 0x70, 0x51, 0xc1, 0xf1, 0xeb, 0xd5, 0xa1, 0xe7, 0x1e, 0xdb, 0x7d, 0x22,
-	0x60, 0xc6, 0x37, 0x70, 0xb7, 0xe5, 0x11, 0x33, 0x20, 0x1d, 0xe2, 0x5d, 0xd8, 0x3d, 0x72, 0xc8,
-	0xd1, 0x98, 0xfc, 0xe2, 0x9c, 0xf8, 0x01, 0x7a, 0x0e, 0x55, 0x3f, 0x81, 0xa8, 0x69, 0x0d, 0x6d,
-	0x6d, 0x76, 0x03, 0x3d, 0x74, 0xfc, 0x87, 0xa9, 0x29, 0x29, 0x4a, 0xe3, 0xa7, 0xb0, 0xa4, 0x66,
-	0xed, 0x0f, 0x5d, 0xc7, 0x27, 0x68, 0x1d, 0xf4, 0xe4, 0x8c, 0xbd, 0x36, 0xe3, 0x3e, 0x83, 0x47,
-	0xe0, 0xc6, 0x0e, 0xd4, 0x76, 0x49, 0xa0, 0x96, 0xf1, 0x3a, 0x7c, 0x7e, 0xa7, 0xc1, 0xa2, 0x82,
-	0x91, 0x90, 0xe8, 0x06, 0xda, 0xa2, 0x25, 0x98, 0xe9, 0x31, 0x6d, 0xad, 0x66, 0x50, 0x2b, 0xb0,
-	0xe5, 0x63, 0x00, 0xc5, 0x9e, 0x0f, 0x2d, 0x81, 0x2d, 0x72, 0x6c, 0x04, 0xa0, 0x4e, 0xe8, 0xb2,
-	0xc1, 0x87, 0x77, 0xc2, 0x0a, 0x2c, 0xa9, 0x59, 0x73, 0x95, 0x8d, 0x3d, 0xb8, 0xdb, 0x26, 0x7d,
-	0x92, 0xb5, 0xf4, 0x75, 0x6c, 0xbb, 0x02, 0x4b, 0x6a, 0x56, 0x62, 0xa9, 0x43, 0xa8, 0x62, 0xf7,
-	0x3c, 0xb0, 0x9d, 0x93, 0xd0, 0x66, 0xeb, 0xa0, 0x7b, 0x09, 0x48, 0xcc, 0x3d, 0x0d, 0x47, 0x08,
-	0x26, 0x4d, 0x7f, 0xaf, 0x2d, 0x4c, 0xcb, 0xbe, 0x8d, 0x3f, 0x69, 0x61, 0xf4, 0x26, 0x19, 0x4b,
-	0x86, 0x4b, 0xf2, 0x91, 0x0d, 0x97, 0x9a, 0x92, 0xa2, 0x44, 0x0b, 0x30, 0xd5, 0x33, 0x5b, 0xc4,
-	0x0b, 0x9d, 0x29, 0x46, 0xa8, 0x06, 0xd3, 0x41, 0xdf, 0x67, 0x08, 0xee, 0xc7, 0x70, 0x48, 0x67,
-	0x04, 0x7d, 0xff, 0x05, 0x79, 0x5f, 0x9b, 0xe4, 0x33, 0xf8, 0x28, 0xde, 0x07, 0x69, 0x21, 0xe3,
-	0x7d, 0x70, 0x55, 0x2b, 0x88, 0x7d, 0xa0, 0xd6, 0xf6, 0x3a, 0x7c, 0xfe, 0xc6, 0xf7, 0x41, 0x86,
-	0x44, 0x37, 0xb1, 0xdb, 0x0d, 0xf6, 0x81, 0x64, 0xf3, 0xc9, 0x2c, 0x9b, 0x97, 0x12, 0x36, 0x67,
-	0x11, 0xc0, 0xe3, 0xfb, 0xfb, 0x1c, 0x01, 0xd1, 0x26, 0x54, 0xdb, 0x3b, 0xde, 0x84, 0x37, 0x77,
-	0x6c, 0xb4, 0x09, 0x33, 0x96, 0xea, 0x42, 0x9d, 0x07, 0x63, 0x9b, 0x28, 0xb6, 0xfb, 0x53, 0xa8,
-	0x58, 0x64, 0x34, 0xd1, 0x7c, 0x4c, 0xad, 0x95, 0x9c, 0x90, 0xa4, 0x33, 0x76, 0xc3, 0x8d, 0x98,
-	0x62, 0x2b, 0x02, 0x6a, 0x0d, 0x3e, 0x4a, 0xd0, 0x47, 0x0a, 0xa4, 0xc1, 0x46, 0x0b, 0xee, 0xec,
-	0x92, 0x40, 0x29, 0xdc, 0xd5, 0x99, 0xfc, 0x46, 0x63, 0xdb, 0x44, 0x2d, 0xcb, 0x7f, 0xab, 0xe3,
-	0x8d, 0x32, 0x7c, 0x17, 0xea, 0x3c, 0x02, 0x3e, 0xac, 0xd9, 0x97, 0xc3, 0xe8, 0x57, 0xaa, 0x6a,
-	0xec, 0x40, 0x9d, 0x07, 0xc3, 0x0d, 0xed, 0xb9, 0x1c, 0xc6, 0xa7, 0x7a, 0x99, 0xbf, 0x6b, 0x30,
-	0xc5, 0x31, 0x74, 0x07, 0x58, 0xe4, 0x62, 0xbb, 0xbb, 0xc7, 0x58, 0xcd, 0x61, 0x31, 0x52, 0xad,
-	0x55, 0x50, 0xae, 0xa5, 0x3c, 0x71, 0x8a, 0xea, 0x13, 0x47, 0xb9, 0x31, 0x26, 0x33, 0xce, 0x8f,
-	0x07, 0x50, 0xf1, 0xcf, 0xec, 0xe1, 0x4e, 0xcb, 0x09, 0x5a, 0xa7, 0xa4, 0x77, 0xc6, 0x32, 0x49,
-	0x19, 0x27, 0x81, 0xc6, 0x16, 0xcc, 0xcb, 0x71, 0x1c, 0x9a, 0xca, 0x60, 0x6a, 0xd9, 0xbd, 0xd0,
-	0x33, 0x10, 0x7b, 0x06, 0x0b, 0x8c, 0xb1, 0x00, 0xb7, 0x92, 0x53, 0x85, 0x75, 0xd6, 0x41, 0x8f,
-	0x62, 0x31, 0xe4, 0x97, 0x61, 0x26, 0xc3, 0x87, 0x8f, 0x25, 0x5a, 0x11, 0xb0, 0x57, 0x58, 0xfc,
-	0x46, 0xb1, 0xb9, 0x05, 0xf3, 0x72, 0x10, 0x5d, 0x53, 0xe7, 0xe4, 0x54, 0xa1, 0xf3, 0x8f, 0x61,
-	0x5e, 0x0e, 0x98, 0x71, 0x6a, 0x2f, 0xc0, 0xad, 0x24, 0xb9, 0x60, 0xf3, 0x57, 0x0d, 0x6e, 0x37,
-	0x7b, 0x81, 0x7d, 0x61, 0x5e, 0x91, 0x13, 0xcd, 0xcd, 0x16, 0xb9, 0x68, 0x5a, 0x96, 0xc7, 0xac,
-	0x30, 0x87, 0xc3, 0x21, 0xc5, 0x38, 0x97, 0x67, 0x1d, 0x9a, 0x9c, 0x8b, 0x1c, 0x23, 0x86, 0x94,
-	0xd7, 0x71, 0xcb, 0x09, 0xba, 0x43, 0x16, 0x3b, 0x15, 0x2c, 0x46, 0xa8, 0x0e, 0x65, 0xfa, 0xd5,
-	0x76, 0x2f, 0x1d, 0x16, 0x2c, 0x15, 0x1c, 0x8d, 0x47, 0xa3, 0x69, 0x4a, 0x15, 0x4d, 0x35, 0x58,
-	0x48, 0x8b, 0x2f, 0x34, 0xfb, 0x0c, 0xee, 0xb4, 0x89, 0x79, 0x1d, 0xd5, 0x8c, 0x3a, 0xd4, 0x46,
-	0xa7, 0x08, 0x76, 0x9b, 0x50, 0x8f, 0xe2, 0x46, 0xac, 0x68, 0xbb, 0xce, 0x38, 0x8e, 0x7f, 0xd6,
-	0xe0, 0xae, 0x72, 0x9a, 0x08, 0x3c, 0xc9, 0x98, 0x5a, 0xa6, 0x31, 0x0b, 0x59, 0xc6, 0x2c, 0x66,
-	0x1a, 0x73, 0x72, 0x9c, 0x31, 0x95, 0x5b, 0x73, 0x91, 0x9d, 0x0c, 0xd8, 0x74, 0x2c, 0x77, 0xd0,
-	0xe6, 0x72, 0x08, 0x05, 0x8d, 0x4d, 0x5e, 0x15, 0x25, 0x51, 0xe3, 0x94, 0x30, 0x4e, 0xa1, 0xc1,
-	0x37, 0xec, 0xab, 0x66, 0xab, 0xe5, 0x0e, 0x06, 0xa6, 0x63, 0x7d, 0x75, 0x4e, 0xce, 0xc9, 0x5e,
-	0x40, 0x06, 0xe3, 0xe2, 0x4c, 0x87, 0x62, 0xcf, 0xb6, 0x84, 0x26, 0xf4, 0x93, 0x2a, 0xd8, 0xe3,
-	0x4c, 0xfc, 0x5a, 0xa9, 0x51, 0x5c, 0x9b, 0xc3, 0xd1, 0xd8, 0xb8, 0x0f, 0xf7, 0x72, 0x56, 0x12,
-	0x3e, 0xfc, 0x8b, 0x06, 0xcb, 0x1d, 0xe2, 0x58, 0x87, 0x9e, 0x3b, 0xf4, 0x6c, 0x12, 0x98, 0xde,
-	0xfb, 0x43, 0xf3, 0x7d, 0xdf, 0x35, 0xad, 0x50, 0x98, 0x15, 0x80, 0x81, 0xd9, 0x13, 0x40, 0x21,
-	0x90, 0x04, 0xa1, 0x42, 0x0d, 0xec, 0x9e, 0xf0, 0x08, 0xfd, 0x44, 0x0d, 0x98, 0x3d, 0x31, 0x03,
-	0x72, 0x69, 0xbe, 0x7f, 0xd5, 0x6c, 0xf9, 0xb5, 0x22, 0x93, 0x4b, 0x06, 0xd1, 0xb2, 0xda, 0x3e,
-	0x74, 0xfb, 0x4c, 0x93, 0x32, 0x66, 0xdf, 0x34, 0x5d, 0x1c, 0x7b, 0x74, 0x4d, 0xa7, 0xf7, 0x5e,
-	0x44, 0x7e, 0x0c, 0x40, 0x55, 0x28, 0x58, 0x1e, 0x8b, 0xf7, 0x0a, 0x2e, 0x58, 0x9e, 0xd1, 0x80,
-	0x95, 0x2c, 0xb1, 0x85, 0x66, 0xff, 0xd2, 0xc2, 0xd4, 0xb8, 0xcb, 0x57, 0x0e, 0x15, 0xa2, 0x02,
-	0x9b, 0x3d, 0xa1, 0x09, 0xfd, 0xa4, 0xe2, 0x38, 0xe6, 0x80, 0x84, 0x55, 0x3e, 0xfd, 0xa6, 0x4a,
-	0x58, 0xc4, 0xef, 0x79, 0xf6, 0x90, 0x46, 0xa7, 0xc8, 0x5f, 0x32, 0x88, 0xda, 0xbe, 0x6f, 0x06,
-	0x76, 0x70, 0x6e, 0x11, 0xa6, 0x88, 0x86, 0xa3, 0x31, 0x55, 0xa6, 0xef, 0x3a, 0x27, 0x1c, 0x59,
-	0x62, 0xc8, 0x18, 0x40, 0x67, 0x9a, 0x7d, 0x31, 0x73, 0x8a, 0xcf, 0x0c, 0xc7, 0xf4, 0x74, 0x11,
-	0x96, 0x8a, 0x4f, 0x97, 0x32, 0x3f, 0x5d, 0xd2, 0x70, 0xe3, 0x0e, 0xdc, 0x4e, 0x69, 0x28, 0x74,
-	0xff, 0x84, 0x65, 0xf4, 0x71, 0x7a, 0x1b, 0xff, 0x28, 0x00, 0x92, 0xe9, 0x44, 0xf0, 0x7e, 0xbf,
-	0x0d, 0x94, 0x38, 0x74, 0xa6, 0x73, 0x0f, 0x9d, 0x72, 0xba, 0xd4, 0x6f, 0xc0, 0xec, 0xb1, 0xed,
-	0xf9, 0x41, 0x87, 0x10, 0xa7, 0x19, 0xd4, 0x66, 0xb8, 0xcc, 0x12, 0x88, 0x46, 0x7b, 0xdf, 0x8c,
-	0x08, 0x80, 0x11, 0x48, 0x10, 0xa5, 0x7b, 0xe6, 0x32, 0xdc, 0x43, 0x23, 0x90, 0x1f, 0x54, 0xff,
-	0xcf, 0x11, 0x98, 0xd2, 0x50, 0x44, 0xe0, 0x5a, 0x78, 0xb8, 0x8e, 0x0d, 0xc2, 0x3b, 0x70, 0x3b,
-	0x45, 0x29, 0x58, 0xfc, 0x5b, 0x83, 0x39, 0x01, 0xeb, 0x04, 0x66, 0xe0, 0x53, 0x95, 0x02, 0x7b,
-	0x40, 0xfc, 0xc0, 0x1c, 0x0c, 0x45, 0xd1, 0x18, 0x03, 0xd0, 0x8f, 0xe0, 0x63, 0xef, 0xdd, 0xa1,
-	0xd9, 0x3b, 0x23, 0x81, 0x8f, 0x49, 0x8f, 0xd8, 0x17, 0xc4, 0x62, 0xf6, 0x2c, 0xe1, 0x51, 0x04,
-	0x7a, 0x04, 0xf3, 0x23, 0xc0, 0x83, 0x17, 0xcc, 0xc8, 0x25, 0xac, 0x42, 0x51, 0xfe, 0xc1, 0x08,
-	0xff, 0x49, 0xce, 0x7f, 0x04, 0x41, 0x8d, 0x18, 0x01, 0xb7, 0x07, 0x76, 0x10, 0x10, 0x8b, 0x79,
-	0xa1, 0x84, 0x47, 0xe0, 0xf4, 0x44, 0x5c, 0x88, 0xb7, 0x21, 0xd3, 0x35, 0x3b, 0x52, 0x1e, 0x43,
-	0xd9, 0x76, 0x02, 0xe2, 0x5d, 0x98, 0x7d, 0xa6, 0x5d, 0x75, 0xe3, 0x0e, 0x2d, 0x91, 0x9a, 0x27,
-	0x27, 0x1e, 0x39, 0x61, 0x27, 0xe9, 0x9e, 0x40, 0xe3, 0x88, 0x10, 0xfd, 0x00, 0xaa, 0x7e, 0x60,
-	0x7a, 0xc1, 0x51, 0x64, 0x3e, 0x1e, 0x4d, 0x29, 0x28, 0x32, 0x60, 0x8e, 0x38, 0x56, 0x4c, 0xc5,
-	0xcb, 0xda, 0x04, 0x4c, 0xdc, 0x95, 0x92, 0xc2, 0x46, 0x17, 0xae, 0x29, 0x8f, 0xf8, 0xe7, 0xfd,
-	0xa0, 0xa6, 0x35, 0x8a, 0x6b, 0xb3, 0x1b, 0x3a, 0x95, 0x2c, 0x41, 0x29, 0xf0, 0xc6, 0x6f, 0x35,
-	0xf8, 0x88, 0x57, 0x00, 0xd1, 0x91, 0x94, 0x79, 0xea, 0xad, 0x00, 0x1c, 0x7b, 0x83, 0xf0, 0x00,
-	0xe2, 0xe7, 0x8c, 0x04, 0xa1, 0x7b, 0x87, 0x1e, 0xea, 0xe2, 0xe8, 0x67, 0xdf, 0xe8, 0x16, 0x94,
-	0x8e, 0x0f, 0x5d, 0x71, 0xa5, 0xaf, 0x60, 0x3e, 0x60, 0xa9, 0xc3, 0x75, 0x8e, 0x6d, 0x6f, 0x20,
-	0xbc, 0x51, 0xc6, 0x31, 0xc0, 0xd8, 0x0d, 0x5f, 0x4c, 0x52, 0x82, 0x85, 0xbe, 0xf8, 0x14, 0x26,
-	0xed, 0x80, 0x0c, 0x44, 0x61, 0x3a, 0x1f, 0x17, 0xa6, 0x31, 0x25, 0x23, 0x30, 0x56, 0x61, 0x39,
-	0x83, 0x91, 0x88, 0xec, 0xe7, 0xd0, 0xd8, 0xe9, 0x9f, 0xfb, 0xa7, 0x12, 0x7e, 0xc7, 0xf5, 0xda,
-	0x4c, 0xdd, 0x71, 0xe5, 0xd3, 0x7d, 0xb8, 0x97, 0x33, 0x57, 0x2c, 0xf0, 0x05, 0xdc, 0x8f, 0x4a,
-	0xac, 0x68, 0x79, 0xff, 0xca, 0x6b, 0x7c, 0x05, 0x0f, 0xf2, 0xa7, 0x0b, 0x7f, 0xff, 0x10, 0x4a,
-	0x54, 0x61, 0x5f, 0xb8, 0x5b, 0x69, 0x12, 0x4e, 0x21, 0x24, 0xda, 0x27, 0xef, 0x58, 0xf1, 0xd5,
-	0xb7, 0x9d, 0x33, 0x5a, 0x63, 0x5d, 0x59, 0xa2, 0xe7, 0x4c, 0xa2, 0x9c, 0xe9, 0x42, 0xa2, 0x30,
-	0x16, 0xb4, 0x38, 0x16, 0x8c, 0x4d, 0x68, 0x74, 0x02, 0x8f, 0x98, 0x83, 0x1d, 0xcf, 0x1c, 0x90,
-	0x97, 0xee, 0x09, 0xd5, 0x64, 0x6c, 0x5a, 0xfa, 0x83, 0x06, 0xf7, 0x72, 0xa6, 0x89, 0xf5, 0x9e,
-	0xc0, 0xdc, 0xf9, 0x90, 0x89, 0x43, 0x89, 0x42, 0x43, 0xb0, 0x77, 0x9e, 0x6e, 0x0c, 0x7f, 0xe9,
-	0x9e, 0xe0, 0x04, 0x1d, 0xfa, 0x09, 0x54, 0xad, 0x50, 0x11, 0x3e, 0xb3, 0xc0, 0x66, 0xde, 0x62,
-	0x26, 0x94, 0x31, 0x74, 0x6e, 0x8a, 0xd6, 0xd8, 0x82, 0xd5, 0x51, 0xd1, 0xae, 0x56, 0xcf, 0xff,
-	0x5e, 0x53, 0x59, 0x23, 0x75, 0xf7, 0xfb, 0xdf, 0x68, 0xf5, 0x6b, 0x0d, 0xca, 0x6d, 0x33, 0x30,
-	0xb1, 0x19, 0x10, 0x56, 0x75, 0xba, 0xd6, 0x79, 0x9f, 0x65, 0x34, 0x91, 0xec, 0x25, 0x08, 0xdd,
-	0xca, 0x6f, 0x4d, 0xc7, 0xba, 0xb4, 0xad, 0xe0, 0x94, 0xe5, 0x84, 0x0a, 0x8e, 0x01, 0x34, 0x8f,
-	0xf9, 0x43, 0x8f, 0x98, 0xd6, 0x8e, 0xd9, 0x0b, 0x5c, 0x4f, 0xa4, 0x86, 0x04, 0x8c, 0x96, 0xe8,
-	0x6f, 0xed, 0xc0, 0x33, 0x03, 0x22, 0x92, 0x44, 0x38, 0x34, 0x3c, 0x98, 0xe3, 0x6a, 0x1e, 0xbd,
-	0xde, 0x73, 0x8e, 0xdd, 0x64, 0x65, 0xaa, 0xa5, 0x2b, 0xd3, 0x35, 0x28, 0x5b, 0x42, 0x6a, 0x26,
-	0xc8, 0xec, 0xc6, 0x1c, 0x53, 0x57, 0xc0, 0x70, 0x84, 0xe5, 0xc5, 0xba, 0x45, 0x18, 0x25, 0xcf,
-	0xbf, 0xd1, 0xd8, 0xf8, 0xa7, 0x16, 0x2e, 0x8a, 0xf9, 0xa2, 0xca, 0x1a, 0x81, 0x9e, 0x76, 0x61,
-	0x8d, 0x40, 0xbf, 0xd9, 0xa1, 0x64, 0x0f, 0x48, 0xc7, 0x76, 0x7a, 0x64, 0xf7, 0xb0, 0xb3, 0x3d,
-	0x74, 0x7b, 0xa7, 0x82, 0xf7, 0x28, 0x22, 0x79, 0x80, 0x72, 0xa5, 0xa5, 0x03, 0x14, 0xc1, 0xa4,
-	0xe7, 0xfb, 0xb6, 0x38, 0xa6, 0xd8, 0x37, 0x35, 0x52, 0xdf, 0xc5, 0x66, 0x67, 0x1f, 0xb3, 0x32,
-	0xa1, 0x80, 0xc3, 0x21, 0xcd, 0xb0, 0x6f, 0x5d, 0xd3, 0xb3, 0x58, 0x09, 0x56, 0xc1, 0x7c, 0x40,
-	0xe9, 0x4d, 0x27, 0x20, 0x8e, 0x63, 0xb2, 0x92, 0xa1, 0x82, 0xc3, 0xa1, 0xf1, 0x2b, 0x0d, 0xaa,
-	0xc9, 0xe0, 0xa1, 0xc7, 0x45, 0xf0, 0x8e, 0x2a, 0x2b, 0x52, 0xaa, 0x1e, 0x07, 0x18, 0xb7, 0x3c,
-	0x16, 0x78, 0x76, 0xb0, 0x70, 0xca, 0x42, 0x7c, 0xb0, 0xc8, 0xe6, 0xc2, 0x02, 0x4f, 0xe3, 0x66,
-	0x78, 0x1a, 0xde, 0x05, 0xc4, 0x9d, 0x5b, 0x82, 0x18, 0xdf, 0x15, 0xa0, 0x1a, 0x46, 0xe2, 0x51,
-	0x96, 0xa5, 0x1b, 0x30, 0x6b, 0x0f, 0x06, 0xc4, 0xb2, 0xcd, 0x80, 0xf4, 0xf9, 0x65, 0xb3, 0x8c,
-	0x65, 0xd0, 0x07, 0xb5, 0x7b, 0xfe, 0xc5, 0xe7, 0x16, 0x94, 0x86, 0xee, 0x25, 0xe1, 0x77, 0x9f,
-	0x12, 0xe6, 0x83, 0x44, 0xd0, 0x4d, 0x5f, 0x39, 0xe8, 0xca, 0xc9, 0xa0, 0x8b, 0xae, 0x61, 0x33,
-	0xd2, 0x35, 0x2c, 0xf2, 0x2b, 0x64, 0xf8, 0x75, 0x36, 0xe9, 0xd7, 0x6f, 0x41, 0x4f, 0xef, 0x6c,
-	0xb4, 0x9e, 0x72, 0x2c, 0x92, 0xf7, 0x7f, 0xca, 0xb5, 0x49, 0x87, 0x15, 0x46, 0x1c, 0x36, 0xcf,
-	0xae, 0x32, 0x3f, 0x23, 0x9e, 0x1f, 0xbf, 0x2d, 0x18, 0x98, 0xdd, 0x5b, 0x22, 0x60, 0x7c, 0xe9,
-	0xbe, 0xe0, 0x20, 0x91, 0x30, 0xc2, 0x21, 0x32, 0x68, 0x61, 0x72, 0x42, 0x11, 0xbc, 0x64, 0x62,
-	0xaf, 0x4a, 0x98, 0x41, 0xb0, 0xc0, 0x18, 0x7f, 0xd4, 0xa0, 0xba, 0x9b, 0xa8, 0x6f, 0x95, 0x95,
-	0xb0, 0xa6, 0xae, 0x84, 0x99, 0x9d, 0x4f, 0x4d, 0xc7, 0x21, 0x7d, 0x9e, 0xf5, 0x2a, 0x38, 0x1a,
-	0xa3, 0x36, 0x54, 0xc8, 0xbb, 0xc0, 0x33, 0x5b, 0x21, 0x41, 0x91, 0x45, 0xf1, 0x8a, 0x54, 0x1e,
-	0x09, 0x46, 0xdb, 0x12, 0x19, 0x4e, 0x4e, 0x32, 0xbe, 0xd3, 0xa0, 0x9e, 0x4d, 0x8d, 0x1e, 0x8e,
-	0x64, 0xcc, 0xea, 0x46, 0x95, 0xae, 0xf0, 0x2a, 0x82, 0xa6, 0x33, 0x68, 0x1c, 0x76, 0x85, 0x74,
-	0xd8, 0x25, 0xf2, 0x6b, 0x31, 0x9d, 0x5f, 0x33, 0x73, 0x27, 0x7b, 0x48, 0x65, 0x59, 0xd6, 0x76,
-	0x4e, 0x78, 0xa2, 0xe5, 0x0f, 0x13, 0x15, 0x3c, 0x02, 0x8f, 0xbb, 0xc0, 0x49, 0xad, 0xa4, 0x2e,
-	0x4a, 0xd2, 0xca, 0x72, 0x34, 0xa5, 0xa6, 0xa4, 0x28, 0xe3, 0xee, 0x57, 0x9a, 0x75, 0xdc, 0xfd,
-	0xba, 0xaa, 0x67, 0x45, 0xf7, 0x4b, 0x2d, 0xe3, 0x75, 0xf8, 0x88, 0x2e, 0x70, 0x86, 0x44, 0x37,
-	0xd0, 0xf6, 0xc3, 0x74, 0x81, 0x3f, 0xbc, 0x13, 0xa2, 0x06, 0x94, 0x5a, 0xe5, 0xb8, 0x01, 0x75,
-	0x73, 0xdb, 0x46, 0x0d, 0x28, 0xf5, 0x52, 0xeb, 0x4b, 0x50, 0xc6, 0xaf, 0xbf, 0xb6, 0x1d, 0xcb,
-	0xbd, 0x44, 0xd3, 0x50, 0xc4, 0xaf, 0x3f, 0xd3, 0x27, 0xf8, 0xc7, 0x86, 0xae, 0xad, 0xaf, 0x02,
-	0xc4, 0x9b, 0x04, 0x95, 0x61, 0xf2, 0xe5, 0x01, 0x6e, 0x72, 0x82, 0x9d, 0xce, 0x0b, 0x5d, 0x5b,
-	0xbf, 0x80, 0x29, 0x9e, 0x2d, 0xd0, 0x0c, 0x94, 0xb6, 0xbb, 0xcf, 0x9e, 0x3c, 0xd3, 0x27, 0xe8,
-	0x67, 0xb7, 0xb3, 0xf5, 0xd9, 0xe7, 0x7a, 0x81, 0x7e, 0xb6, 0xf6, 0x9f, 0x3e, 0xdd, 0xd2, 0x8b,
-	0x9c, 0x60, 0xf3, 0xf1, 0x63, 0x7d, 0x92, 0x7e, 0x36, 0xbb, 0x94, 0xa0, 0xc4, 0x09, 0x36, 0x9f,
-	0x3e, 0xd2, 0xa7, 0x18, 0xb4, 0xb3, 0xb5, 0xf1, 0x58, 0x9f, 0xa6, 0x9f, 0x2f, 0xf0, 0xd6, 0xc6,
-	0x23, 0xbd, 0x4c, 0x3f, 0xf7, 0xf6, 0x9f, 0x3d, 0xf9, 0x5c, 0x9f, 0xa1, 0x9f, 0xb8, 0xfb, 0xec,
-	0xc9, 0xa6, 0x0e, 0xeb, 0x7d, 0x98, 0x57, 0x5c, 0xec, 0x10, 0xc0, 0x54, 0x67, 0xbb, 0x75, 0xb0,
-	0xdf, 0xd6, 0x27, 0xe8, 0xf7, 0xab, 0xbd, 0xfd, 0xee, 0xd1, 0xb6, 0xae, 0x51, 0xc9, 0xbf, 0x3c,
-	0xe8, 0x62, 0xbd, 0x40, 0x25, 0x6f, 0x37, 0xbf, 0xd1, 0x8b, 0x14, 0xf4, 0xf5, 0xf6, 0xf6, 0x0b,
-	0x2e, 0xcd, 0xab, 0x83, 0xfd, 0xa3, 0x2f, 0xf5, 0x12, 0x9a, 0x85, 0xe9, 0xaf, 0xba, 0x4d, 0x7c,
-	0xb4, 0x8d, 0xf5, 0x29, 0x4a, 0xf1, 0xcd, 0x76, 0x13, 0xeb, 0xd3, 0x1b, 0xbf, 0xac, 0x43, 0x65,
-	0x9f, 0x04, 0x97, 0xae, 0x77, 0xd6, 0x21, 0xde, 0x05, 0xf1, 0xd0, 0x9b, 0xf0, 0x09, 0x2d, 0xd9,
-	0x5c, 0x47, 0xab, 0xd4, 0xfb, 0x39, 0x7f, 0x70, 0xd4, 0x1b, 0xd9, 0x04, 0xc2, 0xf9, 0x13, 0x08,
-	0xb3, 0xcc, 0x9e, 0xe2, 0xbc, 0xc4, 0xe2, 0x2a, 0xe3, 0xa7, 0x8b, 0xfa, 0x72, 0x06, 0x36, 0xe2,
-	0xf9, 0x26, 0x7c, 0x71, 0x51, 0x09, 0x9c, 0xf3, 0xb7, 0x03, 0x17, 0x38, 0xf7, 0x9f, 0x05, 0xc6,
-	0x5c, 0xf5, 0xab, 0x01, 0x67, 0x9e, 0xf3, 0x3f, 0x03, 0x67, 0x9e, 0xfb, 0x97, 0xc2, 0x44, 0x6c,
-	0xea, 0xd4, 0xdf, 0x0a, 0x92, 0xa9, 0x95, 0x7d, 0x5a, 0xd9, 0xd4, 0x19, 0xdd, 0xd7, 0xd0, 0xd4,
-	0x29, 0xce, 0xa1, 0xa9, 0xd5, 0x6c, 0x97, 0x33, 0xb0, 0xa3, 0xa6, 0x56, 0x09, 0x9c, 0xd3, 0x1d,
-	0x97, 0x4d, 0x9d, 0xc7, 0x5c, 0xd5, 0x50, 0x96, 0x4d, 0x9d, 0xc3, 0x3c, 0xb7, 0x17, 0x3d, 0x81,
-	0x5e, 0x27, 0xdb, 0x6d, 0x21, 0xef, 0x95, 0xd8, 0x90, 0xaa, 0xce, 0x65, 0x7d, 0x35, 0x13, 0x1f,
-	0x71, 0x3e, 0x90, 0xba, 0x6e, 0x21, 0xdb, 0xbb, 0xc2, 0x90, 0x4a, 0x9e, 0x4b, 0x6a, 0xa4, 0x2c,
-	0xaa, 0xa2, 0xd5, 0xca, 0x45, 0xcd, 0x6e, 0xed, 0xd6, 0x57, 0x33, 0xf1, 0x32, 0x67, 0x45, 0x77,
-	0x95, 0x73, 0xce, 0x6e, 0xdf, 0xd6, 0x57, 0x33, 0xf1, 0x11, 0xe7, 0x16, 0xcc, 0xc9, 0x56, 0x42,
-	0x77, 0xd2, 0x76, 0x0b, 0x79, 0xd5, 0x46, 0x11, 0x11, 0x93, 0xe7, 0x30, 0x13, 0x99, 0x05, 0xdd,
-	0x4a, 0x58, 0x29, 0x9c, 0x7e, 0x3b, 0x05, 0x95, 0x05, 0x90, 0x75, 0xe7, 0x02, 0x28, 0x9a, 0x8d,
-	0x5c, 0x00, 0x65, 0x2b, 0x91, 0x31, 0x91, 0xd5, 0xe4, 0x4c, 0x14, 0xed, 0x45, 0xce, 0x44, 0xd9,
-	0x48, 0x9c, 0x40, 0x7b, 0x50, 0x4d, 0xb6, 0xe2, 0xd0, 0x22, 0x7b, 0xac, 0x53, 0xb5, 0xe0, 0xea,
-	0x75, 0x15, 0x4a, 0x0e, 0xad, 0x74, 0x23, 0x8e, 0x87, 0x56, 0x46, 0x47, 0x8f, 0x87, 0x56, 0x66,
-	0xef, 0x8e, 0x05, 0x80, 0xa2, 0x0d, 0xc7, 0x03, 0x20, 0xbb, 0xad, 0xc7, 0x03, 0x20, 0xa7, 0x7f,
-	0x67, 0x4c, 0xa0, 0x6f, 0xc3, 0xb6, 0x44, 0xfa, 0x85, 0xaf, 0x91, 0x76, 0x78, 0xfa, 0x8d, 0xad,
-	0x7e, 0x2f, 0x87, 0x22, 0xe2, 0xff, 0x73, 0x58, 0xcc, 0x7c, 0x02, 0x43, 0x0f, 0x28, 0x87, 0x71,
-	0xaf, 0x6b, 0xf5, 0x4f, 0xc6, 0x50, 0x45, 0x6b, 0xf9, 0xb0, 0x94, 0xf7, 0x14, 0x86, 0x3e, 0x4d,
-	0x98, 0x23, 0xfb, 0xad, 0xad, 0xbe, 0x36, 0x9e, 0x30, 0xb5, 0x68, 0xe6, 0x6b, 0x57, 0xb4, 0xe8,
-	0xb8, 0xe7, 0xb4, 0x68, 0xd1, 0xb1, 0x0f, 0x67, 0x51, 0xee, 0x4a, 0xb4, 0x33, 0xa3, 0xdc, 0xa5,
-	0xea, 0x7f, 0x46, 0xb9, 0x4b, 0xd9, 0x01, 0xe5, 0x6e, 0xca, 0xec, 0x3f, 0x72, 0x37, 0x8d, 0x6b,
-	0x84, 0x72, 0x37, 0x8d, 0x6f, 0x62, 0x4e, 0x20, 0x13, 0x16, 0xd4, 0xed, 0x40, 0x74, 0x8f, 0xff,
-	0xae, 0x98, 0xd3, 0xe1, 0xac, 0x1b, 0x79, 0x24, 0xd1, 0x12, 0x3b, 0x50, 0x49, 0x5c, 0x29, 0x90,
-	0x94, 0xbe, 0x92, 0xaf, 0x89, 0xf5, 0x45, 0x05, 0x26, 0xe2, 0xf3, 0x05, 0x40, 0x7c, 0x0b, 0x40,
-	0x61, 0x12, 0x4b, 0x71, 0x58, 0x48, 0x83, 0x65, 0x31, 0x12, 0x45, 0x35, 0x92, 0x92, 0x98, 0x4a,
-	0x0c, 0x75, 0x7b, 0x86, 0xf1, 0x49, 0x54, 0xcc, 0x48, 0xca, 0x63, 0x2a, 0x3e, 0xea, 0x1e, 0x8d,
-	0x54, 0xb7, 0xa4, 0xee, 0xce, 0xab, 0x23, 0x36, 0xc8, 0xae, 0x5b, 0x32, 0xee, 0x07, 0x61, 0xdd,
-	0x92, 0xe2, 0xbc, 0x94, 0xb4, 0x4d, 0x46, 0xdd, 0x92, 0xc9, 0xf3, 0x4d, 0xaa, 0x29, 0xa7, 0xa8,
-	0x5b, 0x72, 0x04, 0xce, 0xbd, 0xd0, 0x48, 0x75, 0x8b, 0x8a, 0x79, 0xce, 0x65, 0x47, 0xae, 0x5b,
-	0x32, 0x99, 0xbf, 0x84, 0x8f, 0x52, 0x9d, 0x17, 0x54, 0x4f, 0x6a, 0x2b, 0xf7, 0x8e, 0xea, 0x77,
-	0x95, 0xb8, 0x88, 0x5b, 0x1f, 0x16, 0x33, 0xdf, 0xb7, 0xf9, 0xf6, 0x1c, 0xf7, 0x6a, 0xce, 0xb7,
-	0xe7, 0xd8, 0x47, 0x72, 0x63, 0xe2, 0x91, 0x86, 0x6c, 0xa8, 0x65, 0x3d, 0x3b, 0xa3, 0xfb, 0x6a,
-	0x36, 0xc9, 0xe3, 0xec, 0x41, 0x3e, 0x91, 0xb4, 0x14, 0xdf, 0x60, 0xe2, 0x71, 0x28, 0xda, 0x60,
-	0xc9, 0x17, 0xa4, 0x68, 0x83, 0xa5, 0xde, 0x90, 0x8c, 0x89, 0xb7, 0x53, 0xec, 0x17, 0xf5, 0xc7,
-	0xff, 0x09, 0x00, 0x00, 0xff, 0xff, 0x0e, 0xde, 0xdf, 0xda, 0xc2, 0x2e, 0x00, 0x00,
+var fileDescriptor_ns_516b99e4b39d9522 = []byte{
+	// 2898 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x3a, 0x4f, 0x6f, 0xdb, 0xc8,
+	0xf5, 0xa6, 0x64, 0xd9, 0xf2, 0xb3, 0xa5, 0xe5, 0x8e, 0x13, 0x47, 0x56, 0xfc, 0x2f, 0x4c, 0xf6,
+	0xb7, 0xfe, 0x19, 0x6d, 0x90, 0x75, 0xbc, 0x49, 0x1c, 0x74, 0x0f, 0x82, 0x24, 0x7b, 0xdd, 0x24,
+	0xb6, 0x77, 0x64, 0x75, 0xb3, 0x08, 0xb0, 0x00, 0x23, 0x8e, 0x6d, 0xd6, 0x12, 0xa9, 0x92, 0xb4,
+	0x9d, 0x9c, 0x5b, 0xf4, 0x5a, 0x14, 0x45, 0x81, 0xf6, 0xd2, 0x4b, 0x0f, 0x3d, 0xf4, 0xdc, 0x8f,
+	0x50, 0xa0, 0xa7, 0xfd, 0x04, 0x45, 0xd1, 0x53, 0x3f, 0x47, 0x31, 0x7f, 0x48, 0x0e, 0xa9, 0x21,
+	0x65, 0xd7, 0x01, 0xba, 0xe8, 0x8d, 0xf3, 0xde, 0x9b, 0x37, 0xef, 0xdf, 0xbc, 0x79, 0x33, 0x8f,
+	0x50, 0x76, 0xfc, 0x87, 0x43, 0xcf, 0x0d, 0x5c, 0x54, 0x70, 0xfc, 0x7a, 0x75, 0xe8, 0xb9, 0xc7,
+	0x76, 0x9f, 0x08, 0x98, 0xf1, 0x0d, 0xdc, 0x6d, 0x7a, 0xc4, 0x0c, 0x48, 0x87, 0x78, 0x17, 0x76,
+	0x8f, 0x1c, 0x72, 0x34, 0x26, 0x3f, 0x3b, 0x27, 0x7e, 0x80, 0x9e, 0x43, 0xd5, 0x4f, 0x20, 0x6a,
+	0xda, 0x9a, 0xb6, 0x3e, 0xbb, 0x89, 0x1e, 0x3a, 0xfe, 0xc3, 0xd4, 0x94, 0x14, 0xa5, 0xf1, 0x63,
+	0x58, 0x52, 0xb3, 0xf6, 0x87, 0xae, 0xe3, 0x13, 0xb4, 0x01, 0x7a, 0x72, 0xc6, 0x5e, 0x8b, 0x71,
+	0x9f, 0xc1, 0x23, 0x70, 0x63, 0x07, 0x6a, 0xbb, 0x24, 0x50, 0xcb, 0x78, 0x1d, 0x3e, 0xbf, 0xd1,
+	0x60, 0x51, 0xc1, 0x48, 0x48, 0x74, 0x03, 0x6d, 0xd1, 0x12, 0xcc, 0xf4, 0x98, 0xb6, 0x56, 0x23,
+	0xa8, 0x15, 0xd8, 0xf2, 0x31, 0x80, 0x62, 0xcf, 0x87, 0x96, 0xc0, 0x16, 0x39, 0x36, 0x02, 0x50,
+	0x27, 0x74, 0xd9, 0xe0, 0xc3, 0x3b, 0x61, 0x05, 0x96, 0xd4, 0xac, 0xb9, 0xca, 0xc6, 0x1e, 0xdc,
+	0x6d, 0x91, 0x3e, 0xc9, 0x5a, 0xfa, 0x3a, 0xb6, 0x5d, 0x81, 0x25, 0x35, 0x2b, 0xb1, 0xd4, 0x21,
+	0x54, 0xb1, 0x7b, 0x1e, 0xd8, 0xce, 0x49, 0x68, 0xb3, 0x0d, 0xd0, 0xbd, 0x04, 0x24, 0xe6, 0x9e,
+	0x86, 0x23, 0x04, 0x93, 0xa6, 0xbf, 0xd7, 0x12, 0xa6, 0x65, 0xdf, 0xc6, 0x1f, 0xb5, 0x30, 0x7a,
+	0x93, 0x8c, 0x25, 0xc3, 0x25, 0xf9, 0xc8, 0x86, 0x4b, 0x4d, 0x49, 0x51, 0xa2, 0x05, 0x98, 0xea,
+	0x99, 0x4d, 0xe2, 0x85, 0xce, 0x14, 0x23, 0x54, 0x83, 0xe9, 0xa0, 0xef, 0x33, 0x04, 0xf7, 0x63,
+	0x38, 0xa4, 0x33, 0x82, 0xbe, 0xff, 0x82, 0xbc, 0xaf, 0x4d, 0xf2, 0x19, 0x7c, 0x14, 0xef, 0x83,
+	0xb4, 0x90, 0xf1, 0x3e, 0xb8, 0xaa, 0x15, 0xc4, 0x3e, 0x50, 0x6b, 0x7b, 0x1d, 0x3e, 0x7f, 0xe5,
+	0xfb, 0x20, 0x43, 0xa2, 0x9b, 0xd8, 0xed, 0x06, 0xfb, 0x40, 0xb2, 0xf9, 0x64, 0x96, 0xcd, 0x4b,
+	0x09, 0x9b, 0xb3, 0x08, 0xe0, 0xf1, 0xfd, 0x7d, 0x8e, 0x80, 0x68, 0x13, 0xaa, 0xed, 0x1d, 0x6f,
+	0xc2, 0x9b, 0x3b, 0x36, 0xda, 0x84, 0x19, 0x4b, 0x75, 0xa1, 0xce, 0x83, 0xb1, 0x45, 0x14, 0xdb,
+	0xfd, 0x29, 0x54, 0x2c, 0x32, 0x9a, 0x68, 0x3e, 0xa6, 0xd6, 0x4a, 0x4e, 0x48, 0xd2, 0x19, 0xbb,
+	0xe1, 0x46, 0x4c, 0xb1, 0x15, 0x01, 0xb5, 0x0e, 0x1f, 0x25, 0xe8, 0x23, 0x05, 0xd2, 0x60, 0xa3,
+	0x09, 0x77, 0x76, 0x49, 0xa0, 0x14, 0xee, 0xea, 0x4c, 0x7e, 0xa5, 0xb1, 0x6d, 0xa2, 0x96, 0xe5,
+	0x3f, 0xd5, 0xf1, 0x46, 0x19, 0xbe, 0x0b, 0x75, 0x1e, 0x01, 0x1f, 0xd6, 0xec, 0xcb, 0x61, 0xf4,
+	0x2b, 0x55, 0x35, 0x76, 0xa0, 0xce, 0x83, 0xe1, 0x86, 0xf6, 0x5c, 0x0e, 0xe3, 0x53, 0xbd, 0xcc,
+	0xdf, 0x34, 0x98, 0xe2, 0x18, 0xba, 0x03, 0x2c, 0x72, 0xd1, 0xee, 0xee, 0x31, 0x56, 0x73, 0x58,
+	0x8c, 0x54, 0x6b, 0x15, 0x94, 0x6b, 0x29, 0x4f, 0x9c, 0xa2, 0xfa, 0xc4, 0x51, 0x6e, 0x8c, 0xc9,
+	0x8c, 0xf3, 0xe3, 0x01, 0x54, 0xfc, 0x33, 0x7b, 0xb8, 0xd3, 0x74, 0x82, 0xe6, 0x29, 0xe9, 0x9d,
+	0xb1, 0x4c, 0x52, 0xc6, 0x49, 0xa0, 0xb1, 0x0d, 0xf3, 0x72, 0x1c, 0x87, 0xa6, 0x32, 0x98, 0x5a,
+	0x76, 0x2f, 0xf4, 0x0c, 0xc4, 0x9e, 0xc1, 0x02, 0x63, 0x2c, 0xc0, 0xad, 0xe4, 0x54, 0x61, 0x9d,
+	0x0d, 0xd0, 0xa3, 0x58, 0x0c, 0xf9, 0x65, 0x98, 0xc9, 0xf0, 0xe1, 0x63, 0x89, 0x56, 0x04, 0xec,
+	0x15, 0x16, 0xbf, 0x51, 0x6c, 0x6e, 0xc3, 0xbc, 0x1c, 0x44, 0xd7, 0xd4, 0x39, 0x39, 0x55, 0xe8,
+	0xfc, 0x43, 0x98, 0x97, 0x03, 0x66, 0x9c, 0xda, 0x0b, 0x70, 0x2b, 0x49, 0x2e, 0xd8, 0xfc, 0xa9,
+	0x00, 0xb7, 0x1b, 0xbd, 0xc0, 0xbe, 0x30, 0xaf, 0xc8, 0x89, 0xe6, 0x66, 0x8b, 0x5c, 0x34, 0x2c,
+	0xcb, 0x63, 0x56, 0x98, 0xc3, 0xe1, 0x10, 0xad, 0xc1, 0xac, 0xbf, 0x7f, 0x79, 0xd6, 0xd9, 0x73,
+	0x02, 0x9a, 0xa0, 0x8b, 0x0c, 0x2b, 0x83, 0x28, 0xc5, 0xb1, 0x44, 0x31, 0xcd, 0x29, 0x24, 0x10,
+	0x5a, 0x01, 0x70, 0x2e, 0xcf, 0x3a, 0x6d, 0xa7, 0x47, 0x09, 0xca, 0x8c, 0x40, 0x82, 0x50, 0xa9,
+	0x8e, 0x9b, 0x4e, 0xd0, 0x1d, 0xb2, 0x28, 0xac, 0x60, 0x31, 0xa2, 0xf6, 0x77, 0x68, 0x8c, 0xb5,
+	0xdc, 0x4b, 0x87, 0xc5, 0x5d, 0x05, 0xc7, 0x00, 0x8a, 0x35, 0x23, 0xec, 0x0c, 0xc7, 0x46, 0x80,
+	0xd1, 0xb8, 0x9d, 0x52, 0xc5, 0x6d, 0x0d, 0x16, 0xd2, 0x86, 0x12, 0x36, 0xfc, 0x0c, 0xee, 0xb4,
+	0x88, 0x79, 0x1d, 0x23, 0x1a, 0x75, 0xa8, 0x8d, 0x4e, 0x11, 0xec, 0xb6, 0xa0, 0x1e, 0x45, 0xa8,
+	0x58, 0xd1, 0x76, 0x9d, 0x71, 0x1c, 0x7f, 0x5b, 0x80, 0xbb, 0xca, 0x69, 0x22, 0xc4, 0x25, 0xb7,
+	0x69, 0xb9, 0x6e, 0x2b, 0x8c, 0x75, 0xdb, 0xd4, 0x38, 0xb7, 0x4d, 0xe7, 0xb8, 0xad, 0x98, 0xed,
+	0xb6, 0xc9, 0x5c, 0xb7, 0x95, 0xc7, 0xba, 0x4d, 0x99, 0x6e, 0x16, 0xd9, 0x69, 0x87, 0x4d, 0xc7,
+	0x72, 0x07, 0x2d, 0xae, 0xb1, 0x30, 0xa5, 0xb1, 0xc5, 0x2b, 0xbd, 0x24, 0x6a, 0x9c, 0xb9, 0x8c,
+	0x53, 0x58, 0xe3, 0x49, 0xe8, 0x55, 0xa3, 0xd9, 0x74, 0x07, 0x03, 0xd3, 0xb1, 0xbe, 0x3a, 0x27,
+	0xe7, 0x64, 0x2f, 0x20, 0x83, 0x71, 0x7b, 0x47, 0x87, 0x62, 0xcf, 0xb6, 0x84, 0xa2, 0xf4, 0x13,
+	0xd5, 0xa1, 0xdc, 0xe3, 0x4c, 0xfc, 0x5a, 0x69, 0xad, 0xb8, 0x3e, 0x87, 0xa3, 0xb1, 0x71, 0x1f,
+	0xee, 0xe5, 0xac, 0x24, 0xa2, 0xe5, 0x2f, 0x1a, 0x2c, 0x77, 0x88, 0x63, 0x1d, 0x7a, 0xee, 0xd0,
+	0xb3, 0x49, 0x60, 0x7a, 0xef, 0x0f, 0xcd, 0xf7, 0x7d, 0xd7, 0xb4, 0x42, 0x61, 0x56, 0x00, 0x06,
+	0x66, 0x4f, 0x00, 0x85, 0x40, 0x12, 0x84, 0x0a, 0x35, 0xb0, 0x7b, 0xc2, 0xef, 0xf4, 0x93, 0xfa,
+	0xfb, 0xc4, 0x0c, 0xc8, 0xa5, 0xf9, 0xfe, 0x55, 0xa3, 0xe9, 0xd7, 0x8a, 0x4c, 0x2e, 0x19, 0x44,
+	0xaf, 0x0a, 0xf6, 0xa1, 0xdb, 0x67, 0x9a, 0x94, 0x31, 0xfb, 0xa6, 0xde, 0x3a, 0xf6, 0xe8, 0x9a,
+	0x4e, 0xef, 0x7d, 0xb8, 0x05, 0x23, 0x00, 0xaa, 0x42, 0xc1, 0xf2, 0x58, 0xe8, 0x54, 0x70, 0xc1,
+	0xf2, 0x8c, 0x35, 0x58, 0xc9, 0x12, 0x5b, 0x68, 0xf6, 0x4f, 0x2d, 0x4c, 0xf7, 0xbb, 0x7c, 0xe5,
+	0x50, 0x21, 0x2a, 0xb0, 0xd9, 0x13, 0x9a, 0xd0, 0x4f, 0x2a, 0x8e, 0x63, 0x0e, 0x48, 0x78, 0x73,
+	0xa1, 0xdf, 0x54, 0x09, 0x8b, 0xf8, 0x3d, 0xcf, 0x1e, 0xd2, 0x7d, 0x20, 0x72, 0xb2, 0x0c, 0xa2,
+	0xb6, 0xef, 0x9b, 0x81, 0x1d, 0x9c, 0x5b, 0x84, 0x29, 0xa2, 0xe1, 0x68, 0x4c, 0x95, 0xe9, 0xbb,
+	0xce, 0x09, 0x47, 0x96, 0x18, 0x32, 0x06, 0xd0, 0x99, 0x66, 0x5f, 0xcc, 0x9c, 0xe2, 0x33, 0xc3,
+	0x31, 0x3d, 0x31, 0x85, 0xa5, 0xe2, 0x13, 0xb3, 0xcc, 0x4f, 0xcc, 0x34, 0xdc, 0xb8, 0x03, 0xb7,
+	0x53, 0x1a, 0x0a, 0xdd, 0x3f, 0x61, 0xa7, 0xd4, 0x38, 0xbd, 0x8d, 0xbf, 0x17, 0x00, 0xc9, 0x74,
+	0x22, 0x78, 0xbf, 0xdf, 0x06, 0x4a, 0x1c, 0xa4, 0xd3, 0xb9, 0x07, 0x69, 0x39, 0x7d, 0x7d, 0xa1,
+	0x99, 0xc8, 0xf6, 0xfc, 0xa0, 0x43, 0x88, 0xd3, 0x08, 0x58, 0x2a, 0x9f, 0xc1, 0x32, 0x88, 0x46,
+	0x7b, 0xdf, 0x8c, 0x08, 0x80, 0x11, 0x48, 0x10, 0xa5, 0x7b, 0xe6, 0x32, 0xdc, 0x43, 0x23, 0x90,
+	0x1f, 0xbe, 0xff, 0xcb, 0x11, 0x98, 0xd2, 0x50, 0x44, 0xe0, 0x7a, 0x58, 0x30, 0x8c, 0x0d, 0xc2,
+	0x3b, 0x70, 0x3b, 0x45, 0x29, 0x58, 0xfc, 0x4b, 0x83, 0x39, 0x01, 0xeb, 0x04, 0x66, 0xe0, 0x53,
+	0x95, 0x02, 0x7b, 0x40, 0xfc, 0xc0, 0x1c, 0x0c, 0x45, 0x21, 0x1c, 0x03, 0xd0, 0x0f, 0xe0, 0x63,
+	0xef, 0xdd, 0xa1, 0xd9, 0x3b, 0x23, 0x81, 0x8f, 0x49, 0x8f, 0xd8, 0x17, 0xc4, 0x62, 0xf6, 0x2c,
+	0xe1, 0x51, 0x04, 0x7a, 0x04, 0xf3, 0x23, 0xc0, 0x83, 0x17, 0xcc, 0xc8, 0x25, 0xac, 0x42, 0x51,
+	0xfe, 0xc1, 0x08, 0xff, 0x49, 0xce, 0x7f, 0x04, 0x41, 0x8d, 0x18, 0x01, 0xdb, 0x03, 0x3b, 0x08,
+	0x88, 0xc5, 0xbc, 0x50, 0xc2, 0x23, 0x70, 0xe3, 0xcf, 0x1a, 0x2c, 0xc4, 0xdb, 0x90, 0xe9, 0x9a,
+	0x1d, 0x29, 0x8f, 0xa1, 0x6c, 0x3b, 0x01, 0xf1, 0x2e, 0xcc, 0x3e, 0xd3, 0xae, 0xba, 0x79, 0x87,
+	0x96, 0x7d, 0x8d, 0x93, 0x13, 0x8f, 0x9c, 0xb0, 0x33, 0x7b, 0x4f, 0xa0, 0x71, 0x44, 0x88, 0xfe,
+	0x0f, 0xaa, 0x7e, 0x60, 0x7a, 0xc1, 0x51, 0x64, 0x3e, 0x1e, 0x4d, 0x29, 0x28, 0x32, 0x60, 0x8e,
+	0x38, 0x56, 0x4c, 0xc5, 0x4b, 0xf5, 0x04, 0x4c, 0xdc, 0xff, 0x92, 0xc2, 0x46, 0x97, 0xc8, 0x29,
+	0x8f, 0xf8, 0xe7, 0xfd, 0xa0, 0xa6, 0xad, 0x15, 0xd7, 0x67, 0x37, 0x75, 0x2a, 0x59, 0x82, 0x52,
+	0xe0, 0x8d, 0x5f, 0x6b, 0xf0, 0x11, 0xaf, 0x35, 0xa2, 0x23, 0x29, 0xf3, 0xd4, 0x5b, 0x01, 0x38,
+	0xf6, 0x06, 0xe1, 0x01, 0xc4, 0xcf, 0x19, 0x09, 0x42, 0xf7, 0x0e, 0x2d, 0x07, 0x44, 0x69, 0xc0,
+	0xbe, 0xd1, 0x2d, 0x28, 0x1d, 0x1f, 0xba, 0xe2, 0x99, 0xa2, 0x82, 0xf9, 0x80, 0xa5, 0x0e, 0xd7,
+	0x39, 0xb6, 0xbd, 0x81, 0xf0, 0x46, 0x19, 0xc7, 0x00, 0x63, 0x37, 0x7c, 0x05, 0x4a, 0x09, 0x16,
+	0xfa, 0xe2, 0x53, 0x98, 0xb4, 0x03, 0x32, 0x10, 0xc5, 0xf6, 0x7c, 0x5c, 0x6c, 0xc7, 0x94, 0x8c,
+	0xc0, 0x58, 0x85, 0xe5, 0x0c, 0x46, 0x22, 0xb2, 0x9f, 0xc3, 0xda, 0x4e, 0xff, 0xdc, 0x3f, 0x95,
+	0xf0, 0x3b, 0xae, 0xd7, 0x62, 0xea, 0x8e, 0x2b, 0xd4, 0xee, 0xc3, 0xbd, 0x9c, 0xb9, 0x62, 0x81,
+	0x2f, 0xe0, 0x7e, 0x54, 0xcc, 0x45, 0xcb, 0xfb, 0x57, 0x5e, 0xe3, 0x2b, 0x78, 0x90, 0x3f, 0x5d,
+	0xf8, 0xfb, 0xff, 0xa1, 0x44, 0x15, 0xf6, 0x85, 0xbb, 0x95, 0x26, 0xe1, 0x14, 0x42, 0xa2, 0x7d,
+	0xf2, 0x8e, 0x15, 0x5f, 0x7d, 0xdb, 0x39, 0xa3, 0x35, 0xd6, 0x95, 0x25, 0x7a, 0xce, 0x24, 0xca,
+	0x99, 0x2e, 0x24, 0x0a, 0x63, 0x41, 0x8b, 0x63, 0xc1, 0xd8, 0x82, 0xb5, 0x4e, 0xe0, 0x11, 0x73,
+	0xb0, 0xe3, 0x99, 0x03, 0xf2, 0xd2, 0x3d, 0xa1, 0x9a, 0x8c, 0x4d, 0x4b, 0xbf, 0xd7, 0xe0, 0x5e,
+	0xce, 0x34, 0xb1, 0xde, 0x13, 0x98, 0x3b, 0x1f, 0x32, 0x71, 0x28, 0x51, 0x68, 0x08, 0xf6, 0x76,
+	0xd5, 0x8d, 0xe1, 0x2f, 0xdd, 0x13, 0x9c, 0xa0, 0x43, 0x3f, 0x82, 0xaa, 0x15, 0x2a, 0xc2, 0x67,
+	0x16, 0xd8, 0xcc, 0x5b, 0xcc, 0x84, 0x32, 0x86, 0xce, 0x4d, 0xd1, 0x1a, 0xdb, 0xb0, 0x3a, 0x2a,
+	0xda, 0xd5, 0x6e, 0x0e, 0xbf, 0xd3, 0x54, 0xd6, 0x48, 0xdd, 0x67, 0xff, 0x3b, 0x5a, 0xfd, 0x52,
+	0x83, 0x72, 0xcb, 0x0c, 0x4c, 0x6c, 0x06, 0x84, 0x55, 0x9d, 0xae, 0x75, 0xde, 0x67, 0x19, 0x4d,
+	0x24, 0x7b, 0x09, 0x42, 0xb7, 0xf2, 0x5b, 0xd3, 0xb1, 0x2e, 0x6d, 0x2b, 0x38, 0x65, 0x39, 0xa1,
+	0x82, 0x63, 0x00, 0xcd, 0x63, 0xfe, 0xd0, 0x23, 0xa6, 0xb5, 0x63, 0xf6, 0x02, 0xd7, 0x13, 0xa9,
+	0x21, 0x01, 0xa3, 0x25, 0xfa, 0x5b, 0x3b, 0xf0, 0xcc, 0x80, 0x88, 0x24, 0x11, 0x0e, 0x0d, 0x0f,
+	0xe6, 0xb8, 0x9a, 0x47, 0xaf, 0xf7, 0x9c, 0x63, 0x37, 0x59, 0x99, 0x6a, 0xe9, 0xca, 0x74, 0x1d,
+	0xca, 0x96, 0x90, 0x9a, 0x09, 0x32, 0xbb, 0x39, 0xc7, 0xd4, 0x15, 0x30, 0x1c, 0x61, 0x79, 0xb1,
+	0x6e, 0x11, 0x46, 0xc9, 0xf3, 0x6f, 0x34, 0x36, 0xfe, 0xa1, 0x85, 0x8b, 0x62, 0xbe, 0xa8, 0xb2,
+	0x46, 0xa0, 0xa7, 0x5d, 0x58, 0x23, 0xd0, 0x6f, 0x76, 0x28, 0xd9, 0x03, 0xd2, 0xb1, 0x9d, 0x1e,
+	0xd9, 0x3d, 0xec, 0xb4, 0x87, 0x6e, 0xef, 0x54, 0xf0, 0x1e, 0x45, 0x24, 0x0f, 0x50, 0x71, 0x5d,
+	0x8a, 0x0f, 0x50, 0x04, 0x93, 0x9e, 0xef, 0xdb, 0xe2, 0x98, 0x62, 0xdf, 0xd4, 0x48, 0x7d, 0x17,
+	0x9b, 0x9d, 0x7d, 0xcc, 0xca, 0x84, 0x02, 0x0e, 0x87, 0x34, 0xc3, 0xbe, 0x75, 0x4d, 0xcf, 0x62,
+	0x25, 0x58, 0x05, 0xf3, 0x01, 0xa5, 0x37, 0x9d, 0x80, 0x38, 0x8e, 0x29, 0x2e, 0x5c, 0xe1, 0xd0,
+	0xf8, 0x85, 0x06, 0xd5, 0x64, 0xf0, 0xd0, 0xe3, 0x22, 0x78, 0x47, 0x95, 0x15, 0x29, 0x55, 0x8f,
+	0x03, 0x8c, 0x5b, 0x1e, 0x0b, 0x3c, 0x3b, 0x58, 0x38, 0x65, 0x21, 0x3e, 0x58, 0x64, 0x73, 0x61,
+	0x81, 0xa7, 0x71, 0x33, 0x3c, 0x0d, 0xef, 0x02, 0xe2, 0x0d, 0x41, 0x82, 0x18, 0xdf, 0x15, 0xa0,
+	0x1a, 0x46, 0xe2, 0x51, 0x96, 0xa5, 0xd7, 0x60, 0xd6, 0x1e, 0x0c, 0x88, 0x65, 0x9b, 0x01, 0xe9,
+	0xf3, 0x2b, 0x6d, 0x19, 0xcb, 0xa0, 0x0f, 0x6a, 0xf7, 0xfc, 0x8b, 0xcf, 0x2d, 0x28, 0x0d, 0xdd,
+	0x4b, 0xc2, 0xef, 0x3e, 0x25, 0xcc, 0x07, 0x89, 0xa0, 0x9b, 0xbe, 0x72, 0xd0, 0x95, 0x93, 0x41,
+	0x17, 0x5d, 0xc3, 0x66, 0xa4, 0x6b, 0x58, 0xe4, 0x57, 0xc8, 0xf0, 0xeb, 0x6c, 0xd2, 0xaf, 0xdf,
+	0x82, 0x9e, 0xde, 0xd9, 0x68, 0x23, 0xe5, 0x58, 0x24, 0xef, 0xff, 0x94, 0x6b, 0x93, 0x0e, 0x2b,
+	0x8c, 0x38, 0x6c, 0x9e, 0x5d, 0x65, 0x7e, 0x42, 0x3c, 0x3f, 0x7e, 0xc5, 0x30, 0x30, 0xbb, 0xb7,
+	0x44, 0xc0, 0xf8, 0xd2, 0x7d, 0xc1, 0x41, 0x22, 0x61, 0x84, 0x43, 0x64, 0xd0, 0xc2, 0xe4, 0x84,
+	0x22, 0x78, 0xc9, 0xc4, 0x5e, 0xca, 0x30, 0x83, 0x60, 0x81, 0x31, 0xfe, 0xa0, 0x41, 0x75, 0x37,
+	0x51, 0xdf, 0x2a, 0x2b, 0x61, 0x4d, 0x5d, 0x09, 0x33, 0x3b, 0x9f, 0x9a, 0x8e, 0x43, 0xfa, 0x3c,
+	0xeb, 0x55, 0x70, 0x34, 0x46, 0x2d, 0xa8, 0x90, 0x77, 0x81, 0x67, 0x36, 0x43, 0x82, 0x22, 0x8b,
+	0xe2, 0x15, 0xa9, 0x3c, 0x12, 0x8c, 0xda, 0x12, 0x19, 0x4e, 0x4e, 0x32, 0xbe, 0xd3, 0xa0, 0x9e,
+	0x4d, 0x8d, 0x1e, 0x8e, 0x64, 0xcc, 0xea, 0x66, 0x95, 0xae, 0xf0, 0x2a, 0x82, 0xa6, 0x33, 0x68,
+	0x1c, 0x76, 0x85, 0x74, 0xd8, 0x25, 0xf2, 0x6b, 0x31, 0x9d, 0x5f, 0x33, 0x73, 0x27, 0x7b, 0x1c,
+	0x66, 0x59, 0xd6, 0x76, 0x4e, 0x78, 0xa2, 0xe5, 0x0f, 0x13, 0x15, 0x3c, 0x02, 0x8f, 0x3b, 0xdb,
+	0x49, 0xad, 0xa4, 0xce, 0x50, 0xd2, 0xca, 0x72, 0x34, 0xa5, 0xa6, 0xa4, 0x28, 0xe3, 0x8e, 0x5e,
+	0x9a, 0x75, 0xdc, 0xd1, 0xbb, 0xaa, 0x67, 0x45, 0x47, 0x4f, 0x2d, 0xe3, 0x75, 0xf8, 0x88, 0xce,
+	0x76, 0x86, 0x44, 0x37, 0xd0, 0xf6, 0xc3, 0x74, 0xb6, 0x3f, 0xbc, 0x13, 0xa2, 0xa6, 0x9a, 0x5a,
+	0xe5, 0xb8, 0xa9, 0x76, 0x73, 0xdb, 0x46, 0x4d, 0x35, 0xf5, 0x52, 0x1b, 0x4b, 0x50, 0xc6, 0xaf,
+	0xbf, 0xb6, 0x1d, 0xcb, 0xbd, 0x44, 0xd3, 0x50, 0xc4, 0xaf, 0x3f, 0xd3, 0x27, 0xf8, 0xc7, 0xa6,
+	0xae, 0x6d, 0xac, 0x02, 0xc4, 0x9b, 0x04, 0x95, 0x61, 0xf2, 0xe5, 0x01, 0x6e, 0x70, 0x82, 0x9d,
+	0xce, 0x0b, 0x5d, 0xdb, 0xb8, 0x80, 0x29, 0x9e, 0x2d, 0xd0, 0x0c, 0x94, 0xda, 0xdd, 0x67, 0x4f,
+	0x9e, 0xe9, 0x13, 0xf4, 0xb3, 0xdb, 0xd9, 0xfe, 0xec, 0x73, 0xbd, 0x40, 0x3f, 0x9b, 0xfb, 0x4f,
+	0x9f, 0x6e, 0xeb, 0x45, 0x4e, 0xb0, 0xf5, 0xf8, 0xb1, 0x3e, 0x49, 0x3f, 0x1b, 0x5d, 0x4a, 0x50,
+	0xe2, 0x04, 0x5b, 0x4f, 0x1f, 0xe9, 0x53, 0x0c, 0xda, 0xd9, 0xde, 0x7c, 0xac, 0x4f, 0xd3, 0xcf,
+	0x17, 0x78, 0x7b, 0xf3, 0x91, 0x5e, 0xa6, 0x9f, 0x7b, 0xfb, 0xcf, 0x9e, 0x7c, 0xae, 0xcf, 0xd0,
+	0x4f, 0xdc, 0x7d, 0xf6, 0x64, 0x4b, 0x87, 0x8d, 0x3e, 0xcc, 0x2b, 0x2e, 0x76, 0x08, 0x60, 0xaa,
+	0xd3, 0x6e, 0x1e, 0xec, 0xb7, 0xf4, 0x09, 0xfa, 0xfd, 0x6a, 0x6f, 0xbf, 0x7b, 0xd4, 0xd6, 0x35,
+	0x2a, 0xf9, 0x97, 0x07, 0x5d, 0xac, 0x17, 0xa8, 0xe4, 0xad, 0xc6, 0x37, 0x7a, 0x91, 0x82, 0xbe,
+	0x6e, 0xb7, 0x5f, 0x70, 0x69, 0x5e, 0x1d, 0xec, 0x1f, 0x7d, 0xa9, 0x97, 0xd0, 0x2c, 0x4c, 0x7f,
+	0xd5, 0x6d, 0xe0, 0xa3, 0x36, 0xd6, 0xa7, 0x28, 0xc5, 0x37, 0xed, 0x06, 0xd6, 0xa7, 0x37, 0x7f,
+	0x5e, 0x87, 0xca, 0x3e, 0x09, 0x2e, 0x5d, 0xef, 0xac, 0x43, 0xbc, 0x0b, 0xe2, 0xa1, 0x37, 0xe1,
+	0x13, 0x5a, 0xf2, 0x87, 0x01, 0xb4, 0x4a, 0xbd, 0x9f, 0xf3, 0x57, 0x4a, 0x7d, 0x2d, 0x9b, 0x40,
+	0x38, 0x7f, 0x02, 0x61, 0x96, 0xd9, 0x53, 0x9c, 0x97, 0x58, 0x5c, 0x65, 0xfc, 0x48, 0x52, 0x5f,
+	0xce, 0xc0, 0x46, 0x3c, 0xdf, 0x84, 0x2f, 0x2e, 0x2a, 0x81, 0x73, 0xfe, 0xe0, 0xe0, 0x02, 0xe7,
+	0xfe, 0x87, 0xc1, 0x98, 0xab, 0x7e, 0x9f, 0xe0, 0xcc, 0x73, 0xfe, 0xd1, 0xe0, 0xcc, 0x73, 0xff,
+	0xbc, 0x98, 0x88, 0x4d, 0x9d, 0xfa, 0x03, 0x43, 0x32, 0xb5, 0xb2, 0xf7, 0x2c, 0x9b, 0x3a, 0xa3,
+	0xa3, 0x1c, 0x9a, 0x3a, 0xc5, 0x39, 0x34, 0xb5, 0x9a, 0xed, 0x72, 0x06, 0x76, 0xd4, 0xd4, 0x2a,
+	0x81, 0x73, 0x3a, 0xfe, 0xb2, 0xa9, 0xf3, 0x98, 0xab, 0x9a, 0xe4, 0xb2, 0xa9, 0x73, 0x98, 0xe7,
+	0xf6, 0xd7, 0x27, 0xd0, 0xeb, 0x64, 0x0b, 0x31, 0xe4, 0xbd, 0x12, 0x1b, 0x52, 0xd5, 0x8d, 0xad,
+	0xaf, 0x66, 0xe2, 0x23, 0xce, 0x07, 0x52, 0x27, 0x31, 0x64, 0x7b, 0x57, 0x18, 0x52, 0xc9, 0x73,
+	0x49, 0x8d, 0x94, 0x45, 0x55, 0xb4, 0x8f, 0xb9, 0xa8, 0xd9, 0xed, 0xea, 0xfa, 0x6a, 0x26, 0x5e,
+	0xe6, 0xac, 0xe8, 0x18, 0x73, 0xce, 0xd9, 0x2d, 0xe9, 0xfa, 0x6a, 0x26, 0x3e, 0xe2, 0xdc, 0x84,
+	0x39, 0xd9, 0x4a, 0xe8, 0x4e, 0xda, 0x6e, 0x21, 0xaf, 0xda, 0x28, 0x22, 0x62, 0xf2, 0x1c, 0x66,
+	0x22, 0xb3, 0xa0, 0x5b, 0x09, 0x2b, 0x85, 0xd3, 0x6f, 0xa7, 0xa0, 0xb2, 0x00, 0xb2, 0xee, 0x5c,
+	0x00, 0x45, 0x03, 0x95, 0x0b, 0xa0, 0x6c, 0x8f, 0x32, 0x26, 0xb2, 0x9a, 0x9c, 0x89, 0xa2, 0x65,
+	0xca, 0x99, 0x28, 0x9b, 0xa3, 0x13, 0x68, 0x0f, 0xaa, 0xc9, 0xa6, 0x1f, 0x5a, 0x64, 0x8f, 0x75,
+	0xaa, 0x66, 0x5f, 0xbd, 0xae, 0x42, 0xc9, 0xa1, 0x95, 0x6e, 0xf9, 0xf1, 0xd0, 0xca, 0xe8, 0x1d,
+	0xf2, 0xd0, 0xca, 0xec, 0x12, 0xb2, 0x00, 0x50, 0x34, 0xfc, 0x78, 0x00, 0x64, 0x37, 0x10, 0x79,
+	0x00, 0xe4, 0x74, 0x0a, 0x8d, 0x09, 0xf4, 0x6d, 0xd8, 0x96, 0x48, 0xbf, 0xf0, 0xad, 0xa5, 0x1d,
+	0x9e, 0x7e, 0x63, 0xab, 0xdf, 0xcb, 0xa1, 0x88, 0xf8, 0xff, 0x14, 0x16, 0x33, 0x9f, 0xc0, 0xd0,
+	0x03, 0xca, 0x61, 0xdc, 0xeb, 0x5a, 0xfd, 0x93, 0x31, 0x54, 0xd1, 0x5a, 0x3e, 0x2c, 0xe5, 0x3d,
+	0x85, 0xa1, 0x4f, 0x13, 0xe6, 0xc8, 0x7e, 0x6b, 0xab, 0xaf, 0x8f, 0x27, 0x4c, 0x2d, 0x9a, 0xf9,
+	0xda, 0x15, 0x2d, 0x3a, 0xee, 0x39, 0x2d, 0x5a, 0x74, 0xec, 0xc3, 0x59, 0x94, 0xbb, 0x12, 0xed,
+	0xcc, 0x28, 0x77, 0xa9, 0xfa, 0x9f, 0x51, 0xee, 0x52, 0x76, 0x40, 0xb9, 0x9b, 0x32, 0xfb, 0x8f,
+	0xdc, 0x4d, 0xe3, 0x1a, 0xa1, 0xdc, 0x4d, 0xe3, 0x9b, 0x98, 0x13, 0xc8, 0x84, 0x05, 0x75, 0x3b,
+	0x10, 0xdd, 0xe3, 0xbf, 0x60, 0xe6, 0x74, 0x38, 0xeb, 0x46, 0x1e, 0x49, 0xb4, 0xc4, 0x0e, 0x54,
+	0x12, 0x57, 0x0a, 0x24, 0xa5, 0xaf, 0xe4, 0x6b, 0x62, 0x7d, 0x51, 0x81, 0x89, 0xf8, 0x7c, 0x01,
+	0x10, 0xdf, 0x02, 0x50, 0x98, 0xc4, 0x52, 0x1c, 0x16, 0xd2, 0x60, 0x59, 0x8c, 0x44, 0x51, 0x8d,
+	0xa4, 0x24, 0xa6, 0x12, 0x43, 0xdd, 0x9e, 0x61, 0x7c, 0x12, 0x15, 0x33, 0x92, 0xf2, 0x98, 0x8a,
+	0x8f, 0xba, 0x47, 0x23, 0xd5, 0x2d, 0xa9, 0xbb, 0xf3, 0xea, 0x88, 0x0d, 0xb2, 0xeb, 0x96, 0x8c,
+	0xfb, 0x41, 0x58, 0xb7, 0xa4, 0x38, 0x2f, 0x25, 0x6d, 0x93, 0x51, 0xb7, 0x64, 0xf2, 0x7c, 0x93,
+	0x6a, 0xca, 0x29, 0xea, 0x96, 0x1c, 0x81, 0x73, 0x2f, 0x34, 0x52, 0xdd, 0xa2, 0x62, 0x9e, 0x73,
+	0xd9, 0x91, 0xeb, 0x96, 0x4c, 0xe6, 0x2f, 0xe1, 0xa3, 0x54, 0xe7, 0x05, 0xd5, 0x93, 0xda, 0xca,
+	0xbd, 0xa3, 0xfa, 0x5d, 0x25, 0x2e, 0xe2, 0xd6, 0x87, 0xc5, 0xcc, 0xf7, 0x6d, 0xbe, 0x3d, 0xc7,
+	0xbd, 0x9a, 0xf3, 0xed, 0x39, 0xf6, 0x91, 0xdc, 0x98, 0x78, 0xa4, 0x21, 0x1b, 0x6a, 0x59, 0xcf,
+	0xce, 0xe8, 0xbe, 0x9a, 0x4d, 0xf2, 0x38, 0x7b, 0x90, 0x4f, 0x24, 0x2d, 0xc5, 0x37, 0x98, 0x78,
+	0x1c, 0x8a, 0x36, 0x58, 0xf2, 0x05, 0x29, 0xda, 0x60, 0xa9, 0x37, 0x24, 0x63, 0xe2, 0xed, 0x14,
+	0xfb, 0xed, 0xfe, 0xf1, 0xbf, 0x03, 0x00, 0x00, 0xff, 0xff, 0xc9, 0xa3, 0x31, 0x73, 0x96, 0x2f,
+	0x00, 0x00,
 }

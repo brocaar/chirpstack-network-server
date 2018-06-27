@@ -43,7 +43,7 @@ func (x RXWindow) String() string {
 	return proto.EnumName(RXWindow_name, int32(x))
 }
 func (RXWindow) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_as_b8a9ebddbc75fc9e, []int{0}
+	return fileDescriptor_as_819b983bab735c1a, []int{0}
 }
 
 type ErrorType int32
@@ -78,14 +78,14 @@ func (x ErrorType) String() string {
 	return proto.EnumName(ErrorType_name, int32(x))
 }
 func (ErrorType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_as_b8a9ebddbc75fc9e, []int{1}
+	return fileDescriptor_as_819b983bab735c1a, []int{1}
 }
 
 type DataRate struct {
-	Modulation           string   `protobuf:"bytes,1,opt,name=modulation" json:"modulation,omitempty"`
-	BandWidth            uint32   `protobuf:"varint,2,opt,name=bandWidth" json:"bandWidth,omitempty"`
-	SpreadFactor         uint32   `protobuf:"varint,3,opt,name=spreadFactor" json:"spreadFactor,omitempty"`
-	Bitrate              uint32   `protobuf:"varint,4,opt,name=bitrate" json:"bitrate,omitempty"`
+	Modulation           string   `protobuf:"bytes,1,opt,name=modulation,proto3" json:"modulation,omitempty"`
+	BandWidth            uint32   `protobuf:"varint,2,opt,name=bandWidth,proto3" json:"bandWidth,omitempty"`
+	SpreadFactor         uint32   `protobuf:"varint,3,opt,name=spreadFactor,proto3" json:"spreadFactor,omitempty"`
+	Bitrate              uint32   `protobuf:"varint,4,opt,name=bitrate,proto3" json:"bitrate,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -95,7 +95,7 @@ func (m *DataRate) Reset()         { *m = DataRate{} }
 func (m *DataRate) String() string { return proto.CompactTextString(m) }
 func (*DataRate) ProtoMessage()    {}
 func (*DataRate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_b8a9ebddbc75fc9e, []int{0}
+	return fileDescriptor_as_819b983bab735c1a, []int{0}
 }
 func (m *DataRate) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DataRate.Unmarshal(m, b)
@@ -145,13 +145,13 @@ func (m *DataRate) GetBitrate() uint32 {
 
 type RXInfo struct {
 	Mac                  []byte   `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
-	Time                 string   `protobuf:"bytes,2,opt,name=time" json:"time,omitempty"`
-	Rssi                 int32    `protobuf:"varint,3,opt,name=rssi" json:"rssi,omitempty"`
-	LoRaSNR              float64  `protobuf:"fixed64,4,opt,name=loRaSNR" json:"loRaSNR,omitempty"`
-	Name                 string   `protobuf:"bytes,5,opt,name=name" json:"name,omitempty"`
-	Latitude             float64  `protobuf:"fixed64,6,opt,name=latitude" json:"latitude,omitempty"`
-	Longitude            float64  `protobuf:"fixed64,7,opt,name=longitude" json:"longitude,omitempty"`
-	Altitude             float64  `protobuf:"fixed64,8,opt,name=altitude" json:"altitude,omitempty"`
+	Time                 string   `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
+	Rssi                 int32    `protobuf:"varint,3,opt,name=rssi,proto3" json:"rssi,omitempty"`
+	LoRaSNR              float64  `protobuf:"fixed64,4,opt,name=loRaSNR,proto3" json:"loRaSNR,omitempty"`
+	Name                 string   `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
+	Latitude             float64  `protobuf:"fixed64,6,opt,name=latitude,proto3" json:"latitude,omitempty"`
+	Longitude            float64  `protobuf:"fixed64,7,opt,name=longitude,proto3" json:"longitude,omitempty"`
+	Altitude             float64  `protobuf:"fixed64,8,opt,name=altitude,proto3" json:"altitude,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -161,7 +161,7 @@ func (m *RXInfo) Reset()         { *m = RXInfo{} }
 func (m *RXInfo) String() string { return proto.CompactTextString(m) }
 func (*RXInfo) ProtoMessage()    {}
 func (*RXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_b8a9ebddbc75fc9e, []int{1}
+	return fileDescriptor_as_819b983bab735c1a, []int{1}
 }
 func (m *RXInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_RXInfo.Unmarshal(m, b)
@@ -238,10 +238,10 @@ func (m *RXInfo) GetAltitude() float64 {
 }
 
 type TXInfo struct {
-	Frequency            int64     `protobuf:"varint,1,opt,name=frequency" json:"frequency,omitempty"`
-	DataRate             *DataRate `protobuf:"bytes,2,opt,name=dataRate" json:"dataRate,omitempty"`
-	Adr                  bool      `protobuf:"varint,3,opt,name=adr" json:"adr,omitempty"`
-	CodeRate             string    `protobuf:"bytes,4,opt,name=codeRate" json:"codeRate,omitempty"`
+	Frequency            int64     `protobuf:"varint,1,opt,name=frequency,proto3" json:"frequency,omitempty"`
+	DataRate             *DataRate `protobuf:"bytes,2,opt,name=dataRate,proto3" json:"dataRate,omitempty"`
+	Adr                  bool      `protobuf:"varint,3,opt,name=adr,proto3" json:"adr,omitempty"`
+	CodeRate             string    `protobuf:"bytes,4,opt,name=codeRate,proto3" json:"codeRate,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
@@ -251,7 +251,7 @@ func (m *TXInfo) Reset()         { *m = TXInfo{} }
 func (m *TXInfo) String() string { return proto.CompactTextString(m) }
 func (*TXInfo) ProtoMessage()    {}
 func (*TXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_b8a9ebddbc75fc9e, []int{2}
+	return fileDescriptor_as_819b983bab735c1a, []int{2}
 }
 func (m *TXInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TXInfo.Unmarshal(m, b)
@@ -300,33 +300,23 @@ func (m *TXInfo) GetCodeRate() string {
 }
 
 type HandleUplinkDataRequest struct {
-	DevEUI []byte    `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
-	AppEUI []byte    `protobuf:"bytes,2,opt,name=appEUI,proto3" json:"appEUI,omitempty"`
-	FCnt   uint32    `protobuf:"varint,3,opt,name=fCnt" json:"fCnt,omitempty"`
-	FPort  uint32    `protobuf:"varint,4,opt,name=fPort" json:"fPort,omitempty"`
-	Data   []byte    `protobuf:"bytes,5,opt,name=data,proto3" json:"data,omitempty"`
-	TxInfo *TXInfo   `protobuf:"bytes,6,opt,name=txInfo" json:"txInfo,omitempty"`
-	RxInfo []*RXInfo `protobuf:"bytes,7,rep,name=rxInfo" json:"rxInfo,omitempty"`
-	// The device battery status
-	// 0:      The end-device is connected to an external power source
-	// 1..254: The battery level, 1 being at minimum and 254 being at maximum
-	// 255:    The end-device was not able to measure the battery level
-	// 256:    The device-status is not available.
-	DeviceStatusBattery uint32 `protobuf:"varint,9,opt,name=deviceStatusBattery" json:"deviceStatusBattery,omitempty"`
-	// The device margin status
-	// -32..32: The demodulation SNR ration in dB
-	// 256:     The device-status is not available.
-	DeviceStatusMargin   int32    `protobuf:"varint,10,opt,name=deviceStatusMargin" json:"deviceStatusMargin,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	DevEUI               []byte    `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	AppEUI               []byte    `protobuf:"bytes,2,opt,name=appEUI,proto3" json:"appEUI,omitempty"`
+	FCnt                 uint32    `protobuf:"varint,3,opt,name=fCnt,proto3" json:"fCnt,omitempty"`
+	FPort                uint32    `protobuf:"varint,4,opt,name=fPort,proto3" json:"fPort,omitempty"`
+	Data                 []byte    `protobuf:"bytes,5,opt,name=data,proto3" json:"data,omitempty"`
+	TxInfo               *TXInfo   `protobuf:"bytes,6,opt,name=txInfo,proto3" json:"txInfo,omitempty"`
+	RxInfo               []*RXInfo `protobuf:"bytes,7,rep,name=rxInfo,proto3" json:"rxInfo,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
 }
 
 func (m *HandleUplinkDataRequest) Reset()         { *m = HandleUplinkDataRequest{} }
 func (m *HandleUplinkDataRequest) String() string { return proto.CompactTextString(m) }
 func (*HandleUplinkDataRequest) ProtoMessage()    {}
 func (*HandleUplinkDataRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_b8a9ebddbc75fc9e, []int{3}
+	return fileDescriptor_as_819b983bab735c1a, []int{3}
 }
 func (m *HandleUplinkDataRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleUplinkDataRequest.Unmarshal(m, b)
@@ -395,29 +385,15 @@ func (m *HandleUplinkDataRequest) GetRxInfo() []*RXInfo {
 	return nil
 }
 
-func (m *HandleUplinkDataRequest) GetDeviceStatusBattery() uint32 {
-	if m != nil {
-		return m.DeviceStatusBattery
-	}
-	return 0
-}
-
-func (m *HandleUplinkDataRequest) GetDeviceStatusMargin() int32 {
-	if m != nil {
-		return m.DeviceStatusMargin
-	}
-	return 0
-}
-
 type HandleProprietaryUplinkRequest struct {
 	// MACPayload of the proprietary LoRaWAN frame.
 	MacPayload []byte `protobuf:"bytes,1,opt,name=macPayload,proto3" json:"macPayload,omitempty"`
 	// MIC of the proprietary LoRaWAN frame.
 	Mic []byte `protobuf:"bytes,2,opt,name=mic,proto3" json:"mic,omitempty"`
 	// TXInfo contains the TX related meta-data.
-	TxInfo *TXInfo `protobuf:"bytes,3,opt,name=txInfo" json:"txInfo,omitempty"`
+	TxInfo *TXInfo `protobuf:"bytes,3,opt,name=txInfo,proto3" json:"txInfo,omitempty"`
 	// RXInfo contains the RX related meta-data.
-	RxInfo               []*RXInfo `protobuf:"bytes,4,rep,name=rxInfo" json:"rxInfo,omitempty"`
+	RxInfo               []*RXInfo `protobuf:"bytes,4,rep,name=rxInfo,proto3" json:"rxInfo,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
 	XXX_unrecognized     []byte    `json:"-"`
 	XXX_sizecache        int32     `json:"-"`
@@ -427,7 +403,7 @@ func (m *HandleProprietaryUplinkRequest) Reset()         { *m = HandleProprietar
 func (m *HandleProprietaryUplinkRequest) String() string { return proto.CompactTextString(m) }
 func (*HandleProprietaryUplinkRequest) ProtoMessage()    {}
 func (*HandleProprietaryUplinkRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_b8a9ebddbc75fc9e, []int{4}
+	return fileDescriptor_as_819b983bab735c1a, []int{4}
 }
 func (m *HandleProprietaryUplinkRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleProprietaryUplinkRequest.Unmarshal(m, b)
@@ -485,7 +461,7 @@ func (m *HandleProprietaryUplinkResponse) Reset()         { *m = HandleProprieta
 func (m *HandleProprietaryUplinkResponse) String() string { return proto.CompactTextString(m) }
 func (*HandleProprietaryUplinkResponse) ProtoMessage()    {}
 func (*HandleProprietaryUplinkResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_b8a9ebddbc75fc9e, []int{5}
+	return fileDescriptor_as_819b983bab735c1a, []int{5}
 }
 func (m *HandleProprietaryUplinkResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleProprietaryUplinkResponse.Unmarshal(m, b)
@@ -515,7 +491,7 @@ func (m *HandleUplinkDataResponse) Reset()         { *m = HandleUplinkDataRespon
 func (m *HandleUplinkDataResponse) String() string { return proto.CompactTextString(m) }
 func (*HandleUplinkDataResponse) ProtoMessage()    {}
 func (*HandleUplinkDataResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_b8a9ebddbc75fc9e, []int{6}
+	return fileDescriptor_as_819b983bab735c1a, []int{6}
 }
 func (m *HandleUplinkDataResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleUplinkDataResponse.Unmarshal(m, b)
@@ -539,11 +515,11 @@ type HandleErrorRequest struct {
 	// DevEUI of the device.
 	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
 	// Type of the error.
-	Type ErrorType `protobuf:"varint,3,opt,name=type,enum=as.ErrorType" json:"type,omitempty"`
+	Type ErrorType `protobuf:"varint,3,opt,name=type,proto3,enum=as.ErrorType" json:"type,omitempty"`
 	// Error string describing the error.
-	Error string `protobuf:"bytes,4,opt,name=error" json:"error,omitempty"`
+	Error string `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
 	// Frame-counter (if applicable) related to the error.
-	FCnt                 uint32   `protobuf:"varint,5,opt,name=fCnt" json:"fCnt,omitempty"`
+	FCnt                 uint32   `protobuf:"varint,5,opt,name=fCnt,proto3" json:"fCnt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -553,7 +529,7 @@ func (m *HandleErrorRequest) Reset()         { *m = HandleErrorRequest{} }
 func (m *HandleErrorRequest) String() string { return proto.CompactTextString(m) }
 func (*HandleErrorRequest) ProtoMessage()    {}
 func (*HandleErrorRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_b8a9ebddbc75fc9e, []int{7}
+	return fileDescriptor_as_819b983bab735c1a, []int{7}
 }
 func (m *HandleErrorRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleErrorRequest.Unmarshal(m, b)
@@ -611,7 +587,7 @@ func (m *HandleErrorResponse) Reset()         { *m = HandleErrorResponse{} }
 func (m *HandleErrorResponse) String() string { return proto.CompactTextString(m) }
 func (*HandleErrorResponse) ProtoMessage()    {}
 func (*HandleErrorResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_b8a9ebddbc75fc9e, []int{8}
+	return fileDescriptor_as_819b983bab735c1a, []int{8}
 }
 func (m *HandleErrorResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleErrorResponse.Unmarshal(m, b)
@@ -635,9 +611,9 @@ type HandleDownlinkACKRequest struct {
 	// DevEUI of the device.
 	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
 	// Downlink frame-counter.
-	FCnt uint32 `protobuf:"varint,2,opt,name=fCnt" json:"fCnt,omitempty"`
+	FCnt uint32 `protobuf:"varint,2,opt,name=fCnt,proto3" json:"fCnt,omitempty"`
 	// Frame was acknowledged?
-	Acknowledged         bool     `protobuf:"varint,3,opt,name=acknowledged" json:"acknowledged,omitempty"`
+	Acknowledged         bool     `protobuf:"varint,3,opt,name=acknowledged,proto3" json:"acknowledged,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -647,7 +623,7 @@ func (m *HandleDownlinkACKRequest) Reset()         { *m = HandleDownlinkACKReque
 func (m *HandleDownlinkACKRequest) String() string { return proto.CompactTextString(m) }
 func (*HandleDownlinkACKRequest) ProtoMessage()    {}
 func (*HandleDownlinkACKRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_b8a9ebddbc75fc9e, []int{9}
+	return fileDescriptor_as_819b983bab735c1a, []int{9}
 }
 func (m *HandleDownlinkACKRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleDownlinkACKRequest.Unmarshal(m, b)
@@ -698,7 +674,7 @@ func (m *HandleDownlinkACKResponse) Reset()         { *m = HandleDownlinkACKResp
 func (m *HandleDownlinkACKResponse) String() string { return proto.CompactTextString(m) }
 func (*HandleDownlinkACKResponse) ProtoMessage()    {}
 func (*HandleDownlinkACKResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_b8a9ebddbc75fc9e, []int{10}
+	return fileDescriptor_as_819b983bab735c1a, []int{10}
 }
 func (m *HandleDownlinkACKResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleDownlinkACKResponse.Unmarshal(m, b)
@@ -718,6 +694,99 @@ func (m *HandleDownlinkACKResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_HandleDownlinkACKResponse proto.InternalMessageInfo
 
+type SetDeviceStatusRequest struct {
+	// Device EUI (8 bytes).
+	DevEui []byte `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
+	// Battery level.
+	// 0:      The end-device is connected to an external power source
+	// 1..254: The battery level, 1 being at minimum and 254 being at maximum
+	// 255:    The end-device was not able to measure the battery level
+	// 256:    The device-status is not available.
+	Battery uint32 `protobuf:"varint,2,opt,name=battery,proto3" json:"battery,omitempty"`
+	// The device margin status
+	// -32..32: The demodulation SNR ration in dB
+	// 256:     The device-status is not available.
+	Margin               int32    `protobuf:"varint,3,opt,name=margin,proto3" json:"margin,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SetDeviceStatusRequest) Reset()         { *m = SetDeviceStatusRequest{} }
+func (m *SetDeviceStatusRequest) String() string { return proto.CompactTextString(m) }
+func (*SetDeviceStatusRequest) ProtoMessage()    {}
+func (*SetDeviceStatusRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_as_819b983bab735c1a, []int{11}
+}
+func (m *SetDeviceStatusRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SetDeviceStatusRequest.Unmarshal(m, b)
+}
+func (m *SetDeviceStatusRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SetDeviceStatusRequest.Marshal(b, m, deterministic)
+}
+func (dst *SetDeviceStatusRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SetDeviceStatusRequest.Merge(dst, src)
+}
+func (m *SetDeviceStatusRequest) XXX_Size() int {
+	return xxx_messageInfo_SetDeviceStatusRequest.Size(m)
+}
+func (m *SetDeviceStatusRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_SetDeviceStatusRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SetDeviceStatusRequest proto.InternalMessageInfo
+
+func (m *SetDeviceStatusRequest) GetDevEui() []byte {
+	if m != nil {
+		return m.DevEui
+	}
+	return nil
+}
+
+func (m *SetDeviceStatusRequest) GetBattery() uint32 {
+	if m != nil {
+		return m.Battery
+	}
+	return 0
+}
+
+func (m *SetDeviceStatusRequest) GetMargin() int32 {
+	if m != nil {
+		return m.Margin
+	}
+	return 0
+}
+
+type SetDeviceStatusResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *SetDeviceStatusResponse) Reset()         { *m = SetDeviceStatusResponse{} }
+func (m *SetDeviceStatusResponse) String() string { return proto.CompactTextString(m) }
+func (*SetDeviceStatusResponse) ProtoMessage()    {}
+func (*SetDeviceStatusResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_as_819b983bab735c1a, []int{12}
+}
+func (m *SetDeviceStatusResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_SetDeviceStatusResponse.Unmarshal(m, b)
+}
+func (m *SetDeviceStatusResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_SetDeviceStatusResponse.Marshal(b, m, deterministic)
+}
+func (dst *SetDeviceStatusResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SetDeviceStatusResponse.Merge(dst, src)
+}
+func (m *SetDeviceStatusResponse) XXX_Size() int {
+	return xxx_messageInfo_SetDeviceStatusResponse.Size(m)
+}
+func (m *SetDeviceStatusResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_SetDeviceStatusResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_SetDeviceStatusResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*DataRate)(nil), "as.DataRate")
 	proto.RegisterType((*RXInfo)(nil), "as.RXInfo")
@@ -730,6 +799,8 @@ func init() {
 	proto.RegisterType((*HandleErrorResponse)(nil), "as.HandleErrorResponse")
 	proto.RegisterType((*HandleDownlinkACKRequest)(nil), "as.HandleDownlinkACKRequest")
 	proto.RegisterType((*HandleDownlinkACKResponse)(nil), "as.HandleDownlinkACKResponse")
+	proto.RegisterType((*SetDeviceStatusRequest)(nil), "as.SetDeviceStatusRequest")
+	proto.RegisterType((*SetDeviceStatusResponse)(nil), "as.SetDeviceStatusResponse")
 	proto.RegisterEnum("as.RXWindow", RXWindow_name, RXWindow_value)
 	proto.RegisterEnum("as.ErrorType", ErrorType_name, ErrorType_value)
 }
@@ -754,6 +825,8 @@ type ApplicationServerClient interface {
 	HandleError(ctx context.Context, in *HandleErrorRequest, opts ...grpc.CallOption) (*HandleErrorResponse, error)
 	// HandleDownlinkACK sends a downlink ACK or nACK response.
 	HandleDownlinkACK(ctx context.Context, in *HandleDownlinkACKRequest, opts ...grpc.CallOption) (*HandleDownlinkACKResponse, error)
+	// SetDeviceStatus updates the device-status for the given device.
+	SetDeviceStatus(ctx context.Context, in *SetDeviceStatusRequest, opts ...grpc.CallOption) (*SetDeviceStatusResponse, error)
 }
 
 type applicationServerClient struct {
@@ -800,8 +873,16 @@ func (c *applicationServerClient) HandleDownlinkACK(ctx context.Context, in *Han
 	return out, nil
 }
 
-// Server API for ApplicationServer service
+func (c *applicationServerClient) SetDeviceStatus(ctx context.Context, in *SetDeviceStatusRequest, opts ...grpc.CallOption) (*SetDeviceStatusResponse, error) {
+	out := new(SetDeviceStatusResponse)
+	err := c.cc.Invoke(ctx, "/as.ApplicationServer/SetDeviceStatus", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
 
+// ApplicationServerServer is the server API for ApplicationServer service.
 type ApplicationServerServer interface {
 	// HandleUplinkData publishes data received from an end-device.
 	HandleUplinkData(context.Context, *HandleUplinkDataRequest) (*HandleUplinkDataResponse, error)
@@ -811,6 +892,8 @@ type ApplicationServerServer interface {
 	HandleError(context.Context, *HandleErrorRequest) (*HandleErrorResponse, error)
 	// HandleDownlinkACK sends a downlink ACK or nACK response.
 	HandleDownlinkACK(context.Context, *HandleDownlinkACKRequest) (*HandleDownlinkACKResponse, error)
+	// SetDeviceStatus updates the device-status for the given device.
+	SetDeviceStatus(context.Context, *SetDeviceStatusRequest) (*SetDeviceStatusResponse, error)
 }
 
 func RegisterApplicationServerServer(s *grpc.Server, srv ApplicationServerServer) {
@@ -889,6 +972,24 @@ func _ApplicationServer_HandleDownlinkACK_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApplicationServer_SetDeviceStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetDeviceStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApplicationServerServer).SetDeviceStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/as.ApplicationServer/SetDeviceStatus",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApplicationServerServer).SetDeviceStatus(ctx, req.(*SetDeviceStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ApplicationServer_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "as.ApplicationServer",
 	HandlerType: (*ApplicationServerServer)(nil),
@@ -909,64 +1010,70 @@ var _ApplicationServer_serviceDesc = grpc.ServiceDesc{
 			MethodName: "HandleDownlinkACK",
 			Handler:    _ApplicationServer_HandleDownlinkACK_Handler,
 		},
+		{
+			MethodName: "SetDeviceStatus",
+			Handler:    _ApplicationServer_SetDeviceStatus_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "as.proto",
 }
 
-func init() { proto.RegisterFile("as.proto", fileDescriptor_as_b8a9ebddbc75fc9e) }
+func init() { proto.RegisterFile("as.proto", fileDescriptor_as_819b983bab735c1a) }
 
-var fileDescriptor_as_b8a9ebddbc75fc9e = []byte{
-	// 803 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x55, 0xdd, 0x76, 0xea, 0x44,
-	0x14, 0x6e, 0xf8, 0x0d, 0x1b, 0x8e, 0xe6, 0xcc, 0xd1, 0x9e, 0xc8, 0xc1, 0x63, 0x4f, 0xbc, 0xe9,
-	0xea, 0x05, 0x4b, 0xf1, 0x05, 0x44, 0x48, 0x95, 0xe5, 0x6a, 0x8b, 0x03, 0xd8, 0x2e, 0x6f, 0x58,
-	0xd3, 0xcc, 0x50, 0x63, 0x43, 0x26, 0x4e, 0x86, 0x56, 0x2e, 0xf4, 0xd2, 0x87, 0xf0, 0x2d, 0x7c,
-	0x09, 0x9f, 0xc3, 0x47, 0x71, 0xcd, 0x4c, 0x02, 0xa9, 0x80, 0xf5, 0x6e, 0xef, 0xef, 0xdb, 0xb3,
-	0x7f, 0xbe, 0xbd, 0x03, 0x60, 0x93, 0xb4, 0x9b, 0x08, 0x2e, 0x39, 0x2a, 0x91, 0xd4, 0xfb, 0xdd,
-	0x02, 0x7b, 0x48, 0x24, 0xc1, 0x44, 0x32, 0xf4, 0x16, 0x60, 0xc9, 0xe9, 0x2a, 0x22, 0x32, 0xe4,
-	0xb1, 0x6b, 0x9d, 0x58, 0xa7, 0x0d, 0x5c, 0x40, 0x50, 0x07, 0x1a, 0xb7, 0x24, 0xa6, 0xd7, 0x21,
-	0x95, 0x3f, 0xba, 0xa5, 0x13, 0xeb, 0xf4, 0x05, 0xde, 0x02, 0xc8, 0x83, 0x56, 0x9a, 0x08, 0x46,
-	0xe8, 0x39, 0x09, 0x24, 0x17, 0x6e, 0x59, 0x07, 0x3c, 0xc1, 0x90, 0x0b, 0xf5, 0xdb, 0x50, 0x0a,
-	0x22, 0x99, 0x5b, 0xd1, 0x74, 0xee, 0x7a, 0x7f, 0x59, 0x50, 0xc3, 0x37, 0xa3, 0x78, 0xc1, 0x91,
-	0x03, 0xe5, 0x25, 0x09, 0x74, 0xfd, 0x16, 0x56, 0x26, 0x42, 0x50, 0x91, 0xe1, 0x92, 0xe9, 0x9a,
-	0x0d, 0xac, 0x6d, 0x85, 0x89, 0x34, 0x0d, 0x75, 0x99, 0x2a, 0xd6, 0xb6, 0x4a, 0x1f, 0x71, 0x4c,
-	0x26, 0x97, 0x58, 0xa7, 0xb7, 0x70, 0xee, 0xaa, 0xe8, 0x98, 0x2c, 0x99, 0x5b, 0x35, 0x19, 0x94,
-	0x8d, 0xda, 0x60, 0xab, 0xc1, 0xe4, 0x8a, 0x32, 0xb7, 0xa6, 0xc3, 0x37, 0xbe, 0x1a, 0x35, 0xe2,
-	0xf1, 0x9d, 0x21, 0xeb, 0x9a, 0xdc, 0x02, 0xea, 0x25, 0x89, 0xb2, 0x97, 0xb6, 0x79, 0x99, 0xfb,
-	0xde, 0x6f, 0x50, 0x9b, 0x9a, 0x39, 0x3a, 0xd0, 0x58, 0x08, 0xf6, 0xf3, 0x8a, 0xc5, 0xc1, 0x5a,
-	0x4f, 0x53, 0xc6, 0x5b, 0x00, 0x9d, 0x82, 0x4d, 0x33, 0xe1, 0xf5, 0x5c, 0xcd, 0x5e, 0xab, 0x4b,
-	0xd2, 0x6e, 0xbe, 0x0c, 0xbc, 0x61, 0x95, 0x1e, 0x84, 0x1a, 0x3d, 0x6d, 0xac, 0x4c, 0x55, 0x3f,
-	0xe0, 0x94, 0xe1, 0x5c, 0xc7, 0x06, 0xde, 0xf8, 0xde, 0x9f, 0x25, 0x78, 0xfd, 0x0d, 0x89, 0x69,
-	0xc4, 0x66, 0x49, 0x14, 0xc6, 0xf7, 0x3a, 0xa1, 0x2a, 0x9a, 0x4a, 0x74, 0x0c, 0x35, 0xca, 0x1e,
-	0xfc, 0xd9, 0x28, 0x13, 0x37, 0xf3, 0x14, 0x4e, 0x92, 0x44, 0xe1, 0x25, 0x83, 0x1b, 0x4f, 0xa9,
-	0xb6, 0x18, 0xc4, 0x32, 0x5b, 0xa5, 0xb6, 0xd1, 0x07, 0x50, 0x5d, 0x8c, 0xb9, 0x90, 0xd9, 0x02,
-	0x8d, 0xa3, 0x22, 0x55, 0xbf, 0x5a, 0xdf, 0x16, 0xd6, 0x36, 0xf2, 0xa0, 0x26, 0x7f, 0x51, 0x4a,
-	0x68, 0x75, 0x9b, 0x3d, 0x50, 0xf3, 0x19, 0x6d, 0x70, 0xc6, 0xa8, 0x18, 0x61, 0x62, 0xea, 0x27,
-	0xe5, 0x3c, 0x06, 0x67, 0x31, 0x86, 0x41, 0x9f, 0xc1, 0x2b, 0xca, 0x1e, 0xc2, 0x80, 0x4d, 0x24,
-	0x91, 0xab, 0xf4, 0x2b, 0x22, 0x25, 0x13, 0x6b, 0xb7, 0xa1, 0xeb, 0xef, 0xa3, 0x50, 0x17, 0x50,
-	0x11, 0xbe, 0x20, 0xe2, 0x2e, 0x8c, 0x5d, 0xd0, 0x97, 0xb2, 0x87, 0xf1, 0xfe, 0xb0, 0xe0, 0xad,
-	0xd1, 0x6c, 0x2c, 0x78, 0x22, 0x42, 0x26, 0x89, 0x58, 0x1b, 0xf9, 0x72, 0xe9, 0xd4, 0xb7, 0x41,
-	0x82, 0x31, 0x59, 0x47, 0x9c, 0xd0, 0x4c, 0xbe, 0x02, 0xa2, 0x8f, 0x36, 0x0c, 0x32, 0xfd, 0x94,
-	0x59, 0x18, 0xbf, 0xfc, 0x3f, 0xc6, 0xaf, 0x1c, 0x1a, 0xdf, 0x7b, 0x07, 0x9f, 0x1c, 0xec, 0x2d,
-	0x4d, 0x78, 0x9c, 0x32, 0xaf, 0x0d, 0xee, 0xee, 0xca, 0x33, 0x6e, 0x0d, 0xc8, 0x70, 0xbe, 0x10,
-	0x5c, 0x3c, 0x77, 0x09, 0xef, 0xa0, 0x22, 0xd7, 0x09, 0xd3, 0x2d, 0xbf, 0xd7, 0x7b, 0xa1, 0xda,
-	0xd1, 0xef, 0xa6, 0xeb, 0x84, 0x61, 0x4d, 0xa9, 0x03, 0x60, 0x0a, 0xca, 0x2e, 0xcf, 0x38, 0x9b,
-	0x53, 0xa9, 0x6e, 0x4f, 0xc5, 0xfb, 0x10, 0x5e, 0x3d, 0x29, 0x9d, 0x75, 0xf4, 0x53, 0xde, 0xed,
-	0x90, 0x3f, 0xc6, 0xaa, 0xdf, 0xfe, 0xe0, 0xdb, 0xe7, 0xfa, 0xca, 0xd3, 0x97, 0x0a, 0x97, 0xe8,
-	0x41, 0x8b, 0x04, 0xf7, 0x31, 0x7f, 0x8c, 0x18, 0xbd, 0x63, 0x34, 0xfb, 0x40, 0x9e, 0x60, 0xde,
-	0x1b, 0xf8, 0x68, 0x4f, 0x2d, 0xd3, 0xc8, 0x59, 0x07, 0x6c, 0x7c, 0x73, 0x1d, 0xc6, 0x94, 0x3f,
-	0xa2, 0x3a, 0x94, 0xf1, 0xcd, 0xe7, 0xce, 0x91, 0x31, 0x7a, 0x8e, 0x75, 0xf6, 0x2b, 0x34, 0x36,
-	0xa3, 0xa3, 0x26, 0xd4, 0xbf, 0x66, 0x31, 0x13, 0x61, 0xe0, 0x1c, 0x21, 0x1b, 0x2a, 0x57, 0xd3,
-	0x7e, 0xdf, 0xb1, 0x90, 0x03, 0xad, 0x61, 0x7f, 0xda, 0x9f, 0xcf, 0xc6, 0xf3, 0xf3, 0xc1, 0xe5,
-	0xd4, 0x29, 0xa1, 0xf7, 0xa1, 0x99, 0x23, 0x17, 0xa3, 0x81, 0x53, 0x46, 0x6d, 0x38, 0x1e, 0xfa,
-	0xdf, 0x8f, 0x06, 0xfe, 0xfc, 0xbb, 0x99, 0x3f, 0xf3, 0xe7, 0xa3, 0xa9, 0x7f, 0x31, 0x9f, 0x8c,
-	0x7e, 0xf0, 0x9d, 0xca, 0x7e, 0x4e, 0x27, 0xaa, 0xf6, 0xfe, 0x2e, 0xc1, 0xcb, 0x7e, 0x92, 0x44,
-	0x61, 0xa0, 0x7f, 0x7c, 0x27, 0x4c, 0x3c, 0x30, 0x81, 0xae, 0xc0, 0xf9, 0xf7, 0xa6, 0xd1, 0x1b,
-	0xb5, 0xa5, 0x03, 0x9f, 0x7c, 0xbb, 0xb3, 0x9f, 0xcc, 0x56, 0x71, 0x84, 0x68, 0xfe, 0x6b, 0xb1,
-	0x73, 0x5d, 0xc8, 0xdb, 0x3e, 0x3d, 0xf4, 0x59, 0xb4, 0x3f, 0xfd, 0xcf, 0x98, 0x4d, 0x95, 0x2f,
-	0xa1, 0x59, 0xb8, 0x04, 0x74, 0xbc, 0x7d, 0x55, 0xbc, 0xca, 0xf6, 0xeb, 0x1d, 0x7c, 0x93, 0x01,
-	0xc3, 0xcb, 0x9d, 0x45, 0xa2, 0xc2, 0x70, 0xbb, 0xb7, 0xd4, 0xfe, 0xf8, 0x00, 0x9b, 0xe7, 0xbc,
-	0xad, 0xe9, 0xff, 0xc1, 0x2f, 0xfe, 0x09, 0x00, 0x00, 0xff, 0xff, 0xf7, 0x4a, 0xa7, 0x75, 0x13,
+var fileDescriptor_as_819b983bab735c1a = []byte{
+	// 835 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x55, 0xdd, 0x72, 0xdb, 0x44,
+	0x14, 0x8e, 0xfc, 0xef, 0x63, 0x97, 0xaa, 0x0b, 0x24, 0xaa, 0x12, 0x4a, 0x2a, 0x6e, 0x32, 0xbd,
+	0xc8, 0x0c, 0xe6, 0x05, 0xf0, 0xd8, 0x2a, 0x78, 0xa0, 0x6d, 0x58, 0xdb, 0x34, 0xc3, 0x8d, 0x67,
+	0xa3, 0xdd, 0x04, 0x51, 0x59, 0x2b, 0x56, 0xeb, 0x04, 0x5f, 0xc0, 0x25, 0x0f, 0xc1, 0x43, 0xf0,
+	0x18, 0xdc, 0xf2, 0x4a, 0xcc, 0xfe, 0x48, 0x56, 0x6a, 0x9b, 0xf4, 0xee, 0x9c, 0xef, 0xfc, 0x7d,
+	0xe7, 0x47, 0x2b, 0xe8, 0x90, 0xfc, 0x3c, 0x13, 0x5c, 0x72, 0x54, 0x23, 0x79, 0xf0, 0xa7, 0x03,
+	0x9d, 0x31, 0x91, 0x04, 0x13, 0xc9, 0xd0, 0x33, 0x80, 0x25, 0xa7, 0xab, 0x84, 0xc8, 0x98, 0xa7,
+	0x9e, 0x73, 0xea, 0x9c, 0x75, 0x71, 0x05, 0x41, 0x27, 0xd0, 0xbd, 0x22, 0x29, 0x7d, 0x1b, 0x53,
+	0xf9, 0xb3, 0x57, 0x3b, 0x75, 0xce, 0x1e, 0xe1, 0x0d, 0x80, 0x02, 0xe8, 0xe7, 0x99, 0x60, 0x84,
+	0xbe, 0x24, 0x91, 0xe4, 0xc2, 0xab, 0x6b, 0x87, 0x7b, 0x18, 0xf2, 0xa0, 0x7d, 0x15, 0x4b, 0x41,
+	0x24, 0xf3, 0x1a, 0xda, 0x5c, 0xa8, 0xc1, 0x3f, 0x0e, 0xb4, 0xf0, 0xe5, 0x24, 0xbd, 0xe6, 0xc8,
+	0x85, 0xfa, 0x92, 0x44, 0xba, 0x7e, 0x1f, 0x2b, 0x11, 0x21, 0x68, 0xc8, 0x78, 0xc9, 0x74, 0xcd,
+	0x2e, 0xd6, 0xb2, 0xc2, 0x44, 0x9e, 0xc7, 0xba, 0x4c, 0x13, 0x6b, 0x59, 0xa5, 0x4f, 0x38, 0x26,
+	0xd3, 0xd7, 0x58, 0xa7, 0x77, 0x70, 0xa1, 0x2a, 0xef, 0x94, 0x2c, 0x99, 0xd7, 0x34, 0x19, 0x94,
+	0x8c, 0x7c, 0xe8, 0xa8, 0xc6, 0xe4, 0x8a, 0x32, 0xaf, 0xa5, 0xdd, 0x4b, 0x5d, 0xb5, 0x9a, 0xf0,
+	0xf4, 0xc6, 0x18, 0xdb, 0xda, 0xb8, 0x01, 0x54, 0x24, 0x49, 0x6c, 0x64, 0xc7, 0x44, 0x16, 0x7a,
+	0xf0, 0x07, 0xb4, 0x66, 0xa6, 0x8f, 0x13, 0xe8, 0x5e, 0x0b, 0xf6, 0xeb, 0x8a, 0xa5, 0xd1, 0x5a,
+	0x77, 0x53, 0xc7, 0x1b, 0x00, 0x9d, 0x41, 0x87, 0xda, 0xc1, 0xeb, 0xbe, 0x7a, 0x83, 0xfe, 0x39,
+	0xc9, 0xcf, 0x8b, 0x65, 0xe0, 0xd2, 0xaa, 0xe6, 0x41, 0xa8, 0x99, 0x67, 0x07, 0x2b, 0x51, 0xd5,
+	0x8f, 0x38, 0x65, 0xb8, 0x98, 0x63, 0x17, 0x97, 0x7a, 0xf0, 0xaf, 0x03, 0x47, 0xdf, 0x92, 0x94,
+	0x26, 0x6c, 0x9e, 0x25, 0x71, 0xfa, 0x4e, 0x27, 0x54, 0x45, 0x73, 0x89, 0x0e, 0xa1, 0x45, 0xd9,
+	0x6d, 0x38, 0x9f, 0xd8, 0xe1, 0x5a, 0x4d, 0xe1, 0x24, 0xcb, 0x14, 0x5e, 0x33, 0xb8, 0xd1, 0xd4,
+	0xd4, 0xae, 0x47, 0xa9, 0xb4, 0xab, 0xd4, 0x32, 0xfa, 0x04, 0x9a, 0xd7, 0x17, 0x5c, 0x48, 0xbb,
+	0x40, 0xa3, 0x28, 0x4f, 0xc5, 0x57, 0xcf, 0xb7, 0x8f, 0xb5, 0x8c, 0x02, 0x68, 0xc9, 0xdf, 0xd4,
+	0x24, 0xf4, 0x74, 0x7b, 0x03, 0x50, 0xfd, 0x99, 0xd9, 0x60, 0x6b, 0x51, 0x3e, 0xc2, 0xf8, 0xb4,
+	0x4f, 0xeb, 0x85, 0x0f, 0xb6, 0x3e, 0xc6, 0x12, 0xfc, 0xe5, 0xc0, 0x33, 0xd3, 0xd1, 0x85, 0xe0,
+	0x99, 0x88, 0x99, 0x24, 0x62, 0x6d, 0x9a, 0x2b, 0x1a, 0x53, 0x97, 0x4b, 0xa2, 0x0b, 0xb2, 0x4e,
+	0x38, 0xa1, 0xb6, 0xb9, 0x0a, 0xa2, 0x4f, 0x2a, 0x8e, 0x6c, 0x77, 0x4a, 0xac, 0x90, 0xab, 0x7f,
+	0x00, 0xb9, 0xc6, 0x5e, 0x72, 0xcf, 0xe1, 0xf3, 0xbd, 0xdc, 0xf2, 0x8c, 0xa7, 0x39, 0x0b, 0x7c,
+	0xf0, 0xb6, 0x17, 0x62, 0x6d, 0x6b, 0x40, 0xc6, 0x16, 0x0a, 0xc1, 0xc5, 0x43, 0x7b, 0x7a, 0x0e,
+	0x0d, 0xb9, 0xce, 0x98, 0xa6, 0xfc, 0xd1, 0xe0, 0x91, 0xa2, 0xa3, 0xe3, 0x66, 0xeb, 0x8c, 0x61,
+	0x6d, 0x52, 0xeb, 0x61, 0x0a, 0xb2, 0x77, 0x61, 0x94, 0x72, 0x91, 0xcd, 0xcd, 0x22, 0x83, 0x4f,
+	0xe1, 0xe3, 0x7b, 0xa5, 0x2d, 0xa3, 0x5f, 0x0a, 0xb6, 0x63, 0x7e, 0x97, 0x2a, 0xbe, 0xc3, 0xd1,
+	0x77, 0x0f, 0xf1, 0x2a, 0xd2, 0xd7, 0x2a, 0x77, 0x12, 0x40, 0x9f, 0x44, 0xef, 0x52, 0x7e, 0x97,
+	0x30, 0x7a, 0xc3, 0xa8, 0x3d, 0xdf, 0x7b, 0x58, 0x70, 0x0c, 0x4f, 0x77, 0xd4, 0xb2, 0x44, 0x22,
+	0x38, 0x9c, 0x32, 0x39, 0x66, 0xb7, 0x71, 0xc4, 0xa6, 0x92, 0xc8, 0x55, 0x5e, 0xd0, 0x38, 0x82,
+	0x36, 0x65, 0xb7, 0x0b, 0xb6, 0x8a, 0xab, 0x3c, 0x56, 0xfa, 0xfb, 0xbf, 0x22, 0x52, 0x32, 0xb1,
+	0xb6, 0x54, 0x0a, 0x55, 0x31, 0x5f, 0x12, 0x71, 0x13, 0xa7, 0xf6, 0xbd, 0xb0, 0x5a, 0xf0, 0x14,
+	0x8e, 0xb6, 0x8a, 0x98, 0xfa, 0x2f, 0x4e, 0xa0, 0x83, 0x2f, 0xdf, 0xc6, 0x29, 0xe5, 0x77, 0xa8,
+	0x0d, 0x75, 0x7c, 0xf9, 0xa5, 0x7b, 0x60, 0x84, 0x81, 0xeb, 0xbc, 0xf8, 0x1d, 0xba, 0xe5, 0xe8,
+	0x51, 0x0f, 0xda, 0xdf, 0xb0, 0x94, 0x89, 0x38, 0x72, 0x0f, 0x50, 0x07, 0x1a, 0x6f, 0x66, 0xc3,
+	0xa1, 0xeb, 0x20, 0x17, 0xfa, 0xe3, 0xe1, 0x6c, 0xb8, 0x98, 0x5f, 0x2c, 0x5e, 0x8e, 0x5e, 0xcf,
+	0xdc, 0x1a, 0x7a, 0x0c, 0xbd, 0x02, 0x79, 0x35, 0x19, 0xb9, 0x75, 0xe4, 0xc3, 0xe1, 0x38, 0xfc,
+	0x71, 0x32, 0x0a, 0x17, 0x3f, 0xcc, 0xc3, 0x79, 0xb8, 0x98, 0xcc, 0xc2, 0x57, 0x8b, 0xe9, 0xe4,
+	0xa7, 0xd0, 0x6d, 0xec, 0xb6, 0xe9, 0x44, 0xcd, 0xc1, 0xdf, 0x75, 0x78, 0x32, 0xcc, 0xb2, 0x24,
+	0x8e, 0xf4, 0xd3, 0x3c, 0x65, 0xe2, 0x96, 0x09, 0xf4, 0x06, 0xdc, 0xf7, 0x2f, 0x0d, 0x1d, 0xab,
+	0x2b, 0xd9, 0xf3, 0x20, 0xf8, 0x27, 0xbb, 0x8d, 0x76, 0x03, 0x07, 0x88, 0x16, 0x6f, 0xc9, 0xd6,
+	0x75, 0xa3, 0x60, 0x13, 0xba, 0xef, 0xb3, 0xf4, 0xbf, 0xf8, 0x5f, 0x9f, 0xb2, 0xca, 0xd7, 0xd0,
+	0xab, 0x5c, 0x22, 0x3a, 0xdc, 0x44, 0x55, 0xbf, 0x0a, 0xff, 0x68, 0x0b, 0x2f, 0x33, 0x60, 0x78,
+	0xb2, 0x75, 0x48, 0xa8, 0xd2, 0xdc, 0xf6, 0x2d, 0xfb, 0x9f, 0xed, 0xb1, 0x96, 0x39, 0xbf, 0x87,
+	0xc7, 0xef, 0x9d, 0x06, 0xf2, 0x55, 0xcc, 0xee, 0xa3, 0xf4, 0x8f, 0x77, 0xda, 0x8a, 0x6c, 0x57,
+	0x2d, 0xfd, 0xcf, 0xfd, 0xea, 0xbf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x54, 0x1c, 0x6d, 0x78, 0x7f,
 	0x07, 0x00, 0x00,
 }

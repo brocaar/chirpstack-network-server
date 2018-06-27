@@ -15,6 +15,9 @@ service ApplicationServer {
 
     // HandleDownlinkACK sends a downlink ACK or nACK response.
     rpc HandleDownlinkACK(HandleDownlinkACKRequest) returns (HandleDownlinkACKResponse) {}
+
+    // SetDeviceStatus updates the device-status for the given device.
+    rpc SetDeviceStatus(SetDeviceStatusRequest) returns (SetDeviceStatusResponse) {}
 }
 
 enum RXWindow {
@@ -64,18 +67,6 @@ message HandleUplinkDataRequest {
     bytes data = 5;
     TXInfo txInfo = 6;
     repeated RXInfo rxInfo = 7;
-
-    // The device battery status
-    // 0:      The end-device is connected to an external power source
-    // 1..254: The battery level, 1 being at minimum and 254 being at maximum
-    // 255:    The end-device was not able to measure the battery level
-    // 256:    The device-status is not available.
-    uint32 deviceStatusBattery = 9;
-
-    // The device margin status
-    // -32..32: The demodulation SNR ration in dB
-    // 256:     The device-status is not available.
-    int32  deviceStatusMargin = 10;
 }
 
 message HandleProprietaryUplinkRequest {
@@ -124,3 +115,22 @@ message HandleDownlinkACKRequest {
 }
 
 message HandleDownlinkACKResponse {}
+
+message SetDeviceStatusRequest {
+    // Device EUI (8 bytes).
+    bytes dev_eui = 1;
+
+    // Battery level.
+    // 0:      The end-device is connected to an external power source
+    // 1..254: The battery level, 1 being at minimum and 254 being at maximum
+    // 255:    The end-device was not able to measure the battery level
+    // 256:    The device-status is not available.
+    uint32 battery = 2;
+
+    // The device margin status
+    // -32..32: The demodulation SNR ration in dB
+    // 256:     The device-status is not available.
+    int32  margin = 3;
+}
+
+message SetDeviceStatusResponse {}

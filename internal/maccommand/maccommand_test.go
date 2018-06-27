@@ -28,30 +28,6 @@ func TestHandleUplink(t *testing.T) {
 			}
 			So(storage.SaveDeviceSession(config.C.Redis.Pool, ds), ShouldBeNil)
 
-			Convey("Test DevStatusAns", func() {
-				block := storage.MACCommandBlock{
-					CID: lorawan.DevStatusAns,
-					MACCommands: storage.MACCommands{
-						lorawan.MACCommand{
-							CID: lorawan.DevStatusAns,
-							Payload: &lorawan.DevStatusAnsPayload{
-								Battery: 200,
-								Margin:  21,
-							},
-						},
-					},
-				}
-
-				resp, err := Handle(&ds, block, nil, models.RXPacket{})
-				So(err, ShouldBeNil)
-				So(resp, ShouldHaveLength, 0)
-
-				Convey("Then the dev-status fields on the device-session are updated", func() {
-					So(ds.LastDevStatusBattery, ShouldEqual, 200)
-					So(ds.LastDevStatusMargin, ShouldEqual, 21)
-				})
-			})
-
 			Convey("Test LinkCheckReq", func() {
 				dr2, err := config.C.NetworkServer.Band.Band.GetDataRate(2)
 				So(err, ShouldBeNil)
@@ -76,7 +52,7 @@ func TestHandleUplink(t *testing.T) {
 					},
 				}
 
-				resp, err := Handle(&ds, block, nil, rxPacket)
+				resp, err := Handle(&ds, storage.DeviceProfile{}, storage.ServiceProfile{}, nil, block, nil, rxPacket)
 				So(err, ShouldBeNil)
 
 				Convey("Then the expected response was returned", func() {
@@ -109,7 +85,7 @@ func TestHandleUplink(t *testing.T) {
 					},
 				}
 
-				resp, err := Handle(&ds, block, nil, models.RXPacket{})
+				resp, err := Handle(&ds, storage.DeviceProfile{}, storage.ServiceProfile{}, nil, block, nil, models.RXPacket{})
 				So(err, ShouldBeNil)
 
 				Convey("Then the ClassB PingNb has been set", func() {
@@ -293,7 +269,7 @@ func TestHandleDownlink(t *testing.T) {
 							},
 						}
 
-						resp, err := Handle(&tst.DeviceSession, answer, pending, models.RXPacket{})
+						resp, err := Handle(&tst.DeviceSession, storage.DeviceProfile{}, storage.ServiceProfile{}, nil, answer, pending, models.RXPacket{})
 						Convey("Then the expected error (or nil) was returned", func() {
 							if err != nil && tst.ExpectedError != nil {
 								So(err.Error(), ShouldResemble, tst.ExpectedError.Error())
@@ -400,7 +376,7 @@ func TestHandleDownlink(t *testing.T) {
 							},
 						}
 
-						_, err := Handle(&test.DeviceSession, answer, pending, models.RXPacket{})
+						_, err := Handle(&test.DeviceSession, storage.DeviceProfile{}, storage.ServiceProfile{}, nil, answer, pending, models.RXPacket{})
 						Convey("Then the expected error (or nil) was returned", func() {
 							if err != nil && test.ExpectedError != nil {
 								So(err.Error(), ShouldEqual, test.ExpectedError.Error())

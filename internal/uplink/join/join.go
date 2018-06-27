@@ -108,7 +108,7 @@ func getDeviceAndDeviceProfile(ctx *context) error {
 	}
 
 	if !ctx.DeviceProfile.SupportsJoin {
-		return errors.Wrap(err, "device does not support join")
+		return errors.New("device does not support join")
 	}
 
 	return nil
@@ -116,7 +116,7 @@ func getDeviceAndDeviceProfile(ctx *context) error {
 
 func validateNonce(ctx *context) error {
 	// validate that the nonce has not been used yet
-	err := storage.ValidateDevNonce(config.C.PostgreSQL.DB, ctx.JoinRequestPayload.AppEUI, ctx.JoinRequestPayload.DevEUI, ctx.JoinRequestPayload.DevNonce)
+	err := storage.ValidateDevNonce(config.C.PostgreSQL.DB, ctx.JoinRequestPayload.JoinEUI, ctx.JoinRequestPayload.DevEUI, ctx.JoinRequestPayload.DevNonce, lorawan.JoinRequestType)
 	if err != nil {
 		return errors.Wrap(err, "validate dev-nonce error")
 	}
@@ -147,11 +147,25 @@ func getJoinAcceptFromAS(ctx *context) error {
 	}
 	transactionID := binary.LittleEndian.Uint32(randomBytes)
 
+	var cFListB []byte
+	cFList := config.C.NetworkServer.Band.Band.GetCFList(ctx.DeviceProfile.MACVersion)
+	if cFList != nil {
+		cFListB, err = cFList.MarshalBinary()
+		if err != nil {
+			return errors.Wrap(err, "marshal cflist error")
+		}
+	}
+
+	// note about the OptNeg field:
+	// it must only be set to true for devices != 1.0.x as it will indicate to
+	// the join-server and device how to derrive the session-keys and how to
+	// sign the join-accept message
+
 	joinReqPL := backend.JoinReqPayload{
 		BasePayload: backend.BasePayload{
 			ProtocolVersion: backend.ProtocolVersion1_0,
 			SenderID:        config.C.NetworkServer.NetID.String(),
-			ReceiverID:      ctx.JoinRequestPayload.AppEUI.String(),
+			ReceiverID:      ctx.JoinRequestPayload.JoinEUI.String(),
 			TransactionID:   transactionID,
 			MessageType:     backend.JoinReq,
 		},
@@ -160,14 +174,15 @@ func getJoinAcceptFromAS(ctx *context) error {
 		DevEUI:     ctx.JoinRequestPayload.DevEUI,
 		DevAddr:    ctx.DevAddr,
 		DLSettings: lorawan.DLSettings{
+			OptNeg:      !strings.HasPrefix(ctx.DeviceProfile.MACVersion, "1.0"), // must be set to true for != "1.0" devices
 			RX2DataRate: uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
 			RX1DROffset: uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
 		},
 		RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
-		CFList:  config.C.NetworkServer.Band.Band.GetCFList(),
+		CFList:  backend.HEXBytes(cFListB),
 	}
 
-	jsClient, err := config.C.JoinServer.Pool.Get(ctx.JoinRequestPayload.AppEUI)
+	jsClient, err := config.C.JoinServer.Pool.Get(ctx.JoinRequestPayload.JoinEUI)
 	if err != nil {
 		return errors.Wrap(err, "get join-server client error")
 	}
@@ -188,21 +203,15 @@ func flushDeviceQueue(ctx *context) error {
 }
 
 func createNodeSession(ctx *context) error {
-	if ctx.JoinAnsPayload.NwkSKey.KEKLabel != "" {
-		return errors.New("NwkSKey KEKLabel unsupported")
-	}
-
 	ctx.DeviceSession = storage.DeviceSession{
 		DeviceProfileID:  ctx.Device.DeviceProfileID,
 		ServiceProfileID: ctx.Device.ServiceProfileID,
 		RoutingProfileID: ctx.Device.RoutingProfileID,
 
+		MACVersion:            ctx.DeviceProfile.MACVersion,
 		DevAddr:               ctx.DevAddr,
-		JoinEUI:               ctx.JoinRequestPayload.AppEUI,
+		JoinEUI:               ctx.JoinRequestPayload.JoinEUI,
 		DevEUI:                ctx.JoinRequestPayload.DevEUI,
-		NwkSKey:               ctx.JoinAnsPayload.NwkSKey.AESKey,
-		FCntUp:                0,
-		FCntDown:              0,
 		RXWindow:              storage.RX1,
 		RXDelay:               uint8(config.C.NetworkServer.NetworkSettings.RX1Delay),
 		RX1DROffset:           uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
@@ -210,19 +219,39 @@ func createNodeSession(ctx *context) error {
 		RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 		EnabledUplinkChannels: config.C.NetworkServer.Band.Band.GetStandardUplinkChannelIndices(),
 		ExtraUplinkChannels:   make(map[int]band.Channel),
-		LastRXInfoSet:         ctx.RXPacket.RXInfoSet,
+		UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
 		MaxSupportedDR:        ctx.ServiceProfile.ServiceProfile.DRMax,
 		SkipFCntValidation:    ctx.Device.SkipFCntCheck,
-
-		// set to invalid value to indicate we haven't received a status yet
-		LastDevStatusMargin: 127,
-		PingSlotDR:          ctx.DeviceProfile.PingSlotDR,
-		PingSlotFrequency:   int(ctx.DeviceProfile.PingSlotFreq),
-		NbTrans:             1,
+		PingSlotDR:            ctx.DeviceProfile.PingSlotDR,
+		PingSlotFrequency:     int(ctx.DeviceProfile.PingSlotFreq),
+		NbTrans:               1,
 	}
 
-	if cfList := config.C.NetworkServer.Band.Band.GetCFList(); cfList != nil {
-		for _, f := range cfList {
+	if ctx.JoinAnsPayload.NwkSKey != nil {
+		ctx.DeviceSession.SNwkSIntKey = ctx.JoinAnsPayload.NwkSKey.AESKey
+		ctx.DeviceSession.FNwkSIntKey = ctx.JoinAnsPayload.NwkSKey.AESKey
+		ctx.DeviceSession.NwkSEncKey = ctx.JoinAnsPayload.NwkSKey.AESKey
+	}
+
+	if ctx.JoinAnsPayload.SNwkSIntKey != nil {
+		ctx.DeviceSession.SNwkSIntKey = ctx.JoinAnsPayload.SNwkSIntKey.AESKey
+	}
+
+	if ctx.JoinAnsPayload.FNwkSIntKey != nil {
+		ctx.DeviceSession.FNwkSIntKey = ctx.JoinAnsPayload.FNwkSIntKey.AESKey
+	}
+
+	if ctx.JoinAnsPayload.NwkSEncKey != nil {
+		ctx.DeviceSession.NwkSEncKey = ctx.JoinAnsPayload.NwkSEncKey.AESKey
+	}
+
+	if cfList := config.C.NetworkServer.Band.Band.GetCFList(ctx.DeviceProfile.MACVersion); cfList != nil && cfList.CFListType == lorawan.CFListChannel {
+		channelPL, ok := cfList.Payload.(*lorawan.CFListChannelPayload)
+		if !ok {
+			return fmt.Errorf("expected *lorawan.CFListChannelPayload, got %T", cfList.Payload)
+		}
+
+		for _, f := range channelPL.Channels {
 			if f == 0 {
 				continue
 			}
@@ -266,11 +295,14 @@ func createNodeSession(ctx *context) error {
 
 func createDeviceActivation(ctx *context) error {
 	da := storage.DeviceActivation{
-		DevEUI:   ctx.DeviceSession.DevEUI,
-		JoinEUI:  ctx.DeviceSession.JoinEUI,
-		DevAddr:  ctx.DeviceSession.DevAddr,
-		NwkSKey:  ctx.DeviceSession.NwkSKey,
-		DevNonce: ctx.JoinRequestPayload.DevNonce,
+		DevEUI:      ctx.DeviceSession.DevEUI,
+		JoinEUI:     ctx.DeviceSession.JoinEUI,
+		DevAddr:     ctx.DeviceSession.DevAddr,
+		SNwkSIntKey: ctx.DeviceSession.SNwkSIntKey,
+		FNwkSIntKey: ctx.DeviceSession.FNwkSIntKey,
+		NwkSEncKey:  ctx.DeviceSession.NwkSEncKey,
+		DevNonce:    ctx.JoinRequestPayload.DevNonce,
+		JoinReqType: lorawan.JoinRequestType,
 	}
 
 	if err := storage.CreateDeviceActivation(config.C.PostgreSQL.DB, &da); err != nil {

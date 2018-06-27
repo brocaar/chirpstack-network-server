@@ -541,11 +541,15 @@ func (n *NetworkServerAPI) DeleteDevice(ctx context.Context, req *ns.DeleteDevic
 func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateDeviceRequest) (*ns.ActivateDeviceResponse, error) {
 	var devEUI lorawan.EUI64
 	var devAddr lorawan.DevAddr
-	var nwkSKey lorawan.AES128Key
+	var fNwkSIntKey lorawan.AES128Key
+	var sNwkSIntKey lorawan.AES128Key
+	var nwkSEncKey lorawan.AES128Key
 
 	copy(devEUI[:], req.DevEUI)
 	copy(devAddr[:], req.DevAddr)
-	copy(nwkSKey[:], req.NwkSKey)
+	copy(fNwkSIntKey[:], req.FNwkSIntKey)
+	copy(sNwkSIntKey[:], req.SNwkSIntKey)
+	copy(nwkSEncKey[:], req.NwkSEncKey)
 
 	d, err := storage.GetDevice(config.C.PostgreSQL.DB, devEUI)
 	if err != nil {
@@ -562,11 +566,6 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		return nil, errToRPCError(err)
 	}
 
-	var channelFrequencies []int
-	for _, f := range dp.FactoryPresetFreqs {
-		channelFrequencies = append(channelFrequencies, int(f))
-	}
-
 	ds := storage.DeviceSession{
 		DeviceProfileID:  d.DeviceProfileID,
 		ServiceProfileID: d.ServiceProfileID,
@@ -574,31 +573,22 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 
 		DevEUI:             devEUI,
 		DevAddr:            devAddr,
-		NwkSKey:            nwkSKey,
+		SNwkSIntKey:        sNwkSIntKey,
+		FNwkSIntKey:        fNwkSIntKey,
+		NwkSEncKey:         nwkSEncKey,
 		FCntUp:             req.FCntUp,
-		FCntDown:           req.FCntDown,
+		NFCntDown:          req.NFCntDown,
+		AFCntDown:          req.AFCntDown,
 		SkipFCntValidation: req.SkipFCntCheck || d.SkipFCntCheck,
 
 		RXWindow:       storage.RX1,
-		RXDelay:        uint8(dp.RXDelay1),
-		RX1DROffset:    uint8(dp.RXDROffset1),
-		RX2DR:          uint8(dp.RXDataRate2),
-		RX2Frequency:   int(dp.RXFreq2),
 		MaxSupportedDR: sp.ServiceProfile.DRMax,
 
-		EnabledUplinkChannels: config.C.NetworkServer.Band.Band.GetStandardUplinkChannelIndices(), // TODO: replace by ServiceProfile.ChannelMask?
-		ChannelFrequencies:    channelFrequencies,
-
-		// set to invalid value to indicate we haven't received a status yet
-		LastDevStatusMargin: 127,
-		PingSlotDR:          dp.PingSlotDR,
-		PingSlotFrequency:   int(dp.PingSlotFreq),
-		NbTrans:             1,
+		MACVersion: dp.MACVersion,
 	}
 
-	if dp.PingSlotPeriod != 0 {
-		ds.PingSlotNb = (1 << 12) / dp.PingSlotPeriod
-	}
+	// reset the device-session to the device boot parameters
+	ds.ResetToBootParameters(dp)
 
 	if err := storage.SaveDeviceSession(config.C.Redis.Pool, ds); err != nil {
 		return nil, errToRPCError(err)
@@ -643,9 +633,12 @@ func (n *NetworkServerAPI) GetDeviceActivation(ctx context.Context, req *ns.GetD
 
 	return &ns.GetDeviceActivationResponse{
 		DevAddr:       ds.DevAddr[:],
-		NwkSKey:       ds.NwkSKey[:],
+		SNwkSIntKey:   ds.SNwkSIntKey[:],
+		FNwkSIntKey:   ds.FNwkSIntKey[:],
+		NwkSEncKey:    ds.NwkSEncKey[:],
 		FCntUp:        ds.FCntUp,
-		FCntDown:      ds.FCntDown,
+		NFCntDown:     ds.NFCntDown,
+		AFCntDown:     ds.AFCntDown,
 		SkipFCntCheck: ds.SkipFCntValidation,
 	}, nil
 }
@@ -1167,7 +1160,12 @@ func (n *NetworkServerAPI) GetNextDownlinkFCntForDevEUI(ctx context.Context, req
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
-	resp.FCnt = ds.FCntDown
+
+	if ds.GetMACVersion() == lorawan.LoRaWAN1_0 {
+		resp.FCnt = ds.NFCntDown
+	} else {
+		resp.FCnt = ds.AFCntDown
+	}
 
 	items, err := storage.GetDeviceQueueItemsForDevEUI(config.C.PostgreSQL.DB, devEUI)
 	if err != nil {

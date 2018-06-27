@@ -88,21 +88,27 @@ func TestDevice(t *testing.T) {
 					joinEUI := lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}
 
 					da := DeviceActivation{
-						DevEUI:   d.DevEUI,
-						JoinEUI:  joinEUI,
-						DevAddr:  lorawan.DevAddr{1, 2, 3, 4},
-						NwkSKey:  lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
-						DevNonce: lorawan.DevNonce{1, 2},
+						DevEUI:      d.DevEUI,
+						JoinEUI:     joinEUI,
+						DevAddr:     lorawan.DevAddr{1, 2, 3, 4},
+						SNwkSIntKey: lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+						FNwkSIntKey: lorawan.AES128Key{2, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+						NwkSEncKey:  lorawan.AES128Key{3, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+						DevNonce:    258,
+						JoinReqType: lorawan.JoinRequestType,
 					}
 					So(CreateDeviceActivation(config.C.PostgreSQL.DB, &da), ShouldBeNil)
 
 					Convey("Then GetLastDeviceActivationForDevEUI returns the most recent device-activation", func() {
 						da2 := DeviceActivation{
-							DevEUI:   d.DevEUI,
-							JoinEUI:  joinEUI,
-							DevAddr:  lorawan.DevAddr{4, 3, 2, 1},
-							NwkSKey:  lorawan.AES128Key{8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1},
-							DevNonce: lorawan.DevNonce{2, 1},
+							DevEUI:      d.DevEUI,
+							JoinEUI:     joinEUI,
+							DevAddr:     lorawan.DevAddr{4, 3, 2, 1},
+							SNwkSIntKey: lorawan.AES128Key{8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1},
+							FNwkSIntKey: lorawan.AES128Key{8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 2},
+							NwkSEncKey:  lorawan.AES128Key{8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 3},
+							DevNonce:    513,
+							JoinReqType: lorawan.JoinRequestType,
 						}
 						So(CreateDeviceActivation(config.C.PostgreSQL.DB, &da2), ShouldBeNil)
 						da2.CreatedAt = da2.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -114,11 +120,11 @@ func TestDevice(t *testing.T) {
 					})
 
 					Convey("Then ValidateDevNonce for an used dev-nonce returns an error", func() {
-						So(ValidateDevNonce(config.C.PostgreSQL.DB, joinEUI, d.DevEUI, da.DevNonce), ShouldEqual, ErrAlreadyExists)
+						So(ValidateDevNonce(config.C.PostgreSQL.DB, joinEUI, d.DevEUI, da.DevNonce, lorawan.JoinRequestType), ShouldEqual, ErrAlreadyExists)
 					})
 
 					Convey("Then ValidateDevNonce for an unused dev-nonce returns no error", func() {
-						So(ValidateDevNonce(config.C.PostgreSQL.DB, joinEUI, d.DevEUI, lorawan.DevNonce{2, 1}), ShouldBeNil)
+						So(ValidateDevNonce(config.C.PostgreSQL.DB, joinEUI, d.DevEUI, lorawan.DevNonce(513), lorawan.JoinRequestType), ShouldBeNil)
 					})
 				})
 			})

@@ -333,14 +333,23 @@ message ActivateDeviceRequest {
     // The address of the device (4 bytes).
     bytes devAddr = 2;
 
-    // The network-session key (16 bytes).
-    bytes nwkSKey = 3;
+    // SNwkSIntKey (serving network-server session integrity key).
+    bytes sNwkSIntKey = 3;
+
+    // FNwkSIntKey (forwarding network-server session integrity key).
+    bytes fNwkSIntKey = 7;
+
+    // NwkSEncKey (network-server session encryption key).
+    bytes nwkSEncKey = 8;
 
     // The next expected uplink frame-counter.
     uint32 fCntUp = 4;
 
-    // The frame-counter used for the next downlink frame.
-    uint32 fCntDown = 5;
+    // The network frame-counter used for the next downlink frame.
+    uint32 nFCntDown = 5;
+
+    // The application frame-counter used for the next downlink frame (LoRaWAN 1.1).
+    uint32 aFCntDown = 9;
 
     // Skip frame-counter checks (this is insecure, but could be helpful for debugging).
     bool skipFCntCheck = 6;
@@ -364,14 +373,23 @@ message GetDeviceActivationResponse {
     // The address of the device (4 bytes).
     bytes devAddr = 1;
 
-    // The network-session key (16 bytes).
-    bytes nwkSKey = 2;
+    // SNwkSIntKey (serving network-server session integrity key).
+    bytes sNwkSIntKey = 2;
+
+    // FNwkSIntKey (forwarding network-server session integrity key).
+    bytes fNwkSIntKey = 6;
+
+    // NwkSEncKey (network-server session encryption key).
+    bytes nwkSEncKey = 7;
 
     // The next expected uplink frame-counter.
     uint32 fCntUp = 3;
 
-    // The frame-counter used for the next downlink frame.
-    uint32 fCntDown = 4;
+    // The network frame-counter used for the next downlink frame.
+    uint32 nFCntDown = 4;
+
+    // The application frame-counter used for the next downlink frame (LoRaWAN 1.1).
+    uint32 aFCntDown = 8;
 
     // Skip frame-counter checks (this is insecure, but could be helpful for debugging).
     bool skipFCntCheck = 5;

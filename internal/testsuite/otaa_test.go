@@ -10,7 +10,6 @@ import (
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
@@ -66,9 +65,11 @@ func TestOTAAScenarios(t *testing.T) {
 
 		dp := storage.DeviceProfile{
 			DeviceProfile: backend.DeviceProfile{
-				RXDelay1:    3,
-				RXDROffset1: 1,
-				RXDataRate2: 5,
+				MACVersion:   "1.0.2",
+				RXDelay1:     3,
+				RXDROffset1:  1,
+				RXDataRate2:  5,
+				SupportsJoin: true,
 			},
 		}
 		So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
@@ -105,25 +106,36 @@ func TestOTAAScenarios(t *testing.T) {
 				Major: lorawan.LoRaWANR1,
 			},
 			MACPayload: &lorawan.JoinRequestPayload{
-				AppEUI:   lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+				JoinEUI:  lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 				DevEUI:   d.DevEUI,
-				DevNonce: [2]byte{1, 2},
+				DevNonce: 258,
 			},
 		}
-		So(jrPayload.SetMIC(appKey), ShouldBeNil)
+		So(jrPayload.SetUplinkJoinMIC(appKey), ShouldBeNil)
 		jrBytes, err := jrPayload.MarshalBinary()
 		So(err, ShouldBeNil)
 
 		jaPayload := lorawan.JoinAcceptPayload{
-			AppNonce: [3]byte{3, 2, 1},
-			NetID:    config.C.NetworkServer.NetID,
+			JoinNonce: 197121,
+			HomeNetID: config.C.NetworkServer.NetID,
 			DLSettings: lorawan.DLSettings{
 				RX2DataRate: 2,
 				RX1DROffset: 1,
 			},
 			DevAddr: [4]byte{1, 2, 3, 4},
 			RXDelay: 3,
-			CFList:  &lorawan.CFList{100, 200, 300, 400, 500},
+			CFList: &lorawan.CFList{
+				CFListType: lorawan.CFListChannel,
+				Payload: &lorawan.CFListChannelPayload{
+					Channels: [5]uint32{
+						100,
+						200,
+						300,
+						400,
+						500,
+					},
+				},
+			},
 		}
 		jaPHY := lorawan.PHYPayload{
 			MHDR: lorawan.MHDR{
@@ -132,7 +144,7 @@ func TestOTAAScenarios(t *testing.T) {
 			},
 			MACPayload: &jaPayload,
 		}
-		So(jaPHY.SetMIC(appKey), ShouldBeNil)
+		So(jaPHY.SetDownlinkJoinMIC(lorawan.JoinRequestType, lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}, lorawan.DevNonce(258), appKey), ShouldBeNil)
 		So(jaPHY.EncryptJoinAcceptPayload(appKey), ShouldBeNil)
 		jaBytes, err := jaPHY.MarshalBinary()
 		So(err, ShouldBeNil)
@@ -155,17 +167,20 @@ func TestOTAAScenarios(t *testing.T) {
 					PHYPayload: jrPayload,
 					DeviceActivations: []storage.DeviceActivation{
 						{
-							DevEUI:   d.DevEUI,
-							JoinEUI:  lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-							DevAddr:  lorawan.DevAddr{},
-							NwkSKey:  lorawan.AES128Key{},
-							DevNonce: lorawan.DevNonce{1, 2},
+							DevEUI:      d.DevEUI,
+							JoinEUI:     lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+							DevAddr:     lorawan.DevAddr{},
+							SNwkSIntKey: lorawan.AES128Key{},
+							FNwkSIntKey: lorawan.AES128Key{},
+							NwkSEncKey:  lorawan.AES128Key{},
+							JoinReqType: lorawan.JoinRequestType,
+							DevNonce:    258,
 						},
 					},
 					ExpectedError: errors.New("validate dev-nonce error: object already exists"),
 				},
 				{
-					Name:       "join-request accepted using rx1",
+					Name:       "join-request accepted using (NwkSKey)",
 					RXInfo:     rxInfo,
 					PHYPayload: jrPayload,
 					AppKey:     appKey,
@@ -213,17 +228,96 @@ func TestOTAAScenarios(t *testing.T) {
 					},
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
+						MACVersion:            "1.0.2",
 						RoutingProfileID:      rp.RoutingProfile.RoutingProfileID,
 						DeviceProfileID:       dp.DeviceProfile.DeviceProfileID,
 						ServiceProfileID:      sp.ServiceProfile.ServiceProfileID,
 						JoinEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 						DevEUI:                lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
-						NwkSKey:               lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						FNwkSIntKey:           lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						SNwkSIntKey:           lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						NwkSEncKey:            lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 						RXWindow:              storage.RX1,
 						EnabledUplinkChannels: []int{0, 1, 2},
 						ExtraUplinkChannels:   map[int]band.Channel{},
-						LastRXInfoSet:         []models.RXInfo{{}},
-						LastDevStatusMargin:   127,
+						UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
+						RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
+						NbTrans:               1,
+					},
+				},
+				{
+					BeforeFunc: func(tc *otaaTestCase) error {
+						dp.MACVersion = "1.1.0"
+						return storage.UpdateDeviceProfile(db, &dp)
+					},
+					Name:       "join-request accepted (SNwkSIntKey, FNwkSIntKey, NwkSEncKey)",
+					RXInfo:     rxInfo,
+					PHYPayload: jrPayload,
+					AppKey:     appKey,
+					JoinServerJoinAnsPayload: backend.JoinAnsPayload{
+						PHYPayload: backend.HEXBytes(jaBytes),
+						Result: backend.Result{
+							ResultCode: backend.Success,
+						},
+						SNwkSIntKey: &backend.KeyEnvelope{
+							AESKey: lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						},
+						FNwkSIntKey: &backend.KeyEnvelope{
+							AESKey: lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 2},
+						},
+						NwkSEncKey: &backend.KeyEnvelope{
+							AESKey: lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 3},
+						},
+					},
+					DeviceQueueItems: []storage.DeviceQueueItem{
+						{
+							DevEUI:     lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
+							FRMPayload: []byte{1, 2, 3, 4},
+							FCnt:       10,
+							FPort:      1,
+						},
+					},
+
+					ExpectedJoinReqPayload: backend.JoinReqPayload{
+						BasePayload: backend.BasePayload{
+							ProtocolVersion: backend.ProtocolVersion1_0,
+							SenderID:        "030201",
+							ReceiverID:      "0102030405060708",
+							MessageType:     backend.JoinReq,
+						},
+						MACVersion: "1.1.0",
+						PHYPayload: backend.HEXBytes(jrBytes),
+						DevEUI:     d.DevEUI,
+						DLSettings: lorawan.DLSettings{
+							OptNeg:      true,
+							RX2DataRate: uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
+							RX1DROffset: uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
+						},
+						RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
+					},
+					ExpectedTXInfo: gw.TXInfo{
+						MAC:       rxInfo.MAC,
+						Timestamp: &timestamp,
+						Frequency: rxInfo.Frequency,
+						Power:     14,
+						DataRate:  rxInfo.DataRate,
+						CodeRate:  rxInfo.CodeRate,
+					},
+					ExpectedPHYPayload: jaPHY,
+					ExpectedDeviceSession: storage.DeviceSession{
+						MACVersion:            "1.1.0",
+						RoutingProfileID:      rp.RoutingProfile.RoutingProfileID,
+						DeviceProfileID:       dp.DeviceProfile.DeviceProfileID,
+						ServiceProfileID:      sp.ServiceProfile.ServiceProfileID,
+						JoinEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+						DevEUI:                lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
+						SNwkSIntKey:           lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						FNwkSIntKey:           lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 2},
+						NwkSEncKey:            lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 3},
+						RXWindow:              storage.RX1,
+						EnabledUplinkChannels: []int{0, 1, 2},
+						ExtraUplinkChannels:   map[int]band.Channel{},
+						UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
 						RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 						NbTrans:               1,
 					},
@@ -273,23 +367,44 @@ func TestOTAAScenarios(t *testing.T) {
 					},
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
+						MACVersion:            "1.0.2",
 						RoutingProfileID:      rp.RoutingProfile.RoutingProfileID,
 						DeviceProfileID:       dp.DeviceProfile.DeviceProfileID,
 						ServiceProfileID:      sp.ServiceProfile.ServiceProfileID,
 						JoinEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 						DevEUI:                lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
-						NwkSKey:               lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						FNwkSIntKey:           lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						SNwkSIntKey:           lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						NwkSEncKey:            lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 						RXWindow:              storage.RX1,
 						EnabledUplinkChannels: []int{0, 1, 2},
 						ExtraUplinkChannels:   map[int]band.Channel{},
-						LastRXInfoSet:         []models.RXInfo{{}},
-						LastDevStatusMargin:   127,
+						UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
 						RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 						SkipFCntValidation:    true,
 						NbTrans:               1,
 					},
 				},
 				{
+					BeforeFunc: func(tc *otaaTestCase) error {
+						cFList := lorawan.CFList{
+							CFListType: lorawan.CFListChannel,
+							Payload: &lorawan.CFListChannelPayload{
+								Channels: [5]uint32{
+									868600000,
+									868700000,
+									868800000,
+								},
+							},
+						}
+						cFListB, err := cFList.MarshalBinary()
+						if err != nil {
+							return err
+						}
+						tc.ExpectedJoinReqPayload.CFList = backend.HEXBytes(cFListB)
+
+						return nil
+					},
 					Name:          "join-request using rx1 and CFList",
 					RXInfo:        rxInfo,
 					PHYPayload:    jrPayload,
@@ -328,7 +443,7 @@ func TestOTAAScenarios(t *testing.T) {
 							RX1DROffset: uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
 						},
 						RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
-						CFList:  &lorawan.CFList{868600000, 868700000, 868800000},
+						// CFList is set in the BeforeFunc
 					},
 					ExpectedTXInfo: gw.TXInfo{
 						MAC:       rxInfo.MAC,
@@ -340,12 +455,15 @@ func TestOTAAScenarios(t *testing.T) {
 					},
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
+						MACVersion:            "1.0.2",
 						RoutingProfileID:      rp.RoutingProfile.RoutingProfileID,
 						DeviceProfileID:       dp.DeviceProfile.DeviceProfileID,
 						ServiceProfileID:      sp.ServiceProfile.ServiceProfileID,
 						JoinEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 						DevEUI:                lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
-						NwkSKey:               lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						FNwkSIntKey:           lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						SNwkSIntKey:           lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+						NwkSEncKey:            lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 						RXWindow:              storage.RX1,
 						EnabledUplinkChannels: []int{0, 1, 2, 3, 4, 5},
 						ExtraUplinkChannels: map[int]band.Channel{
@@ -353,10 +471,9 @@ func TestOTAAScenarios(t *testing.T) {
 							4: band.Channel{Frequency: 868700000, MinDR: 0, MaxDR: 5},
 							5: band.Channel{Frequency: 868800000, MinDR: 0, MaxDR: 5},
 						},
-						LastRXInfoSet:       []models.RXInfo{{}},
-						LastDevStatusMargin: 127,
-						RX2Frequency:        config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
-						NbTrans:             1,
+						UplinkGatewayHistory: map[lorawan.EUI64]storage.UplinkGatewayHistory{},
+						RX2Frequency:         config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
+						NbTrans:              1,
 					},
 				},
 			}
@@ -400,7 +517,11 @@ func runOTAATests(asClient *test.ApplicationClient, jsClient *test.JoinServerCli
 				PHYPayload: t.PHYPayload,
 			})
 			if err != nil {
-				So(err.Error(), ShouldEqual, t.ExpectedError.Error())
+				if t.ExpectedError == nil {
+					So(err.Error(), ShouldEqual, "")
+				} else {
+					So(err.Error(), ShouldEqual, t.ExpectedError.Error())
+				}
 				return
 			}
 			So(t.ExpectedError, ShouldBeNil)
@@ -452,7 +573,10 @@ func runOTAATests(asClient *test.ApplicationClient, jsClient *test.JoinServerCli
 				da, err := storage.GetLastDeviceActivationForDevEUI(config.C.PostgreSQL.DB, t.ExpectedDeviceSession.DevEUI)
 				So(err, ShouldBeNil)
 				So(da.DevAddr, ShouldNotEqual, lorawan.DevAddr{})
-				So(da.NwkSKey, ShouldEqual, t.ExpectedDeviceSession.NwkSKey)
+				So(da.SNwkSIntKey, ShouldEqual, t.ExpectedDeviceSession.SNwkSIntKey)
+				So(da.FNwkSIntKey, ShouldEqual, t.ExpectedDeviceSession.FNwkSIntKey)
+				So(da.NwkSEncKey, ShouldEqual, t.ExpectedDeviceSession.NwkSEncKey)
+				So(da.JoinReqType, ShouldEqual, lorawan.JoinRequestType)
 			})
 		})
 	}
