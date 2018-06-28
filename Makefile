@@ -38,9 +38,11 @@ package-deb:
 
 api:
 	@echo "Generating API code from .proto files"
+	go generate api/gw/gw.go
 	go generate api/as/as.go
 	go generate api/nc/nc.go
 	go generate api/ns/ns.go
+	go generate api/common/common.go
 	go generate internal/storage/device_session.go
 
 statics:
@@ -50,10 +52,8 @@ statics:
 requirements:
 	@go get -u github.com/kisielk/errcheck
 	@go get -u github.com/golang/lint/golint
-	@go get -u github.com/kardianos/govendor
 	@go get -u github.com/smartystreets/goconvey
 	@go get -u golang.org/x/tools/cmd/stringer
-	@go get -u github.com/golang/protobuf/proto
 	@go get -u github.com/golang/protobuf/protoc-gen-go
 	@go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
 	@go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway

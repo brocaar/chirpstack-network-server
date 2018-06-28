@@ -6,6 +6,10 @@ package ns
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
+import common "github.com/brocaar/loraserver/api/common"
+import gw "github.com/brocaar/loraserver/api/gw"
+import empty "github.com/golang/protobuf/ptypes/empty"
+import timestamp "github.com/golang/protobuf/ptypes/timestamp"
 
 import (
 	context "golang.org/x/net/context"
@@ -45,89 +49,7 @@ func (x RXWindow) String() string {
 	return proto.EnumName(RXWindow_name, int32(x))
 }
 func (RXWindow) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{0}
-}
-
-type Modulation int32
-
-const (
-	// LoRa
-	Modulation_LORA Modulation = 0
-	// FSK
-	Modulation_FSK Modulation = 1
-)
-
-var Modulation_name = map[int32]string{
-	0: "LORA",
-	1: "FSK",
-}
-var Modulation_value = map[string]int32{
-	"LORA": 0,
-	"FSK":  1,
-}
-
-func (x Modulation) String() string {
-	return proto.EnumName(Modulation_name, int32(x))
-}
-func (Modulation) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{1}
-}
-
-type Region int32
-
-const (
-	// EU868
-	Region_EU868 Region = 0
-	// US915
-	Region_US915 Region = 2
-	// CN779
-	Region_CN779 Region = 3
-	// EU433
-	Region_EU433 Region = 4
-	// AU915
-	Region_AU915 Region = 5
-	// CN470
-	Region_CN470 Region = 6
-	// AS923
-	Region_AS923 Region = 7
-	// KR920
-	Region_KR920 Region = 8
-	// IN865
-	Region_IN865 Region = 9
-	// RU864
-	Region_RU864 Region = 10
-)
-
-var Region_name = map[int32]string{
-	0:  "EU868",
-	2:  "US915",
-	3:  "CN779",
-	4:  "EU433",
-	5:  "AU915",
-	6:  "CN470",
-	7:  "AS923",
-	8:  "KR920",
-	9:  "IN865",
-	10: "RU864",
-}
-var Region_value = map[string]int32{
-	"EU868": 0,
-	"US915": 2,
-	"CN779": 3,
-	"EU433": 4,
-	"AU915": 5,
-	"CN470": 6,
-	"AS923": 7,
-	"KR920": 8,
-	"IN865": 9,
-	"RU864": 10,
-}
-
-func (x Region) String() string {
-	return proto.EnumName(Region_name, int32(x))
-}
-func (Region) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{2}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{0}
 }
 
 type AggregationInterval int32
@@ -168,11 +90,12 @@ func (x AggregationInterval) String() string {
 	return proto.EnumName(AggregationInterval_name, int32(x))
 }
 func (AggregationInterval) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{3}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{1}
 }
 
 type CreateServiceProfileRequest struct {
-	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile,proto3" json:"serviceProfile,omitempty"`
+	// Service-profile object to create.
+	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=service_profile,json=serviceProfile,proto3" json:"service_profile,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -182,7 +105,7 @@ func (m *CreateServiceProfileRequest) Reset()         { *m = CreateServiceProfil
 func (m *CreateServiceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateServiceProfileRequest) ProtoMessage()    {}
 func (*CreateServiceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{0}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{0}
 }
 func (m *CreateServiceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateServiceProfileRequest.Unmarshal(m, b)
@@ -210,7 +133,8 @@ func (m *CreateServiceProfileRequest) GetServiceProfile() *ServiceProfile {
 }
 
 type CreateServiceProfileResponse struct {
-	ServiceProfileID     string   `protobuf:"bytes,1,opt,name=serviceProfileID,proto3" json:"serviceProfileID,omitempty"`
+	// ID of the created service-profile.
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -220,7 +144,7 @@ func (m *CreateServiceProfileResponse) Reset()         { *m = CreateServiceProfi
 func (m *CreateServiceProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateServiceProfileResponse) ProtoMessage()    {}
 func (*CreateServiceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{1}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{1}
 }
 func (m *CreateServiceProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateServiceProfileResponse.Unmarshal(m, b)
@@ -240,15 +164,16 @@ func (m *CreateServiceProfileResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CreateServiceProfileResponse proto.InternalMessageInfo
 
-func (m *CreateServiceProfileResponse) GetServiceProfileID() string {
+func (m *CreateServiceProfileResponse) GetId() []byte {
 	if m != nil {
-		return m.ServiceProfileID
+		return m.Id
 	}
-	return ""
+	return nil
 }
 
 type GetServiceProfileRequest struct {
-	ServiceProfileID     string   `protobuf:"bytes,1,opt,name=serviceProfileID,proto3" json:"serviceProfileID,omitempty"`
+	// ID of the service-profile.
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -258,7 +183,7 @@ func (m *GetServiceProfileRequest) Reset()         { *m = GetServiceProfileReque
 func (m *GetServiceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*GetServiceProfileRequest) ProtoMessage()    {}
 func (*GetServiceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{2}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{2}
 }
 func (m *GetServiceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetServiceProfileRequest.Unmarshal(m, b)
@@ -278,27 +203,30 @@ func (m *GetServiceProfileRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetServiceProfileRequest proto.InternalMessageInfo
 
-func (m *GetServiceProfileRequest) GetServiceProfileID() string {
+func (m *GetServiceProfileRequest) GetId() []byte {
 	if m != nil {
-		return m.ServiceProfileID
+		return m.Id
 	}
-	return ""
+	return nil
 }
 
 type GetServiceProfileResponse struct {
-	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile,proto3" json:"serviceProfile,omitempty"`
-	CreatedAt            string          `protobuf:"bytes,2,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	UpdatedAt            string          `protobuf:"bytes,3,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
-	XXX_unrecognized     []byte          `json:"-"`
-	XXX_sizecache        int32           `json:"-"`
+	// Service-profile object.
+	ServiceProfile *ServiceProfile `protobuf:"bytes,1,opt,name=service_profile,json=serviceProfile,proto3" json:"service_profile,omitempty"`
+	// Created at timestamp.
+	CreatedAt *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// Last update timestamp.
+	UpdatedAt            *timestamp.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
 func (m *GetServiceProfileResponse) Reset()         { *m = GetServiceProfileResponse{} }
 func (m *GetServiceProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*GetServiceProfileResponse) ProtoMessage()    {}
 func (*GetServiceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{3}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{3}
 }
 func (m *GetServiceProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetServiceProfileResponse.Unmarshal(m, b)
@@ -325,22 +253,23 @@ func (m *GetServiceProfileResponse) GetServiceProfile() *ServiceProfile {
 	return nil
 }
 
-func (m *GetServiceProfileResponse) GetCreatedAt() string {
+func (m *GetServiceProfileResponse) GetCreatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
-	return ""
+	return nil
 }
 
-func (m *GetServiceProfileResponse) GetUpdatedAt() string {
+func (m *GetServiceProfileResponse) GetUpdatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.UpdatedAt
 	}
-	return ""
+	return nil
 }
 
 type UpdateServiceProfileRequest struct {
-	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=serviceProfile,proto3" json:"serviceProfile,omitempty"`
+	// Service-profile object to update.
+	ServiceProfile       *ServiceProfile `protobuf:"bytes,1,opt,name=service_profile,json=serviceProfile,proto3" json:"service_profile,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -350,7 +279,7 @@ func (m *UpdateServiceProfileRequest) Reset()         { *m = UpdateServiceProfil
 func (m *UpdateServiceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateServiceProfileRequest) ProtoMessage()    {}
 func (*UpdateServiceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{4}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{4}
 }
 func (m *UpdateServiceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateServiceProfileRequest.Unmarshal(m, b)
@@ -377,38 +306,9 @@ func (m *UpdateServiceProfileRequest) GetServiceProfile() *ServiceProfile {
 	return nil
 }
 
-type UpdateServiceProfileResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *UpdateServiceProfileResponse) Reset()         { *m = UpdateServiceProfileResponse{} }
-func (m *UpdateServiceProfileResponse) String() string { return proto.CompactTextString(m) }
-func (*UpdateServiceProfileResponse) ProtoMessage()    {}
-func (*UpdateServiceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{5}
-}
-func (m *UpdateServiceProfileResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UpdateServiceProfileResponse.Unmarshal(m, b)
-}
-func (m *UpdateServiceProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UpdateServiceProfileResponse.Marshal(b, m, deterministic)
-}
-func (dst *UpdateServiceProfileResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateServiceProfileResponse.Merge(dst, src)
-}
-func (m *UpdateServiceProfileResponse) XXX_Size() int {
-	return xxx_messageInfo_UpdateServiceProfileResponse.Size(m)
-}
-func (m *UpdateServiceProfileResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateServiceProfileResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UpdateServiceProfileResponse proto.InternalMessageInfo
-
 type DeleteServiceProfileRequest struct {
-	ServiceProfileID     string   `protobuf:"bytes,1,opt,name=serviceProfileID,proto3" json:"serviceProfileID,omitempty"`
+	// ID of the service-profile.
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -418,7 +318,7 @@ func (m *DeleteServiceProfileRequest) Reset()         { *m = DeleteServiceProfil
 func (m *DeleteServiceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteServiceProfileRequest) ProtoMessage()    {}
 func (*DeleteServiceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{6}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{5}
 }
 func (m *DeleteServiceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteServiceProfileRequest.Unmarshal(m, b)
@@ -438,107 +338,26 @@ func (m *DeleteServiceProfileRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeleteServiceProfileRequest proto.InternalMessageInfo
 
-func (m *DeleteServiceProfileRequest) GetServiceProfileID() string {
+func (m *DeleteServiceProfileRequest) GetId() []byte {
 	if m != nil {
-		return m.ServiceProfileID
+		return m.Id
 	}
-	return ""
-}
-
-type DeleteServiceProfileResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DeleteServiceProfileResponse) Reset()         { *m = DeleteServiceProfileResponse{} }
-func (m *DeleteServiceProfileResponse) String() string { return proto.CompactTextString(m) }
-func (*DeleteServiceProfileResponse) ProtoMessage()    {}
-func (*DeleteServiceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{7}
-}
-func (m *DeleteServiceProfileResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteServiceProfileResponse.Unmarshal(m, b)
-}
-func (m *DeleteServiceProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteServiceProfileResponse.Marshal(b, m, deterministic)
-}
-func (dst *DeleteServiceProfileResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteServiceProfileResponse.Merge(dst, src)
-}
-func (m *DeleteServiceProfileResponse) XXX_Size() int {
-	return xxx_messageInfo_DeleteServiceProfileResponse.Size(m)
-}
-func (m *DeleteServiceProfileResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteServiceProfileResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DeleteServiceProfileResponse proto.InternalMessageInfo
-
-type RoutingProfile struct {
-	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID,proto3" json:"routingProfileID,omitempty"`
-	AsID                 string   `protobuf:"bytes,2,opt,name=asID,proto3" json:"asID,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *RoutingProfile) Reset()         { *m = RoutingProfile{} }
-func (m *RoutingProfile) String() string { return proto.CompactTextString(m) }
-func (*RoutingProfile) ProtoMessage()    {}
-func (*RoutingProfile) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{8}
-}
-func (m *RoutingProfile) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_RoutingProfile.Unmarshal(m, b)
-}
-func (m *RoutingProfile) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_RoutingProfile.Marshal(b, m, deterministic)
-}
-func (dst *RoutingProfile) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RoutingProfile.Merge(dst, src)
-}
-func (m *RoutingProfile) XXX_Size() int {
-	return xxx_messageInfo_RoutingProfile.Size(m)
-}
-func (m *RoutingProfile) XXX_DiscardUnknown() {
-	xxx_messageInfo_RoutingProfile.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RoutingProfile proto.InternalMessageInfo
-
-func (m *RoutingProfile) GetRoutingProfileID() string {
-	if m != nil {
-		return m.RoutingProfileID
-	}
-	return ""
-}
-
-func (m *RoutingProfile) GetAsID() string {
-	if m != nil {
-		return m.AsID
-	}
-	return ""
+	return nil
 }
 
 type CreateRoutingProfileRequest struct {
-	RoutingProfile *RoutingProfile `protobuf:"bytes,1,opt,name=routingProfile,proto3" json:"routingProfile,omitempty"`
-	// ca certificate for connecting to lora-app-server
-	CaCert string `protobuf:"bytes,2,opt,name=caCert,proto3" json:"caCert,omitempty"`
-	// tls certificate for connecting to lora-app-server
-	TlsCert string `protobuf:"bytes,3,opt,name=tlsCert,proto3" json:"tlsCert,omitempty"`
-	// tls key for connecting to lora-app-server
-	TlsKey               string   `protobuf:"bytes,4,opt,name=tlsKey,proto3" json:"tlsKey,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	// Routing-profile object to create.
+	RoutingProfile       *RoutingProfile `protobuf:"bytes,1,opt,name=routing_profile,json=routingProfile,proto3" json:"routing_profile,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
 func (m *CreateRoutingProfileRequest) Reset()         { *m = CreateRoutingProfileRequest{} }
 func (m *CreateRoutingProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateRoutingProfileRequest) ProtoMessage()    {}
 func (*CreateRoutingProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{9}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{6}
 }
 func (m *CreateRoutingProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateRoutingProfileRequest.Unmarshal(m, b)
@@ -565,29 +384,9 @@ func (m *CreateRoutingProfileRequest) GetRoutingProfile() *RoutingProfile {
 	return nil
 }
 
-func (m *CreateRoutingProfileRequest) GetCaCert() string {
-	if m != nil {
-		return m.CaCert
-	}
-	return ""
-}
-
-func (m *CreateRoutingProfileRequest) GetTlsCert() string {
-	if m != nil {
-		return m.TlsCert
-	}
-	return ""
-}
-
-func (m *CreateRoutingProfileRequest) GetTlsKey() string {
-	if m != nil {
-		return m.TlsKey
-	}
-	return ""
-}
-
 type CreateRoutingProfileResponse struct {
-	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID,proto3" json:"routingProfileID,omitempty"`
+	// ID of the created routing-profile.
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -597,7 +396,7 @@ func (m *CreateRoutingProfileResponse) Reset()         { *m = CreateRoutingProfi
 func (m *CreateRoutingProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateRoutingProfileResponse) ProtoMessage()    {}
 func (*CreateRoutingProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{10}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{7}
 }
 func (m *CreateRoutingProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateRoutingProfileResponse.Unmarshal(m, b)
@@ -617,15 +416,16 @@ func (m *CreateRoutingProfileResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CreateRoutingProfileResponse proto.InternalMessageInfo
 
-func (m *CreateRoutingProfileResponse) GetRoutingProfileID() string {
+func (m *CreateRoutingProfileResponse) GetId() []byte {
 	if m != nil {
-		return m.RoutingProfileID
+		return m.Id
 	}
-	return ""
+	return nil
 }
 
 type GetRoutingProfileRequest struct {
-	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID,proto3" json:"routingProfileID,omitempty"`
+	// ID of the routing-profile.
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -635,7 +435,7 @@ func (m *GetRoutingProfileRequest) Reset()         { *m = GetRoutingProfileReque
 func (m *GetRoutingProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*GetRoutingProfileRequest) ProtoMessage()    {}
 func (*GetRoutingProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{11}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{8}
 }
 func (m *GetRoutingProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetRoutingProfileRequest.Unmarshal(m, b)
@@ -655,31 +455,30 @@ func (m *GetRoutingProfileRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetRoutingProfileRequest proto.InternalMessageInfo
 
-func (m *GetRoutingProfileRequest) GetRoutingProfileID() string {
+func (m *GetRoutingProfileRequest) GetId() []byte {
 	if m != nil {
-		return m.RoutingProfileID
+		return m.Id
 	}
-	return ""
+	return nil
 }
 
 type GetRoutingProfileResponse struct {
-	RoutingProfile *RoutingProfile `protobuf:"bytes,1,opt,name=routingProfile,proto3" json:"routingProfile,omitempty"`
-	CreatedAt      string          `protobuf:"bytes,2,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	UpdatedAt      string          `protobuf:"bytes,3,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
-	// ca certificate for connecting to lora-app-server
-	CaCert string `protobuf:"bytes,4,opt,name=caCert,proto3" json:"caCert,omitempty"`
-	// tls certificate for connecting to lora-app-server
-	TlsCert              string   `protobuf:"bytes,5,opt,name=tlsCert,proto3" json:"tlsCert,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	// Routing-profile object.
+	RoutingProfile *RoutingProfile `protobuf:"bytes,1,opt,name=routing_profile,json=routingProfile,proto3" json:"routing_profile,omitempty"`
+	// Created at timestamp.
+	CreatedAt *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// Last update timestamp.
+	UpdatedAt            *timestamp.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
 func (m *GetRoutingProfileResponse) Reset()         { *m = GetRoutingProfileResponse{} }
 func (m *GetRoutingProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*GetRoutingProfileResponse) ProtoMessage()    {}
 func (*GetRoutingProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{12}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{9}
 }
 func (m *GetRoutingProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetRoutingProfileResponse.Unmarshal(m, b)
@@ -706,52 +505,33 @@ func (m *GetRoutingProfileResponse) GetRoutingProfile() *RoutingProfile {
 	return nil
 }
 
-func (m *GetRoutingProfileResponse) GetCreatedAt() string {
+func (m *GetRoutingProfileResponse) GetCreatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
-	return ""
+	return nil
 }
 
-func (m *GetRoutingProfileResponse) GetUpdatedAt() string {
+func (m *GetRoutingProfileResponse) GetUpdatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.UpdatedAt
 	}
-	return ""
-}
-
-func (m *GetRoutingProfileResponse) GetCaCert() string {
-	if m != nil {
-		return m.CaCert
-	}
-	return ""
-}
-
-func (m *GetRoutingProfileResponse) GetTlsCert() string {
-	if m != nil {
-		return m.TlsCert
-	}
-	return ""
+	return nil
 }
 
 type UpdateRoutingProfileRequest struct {
-	RoutingProfile *RoutingProfile `protobuf:"bytes,1,opt,name=routingProfile,proto3" json:"routingProfile,omitempty"`
-	// ca certificate for connecting to lora-app-server
-	CaCert string `protobuf:"bytes,2,opt,name=caCert,proto3" json:"caCert,omitempty"`
-	// tls certificate for connecting to lora-app-server
-	TlsCert string `protobuf:"bytes,3,opt,name=tlsCert,proto3" json:"tlsCert,omitempty"`
-	// tls key for connecting to lora-app-server
-	TlsKey               string   `protobuf:"bytes,4,opt,name=tlsKey,proto3" json:"tlsKey,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	// Routing-profile object to update.
+	RoutingProfile       *RoutingProfile `protobuf:"bytes,1,opt,name=routing_profile,json=routingProfile,proto3" json:"routing_profile,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
 func (m *UpdateRoutingProfileRequest) Reset()         { *m = UpdateRoutingProfileRequest{} }
 func (m *UpdateRoutingProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateRoutingProfileRequest) ProtoMessage()    {}
 func (*UpdateRoutingProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{13}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{10}
 }
 func (m *UpdateRoutingProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateRoutingProfileRequest.Unmarshal(m, b)
@@ -778,59 +558,9 @@ func (m *UpdateRoutingProfileRequest) GetRoutingProfile() *RoutingProfile {
 	return nil
 }
 
-func (m *UpdateRoutingProfileRequest) GetCaCert() string {
-	if m != nil {
-		return m.CaCert
-	}
-	return ""
-}
-
-func (m *UpdateRoutingProfileRequest) GetTlsCert() string {
-	if m != nil {
-		return m.TlsCert
-	}
-	return ""
-}
-
-func (m *UpdateRoutingProfileRequest) GetTlsKey() string {
-	if m != nil {
-		return m.TlsKey
-	}
-	return ""
-}
-
-type UpdateRoutingProfileResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *UpdateRoutingProfileResponse) Reset()         { *m = UpdateRoutingProfileResponse{} }
-func (m *UpdateRoutingProfileResponse) String() string { return proto.CompactTextString(m) }
-func (*UpdateRoutingProfileResponse) ProtoMessage()    {}
-func (*UpdateRoutingProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{14}
-}
-func (m *UpdateRoutingProfileResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UpdateRoutingProfileResponse.Unmarshal(m, b)
-}
-func (m *UpdateRoutingProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UpdateRoutingProfileResponse.Marshal(b, m, deterministic)
-}
-func (dst *UpdateRoutingProfileResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateRoutingProfileResponse.Merge(dst, src)
-}
-func (m *UpdateRoutingProfileResponse) XXX_Size() int {
-	return xxx_messageInfo_UpdateRoutingProfileResponse.Size(m)
-}
-func (m *UpdateRoutingProfileResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateRoutingProfileResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UpdateRoutingProfileResponse proto.InternalMessageInfo
-
 type DeleteRoutingProfileRequest struct {
-	RoutingProfileID     string   `protobuf:"bytes,1,opt,name=routingProfileID,proto3" json:"routingProfileID,omitempty"`
+	// Routing-profile ID.
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -840,7 +570,7 @@ func (m *DeleteRoutingProfileRequest) Reset()         { *m = DeleteRoutingProfil
 func (m *DeleteRoutingProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteRoutingProfileRequest) ProtoMessage()    {}
 func (*DeleteRoutingProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{15}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{11}
 }
 func (m *DeleteRoutingProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteRoutingProfileRequest.Unmarshal(m, b)
@@ -860,45 +590,16 @@ func (m *DeleteRoutingProfileRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeleteRoutingProfileRequest proto.InternalMessageInfo
 
-func (m *DeleteRoutingProfileRequest) GetRoutingProfileID() string {
+func (m *DeleteRoutingProfileRequest) GetId() []byte {
 	if m != nil {
-		return m.RoutingProfileID
+		return m.Id
 	}
-	return ""
+	return nil
 }
-
-type DeleteRoutingProfileResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DeleteRoutingProfileResponse) Reset()         { *m = DeleteRoutingProfileResponse{} }
-func (m *DeleteRoutingProfileResponse) String() string { return proto.CompactTextString(m) }
-func (*DeleteRoutingProfileResponse) ProtoMessage()    {}
-func (*DeleteRoutingProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{16}
-}
-func (m *DeleteRoutingProfileResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteRoutingProfileResponse.Unmarshal(m, b)
-}
-func (m *DeleteRoutingProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteRoutingProfileResponse.Marshal(b, m, deterministic)
-}
-func (dst *DeleteRoutingProfileResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteRoutingProfileResponse.Merge(dst, src)
-}
-func (m *DeleteRoutingProfileResponse) XXX_Size() int {
-	return xxx_messageInfo_DeleteRoutingProfileResponse.Size(m)
-}
-func (m *DeleteRoutingProfileResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteRoutingProfileResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DeleteRoutingProfileResponse proto.InternalMessageInfo
 
 type CreateDeviceProfileRequest struct {
-	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile,proto3" json:"deviceProfile,omitempty"`
+	// Device-profile object to create.
+	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=device_profile,json=deviceProfile,proto3" json:"device_profile,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
 	XXX_sizecache        int32          `json:"-"`
@@ -908,7 +609,7 @@ func (m *CreateDeviceProfileRequest) Reset()         { *m = CreateDeviceProfileR
 func (m *CreateDeviceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateDeviceProfileRequest) ProtoMessage()    {}
 func (*CreateDeviceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{17}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{12}
 }
 func (m *CreateDeviceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDeviceProfileRequest.Unmarshal(m, b)
@@ -936,7 +637,8 @@ func (m *CreateDeviceProfileRequest) GetDeviceProfile() *DeviceProfile {
 }
 
 type CreateDeviceProfileResponse struct {
-	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID,proto3" json:"deviceProfileID,omitempty"`
+	// ID of the created device-profile.
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -946,7 +648,7 @@ func (m *CreateDeviceProfileResponse) Reset()         { *m = CreateDeviceProfile
 func (m *CreateDeviceProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateDeviceProfileResponse) ProtoMessage()    {}
 func (*CreateDeviceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{18}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{13}
 }
 func (m *CreateDeviceProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDeviceProfileResponse.Unmarshal(m, b)
@@ -966,15 +668,16 @@ func (m *CreateDeviceProfileResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CreateDeviceProfileResponse proto.InternalMessageInfo
 
-func (m *CreateDeviceProfileResponse) GetDeviceProfileID() string {
+func (m *CreateDeviceProfileResponse) GetId() []byte {
 	if m != nil {
-		return m.DeviceProfileID
+		return m.Id
 	}
-	return ""
+	return nil
 }
 
 type GetDeviceProfileRequest struct {
-	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID,proto3" json:"deviceProfileID,omitempty"`
+	// Device-profile ID.
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -984,7 +687,7 @@ func (m *GetDeviceProfileRequest) Reset()         { *m = GetDeviceProfileRequest
 func (m *GetDeviceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceProfileRequest) ProtoMessage()    {}
 func (*GetDeviceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{19}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{14}
 }
 func (m *GetDeviceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceProfileRequest.Unmarshal(m, b)
@@ -1004,27 +707,30 @@ func (m *GetDeviceProfileRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetDeviceProfileRequest proto.InternalMessageInfo
 
-func (m *GetDeviceProfileRequest) GetDeviceProfileID() string {
+func (m *GetDeviceProfileRequest) GetId() []byte {
 	if m != nil {
-		return m.DeviceProfileID
+		return m.Id
 	}
-	return ""
+	return nil
 }
 
 type GetDeviceProfileResponse struct {
-	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile,proto3" json:"deviceProfile,omitempty"`
-	CreatedAt            string         `protobuf:"bytes,2,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	UpdatedAt            string         `protobuf:"bytes,3,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
-	XXX_unrecognized     []byte         `json:"-"`
-	XXX_sizecache        int32          `json:"-"`
+	// Device-profile object.
+	DeviceProfile *DeviceProfile `protobuf:"bytes,1,opt,name=device_profile,json=deviceProfile,proto3" json:"device_profile,omitempty"`
+	// Created at timestamp.
+	CreatedAt *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// Last update timestamp.
+	UpdatedAt            *timestamp.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
 func (m *GetDeviceProfileResponse) Reset()         { *m = GetDeviceProfileResponse{} }
 func (m *GetDeviceProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceProfileResponse) ProtoMessage()    {}
 func (*GetDeviceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{20}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{15}
 }
 func (m *GetDeviceProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceProfileResponse.Unmarshal(m, b)
@@ -1051,22 +757,23 @@ func (m *GetDeviceProfileResponse) GetDeviceProfile() *DeviceProfile {
 	return nil
 }
 
-func (m *GetDeviceProfileResponse) GetCreatedAt() string {
+func (m *GetDeviceProfileResponse) GetCreatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
-	return ""
+	return nil
 }
 
-func (m *GetDeviceProfileResponse) GetUpdatedAt() string {
+func (m *GetDeviceProfileResponse) GetUpdatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.UpdatedAt
 	}
-	return ""
+	return nil
 }
 
 type UpdateDeviceProfileRequest struct {
-	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=deviceProfile,proto3" json:"deviceProfile,omitempty"`
+	// Device-profile object to update.
+	DeviceProfile        *DeviceProfile `protobuf:"bytes,1,opt,name=device_profile,json=deviceProfile,proto3" json:"device_profile,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
 	XXX_sizecache        int32          `json:"-"`
@@ -1076,7 +783,7 @@ func (m *UpdateDeviceProfileRequest) Reset()         { *m = UpdateDeviceProfileR
 func (m *UpdateDeviceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateDeviceProfileRequest) ProtoMessage()    {}
 func (*UpdateDeviceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{21}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{16}
 }
 func (m *UpdateDeviceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateDeviceProfileRequest.Unmarshal(m, b)
@@ -1103,38 +810,9 @@ func (m *UpdateDeviceProfileRequest) GetDeviceProfile() *DeviceProfile {
 	return nil
 }
 
-type UpdateDeviceProfileResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *UpdateDeviceProfileResponse) Reset()         { *m = UpdateDeviceProfileResponse{} }
-func (m *UpdateDeviceProfileResponse) String() string { return proto.CompactTextString(m) }
-func (*UpdateDeviceProfileResponse) ProtoMessage()    {}
-func (*UpdateDeviceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{22}
-}
-func (m *UpdateDeviceProfileResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UpdateDeviceProfileResponse.Unmarshal(m, b)
-}
-func (m *UpdateDeviceProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UpdateDeviceProfileResponse.Marshal(b, m, deterministic)
-}
-func (dst *UpdateDeviceProfileResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateDeviceProfileResponse.Merge(dst, src)
-}
-func (m *UpdateDeviceProfileResponse) XXX_Size() int {
-	return xxx_messageInfo_UpdateDeviceProfileResponse.Size(m)
-}
-func (m *UpdateDeviceProfileResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateDeviceProfileResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UpdateDeviceProfileResponse proto.InternalMessageInfo
-
 type DeleteDeviceProfileRequest struct {
-	DeviceProfileID      string   `protobuf:"bytes,1,opt,name=deviceProfileID,proto3" json:"deviceProfileID,omitempty"`
+	// Device-profile ID.
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1144,7 +822,7 @@ func (m *DeleteDeviceProfileRequest) Reset()         { *m = DeleteDeviceProfileR
 func (m *DeleteDeviceProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteDeviceProfileRequest) ProtoMessage()    {}
 func (*DeleteDeviceProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{23}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{17}
 }
 func (m *DeleteDeviceProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteDeviceProfileRequest.Unmarshal(m, b)
@@ -1164,49 +842,25 @@ func (m *DeleteDeviceProfileRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeleteDeviceProfileRequest proto.InternalMessageInfo
 
-func (m *DeleteDeviceProfileRequest) GetDeviceProfileID() string {
+func (m *DeleteDeviceProfileRequest) GetId() []byte {
 	if m != nil {
-		return m.DeviceProfileID
+		return m.Id
 	}
-	return ""
+	return nil
 }
-
-type DeleteDeviceProfileResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DeleteDeviceProfileResponse) Reset()         { *m = DeleteDeviceProfileResponse{} }
-func (m *DeleteDeviceProfileResponse) String() string { return proto.CompactTextString(m) }
-func (*DeleteDeviceProfileResponse) ProtoMessage()    {}
-func (*DeleteDeviceProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{24}
-}
-func (m *DeleteDeviceProfileResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteDeviceProfileResponse.Unmarshal(m, b)
-}
-func (m *DeleteDeviceProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteDeviceProfileResponse.Marshal(b, m, deterministic)
-}
-func (dst *DeleteDeviceProfileResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteDeviceProfileResponse.Merge(dst, src)
-}
-func (m *DeleteDeviceProfileResponse) XXX_Size() int {
-	return xxx_messageInfo_DeleteDeviceProfileResponse.Size(m)
-}
-func (m *DeleteDeviceProfileResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteDeviceProfileResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DeleteDeviceProfileResponse proto.InternalMessageInfo
 
 type Device struct {
-	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
-	DeviceProfileID      string   `protobuf:"bytes,2,opt,name=deviceProfileID,proto3" json:"deviceProfileID,omitempty"`
-	ServiceProfileID     string   `protobuf:"bytes,3,opt,name=serviceProfileID,proto3" json:"serviceProfileID,omitempty"`
-	RoutingProfileID     string   `protobuf:"bytes,4,opt,name=routingProfileID,proto3" json:"routingProfileID,omitempty"`
-	SkipFCntCheck        bool     `protobuf:"varint,5,opt,name=skipFCntCheck,proto3" json:"skipFCntCheck,omitempty"`
+	// DevEUI.
+	DevEui []byte `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
+	// Device-profile ID.
+	DeviceProfileId []byte `protobuf:"bytes,2,opt,name=device_profile_id,json=deviceProfileId,proto3" json:"device_profile_id,omitempty"`
+	// Service-profile ID.
+	ServiceProfileId []byte `protobuf:"bytes,3,opt,name=service_profile_id,json=serviceProfileId,proto3" json:"service_profile_id,omitempty"`
+	// Routing-profile ID.
+	RoutingProfileId []byte `protobuf:"bytes,4,opt,name=routing_profile_id,json=routingProfileId,proto3" json:"routing_profile_id,omitempty"`
+	// Skip frame-counter check.
+	// Note that turning this on is insecure and is intended for debugging only.
+	SkipFCntCheck        bool     `protobuf:"varint,5,opt,name=skip_f_cnt_check,json=skipFCntCheck,proto3" json:"skip_f_cnt_check,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1216,7 +870,7 @@ func (m *Device) Reset()         { *m = Device{} }
 func (m *Device) String() string { return proto.CompactTextString(m) }
 func (*Device) ProtoMessage()    {}
 func (*Device) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{25}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{18}
 }
 func (m *Device) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Device.Unmarshal(m, b)
@@ -1236,32 +890,32 @@ func (m *Device) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Device proto.InternalMessageInfo
 
-func (m *Device) GetDevEUI() []byte {
+func (m *Device) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
 
-func (m *Device) GetDeviceProfileID() string {
+func (m *Device) GetDeviceProfileId() []byte {
 	if m != nil {
-		return m.DeviceProfileID
+		return m.DeviceProfileId
 	}
-	return ""
+	return nil
 }
 
-func (m *Device) GetServiceProfileID() string {
+func (m *Device) GetServiceProfileId() []byte {
 	if m != nil {
-		return m.ServiceProfileID
+		return m.ServiceProfileId
 	}
-	return ""
+	return nil
 }
 
-func (m *Device) GetRoutingProfileID() string {
+func (m *Device) GetRoutingProfileId() []byte {
 	if m != nil {
-		return m.RoutingProfileID
+		return m.RoutingProfileId
 	}
-	return ""
+	return nil
 }
 
 func (m *Device) GetSkipFCntCheck() bool {
@@ -1272,6 +926,7 @@ func (m *Device) GetSkipFCntCheck() bool {
 }
 
 type CreateDeviceRequest struct {
+	// Device object to create.
 	Device               *Device  `protobuf:"bytes,1,opt,name=device,proto3" json:"device,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1282,7 +937,7 @@ func (m *CreateDeviceRequest) Reset()         { *m = CreateDeviceRequest{} }
 func (m *CreateDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateDeviceRequest) ProtoMessage()    {}
 func (*CreateDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{26}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{19}
 }
 func (m *CreateDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDeviceRequest.Unmarshal(m, b)
@@ -1309,38 +964,9 @@ func (m *CreateDeviceRequest) GetDevice() *Device {
 	return nil
 }
 
-type CreateDeviceResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *CreateDeviceResponse) Reset()         { *m = CreateDeviceResponse{} }
-func (m *CreateDeviceResponse) String() string { return proto.CompactTextString(m) }
-func (*CreateDeviceResponse) ProtoMessage()    {}
-func (*CreateDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{27}
-}
-func (m *CreateDeviceResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_CreateDeviceResponse.Unmarshal(m, b)
-}
-func (m *CreateDeviceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_CreateDeviceResponse.Marshal(b, m, deterministic)
-}
-func (dst *CreateDeviceResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateDeviceResponse.Merge(dst, src)
-}
-func (m *CreateDeviceResponse) XXX_Size() int {
-	return xxx_messageInfo_CreateDeviceResponse.Size(m)
-}
-func (m *CreateDeviceResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_CreateDeviceResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CreateDeviceResponse proto.InternalMessageInfo
-
 type GetDeviceRequest struct {
-	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	// DevEUI.
+	DevEui               []byte   `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1350,7 +976,7 @@ func (m *GetDeviceRequest) Reset()         { *m = GetDeviceRequest{} }
 func (m *GetDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceRequest) ProtoMessage()    {}
 func (*GetDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{28}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{20}
 }
 func (m *GetDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceRequest.Unmarshal(m, b)
@@ -1370,27 +996,30 @@ func (m *GetDeviceRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetDeviceRequest proto.InternalMessageInfo
 
-func (m *GetDeviceRequest) GetDevEUI() []byte {
+func (m *GetDeviceRequest) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
 
 type GetDeviceResponse struct {
-	Device               *Device  `protobuf:"bytes,1,opt,name=device,proto3" json:"device,omitempty"`
-	CreatedAt            string   `protobuf:"bytes,2,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	UpdatedAt            string   `protobuf:"bytes,3,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	// Device object.
+	Device *Device `protobuf:"bytes,1,opt,name=device,proto3" json:"device,omitempty"`
+	// Created at timestamp.
+	CreatedAt *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// Last update timestamp.
+	UpdatedAt            *timestamp.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
 func (m *GetDeviceResponse) Reset()         { *m = GetDeviceResponse{} }
 func (m *GetDeviceResponse) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceResponse) ProtoMessage()    {}
 func (*GetDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{29}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{21}
 }
 func (m *GetDeviceResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceResponse.Unmarshal(m, b)
@@ -1417,21 +1046,22 @@ func (m *GetDeviceResponse) GetDevice() *Device {
 	return nil
 }
 
-func (m *GetDeviceResponse) GetCreatedAt() string {
+func (m *GetDeviceResponse) GetCreatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
-	return ""
+	return nil
 }
 
-func (m *GetDeviceResponse) GetUpdatedAt() string {
+func (m *GetDeviceResponse) GetUpdatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.UpdatedAt
 	}
-	return ""
+	return nil
 }
 
 type UpdateDeviceRequest struct {
+	// Device object to update.
 	Device               *Device  `protobuf:"bytes,1,opt,name=device,proto3" json:"device,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -1442,7 +1072,7 @@ func (m *UpdateDeviceRequest) Reset()         { *m = UpdateDeviceRequest{} }
 func (m *UpdateDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateDeviceRequest) ProtoMessage()    {}
 func (*UpdateDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{30}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{22}
 }
 func (m *UpdateDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateDeviceRequest.Unmarshal(m, b)
@@ -1469,38 +1099,9 @@ func (m *UpdateDeviceRequest) GetDevice() *Device {
 	return nil
 }
 
-type UpdateDeviceResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *UpdateDeviceResponse) Reset()         { *m = UpdateDeviceResponse{} }
-func (m *UpdateDeviceResponse) String() string { return proto.CompactTextString(m) }
-func (*UpdateDeviceResponse) ProtoMessage()    {}
-func (*UpdateDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{31}
-}
-func (m *UpdateDeviceResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UpdateDeviceResponse.Unmarshal(m, b)
-}
-func (m *UpdateDeviceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UpdateDeviceResponse.Marshal(b, m, deterministic)
-}
-func (dst *UpdateDeviceResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateDeviceResponse.Merge(dst, src)
-}
-func (m *UpdateDeviceResponse) XXX_Size() int {
-	return xxx_messageInfo_UpdateDeviceResponse.Size(m)
-}
-func (m *UpdateDeviceResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateDeviceResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UpdateDeviceResponse proto.InternalMessageInfo
-
 type DeleteDeviceRequest struct {
-	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	// DevEUI.
+	DevEui               []byte   `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1510,7 +1111,7 @@ func (m *DeleteDeviceRequest) Reset()         { *m = DeleteDeviceRequest{} }
 func (m *DeleteDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteDeviceRequest) ProtoMessage()    {}
 func (*DeleteDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{32}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{23}
 }
 func (m *DeleteDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteDeviceRequest.Unmarshal(m, b)
@@ -1530,72 +1131,137 @@ func (m *DeleteDeviceRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeleteDeviceRequest proto.InternalMessageInfo
 
-func (m *DeleteDeviceRequest) GetDevEUI() []byte {
+func (m *DeleteDeviceRequest) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
 
-type DeleteDeviceResponse struct {
+type DeviceActivation struct {
+	// DevEUI.
+	DevEui []byte `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
+	// Device address (DevAddr).
+	DevAddr []byte `protobuf:"bytes,2,opt,name=dev_addr,json=devAddr,proto3" json:"dev_addr,omitempty"`
+	// SNwkSIntKey (serving network-server session integrity key).
+	SNwkSIntKey []byte `protobuf:"bytes,3,opt,name=s_nwk_s_int_key,json=sNwkSIntKey,proto3" json:"s_nwk_s_int_key,omitempty"`
+	// FNwkSIntKey (forwarding network-server session integrity key).
+	FNwkSIntKey []byte `protobuf:"bytes,4,opt,name=f_nwk_s_int_key,json=fNwkSIntKey,proto3" json:"f_nwk_s_int_key,omitempty"`
+	// NwkSEncKey (network-server session encryption key).
+	NwkSEncKey []byte `protobuf:"bytes,5,opt,name=nwk_s_enc_key,json=nwkSEncKey,proto3" json:"nwk_s_enc_key,omitempty"`
+	// The next expected uplink frame-counter.
+	FCntUp uint32 `protobuf:"varint,6,opt,name=f_cnt_up,json=fCntUp,proto3" json:"f_cnt_up,omitempty"`
+	// The network frame-counter used for the next downlink frame.
+	NFCntDown uint32 `protobuf:"varint,7,opt,name=n_f_cnt_down,json=nFCntDown,proto3" json:"n_f_cnt_down,omitempty"`
+	// The application frame-counter used for the next downlink frame (LoRaWAN 1.1).
+	AFCntDown uint32 `protobuf:"varint,8,opt,name=a_f_cnt_down,json=aFCntDown,proto3" json:"a_f_cnt_down,omitempty"`
+	// Skip frame-counter checks (this is insecure, but could be helpful for debugging).
+	SkipFCntCheck        bool     `protobuf:"varint,9,opt,name=skip_f_cnt_check,json=skipFCntCheck,proto3" json:"skip_f_cnt_check,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *DeleteDeviceResponse) Reset()         { *m = DeleteDeviceResponse{} }
-func (m *DeleteDeviceResponse) String() string { return proto.CompactTextString(m) }
-func (*DeleteDeviceResponse) ProtoMessage()    {}
-func (*DeleteDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{33}
+func (m *DeviceActivation) Reset()         { *m = DeviceActivation{} }
+func (m *DeviceActivation) String() string { return proto.CompactTextString(m) }
+func (*DeviceActivation) ProtoMessage()    {}
+func (*DeviceActivation) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{24}
 }
-func (m *DeleteDeviceResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteDeviceResponse.Unmarshal(m, b)
+func (m *DeviceActivation) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DeviceActivation.Unmarshal(m, b)
 }
-func (m *DeleteDeviceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteDeviceResponse.Marshal(b, m, deterministic)
+func (m *DeviceActivation) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DeviceActivation.Marshal(b, m, deterministic)
 }
-func (dst *DeleteDeviceResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteDeviceResponse.Merge(dst, src)
+func (dst *DeviceActivation) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeviceActivation.Merge(dst, src)
 }
-func (m *DeleteDeviceResponse) XXX_Size() int {
-	return xxx_messageInfo_DeleteDeviceResponse.Size(m)
+func (m *DeviceActivation) XXX_Size() int {
+	return xxx_messageInfo_DeviceActivation.Size(m)
 }
-func (m *DeleteDeviceResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteDeviceResponse.DiscardUnknown(m)
+func (m *DeviceActivation) XXX_DiscardUnknown() {
+	xxx_messageInfo_DeviceActivation.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_DeleteDeviceResponse proto.InternalMessageInfo
+var xxx_messageInfo_DeviceActivation proto.InternalMessageInfo
+
+func (m *DeviceActivation) GetDevEui() []byte {
+	if m != nil {
+		return m.DevEui
+	}
+	return nil
+}
+
+func (m *DeviceActivation) GetDevAddr() []byte {
+	if m != nil {
+		return m.DevAddr
+	}
+	return nil
+}
+
+func (m *DeviceActivation) GetSNwkSIntKey() []byte {
+	if m != nil {
+		return m.SNwkSIntKey
+	}
+	return nil
+}
+
+func (m *DeviceActivation) GetFNwkSIntKey() []byte {
+	if m != nil {
+		return m.FNwkSIntKey
+	}
+	return nil
+}
+
+func (m *DeviceActivation) GetNwkSEncKey() []byte {
+	if m != nil {
+		return m.NwkSEncKey
+	}
+	return nil
+}
+
+func (m *DeviceActivation) GetFCntUp() uint32 {
+	if m != nil {
+		return m.FCntUp
+	}
+	return 0
+}
+
+func (m *DeviceActivation) GetNFCntDown() uint32 {
+	if m != nil {
+		return m.NFCntDown
+	}
+	return 0
+}
+
+func (m *DeviceActivation) GetAFCntDown() uint32 {
+	if m != nil {
+		return m.AFCntDown
+	}
+	return 0
+}
+
+func (m *DeviceActivation) GetSkipFCntCheck() bool {
+	if m != nil {
+		return m.SkipFCntCheck
+	}
+	return false
+}
 
 type ActivateDeviceRequest struct {
-	// Device EUI (8 bytes).
-	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
-	// The address of the device (4 bytes).
-	DevAddr []byte `protobuf:"bytes,2,opt,name=devAddr,proto3" json:"devAddr,omitempty"`
-	// SNwkSIntKey (serving network-server session integrity key).
-	SNwkSIntKey []byte `protobuf:"bytes,3,opt,name=sNwkSIntKey,proto3" json:"sNwkSIntKey,omitempty"`
-	// FNwkSIntKey (forwarding network-server session integrity key).
-	FNwkSIntKey []byte `protobuf:"bytes,7,opt,name=fNwkSIntKey,proto3" json:"fNwkSIntKey,omitempty"`
-	// NwkSEncKey (network-server session encryption key).
-	NwkSEncKey []byte `protobuf:"bytes,8,opt,name=nwkSEncKey,proto3" json:"nwkSEncKey,omitempty"`
-	// The next expected uplink frame-counter.
-	FCntUp uint32 `protobuf:"varint,4,opt,name=fCntUp,proto3" json:"fCntUp,omitempty"`
-	// The network frame-counter used for the next downlink frame.
-	NFCntDown uint32 `protobuf:"varint,5,opt,name=nFCntDown,proto3" json:"nFCntDown,omitempty"`
-	// The application frame-counter used for the next downlink frame (LoRaWAN 1.1).
-	AFCntDown uint32 `protobuf:"varint,9,opt,name=aFCntDown,proto3" json:"aFCntDown,omitempty"`
-	// Skip frame-counter checks (this is insecure, but could be helpful for debugging).
-	SkipFCntCheck        bool     `protobuf:"varint,6,opt,name=skipFCntCheck,proto3" json:"skipFCntCheck,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	// Device-activation to activate a device (ABP).
+	DeviceActivation     *DeviceActivation `protobuf:"bytes,1,opt,name=device_activation,json=deviceActivation,proto3" json:"device_activation,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
 func (m *ActivateDeviceRequest) Reset()         { *m = ActivateDeviceRequest{} }
 func (m *ActivateDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*ActivateDeviceRequest) ProtoMessage()    {}
 func (*ActivateDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{34}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{25}
 }
 func (m *ActivateDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ActivateDeviceRequest.Unmarshal(m, b)
@@ -1615,102 +1281,16 @@ func (m *ActivateDeviceRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ActivateDeviceRequest proto.InternalMessageInfo
 
-func (m *ActivateDeviceRequest) GetDevEUI() []byte {
+func (m *ActivateDeviceRequest) GetDeviceActivation() *DeviceActivation {
 	if m != nil {
-		return m.DevEUI
+		return m.DeviceActivation
 	}
 	return nil
 }
-
-func (m *ActivateDeviceRequest) GetDevAddr() []byte {
-	if m != nil {
-		return m.DevAddr
-	}
-	return nil
-}
-
-func (m *ActivateDeviceRequest) GetSNwkSIntKey() []byte {
-	if m != nil {
-		return m.SNwkSIntKey
-	}
-	return nil
-}
-
-func (m *ActivateDeviceRequest) GetFNwkSIntKey() []byte {
-	if m != nil {
-		return m.FNwkSIntKey
-	}
-	return nil
-}
-
-func (m *ActivateDeviceRequest) GetNwkSEncKey() []byte {
-	if m != nil {
-		return m.NwkSEncKey
-	}
-	return nil
-}
-
-func (m *ActivateDeviceRequest) GetFCntUp() uint32 {
-	if m != nil {
-		return m.FCntUp
-	}
-	return 0
-}
-
-func (m *ActivateDeviceRequest) GetNFCntDown() uint32 {
-	if m != nil {
-		return m.NFCntDown
-	}
-	return 0
-}
-
-func (m *ActivateDeviceRequest) GetAFCntDown() uint32 {
-	if m != nil {
-		return m.AFCntDown
-	}
-	return 0
-}
-
-func (m *ActivateDeviceRequest) GetSkipFCntCheck() bool {
-	if m != nil {
-		return m.SkipFCntCheck
-	}
-	return false
-}
-
-type ActivateDeviceResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *ActivateDeviceResponse) Reset()         { *m = ActivateDeviceResponse{} }
-func (m *ActivateDeviceResponse) String() string { return proto.CompactTextString(m) }
-func (*ActivateDeviceResponse) ProtoMessage()    {}
-func (*ActivateDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{35}
-}
-func (m *ActivateDeviceResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_ActivateDeviceResponse.Unmarshal(m, b)
-}
-func (m *ActivateDeviceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_ActivateDeviceResponse.Marshal(b, m, deterministic)
-}
-func (dst *ActivateDeviceResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ActivateDeviceResponse.Merge(dst, src)
-}
-func (m *ActivateDeviceResponse) XXX_Size() int {
-	return xxx_messageInfo_ActivateDeviceResponse.Size(m)
-}
-func (m *ActivateDeviceResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_ActivateDeviceResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ActivateDeviceResponse proto.InternalMessageInfo
 
 type DeactivateDeviceRequest struct {
 	// Device EUI (8 bytes).
-	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEui               []byte   `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1720,7 +1300,7 @@ func (m *DeactivateDeviceRequest) Reset()         { *m = DeactivateDeviceRequest
 func (m *DeactivateDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*DeactivateDeviceRequest) ProtoMessage()    {}
 func (*DeactivateDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{36}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{26}
 }
 func (m *DeactivateDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeactivateDeviceRequest.Unmarshal(m, b)
@@ -1740,46 +1320,16 @@ func (m *DeactivateDeviceRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeactivateDeviceRequest proto.InternalMessageInfo
 
-func (m *DeactivateDeviceRequest) GetDevEUI() []byte {
+func (m *DeactivateDeviceRequest) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
 
-type DeactivateDeviceResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DeactivateDeviceResponse) Reset()         { *m = DeactivateDeviceResponse{} }
-func (m *DeactivateDeviceResponse) String() string { return proto.CompactTextString(m) }
-func (*DeactivateDeviceResponse) ProtoMessage()    {}
-func (*DeactivateDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{37}
-}
-func (m *DeactivateDeviceResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeactivateDeviceResponse.Unmarshal(m, b)
-}
-func (m *DeactivateDeviceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeactivateDeviceResponse.Marshal(b, m, deterministic)
-}
-func (dst *DeactivateDeviceResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeactivateDeviceResponse.Merge(dst, src)
-}
-func (m *DeactivateDeviceResponse) XXX_Size() int {
-	return xxx_messageInfo_DeactivateDeviceResponse.Size(m)
-}
-func (m *DeactivateDeviceResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeactivateDeviceResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DeactivateDeviceResponse proto.InternalMessageInfo
-
 type GetDeviceActivationRequest struct {
 	// Device EUI (8 bytes).
-	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEui               []byte   `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1789,7 +1339,7 @@ func (m *GetDeviceActivationRequest) Reset()         { *m = GetDeviceActivationR
 func (m *GetDeviceActivationRequest) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceActivationRequest) ProtoMessage()    {}
 func (*GetDeviceActivationRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{38}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{27}
 }
 func (m *GetDeviceActivationRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceActivationRequest.Unmarshal(m, b)
@@ -1809,40 +1359,26 @@ func (m *GetDeviceActivationRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetDeviceActivationRequest proto.InternalMessageInfo
 
-func (m *GetDeviceActivationRequest) GetDevEUI() []byte {
+func (m *GetDeviceActivationRequest) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
 
 type GetDeviceActivationResponse struct {
-	// The address of the device (4 bytes).
-	DevAddr []byte `protobuf:"bytes,1,opt,name=devAddr,proto3" json:"devAddr,omitempty"`
-	// SNwkSIntKey (serving network-server session integrity key).
-	SNwkSIntKey []byte `protobuf:"bytes,2,opt,name=sNwkSIntKey,proto3" json:"sNwkSIntKey,omitempty"`
-	// FNwkSIntKey (forwarding network-server session integrity key).
-	FNwkSIntKey []byte `protobuf:"bytes,6,opt,name=fNwkSIntKey,proto3" json:"fNwkSIntKey,omitempty"`
-	// NwkSEncKey (network-server session encryption key).
-	NwkSEncKey []byte `protobuf:"bytes,7,opt,name=nwkSEncKey,proto3" json:"nwkSEncKey,omitempty"`
-	// The next expected uplink frame-counter.
-	FCntUp uint32 `protobuf:"varint,3,opt,name=fCntUp,proto3" json:"fCntUp,omitempty"`
-	// The network frame-counter used for the next downlink frame.
-	NFCntDown uint32 `protobuf:"varint,4,opt,name=nFCntDown,proto3" json:"nFCntDown,omitempty"`
-	// The application frame-counter used for the next downlink frame (LoRaWAN 1.1).
-	AFCntDown uint32 `protobuf:"varint,8,opt,name=aFCntDown,proto3" json:"aFCntDown,omitempty"`
-	// Skip frame-counter checks (this is insecure, but could be helpful for debugging).
-	SkipFCntCheck        bool     `protobuf:"varint,5,opt,name=skipFCntCheck,proto3" json:"skipFCntCheck,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	// Device-activation object.
+	DeviceActivation     *DeviceActivation `protobuf:"bytes,1,opt,name=device_activation,json=deviceActivation,proto3" json:"device_activation,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
+	XXX_unrecognized     []byte            `json:"-"`
+	XXX_sizecache        int32             `json:"-"`
 }
 
 func (m *GetDeviceActivationResponse) Reset()         { *m = GetDeviceActivationResponse{} }
 func (m *GetDeviceActivationResponse) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceActivationResponse) ProtoMessage()    {}
 func (*GetDeviceActivationResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{39}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{28}
 }
 func (m *GetDeviceActivationResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceActivationResponse.Unmarshal(m, b)
@@ -1862,94 +1398,17 @@ func (m *GetDeviceActivationResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetDeviceActivationResponse proto.InternalMessageInfo
 
-func (m *GetDeviceActivationResponse) GetDevAddr() []byte {
+func (m *GetDeviceActivationResponse) GetDeviceActivation() *DeviceActivation {
 	if m != nil {
-		return m.DevAddr
+		return m.DeviceActivation
 	}
 	return nil
 }
-
-func (m *GetDeviceActivationResponse) GetSNwkSIntKey() []byte {
-	if m != nil {
-		return m.SNwkSIntKey
-	}
-	return nil
-}
-
-func (m *GetDeviceActivationResponse) GetFNwkSIntKey() []byte {
-	if m != nil {
-		return m.FNwkSIntKey
-	}
-	return nil
-}
-
-func (m *GetDeviceActivationResponse) GetNwkSEncKey() []byte {
-	if m != nil {
-		return m.NwkSEncKey
-	}
-	return nil
-}
-
-func (m *GetDeviceActivationResponse) GetFCntUp() uint32 {
-	if m != nil {
-		return m.FCntUp
-	}
-	return 0
-}
-
-func (m *GetDeviceActivationResponse) GetNFCntDown() uint32 {
-	if m != nil {
-		return m.NFCntDown
-	}
-	return 0
-}
-
-func (m *GetDeviceActivationResponse) GetAFCntDown() uint32 {
-	if m != nil {
-		return m.AFCntDown
-	}
-	return 0
-}
-
-func (m *GetDeviceActivationResponse) GetSkipFCntCheck() bool {
-	if m != nil {
-		return m.SkipFCntCheck
-	}
-	return false
-}
-
-type GetRandomDevAddrRequest struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetRandomDevAddrRequest) Reset()         { *m = GetRandomDevAddrRequest{} }
-func (m *GetRandomDevAddrRequest) String() string { return proto.CompactTextString(m) }
-func (*GetRandomDevAddrRequest) ProtoMessage()    {}
-func (*GetRandomDevAddrRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{40}
-}
-func (m *GetRandomDevAddrRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetRandomDevAddrRequest.Unmarshal(m, b)
-}
-func (m *GetRandomDevAddrRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetRandomDevAddrRequest.Marshal(b, m, deterministic)
-}
-func (dst *GetRandomDevAddrRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetRandomDevAddrRequest.Merge(dst, src)
-}
-func (m *GetRandomDevAddrRequest) XXX_Size() int {
-	return xxx_messageInfo_GetRandomDevAddrRequest.Size(m)
-}
-func (m *GetRandomDevAddrRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetRandomDevAddrRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetRandomDevAddrRequest proto.InternalMessageInfo
 
 type GetRandomDevAddrResponse struct {
-	DevAddr              []byte   `protobuf:"bytes,1,opt,name=devAddr,proto3" json:"devAddr,omitempty"`
+	// Random device address (DevAddr).
+	// Note that this includes the NetID prefix of the network-server.
+	DevAddr              []byte   `protobuf:"bytes,1,opt,name=dev_addr,json=devAddr,proto3" json:"dev_addr,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -1959,7 +1418,7 @@ func (m *GetRandomDevAddrResponse) Reset()         { *m = GetRandomDevAddrRespon
 func (m *GetRandomDevAddrResponse) String() string { return proto.CompactTextString(m) }
 func (*GetRandomDevAddrResponse) ProtoMessage()    {}
 func (*GetRandomDevAddrResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{41}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{29}
 }
 func (m *GetRandomDevAddrResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetRandomDevAddrResponse.Unmarshal(m, b)
@@ -1987,8 +1446,8 @@ func (m *GetRandomDevAddrResponse) GetDevAddr() []byte {
 }
 
 type CreateMACCommandQueueItemRequest struct {
-	// DevEUI of the node.
-	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	// DevEUI EUI (8 bytes).
+	DevEui []byte `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
 	// Command identifier (specified by the LoRaWAN specs).
 	Cid uint32 `protobuf:"varint,4,opt,name=cid,proto3" json:"cid,omitempty"`
 	// MAC-command(s). In case multiple payloads are defined, then they
@@ -2003,7 +1462,7 @@ func (m *CreateMACCommandQueueItemRequest) Reset()         { *m = CreateMACComma
 func (m *CreateMACCommandQueueItemRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateMACCommandQueueItemRequest) ProtoMessage()    {}
 func (*CreateMACCommandQueueItemRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{42}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{30}
 }
 func (m *CreateMACCommandQueueItemRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateMACCommandQueueItemRequest.Unmarshal(m, b)
@@ -2023,9 +1482,9 @@ func (m *CreateMACCommandQueueItemRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CreateMACCommandQueueItemRequest proto.InternalMessageInfo
 
-func (m *CreateMACCommandQueueItemRequest) GetDevEUI() []byte {
+func (m *CreateMACCommandQueueItemRequest) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
@@ -2044,46 +1503,16 @@ func (m *CreateMACCommandQueueItemRequest) GetCommands() [][]byte {
 	return nil
 }
 
-type CreateMACCommandQueueItemResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *CreateMACCommandQueueItemResponse) Reset()         { *m = CreateMACCommandQueueItemResponse{} }
-func (m *CreateMACCommandQueueItemResponse) String() string { return proto.CompactTextString(m) }
-func (*CreateMACCommandQueueItemResponse) ProtoMessage()    {}
-func (*CreateMACCommandQueueItemResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{43}
-}
-func (m *CreateMACCommandQueueItemResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_CreateMACCommandQueueItemResponse.Unmarshal(m, b)
-}
-func (m *CreateMACCommandQueueItemResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_CreateMACCommandQueueItemResponse.Marshal(b, m, deterministic)
-}
-func (dst *CreateMACCommandQueueItemResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateMACCommandQueueItemResponse.Merge(dst, src)
-}
-func (m *CreateMACCommandQueueItemResponse) XXX_Size() int {
-	return xxx_messageInfo_CreateMACCommandQueueItemResponse.Size(m)
-}
-func (m *CreateMACCommandQueueItemResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_CreateMACCommandQueueItemResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CreateMACCommandQueueItemResponse proto.InternalMessageInfo
-
 type SendProprietaryPayloadRequest struct {
 	// MACPayload of the proprietary LoRaWAN frame.
-	MacPayload []byte `protobuf:"bytes,1,opt,name=macPayload,proto3" json:"macPayload,omitempty"`
+	MacPayload []byte `protobuf:"bytes,1,opt,name=mac_payload,json=macPayload,proto3" json:"mac_payload,omitempty"`
 	// MIC of the proprietary LoRaWAN frame (must be 4 bytes).
 	Mic []byte `protobuf:"bytes,2,opt,name=mic,proto3" json:"mic,omitempty"`
 	// Gateway MAC address(es) to use for transmitting the LoRaWAN frame.
-	GatewayMACs [][]byte `protobuf:"bytes,3,rep,name=gatewayMACs,proto3" json:"gatewayMACs,omitempty"`
+	GatewayMacs [][]byte `protobuf:"bytes,3,rep,name=gateway_macs,json=gatewayMacs,proto3" json:"gateway_macs,omitempty"`
 	// Set to true for sending as a gateway, or false for sending as a node.
 	// In the latter case the frame will be received by other gateways.
-	IPol bool `protobuf:"varint,4,opt,name=iPol,proto3" json:"iPol,omitempty"`
+	PolarizationInversion bool `protobuf:"varint,4,opt,name=polarization_inversion,json=polarizationInversion,proto3" json:"polarization_inversion,omitempty"`
 	// Frequency (Hz) to use for the transmission.
 	Frequency uint32 `protobuf:"varint,5,opt,name=frequency,proto3" json:"frequency,omitempty"`
 	// Data-rate to use for the transmission.
@@ -2097,7 +1526,7 @@ func (m *SendProprietaryPayloadRequest) Reset()         { *m = SendProprietaryPa
 func (m *SendProprietaryPayloadRequest) String() string { return proto.CompactTextString(m) }
 func (*SendProprietaryPayloadRequest) ProtoMessage()    {}
 func (*SendProprietaryPayloadRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{44}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{31}
 }
 func (m *SendProprietaryPayloadRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SendProprietaryPayloadRequest.Unmarshal(m, b)
@@ -2131,16 +1560,16 @@ func (m *SendProprietaryPayloadRequest) GetMic() []byte {
 	return nil
 }
 
-func (m *SendProprietaryPayloadRequest) GetGatewayMACs() [][]byte {
+func (m *SendProprietaryPayloadRequest) GetGatewayMacs() [][]byte {
 	if m != nil {
-		return m.GatewayMACs
+		return m.GatewayMacs
 	}
 	return nil
 }
 
-func (m *SendProprietaryPayloadRequest) GetIPol() bool {
+func (m *SendProprietaryPayloadRequest) GetPolarizationInversion() bool {
 	if m != nil {
-		return m.IPol
+		return m.PolarizationInversion
 	}
 	return false
 }
@@ -2159,39 +1588,9 @@ func (m *SendProprietaryPayloadRequest) GetDr() uint32 {
 	return 0
 }
 
-type SendProprietaryPayloadResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *SendProprietaryPayloadResponse) Reset()         { *m = SendProprietaryPayloadResponse{} }
-func (m *SendProprietaryPayloadResponse) String() string { return proto.CompactTextString(m) }
-func (*SendProprietaryPayloadResponse) ProtoMessage()    {}
-func (*SendProprietaryPayloadResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{45}
-}
-func (m *SendProprietaryPayloadResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SendProprietaryPayloadResponse.Unmarshal(m, b)
-}
-func (m *SendProprietaryPayloadResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SendProprietaryPayloadResponse.Marshal(b, m, deterministic)
-}
-func (dst *SendProprietaryPayloadResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SendProprietaryPayloadResponse.Merge(dst, src)
-}
-func (m *SendProprietaryPayloadResponse) XXX_Size() int {
-	return xxx_messageInfo_SendProprietaryPayloadResponse.Size(m)
-}
-func (m *SendProprietaryPayloadResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_SendProprietaryPayloadResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_SendProprietaryPayloadResponse proto.InternalMessageInfo
-
-type CreateGatewayRequest struct {
-	// MAC address of the gateway.
-	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+type Gateway struct {
+	// Gateway ID.
+	Id []byte `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Name of the gateway.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Description for the gateway.
@@ -2203,7 +1602,88 @@ type CreateGatewayRequest struct {
 	// Altitude of the gateway.
 	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude,proto3" json:"altitude,omitempty"`
 	// ID of the gateway-profile (optional).
-	GatewayProfileID     string   `protobuf:"bytes,8,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
+	GatewayProfileId     []byte   `protobuf:"bytes,7,opt,name=gateway_profile_id,json=gatewayProfileId,proto3" json:"gateway_profile_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Gateway) Reset()         { *m = Gateway{} }
+func (m *Gateway) String() string { return proto.CompactTextString(m) }
+func (*Gateway) ProtoMessage()    {}
+func (*Gateway) Descriptor() ([]byte, []int) {
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{32}
+}
+func (m *Gateway) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Gateway.Unmarshal(m, b)
+}
+func (m *Gateway) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Gateway.Marshal(b, m, deterministic)
+}
+func (dst *Gateway) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Gateway.Merge(dst, src)
+}
+func (m *Gateway) XXX_Size() int {
+	return xxx_messageInfo_Gateway.Size(m)
+}
+func (m *Gateway) XXX_DiscardUnknown() {
+	xxx_messageInfo_Gateway.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Gateway proto.InternalMessageInfo
+
+func (m *Gateway) GetId() []byte {
+	if m != nil {
+		return m.Id
+	}
+	return nil
+}
+
+func (m *Gateway) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Gateway) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
+func (m *Gateway) GetLatitude() float64 {
+	if m != nil {
+		return m.Latitude
+	}
+	return 0
+}
+
+func (m *Gateway) GetLongitude() float64 {
+	if m != nil {
+		return m.Longitude
+	}
+	return 0
+}
+
+func (m *Gateway) GetAltitude() float64 {
+	if m != nil {
+		return m.Altitude
+	}
+	return 0
+}
+
+func (m *Gateway) GetGatewayProfileId() []byte {
+	if m != nil {
+		return m.GatewayProfileId
+	}
+	return nil
+}
+
+type CreateGatewayRequest struct {
+	// Gateway object to create.
+	Gateway              *Gateway `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2213,7 +1693,7 @@ func (m *CreateGatewayRequest) Reset()         { *m = CreateGatewayRequest{} }
 func (m *CreateGatewayRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateGatewayRequest) ProtoMessage()    {}
 func (*CreateGatewayRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{46}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{33}
 }
 func (m *CreateGatewayRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateGatewayRequest.Unmarshal(m, b)
@@ -2233,88 +1713,16 @@ func (m *CreateGatewayRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CreateGatewayRequest proto.InternalMessageInfo
 
-func (m *CreateGatewayRequest) GetMac() []byte {
+func (m *CreateGatewayRequest) GetGateway() *Gateway {
 	if m != nil {
-		return m.Mac
+		return m.Gateway
 	}
 	return nil
 }
 
-func (m *CreateGatewayRequest) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *CreateGatewayRequest) GetDescription() string {
-	if m != nil {
-		return m.Description
-	}
-	return ""
-}
-
-func (m *CreateGatewayRequest) GetLatitude() float64 {
-	if m != nil {
-		return m.Latitude
-	}
-	return 0
-}
-
-func (m *CreateGatewayRequest) GetLongitude() float64 {
-	if m != nil {
-		return m.Longitude
-	}
-	return 0
-}
-
-func (m *CreateGatewayRequest) GetAltitude() float64 {
-	if m != nil {
-		return m.Altitude
-	}
-	return 0
-}
-
-func (m *CreateGatewayRequest) GetGatewayProfileID() string {
-	if m != nil {
-		return m.GatewayProfileID
-	}
-	return ""
-}
-
-type CreateGatewayResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *CreateGatewayResponse) Reset()         { *m = CreateGatewayResponse{} }
-func (m *CreateGatewayResponse) String() string { return proto.CompactTextString(m) }
-func (*CreateGatewayResponse) ProtoMessage()    {}
-func (*CreateGatewayResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{47}
-}
-func (m *CreateGatewayResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_CreateGatewayResponse.Unmarshal(m, b)
-}
-func (m *CreateGatewayResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_CreateGatewayResponse.Marshal(b, m, deterministic)
-}
-func (dst *CreateGatewayResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateGatewayResponse.Merge(dst, src)
-}
-func (m *CreateGatewayResponse) XXX_Size() int {
-	return xxx_messageInfo_CreateGatewayResponse.Size(m)
-}
-func (m *CreateGatewayResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_CreateGatewayResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CreateGatewayResponse proto.InternalMessageInfo
-
 type GetGatewayRequest struct {
-	// MAC address of the gateway.
-	Mac                  []byte   `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	// Gateway ID.
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2324,7 +1732,7 @@ func (m *GetGatewayRequest) Reset()         { *m = GetGatewayRequest{} }
 func (m *GetGatewayRequest) String() string { return proto.CompactTextString(m) }
 func (*GetGatewayRequest) ProtoMessage()    {}
 func (*GetGatewayRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{48}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{34}
 }
 func (m *GetGatewayRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetGatewayRequest.Unmarshal(m, b)
@@ -2344,46 +1752,34 @@ func (m *GetGatewayRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetGatewayRequest proto.InternalMessageInfo
 
-func (m *GetGatewayRequest) GetMac() []byte {
+func (m *GetGatewayRequest) GetId() []byte {
 	if m != nil {
-		return m.Mac
+		return m.Id
 	}
 	return nil
 }
 
 type GetGatewayResponse struct {
-	// MAC address of the gateway.
-	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
-	// Name of the gateway.
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// Description for the gateway.
-	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	// Latitude of the gateway.
-	Latitude float64 `protobuf:"fixed64,4,opt,name=latitude,proto3" json:"latitude,omitempty"`
-	// Longitude of the gateway.
-	Longitude float64 `protobuf:"fixed64,5,opt,name=longitude,proto3" json:"longitude,omitempty"`
-	// Altitude of the gateway.
-	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude,proto3" json:"altitude,omitempty"`
-	// The timestamp when the gateway was created.
-	CreatedAt string `protobuf:"bytes,7,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	// The timestamp when the gateway was last updated.
-	UpdatedAt string `protobuf:"bytes,8,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
-	// The timestamp when the gateway was first seen.
-	FirstSeenAt string `protobuf:"bytes,9,opt,name=firstSeenAt,proto3" json:"firstSeenAt,omitempty"`
-	// The timestamp when the gateway was last seen.
-	LastSeenAt string `protobuf:"bytes,10,opt,name=lastSeenAt,proto3" json:"lastSeenAt,omitempty"`
-	// ID of the gateway-profile (optional).
-	GatewayProfileID     string   `protobuf:"bytes,12,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	// Gateway object.
+	Gateway *Gateway `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway,omitempty"`
+	// Created at timestamp.
+	CreatedAt *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// Last update timestamp.
+	UpdatedAt *timestamp.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	// First seen timestamp.
+	FirstSeenAt *timestamp.Timestamp `protobuf:"bytes,4,opt,name=first_seen_at,json=firstSeenAt,proto3" json:"first_seen_at,omitempty"`
+	// Last seen timestamp.
+	LastSeenAt           *timestamp.Timestamp `protobuf:"bytes,5,opt,name=last_seen_at,json=lastSeenAt,proto3" json:"last_seen_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
 func (m *GetGatewayResponse) Reset()         { *m = GetGatewayResponse{} }
 func (m *GetGatewayResponse) String() string { return proto.CompactTextString(m) }
 func (*GetGatewayResponse) ProtoMessage()    {}
 func (*GetGatewayResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{49}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{35}
 }
 func (m *GetGatewayResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetGatewayResponse.Unmarshal(m, b)
@@ -2403,98 +1799,44 @@ func (m *GetGatewayResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetGatewayResponse proto.InternalMessageInfo
 
-func (m *GetGatewayResponse) GetMac() []byte {
+func (m *GetGatewayResponse) GetGateway() *Gateway {
 	if m != nil {
-		return m.Mac
+		return m.Gateway
 	}
 	return nil
 }
 
-func (m *GetGatewayResponse) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *GetGatewayResponse) GetDescription() string {
-	if m != nil {
-		return m.Description
-	}
-	return ""
-}
-
-func (m *GetGatewayResponse) GetLatitude() float64 {
-	if m != nil {
-		return m.Latitude
-	}
-	return 0
-}
-
-func (m *GetGatewayResponse) GetLongitude() float64 {
-	if m != nil {
-		return m.Longitude
-	}
-	return 0
-}
-
-func (m *GetGatewayResponse) GetAltitude() float64 {
-	if m != nil {
-		return m.Altitude
-	}
-	return 0
-}
-
-func (m *GetGatewayResponse) GetCreatedAt() string {
+func (m *GetGatewayResponse) GetCreatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
-	return ""
+	return nil
 }
 
-func (m *GetGatewayResponse) GetUpdatedAt() string {
+func (m *GetGatewayResponse) GetUpdatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.UpdatedAt
 	}
-	return ""
+	return nil
 }
 
-func (m *GetGatewayResponse) GetFirstSeenAt() string {
+func (m *GetGatewayResponse) GetFirstSeenAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.FirstSeenAt
 	}
-	return ""
+	return nil
 }
 
-func (m *GetGatewayResponse) GetLastSeenAt() string {
+func (m *GetGatewayResponse) GetLastSeenAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.LastSeenAt
 	}
-	return ""
-}
-
-func (m *GetGatewayResponse) GetGatewayProfileID() string {
-	if m != nil {
-		return m.GatewayProfileID
-	}
-	return ""
+	return nil
 }
 
 type UpdateGatewayRequest struct {
-	// MAC address of the gateway.
-	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
-	// Name of the gateway.
-	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	// Description for the gateway.
-	Description string `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	// Latitude of the gateway.
-	Latitude float64 `protobuf:"fixed64,4,opt,name=latitude,proto3" json:"latitude,omitempty"`
-	// Longitude of the gateway.
-	Longitude float64 `protobuf:"fixed64,5,opt,name=longitude,proto3" json:"longitude,omitempty"`
-	// Altitude of the gateway.
-	Altitude float64 `protobuf:"fixed64,6,opt,name=altitude,proto3" json:"altitude,omitempty"`
-	// ID of the gateway-profile.
-	GatewayProfileID     string   `protobuf:"bytes,8,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
+	// Gateway object to update.
+	Gateway              *Gateway `protobuf:"bytes,1,opt,name=gateway,proto3" json:"gateway,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2504,7 +1846,7 @@ func (m *UpdateGatewayRequest) Reset()         { *m = UpdateGatewayRequest{} }
 func (m *UpdateGatewayRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateGatewayRequest) ProtoMessage()    {}
 func (*UpdateGatewayRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{50}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{36}
 }
 func (m *UpdateGatewayRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateGatewayRequest.Unmarshal(m, b)
@@ -2524,88 +1866,16 @@ func (m *UpdateGatewayRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_UpdateGatewayRequest proto.InternalMessageInfo
 
-func (m *UpdateGatewayRequest) GetMac() []byte {
+func (m *UpdateGatewayRequest) GetGateway() *Gateway {
 	if m != nil {
-		return m.Mac
+		return m.Gateway
 	}
 	return nil
 }
 
-func (m *UpdateGatewayRequest) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *UpdateGatewayRequest) GetDescription() string {
-	if m != nil {
-		return m.Description
-	}
-	return ""
-}
-
-func (m *UpdateGatewayRequest) GetLatitude() float64 {
-	if m != nil {
-		return m.Latitude
-	}
-	return 0
-}
-
-func (m *UpdateGatewayRequest) GetLongitude() float64 {
-	if m != nil {
-		return m.Longitude
-	}
-	return 0
-}
-
-func (m *UpdateGatewayRequest) GetAltitude() float64 {
-	if m != nil {
-		return m.Altitude
-	}
-	return 0
-}
-
-func (m *UpdateGatewayRequest) GetGatewayProfileID() string {
-	if m != nil {
-		return m.GatewayProfileID
-	}
-	return ""
-}
-
-type UpdateGatewayResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *UpdateGatewayResponse) Reset()         { *m = UpdateGatewayResponse{} }
-func (m *UpdateGatewayResponse) String() string { return proto.CompactTextString(m) }
-func (*UpdateGatewayResponse) ProtoMessage()    {}
-func (*UpdateGatewayResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{51}
-}
-func (m *UpdateGatewayResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UpdateGatewayResponse.Unmarshal(m, b)
-}
-func (m *UpdateGatewayResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UpdateGatewayResponse.Marshal(b, m, deterministic)
-}
-func (dst *UpdateGatewayResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateGatewayResponse.Merge(dst, src)
-}
-func (m *UpdateGatewayResponse) XXX_Size() int {
-	return xxx_messageInfo_UpdateGatewayResponse.Size(m)
-}
-func (m *UpdateGatewayResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateGatewayResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UpdateGatewayResponse proto.InternalMessageInfo
-
 type DeleteGatewayRequest struct {
-	// MAC address of the gateway.
-	Mac                  []byte   `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	// Gateway ID.
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2615,7 +1885,7 @@ func (m *DeleteGatewayRequest) Reset()         { *m = DeleteGatewayRequest{} }
 func (m *DeleteGatewayRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteGatewayRequest) ProtoMessage()    {}
 func (*DeleteGatewayRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{52}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{37}
 }
 func (m *DeleteGatewayRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteGatewayRequest.Unmarshal(m, b)
@@ -2635,54 +1905,24 @@ func (m *DeleteGatewayRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeleteGatewayRequest proto.InternalMessageInfo
 
-func (m *DeleteGatewayRequest) GetMac() []byte {
+func (m *DeleteGatewayRequest) GetId() []byte {
 	if m != nil {
-		return m.Mac
+		return m.Id
 	}
 	return nil
 }
 
-type DeleteGatewayResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DeleteGatewayResponse) Reset()         { *m = DeleteGatewayResponse{} }
-func (m *DeleteGatewayResponse) String() string { return proto.CompactTextString(m) }
-func (*DeleteGatewayResponse) ProtoMessage()    {}
-func (*DeleteGatewayResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{53}
-}
-func (m *DeleteGatewayResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteGatewayResponse.Unmarshal(m, b)
-}
-func (m *DeleteGatewayResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteGatewayResponse.Marshal(b, m, deterministic)
-}
-func (dst *DeleteGatewayResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteGatewayResponse.Merge(dst, src)
-}
-func (m *DeleteGatewayResponse) XXX_Size() int {
-	return xxx_messageInfo_DeleteGatewayResponse.Size(m)
-}
-func (m *DeleteGatewayResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteGatewayResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DeleteGatewayResponse proto.InternalMessageInfo
-
 type GatewayStats struct {
 	// Timestamp of the (aggregated) measurement.
-	Timestamp string `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	Timestamp *timestamp.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// Packets received by the gateway.
-	RxPacketsReceived int32 `protobuf:"varint,2,opt,name=rxPacketsReceived,proto3" json:"rxPacketsReceived,omitempty"`
+	RxPacketsReceived int32 `protobuf:"varint,2,opt,name=rx_packets_received,json=rxPacketsReceived,proto3" json:"rx_packets_received,omitempty"`
 	// Packets received by the gateway that passed the CRC check.
-	RxPacketsReceivedOK int32 `protobuf:"varint,3,opt,name=rxPacketsReceivedOK,proto3" json:"rxPacketsReceivedOK,omitempty"`
+	RxPacketsReceivedOk int32 `protobuf:"varint,3,opt,name=rx_packets_received_ok,json=rxPacketsReceivedOk,proto3" json:"rx_packets_received_ok,omitempty"`
 	// Packets received by the gateway for transmission.
-	TxPacketsReceived int32 `protobuf:"varint,4,opt,name=txPacketsReceived,proto3" json:"txPacketsReceived,omitempty"`
+	TxPacketsReceived int32 `protobuf:"varint,4,opt,name=tx_packets_received,json=txPacketsReceived,proto3" json:"tx_packets_received,omitempty"`
 	// Packets transmitted by the gateway.
-	TxPacketsEmitted     int32    `protobuf:"varint,5,opt,name=txPacketsEmitted,proto3" json:"txPacketsEmitted,omitempty"`
+	TxPacketsEmitted     int32    `protobuf:"varint,5,opt,name=tx_packets_emitted,json=txPacketsEmitted,proto3" json:"tx_packets_emitted,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -2692,7 +1932,7 @@ func (m *GatewayStats) Reset()         { *m = GatewayStats{} }
 func (m *GatewayStats) String() string { return proto.CompactTextString(m) }
 func (*GatewayStats) ProtoMessage()    {}
 func (*GatewayStats) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{54}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{38}
 }
 func (m *GatewayStats) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GatewayStats.Unmarshal(m, b)
@@ -2712,11 +1952,11 @@ func (m *GatewayStats) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GatewayStats proto.InternalMessageInfo
 
-func (m *GatewayStats) GetTimestamp() string {
+func (m *GatewayStats) GetTimestamp() *timestamp.Timestamp {
 	if m != nil {
 		return m.Timestamp
 	}
-	return ""
+	return nil
 }
 
 func (m *GatewayStats) GetRxPacketsReceived() int32 {
@@ -2726,9 +1966,9 @@ func (m *GatewayStats) GetRxPacketsReceived() int32 {
 	return 0
 }
 
-func (m *GatewayStats) GetRxPacketsReceivedOK() int32 {
+func (m *GatewayStats) GetRxPacketsReceivedOk() int32 {
 	if m != nil {
-		return m.RxPacketsReceivedOK
+		return m.RxPacketsReceivedOk
 	}
 	return 0
 }
@@ -2749,23 +1989,23 @@ func (m *GatewayStats) GetTxPacketsEmitted() int32 {
 
 type GetGatewayStatsRequest struct {
 	// MAC address of the gateway.
-	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	GatewayId []byte `protobuf:"bytes,1,opt,name=gateway_id,json=gatewayId,proto3" json:"gateway_id,omitempty"`
 	// Aggregation interval.
 	Interval AggregationInterval `protobuf:"varint,2,opt,name=interval,proto3,enum=ns.AggregationInterval" json:"interval,omitempty"`
 	// Timestamp to start from.
-	StartTimestamp string `protobuf:"bytes,3,opt,name=startTimestamp,proto3" json:"startTimestamp,omitempty"`
+	StartTimestamp *timestamp.Timestamp `protobuf:"bytes,3,opt,name=start_timestamp,json=startTimestamp,proto3" json:"start_timestamp,omitempty"`
 	// Timestamp until to get from.
-	EndTimestamp         string   `protobuf:"bytes,4,opt,name=endTimestamp,proto3" json:"endTimestamp,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	EndTimestamp         *timestamp.Timestamp `protobuf:"bytes,4,opt,name=end_timestamp,json=endTimestamp,proto3" json:"end_timestamp,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
 func (m *GetGatewayStatsRequest) Reset()         { *m = GetGatewayStatsRequest{} }
 func (m *GetGatewayStatsRequest) String() string { return proto.CompactTextString(m) }
 func (*GetGatewayStatsRequest) ProtoMessage()    {}
 func (*GetGatewayStatsRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{55}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{39}
 }
 func (m *GetGatewayStatsRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetGatewayStatsRequest.Unmarshal(m, b)
@@ -2785,9 +2025,9 @@ func (m *GetGatewayStatsRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetGatewayStatsRequest proto.InternalMessageInfo
 
-func (m *GetGatewayStatsRequest) GetMac() []byte {
+func (m *GetGatewayStatsRequest) GetGatewayId() []byte {
 	if m != nil {
-		return m.Mac
+		return m.GatewayId
 	}
 	return nil
 }
@@ -2799,18 +2039,18 @@ func (m *GetGatewayStatsRequest) GetInterval() AggregationInterval {
 	return AggregationInterval_SECOND
 }
 
-func (m *GetGatewayStatsRequest) GetStartTimestamp() string {
+func (m *GetGatewayStatsRequest) GetStartTimestamp() *timestamp.Timestamp {
 	if m != nil {
 		return m.StartTimestamp
 	}
-	return ""
+	return nil
 }
 
-func (m *GetGatewayStatsRequest) GetEndTimestamp() string {
+func (m *GetGatewayStatsRequest) GetEndTimestamp() *timestamp.Timestamp {
 	if m != nil {
 		return m.EndTimestamp
 	}
-	return ""
+	return nil
 }
 
 type GetGatewayStatsResponse struct {
@@ -2824,7 +2064,7 @@ func (m *GetGatewayStatsResponse) Reset()         { *m = GetGatewayStatsResponse
 func (m *GetGatewayStatsResponse) String() string { return proto.CompactTextString(m) }
 func (*GetGatewayStatsResponse) ProtoMessage()    {}
 func (*GetGatewayStatsResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{56}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{40}
 }
 func (m *GetGatewayStatsResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetGatewayStatsResponse.Unmarshal(m, b)
@@ -2853,13 +2093,13 @@ func (m *GetGatewayStatsResponse) GetResult() []*GatewayStats {
 
 type DeviceQueueItem struct {
 	// DevEUI of the device.
-	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEui []byte `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
 	// The encrypted FRMPayload bytes.
-	FrmPayload []byte `protobuf:"bytes,2,opt,name=frmPayload,proto3" json:"frmPayload,omitempty"`
+	FrmPayload []byte `protobuf:"bytes,2,opt,name=frm_payload,json=frmPayload,proto3" json:"frm_payload,omitempty"`
 	// The FCnt of the payload.
-	FCnt uint32 `protobuf:"varint,3,opt,name=fCnt,proto3" json:"fCnt,omitempty"`
+	FCnt uint32 `protobuf:"varint,3,opt,name=f_cnt,json=fCnt,proto3" json:"f_cnt,omitempty"`
 	// The FPort of the payload.
-	FPort uint32 `protobuf:"varint,4,opt,name=fPort,proto3" json:"fPort,omitempty"`
+	FPort uint32 `protobuf:"varint,4,opt,name=f_port,json=fPort,proto3" json:"f_port,omitempty"`
 	// When set to true, LoRa Server will wait for the device to ack the
 	// received frame.
 	Confirmed            bool     `protobuf:"varint,5,opt,name=confirmed,proto3" json:"confirmed,omitempty"`
@@ -2872,7 +2112,7 @@ func (m *DeviceQueueItem) Reset()         { *m = DeviceQueueItem{} }
 func (m *DeviceQueueItem) String() string { return proto.CompactTextString(m) }
 func (*DeviceQueueItem) ProtoMessage()    {}
 func (*DeviceQueueItem) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{57}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{41}
 }
 func (m *DeviceQueueItem) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeviceQueueItem.Unmarshal(m, b)
@@ -2892,9 +2132,9 @@ func (m *DeviceQueueItem) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeviceQueueItem proto.InternalMessageInfo
 
-func (m *DeviceQueueItem) GetDevEUI() []byte {
+func (m *DeviceQueueItem) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
@@ -2938,7 +2178,7 @@ func (m *CreateDeviceQueueItemRequest) Reset()         { *m = CreateDeviceQueueI
 func (m *CreateDeviceQueueItemRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateDeviceQueueItemRequest) ProtoMessage()    {}
 func (*CreateDeviceQueueItemRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{58}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{42}
 }
 func (m *CreateDeviceQueueItemRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateDeviceQueueItemRequest.Unmarshal(m, b)
@@ -2965,39 +2205,9 @@ func (m *CreateDeviceQueueItemRequest) GetItem() *DeviceQueueItem {
 	return nil
 }
 
-type CreateDeviceQueueItemResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *CreateDeviceQueueItemResponse) Reset()         { *m = CreateDeviceQueueItemResponse{} }
-func (m *CreateDeviceQueueItemResponse) String() string { return proto.CompactTextString(m) }
-func (*CreateDeviceQueueItemResponse) ProtoMessage()    {}
-func (*CreateDeviceQueueItemResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{59}
-}
-func (m *CreateDeviceQueueItemResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_CreateDeviceQueueItemResponse.Unmarshal(m, b)
-}
-func (m *CreateDeviceQueueItemResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_CreateDeviceQueueItemResponse.Marshal(b, m, deterministic)
-}
-func (dst *CreateDeviceQueueItemResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateDeviceQueueItemResponse.Merge(dst, src)
-}
-func (m *CreateDeviceQueueItemResponse) XXX_Size() int {
-	return xxx_messageInfo_CreateDeviceQueueItemResponse.Size(m)
-}
-func (m *CreateDeviceQueueItemResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_CreateDeviceQueueItemResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_CreateDeviceQueueItemResponse proto.InternalMessageInfo
-
 type FlushDeviceQueueForDevEUIRequest struct {
 	// DevEUI of the device.
-	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEui               []byte   `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3007,7 +2217,7 @@ func (m *FlushDeviceQueueForDevEUIRequest) Reset()         { *m = FlushDeviceQue
 func (m *FlushDeviceQueueForDevEUIRequest) String() string { return proto.CompactTextString(m) }
 func (*FlushDeviceQueueForDevEUIRequest) ProtoMessage()    {}
 func (*FlushDeviceQueueForDevEUIRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{60}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{43}
 }
 func (m *FlushDeviceQueueForDevEUIRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FlushDeviceQueueForDevEUIRequest.Unmarshal(m, b)
@@ -3027,46 +2237,16 @@ func (m *FlushDeviceQueueForDevEUIRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_FlushDeviceQueueForDevEUIRequest proto.InternalMessageInfo
 
-func (m *FlushDeviceQueueForDevEUIRequest) GetDevEUI() []byte {
+func (m *FlushDeviceQueueForDevEUIRequest) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
 
-type FlushDeviceQueueForDevEUIResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *FlushDeviceQueueForDevEUIResponse) Reset()         { *m = FlushDeviceQueueForDevEUIResponse{} }
-func (m *FlushDeviceQueueForDevEUIResponse) String() string { return proto.CompactTextString(m) }
-func (*FlushDeviceQueueForDevEUIResponse) ProtoMessage()    {}
-func (*FlushDeviceQueueForDevEUIResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{61}
-}
-func (m *FlushDeviceQueueForDevEUIResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_FlushDeviceQueueForDevEUIResponse.Unmarshal(m, b)
-}
-func (m *FlushDeviceQueueForDevEUIResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_FlushDeviceQueueForDevEUIResponse.Marshal(b, m, deterministic)
-}
-func (dst *FlushDeviceQueueForDevEUIResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FlushDeviceQueueForDevEUIResponse.Merge(dst, src)
-}
-func (m *FlushDeviceQueueForDevEUIResponse) XXX_Size() int {
-	return xxx_messageInfo_FlushDeviceQueueForDevEUIResponse.Size(m)
-}
-func (m *FlushDeviceQueueForDevEUIResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_FlushDeviceQueueForDevEUIResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_FlushDeviceQueueForDevEUIResponse proto.InternalMessageInfo
-
 type GetDeviceQueueItemsForDevEUIRequest struct {
 	// DevEUI of the device.
-	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEui               []byte   `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3076,7 +2256,7 @@ func (m *GetDeviceQueueItemsForDevEUIRequest) Reset()         { *m = GetDeviceQu
 func (m *GetDeviceQueueItemsForDevEUIRequest) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceQueueItemsForDevEUIRequest) ProtoMessage()    {}
 func (*GetDeviceQueueItemsForDevEUIRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{62}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{44}
 }
 func (m *GetDeviceQueueItemsForDevEUIRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceQueueItemsForDevEUIRequest.Unmarshal(m, b)
@@ -3096,9 +2276,9 @@ func (m *GetDeviceQueueItemsForDevEUIRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetDeviceQueueItemsForDevEUIRequest proto.InternalMessageInfo
 
-func (m *GetDeviceQueueItemsForDevEUIRequest) GetDevEUI() []byte {
+func (m *GetDeviceQueueItemsForDevEUIRequest) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
@@ -3114,7 +2294,7 @@ func (m *GetDeviceQueueItemsForDevEUIResponse) Reset()         { *m = GetDeviceQ
 func (m *GetDeviceQueueItemsForDevEUIResponse) String() string { return proto.CompactTextString(m) }
 func (*GetDeviceQueueItemsForDevEUIResponse) ProtoMessage()    {}
 func (*GetDeviceQueueItemsForDevEUIResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{63}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{45}
 }
 func (m *GetDeviceQueueItemsForDevEUIResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetDeviceQueueItemsForDevEUIResponse.Unmarshal(m, b)
@@ -3143,7 +2323,7 @@ func (m *GetDeviceQueueItemsForDevEUIResponse) GetItems() []*DeviceQueueItem {
 
 type GetNextDownlinkFCntForDevEUIRequest struct {
 	// DevEUI of the device.
-	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEui               []byte   `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3153,7 +2333,7 @@ func (m *GetNextDownlinkFCntForDevEUIRequest) Reset()         { *m = GetNextDown
 func (m *GetNextDownlinkFCntForDevEUIRequest) String() string { return proto.CompactTextString(m) }
 func (*GetNextDownlinkFCntForDevEUIRequest) ProtoMessage()    {}
 func (*GetNextDownlinkFCntForDevEUIRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{64}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{46}
 }
 func (m *GetNextDownlinkFCntForDevEUIRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetNextDownlinkFCntForDevEUIRequest.Unmarshal(m, b)
@@ -3173,16 +2353,16 @@ func (m *GetNextDownlinkFCntForDevEUIRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetNextDownlinkFCntForDevEUIRequest proto.InternalMessageInfo
 
-func (m *GetNextDownlinkFCntForDevEUIRequest) GetDevEUI() []byte {
+func (m *GetNextDownlinkFCntForDevEUIRequest) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
 
 type GetNextDownlinkFCntForDevEUIResponse struct {
 	// The frame-counter to use.
-	FCnt                 uint32   `protobuf:"varint,1,opt,name=fCnt,proto3" json:"fCnt,omitempty"`
+	FCnt                 uint32   `protobuf:"varint,1,opt,name=f_cnt,json=fCnt,proto3" json:"f_cnt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3192,7 +2372,7 @@ func (m *GetNextDownlinkFCntForDevEUIResponse) Reset()         { *m = GetNextDow
 func (m *GetNextDownlinkFCntForDevEUIResponse) String() string { return proto.CompactTextString(m) }
 func (*GetNextDownlinkFCntForDevEUIResponse) ProtoMessage()    {}
 func (*GetNextDownlinkFCntForDevEUIResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{65}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{47}
 }
 func (m *GetNextDownlinkFCntForDevEUIResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetNextDownlinkFCntForDevEUIResponse.Unmarshal(m, b)
@@ -3221,7 +2401,7 @@ func (m *GetNextDownlinkFCntForDevEUIResponse) GetFCnt() uint32 {
 
 type StreamFrameLogsForGatewayRequest struct {
 	// MAC address of the gateway.
-	Mac                  []byte   `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
+	GatewayId            []byte   `protobuf:"bytes,1,opt,name=gateway_id,json=gatewayId,proto3" json:"gateway_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3231,7 +2411,7 @@ func (m *StreamFrameLogsForGatewayRequest) Reset()         { *m = StreamFrameLog
 func (m *StreamFrameLogsForGatewayRequest) String() string { return proto.CompactTextString(m) }
 func (*StreamFrameLogsForGatewayRequest) ProtoMessage()    {}
 func (*StreamFrameLogsForGatewayRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{66}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{48}
 }
 func (m *StreamFrameLogsForGatewayRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StreamFrameLogsForGatewayRequest.Unmarshal(m, b)
@@ -3251,28 +2431,28 @@ func (m *StreamFrameLogsForGatewayRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_StreamFrameLogsForGatewayRequest proto.InternalMessageInfo
 
-func (m *StreamFrameLogsForGatewayRequest) GetMac() []byte {
+func (m *StreamFrameLogsForGatewayRequest) GetGatewayId() []byte {
 	if m != nil {
-		return m.Mac
+		return m.GatewayId
 	}
 	return nil
 }
 
 type StreamFrameLogsForGatewayResponse struct {
-	// Contains zero or one uplink frame.
-	UplinkFrames []*UplinkFrameLog `protobuf:"bytes,1,rep,name=uplinkFrames,proto3" json:"uplinkFrames,omitempty"`
-	// Contains zero or one downlink frame.
-	DownlinkFrames       []*DownlinkFrameLog `protobuf:"bytes,2,rep,name=downlinkFrames,proto3" json:"downlinkFrames,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
-	XXX_unrecognized     []byte              `json:"-"`
-	XXX_sizecache        int32               `json:"-"`
+	// Types that are valid to be assigned to Frame:
+	//	*StreamFrameLogsForGatewayResponse_UplinkFrameSet
+	//	*StreamFrameLogsForGatewayResponse_DownlinkFrame
+	Frame                isStreamFrameLogsForGatewayResponse_Frame `protobuf_oneof:"frame"`
+	XXX_NoUnkeyedLiteral struct{}                                  `json:"-"`
+	XXX_unrecognized     []byte                                    `json:"-"`
+	XXX_sizecache        int32                                     `json:"-"`
 }
 
 func (m *StreamFrameLogsForGatewayResponse) Reset()         { *m = StreamFrameLogsForGatewayResponse{} }
 func (m *StreamFrameLogsForGatewayResponse) String() string { return proto.CompactTextString(m) }
 func (*StreamFrameLogsForGatewayResponse) ProtoMessage()    {}
 func (*StreamFrameLogsForGatewayResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{67}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{49}
 }
 func (m *StreamFrameLogsForGatewayResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StreamFrameLogsForGatewayResponse.Unmarshal(m, b)
@@ -3292,23 +2472,118 @@ func (m *StreamFrameLogsForGatewayResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_StreamFrameLogsForGatewayResponse proto.InternalMessageInfo
 
-func (m *StreamFrameLogsForGatewayResponse) GetUplinkFrames() []*UplinkFrameLog {
+type isStreamFrameLogsForGatewayResponse_Frame interface {
+	isStreamFrameLogsForGatewayResponse_Frame()
+}
+
+type StreamFrameLogsForGatewayResponse_UplinkFrameSet struct {
+	UplinkFrameSet *gw.UplinkFrameSet `protobuf:"bytes,1,opt,name=uplink_frame_set,json=uplinkFrameSet,proto3,oneof"`
+}
+type StreamFrameLogsForGatewayResponse_DownlinkFrame struct {
+	DownlinkFrame *gw.DownlinkFrame `protobuf:"bytes,2,opt,name=downlink_frame,json=downlinkFrame,proto3,oneof"`
+}
+
+func (*StreamFrameLogsForGatewayResponse_UplinkFrameSet) isStreamFrameLogsForGatewayResponse_Frame() {}
+func (*StreamFrameLogsForGatewayResponse_DownlinkFrame) isStreamFrameLogsForGatewayResponse_Frame()  {}
+
+func (m *StreamFrameLogsForGatewayResponse) GetFrame() isStreamFrameLogsForGatewayResponse_Frame {
 	if m != nil {
-		return m.UplinkFrames
+		return m.Frame
 	}
 	return nil
 }
 
-func (m *StreamFrameLogsForGatewayResponse) GetDownlinkFrames() []*DownlinkFrameLog {
-	if m != nil {
-		return m.DownlinkFrames
+func (m *StreamFrameLogsForGatewayResponse) GetUplinkFrameSet() *gw.UplinkFrameSet {
+	if x, ok := m.GetFrame().(*StreamFrameLogsForGatewayResponse_UplinkFrameSet); ok {
+		return x.UplinkFrameSet
 	}
 	return nil
+}
+
+func (m *StreamFrameLogsForGatewayResponse) GetDownlinkFrame() *gw.DownlinkFrame {
+	if x, ok := m.GetFrame().(*StreamFrameLogsForGatewayResponse_DownlinkFrame); ok {
+		return x.DownlinkFrame
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*StreamFrameLogsForGatewayResponse) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _StreamFrameLogsForGatewayResponse_OneofMarshaler, _StreamFrameLogsForGatewayResponse_OneofUnmarshaler, _StreamFrameLogsForGatewayResponse_OneofSizer, []interface{}{
+		(*StreamFrameLogsForGatewayResponse_UplinkFrameSet)(nil),
+		(*StreamFrameLogsForGatewayResponse_DownlinkFrame)(nil),
+	}
+}
+
+func _StreamFrameLogsForGatewayResponse_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*StreamFrameLogsForGatewayResponse)
+	// frame
+	switch x := m.Frame.(type) {
+	case *StreamFrameLogsForGatewayResponse_UplinkFrameSet:
+		b.EncodeVarint(1<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.UplinkFrameSet); err != nil {
+			return err
+		}
+	case *StreamFrameLogsForGatewayResponse_DownlinkFrame:
+		b.EncodeVarint(2<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.DownlinkFrame); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("StreamFrameLogsForGatewayResponse.Frame has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _StreamFrameLogsForGatewayResponse_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*StreamFrameLogsForGatewayResponse)
+	switch tag {
+	case 1: // frame.uplink_frame_set
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(gw.UplinkFrameSet)
+		err := b.DecodeMessage(msg)
+		m.Frame = &StreamFrameLogsForGatewayResponse_UplinkFrameSet{msg}
+		return true, err
+	case 2: // frame.downlink_frame
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(gw.DownlinkFrame)
+		err := b.DecodeMessage(msg)
+		m.Frame = &StreamFrameLogsForGatewayResponse_DownlinkFrame{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _StreamFrameLogsForGatewayResponse_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*StreamFrameLogsForGatewayResponse)
+	// frame
+	switch x := m.Frame.(type) {
+	case *StreamFrameLogsForGatewayResponse_UplinkFrameSet:
+		s := proto.Size(x.UplinkFrameSet)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *StreamFrameLogsForGatewayResponse_DownlinkFrame:
+		s := proto.Size(x.DownlinkFrame)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
 }
 
 type StreamFrameLogsForDeviceRequest struct {
 	// DevEUI of the device.
-	DevEUI               []byte   `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	DevEui               []byte   `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -3318,7 +2593,7 @@ func (m *StreamFrameLogsForDeviceRequest) Reset()         { *m = StreamFrameLogs
 func (m *StreamFrameLogsForDeviceRequest) String() string { return proto.CompactTextString(m) }
 func (*StreamFrameLogsForDeviceRequest) ProtoMessage()    {}
 func (*StreamFrameLogsForDeviceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{68}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{50}
 }
 func (m *StreamFrameLogsForDeviceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StreamFrameLogsForDeviceRequest.Unmarshal(m, b)
@@ -3338,28 +2613,28 @@ func (m *StreamFrameLogsForDeviceRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_StreamFrameLogsForDeviceRequest proto.InternalMessageInfo
 
-func (m *StreamFrameLogsForDeviceRequest) GetDevEUI() []byte {
+func (m *StreamFrameLogsForDeviceRequest) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
 
 type StreamFrameLogsForDeviceResponse struct {
-	// Contains zero or one uplink frame.
-	UplinkFrames []*UplinkFrameLog `protobuf:"bytes,1,rep,name=uplinkFrames,proto3" json:"uplinkFrames,omitempty"`
-	// Contains zero or one downlink frame.
-	DownlinkFrames       []*DownlinkFrameLog `protobuf:"bytes,2,rep,name=downlinkFrames,proto3" json:"downlinkFrames,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}            `json:"-"`
-	XXX_unrecognized     []byte              `json:"-"`
-	XXX_sizecache        int32               `json:"-"`
+	// Types that are valid to be assigned to Frame:
+	//	*StreamFrameLogsForDeviceResponse_UplinkFrameSet
+	//	*StreamFrameLogsForDeviceResponse_DownlinkFrame
+	Frame                isStreamFrameLogsForDeviceResponse_Frame `protobuf_oneof:"frame"`
+	XXX_NoUnkeyedLiteral struct{}                                 `json:"-"`
+	XXX_unrecognized     []byte                                   `json:"-"`
+	XXX_sizecache        int32                                    `json:"-"`
 }
 
 func (m *StreamFrameLogsForDeviceResponse) Reset()         { *m = StreamFrameLogsForDeviceResponse{} }
 func (m *StreamFrameLogsForDeviceResponse) String() string { return proto.CompactTextString(m) }
 func (*StreamFrameLogsForDeviceResponse) ProtoMessage()    {}
 func (*StreamFrameLogsForDeviceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{69}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{51}
 }
 func (m *StreamFrameLogsForDeviceResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_StreamFrameLogsForDeviceResponse.Unmarshal(m, b)
@@ -3379,524 +2654,130 @@ func (m *StreamFrameLogsForDeviceResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_StreamFrameLogsForDeviceResponse proto.InternalMessageInfo
 
-func (m *StreamFrameLogsForDeviceResponse) GetUplinkFrames() []*UplinkFrameLog {
+type isStreamFrameLogsForDeviceResponse_Frame interface {
+	isStreamFrameLogsForDeviceResponse_Frame()
+}
+
+type StreamFrameLogsForDeviceResponse_UplinkFrameSet struct {
+	UplinkFrameSet *gw.UplinkFrameSet `protobuf:"bytes,1,opt,name=uplink_frame_set,json=uplinkFrameSet,proto3,oneof"`
+}
+type StreamFrameLogsForDeviceResponse_DownlinkFrame struct {
+	DownlinkFrame *gw.DownlinkFrame `protobuf:"bytes,2,opt,name=downlink_frame,json=downlinkFrame,proto3,oneof"`
+}
+
+func (*StreamFrameLogsForDeviceResponse_UplinkFrameSet) isStreamFrameLogsForDeviceResponse_Frame() {}
+func (*StreamFrameLogsForDeviceResponse_DownlinkFrame) isStreamFrameLogsForDeviceResponse_Frame()  {}
+
+func (m *StreamFrameLogsForDeviceResponse) GetFrame() isStreamFrameLogsForDeviceResponse_Frame {
 	if m != nil {
-		return m.UplinkFrames
+		return m.Frame
 	}
 	return nil
 }
 
-func (m *StreamFrameLogsForDeviceResponse) GetDownlinkFrames() []*DownlinkFrameLog {
-	if m != nil {
-		return m.DownlinkFrames
+func (m *StreamFrameLogsForDeviceResponse) GetUplinkFrameSet() *gw.UplinkFrameSet {
+	if x, ok := m.GetFrame().(*StreamFrameLogsForDeviceResponse_UplinkFrameSet); ok {
+		return x.UplinkFrameSet
 	}
 	return nil
 }
 
-type DataRate struct {
-	// The used modulation (LORA or FSK).
-	Modulation string `protobuf:"bytes,1,opt,name=modulation,proto3" json:"modulation,omitempty"`
-	// Bandwidth (in kHz).
-	Bandwidth uint32 `protobuf:"varint,2,opt,name=bandwidth,proto3" json:"bandwidth,omitempty"`
-	// Used spread-factor.
-	SpreadFactor uint32 `protobuf:"varint,3,opt,name=spreadFactor,proto3" json:"spreadFactor,omitempty"`
-	// Bitrate (used for FSK modulation).
-	Bitrate              uint32   `protobuf:"varint,4,opt,name=bitrate,proto3" json:"bitrate,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DataRate) Reset()         { *m = DataRate{} }
-func (m *DataRate) String() string { return proto.CompactTextString(m) }
-func (*DataRate) ProtoMessage()    {}
-func (*DataRate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{70}
-}
-func (m *DataRate) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DataRate.Unmarshal(m, b)
-}
-func (m *DataRate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DataRate.Marshal(b, m, deterministic)
-}
-func (dst *DataRate) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DataRate.Merge(dst, src)
-}
-func (m *DataRate) XXX_Size() int {
-	return xxx_messageInfo_DataRate.Size(m)
-}
-func (m *DataRate) XXX_DiscardUnknown() {
-	xxx_messageInfo_DataRate.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DataRate proto.InternalMessageInfo
-
-func (m *DataRate) GetModulation() string {
-	if m != nil {
-		return m.Modulation
-	}
-	return ""
-}
-
-func (m *DataRate) GetBandwidth() uint32 {
-	if m != nil {
-		return m.Bandwidth
-	}
-	return 0
-}
-
-func (m *DataRate) GetSpreadFactor() uint32 {
-	if m != nil {
-		return m.SpreadFactor
-	}
-	return 0
-}
-
-func (m *DataRate) GetBitrate() uint32 {
-	if m != nil {
-		return m.Bitrate
-	}
-	return 0
-}
-
-type UplinkTXInfo struct {
-	// TX frequency (in Hz).
-	Frequency uint32 `protobuf:"varint,1,opt,name=frequency,proto3" json:"frequency,omitempty"`
-	// Data-rate.
-	DataRate *DataRate `protobuf:"bytes,2,opt,name=dataRate,proto3" json:"dataRate,omitempty"`
-	// Code rate.
-	CodeRate             string   `protobuf:"bytes,3,opt,name=codeRate,proto3" json:"codeRate,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *UplinkTXInfo) Reset()         { *m = UplinkTXInfo{} }
-func (m *UplinkTXInfo) String() string { return proto.CompactTextString(m) }
-func (*UplinkTXInfo) ProtoMessage()    {}
-func (*UplinkTXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{71}
-}
-func (m *UplinkTXInfo) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UplinkTXInfo.Unmarshal(m, b)
-}
-func (m *UplinkTXInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UplinkTXInfo.Marshal(b, m, deterministic)
-}
-func (dst *UplinkTXInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UplinkTXInfo.Merge(dst, src)
-}
-func (m *UplinkTXInfo) XXX_Size() int {
-	return xxx_messageInfo_UplinkTXInfo.Size(m)
-}
-func (m *UplinkTXInfo) XXX_DiscardUnknown() {
-	xxx_messageInfo_UplinkTXInfo.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UplinkTXInfo proto.InternalMessageInfo
-
-func (m *UplinkTXInfo) GetFrequency() uint32 {
-	if m != nil {
-		return m.Frequency
-	}
-	return 0
-}
-
-func (m *UplinkTXInfo) GetDataRate() *DataRate {
-	if m != nil {
-		return m.DataRate
+func (m *StreamFrameLogsForDeviceResponse) GetDownlinkFrame() *gw.DownlinkFrame {
+	if x, ok := m.GetFrame().(*StreamFrameLogsForDeviceResponse_DownlinkFrame); ok {
+		return x.DownlinkFrame
 	}
 	return nil
 }
 
-func (m *UplinkTXInfo) GetCodeRate() string {
-	if m != nil {
-		return m.CodeRate
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*StreamFrameLogsForDeviceResponse) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _StreamFrameLogsForDeviceResponse_OneofMarshaler, _StreamFrameLogsForDeviceResponse_OneofUnmarshaler, _StreamFrameLogsForDeviceResponse_OneofSizer, []interface{}{
+		(*StreamFrameLogsForDeviceResponse_UplinkFrameSet)(nil),
+		(*StreamFrameLogsForDeviceResponse_DownlinkFrame)(nil),
 	}
-	return ""
 }
 
-type UplinkRXInfo struct {
-	// Gateway MAC.
-	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
-	// Time when the frame was received (if available).
-	Time string `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
-	// Time when the frame was received as time since GPS epoch (if available).
-	TimeSinceGPSEpoch string `protobuf:"bytes,3,opt,name=timeSinceGPSEpoch,proto3" json:"timeSinceGPSEpoch,omitempty"`
-	// Gateway internal timestamp.
-	Timestamp uint32 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// RSSI.
-	Rssi int32 `protobuf:"varint,5,opt,name=rssi,proto3" json:"rssi,omitempty"`
-	// LoRa SNR.
-	LoRaSNR float32 `protobuf:"fixed32,6,opt,name=loRaSNR,proto3" json:"loRaSNR,omitempty"`
-	// The board identifier that received the uplink frame.
-	Board uint32 `protobuf:"varint,7,opt,name=board,proto3" json:"board,omitempty"`
-	// THe antenna identifier that received the uplink frame.
-	Antenna              uint32   `protobuf:"varint,8,opt,name=antenna,proto3" json:"antenna,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *UplinkRXInfo) Reset()         { *m = UplinkRXInfo{} }
-func (m *UplinkRXInfo) String() string { return proto.CompactTextString(m) }
-func (*UplinkRXInfo) ProtoMessage()    {}
-func (*UplinkRXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{72}
-}
-func (m *UplinkRXInfo) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UplinkRXInfo.Unmarshal(m, b)
-}
-func (m *UplinkRXInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UplinkRXInfo.Marshal(b, m, deterministic)
-}
-func (dst *UplinkRXInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UplinkRXInfo.Merge(dst, src)
-}
-func (m *UplinkRXInfo) XXX_Size() int {
-	return xxx_messageInfo_UplinkRXInfo.Size(m)
-}
-func (m *UplinkRXInfo) XXX_DiscardUnknown() {
-	xxx_messageInfo_UplinkRXInfo.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UplinkRXInfo proto.InternalMessageInfo
-
-func (m *UplinkRXInfo) GetMac() []byte {
-	if m != nil {
-		return m.Mac
+func _StreamFrameLogsForDeviceResponse_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*StreamFrameLogsForDeviceResponse)
+	// frame
+	switch x := m.Frame.(type) {
+	case *StreamFrameLogsForDeviceResponse_UplinkFrameSet:
+		b.EncodeVarint(1<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.UplinkFrameSet); err != nil {
+			return err
+		}
+	case *StreamFrameLogsForDeviceResponse_DownlinkFrame:
+		b.EncodeVarint(2<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.DownlinkFrame); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("StreamFrameLogsForDeviceResponse.Frame has unexpected type %T", x)
 	}
 	return nil
 }
 
-func (m *UplinkRXInfo) GetTime() string {
-	if m != nil {
-		return m.Time
+func _StreamFrameLogsForDeviceResponse_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*StreamFrameLogsForDeviceResponse)
+	switch tag {
+	case 1: // frame.uplink_frame_set
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(gw.UplinkFrameSet)
+		err := b.DecodeMessage(msg)
+		m.Frame = &StreamFrameLogsForDeviceResponse_UplinkFrameSet{msg}
+		return true, err
+	case 2: // frame.downlink_frame
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(gw.DownlinkFrame)
+		err := b.DecodeMessage(msg)
+		m.Frame = &StreamFrameLogsForDeviceResponse_DownlinkFrame{msg}
+		return true, err
+	default:
+		return false, nil
 	}
-	return ""
 }
 
-func (m *UplinkRXInfo) GetTimeSinceGPSEpoch() string {
-	if m != nil {
-		return m.TimeSinceGPSEpoch
+func _StreamFrameLogsForDeviceResponse_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*StreamFrameLogsForDeviceResponse)
+	// frame
+	switch x := m.Frame.(type) {
+	case *StreamFrameLogsForDeviceResponse_UplinkFrameSet:
+		s := proto.Size(x.UplinkFrameSet)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *StreamFrameLogsForDeviceResponse_DownlinkFrame:
+		s := proto.Size(x.DownlinkFrame)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
 	}
-	return ""
+	return n
 }
-
-func (m *UplinkRXInfo) GetTimestamp() uint32 {
-	if m != nil {
-		return m.Timestamp
-	}
-	return 0
-}
-
-func (m *UplinkRXInfo) GetRssi() int32 {
-	if m != nil {
-		return m.Rssi
-	}
-	return 0
-}
-
-func (m *UplinkRXInfo) GetLoRaSNR() float32 {
-	if m != nil {
-		return m.LoRaSNR
-	}
-	return 0
-}
-
-func (m *UplinkRXInfo) GetBoard() uint32 {
-	if m != nil {
-		return m.Board
-	}
-	return 0
-}
-
-func (m *UplinkRXInfo) GetAntenna() uint32 {
-	if m != nil {
-		return m.Antenna
-	}
-	return 0
-}
-
-type UplinkFrameLog struct {
-	// TX information of the uplink.
-	TxInfo *UplinkTXInfo `protobuf:"bytes,1,opt,name=txInfo,proto3" json:"txInfo,omitempty"`
-	// RX information of the uplink.
-	RxInfo []*UplinkRXInfo `protobuf:"bytes,2,rep,name=rxInfo,proto3" json:"rxInfo,omitempty"`
-	// LoRaWAN PHYPayload.
-	PhyPayload           []byte   `protobuf:"bytes,3,opt,name=phyPayload,proto3" json:"phyPayload,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *UplinkFrameLog) Reset()         { *m = UplinkFrameLog{} }
-func (m *UplinkFrameLog) String() string { return proto.CompactTextString(m) }
-func (*UplinkFrameLog) ProtoMessage()    {}
-func (*UplinkFrameLog) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{73}
-}
-func (m *UplinkFrameLog) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UplinkFrameLog.Unmarshal(m, b)
-}
-func (m *UplinkFrameLog) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UplinkFrameLog.Marshal(b, m, deterministic)
-}
-func (dst *UplinkFrameLog) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UplinkFrameLog.Merge(dst, src)
-}
-func (m *UplinkFrameLog) XXX_Size() int {
-	return xxx_messageInfo_UplinkFrameLog.Size(m)
-}
-func (m *UplinkFrameLog) XXX_DiscardUnknown() {
-	xxx_messageInfo_UplinkFrameLog.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UplinkFrameLog proto.InternalMessageInfo
-
-func (m *UplinkFrameLog) GetTxInfo() *UplinkTXInfo {
-	if m != nil {
-		return m.TxInfo
-	}
-	return nil
-}
-
-func (m *UplinkFrameLog) GetRxInfo() []*UplinkRXInfo {
-	if m != nil {
-		return m.RxInfo
-	}
-	return nil
-}
-
-func (m *UplinkFrameLog) GetPhyPayload() []byte {
-	if m != nil {
-		return m.PhyPayload
-	}
-	return nil
-}
-
-type DownlinkTXInfo struct {
-	// Gateway MAC.
-	Mac []byte `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
-	// Frame must be sent immediately.
-	Immediately bool `protobuf:"varint,2,opt,name=immediately,proto3" json:"immediately,omitempty"`
-	// Transmit frame at the given time since GPS epoch.
-	TimeSinceGPSEpoch string `protobuf:"bytes,3,opt,name=timeSinceGPSEpoch,proto3" json:"timeSinceGPSEpoch,omitempty"`
-	// Transmit the frame at the given gateway internal timestamp.
-	Timestamp uint32 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	// TX frequency (in Hz).
-	Frequency uint32 `protobuf:"varint,5,opt,name=frequency,proto3" json:"frequency,omitempty"`
-	// TX power (in dBm).
-	Power int32 `protobuf:"varint,6,opt,name=power,proto3" json:"power,omitempty"`
-	// Data-rate.
-	DataRate *DataRate `protobuf:"bytes,7,opt,name=dataRate,proto3" json:"dataRate,omitempty"`
-	// Code rate.
-	CodeRate string `protobuf:"bytes,8,opt,name=codeRate,proto3" json:"codeRate,omitempty"`
-	// Lora modulation polarization inversion.
-	IPol bool `protobuf:"varint,9,opt,name=iPol,proto3" json:"iPol,omitempty"`
-	// The board identifier that received the uplink frame.
-	Board uint32 `protobuf:"varint,10,opt,name=board,proto3" json:"board,omitempty"`
-	// THe antenna identifier that received the uplink frame.
-	Antenna              uint32   `protobuf:"varint,11,opt,name=antenna,proto3" json:"antenna,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DownlinkTXInfo) Reset()         { *m = DownlinkTXInfo{} }
-func (m *DownlinkTXInfo) String() string { return proto.CompactTextString(m) }
-func (*DownlinkTXInfo) ProtoMessage()    {}
-func (*DownlinkTXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{74}
-}
-func (m *DownlinkTXInfo) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DownlinkTXInfo.Unmarshal(m, b)
-}
-func (m *DownlinkTXInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DownlinkTXInfo.Marshal(b, m, deterministic)
-}
-func (dst *DownlinkTXInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DownlinkTXInfo.Merge(dst, src)
-}
-func (m *DownlinkTXInfo) XXX_Size() int {
-	return xxx_messageInfo_DownlinkTXInfo.Size(m)
-}
-func (m *DownlinkTXInfo) XXX_DiscardUnknown() {
-	xxx_messageInfo_DownlinkTXInfo.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DownlinkTXInfo proto.InternalMessageInfo
-
-func (m *DownlinkTXInfo) GetMac() []byte {
-	if m != nil {
-		return m.Mac
-	}
-	return nil
-}
-
-func (m *DownlinkTXInfo) GetImmediately() bool {
-	if m != nil {
-		return m.Immediately
-	}
-	return false
-}
-
-func (m *DownlinkTXInfo) GetTimeSinceGPSEpoch() string {
-	if m != nil {
-		return m.TimeSinceGPSEpoch
-	}
-	return ""
-}
-
-func (m *DownlinkTXInfo) GetTimestamp() uint32 {
-	if m != nil {
-		return m.Timestamp
-	}
-	return 0
-}
-
-func (m *DownlinkTXInfo) GetFrequency() uint32 {
-	if m != nil {
-		return m.Frequency
-	}
-	return 0
-}
-
-func (m *DownlinkTXInfo) GetPower() int32 {
-	if m != nil {
-		return m.Power
-	}
-	return 0
-}
-
-func (m *DownlinkTXInfo) GetDataRate() *DataRate {
-	if m != nil {
-		return m.DataRate
-	}
-	return nil
-}
-
-func (m *DownlinkTXInfo) GetCodeRate() string {
-	if m != nil {
-		return m.CodeRate
-	}
-	return ""
-}
-
-func (m *DownlinkTXInfo) GetIPol() bool {
-	if m != nil {
-		return m.IPol
-	}
-	return false
-}
-
-func (m *DownlinkTXInfo) GetBoard() uint32 {
-	if m != nil {
-		return m.Board
-	}
-	return 0
-}
-
-func (m *DownlinkTXInfo) GetAntenna() uint32 {
-	if m != nil {
-		return m.Antenna
-	}
-	return 0
-}
-
-type DownlinkFrameLog struct {
-	// TX information of the downlink.
-	TxInfo *DownlinkTXInfo `protobuf:"bytes,1,opt,name=txInfo,proto3" json:"txInfo,omitempty"`
-	// LoRaWAN PHYPayload.
-	PhyPayload           []byte   `protobuf:"bytes,2,opt,name=phyPayload,proto3" json:"phyPayload,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DownlinkFrameLog) Reset()         { *m = DownlinkFrameLog{} }
-func (m *DownlinkFrameLog) String() string { return proto.CompactTextString(m) }
-func (*DownlinkFrameLog) ProtoMessage()    {}
-func (*DownlinkFrameLog) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{75}
-}
-func (m *DownlinkFrameLog) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DownlinkFrameLog.Unmarshal(m, b)
-}
-func (m *DownlinkFrameLog) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DownlinkFrameLog.Marshal(b, m, deterministic)
-}
-func (dst *DownlinkFrameLog) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DownlinkFrameLog.Merge(dst, src)
-}
-func (m *DownlinkFrameLog) XXX_Size() int {
-	return xxx_messageInfo_DownlinkFrameLog.Size(m)
-}
-func (m *DownlinkFrameLog) XXX_DiscardUnknown() {
-	xxx_messageInfo_DownlinkFrameLog.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DownlinkFrameLog proto.InternalMessageInfo
-
-func (m *DownlinkFrameLog) GetTxInfo() *DownlinkTXInfo {
-	if m != nil {
-		return m.TxInfo
-	}
-	return nil
-}
-
-func (m *DownlinkFrameLog) GetPhyPayload() []byte {
-	if m != nil {
-		return m.PhyPayload
-	}
-	return nil
-}
-
-type GetVersionRequest struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetVersionRequest) Reset()         { *m = GetVersionRequest{} }
-func (m *GetVersionRequest) String() string { return proto.CompactTextString(m) }
-func (*GetVersionRequest) ProtoMessage()    {}
-func (*GetVersionRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{76}
-}
-func (m *GetVersionRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetVersionRequest.Unmarshal(m, b)
-}
-func (m *GetVersionRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetVersionRequest.Marshal(b, m, deterministic)
-}
-func (dst *GetVersionRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetVersionRequest.Merge(dst, src)
-}
-func (m *GetVersionRequest) XXX_Size() int {
-	return xxx_messageInfo_GetVersionRequest.Size(m)
-}
-func (m *GetVersionRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetVersionRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetVersionRequest proto.InternalMessageInfo
 
 type GetVersionResponse struct {
 	// LoRa Server version.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	// Region configured for this network-server.
-	Region               Region   `protobuf:"varint,2,opt,name=region,proto3,enum=ns.Region" json:"region,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Region               common.Region `protobuf:"varint,2,opt,name=region,proto3,enum=common.Region" json:"region,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
+	XXX_unrecognized     []byte        `json:"-"`
+	XXX_sizecache        int32         `json:"-"`
 }
 
 func (m *GetVersionResponse) Reset()         { *m = GetVersionResponse{} }
 func (m *GetVersionResponse) String() string { return proto.CompactTextString(m) }
 func (*GetVersionResponse) ProtoMessage()    {}
 func (*GetVersionResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{77}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{52}
 }
 func (m *GetVersionResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetVersionResponse.Unmarshal(m, b)
@@ -3923,22 +2804,22 @@ func (m *GetVersionResponse) GetVersion() string {
 	return ""
 }
 
-func (m *GetVersionResponse) GetRegion() Region {
+func (m *GetVersionResponse) GetRegion() common.Region {
 	if m != nil {
 		return m.Region
 	}
-	return Region_EU868
+	return common.Region_EU868
 }
 
 type GatewayProfile struct {
 	// ID of the gateway-profile.
-	GatewayProfileID string `protobuf:"bytes,1,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
+	Id []byte `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Default channels (channels specified by the LoRaWAN Regional Parameters
 	// specification) enabled for this configuration.
 	Channels []uint32 `protobuf:"varint,2,rep,packed,name=channels,proto3" json:"channels,omitempty"`
 	// Extra channels added to the channel-configuration (in case the LoRaWAN
 	// region supports adding custom channels).
-	ExtraChannels        []*GatewayProfileExtraChannel `protobuf:"bytes,3,rep,name=extraChannels,proto3" json:"extraChannels,omitempty"`
+	ExtraChannels        []*GatewayProfileExtraChannel `protobuf:"bytes,3,rep,name=extra_channels,json=extraChannels,proto3" json:"extra_channels,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                      `json:"-"`
 	XXX_unrecognized     []byte                        `json:"-"`
 	XXX_sizecache        int32                         `json:"-"`
@@ -3948,7 +2829,7 @@ func (m *GatewayProfile) Reset()         { *m = GatewayProfile{} }
 func (m *GatewayProfile) String() string { return proto.CompactTextString(m) }
 func (*GatewayProfile) ProtoMessage()    {}
 func (*GatewayProfile) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{78}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{53}
 }
 func (m *GatewayProfile) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GatewayProfile.Unmarshal(m, b)
@@ -3968,11 +2849,11 @@ func (m *GatewayProfile) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GatewayProfile proto.InternalMessageInfo
 
-func (m *GatewayProfile) GetGatewayProfileID() string {
+func (m *GatewayProfile) GetId() []byte {
 	if m != nil {
-		return m.GatewayProfileID
+		return m.Id
 	}
-	return ""
+	return nil
 }
 
 func (m *GatewayProfile) GetChannels() []uint32 {
@@ -3991,7 +2872,7 @@ func (m *GatewayProfile) GetExtraChannels() []*GatewayProfileExtraChannel {
 
 type GatewayProfileExtraChannel struct {
 	// Modulation.
-	Modulation Modulation `protobuf:"varint,1,opt,name=modulation,proto3,enum=ns.Modulation" json:"modulation,omitempty"`
+	Modulation common.Modulation `protobuf:"varint,1,opt,name=modulation,proto3,enum=common.Modulation" json:"modulation,omitempty"`
 	// Frequency.
 	Frequency uint32 `protobuf:"varint,2,opt,name=frequency,proto3" json:"frequency,omitempty"`
 	// Bandwidth.
@@ -3999,7 +2880,7 @@ type GatewayProfileExtraChannel struct {
 	// Bitrate (in case of FSK modulation).
 	Bitrate uint32 `protobuf:"varint,4,opt,name=bitrate,proto3" json:"bitrate,omitempty"`
 	// Spreading factors (in case of LoRa modulation).
-	SpreadingFactors     []uint32 `protobuf:"varint,5,rep,packed,name=spreadingFactors,proto3" json:"spreadingFactors,omitempty"`
+	SpreadingFactors     []uint32 `protobuf:"varint,5,rep,packed,name=spreading_factors,json=spreadingFactors,proto3" json:"spreading_factors,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -4009,7 +2890,7 @@ func (m *GatewayProfileExtraChannel) Reset()         { *m = GatewayProfileExtraC
 func (m *GatewayProfileExtraChannel) String() string { return proto.CompactTextString(m) }
 func (*GatewayProfileExtraChannel) ProtoMessage()    {}
 func (*GatewayProfileExtraChannel) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{79}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{54}
 }
 func (m *GatewayProfileExtraChannel) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GatewayProfileExtraChannel.Unmarshal(m, b)
@@ -4029,11 +2910,11 @@ func (m *GatewayProfileExtraChannel) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GatewayProfileExtraChannel proto.InternalMessageInfo
 
-func (m *GatewayProfileExtraChannel) GetModulation() Modulation {
+func (m *GatewayProfileExtraChannel) GetModulation() common.Modulation {
 	if m != nil {
 		return m.Modulation
 	}
-	return Modulation_LORA
+	return common.Modulation_LORA
 }
 
 func (m *GatewayProfileExtraChannel) GetFrequency() uint32 {
@@ -4065,7 +2946,8 @@ func (m *GatewayProfileExtraChannel) GetSpreadingFactors() []uint32 {
 }
 
 type CreateGatewayProfileRequest struct {
-	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile,proto3" json:"gatewayProfile,omitempty"`
+	// Gateway-profile object to create.
+	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gateway_profile,json=gatewayProfile,proto3" json:"gateway_profile,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -4075,7 +2957,7 @@ func (m *CreateGatewayProfileRequest) Reset()         { *m = CreateGatewayProfil
 func (m *CreateGatewayProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateGatewayProfileRequest) ProtoMessage()    {}
 func (*CreateGatewayProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{80}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{55}
 }
 func (m *CreateGatewayProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateGatewayProfileRequest.Unmarshal(m, b)
@@ -4104,7 +2986,7 @@ func (m *CreateGatewayProfileRequest) GetGatewayProfile() *GatewayProfile {
 
 type CreateGatewayProfileResponse struct {
 	// ID of the create configuration object.
-	GatewayProfileID     string   `protobuf:"bytes,1,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -4114,7 +2996,7 @@ func (m *CreateGatewayProfileResponse) Reset()         { *m = CreateGatewayProfi
 func (m *CreateGatewayProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateGatewayProfileResponse) ProtoMessage()    {}
 func (*CreateGatewayProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{81}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{56}
 }
 func (m *CreateGatewayProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateGatewayProfileResponse.Unmarshal(m, b)
@@ -4134,16 +3016,16 @@ func (m *CreateGatewayProfileResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CreateGatewayProfileResponse proto.InternalMessageInfo
 
-func (m *CreateGatewayProfileResponse) GetGatewayProfileID() string {
+func (m *CreateGatewayProfileResponse) GetId() []byte {
 	if m != nil {
-		return m.GatewayProfileID
+		return m.Id
 	}
-	return ""
+	return nil
 }
 
 type GetGatewayProfileRequest struct {
-	// ID of the gateway-profile.
-	GatewayProfileID     string   `protobuf:"bytes,1,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
+	// Gateway-profile ID.
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -4153,7 +3035,7 @@ func (m *GetGatewayProfileRequest) Reset()         { *m = GetGatewayProfileReque
 func (m *GetGatewayProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*GetGatewayProfileRequest) ProtoMessage()    {}
 func (*GetGatewayProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{82}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{57}
 }
 func (m *GetGatewayProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetGatewayProfileRequest.Unmarshal(m, b)
@@ -4173,27 +3055,30 @@ func (m *GetGatewayProfileRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_GetGatewayProfileRequest proto.InternalMessageInfo
 
-func (m *GetGatewayProfileRequest) GetGatewayProfileID() string {
+func (m *GetGatewayProfileRequest) GetId() []byte {
 	if m != nil {
-		return m.GatewayProfileID
+		return m.Id
 	}
-	return ""
+	return nil
 }
 
 type GetGatewayProfileResponse struct {
-	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile,proto3" json:"gatewayProfile,omitempty"`
-	CreatedAt            string          `protobuf:"bytes,2,opt,name=createdAt,proto3" json:"createdAt,omitempty"`
-	UpdatedAt            string          `protobuf:"bytes,3,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
-	XXX_unrecognized     []byte          `json:"-"`
-	XXX_sizecache        int32           `json:"-"`
+	// Gateway-profile object.
+	GatewayProfile *GatewayProfile `protobuf:"bytes,1,opt,name=gateway_profile,json=gatewayProfile,proto3" json:"gateway_profile,omitempty"`
+	// Created at timestamp.
+	CreatedAt *timestamp.Timestamp `protobuf:"bytes,2,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// Last update timestamp.
+	UpdatedAt            *timestamp.Timestamp `protobuf:"bytes,3,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
 }
 
 func (m *GetGatewayProfileResponse) Reset()         { *m = GetGatewayProfileResponse{} }
 func (m *GetGatewayProfileResponse) String() string { return proto.CompactTextString(m) }
 func (*GetGatewayProfileResponse) ProtoMessage()    {}
 func (*GetGatewayProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{83}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{58}
 }
 func (m *GetGatewayProfileResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetGatewayProfileResponse.Unmarshal(m, b)
@@ -4220,22 +3105,23 @@ func (m *GetGatewayProfileResponse) GetGatewayProfile() *GatewayProfile {
 	return nil
 }
 
-func (m *GetGatewayProfileResponse) GetCreatedAt() string {
+func (m *GetGatewayProfileResponse) GetCreatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.CreatedAt
 	}
-	return ""
+	return nil
 }
 
-func (m *GetGatewayProfileResponse) GetUpdatedAt() string {
+func (m *GetGatewayProfileResponse) GetUpdatedAt() *timestamp.Timestamp {
 	if m != nil {
 		return m.UpdatedAt
 	}
-	return ""
+	return nil
 }
 
 type UpdateGatewayProfileRequest struct {
-	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gatewayProfile,proto3" json:"gatewayProfile,omitempty"`
+	// Gateway-profile object to update.
+	GatewayProfile       *GatewayProfile `protobuf:"bytes,1,opt,name=gateway_profile,json=gatewayProfile,proto3" json:"gateway_profile,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -4245,7 +3131,7 @@ func (m *UpdateGatewayProfileRequest) Reset()         { *m = UpdateGatewayProfil
 func (m *UpdateGatewayProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*UpdateGatewayProfileRequest) ProtoMessage()    {}
 func (*UpdateGatewayProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{84}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{59}
 }
 func (m *UpdateGatewayProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateGatewayProfileRequest.Unmarshal(m, b)
@@ -4272,39 +3158,9 @@ func (m *UpdateGatewayProfileRequest) GetGatewayProfile() *GatewayProfile {
 	return nil
 }
 
-type UpdateGatewayProfileResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *UpdateGatewayProfileResponse) Reset()         { *m = UpdateGatewayProfileResponse{} }
-func (m *UpdateGatewayProfileResponse) String() string { return proto.CompactTextString(m) }
-func (*UpdateGatewayProfileResponse) ProtoMessage()    {}
-func (*UpdateGatewayProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{85}
-}
-func (m *UpdateGatewayProfileResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UpdateGatewayProfileResponse.Unmarshal(m, b)
-}
-func (m *UpdateGatewayProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UpdateGatewayProfileResponse.Marshal(b, m, deterministic)
-}
-func (dst *UpdateGatewayProfileResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateGatewayProfileResponse.Merge(dst, src)
-}
-func (m *UpdateGatewayProfileResponse) XXX_Size() int {
-	return xxx_messageInfo_UpdateGatewayProfileResponse.Size(m)
-}
-func (m *UpdateGatewayProfileResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_UpdateGatewayProfileResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UpdateGatewayProfileResponse proto.InternalMessageInfo
-
 type DeleteGatewayProfileRequest struct {
-	// ID of the gateway-profile.
-	GatewayProfileID     string   `protobuf:"bytes,1,opt,name=gatewayProfileID,proto3" json:"gatewayProfileID,omitempty"`
+	// Gateway-profile ID.
+	Id                   []byte   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -4314,7 +3170,7 @@ func (m *DeleteGatewayProfileRequest) Reset()         { *m = DeleteGatewayProfil
 func (m *DeleteGatewayProfileRequest) String() string { return proto.CompactTextString(m) }
 func (*DeleteGatewayProfileRequest) ProtoMessage()    {}
 func (*DeleteGatewayProfileRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{86}
+	return fileDescriptor_ns_77bc5f14a1131ce6, []int{60}
 }
 func (m *DeleteGatewayProfileRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteGatewayProfileRequest.Unmarshal(m, b)
@@ -4334,42 +3190,12 @@ func (m *DeleteGatewayProfileRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_DeleteGatewayProfileRequest proto.InternalMessageInfo
 
-func (m *DeleteGatewayProfileRequest) GetGatewayProfileID() string {
+func (m *DeleteGatewayProfileRequest) GetId() []byte {
 	if m != nil {
-		return m.GatewayProfileID
+		return m.Id
 	}
-	return ""
+	return nil
 }
-
-type DeleteGatewayProfileResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DeleteGatewayProfileResponse) Reset()         { *m = DeleteGatewayProfileResponse{} }
-func (m *DeleteGatewayProfileResponse) String() string { return proto.CompactTextString(m) }
-func (*DeleteGatewayProfileResponse) ProtoMessage()    {}
-func (*DeleteGatewayProfileResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_ns_516b99e4b39d9522, []int{87}
-}
-func (m *DeleteGatewayProfileResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DeleteGatewayProfileResponse.Unmarshal(m, b)
-}
-func (m *DeleteGatewayProfileResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DeleteGatewayProfileResponse.Marshal(b, m, deterministic)
-}
-func (dst *DeleteGatewayProfileResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteGatewayProfileResponse.Merge(dst, src)
-}
-func (m *DeleteGatewayProfileResponse) XXX_Size() int {
-	return xxx_messageInfo_DeleteGatewayProfileResponse.Size(m)
-}
-func (m *DeleteGatewayProfileResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_DeleteGatewayProfileResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DeleteGatewayProfileResponse proto.InternalMessageInfo
 
 func init() {
 	proto.RegisterType((*CreateServiceProfileRequest)(nil), "ns.CreateServiceProfileRequest")
@@ -4377,63 +3203,45 @@ func init() {
 	proto.RegisterType((*GetServiceProfileRequest)(nil), "ns.GetServiceProfileRequest")
 	proto.RegisterType((*GetServiceProfileResponse)(nil), "ns.GetServiceProfileResponse")
 	proto.RegisterType((*UpdateServiceProfileRequest)(nil), "ns.UpdateServiceProfileRequest")
-	proto.RegisterType((*UpdateServiceProfileResponse)(nil), "ns.UpdateServiceProfileResponse")
 	proto.RegisterType((*DeleteServiceProfileRequest)(nil), "ns.DeleteServiceProfileRequest")
-	proto.RegisterType((*DeleteServiceProfileResponse)(nil), "ns.DeleteServiceProfileResponse")
-	proto.RegisterType((*RoutingProfile)(nil), "ns.RoutingProfile")
 	proto.RegisterType((*CreateRoutingProfileRequest)(nil), "ns.CreateRoutingProfileRequest")
 	proto.RegisterType((*CreateRoutingProfileResponse)(nil), "ns.CreateRoutingProfileResponse")
 	proto.RegisterType((*GetRoutingProfileRequest)(nil), "ns.GetRoutingProfileRequest")
 	proto.RegisterType((*GetRoutingProfileResponse)(nil), "ns.GetRoutingProfileResponse")
 	proto.RegisterType((*UpdateRoutingProfileRequest)(nil), "ns.UpdateRoutingProfileRequest")
-	proto.RegisterType((*UpdateRoutingProfileResponse)(nil), "ns.UpdateRoutingProfileResponse")
 	proto.RegisterType((*DeleteRoutingProfileRequest)(nil), "ns.DeleteRoutingProfileRequest")
-	proto.RegisterType((*DeleteRoutingProfileResponse)(nil), "ns.DeleteRoutingProfileResponse")
 	proto.RegisterType((*CreateDeviceProfileRequest)(nil), "ns.CreateDeviceProfileRequest")
 	proto.RegisterType((*CreateDeviceProfileResponse)(nil), "ns.CreateDeviceProfileResponse")
 	proto.RegisterType((*GetDeviceProfileRequest)(nil), "ns.GetDeviceProfileRequest")
 	proto.RegisterType((*GetDeviceProfileResponse)(nil), "ns.GetDeviceProfileResponse")
 	proto.RegisterType((*UpdateDeviceProfileRequest)(nil), "ns.UpdateDeviceProfileRequest")
-	proto.RegisterType((*UpdateDeviceProfileResponse)(nil), "ns.UpdateDeviceProfileResponse")
 	proto.RegisterType((*DeleteDeviceProfileRequest)(nil), "ns.DeleteDeviceProfileRequest")
-	proto.RegisterType((*DeleteDeviceProfileResponse)(nil), "ns.DeleteDeviceProfileResponse")
 	proto.RegisterType((*Device)(nil), "ns.Device")
 	proto.RegisterType((*CreateDeviceRequest)(nil), "ns.CreateDeviceRequest")
-	proto.RegisterType((*CreateDeviceResponse)(nil), "ns.CreateDeviceResponse")
 	proto.RegisterType((*GetDeviceRequest)(nil), "ns.GetDeviceRequest")
 	proto.RegisterType((*GetDeviceResponse)(nil), "ns.GetDeviceResponse")
 	proto.RegisterType((*UpdateDeviceRequest)(nil), "ns.UpdateDeviceRequest")
-	proto.RegisterType((*UpdateDeviceResponse)(nil), "ns.UpdateDeviceResponse")
 	proto.RegisterType((*DeleteDeviceRequest)(nil), "ns.DeleteDeviceRequest")
-	proto.RegisterType((*DeleteDeviceResponse)(nil), "ns.DeleteDeviceResponse")
+	proto.RegisterType((*DeviceActivation)(nil), "ns.DeviceActivation")
 	proto.RegisterType((*ActivateDeviceRequest)(nil), "ns.ActivateDeviceRequest")
-	proto.RegisterType((*ActivateDeviceResponse)(nil), "ns.ActivateDeviceResponse")
 	proto.RegisterType((*DeactivateDeviceRequest)(nil), "ns.DeactivateDeviceRequest")
-	proto.RegisterType((*DeactivateDeviceResponse)(nil), "ns.DeactivateDeviceResponse")
 	proto.RegisterType((*GetDeviceActivationRequest)(nil), "ns.GetDeviceActivationRequest")
 	proto.RegisterType((*GetDeviceActivationResponse)(nil), "ns.GetDeviceActivationResponse")
-	proto.RegisterType((*GetRandomDevAddrRequest)(nil), "ns.GetRandomDevAddrRequest")
 	proto.RegisterType((*GetRandomDevAddrResponse)(nil), "ns.GetRandomDevAddrResponse")
 	proto.RegisterType((*CreateMACCommandQueueItemRequest)(nil), "ns.CreateMACCommandQueueItemRequest")
-	proto.RegisterType((*CreateMACCommandQueueItemResponse)(nil), "ns.CreateMACCommandQueueItemResponse")
 	proto.RegisterType((*SendProprietaryPayloadRequest)(nil), "ns.SendProprietaryPayloadRequest")
-	proto.RegisterType((*SendProprietaryPayloadResponse)(nil), "ns.SendProprietaryPayloadResponse")
+	proto.RegisterType((*Gateway)(nil), "ns.Gateway")
 	proto.RegisterType((*CreateGatewayRequest)(nil), "ns.CreateGatewayRequest")
-	proto.RegisterType((*CreateGatewayResponse)(nil), "ns.CreateGatewayResponse")
 	proto.RegisterType((*GetGatewayRequest)(nil), "ns.GetGatewayRequest")
 	proto.RegisterType((*GetGatewayResponse)(nil), "ns.GetGatewayResponse")
 	proto.RegisterType((*UpdateGatewayRequest)(nil), "ns.UpdateGatewayRequest")
-	proto.RegisterType((*UpdateGatewayResponse)(nil), "ns.UpdateGatewayResponse")
 	proto.RegisterType((*DeleteGatewayRequest)(nil), "ns.DeleteGatewayRequest")
-	proto.RegisterType((*DeleteGatewayResponse)(nil), "ns.DeleteGatewayResponse")
 	proto.RegisterType((*GatewayStats)(nil), "ns.GatewayStats")
 	proto.RegisterType((*GetGatewayStatsRequest)(nil), "ns.GetGatewayStatsRequest")
 	proto.RegisterType((*GetGatewayStatsResponse)(nil), "ns.GetGatewayStatsResponse")
 	proto.RegisterType((*DeviceQueueItem)(nil), "ns.DeviceQueueItem")
 	proto.RegisterType((*CreateDeviceQueueItemRequest)(nil), "ns.CreateDeviceQueueItemRequest")
-	proto.RegisterType((*CreateDeviceQueueItemResponse)(nil), "ns.CreateDeviceQueueItemResponse")
 	proto.RegisterType((*FlushDeviceQueueForDevEUIRequest)(nil), "ns.FlushDeviceQueueForDevEUIRequest")
-	proto.RegisterType((*FlushDeviceQueueForDevEUIResponse)(nil), "ns.FlushDeviceQueueForDevEUIResponse")
 	proto.RegisterType((*GetDeviceQueueItemsForDevEUIRequest)(nil), "ns.GetDeviceQueueItemsForDevEUIRequest")
 	proto.RegisterType((*GetDeviceQueueItemsForDevEUIResponse)(nil), "ns.GetDeviceQueueItemsForDevEUIResponse")
 	proto.RegisterType((*GetNextDownlinkFCntForDevEUIRequest)(nil), "ns.GetNextDownlinkFCntForDevEUIRequest")
@@ -4442,13 +3250,6 @@ func init() {
 	proto.RegisterType((*StreamFrameLogsForGatewayResponse)(nil), "ns.StreamFrameLogsForGatewayResponse")
 	proto.RegisterType((*StreamFrameLogsForDeviceRequest)(nil), "ns.StreamFrameLogsForDeviceRequest")
 	proto.RegisterType((*StreamFrameLogsForDeviceResponse)(nil), "ns.StreamFrameLogsForDeviceResponse")
-	proto.RegisterType((*DataRate)(nil), "ns.DataRate")
-	proto.RegisterType((*UplinkTXInfo)(nil), "ns.UplinkTXInfo")
-	proto.RegisterType((*UplinkRXInfo)(nil), "ns.UplinkRXInfo")
-	proto.RegisterType((*UplinkFrameLog)(nil), "ns.UplinkFrameLog")
-	proto.RegisterType((*DownlinkTXInfo)(nil), "ns.DownlinkTXInfo")
-	proto.RegisterType((*DownlinkFrameLog)(nil), "ns.DownlinkFrameLog")
-	proto.RegisterType((*GetVersionRequest)(nil), "ns.GetVersionRequest")
 	proto.RegisterType((*GetVersionResponse)(nil), "ns.GetVersionResponse")
 	proto.RegisterType((*GatewayProfile)(nil), "ns.GatewayProfile")
 	proto.RegisterType((*GatewayProfileExtraChannel)(nil), "ns.GatewayProfileExtraChannel")
@@ -4457,12 +3258,8 @@ func init() {
 	proto.RegisterType((*GetGatewayProfileRequest)(nil), "ns.GetGatewayProfileRequest")
 	proto.RegisterType((*GetGatewayProfileResponse)(nil), "ns.GetGatewayProfileResponse")
 	proto.RegisterType((*UpdateGatewayProfileRequest)(nil), "ns.UpdateGatewayProfileRequest")
-	proto.RegisterType((*UpdateGatewayProfileResponse)(nil), "ns.UpdateGatewayProfileResponse")
 	proto.RegisterType((*DeleteGatewayProfileRequest)(nil), "ns.DeleteGatewayProfileRequest")
-	proto.RegisterType((*DeleteGatewayProfileResponse)(nil), "ns.DeleteGatewayProfileResponse")
 	proto.RegisterEnum("ns.RXWindow", RXWindow_name, RXWindow_value)
-	proto.RegisterEnum("ns.Modulation", Modulation_name, Modulation_value)
-	proto.RegisterEnum("ns.Region", Region_name, Region_value)
 	proto.RegisterEnum("ns.AggregationInterval", AggregationInterval_name, AggregationInterval_value)
 }
 
@@ -4474,418 +3271,418 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// NetworkServerClient is the client API for NetworkServer service.
+// NetworkServerServiceClient is the client API for NetworkServerService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type NetworkServerClient interface {
+type NetworkServerServiceClient interface {
 	// CreateServiceProfile creates the given service-profile.
 	CreateServiceProfile(ctx context.Context, in *CreateServiceProfileRequest, opts ...grpc.CallOption) (*CreateServiceProfileResponse, error)
 	// GetServiceProfile returns the service-profile matching the given id.
 	GetServiceProfile(ctx context.Context, in *GetServiceProfileRequest, opts ...grpc.CallOption) (*GetServiceProfileResponse, error)
 	// UpdateServiceProfile updates the given service-profile.
-	UpdateServiceProfile(ctx context.Context, in *UpdateServiceProfileRequest, opts ...grpc.CallOption) (*UpdateServiceProfileResponse, error)
+	UpdateServiceProfile(ctx context.Context, in *UpdateServiceProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// DeleteServiceProfile deletes the service-profile matching the given id.
-	DeleteServiceProfile(ctx context.Context, in *DeleteServiceProfileRequest, opts ...grpc.CallOption) (*DeleteServiceProfileResponse, error)
+	DeleteServiceProfile(ctx context.Context, in *DeleteServiceProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// CreateRoutingProfile creates the given routing-profile.
 	CreateRoutingProfile(ctx context.Context, in *CreateRoutingProfileRequest, opts ...grpc.CallOption) (*CreateRoutingProfileResponse, error)
 	// GetRoutingProfile returns the routing-profile matching the given id.
 	GetRoutingProfile(ctx context.Context, in *GetRoutingProfileRequest, opts ...grpc.CallOption) (*GetRoutingProfileResponse, error)
 	// UpdateRoutingProfile updates the given routing-profile.
-	UpdateRoutingProfile(ctx context.Context, in *UpdateRoutingProfileRequest, opts ...grpc.CallOption) (*UpdateRoutingProfileResponse, error)
+	UpdateRoutingProfile(ctx context.Context, in *UpdateRoutingProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// DeleteRoutingProfile deletes the routing-profile matching the given id.
-	DeleteRoutingProfile(ctx context.Context, in *DeleteRoutingProfileRequest, opts ...grpc.CallOption) (*DeleteRoutingProfileResponse, error)
+	DeleteRoutingProfile(ctx context.Context, in *DeleteRoutingProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// CreateDeviceProfile creates the given device-profile.
 	CreateDeviceProfile(ctx context.Context, in *CreateDeviceProfileRequest, opts ...grpc.CallOption) (*CreateDeviceProfileResponse, error)
 	// GetDeviceProfile returns the device-profile matching the given id.
 	GetDeviceProfile(ctx context.Context, in *GetDeviceProfileRequest, opts ...grpc.CallOption) (*GetDeviceProfileResponse, error)
 	// UpdateDeviceProfile updates the given device-profile.
-	UpdateDeviceProfile(ctx context.Context, in *UpdateDeviceProfileRequest, opts ...grpc.CallOption) (*UpdateDeviceProfileResponse, error)
+	UpdateDeviceProfile(ctx context.Context, in *UpdateDeviceProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// DeleteDeviceProfile deletes the device-profile matching the given id.
-	DeleteDeviceProfile(ctx context.Context, in *DeleteDeviceProfileRequest, opts ...grpc.CallOption) (*DeleteDeviceProfileResponse, error)
+	DeleteDeviceProfile(ctx context.Context, in *DeleteDeviceProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// CreateDevice creates the given device.
-	CreateDevice(ctx context.Context, in *CreateDeviceRequest, opts ...grpc.CallOption) (*CreateDeviceResponse, error)
+	CreateDevice(ctx context.Context, in *CreateDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// GetDevice returns the device matching the given DevEUI.
 	GetDevice(ctx context.Context, in *GetDeviceRequest, opts ...grpc.CallOption) (*GetDeviceResponse, error)
 	// UpdateDevice updates the given device.
-	UpdateDevice(ctx context.Context, in *UpdateDeviceRequest, opts ...grpc.CallOption) (*UpdateDeviceResponse, error)
+	UpdateDevice(ctx context.Context, in *UpdateDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// DeleteDevice deletes the device matching the given DevEUI.
-	DeleteDevice(ctx context.Context, in *DeleteDeviceRequest, opts ...grpc.CallOption) (*DeleteDeviceResponse, error)
+	DeleteDevice(ctx context.Context, in *DeleteDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// ActivateDevice activates a device (ABP).
-	ActivateDevice(ctx context.Context, in *ActivateDeviceRequest, opts ...grpc.CallOption) (*ActivateDeviceResponse, error)
+	ActivateDevice(ctx context.Context, in *ActivateDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// DeactivateDevice de-activates a device.
-	DeactivateDevice(ctx context.Context, in *DeactivateDeviceRequest, opts ...grpc.CallOption) (*DeactivateDeviceResponse, error)
+	DeactivateDevice(ctx context.Context, in *DeactivateDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// GetDeviceActivation returns the device activation details.
 	GetDeviceActivation(ctx context.Context, in *GetDeviceActivationRequest, opts ...grpc.CallOption) (*GetDeviceActivationResponse, error)
 	// CreateDeviceQueueItem creates the given device-queue item.
-	CreateDeviceQueueItem(ctx context.Context, in *CreateDeviceQueueItemRequest, opts ...grpc.CallOption) (*CreateDeviceQueueItemResponse, error)
+	CreateDeviceQueueItem(ctx context.Context, in *CreateDeviceQueueItemRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// FlushDeviceQueueForDevEUI flushes the device-queue for the given DevEUI.
-	FlushDeviceQueueForDevEUI(ctx context.Context, in *FlushDeviceQueueForDevEUIRequest, opts ...grpc.CallOption) (*FlushDeviceQueueForDevEUIResponse, error)
+	FlushDeviceQueueForDevEUI(ctx context.Context, in *FlushDeviceQueueForDevEUIRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// GetDeviceQueueItemsForDevEUI returns all device-queue items for the given DevEUI.
 	GetDeviceQueueItemsForDevEUI(ctx context.Context, in *GetDeviceQueueItemsForDevEUIRequest, opts ...grpc.CallOption) (*GetDeviceQueueItemsForDevEUIResponse, error)
 	// GetNextDownlinkFCntForDevEUI returns the next FCnt that must be used.
 	// This also takes device-queue items for the given DevEUI into consideration.
 	GetNextDownlinkFCntForDevEUI(ctx context.Context, in *GetNextDownlinkFCntForDevEUIRequest, opts ...grpc.CallOption) (*GetNextDownlinkFCntForDevEUIResponse, error)
 	// GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
-	GetRandomDevAddr(ctx context.Context, in *GetRandomDevAddrRequest, opts ...grpc.CallOption) (*GetRandomDevAddrResponse, error)
+	GetRandomDevAddr(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetRandomDevAddrResponse, error)
 	// CreateMACCommandQueueItem adds the downlink mac-command to the queue.
-	CreateMACCommandQueueItem(ctx context.Context, in *CreateMACCommandQueueItemRequest, opts ...grpc.CallOption) (*CreateMACCommandQueueItemResponse, error)
+	CreateMACCommandQueueItem(ctx context.Context, in *CreateMACCommandQueueItemRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// SendProprietaryPayload send a payload using the 'Proprietary' LoRaWAN message-type.
-	SendProprietaryPayload(ctx context.Context, in *SendProprietaryPayloadRequest, opts ...grpc.CallOption) (*SendProprietaryPayloadResponse, error)
+	SendProprietaryPayload(ctx context.Context, in *SendProprietaryPayloadRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// CreateGateway creates the given gateway.
-	CreateGateway(ctx context.Context, in *CreateGatewayRequest, opts ...grpc.CallOption) (*CreateGatewayResponse, error)
+	CreateGateway(ctx context.Context, in *CreateGatewayRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// GetGateway returns data for a particular gateway.
 	GetGateway(ctx context.Context, in *GetGatewayRequest, opts ...grpc.CallOption) (*GetGatewayResponse, error)
 	// UpdateGateway updates an existing gateway.
-	UpdateGateway(ctx context.Context, in *UpdateGatewayRequest, opts ...grpc.CallOption) (*UpdateGatewayResponse, error)
+	UpdateGateway(ctx context.Context, in *UpdateGatewayRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// DeleteGateway deletes a gateway.
-	DeleteGateway(ctx context.Context, in *DeleteGatewayRequest, opts ...grpc.CallOption) (*DeleteGatewayResponse, error)
+	DeleteGateway(ctx context.Context, in *DeleteGatewayRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// CreateGatewayProfile creates the given gateway-profile.
 	CreateGatewayProfile(ctx context.Context, in *CreateGatewayProfileRequest, opts ...grpc.CallOption) (*CreateGatewayProfileResponse, error)
 	// GetGatewayProfile returns the gateway-profile given an id.
 	GetGatewayProfile(ctx context.Context, in *GetGatewayProfileRequest, opts ...grpc.CallOption) (*GetGatewayProfileResponse, error)
 	// UpdateGatewayProfile updates the given gateway-profile.
-	UpdateGatewayProfile(ctx context.Context, in *UpdateGatewayProfileRequest, opts ...grpc.CallOption) (*UpdateGatewayProfileResponse, error)
+	UpdateGatewayProfile(ctx context.Context, in *UpdateGatewayProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// DeleteGatewayProfile deletes the gateway-profile matching a given id.
-	DeleteGatewayProfile(ctx context.Context, in *DeleteGatewayProfileRequest, opts ...grpc.CallOption) (*DeleteGatewayProfileResponse, error)
+	DeleteGatewayProfile(ctx context.Context, in *DeleteGatewayProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// GetGatewayStats returns stats of an existing gateway.
 	GetGatewayStats(ctx context.Context, in *GetGatewayStatsRequest, opts ...grpc.CallOption) (*GetGatewayStatsResponse, error)
 	// StreamFrameLogsForGateway returns a stream of frames seen by the given gateway.
-	StreamFrameLogsForGateway(ctx context.Context, in *StreamFrameLogsForGatewayRequest, opts ...grpc.CallOption) (NetworkServer_StreamFrameLogsForGatewayClient, error)
+	StreamFrameLogsForGateway(ctx context.Context, in *StreamFrameLogsForGatewayRequest, opts ...grpc.CallOption) (NetworkServerService_StreamFrameLogsForGatewayClient, error)
 	// StreamFrameLogsForDevice returns a stream of frames seen by the given device.
-	StreamFrameLogsForDevice(ctx context.Context, in *StreamFrameLogsForDeviceRequest, opts ...grpc.CallOption) (NetworkServer_StreamFrameLogsForDeviceClient, error)
+	StreamFrameLogsForDevice(ctx context.Context, in *StreamFrameLogsForDeviceRequest, opts ...grpc.CallOption) (NetworkServerService_StreamFrameLogsForDeviceClient, error)
 	// GetVersion returns the LoRa Server version.
-	GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*GetVersionResponse, error)
+	GetVersion(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetVersionResponse, error)
 }
 
-type networkServerClient struct {
+type networkServerServiceClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewNetworkServerClient(cc *grpc.ClientConn) NetworkServerClient {
-	return &networkServerClient{cc}
+func NewNetworkServerServiceClient(cc *grpc.ClientConn) NetworkServerServiceClient {
+	return &networkServerServiceClient{cc}
 }
 
-func (c *networkServerClient) CreateServiceProfile(ctx context.Context, in *CreateServiceProfileRequest, opts ...grpc.CallOption) (*CreateServiceProfileResponse, error) {
+func (c *networkServerServiceClient) CreateServiceProfile(ctx context.Context, in *CreateServiceProfileRequest, opts ...grpc.CallOption) (*CreateServiceProfileResponse, error) {
 	out := new(CreateServiceProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/CreateServiceProfile", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/CreateServiceProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) GetServiceProfile(ctx context.Context, in *GetServiceProfileRequest, opts ...grpc.CallOption) (*GetServiceProfileResponse, error) {
+func (c *networkServerServiceClient) GetServiceProfile(ctx context.Context, in *GetServiceProfileRequest, opts ...grpc.CallOption) (*GetServiceProfileResponse, error) {
 	out := new(GetServiceProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/GetServiceProfile", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/GetServiceProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) UpdateServiceProfile(ctx context.Context, in *UpdateServiceProfileRequest, opts ...grpc.CallOption) (*UpdateServiceProfileResponse, error) {
-	out := new(UpdateServiceProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/UpdateServiceProfile", in, out, opts...)
+func (c *networkServerServiceClient) UpdateServiceProfile(ctx context.Context, in *UpdateServiceProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/UpdateServiceProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) DeleteServiceProfile(ctx context.Context, in *DeleteServiceProfileRequest, opts ...grpc.CallOption) (*DeleteServiceProfileResponse, error) {
-	out := new(DeleteServiceProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/DeleteServiceProfile", in, out, opts...)
+func (c *networkServerServiceClient) DeleteServiceProfile(ctx context.Context, in *DeleteServiceProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/DeleteServiceProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) CreateRoutingProfile(ctx context.Context, in *CreateRoutingProfileRequest, opts ...grpc.CallOption) (*CreateRoutingProfileResponse, error) {
+func (c *networkServerServiceClient) CreateRoutingProfile(ctx context.Context, in *CreateRoutingProfileRequest, opts ...grpc.CallOption) (*CreateRoutingProfileResponse, error) {
 	out := new(CreateRoutingProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/CreateRoutingProfile", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/CreateRoutingProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) GetRoutingProfile(ctx context.Context, in *GetRoutingProfileRequest, opts ...grpc.CallOption) (*GetRoutingProfileResponse, error) {
+func (c *networkServerServiceClient) GetRoutingProfile(ctx context.Context, in *GetRoutingProfileRequest, opts ...grpc.CallOption) (*GetRoutingProfileResponse, error) {
 	out := new(GetRoutingProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/GetRoutingProfile", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/GetRoutingProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) UpdateRoutingProfile(ctx context.Context, in *UpdateRoutingProfileRequest, opts ...grpc.CallOption) (*UpdateRoutingProfileResponse, error) {
-	out := new(UpdateRoutingProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/UpdateRoutingProfile", in, out, opts...)
+func (c *networkServerServiceClient) UpdateRoutingProfile(ctx context.Context, in *UpdateRoutingProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/UpdateRoutingProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) DeleteRoutingProfile(ctx context.Context, in *DeleteRoutingProfileRequest, opts ...grpc.CallOption) (*DeleteRoutingProfileResponse, error) {
-	out := new(DeleteRoutingProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/DeleteRoutingProfile", in, out, opts...)
+func (c *networkServerServiceClient) DeleteRoutingProfile(ctx context.Context, in *DeleteRoutingProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/DeleteRoutingProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) CreateDeviceProfile(ctx context.Context, in *CreateDeviceProfileRequest, opts ...grpc.CallOption) (*CreateDeviceProfileResponse, error) {
+func (c *networkServerServiceClient) CreateDeviceProfile(ctx context.Context, in *CreateDeviceProfileRequest, opts ...grpc.CallOption) (*CreateDeviceProfileResponse, error) {
 	out := new(CreateDeviceProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/CreateDeviceProfile", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/CreateDeviceProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) GetDeviceProfile(ctx context.Context, in *GetDeviceProfileRequest, opts ...grpc.CallOption) (*GetDeviceProfileResponse, error) {
+func (c *networkServerServiceClient) GetDeviceProfile(ctx context.Context, in *GetDeviceProfileRequest, opts ...grpc.CallOption) (*GetDeviceProfileResponse, error) {
 	out := new(GetDeviceProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/GetDeviceProfile", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/GetDeviceProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) UpdateDeviceProfile(ctx context.Context, in *UpdateDeviceProfileRequest, opts ...grpc.CallOption) (*UpdateDeviceProfileResponse, error) {
-	out := new(UpdateDeviceProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/UpdateDeviceProfile", in, out, opts...)
+func (c *networkServerServiceClient) UpdateDeviceProfile(ctx context.Context, in *UpdateDeviceProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/UpdateDeviceProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) DeleteDeviceProfile(ctx context.Context, in *DeleteDeviceProfileRequest, opts ...grpc.CallOption) (*DeleteDeviceProfileResponse, error) {
-	out := new(DeleteDeviceProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/DeleteDeviceProfile", in, out, opts...)
+func (c *networkServerServiceClient) DeleteDeviceProfile(ctx context.Context, in *DeleteDeviceProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/DeleteDeviceProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) CreateDevice(ctx context.Context, in *CreateDeviceRequest, opts ...grpc.CallOption) (*CreateDeviceResponse, error) {
-	out := new(CreateDeviceResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/CreateDevice", in, out, opts...)
+func (c *networkServerServiceClient) CreateDevice(ctx context.Context, in *CreateDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/CreateDevice", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) GetDevice(ctx context.Context, in *GetDeviceRequest, opts ...grpc.CallOption) (*GetDeviceResponse, error) {
+func (c *networkServerServiceClient) GetDevice(ctx context.Context, in *GetDeviceRequest, opts ...grpc.CallOption) (*GetDeviceResponse, error) {
 	out := new(GetDeviceResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/GetDevice", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/GetDevice", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) UpdateDevice(ctx context.Context, in *UpdateDeviceRequest, opts ...grpc.CallOption) (*UpdateDeviceResponse, error) {
-	out := new(UpdateDeviceResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/UpdateDevice", in, out, opts...)
+func (c *networkServerServiceClient) UpdateDevice(ctx context.Context, in *UpdateDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/UpdateDevice", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) DeleteDevice(ctx context.Context, in *DeleteDeviceRequest, opts ...grpc.CallOption) (*DeleteDeviceResponse, error) {
-	out := new(DeleteDeviceResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/DeleteDevice", in, out, opts...)
+func (c *networkServerServiceClient) DeleteDevice(ctx context.Context, in *DeleteDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/DeleteDevice", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) ActivateDevice(ctx context.Context, in *ActivateDeviceRequest, opts ...grpc.CallOption) (*ActivateDeviceResponse, error) {
-	out := new(ActivateDeviceResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/ActivateDevice", in, out, opts...)
+func (c *networkServerServiceClient) ActivateDevice(ctx context.Context, in *ActivateDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/ActivateDevice", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) DeactivateDevice(ctx context.Context, in *DeactivateDeviceRequest, opts ...grpc.CallOption) (*DeactivateDeviceResponse, error) {
-	out := new(DeactivateDeviceResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/DeactivateDevice", in, out, opts...)
+func (c *networkServerServiceClient) DeactivateDevice(ctx context.Context, in *DeactivateDeviceRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/DeactivateDevice", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) GetDeviceActivation(ctx context.Context, in *GetDeviceActivationRequest, opts ...grpc.CallOption) (*GetDeviceActivationResponse, error) {
+func (c *networkServerServiceClient) GetDeviceActivation(ctx context.Context, in *GetDeviceActivationRequest, opts ...grpc.CallOption) (*GetDeviceActivationResponse, error) {
 	out := new(GetDeviceActivationResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/GetDeviceActivation", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/GetDeviceActivation", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) CreateDeviceQueueItem(ctx context.Context, in *CreateDeviceQueueItemRequest, opts ...grpc.CallOption) (*CreateDeviceQueueItemResponse, error) {
-	out := new(CreateDeviceQueueItemResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/CreateDeviceQueueItem", in, out, opts...)
+func (c *networkServerServiceClient) CreateDeviceQueueItem(ctx context.Context, in *CreateDeviceQueueItemRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/CreateDeviceQueueItem", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) FlushDeviceQueueForDevEUI(ctx context.Context, in *FlushDeviceQueueForDevEUIRequest, opts ...grpc.CallOption) (*FlushDeviceQueueForDevEUIResponse, error) {
-	out := new(FlushDeviceQueueForDevEUIResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/FlushDeviceQueueForDevEUI", in, out, opts...)
+func (c *networkServerServiceClient) FlushDeviceQueueForDevEUI(ctx context.Context, in *FlushDeviceQueueForDevEUIRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/FlushDeviceQueueForDevEUI", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) GetDeviceQueueItemsForDevEUI(ctx context.Context, in *GetDeviceQueueItemsForDevEUIRequest, opts ...grpc.CallOption) (*GetDeviceQueueItemsForDevEUIResponse, error) {
+func (c *networkServerServiceClient) GetDeviceQueueItemsForDevEUI(ctx context.Context, in *GetDeviceQueueItemsForDevEUIRequest, opts ...grpc.CallOption) (*GetDeviceQueueItemsForDevEUIResponse, error) {
 	out := new(GetDeviceQueueItemsForDevEUIResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/GetDeviceQueueItemsForDevEUI", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/GetDeviceQueueItemsForDevEUI", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) GetNextDownlinkFCntForDevEUI(ctx context.Context, in *GetNextDownlinkFCntForDevEUIRequest, opts ...grpc.CallOption) (*GetNextDownlinkFCntForDevEUIResponse, error) {
+func (c *networkServerServiceClient) GetNextDownlinkFCntForDevEUI(ctx context.Context, in *GetNextDownlinkFCntForDevEUIRequest, opts ...grpc.CallOption) (*GetNextDownlinkFCntForDevEUIResponse, error) {
 	out := new(GetNextDownlinkFCntForDevEUIResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/GetNextDownlinkFCntForDevEUI", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/GetNextDownlinkFCntForDevEUI", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) GetRandomDevAddr(ctx context.Context, in *GetRandomDevAddrRequest, opts ...grpc.CallOption) (*GetRandomDevAddrResponse, error) {
+func (c *networkServerServiceClient) GetRandomDevAddr(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetRandomDevAddrResponse, error) {
 	out := new(GetRandomDevAddrResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/GetRandomDevAddr", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/GetRandomDevAddr", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) CreateMACCommandQueueItem(ctx context.Context, in *CreateMACCommandQueueItemRequest, opts ...grpc.CallOption) (*CreateMACCommandQueueItemResponse, error) {
-	out := new(CreateMACCommandQueueItemResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/CreateMACCommandQueueItem", in, out, opts...)
+func (c *networkServerServiceClient) CreateMACCommandQueueItem(ctx context.Context, in *CreateMACCommandQueueItemRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/CreateMACCommandQueueItem", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) SendProprietaryPayload(ctx context.Context, in *SendProprietaryPayloadRequest, opts ...grpc.CallOption) (*SendProprietaryPayloadResponse, error) {
-	out := new(SendProprietaryPayloadResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/SendProprietaryPayload", in, out, opts...)
+func (c *networkServerServiceClient) SendProprietaryPayload(ctx context.Context, in *SendProprietaryPayloadRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/SendProprietaryPayload", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) CreateGateway(ctx context.Context, in *CreateGatewayRequest, opts ...grpc.CallOption) (*CreateGatewayResponse, error) {
-	out := new(CreateGatewayResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/CreateGateway", in, out, opts...)
+func (c *networkServerServiceClient) CreateGateway(ctx context.Context, in *CreateGatewayRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/CreateGateway", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) GetGateway(ctx context.Context, in *GetGatewayRequest, opts ...grpc.CallOption) (*GetGatewayResponse, error) {
+func (c *networkServerServiceClient) GetGateway(ctx context.Context, in *GetGatewayRequest, opts ...grpc.CallOption) (*GetGatewayResponse, error) {
 	out := new(GetGatewayResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/GetGateway", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/GetGateway", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) UpdateGateway(ctx context.Context, in *UpdateGatewayRequest, opts ...grpc.CallOption) (*UpdateGatewayResponse, error) {
-	out := new(UpdateGatewayResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/UpdateGateway", in, out, opts...)
+func (c *networkServerServiceClient) UpdateGateway(ctx context.Context, in *UpdateGatewayRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/UpdateGateway", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) DeleteGateway(ctx context.Context, in *DeleteGatewayRequest, opts ...grpc.CallOption) (*DeleteGatewayResponse, error) {
-	out := new(DeleteGatewayResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/DeleteGateway", in, out, opts...)
+func (c *networkServerServiceClient) DeleteGateway(ctx context.Context, in *DeleteGatewayRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/DeleteGateway", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) CreateGatewayProfile(ctx context.Context, in *CreateGatewayProfileRequest, opts ...grpc.CallOption) (*CreateGatewayProfileResponse, error) {
+func (c *networkServerServiceClient) CreateGatewayProfile(ctx context.Context, in *CreateGatewayProfileRequest, opts ...grpc.CallOption) (*CreateGatewayProfileResponse, error) {
 	out := new(CreateGatewayProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/CreateGatewayProfile", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/CreateGatewayProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) GetGatewayProfile(ctx context.Context, in *GetGatewayProfileRequest, opts ...grpc.CallOption) (*GetGatewayProfileResponse, error) {
+func (c *networkServerServiceClient) GetGatewayProfile(ctx context.Context, in *GetGatewayProfileRequest, opts ...grpc.CallOption) (*GetGatewayProfileResponse, error) {
 	out := new(GetGatewayProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/GetGatewayProfile", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/GetGatewayProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) UpdateGatewayProfile(ctx context.Context, in *UpdateGatewayProfileRequest, opts ...grpc.CallOption) (*UpdateGatewayProfileResponse, error) {
-	out := new(UpdateGatewayProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/UpdateGatewayProfile", in, out, opts...)
+func (c *networkServerServiceClient) UpdateGatewayProfile(ctx context.Context, in *UpdateGatewayProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/UpdateGatewayProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) DeleteGatewayProfile(ctx context.Context, in *DeleteGatewayProfileRequest, opts ...grpc.CallOption) (*DeleteGatewayProfileResponse, error) {
-	out := new(DeleteGatewayProfileResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/DeleteGatewayProfile", in, out, opts...)
+func (c *networkServerServiceClient) DeleteGatewayProfile(ctx context.Context, in *DeleteGatewayProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/DeleteGatewayProfile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) GetGatewayStats(ctx context.Context, in *GetGatewayStatsRequest, opts ...grpc.CallOption) (*GetGatewayStatsResponse, error) {
+func (c *networkServerServiceClient) GetGatewayStats(ctx context.Context, in *GetGatewayStatsRequest, opts ...grpc.CallOption) (*GetGatewayStatsResponse, error) {
 	out := new(GetGatewayStatsResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/GetGatewayStats", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/GetGatewayStats", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *networkServerClient) StreamFrameLogsForGateway(ctx context.Context, in *StreamFrameLogsForGatewayRequest, opts ...grpc.CallOption) (NetworkServer_StreamFrameLogsForGatewayClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_NetworkServer_serviceDesc.Streams[0], "/ns.NetworkServer/StreamFrameLogsForGateway", opts...)
+func (c *networkServerServiceClient) StreamFrameLogsForGateway(ctx context.Context, in *StreamFrameLogsForGatewayRequest, opts ...grpc.CallOption) (NetworkServerService_StreamFrameLogsForGatewayClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_NetworkServerService_serviceDesc.Streams[0], "/ns.NetworkServerService/StreamFrameLogsForGateway", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &networkServerStreamFrameLogsForGatewayClient{stream}
+	x := &networkServerServiceStreamFrameLogsForGatewayClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -4895,16 +3692,16 @@ func (c *networkServerClient) StreamFrameLogsForGateway(ctx context.Context, in 
 	return x, nil
 }
 
-type NetworkServer_StreamFrameLogsForGatewayClient interface {
+type NetworkServerService_StreamFrameLogsForGatewayClient interface {
 	Recv() (*StreamFrameLogsForGatewayResponse, error)
 	grpc.ClientStream
 }
 
-type networkServerStreamFrameLogsForGatewayClient struct {
+type networkServerServiceStreamFrameLogsForGatewayClient struct {
 	grpc.ClientStream
 }
 
-func (x *networkServerStreamFrameLogsForGatewayClient) Recv() (*StreamFrameLogsForGatewayResponse, error) {
+func (x *networkServerServiceStreamFrameLogsForGatewayClient) Recv() (*StreamFrameLogsForGatewayResponse, error) {
 	m := new(StreamFrameLogsForGatewayResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -4912,12 +3709,12 @@ func (x *networkServerStreamFrameLogsForGatewayClient) Recv() (*StreamFrameLogsF
 	return m, nil
 }
 
-func (c *networkServerClient) StreamFrameLogsForDevice(ctx context.Context, in *StreamFrameLogsForDeviceRequest, opts ...grpc.CallOption) (NetworkServer_StreamFrameLogsForDeviceClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_NetworkServer_serviceDesc.Streams[1], "/ns.NetworkServer/StreamFrameLogsForDevice", opts...)
+func (c *networkServerServiceClient) StreamFrameLogsForDevice(ctx context.Context, in *StreamFrameLogsForDeviceRequest, opts ...grpc.CallOption) (NetworkServerService_StreamFrameLogsForDeviceClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_NetworkServerService_serviceDesc.Streams[1], "/ns.NetworkServerService/StreamFrameLogsForDevice", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &networkServerStreamFrameLogsForDeviceClient{stream}
+	x := &networkServerServiceStreamFrameLogsForDeviceClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -4927,16 +3724,16 @@ func (c *networkServerClient) StreamFrameLogsForDevice(ctx context.Context, in *
 	return x, nil
 }
 
-type NetworkServer_StreamFrameLogsForDeviceClient interface {
+type NetworkServerService_StreamFrameLogsForDeviceClient interface {
 	Recv() (*StreamFrameLogsForDeviceResponse, error)
 	grpc.ClientStream
 }
 
-type networkServerStreamFrameLogsForDeviceClient struct {
+type networkServerServiceStreamFrameLogsForDeviceClient struct {
 	grpc.ClientStream
 }
 
-func (x *networkServerStreamFrameLogsForDeviceClient) Recv() (*StreamFrameLogsForDeviceResponse, error) {
+func (x *networkServerServiceStreamFrameLogsForDeviceClient) Recv() (*StreamFrameLogsForDeviceResponse, error) {
 	m := new(StreamFrameLogsForDeviceResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -4944,1138 +3741,1113 @@ func (x *networkServerStreamFrameLogsForDeviceClient) Recv() (*StreamFrameLogsFo
 	return m, nil
 }
 
-func (c *networkServerClient) GetVersion(ctx context.Context, in *GetVersionRequest, opts ...grpc.CallOption) (*GetVersionResponse, error) {
+func (c *networkServerServiceClient) GetVersion(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetVersionResponse, error) {
 	out := new(GetVersionResponse)
-	err := c.cc.Invoke(ctx, "/ns.NetworkServer/GetVersion", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/ns.NetworkServerService/GetVersion", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// NetworkServerServer is the server API for NetworkServer service.
-type NetworkServerServer interface {
+// NetworkServerServiceServer is the server API for NetworkServerService service.
+type NetworkServerServiceServer interface {
 	// CreateServiceProfile creates the given service-profile.
 	CreateServiceProfile(context.Context, *CreateServiceProfileRequest) (*CreateServiceProfileResponse, error)
 	// GetServiceProfile returns the service-profile matching the given id.
 	GetServiceProfile(context.Context, *GetServiceProfileRequest) (*GetServiceProfileResponse, error)
 	// UpdateServiceProfile updates the given service-profile.
-	UpdateServiceProfile(context.Context, *UpdateServiceProfileRequest) (*UpdateServiceProfileResponse, error)
+	UpdateServiceProfile(context.Context, *UpdateServiceProfileRequest) (*empty.Empty, error)
 	// DeleteServiceProfile deletes the service-profile matching the given id.
-	DeleteServiceProfile(context.Context, *DeleteServiceProfileRequest) (*DeleteServiceProfileResponse, error)
+	DeleteServiceProfile(context.Context, *DeleteServiceProfileRequest) (*empty.Empty, error)
 	// CreateRoutingProfile creates the given routing-profile.
 	CreateRoutingProfile(context.Context, *CreateRoutingProfileRequest) (*CreateRoutingProfileResponse, error)
 	// GetRoutingProfile returns the routing-profile matching the given id.
 	GetRoutingProfile(context.Context, *GetRoutingProfileRequest) (*GetRoutingProfileResponse, error)
 	// UpdateRoutingProfile updates the given routing-profile.
-	UpdateRoutingProfile(context.Context, *UpdateRoutingProfileRequest) (*UpdateRoutingProfileResponse, error)
+	UpdateRoutingProfile(context.Context, *UpdateRoutingProfileRequest) (*empty.Empty, error)
 	// DeleteRoutingProfile deletes the routing-profile matching the given id.
-	DeleteRoutingProfile(context.Context, *DeleteRoutingProfileRequest) (*DeleteRoutingProfileResponse, error)
+	DeleteRoutingProfile(context.Context, *DeleteRoutingProfileRequest) (*empty.Empty, error)
 	// CreateDeviceProfile creates the given device-profile.
 	CreateDeviceProfile(context.Context, *CreateDeviceProfileRequest) (*CreateDeviceProfileResponse, error)
 	// GetDeviceProfile returns the device-profile matching the given id.
 	GetDeviceProfile(context.Context, *GetDeviceProfileRequest) (*GetDeviceProfileResponse, error)
 	// UpdateDeviceProfile updates the given device-profile.
-	UpdateDeviceProfile(context.Context, *UpdateDeviceProfileRequest) (*UpdateDeviceProfileResponse, error)
+	UpdateDeviceProfile(context.Context, *UpdateDeviceProfileRequest) (*empty.Empty, error)
 	// DeleteDeviceProfile deletes the device-profile matching the given id.
-	DeleteDeviceProfile(context.Context, *DeleteDeviceProfileRequest) (*DeleteDeviceProfileResponse, error)
+	DeleteDeviceProfile(context.Context, *DeleteDeviceProfileRequest) (*empty.Empty, error)
 	// CreateDevice creates the given device.
-	CreateDevice(context.Context, *CreateDeviceRequest) (*CreateDeviceResponse, error)
+	CreateDevice(context.Context, *CreateDeviceRequest) (*empty.Empty, error)
 	// GetDevice returns the device matching the given DevEUI.
 	GetDevice(context.Context, *GetDeviceRequest) (*GetDeviceResponse, error)
 	// UpdateDevice updates the given device.
-	UpdateDevice(context.Context, *UpdateDeviceRequest) (*UpdateDeviceResponse, error)
+	UpdateDevice(context.Context, *UpdateDeviceRequest) (*empty.Empty, error)
 	// DeleteDevice deletes the device matching the given DevEUI.
-	DeleteDevice(context.Context, *DeleteDeviceRequest) (*DeleteDeviceResponse, error)
+	DeleteDevice(context.Context, *DeleteDeviceRequest) (*empty.Empty, error)
 	// ActivateDevice activates a device (ABP).
-	ActivateDevice(context.Context, *ActivateDeviceRequest) (*ActivateDeviceResponse, error)
+	ActivateDevice(context.Context, *ActivateDeviceRequest) (*empty.Empty, error)
 	// DeactivateDevice de-activates a device.
-	DeactivateDevice(context.Context, *DeactivateDeviceRequest) (*DeactivateDeviceResponse, error)
+	DeactivateDevice(context.Context, *DeactivateDeviceRequest) (*empty.Empty, error)
 	// GetDeviceActivation returns the device activation details.
 	GetDeviceActivation(context.Context, *GetDeviceActivationRequest) (*GetDeviceActivationResponse, error)
 	// CreateDeviceQueueItem creates the given device-queue item.
-	CreateDeviceQueueItem(context.Context, *CreateDeviceQueueItemRequest) (*CreateDeviceQueueItemResponse, error)
+	CreateDeviceQueueItem(context.Context, *CreateDeviceQueueItemRequest) (*empty.Empty, error)
 	// FlushDeviceQueueForDevEUI flushes the device-queue for the given DevEUI.
-	FlushDeviceQueueForDevEUI(context.Context, *FlushDeviceQueueForDevEUIRequest) (*FlushDeviceQueueForDevEUIResponse, error)
+	FlushDeviceQueueForDevEUI(context.Context, *FlushDeviceQueueForDevEUIRequest) (*empty.Empty, error)
 	// GetDeviceQueueItemsForDevEUI returns all device-queue items for the given DevEUI.
 	GetDeviceQueueItemsForDevEUI(context.Context, *GetDeviceQueueItemsForDevEUIRequest) (*GetDeviceQueueItemsForDevEUIResponse, error)
 	// GetNextDownlinkFCntForDevEUI returns the next FCnt that must be used.
 	// This also takes device-queue items for the given DevEUI into consideration.
 	GetNextDownlinkFCntForDevEUI(context.Context, *GetNextDownlinkFCntForDevEUIRequest) (*GetNextDownlinkFCntForDevEUIResponse, error)
 	// GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
-	GetRandomDevAddr(context.Context, *GetRandomDevAddrRequest) (*GetRandomDevAddrResponse, error)
+	GetRandomDevAddr(context.Context, *empty.Empty) (*GetRandomDevAddrResponse, error)
 	// CreateMACCommandQueueItem adds the downlink mac-command to the queue.
-	CreateMACCommandQueueItem(context.Context, *CreateMACCommandQueueItemRequest) (*CreateMACCommandQueueItemResponse, error)
+	CreateMACCommandQueueItem(context.Context, *CreateMACCommandQueueItemRequest) (*empty.Empty, error)
 	// SendProprietaryPayload send a payload using the 'Proprietary' LoRaWAN message-type.
-	SendProprietaryPayload(context.Context, *SendProprietaryPayloadRequest) (*SendProprietaryPayloadResponse, error)
+	SendProprietaryPayload(context.Context, *SendProprietaryPayloadRequest) (*empty.Empty, error)
 	// CreateGateway creates the given gateway.
-	CreateGateway(context.Context, *CreateGatewayRequest) (*CreateGatewayResponse, error)
+	CreateGateway(context.Context, *CreateGatewayRequest) (*empty.Empty, error)
 	// GetGateway returns data for a particular gateway.
 	GetGateway(context.Context, *GetGatewayRequest) (*GetGatewayResponse, error)
 	// UpdateGateway updates an existing gateway.
-	UpdateGateway(context.Context, *UpdateGatewayRequest) (*UpdateGatewayResponse, error)
+	UpdateGateway(context.Context, *UpdateGatewayRequest) (*empty.Empty, error)
 	// DeleteGateway deletes a gateway.
-	DeleteGateway(context.Context, *DeleteGatewayRequest) (*DeleteGatewayResponse, error)
+	DeleteGateway(context.Context, *DeleteGatewayRequest) (*empty.Empty, error)
 	// CreateGatewayProfile creates the given gateway-profile.
 	CreateGatewayProfile(context.Context, *CreateGatewayProfileRequest) (*CreateGatewayProfileResponse, error)
 	// GetGatewayProfile returns the gateway-profile given an id.
 	GetGatewayProfile(context.Context, *GetGatewayProfileRequest) (*GetGatewayProfileResponse, error)
 	// UpdateGatewayProfile updates the given gateway-profile.
-	UpdateGatewayProfile(context.Context, *UpdateGatewayProfileRequest) (*UpdateGatewayProfileResponse, error)
+	UpdateGatewayProfile(context.Context, *UpdateGatewayProfileRequest) (*empty.Empty, error)
 	// DeleteGatewayProfile deletes the gateway-profile matching a given id.
-	DeleteGatewayProfile(context.Context, *DeleteGatewayProfileRequest) (*DeleteGatewayProfileResponse, error)
+	DeleteGatewayProfile(context.Context, *DeleteGatewayProfileRequest) (*empty.Empty, error)
 	// GetGatewayStats returns stats of an existing gateway.
 	GetGatewayStats(context.Context, *GetGatewayStatsRequest) (*GetGatewayStatsResponse, error)
 	// StreamFrameLogsForGateway returns a stream of frames seen by the given gateway.
-	StreamFrameLogsForGateway(*StreamFrameLogsForGatewayRequest, NetworkServer_StreamFrameLogsForGatewayServer) error
+	StreamFrameLogsForGateway(*StreamFrameLogsForGatewayRequest, NetworkServerService_StreamFrameLogsForGatewayServer) error
 	// StreamFrameLogsForDevice returns a stream of frames seen by the given device.
-	StreamFrameLogsForDevice(*StreamFrameLogsForDeviceRequest, NetworkServer_StreamFrameLogsForDeviceServer) error
+	StreamFrameLogsForDevice(*StreamFrameLogsForDeviceRequest, NetworkServerService_StreamFrameLogsForDeviceServer) error
 	// GetVersion returns the LoRa Server version.
-	GetVersion(context.Context, *GetVersionRequest) (*GetVersionResponse, error)
+	GetVersion(context.Context, *empty.Empty) (*GetVersionResponse, error)
 }
 
-func RegisterNetworkServerServer(s *grpc.Server, srv NetworkServerServer) {
-	s.RegisterService(&_NetworkServer_serviceDesc, srv)
+func RegisterNetworkServerServiceServer(s *grpc.Server, srv NetworkServerServiceServer) {
+	s.RegisterService(&_NetworkServerService_serviceDesc, srv)
 }
 
-func _NetworkServer_CreateServiceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_CreateServiceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateServiceProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).CreateServiceProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).CreateServiceProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/CreateServiceProfile",
+		FullMethod: "/ns.NetworkServerService/CreateServiceProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).CreateServiceProfile(ctx, req.(*CreateServiceProfileRequest))
+		return srv.(NetworkServerServiceServer).CreateServiceProfile(ctx, req.(*CreateServiceProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_GetServiceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_GetServiceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetServiceProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).GetServiceProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).GetServiceProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/GetServiceProfile",
+		FullMethod: "/ns.NetworkServerService/GetServiceProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).GetServiceProfile(ctx, req.(*GetServiceProfileRequest))
+		return srv.(NetworkServerServiceServer).GetServiceProfile(ctx, req.(*GetServiceProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_UpdateServiceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_UpdateServiceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateServiceProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).UpdateServiceProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).UpdateServiceProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/UpdateServiceProfile",
+		FullMethod: "/ns.NetworkServerService/UpdateServiceProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).UpdateServiceProfile(ctx, req.(*UpdateServiceProfileRequest))
+		return srv.(NetworkServerServiceServer).UpdateServiceProfile(ctx, req.(*UpdateServiceProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_DeleteServiceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_DeleteServiceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteServiceProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).DeleteServiceProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).DeleteServiceProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/DeleteServiceProfile",
+		FullMethod: "/ns.NetworkServerService/DeleteServiceProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).DeleteServiceProfile(ctx, req.(*DeleteServiceProfileRequest))
+		return srv.(NetworkServerServiceServer).DeleteServiceProfile(ctx, req.(*DeleteServiceProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_CreateRoutingProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_CreateRoutingProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateRoutingProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).CreateRoutingProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).CreateRoutingProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/CreateRoutingProfile",
+		FullMethod: "/ns.NetworkServerService/CreateRoutingProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).CreateRoutingProfile(ctx, req.(*CreateRoutingProfileRequest))
+		return srv.(NetworkServerServiceServer).CreateRoutingProfile(ctx, req.(*CreateRoutingProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_GetRoutingProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_GetRoutingProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRoutingProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).GetRoutingProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).GetRoutingProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/GetRoutingProfile",
+		FullMethod: "/ns.NetworkServerService/GetRoutingProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).GetRoutingProfile(ctx, req.(*GetRoutingProfileRequest))
+		return srv.(NetworkServerServiceServer).GetRoutingProfile(ctx, req.(*GetRoutingProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_UpdateRoutingProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_UpdateRoutingProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateRoutingProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).UpdateRoutingProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).UpdateRoutingProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/UpdateRoutingProfile",
+		FullMethod: "/ns.NetworkServerService/UpdateRoutingProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).UpdateRoutingProfile(ctx, req.(*UpdateRoutingProfileRequest))
+		return srv.(NetworkServerServiceServer).UpdateRoutingProfile(ctx, req.(*UpdateRoutingProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_DeleteRoutingProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_DeleteRoutingProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteRoutingProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).DeleteRoutingProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).DeleteRoutingProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/DeleteRoutingProfile",
+		FullMethod: "/ns.NetworkServerService/DeleteRoutingProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).DeleteRoutingProfile(ctx, req.(*DeleteRoutingProfileRequest))
+		return srv.(NetworkServerServiceServer).DeleteRoutingProfile(ctx, req.(*DeleteRoutingProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_CreateDeviceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_CreateDeviceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateDeviceProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).CreateDeviceProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).CreateDeviceProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/CreateDeviceProfile",
+		FullMethod: "/ns.NetworkServerService/CreateDeviceProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).CreateDeviceProfile(ctx, req.(*CreateDeviceProfileRequest))
+		return srv.(NetworkServerServiceServer).CreateDeviceProfile(ctx, req.(*CreateDeviceProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_GetDeviceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_GetDeviceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetDeviceProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).GetDeviceProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).GetDeviceProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/GetDeviceProfile",
+		FullMethod: "/ns.NetworkServerService/GetDeviceProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).GetDeviceProfile(ctx, req.(*GetDeviceProfileRequest))
+		return srv.(NetworkServerServiceServer).GetDeviceProfile(ctx, req.(*GetDeviceProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_UpdateDeviceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_UpdateDeviceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateDeviceProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).UpdateDeviceProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).UpdateDeviceProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/UpdateDeviceProfile",
+		FullMethod: "/ns.NetworkServerService/UpdateDeviceProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).UpdateDeviceProfile(ctx, req.(*UpdateDeviceProfileRequest))
+		return srv.(NetworkServerServiceServer).UpdateDeviceProfile(ctx, req.(*UpdateDeviceProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_DeleteDeviceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_DeleteDeviceProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteDeviceProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).DeleteDeviceProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).DeleteDeviceProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/DeleteDeviceProfile",
+		FullMethod: "/ns.NetworkServerService/DeleteDeviceProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).DeleteDeviceProfile(ctx, req.(*DeleteDeviceProfileRequest))
+		return srv.(NetworkServerServiceServer).DeleteDeviceProfile(ctx, req.(*DeleteDeviceProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_CreateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_CreateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateDeviceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).CreateDevice(ctx, in)
+		return srv.(NetworkServerServiceServer).CreateDevice(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/CreateDevice",
+		FullMethod: "/ns.NetworkServerService/CreateDevice",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).CreateDevice(ctx, req.(*CreateDeviceRequest))
+		return srv.(NetworkServerServiceServer).CreateDevice(ctx, req.(*CreateDeviceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_GetDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_GetDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetDeviceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).GetDevice(ctx, in)
+		return srv.(NetworkServerServiceServer).GetDevice(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/GetDevice",
+		FullMethod: "/ns.NetworkServerService/GetDevice",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).GetDevice(ctx, req.(*GetDeviceRequest))
+		return srv.(NetworkServerServiceServer).GetDevice(ctx, req.(*GetDeviceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_UpdateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_UpdateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateDeviceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).UpdateDevice(ctx, in)
+		return srv.(NetworkServerServiceServer).UpdateDevice(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/UpdateDevice",
+		FullMethod: "/ns.NetworkServerService/UpdateDevice",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).UpdateDevice(ctx, req.(*UpdateDeviceRequest))
+		return srv.(NetworkServerServiceServer).UpdateDevice(ctx, req.(*UpdateDeviceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_DeleteDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_DeleteDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteDeviceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).DeleteDevice(ctx, in)
+		return srv.(NetworkServerServiceServer).DeleteDevice(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/DeleteDevice",
+		FullMethod: "/ns.NetworkServerService/DeleteDevice",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).DeleteDevice(ctx, req.(*DeleteDeviceRequest))
+		return srv.(NetworkServerServiceServer).DeleteDevice(ctx, req.(*DeleteDeviceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_ActivateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_ActivateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ActivateDeviceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).ActivateDevice(ctx, in)
+		return srv.(NetworkServerServiceServer).ActivateDevice(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/ActivateDevice",
+		FullMethod: "/ns.NetworkServerService/ActivateDevice",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).ActivateDevice(ctx, req.(*ActivateDeviceRequest))
+		return srv.(NetworkServerServiceServer).ActivateDevice(ctx, req.(*ActivateDeviceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_DeactivateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_DeactivateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeactivateDeviceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).DeactivateDevice(ctx, in)
+		return srv.(NetworkServerServiceServer).DeactivateDevice(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/DeactivateDevice",
+		FullMethod: "/ns.NetworkServerService/DeactivateDevice",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).DeactivateDevice(ctx, req.(*DeactivateDeviceRequest))
+		return srv.(NetworkServerServiceServer).DeactivateDevice(ctx, req.(*DeactivateDeviceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_GetDeviceActivation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_GetDeviceActivation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetDeviceActivationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).GetDeviceActivation(ctx, in)
+		return srv.(NetworkServerServiceServer).GetDeviceActivation(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/GetDeviceActivation",
+		FullMethod: "/ns.NetworkServerService/GetDeviceActivation",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).GetDeviceActivation(ctx, req.(*GetDeviceActivationRequest))
+		return srv.(NetworkServerServiceServer).GetDeviceActivation(ctx, req.(*GetDeviceActivationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_CreateDeviceQueueItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_CreateDeviceQueueItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateDeviceQueueItemRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).CreateDeviceQueueItem(ctx, in)
+		return srv.(NetworkServerServiceServer).CreateDeviceQueueItem(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/CreateDeviceQueueItem",
+		FullMethod: "/ns.NetworkServerService/CreateDeviceQueueItem",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).CreateDeviceQueueItem(ctx, req.(*CreateDeviceQueueItemRequest))
+		return srv.(NetworkServerServiceServer).CreateDeviceQueueItem(ctx, req.(*CreateDeviceQueueItemRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_FlushDeviceQueueForDevEUI_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_FlushDeviceQueueForDevEUI_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FlushDeviceQueueForDevEUIRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).FlushDeviceQueueForDevEUI(ctx, in)
+		return srv.(NetworkServerServiceServer).FlushDeviceQueueForDevEUI(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/FlushDeviceQueueForDevEUI",
+		FullMethod: "/ns.NetworkServerService/FlushDeviceQueueForDevEUI",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).FlushDeviceQueueForDevEUI(ctx, req.(*FlushDeviceQueueForDevEUIRequest))
+		return srv.(NetworkServerServiceServer).FlushDeviceQueueForDevEUI(ctx, req.(*FlushDeviceQueueForDevEUIRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_GetDeviceQueueItemsForDevEUI_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_GetDeviceQueueItemsForDevEUI_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetDeviceQueueItemsForDevEUIRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).GetDeviceQueueItemsForDevEUI(ctx, in)
+		return srv.(NetworkServerServiceServer).GetDeviceQueueItemsForDevEUI(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/GetDeviceQueueItemsForDevEUI",
+		FullMethod: "/ns.NetworkServerService/GetDeviceQueueItemsForDevEUI",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).GetDeviceQueueItemsForDevEUI(ctx, req.(*GetDeviceQueueItemsForDevEUIRequest))
+		return srv.(NetworkServerServiceServer).GetDeviceQueueItemsForDevEUI(ctx, req.(*GetDeviceQueueItemsForDevEUIRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_GetNextDownlinkFCntForDevEUI_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_GetNextDownlinkFCntForDevEUI_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetNextDownlinkFCntForDevEUIRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).GetNextDownlinkFCntForDevEUI(ctx, in)
+		return srv.(NetworkServerServiceServer).GetNextDownlinkFCntForDevEUI(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/GetNextDownlinkFCntForDevEUI",
+		FullMethod: "/ns.NetworkServerService/GetNextDownlinkFCntForDevEUI",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).GetNextDownlinkFCntForDevEUI(ctx, req.(*GetNextDownlinkFCntForDevEUIRequest))
+		return srv.(NetworkServerServiceServer).GetNextDownlinkFCntForDevEUI(ctx, req.(*GetNextDownlinkFCntForDevEUIRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_GetRandomDevAddr_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetRandomDevAddrRequest)
+func _NetworkServerService_GetRandomDevAddr_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).GetRandomDevAddr(ctx, in)
+		return srv.(NetworkServerServiceServer).GetRandomDevAddr(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/GetRandomDevAddr",
+		FullMethod: "/ns.NetworkServerService/GetRandomDevAddr",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).GetRandomDevAddr(ctx, req.(*GetRandomDevAddrRequest))
+		return srv.(NetworkServerServiceServer).GetRandomDevAddr(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_CreateMACCommandQueueItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_CreateMACCommandQueueItem_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateMACCommandQueueItemRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).CreateMACCommandQueueItem(ctx, in)
+		return srv.(NetworkServerServiceServer).CreateMACCommandQueueItem(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/CreateMACCommandQueueItem",
+		FullMethod: "/ns.NetworkServerService/CreateMACCommandQueueItem",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).CreateMACCommandQueueItem(ctx, req.(*CreateMACCommandQueueItemRequest))
+		return srv.(NetworkServerServiceServer).CreateMACCommandQueueItem(ctx, req.(*CreateMACCommandQueueItemRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_SendProprietaryPayload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_SendProprietaryPayload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendProprietaryPayloadRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).SendProprietaryPayload(ctx, in)
+		return srv.(NetworkServerServiceServer).SendProprietaryPayload(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/SendProprietaryPayload",
+		FullMethod: "/ns.NetworkServerService/SendProprietaryPayload",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).SendProprietaryPayload(ctx, req.(*SendProprietaryPayloadRequest))
+		return srv.(NetworkServerServiceServer).SendProprietaryPayload(ctx, req.(*SendProprietaryPayloadRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_CreateGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_CreateGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateGatewayRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).CreateGateway(ctx, in)
+		return srv.(NetworkServerServiceServer).CreateGateway(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/CreateGateway",
+		FullMethod: "/ns.NetworkServerService/CreateGateway",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).CreateGateway(ctx, req.(*CreateGatewayRequest))
+		return srv.(NetworkServerServiceServer).CreateGateway(ctx, req.(*CreateGatewayRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_GetGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_GetGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetGatewayRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).GetGateway(ctx, in)
+		return srv.(NetworkServerServiceServer).GetGateway(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/GetGateway",
+		FullMethod: "/ns.NetworkServerService/GetGateway",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).GetGateway(ctx, req.(*GetGatewayRequest))
+		return srv.(NetworkServerServiceServer).GetGateway(ctx, req.(*GetGatewayRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_UpdateGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_UpdateGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateGatewayRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).UpdateGateway(ctx, in)
+		return srv.(NetworkServerServiceServer).UpdateGateway(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/UpdateGateway",
+		FullMethod: "/ns.NetworkServerService/UpdateGateway",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).UpdateGateway(ctx, req.(*UpdateGatewayRequest))
+		return srv.(NetworkServerServiceServer).UpdateGateway(ctx, req.(*UpdateGatewayRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_DeleteGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_DeleteGateway_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteGatewayRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).DeleteGateway(ctx, in)
+		return srv.(NetworkServerServiceServer).DeleteGateway(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/DeleteGateway",
+		FullMethod: "/ns.NetworkServerService/DeleteGateway",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).DeleteGateway(ctx, req.(*DeleteGatewayRequest))
+		return srv.(NetworkServerServiceServer).DeleteGateway(ctx, req.(*DeleteGatewayRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_CreateGatewayProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_CreateGatewayProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateGatewayProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).CreateGatewayProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).CreateGatewayProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/CreateGatewayProfile",
+		FullMethod: "/ns.NetworkServerService/CreateGatewayProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).CreateGatewayProfile(ctx, req.(*CreateGatewayProfileRequest))
+		return srv.(NetworkServerServiceServer).CreateGatewayProfile(ctx, req.(*CreateGatewayProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_GetGatewayProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_GetGatewayProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetGatewayProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).GetGatewayProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).GetGatewayProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/GetGatewayProfile",
+		FullMethod: "/ns.NetworkServerService/GetGatewayProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).GetGatewayProfile(ctx, req.(*GetGatewayProfileRequest))
+		return srv.(NetworkServerServiceServer).GetGatewayProfile(ctx, req.(*GetGatewayProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_UpdateGatewayProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_UpdateGatewayProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateGatewayProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).UpdateGatewayProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).UpdateGatewayProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/UpdateGatewayProfile",
+		FullMethod: "/ns.NetworkServerService/UpdateGatewayProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).UpdateGatewayProfile(ctx, req.(*UpdateGatewayProfileRequest))
+		return srv.(NetworkServerServiceServer).UpdateGatewayProfile(ctx, req.(*UpdateGatewayProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_DeleteGatewayProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_DeleteGatewayProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteGatewayProfileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).DeleteGatewayProfile(ctx, in)
+		return srv.(NetworkServerServiceServer).DeleteGatewayProfile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/DeleteGatewayProfile",
+		FullMethod: "/ns.NetworkServerService/DeleteGatewayProfile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).DeleteGatewayProfile(ctx, req.(*DeleteGatewayProfileRequest))
+		return srv.(NetworkServerServiceServer).DeleteGatewayProfile(ctx, req.(*DeleteGatewayProfileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_GetGatewayStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _NetworkServerService_GetGatewayStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetGatewayStatsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).GetGatewayStats(ctx, in)
+		return srv.(NetworkServerServiceServer).GetGatewayStats(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/GetGatewayStats",
+		FullMethod: "/ns.NetworkServerService/GetGatewayStats",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).GetGatewayStats(ctx, req.(*GetGatewayStatsRequest))
+		return srv.(NetworkServerServiceServer).GetGatewayStats(ctx, req.(*GetGatewayStatsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _NetworkServer_StreamFrameLogsForGateway_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _NetworkServerService_StreamFrameLogsForGateway_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(StreamFrameLogsForGatewayRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(NetworkServerServer).StreamFrameLogsForGateway(m, &networkServerStreamFrameLogsForGatewayServer{stream})
+	return srv.(NetworkServerServiceServer).StreamFrameLogsForGateway(m, &networkServerServiceStreamFrameLogsForGatewayServer{stream})
 }
 
-type NetworkServer_StreamFrameLogsForGatewayServer interface {
+type NetworkServerService_StreamFrameLogsForGatewayServer interface {
 	Send(*StreamFrameLogsForGatewayResponse) error
 	grpc.ServerStream
 }
 
-type networkServerStreamFrameLogsForGatewayServer struct {
+type networkServerServiceStreamFrameLogsForGatewayServer struct {
 	grpc.ServerStream
 }
 
-func (x *networkServerStreamFrameLogsForGatewayServer) Send(m *StreamFrameLogsForGatewayResponse) error {
+func (x *networkServerServiceStreamFrameLogsForGatewayServer) Send(m *StreamFrameLogsForGatewayResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _NetworkServer_StreamFrameLogsForDevice_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _NetworkServerService_StreamFrameLogsForDevice_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(StreamFrameLogsForDeviceRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(NetworkServerServer).StreamFrameLogsForDevice(m, &networkServerStreamFrameLogsForDeviceServer{stream})
+	return srv.(NetworkServerServiceServer).StreamFrameLogsForDevice(m, &networkServerServiceStreamFrameLogsForDeviceServer{stream})
 }
 
-type NetworkServer_StreamFrameLogsForDeviceServer interface {
+type NetworkServerService_StreamFrameLogsForDeviceServer interface {
 	Send(*StreamFrameLogsForDeviceResponse) error
 	grpc.ServerStream
 }
 
-type networkServerStreamFrameLogsForDeviceServer struct {
+type networkServerServiceStreamFrameLogsForDeviceServer struct {
 	grpc.ServerStream
 }
 
-func (x *networkServerStreamFrameLogsForDeviceServer) Send(m *StreamFrameLogsForDeviceResponse) error {
+func (x *networkServerServiceStreamFrameLogsForDeviceServer) Send(m *StreamFrameLogsForDeviceResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _NetworkServer_GetVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetVersionRequest)
+func _NetworkServerService_GetVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(empty.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NetworkServerServer).GetVersion(ctx, in)
+		return srv.(NetworkServerServiceServer).GetVersion(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/ns.NetworkServer/GetVersion",
+		FullMethod: "/ns.NetworkServerService/GetVersion",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NetworkServerServer).GetVersion(ctx, req.(*GetVersionRequest))
+		return srv.(NetworkServerServiceServer).GetVersion(ctx, req.(*empty.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _NetworkServer_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "ns.NetworkServer",
-	HandlerType: (*NetworkServerServer)(nil),
+var _NetworkServerService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "ns.NetworkServerService",
+	HandlerType: (*NetworkServerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "CreateServiceProfile",
-			Handler:    _NetworkServer_CreateServiceProfile_Handler,
+			Handler:    _NetworkServerService_CreateServiceProfile_Handler,
 		},
 		{
 			MethodName: "GetServiceProfile",
-			Handler:    _NetworkServer_GetServiceProfile_Handler,
+			Handler:    _NetworkServerService_GetServiceProfile_Handler,
 		},
 		{
 			MethodName: "UpdateServiceProfile",
-			Handler:    _NetworkServer_UpdateServiceProfile_Handler,
+			Handler:    _NetworkServerService_UpdateServiceProfile_Handler,
 		},
 		{
 			MethodName: "DeleteServiceProfile",
-			Handler:    _NetworkServer_DeleteServiceProfile_Handler,
+			Handler:    _NetworkServerService_DeleteServiceProfile_Handler,
 		},
 		{
 			MethodName: "CreateRoutingProfile",
-			Handler:    _NetworkServer_CreateRoutingProfile_Handler,
+			Handler:    _NetworkServerService_CreateRoutingProfile_Handler,
 		},
 		{
 			MethodName: "GetRoutingProfile",
-			Handler:    _NetworkServer_GetRoutingProfile_Handler,
+			Handler:    _NetworkServerService_GetRoutingProfile_Handler,
 		},
 		{
 			MethodName: "UpdateRoutingProfile",
-			Handler:    _NetworkServer_UpdateRoutingProfile_Handler,
+			Handler:    _NetworkServerService_UpdateRoutingProfile_Handler,
 		},
 		{
 			MethodName: "DeleteRoutingProfile",
-			Handler:    _NetworkServer_DeleteRoutingProfile_Handler,
+			Handler:    _NetworkServerService_DeleteRoutingProfile_Handler,
 		},
 		{
 			MethodName: "CreateDeviceProfile",
-			Handler:    _NetworkServer_CreateDeviceProfile_Handler,
+			Handler:    _NetworkServerService_CreateDeviceProfile_Handler,
 		},
 		{
 			MethodName: "GetDeviceProfile",
-			Handler:    _NetworkServer_GetDeviceProfile_Handler,
+			Handler:    _NetworkServerService_GetDeviceProfile_Handler,
 		},
 		{
 			MethodName: "UpdateDeviceProfile",
-			Handler:    _NetworkServer_UpdateDeviceProfile_Handler,
+			Handler:    _NetworkServerService_UpdateDeviceProfile_Handler,
 		},
 		{
 			MethodName: "DeleteDeviceProfile",
-			Handler:    _NetworkServer_DeleteDeviceProfile_Handler,
+			Handler:    _NetworkServerService_DeleteDeviceProfile_Handler,
 		},
 		{
 			MethodName: "CreateDevice",
-			Handler:    _NetworkServer_CreateDevice_Handler,
+			Handler:    _NetworkServerService_CreateDevice_Handler,
 		},
 		{
 			MethodName: "GetDevice",
-			Handler:    _NetworkServer_GetDevice_Handler,
+			Handler:    _NetworkServerService_GetDevice_Handler,
 		},
 		{
 			MethodName: "UpdateDevice",
-			Handler:    _NetworkServer_UpdateDevice_Handler,
+			Handler:    _NetworkServerService_UpdateDevice_Handler,
 		},
 		{
 			MethodName: "DeleteDevice",
-			Handler:    _NetworkServer_DeleteDevice_Handler,
+			Handler:    _NetworkServerService_DeleteDevice_Handler,
 		},
 		{
 			MethodName: "ActivateDevice",
-			Handler:    _NetworkServer_ActivateDevice_Handler,
+			Handler:    _NetworkServerService_ActivateDevice_Handler,
 		},
 		{
 			MethodName: "DeactivateDevice",
-			Handler:    _NetworkServer_DeactivateDevice_Handler,
+			Handler:    _NetworkServerService_DeactivateDevice_Handler,
 		},
 		{
 			MethodName: "GetDeviceActivation",
-			Handler:    _NetworkServer_GetDeviceActivation_Handler,
+			Handler:    _NetworkServerService_GetDeviceActivation_Handler,
 		},
 		{
 			MethodName: "CreateDeviceQueueItem",
-			Handler:    _NetworkServer_CreateDeviceQueueItem_Handler,
+			Handler:    _NetworkServerService_CreateDeviceQueueItem_Handler,
 		},
 		{
 			MethodName: "FlushDeviceQueueForDevEUI",
-			Handler:    _NetworkServer_FlushDeviceQueueForDevEUI_Handler,
+			Handler:    _NetworkServerService_FlushDeviceQueueForDevEUI_Handler,
 		},
 		{
 			MethodName: "GetDeviceQueueItemsForDevEUI",
-			Handler:    _NetworkServer_GetDeviceQueueItemsForDevEUI_Handler,
+			Handler:    _NetworkServerService_GetDeviceQueueItemsForDevEUI_Handler,
 		},
 		{
 			MethodName: "GetNextDownlinkFCntForDevEUI",
-			Handler:    _NetworkServer_GetNextDownlinkFCntForDevEUI_Handler,
+			Handler:    _NetworkServerService_GetNextDownlinkFCntForDevEUI_Handler,
 		},
 		{
 			MethodName: "GetRandomDevAddr",
-			Handler:    _NetworkServer_GetRandomDevAddr_Handler,
+			Handler:    _NetworkServerService_GetRandomDevAddr_Handler,
 		},
 		{
 			MethodName: "CreateMACCommandQueueItem",
-			Handler:    _NetworkServer_CreateMACCommandQueueItem_Handler,
+			Handler:    _NetworkServerService_CreateMACCommandQueueItem_Handler,
 		},
 		{
 			MethodName: "SendProprietaryPayload",
-			Handler:    _NetworkServer_SendProprietaryPayload_Handler,
+			Handler:    _NetworkServerService_SendProprietaryPayload_Handler,
 		},
 		{
 			MethodName: "CreateGateway",
-			Handler:    _NetworkServer_CreateGateway_Handler,
+			Handler:    _NetworkServerService_CreateGateway_Handler,
 		},
 		{
 			MethodName: "GetGateway",
-			Handler:    _NetworkServer_GetGateway_Handler,
+			Handler:    _NetworkServerService_GetGateway_Handler,
 		},
 		{
 			MethodName: "UpdateGateway",
-			Handler:    _NetworkServer_UpdateGateway_Handler,
+			Handler:    _NetworkServerService_UpdateGateway_Handler,
 		},
 		{
 			MethodName: "DeleteGateway",
-			Handler:    _NetworkServer_DeleteGateway_Handler,
+			Handler:    _NetworkServerService_DeleteGateway_Handler,
 		},
 		{
 			MethodName: "CreateGatewayProfile",
-			Handler:    _NetworkServer_CreateGatewayProfile_Handler,
+			Handler:    _NetworkServerService_CreateGatewayProfile_Handler,
 		},
 		{
 			MethodName: "GetGatewayProfile",
-			Handler:    _NetworkServer_GetGatewayProfile_Handler,
+			Handler:    _NetworkServerService_GetGatewayProfile_Handler,
 		},
 		{
 			MethodName: "UpdateGatewayProfile",
-			Handler:    _NetworkServer_UpdateGatewayProfile_Handler,
+			Handler:    _NetworkServerService_UpdateGatewayProfile_Handler,
 		},
 		{
 			MethodName: "DeleteGatewayProfile",
-			Handler:    _NetworkServer_DeleteGatewayProfile_Handler,
+			Handler:    _NetworkServerService_DeleteGatewayProfile_Handler,
 		},
 		{
 			MethodName: "GetGatewayStats",
-			Handler:    _NetworkServer_GetGatewayStats_Handler,
+			Handler:    _NetworkServerService_GetGatewayStats_Handler,
 		},
 		{
 			MethodName: "GetVersion",
-			Handler:    _NetworkServer_GetVersion_Handler,
+			Handler:    _NetworkServerService_GetVersion_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "StreamFrameLogsForGateway",
-			Handler:       _NetworkServer_StreamFrameLogsForGateway_Handler,
+			Handler:       _NetworkServerService_StreamFrameLogsForGateway_Handler,
 			ServerStreams: true,
 		},
 		{
 			StreamName:    "StreamFrameLogsForDevice",
-			Handler:       _NetworkServer_StreamFrameLogsForDevice_Handler,
+			Handler:       _NetworkServerService_StreamFrameLogsForDevice_Handler,
 			ServerStreams: true,
 		},
 	},
 	Metadata: "ns.proto",
 }
 
-func init() { proto.RegisterFile("ns.proto", fileDescriptor_ns_516b99e4b39d9522) }
+func init() { proto.RegisterFile("ns.proto", fileDescriptor_ns_77bc5f14a1131ce6) }
 
-var fileDescriptor_ns_516b99e4b39d9522 = []byte{
-	// 2898 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xdc, 0x3a, 0x4f, 0x6f, 0xdb, 0xc8,
-	0xf5, 0xa6, 0x64, 0xd9, 0xf2, 0xb3, 0xa5, 0xe5, 0x8e, 0x13, 0x47, 0x56, 0xfc, 0x2f, 0x4c, 0xf6,
-	0xb7, 0xfe, 0x19, 0x6d, 0x90, 0x75, 0xbc, 0x49, 0x1c, 0x74, 0x0f, 0x82, 0x24, 0x7b, 0xdd, 0x24,
-	0xb6, 0x77, 0x64, 0x75, 0xb3, 0x08, 0xb0, 0x00, 0x23, 0x8e, 0x6d, 0xd6, 0x12, 0xa9, 0x92, 0xb4,
-	0x9d, 0x9c, 0x5b, 0xf4, 0x5a, 0x14, 0x45, 0x81, 0xf6, 0xd2, 0x4b, 0x0f, 0x3d, 0xf4, 0xdc, 0x8f,
-	0x50, 0xa0, 0xa7, 0xfd, 0x04, 0x45, 0xd1, 0x53, 0x3f, 0x47, 0x31, 0x7f, 0x48, 0x0e, 0xa9, 0x21,
-	0x65, 0xd7, 0x01, 0xba, 0xe8, 0x8d, 0xf3, 0xde, 0x9b, 0x37, 0xef, 0xdf, 0xbc, 0x79, 0x33, 0x8f,
-	0x50, 0x76, 0xfc, 0x87, 0x43, 0xcf, 0x0d, 0x5c, 0x54, 0x70, 0xfc, 0x7a, 0x75, 0xe8, 0xb9, 0xc7,
-	0x76, 0x9f, 0x08, 0x98, 0xf1, 0x0d, 0xdc, 0x6d, 0x7a, 0xc4, 0x0c, 0x48, 0x87, 0x78, 0x17, 0x76,
-	0x8f, 0x1c, 0x72, 0x34, 0x26, 0x3f, 0x3b, 0x27, 0x7e, 0x80, 0x9e, 0x43, 0xd5, 0x4f, 0x20, 0x6a,
-	0xda, 0x9a, 0xb6, 0x3e, 0xbb, 0x89, 0x1e, 0x3a, 0xfe, 0xc3, 0xd4, 0x94, 0x14, 0xa5, 0xf1, 0x63,
-	0x58, 0x52, 0xb3, 0xf6, 0x87, 0xae, 0xe3, 0x13, 0xb4, 0x01, 0x7a, 0x72, 0xc6, 0x5e, 0x8b, 0x71,
-	0x9f, 0xc1, 0x23, 0x70, 0x63, 0x07, 0x6a, 0xbb, 0x24, 0x50, 0xcb, 0x78, 0x1d, 0x3e, 0xbf, 0xd1,
-	0x60, 0x51, 0xc1, 0x48, 0x48, 0x74, 0x03, 0x6d, 0xd1, 0x12, 0xcc, 0xf4, 0x98, 0xb6, 0x56, 0x23,
-	0xa8, 0x15, 0xd8, 0xf2, 0x31, 0x80, 0x62, 0xcf, 0x87, 0x96, 0xc0, 0x16, 0x39, 0x36, 0x02, 0x50,
-	0x27, 0x74, 0xd9, 0xe0, 0xc3, 0x3b, 0x61, 0x05, 0x96, 0xd4, 0xac, 0xb9, 0xca, 0xc6, 0x1e, 0xdc,
-	0x6d, 0x91, 0x3e, 0xc9, 0x5a, 0xfa, 0x3a, 0xb6, 0x5d, 0x81, 0x25, 0x35, 0x2b, 0xb1, 0xd4, 0x21,
-	0x54, 0xb1, 0x7b, 0x1e, 0xd8, 0xce, 0x49, 0x68, 0xb3, 0x0d, 0xd0, 0xbd, 0x04, 0x24, 0xe6, 0x9e,
-	0x86, 0x23, 0x04, 0x93, 0xa6, 0xbf, 0xd7, 0x12, 0xa6, 0x65, 0xdf, 0xc6, 0x1f, 0xb5, 0x30, 0x7a,
-	0x93, 0x8c, 0x25, 0xc3, 0x25, 0xf9, 0xc8, 0x86, 0x4b, 0x4d, 0x49, 0x51, 0xa2, 0x05, 0x98, 0xea,
-	0x99, 0x4d, 0xe2, 0x85, 0xce, 0x14, 0x23, 0x54, 0x83, 0xe9, 0xa0, 0xef, 0x33, 0x04, 0xf7, 0x63,
-	0x38, 0xa4, 0x33, 0x82, 0xbe, 0xff, 0x82, 0xbc, 0xaf, 0x4d, 0xf2, 0x19, 0x7c, 0x14, 0xef, 0x83,
-	0xb4, 0x90, 0xf1, 0x3e, 0xb8, 0xaa, 0x15, 0xc4, 0x3e, 0x50, 0x6b, 0x7b, 0x1d, 0x3e, 0x7f, 0xe5,
-	0xfb, 0x20, 0x43, 0xa2, 0x9b, 0xd8, 0xed, 0x06, 0xfb, 0x40, 0xb2, 0xf9, 0x64, 0x96, 0xcd, 0x4b,
-	0x09, 0x9b, 0xb3, 0x08, 0xe0, 0xf1, 0xfd, 0x7d, 0x8e, 0x80, 0x68, 0x13, 0xaa, 0xed, 0x1d, 0x6f,
-	0xc2, 0x9b, 0x3b, 0x36, 0xda, 0x84, 0x19, 0x4b, 0x75, 0xa1, 0xce, 0x83, 0xb1, 0x45, 0x14, 0xdb,
-	0xfd, 0x29, 0x54, 0x2c, 0x32, 0x9a, 0x68, 0x3e, 0xa6, 0xd6, 0x4a, 0x4e, 0x48, 0xd2, 0x19, 0xbb,
-	0xe1, 0x46, 0x4c, 0xb1, 0x15, 0x01, 0xb5, 0x0e, 0x1f, 0x25, 0xe8, 0x23, 0x05, 0xd2, 0x60, 0xa3,
-	0x09, 0x77, 0x76, 0x49, 0xa0, 0x14, 0xee, 0xea, 0x4c, 0x7e, 0xa5, 0xb1, 0x6d, 0xa2, 0x96, 0xe5,
-	0x3f, 0xd5, 0xf1, 0x46, 0x19, 0xbe, 0x0b, 0x75, 0x1e, 0x01, 0x1f, 0xd6, 0xec, 0xcb, 0x61, 0xf4,
-	0x2b, 0x55, 0x35, 0x76, 0xa0, 0xce, 0x83, 0xe1, 0x86, 0xf6, 0x5c, 0x0e, 0xe3, 0x53, 0xbd, 0xcc,
-	0xdf, 0x34, 0x98, 0xe2, 0x18, 0xba, 0x03, 0x2c, 0x72, 0xd1, 0xee, 0xee, 0x31, 0x56, 0x73, 0x58,
-	0x8c, 0x54, 0x6b, 0x15, 0x94, 0x6b, 0x29, 0x4f, 0x9c, 0xa2, 0xfa, 0xc4, 0x51, 0x6e, 0x8c, 0xc9,
-	0x8c, 0xf3, 0xe3, 0x01, 0x54, 0xfc, 0x33, 0x7b, 0xb8, 0xd3, 0x74, 0x82, 0xe6, 0x29, 0xe9, 0x9d,
-	0xb1, 0x4c, 0x52, 0xc6, 0x49, 0xa0, 0xb1, 0x0d, 0xf3, 0x72, 0x1c, 0x87, 0xa6, 0x32, 0x98, 0x5a,
-	0x76, 0x2f, 0xf4, 0x0c, 0xc4, 0x9e, 0xc1, 0x02, 0x63, 0x2c, 0xc0, 0xad, 0xe4, 0x54, 0x61, 0x9d,
-	0x0d, 0xd0, 0xa3, 0x58, 0x0c, 0xf9, 0x65, 0x98, 0xc9, 0xf0, 0xe1, 0x63, 0x89, 0x56, 0x04, 0xec,
-	0x15, 0x16, 0xbf, 0x51, 0x6c, 0x6e, 0xc3, 0xbc, 0x1c, 0x44, 0xd7, 0xd4, 0x39, 0x39, 0x55, 0xe8,
-	0xfc, 0x43, 0x98, 0x97, 0x03, 0x66, 0x9c, 0xda, 0x0b, 0x70, 0x2b, 0x49, 0x2e, 0xd8, 0xfc, 0xa9,
-	0x00, 0xb7, 0x1b, 0xbd, 0xc0, 0xbe, 0x30, 0xaf, 0xc8, 0x89, 0xe6, 0x66, 0x8b, 0x5c, 0x34, 0x2c,
-	0xcb, 0x63, 0x56, 0x98, 0xc3, 0xe1, 0x10, 0xad, 0xc1, 0xac, 0xbf, 0x7f, 0x79, 0xd6, 0xd9, 0x73,
-	0x02, 0x9a, 0xa0, 0x8b, 0x0c, 0x2b, 0x83, 0x28, 0xc5, 0xb1, 0x44, 0x31, 0xcd, 0x29, 0x24, 0x10,
-	0x5a, 0x01, 0x70, 0x2e, 0xcf, 0x3a, 0x6d, 0xa7, 0x47, 0x09, 0xca, 0x8c, 0x40, 0x82, 0x50, 0xa9,
-	0x8e, 0x9b, 0x4e, 0xd0, 0x1d, 0xb2, 0x28, 0xac, 0x60, 0x31, 0xa2, 0xf6, 0x77, 0x68, 0x8c, 0xb5,
-	0xdc, 0x4b, 0x87, 0xc5, 0x5d, 0x05, 0xc7, 0x00, 0x8a, 0x35, 0x23, 0xec, 0x0c, 0xc7, 0x46, 0x80,
-	0xd1, 0xb8, 0x9d, 0x52, 0xc5, 0x6d, 0x0d, 0x16, 0xd2, 0x86, 0x12, 0x36, 0xfc, 0x0c, 0xee, 0xb4,
-	0x88, 0x79, 0x1d, 0x23, 0x1a, 0x75, 0xa8, 0x8d, 0x4e, 0x11, 0xec, 0xb6, 0xa0, 0x1e, 0x45, 0xa8,
-	0x58, 0xd1, 0x76, 0x9d, 0x71, 0x1c, 0x7f, 0x5b, 0x80, 0xbb, 0xca, 0x69, 0x22, 0xc4, 0x25, 0xb7,
-	0x69, 0xb9, 0x6e, 0x2b, 0x8c, 0x75, 0xdb, 0xd4, 0x38, 0xb7, 0x4d, 0xe7, 0xb8, 0xad, 0x98, 0xed,
-	0xb6, 0xc9, 0x5c, 0xb7, 0x95, 0xc7, 0xba, 0x4d, 0x99, 0x6e, 0x16, 0xd9, 0x69, 0x87, 0x4d, 0xc7,
-	0x72, 0x07, 0x2d, 0xae, 0xb1, 0x30, 0xa5, 0xb1, 0xc5, 0x2b, 0xbd, 0x24, 0x6a, 0x9c, 0xb9, 0x8c,
-	0x53, 0x58, 0xe3, 0x49, 0xe8, 0x55, 0xa3, 0xd9, 0x74, 0x07, 0x03, 0xd3, 0xb1, 0xbe, 0x3a, 0x27,
-	0xe7, 0x64, 0x2f, 0x20, 0x83, 0x71, 0x7b, 0x47, 0x87, 0x62, 0xcf, 0xb6, 0x84, 0xa2, 0xf4, 0x13,
-	0xd5, 0xa1, 0xdc, 0xe3, 0x4c, 0xfc, 0x5a, 0x69, 0xad, 0xb8, 0x3e, 0x87, 0xa3, 0xb1, 0x71, 0x1f,
-	0xee, 0xe5, 0xac, 0x24, 0xa2, 0xe5, 0x2f, 0x1a, 0x2c, 0x77, 0x88, 0x63, 0x1d, 0x7a, 0xee, 0xd0,
-	0xb3, 0x49, 0x60, 0x7a, 0xef, 0x0f, 0xcd, 0xf7, 0x7d, 0xd7, 0xb4, 0x42, 0x61, 0x56, 0x00, 0x06,
-	0x66, 0x4f, 0x00, 0x85, 0x40, 0x12, 0x84, 0x0a, 0x35, 0xb0, 0x7b, 0xc2, 0xef, 0xf4, 0x93, 0xfa,
-	0xfb, 0xc4, 0x0c, 0xc8, 0xa5, 0xf9, 0xfe, 0x55, 0xa3, 0xe9, 0xd7, 0x8a, 0x4c, 0x2e, 0x19, 0x44,
-	0xaf, 0x0a, 0xf6, 0xa1, 0xdb, 0x67, 0x9a, 0x94, 0x31, 0xfb, 0xa6, 0xde, 0x3a, 0xf6, 0xe8, 0x9a,
-	0x4e, 0xef, 0x7d, 0xb8, 0x05, 0x23, 0x00, 0xaa, 0x42, 0xc1, 0xf2, 0x58, 0xe8, 0x54, 0x70, 0xc1,
-	0xf2, 0x8c, 0x35, 0x58, 0xc9, 0x12, 0x5b, 0x68, 0xf6, 0x4f, 0x2d, 0x4c, 0xf7, 0xbb, 0x7c, 0xe5,
-	0x50, 0x21, 0x2a, 0xb0, 0xd9, 0x13, 0x9a, 0xd0, 0x4f, 0x2a, 0x8e, 0x63, 0x0e, 0x48, 0x78, 0x73,
-	0xa1, 0xdf, 0x54, 0x09, 0x8b, 0xf8, 0x3d, 0xcf, 0x1e, 0xd2, 0x7d, 0x20, 0x72, 0xb2, 0x0c, 0xa2,
-	0xb6, 0xef, 0x9b, 0x81, 0x1d, 0x9c, 0x5b, 0x84, 0x29, 0xa2, 0xe1, 0x68, 0x4c, 0x95, 0xe9, 0xbb,
-	0xce, 0x09, 0x47, 0x96, 0x18, 0x32, 0x06, 0xd0, 0x99, 0x66, 0x5f, 0xcc, 0x9c, 0xe2, 0x33, 0xc3,
-	0x31, 0x3d, 0x31, 0x85, 0xa5, 0xe2, 0x13, 0xb3, 0xcc, 0x4f, 0xcc, 0x34, 0xdc, 0xb8, 0x03, 0xb7,
-	0x53, 0x1a, 0x0a, 0xdd, 0x3f, 0x61, 0xa7, 0xd4, 0x38, 0xbd, 0x8d, 0xbf, 0x17, 0x00, 0xc9, 0x74,
-	0x22, 0x78, 0xbf, 0xdf, 0x06, 0x4a, 0x1c, 0xa4, 0xd3, 0xb9, 0x07, 0x69, 0x39, 0x7d, 0x7d, 0xa1,
-	0x99, 0xc8, 0xf6, 0xfc, 0xa0, 0x43, 0x88, 0xd3, 0x08, 0x58, 0x2a, 0x9f, 0xc1, 0x32, 0x88, 0x46,
-	0x7b, 0xdf, 0x8c, 0x08, 0x80, 0x11, 0x48, 0x10, 0xa5, 0x7b, 0xe6, 0x32, 0xdc, 0x43, 0x23, 0x90,
-	0x1f, 0xbe, 0xff, 0xcb, 0x11, 0x98, 0xd2, 0x50, 0x44, 0xe0, 0x7a, 0x58, 0x30, 0x8c, 0x0d, 0xc2,
-	0x3b, 0x70, 0x3b, 0x45, 0x29, 0x58, 0xfc, 0x4b, 0x83, 0x39, 0x01, 0xeb, 0x04, 0x66, 0xe0, 0x53,
-	0x95, 0x02, 0x7b, 0x40, 0xfc, 0xc0, 0x1c, 0x0c, 0x45, 0x21, 0x1c, 0x03, 0xd0, 0x0f, 0xe0, 0x63,
-	0xef, 0xdd, 0xa1, 0xd9, 0x3b, 0x23, 0x81, 0x8f, 0x49, 0x8f, 0xd8, 0x17, 0xc4, 0x62, 0xf6, 0x2c,
-	0xe1, 0x51, 0x04, 0x7a, 0x04, 0xf3, 0x23, 0xc0, 0x83, 0x17, 0xcc, 0xc8, 0x25, 0xac, 0x42, 0x51,
-	0xfe, 0xc1, 0x08, 0xff, 0x49, 0xce, 0x7f, 0x04, 0x41, 0x8d, 0x18, 0x01, 0xdb, 0x03, 0x3b, 0x08,
-	0x88, 0xc5, 0xbc, 0x50, 0xc2, 0x23, 0x70, 0xe3, 0xcf, 0x1a, 0x2c, 0xc4, 0xdb, 0x90, 0xe9, 0x9a,
-	0x1d, 0x29, 0x8f, 0xa1, 0x6c, 0x3b, 0x01, 0xf1, 0x2e, 0xcc, 0x3e, 0xd3, 0xae, 0xba, 0x79, 0x87,
-	0x96, 0x7d, 0x8d, 0x93, 0x13, 0x8f, 0x9c, 0xb0, 0x33, 0x7b, 0x4f, 0xa0, 0x71, 0x44, 0x88, 0xfe,
-	0x0f, 0xaa, 0x7e, 0x60, 0x7a, 0xc1, 0x51, 0x64, 0x3e, 0x1e, 0x4d, 0x29, 0x28, 0x32, 0x60, 0x8e,
-	0x38, 0x56, 0x4c, 0xc5, 0x4b, 0xf5, 0x04, 0x4c, 0xdc, 0xff, 0x92, 0xc2, 0x46, 0x97, 0xc8, 0x29,
-	0x8f, 0xf8, 0xe7, 0xfd, 0xa0, 0xa6, 0xad, 0x15, 0xd7, 0x67, 0x37, 0x75, 0x2a, 0x59, 0x82, 0x52,
-	0xe0, 0x8d, 0x5f, 0x6b, 0xf0, 0x11, 0xaf, 0x35, 0xa2, 0x23, 0x29, 0xf3, 0xd4, 0x5b, 0x01, 0x38,
-	0xf6, 0x06, 0xe1, 0x01, 0xc4, 0xcf, 0x19, 0x09, 0x42, 0xf7, 0x0e, 0x2d, 0x07, 0x44, 0x69, 0xc0,
-	0xbe, 0xd1, 0x2d, 0x28, 0x1d, 0x1f, 0xba, 0xe2, 0x99, 0xa2, 0x82, 0xf9, 0x80, 0xa5, 0x0e, 0xd7,
-	0x39, 0xb6, 0xbd, 0x81, 0xf0, 0x46, 0x19, 0xc7, 0x00, 0x63, 0x37, 0x7c, 0x05, 0x4a, 0x09, 0x16,
-	0xfa, 0xe2, 0x53, 0x98, 0xb4, 0x03, 0x32, 0x10, 0xc5, 0xf6, 0x7c, 0x5c, 0x6c, 0xc7, 0x94, 0x8c,
-	0xc0, 0x58, 0x85, 0xe5, 0x0c, 0x46, 0x22, 0xb2, 0x9f, 0xc3, 0xda, 0x4e, 0xff, 0xdc, 0x3f, 0x95,
-	0xf0, 0x3b, 0xae, 0xd7, 0x62, 0xea, 0x8e, 0x2b, 0xd4, 0xee, 0xc3, 0xbd, 0x9c, 0xb9, 0x62, 0x81,
-	0x2f, 0xe0, 0x7e, 0x54, 0xcc, 0x45, 0xcb, 0xfb, 0x57, 0x5e, 0xe3, 0x2b, 0x78, 0x90, 0x3f, 0x5d,
-	0xf8, 0xfb, 0xff, 0xa1, 0x44, 0x15, 0xf6, 0x85, 0xbb, 0x95, 0x26, 0xe1, 0x14, 0x42, 0xa2, 0x7d,
-	0xf2, 0x8e, 0x15, 0x5f, 0x7d, 0xdb, 0x39, 0xa3, 0x35, 0xd6, 0x95, 0x25, 0x7a, 0xce, 0x24, 0xca,
-	0x99, 0x2e, 0x24, 0x0a, 0x63, 0x41, 0x8b, 0x63, 0xc1, 0xd8, 0x82, 0xb5, 0x4e, 0xe0, 0x11, 0x73,
-	0xb0, 0xe3, 0x99, 0x03, 0xf2, 0xd2, 0x3d, 0xa1, 0x9a, 0x8c, 0x4d, 0x4b, 0xbf, 0xd7, 0xe0, 0x5e,
-	0xce, 0x34, 0xb1, 0xde, 0x13, 0x98, 0x3b, 0x1f, 0x32, 0x71, 0x28, 0x51, 0x68, 0x08, 0xf6, 0x76,
-	0xd5, 0x8d, 0xe1, 0x2f, 0xdd, 0x13, 0x9c, 0xa0, 0x43, 0x3f, 0x82, 0xaa, 0x15, 0x2a, 0xc2, 0x67,
-	0x16, 0xd8, 0xcc, 0x5b, 0xcc, 0x84, 0x32, 0x86, 0xce, 0x4d, 0xd1, 0x1a, 0xdb, 0xb0, 0x3a, 0x2a,
-	0xda, 0xd5, 0x6e, 0x0e, 0xbf, 0xd3, 0x54, 0xd6, 0x48, 0xdd, 0x67, 0xff, 0x3b, 0x5a, 0xfd, 0x52,
-	0x83, 0x72, 0xcb, 0x0c, 0x4c, 0x6c, 0x06, 0x84, 0x55, 0x9d, 0xae, 0x75, 0xde, 0x67, 0x19, 0x4d,
-	0x24, 0x7b, 0x09, 0x42, 0xb7, 0xf2, 0x5b, 0xd3, 0xb1, 0x2e, 0x6d, 0x2b, 0x38, 0x65, 0x39, 0xa1,
-	0x82, 0x63, 0x00, 0xcd, 0x63, 0xfe, 0xd0, 0x23, 0xa6, 0xb5, 0x63, 0xf6, 0x02, 0xd7, 0x13, 0xa9,
-	0x21, 0x01, 0xa3, 0x25, 0xfa, 0x5b, 0x3b, 0xf0, 0xcc, 0x80, 0x88, 0x24, 0x11, 0x0e, 0x0d, 0x0f,
-	0xe6, 0xb8, 0x9a, 0x47, 0xaf, 0xf7, 0x9c, 0x63, 0x37, 0x59, 0x99, 0x6a, 0xe9, 0xca, 0x74, 0x1d,
-	0xca, 0x96, 0x90, 0x9a, 0x09, 0x32, 0xbb, 0x39, 0xc7, 0xd4, 0x15, 0x30, 0x1c, 0x61, 0x79, 0xb1,
-	0x6e, 0x11, 0x46, 0xc9, 0xf3, 0x6f, 0x34, 0x36, 0xfe, 0xa1, 0x85, 0x8b, 0x62, 0xbe, 0xa8, 0xb2,
-	0x46, 0xa0, 0xa7, 0x5d, 0x58, 0x23, 0xd0, 0x6f, 0x76, 0x28, 0xd9, 0x03, 0xd2, 0xb1, 0x9d, 0x1e,
-	0xd9, 0x3d, 0xec, 0xb4, 0x87, 0x6e, 0xef, 0x54, 0xf0, 0x1e, 0x45, 0x24, 0x0f, 0x50, 0x71, 0x5d,
-	0x8a, 0x0f, 0x50, 0x04, 0x93, 0x9e, 0xef, 0xdb, 0xe2, 0x98, 0x62, 0xdf, 0xd4, 0x48, 0x7d, 0x17,
-	0x9b, 0x9d, 0x7d, 0xcc, 0xca, 0x84, 0x02, 0x0e, 0x87, 0x34, 0xc3, 0xbe, 0x75, 0x4d, 0xcf, 0x62,
-	0x25, 0x58, 0x05, 0xf3, 0x01, 0xa5, 0x37, 0x9d, 0x80, 0x38, 0x8e, 0x29, 0x2e, 0x5c, 0xe1, 0xd0,
-	0xf8, 0x85, 0x06, 0xd5, 0x64, 0xf0, 0xd0, 0xe3, 0x22, 0x78, 0x47, 0x95, 0x15, 0x29, 0x55, 0x8f,
-	0x03, 0x8c, 0x5b, 0x1e, 0x0b, 0x3c, 0x3b, 0x58, 0x38, 0x65, 0x21, 0x3e, 0x58, 0x64, 0x73, 0x61,
-	0x81, 0xa7, 0x71, 0x33, 0x3c, 0x0d, 0xef, 0x02, 0xe2, 0x0d, 0x41, 0x82, 0x18, 0xdf, 0x15, 0xa0,
-	0x1a, 0x46, 0xe2, 0x51, 0x96, 0xa5, 0xd7, 0x60, 0xd6, 0x1e, 0x0c, 0x88, 0x65, 0x9b, 0x01, 0xe9,
-	0xf3, 0x2b, 0x6d, 0x19, 0xcb, 0xa0, 0x0f, 0x6a, 0xf7, 0xfc, 0x8b, 0xcf, 0x2d, 0x28, 0x0d, 0xdd,
-	0x4b, 0xc2, 0xef, 0x3e, 0x25, 0xcc, 0x07, 0x89, 0xa0, 0x9b, 0xbe, 0x72, 0xd0, 0x95, 0x93, 0x41,
-	0x17, 0x5d, 0xc3, 0x66, 0xa4, 0x6b, 0x58, 0xe4, 0x57, 0xc8, 0xf0, 0xeb, 0x6c, 0xd2, 0xaf, 0xdf,
-	0x82, 0x9e, 0xde, 0xd9, 0x68, 0x23, 0xe5, 0x58, 0x24, 0xef, 0xff, 0x94, 0x6b, 0x93, 0x0e, 0x2b,
-	0x8c, 0x38, 0x6c, 0x9e, 0x5d, 0x65, 0x7e, 0x42, 0x3c, 0x3f, 0x7e, 0xc5, 0x30, 0x30, 0xbb, 0xb7,
-	0x44, 0xc0, 0xf8, 0xd2, 0x7d, 0xc1, 0x41, 0x22, 0x61, 0x84, 0x43, 0x64, 0xd0, 0xc2, 0xe4, 0x84,
-	0x22, 0x78, 0xc9, 0xc4, 0x5e, 0xca, 0x30, 0x83, 0x60, 0x81, 0x31, 0xfe, 0xa0, 0x41, 0x75, 0x37,
-	0x51, 0xdf, 0x2a, 0x2b, 0x61, 0x4d, 0x5d, 0x09, 0x33, 0x3b, 0x9f, 0x9a, 0x8e, 0x43, 0xfa, 0x3c,
-	0xeb, 0x55, 0x70, 0x34, 0x46, 0x2d, 0xa8, 0x90, 0x77, 0x81, 0x67, 0x36, 0x43, 0x82, 0x22, 0x8b,
-	0xe2, 0x15, 0xa9, 0x3c, 0x12, 0x8c, 0xda, 0x12, 0x19, 0x4e, 0x4e, 0x32, 0xbe, 0xd3, 0xa0, 0x9e,
-	0x4d, 0x8d, 0x1e, 0x8e, 0x64, 0xcc, 0xea, 0x66, 0x95, 0xae, 0xf0, 0x2a, 0x82, 0xa6, 0x33, 0x68,
-	0x1c, 0x76, 0x85, 0x74, 0xd8, 0x25, 0xf2, 0x6b, 0x31, 0x9d, 0x5f, 0x33, 0x73, 0x27, 0x7b, 0x1c,
-	0x66, 0x59, 0xd6, 0x76, 0x4e, 0x78, 0xa2, 0xe5, 0x0f, 0x13, 0x15, 0x3c, 0x02, 0x8f, 0x3b, 0xdb,
-	0x49, 0xad, 0xa4, 0xce, 0x50, 0xd2, 0xca, 0x72, 0x34, 0xa5, 0xa6, 0xa4, 0x28, 0xe3, 0x8e, 0x5e,
-	0x9a, 0x75, 0xdc, 0xd1, 0xbb, 0xaa, 0x67, 0x45, 0x47, 0x4f, 0x2d, 0xe3, 0x75, 0xf8, 0x88, 0xce,
-	0x76, 0x86, 0x44, 0x37, 0xd0, 0xf6, 0xc3, 0x74, 0xb6, 0x3f, 0xbc, 0x13, 0xa2, 0xa6, 0x9a, 0x5a,
-	0xe5, 0xb8, 0xa9, 0x76, 0x73, 0xdb, 0x46, 0x4d, 0x35, 0xf5, 0x52, 0x1b, 0x4b, 0x50, 0xc6, 0xaf,
-	0xbf, 0xb6, 0x1d, 0xcb, 0xbd, 0x44, 0xd3, 0x50, 0xc4, 0xaf, 0x3f, 0xd3, 0x27, 0xf8, 0xc7, 0xa6,
-	0xae, 0x6d, 0xac, 0x02, 0xc4, 0x9b, 0x04, 0x95, 0x61, 0xf2, 0xe5, 0x01, 0x6e, 0x70, 0x82, 0x9d,
-	0xce, 0x0b, 0x5d, 0xdb, 0xb8, 0x80, 0x29, 0x9e, 0x2d, 0xd0, 0x0c, 0x94, 0xda, 0xdd, 0x67, 0x4f,
-	0x9e, 0xe9, 0x13, 0xf4, 0xb3, 0xdb, 0xd9, 0xfe, 0xec, 0x73, 0xbd, 0x40, 0x3f, 0x9b, 0xfb, 0x4f,
-	0x9f, 0x6e, 0xeb, 0x45, 0x4e, 0xb0, 0xf5, 0xf8, 0xb1, 0x3e, 0x49, 0x3f, 0x1b, 0x5d, 0x4a, 0x50,
-	0xe2, 0x04, 0x5b, 0x4f, 0x1f, 0xe9, 0x53, 0x0c, 0xda, 0xd9, 0xde, 0x7c, 0xac, 0x4f, 0xd3, 0xcf,
-	0x17, 0x78, 0x7b, 0xf3, 0x91, 0x5e, 0xa6, 0x9f, 0x7b, 0xfb, 0xcf, 0x9e, 0x7c, 0xae, 0xcf, 0xd0,
-	0x4f, 0xdc, 0x7d, 0xf6, 0x64, 0x4b, 0x87, 0x8d, 0x3e, 0xcc, 0x2b, 0x2e, 0x76, 0x08, 0x60, 0xaa,
-	0xd3, 0x6e, 0x1e, 0xec, 0xb7, 0xf4, 0x09, 0xfa, 0xfd, 0x6a, 0x6f, 0xbf, 0x7b, 0xd4, 0xd6, 0x35,
-	0x2a, 0xf9, 0x97, 0x07, 0x5d, 0xac, 0x17, 0xa8, 0xe4, 0xad, 0xc6, 0x37, 0x7a, 0x91, 0x82, 0xbe,
-	0x6e, 0xb7, 0x5f, 0x70, 0x69, 0x5e, 0x1d, 0xec, 0x1f, 0x7d, 0xa9, 0x97, 0xd0, 0x2c, 0x4c, 0x7f,
-	0xd5, 0x6d, 0xe0, 0xa3, 0x36, 0xd6, 0xa7, 0x28, 0xc5, 0x37, 0xed, 0x06, 0xd6, 0xa7, 0x37, 0x7f,
-	0x5e, 0x87, 0xca, 0x3e, 0x09, 0x2e, 0x5d, 0xef, 0xac, 0x43, 0xbc, 0x0b, 0xe2, 0xa1, 0x37, 0xe1,
-	0x13, 0x5a, 0xf2, 0x87, 0x01, 0xb4, 0x4a, 0xbd, 0x9f, 0xf3, 0x57, 0x4a, 0x7d, 0x2d, 0x9b, 0x40,
-	0x38, 0x7f, 0x02, 0x61, 0x96, 0xd9, 0x53, 0x9c, 0x97, 0x58, 0x5c, 0x65, 0xfc, 0x48, 0x52, 0x5f,
-	0xce, 0xc0, 0x46, 0x3c, 0xdf, 0x84, 0x2f, 0x2e, 0x2a, 0x81, 0x73, 0xfe, 0xe0, 0xe0, 0x02, 0xe7,
-	0xfe, 0x87, 0xc1, 0x98, 0xab, 0x7e, 0x9f, 0xe0, 0xcc, 0x73, 0xfe, 0xd1, 0xe0, 0xcc, 0x73, 0xff,
-	0xbc, 0x98, 0x88, 0x4d, 0x9d, 0xfa, 0x03, 0x43, 0x32, 0xb5, 0xb2, 0xf7, 0x2c, 0x9b, 0x3a, 0xa3,
-	0xa3, 0x1c, 0x9a, 0x3a, 0xc5, 0x39, 0x34, 0xb5, 0x9a, 0xed, 0x72, 0x06, 0x76, 0xd4, 0xd4, 0x2a,
-	0x81, 0x73, 0x3a, 0xfe, 0xb2, 0xa9, 0xf3, 0x98, 0xab, 0x9a, 0xe4, 0xb2, 0xa9, 0x73, 0x98, 0xe7,
-	0xf6, 0xd7, 0x27, 0xd0, 0xeb, 0x64, 0x0b, 0x31, 0xe4, 0xbd, 0x12, 0x1b, 0x52, 0xd5, 0x8d, 0xad,
-	0xaf, 0x66, 0xe2, 0x23, 0xce, 0x07, 0x52, 0x27, 0x31, 0x64, 0x7b, 0x57, 0x18, 0x52, 0xc9, 0x73,
-	0x49, 0x8d, 0x94, 0x45, 0x55, 0xb4, 0x8f, 0xb9, 0xa8, 0xd9, 0xed, 0xea, 0xfa, 0x6a, 0x26, 0x5e,
-	0xe6, 0xac, 0xe8, 0x18, 0x73, 0xce, 0xd9, 0x2d, 0xe9, 0xfa, 0x6a, 0x26, 0x3e, 0xe2, 0xdc, 0x84,
-	0x39, 0xd9, 0x4a, 0xe8, 0x4e, 0xda, 0x6e, 0x21, 0xaf, 0xda, 0x28, 0x22, 0x62, 0xf2, 0x1c, 0x66,
-	0x22, 0xb3, 0xa0, 0x5b, 0x09, 0x2b, 0x85, 0xd3, 0x6f, 0xa7, 0xa0, 0xb2, 0x00, 0xb2, 0xee, 0x5c,
-	0x00, 0x45, 0x03, 0x95, 0x0b, 0xa0, 0x6c, 0x8f, 0x32, 0x26, 0xb2, 0x9a, 0x9c, 0x89, 0xa2, 0x65,
-	0xca, 0x99, 0x28, 0x9b, 0xa3, 0x13, 0x68, 0x0f, 0xaa, 0xc9, 0xa6, 0x1f, 0x5a, 0x64, 0x8f, 0x75,
-	0xaa, 0x66, 0x5f, 0xbd, 0xae, 0x42, 0xc9, 0xa1, 0x95, 0x6e, 0xf9, 0xf1, 0xd0, 0xca, 0xe8, 0x1d,
-	0xf2, 0xd0, 0xca, 0xec, 0x12, 0xb2, 0x00, 0x50, 0x34, 0xfc, 0x78, 0x00, 0x64, 0x37, 0x10, 0x79,
-	0x00, 0xe4, 0x74, 0x0a, 0x8d, 0x09, 0xf4, 0x6d, 0xd8, 0x96, 0x48, 0xbf, 0xf0, 0xad, 0xa5, 0x1d,
-	0x9e, 0x7e, 0x63, 0xab, 0xdf, 0xcb, 0xa1, 0x88, 0xf8, 0xff, 0x14, 0x16, 0x33, 0x9f, 0xc0, 0xd0,
-	0x03, 0xca, 0x61, 0xdc, 0xeb, 0x5a, 0xfd, 0x93, 0x31, 0x54, 0xd1, 0x5a, 0x3e, 0x2c, 0xe5, 0x3d,
-	0x85, 0xa1, 0x4f, 0x13, 0xe6, 0xc8, 0x7e, 0x6b, 0xab, 0xaf, 0x8f, 0x27, 0x4c, 0x2d, 0x9a, 0xf9,
-	0xda, 0x15, 0x2d, 0x3a, 0xee, 0x39, 0x2d, 0x5a, 0x74, 0xec, 0xc3, 0x59, 0x94, 0xbb, 0x12, 0xed,
-	0xcc, 0x28, 0x77, 0xa9, 0xfa, 0x9f, 0x51, 0xee, 0x52, 0x76, 0x40, 0xb9, 0x9b, 0x32, 0xfb, 0x8f,
-	0xdc, 0x4d, 0xe3, 0x1a, 0xa1, 0xdc, 0x4d, 0xe3, 0x9b, 0x98, 0x13, 0xc8, 0x84, 0x05, 0x75, 0x3b,
-	0x10, 0xdd, 0xe3, 0xbf, 0x60, 0xe6, 0x74, 0x38, 0xeb, 0x46, 0x1e, 0x49, 0xb4, 0xc4, 0x0e, 0x54,
-	0x12, 0x57, 0x0a, 0x24, 0xa5, 0xaf, 0xe4, 0x6b, 0x62, 0x7d, 0x51, 0x81, 0x89, 0xf8, 0x7c, 0x01,
-	0x10, 0xdf, 0x02, 0x50, 0x98, 0xc4, 0x52, 0x1c, 0x16, 0xd2, 0x60, 0x59, 0x8c, 0x44, 0x51, 0x8d,
-	0xa4, 0x24, 0xa6, 0x12, 0x43, 0xdd, 0x9e, 0x61, 0x7c, 0x12, 0x15, 0x33, 0x92, 0xf2, 0x98, 0x8a,
-	0x8f, 0xba, 0x47, 0x23, 0xd5, 0x2d, 0xa9, 0xbb, 0xf3, 0xea, 0x88, 0x0d, 0xb2, 0xeb, 0x96, 0x8c,
-	0xfb, 0x41, 0x58, 0xb7, 0xa4, 0x38, 0x2f, 0x25, 0x6d, 0x93, 0x51, 0xb7, 0x64, 0xf2, 0x7c, 0x93,
-	0x6a, 0xca, 0x29, 0xea, 0x96, 0x1c, 0x81, 0x73, 0x2f, 0x34, 0x52, 0xdd, 0xa2, 0x62, 0x9e, 0x73,
-	0xd9, 0x91, 0xeb, 0x96, 0x4c, 0xe6, 0x2f, 0xe1, 0xa3, 0x54, 0xe7, 0x05, 0xd5, 0x93, 0xda, 0xca,
-	0xbd, 0xa3, 0xfa, 0x5d, 0x25, 0x2e, 0xe2, 0xd6, 0x87, 0xc5, 0xcc, 0xf7, 0x6d, 0xbe, 0x3d, 0xc7,
-	0xbd, 0x9a, 0xf3, 0xed, 0x39, 0xf6, 0x91, 0xdc, 0x98, 0x78, 0xa4, 0x21, 0x1b, 0x6a, 0x59, 0xcf,
-	0xce, 0xe8, 0xbe, 0x9a, 0x4d, 0xf2, 0x38, 0x7b, 0x90, 0x4f, 0x24, 0x2d, 0xc5, 0x37, 0x98, 0x78,
-	0x1c, 0x8a, 0x36, 0x58, 0xf2, 0x05, 0x29, 0xda, 0x60, 0xa9, 0x37, 0x24, 0x63, 0xe2, 0xed, 0x14,
-	0xfb, 0xed, 0xfe, 0xf1, 0xbf, 0x03, 0x00, 0x00, 0xff, 0xff, 0xc9, 0xa3, 0x31, 0x73, 0x96, 0x2f,
-	0x00, 0x00,
+var fileDescriptor_ns_77bc5f14a1131ce6 = []byte{
+	// 2509 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xcc, 0x5a, 0xcd, 0x72, 0xdb, 0xc8,
+	0x11, 0x16, 0x24, 0x51, 0x3f, 0x2d, 0x91, 0xa2, 0x46, 0xfe, 0xa1, 0x29, 0x79, 0x45, 0xc3, 0xde,
+	0xb5, 0xd6, 0xeb, 0xa5, 0x12, 0x6d, 0xb9, 0x6a, 0x6d, 0x67, 0x9d, 0x62, 0x28, 0xda, 0x56, 0x76,
+	0x2d, 0xd9, 0x90, 0xe5, 0xf5, 0x6e, 0x0e, 0x08, 0x04, 0x0c, 0x69, 0x94, 0x08, 0x80, 0x01, 0x86,
+	0xa2, 0x95, 0x6b, 0x8e, 0x39, 0xe7, 0x19, 0x92, 0x4b, 0x2a, 0xf7, 0x3c, 0x42, 0x0e, 0x39, 0x24,
+	0xb7, 0x3c, 0x42, 0x8e, 0x79, 0x82, 0xd4, 0xfc, 0x60, 0x08, 0x40, 0x03, 0x50, 0x59, 0xaf, 0xcb,
+	0x39, 0x89, 0x98, 0xfe, 0xfa, 0x9b, 0x9e, 0xee, 0xc6, 0x4c, 0x4f, 0x43, 0xb0, 0xe0, 0x47, 0xcd,
+	0x41, 0x18, 0x90, 0x00, 0x4d, 0xfb, 0x51, 0x7d, 0xb3, 0x17, 0x04, 0xbd, 0x3e, 0xde, 0x66, 0x23,
+	0xc7, 0xc3, 0xee, 0x36, 0x71, 0x3d, 0x1c, 0x11, 0xcb, 0x1b, 0x70, 0x50, 0x7d, 0x3d, 0x0b, 0xc0,
+	0xde, 0x80, 0x9c, 0x09, 0xe1, 0xbd, 0x9e, 0x4b, 0xde, 0x0c, 0x8f, 0x9b, 0x76, 0xe0, 0x6d, 0x1f,
+	0x87, 0x81, 0x6d, 0x59, 0xe1, 0x76, 0x3f, 0x08, 0xad, 0x08, 0x87, 0xa7, 0x38, 0xdc, 0xb6, 0x06,
+	0xee, 0xb6, 0x1d, 0x78, 0x5e, 0xe0, 0x8b, 0x3f, 0x42, 0xed, 0xf3, 0xc9, 0x6a, 0xbd, 0xd1, 0x76,
+	0x6f, 0x24, 0xe0, 0x95, 0x41, 0x18, 0x74, 0xdd, 0x3e, 0x16, 0x76, 0xeb, 0xdf, 0xc3, 0x7a, 0x3b,
+	0xc4, 0x16, 0xc1, 0x87, 0x38, 0x3c, 0x75, 0x6d, 0xfc, 0x9c, 0x8b, 0x0d, 0xfc, 0x9b, 0x21, 0x8e,
+	0x08, 0x7a, 0x08, 0x2b, 0x11, 0x17, 0x98, 0x42, 0xb1, 0xa6, 0x35, 0xb4, 0xad, 0xa5, 0x1d, 0xd4,
+	0xf4, 0xa3, 0x66, 0x46, 0xa7, 0x12, 0xa5, 0x9e, 0xf5, 0x26, 0x6c, 0xa8, 0xb9, 0xa3, 0x41, 0xe0,
+	0x47, 0x18, 0x55, 0x60, 0xda, 0x75, 0x18, 0xdf, 0xb2, 0x31, 0xed, 0x3a, 0xfa, 0x1d, 0xa8, 0x3d,
+	0xc1, 0x44, 0x6d, 0x48, 0x16, 0xfb, 0x77, 0x0d, 0xae, 0x29, 0xc0, 0x82, 0xf9, 0x5d, 0xcc, 0x46,
+	0xf7, 0x01, 0x6c, 0x66, 0xb6, 0x63, 0x5a, 0xa4, 0x36, 0xcd, 0xf4, 0xea, 0x4d, 0x1e, 0xba, 0x66,
+	0x1c, 0xba, 0xe6, 0xcb, 0x38, 0xb6, 0xc6, 0xa2, 0x40, 0xb7, 0x08, 0x55, 0x1d, 0x0e, 0x9c, 0x58,
+	0x75, 0x66, 0xb2, 0xaa, 0x40, 0xb7, 0x08, 0x0d, 0xc4, 0x11, 0x7b, 0x78, 0x0f, 0x81, 0xf8, 0x1c,
+	0xd6, 0x77, 0x71, 0x1f, 0xe7, 0x71, 0x67, 0x7d, 0x2b, 0x73, 0xc2, 0x08, 0x86, 0xc4, 0xf5, 0x7b,
+	0xe7, 0x4d, 0x09, 0xb9, 0x40, 0x65, 0x4a, 0x46, 0xa7, 0x12, 0xa6, 0x9e, 0xc7, 0x39, 0x91, 0xe5,
+	0x2e, 0xcc, 0x09, 0xb5, 0x21, 0x39, 0x39, 0x91, 0xc3, 0xfc, 0x2e, 0x66, 0x7f, 0xe8, 0x9c, 0x78,
+	0x0f, 0x81, 0x90, 0x39, 0x71, 0x31, 0xdf, 0xbe, 0x82, 0x3a, 0x8f, 0xdb, 0x2e, 0x56, 0x64, 0xd0,
+	0x97, 0x50, 0x71, 0xb0, 0x22, 0x39, 0x57, 0xa9, 0x21, 0x69, 0x8d, 0xb2, 0x83, 0x33, 0xa9, 0xa9,
+	0xe4, 0xcd, 0x49, 0x87, 0x4f, 0xe1, 0xea, 0x13, 0x4c, 0x94, 0x36, 0x64, 0xa1, 0x7f, 0xd3, 0x58,
+	0xea, 0xa8, 0x79, 0x7f, 0xb0, 0xc1, 0x1f, 0x28, 0x13, 0x5e, 0x41, 0x9d, 0x67, 0xc2, 0x8f, 0xec,
+	0xfe, 0xbb, 0x50, 0xe7, 0x59, 0x70, 0x21, 0x97, 0xfe, 0x43, 0x83, 0x39, 0x0e, 0x44, 0x57, 0x61,
+	0xde, 0xc1, 0xa7, 0x26, 0x1e, 0xba, 0x42, 0x3e, 0xe7, 0xe0, 0xd3, 0xce, 0xd0, 0x45, 0x77, 0x60,
+	0x35, 0x6d, 0x8b, 0xe9, 0x3a, 0xcc, 0x4d, 0xcb, 0xc6, 0x4a, 0x6a, 0xee, 0x3d, 0x07, 0xdd, 0x05,
+	0x94, 0xd9, 0xd4, 0x28, 0x78, 0x86, 0x81, 0xab, 0xe9, 0x3d, 0x8c, 0xa3, 0x33, 0xe9, 0x4e, 0xd1,
+	0xb3, 0x1c, 0x9d, 0xce, 0xee, 0x3d, 0x07, 0xdd, 0x86, 0x6a, 0x74, 0xe2, 0x0e, 0xcc, 0xae, 0x69,
+	0xfb, 0xc4, 0xb4, 0xdf, 0x60, 0xfb, 0xa4, 0x56, 0x6a, 0x68, 0x5b, 0x0b, 0x46, 0x99, 0x8e, 0x3f,
+	0x6e, 0xfb, 0xa4, 0x4d, 0x07, 0xf5, 0xfb, 0xb0, 0x96, 0xcc, 0xc0, 0x78, 0xed, 0x3a, 0xcc, 0x71,
+	0x73, 0x85, 0x2f, 0x61, 0xec, 0x4b, 0x43, 0x48, 0xf4, 0xcf, 0xa0, 0x2a, 0x33, 0x2c, 0xd6, 0xcb,
+	0x73, 0x8c, 0xfe, 0x67, 0x0d, 0x56, 0x13, 0x68, 0x91, 0x88, 0x17, 0x98, 0xe6, 0x03, 0xa5, 0xdc,
+	0x7d, 0x58, 0x4b, 0xa6, 0xdc, 0xff, 0xe2, 0x97, 0x26, 0xac, 0x25, 0xb3, 0x6a, 0xa2, 0x6b, 0xfe,
+	0x3a, 0x0d, 0x55, 0x0e, 0x6d, 0xd9, 0xc4, 0x3d, 0xb5, 0x88, 0x1b, 0xf8, 0xf9, 0x19, 0x76, 0x0d,
+	0x16, 0xa8, 0xc0, 0x72, 0x9c, 0x50, 0x24, 0x16, 0x05, 0xb6, 0x1c, 0x27, 0x44, 0xb7, 0x60, 0x25,
+	0x32, 0xfd, 0xd1, 0x89, 0x19, 0x99, 0xae, 0x4f, 0xcc, 0x13, 0x7c, 0x26, 0xb2, 0x69, 0x29, 0xda,
+	0x1f, 0x9d, 0x1c, 0xee, 0xf9, 0xe4, 0x6b, 0x7c, 0x46, 0x51, 0xdd, 0x0c, 0x8a, 0x67, 0xd1, 0x52,
+	0x37, 0x81, 0xba, 0x01, 0x65, 0x8e, 0xc1, 0xbe, 0xcd, 0x30, 0x25, 0x86, 0x01, 0x7f, 0x74, 0x72,
+	0xd8, 0xf1, 0x6d, 0x0a, 0xa9, 0xc1, 0x02, 0x4f, 0xaf, 0xe1, 0xa0, 0x36, 0xd7, 0xd0, 0xb6, 0xca,
+	0xc6, 0x5c, 0xb7, 0xed, 0x93, 0xa3, 0x01, 0xda, 0x84, 0x65, 0x5f, 0xa4, 0x9e, 0x13, 0x8c, 0xfc,
+	0xda, 0x3c, 0x93, 0x2e, 0xfa, 0x34, 0xed, 0x76, 0x83, 0x91, 0x4f, 0x01, 0x56, 0x12, 0xb0, 0xc0,
+	0x01, 0x96, 0x04, 0xa8, 0xf2, 0x77, 0x51, 0x95, 0xbf, 0xdf, 0xc3, 0x65, 0xe1, 0xb5, 0x8c, 0xbb,
+	0x5b, 0xf2, 0x4d, 0xb4, 0xa4, 0x57, 0x45, 0xd0, 0x2e, 0x8d, 0x83, 0x36, 0xf6, 0xb8, 0x51, 0x75,
+	0x32, 0x23, 0xfa, 0x0e, 0x5c, 0xdd, 0xc5, 0x96, 0x92, 0x3d, 0x37, 0x98, 0xf7, 0xa0, 0x2e, 0xd3,
+	0x3c, 0x41, 0x3e, 0x49, 0xed, 0xd7, 0xb0, 0xae, 0x54, 0x13, 0xef, 0xc9, 0x8f, 0xb0, 0x98, 0x7b,
+	0xbc, 0x94, 0xb0, 0x7c, 0x27, 0xf0, 0x76, 0x79, 0xc2, 0x48, 0xfa, 0x64, 0x4e, 0x69, 0xa9, 0x9c,
+	0xd2, 0x5d, 0x68, 0xf0, 0xfd, 0xe1, 0x59, 0xab, 0xdd, 0x0e, 0x3c, 0xcf, 0xf2, 0x9d, 0x17, 0x43,
+	0x3c, 0xc4, 0x7b, 0x04, 0x7b, 0x93, 0x56, 0x85, 0xaa, 0x30, 0x63, 0x8b, 0x4d, 0xaa, 0x6c, 0xd0,
+	0x9f, 0xa8, 0x0e, 0x0b, 0x36, 0x67, 0x89, 0x6a, 0xa5, 0xc6, 0xcc, 0xd6, 0xb2, 0x21, 0x9f, 0xf5,
+	0x7f, 0x69, 0x70, 0xfd, 0x10, 0xfb, 0xce, 0xf3, 0x30, 0x18, 0x84, 0x2e, 0x26, 0x56, 0x78, 0xf6,
+	0xdc, 0x3a, 0xeb, 0x07, 0x96, 0x13, 0x4f, 0xb4, 0x09, 0x4b, 0x9e, 0x65, 0x9b, 0x03, 0x3e, 0x2a,
+	0x26, 0x03, 0xcf, 0xb2, 0x05, 0x8e, 0x4e, 0xe8, 0xb9, 0xb6, 0x78, 0x2f, 0xe8, 0x4f, 0x74, 0x03,
+	0x96, 0x7b, 0x16, 0xc1, 0x23, 0xeb, 0xcc, 0xf4, 0x2c, 0x3b, 0xaa, 0xcd, 0xb0, 0x49, 0x97, 0xc4,
+	0xd8, 0x33, 0xcb, 0x8e, 0xd0, 0x3d, 0xb8, 0x32, 0x08, 0xfa, 0x56, 0xe8, 0xfe, 0x96, 0x79, 0xca,
+	0x74, 0xfd, 0x53, 0x1c, 0x46, 0xd4, 0xc3, 0xb3, 0x2c, 0xe3, 0x2e, 0x27, 0xa5, 0x7b, 0xb1, 0x10,
+	0x6d, 0xc0, 0x62, 0x37, 0xa4, 0x86, 0xf9, 0x36, 0x7f, 0x3b, 0xca, 0xc6, 0x78, 0x80, 0x1e, 0x1e,
+	0x4e, 0x28, 0x5e, 0x8b, 0x69, 0x27, 0xd4, 0xff, 0xa9, 0xc1, 0xfc, 0x13, 0x3e, 0x69, 0xf6, 0x60,
+	0x41, 0x08, 0x66, 0x7d, 0xcb, 0xc3, 0xcc, 0xec, 0x45, 0x83, 0xfd, 0x46, 0x0d, 0x58, 0x72, 0x70,
+	0x64, 0x87, 0xee, 0x80, 0xc5, 0x7a, 0x86, 0x89, 0x92, 0x43, 0xd4, 0x95, 0x7d, 0x8b, 0xb8, 0x64,
+	0xe8, 0x60, 0x66, 0xa8, 0x66, 0xc8, 0x67, 0x6a, 0x5b, 0x3f, 0xf0, 0x7b, 0x5c, 0x58, 0x62, 0xc2,
+	0xf1, 0x00, 0xd5, 0xb4, 0xfa, 0x42, 0x73, 0x8e, 0x6b, 0xc6, 0xcf, 0xf4, 0x98, 0x89, 0xfd, 0x95,
+	0x38, 0x66, 0xe6, 0xf9, 0x31, 0x23, 0x24, 0xf2, 0x98, 0xd1, 0xbf, 0x82, 0x4b, 0x3c, 0x3b, 0xc4,
+	0xd2, 0xe2, 0x40, 0x7d, 0x0c, 0xf3, 0x02, 0x2b, 0xb2, 0x74, 0x89, 0x66, 0x69, 0x0c, 0x8a, 0x65,
+	0xfa, 0x4d, 0x76, 0x26, 0x64, 0x74, 0xb3, 0xc7, 0xee, 0x5f, 0xa6, 0x01, 0x25, 0x51, 0x22, 0x67,
+	0x2f, 0x36, 0xc5, 0x87, 0x39, 0x3d, 0xd0, 0x23, 0x28, 0x77, 0xdd, 0x30, 0x22, 0x66, 0x84, 0xb1,
+	0x4f, 0xb5, 0x67, 0x27, 0x6a, 0x2f, 0x31, 0x85, 0x43, 0x8c, 0xfd, 0x16, 0x41, 0x3f, 0x83, 0xe5,
+	0xbe, 0x95, 0x50, 0x2f, 0x4d, 0x54, 0x07, 0x8a, 0xe7, 0xda, 0x34, 0x2a, 0xfc, 0xec, 0xfa, 0x61,
+	0x51, 0xf9, 0x04, 0x2e, 0xf1, 0xf3, 0x6b, 0x42, 0x60, 0x7e, 0x3f, 0x0d, 0xcb, 0x02, 0x72, 0x48,
+	0x2c, 0x12, 0xa1, 0x2f, 0x61, 0x51, 0xde, 0xf9, 0xc5, 0x0c, 0x85, 0xfe, 0x92, 0x60, 0xd4, 0x84,
+	0xb5, 0xf0, 0xad, 0x39, 0xb0, 0xec, 0x13, 0x4c, 0x22, 0x33, 0xc4, 0x36, 0x76, 0x4f, 0x31, 0x2f,
+	0x9c, 0x4a, 0xc6, 0x6a, 0xf8, 0xf6, 0x39, 0x97, 0x18, 0x42, 0x80, 0xbe, 0x80, 0x2b, 0x0a, 0xbc,
+	0x19, 0x9c, 0xb0, 0x30, 0x95, 0x8c, 0xb5, 0x73, 0x2a, 0x07, 0x27, 0x74, 0x12, 0xa2, 0x98, 0x64,
+	0x96, 0x4f, 0x42, 0xce, 0x4d, 0x72, 0x17, 0x50, 0x02, 0x8f, 0x3d, 0x97, 0x10, 0xec, 0xb0, 0x50,
+	0x94, 0x8c, 0xaa, 0x84, 0x77, 0xf8, 0xb8, 0xfe, 0x1f, 0x0d, 0xae, 0x8c, 0xd3, 0x94, 0x39, 0x24,
+	0x76, 0xdc, 0x75, 0x80, 0xf8, 0x9d, 0x92, 0x0e, 0x5c, 0x14, 0x23, 0x7b, 0x74, 0x31, 0x0b, 0xae,
+	0x4f, 0x70, 0x78, 0x6a, 0xf5, 0xd9, 0x8a, 0x2b, 0x3b, 0x57, 0x69, 0x5c, 0x5a, 0xbd, 0x5e, 0x88,
+	0x7b, 0x62, 0xd3, 0xe1, 0x62, 0x43, 0x02, 0x51, 0x1b, 0x56, 0x22, 0x62, 0x85, 0xc4, 0x1c, 0x7b,
+	0x7c, 0x72, 0x86, 0x56, 0x98, 0x8a, 0x7c, 0x46, 0x3f, 0x87, 0x32, 0xf6, 0x9d, 0x04, 0xc5, 0xe4,
+	0x34, 0x5d, 0xc6, 0xbe, 0x23, 0x9f, 0xf4, 0x36, 0xbb, 0x90, 0xa4, 0xd7, 0x2c, 0xde, 0xcf, 0x2d,
+	0x98, 0x0b, 0x71, 0x34, 0xec, 0x93, 0x9a, 0xd6, 0x98, 0xd9, 0x5a, 0xda, 0xa9, 0x26, 0x72, 0x8d,
+	0x23, 0x85, 0x5c, 0xff, 0x83, 0x06, 0x2b, 0xfc, 0x00, 0x93, 0x27, 0x4b, 0xfe, 0x91, 0xb2, 0x09,
+	0x4b, 0xdd, 0xd0, 0x93, 0x47, 0x00, 0xdf, 0xe9, 0xa1, 0x1b, 0x7a, 0xf1, 0x11, 0xb0, 0x06, 0x25,
+	0x56, 0x34, 0x30, 0x77, 0x94, 0x8d, 0x59, 0x5a, 0x92, 0xa0, 0xcb, 0x30, 0xd7, 0x35, 0x07, 0x41,
+	0x48, 0xc4, 0x59, 0x54, 0xea, 0x3e, 0x0f, 0x42, 0x42, 0xb7, 0x49, 0x3b, 0xf0, 0xbb, 0x6e, 0xe8,
+	0x89, 0xc0, 0x2e, 0x18, 0xe3, 0x01, 0xfd, 0x49, 0x7c, 0x59, 0xcf, 0x18, 0x17, 0x87, 0xf5, 0x36,
+	0xcc, 0xba, 0x04, 0x7b, 0x22, 0xd3, 0xd7, 0xc6, 0xe7, 0xf0, 0x18, 0xc9, 0x00, 0xfa, 0x43, 0x68,
+	0x3c, 0xee, 0x0f, 0xa3, 0x37, 0x09, 0xe9, 0xe3, 0x20, 0xdc, 0xc5, 0xa7, 0x9d, 0xa3, 0xbd, 0x89,
+	0x95, 0xc1, 0x23, 0xb8, 0x29, 0x2b, 0x03, 0x49, 0x1c, 0x5d, 0x5c, 0xff, 0x05, 0xdc, 0x2a, 0xd6,
+	0x17, 0xf1, 0xfa, 0x14, 0x4a, 0xd4, 0xd8, 0x48, 0x84, 0x4b, 0xb9, 0x1c, 0x8e, 0x10, 0x26, 0xed,
+	0xe3, 0xb7, 0xac, 0x56, 0xeb, 0xbb, 0xfe, 0x09, 0xad, 0xc7, 0x2e, 0x6e, 0xd2, 0x43, 0x66, 0x52,
+	0x81, 0xbe, 0x30, 0x49, 0x86, 0x52, 0x1b, 0x87, 0x52, 0x6f, 0x41, 0xe3, 0x90, 0x84, 0xd8, 0xf2,
+	0x1e, 0x87, 0x96, 0x87, 0xbf, 0x09, 0x7a, 0x74, 0x2d, 0x99, 0x9d, 0xaa, 0xf8, 0x85, 0xd3, 0xff,
+	0xa4, 0xc1, 0x8d, 0x02, 0x0e, 0x31, 0xfb, 0x23, 0xa8, 0x0e, 0x07, 0xd4, 0x38, 0xb3, 0x4b, 0x51,
+	0x66, 0x84, 0x89, 0x6c, 0x30, 0xf4, 0x46, 0xcd, 0x23, 0x26, 0x63, 0x04, 0x87, 0x98, 0x3c, 0x9d,
+	0x32, 0x2a, 0xc3, 0xd4, 0x08, 0x7a, 0x00, 0x15, 0x47, 0x2c, 0x8f, 0x33, 0x88, 0xd3, 0x67, 0x95,
+	0x6a, 0xcb, 0x85, 0x53, 0xc1, 0xd3, 0x29, 0xa3, 0xec, 0x24, 0x07, 0x7e, 0x31, 0x0f, 0x25, 0xa6,
+	0xa2, 0x3f, 0x80, 0xcd, 0xf3, 0x96, 0x5e, 0xb0, 0x14, 0xfd, 0xa3, 0xa6, 0x72, 0x55, 0xe6, 0x06,
+	0xf6, 0x7f, 0xb1, 0xca, 0x57, 0xec, 0x84, 0x7f, 0xc5, 0x0b, 0x2b, 0x69, 0x5a, 0x0d, 0xe6, 0xe3,
+	0x42, 0x4c, 0x63, 0xe5, 0x4f, 0xfc, 0x88, 0x3e, 0xa1, 0x7b, 0x4b, 0x8f, 0x0a, 0xf8, 0x7e, 0x59,
+	0x69, 0x8a, 0xa6, 0xb0, 0xc1, 0x46, 0x0d, 0x21, 0xd5, 0x7f, 0xa7, 0x41, 0xe5, 0x49, 0xaa, 0x66,
+	0x39, 0x57, 0x7b, 0xd1, 0x82, 0xf4, 0x8d, 0xe5, 0xfb, 0xb8, 0x1f, 0xd5, 0xa6, 0x1b, 0x33, 0x5b,
+	0x65, 0x43, 0x3e, 0xa3, 0x0e, 0x54, 0xf0, 0x5b, 0x12, 0x5a, 0xa6, 0x44, 0xcc, 0xb0, 0x77, 0xe3,
+	0xa3, 0xc4, 0x56, 0x26, 0x78, 0x3b, 0x14, 0xd7, 0xe6, 0x30, 0xa3, 0x8c, 0x13, 0x4f, 0x11, 0x2d,
+	0xfd, 0xea, 0xf9, 0x68, 0xb4, 0x03, 0xe0, 0x05, 0xce, 0xb0, 0x3f, 0x2e, 0xea, 0x2b, 0x3b, 0x28,
+	0x5e, 0xd0, 0x33, 0x29, 0x31, 0x12, 0xa8, 0x74, 0xed, 0x39, 0x9d, 0xad, 0x3d, 0x37, 0x60, 0xf1,
+	0xd8, 0xf2, 0x9d, 0x91, 0xeb, 0x90, 0x37, 0x62, 0x1b, 0x1c, 0x0f, 0x50, 0xb7, 0x1e, 0xbb, 0x24,
+	0xb4, 0x08, 0x16, 0x9b, 0x61, 0xfc, 0x88, 0x3e, 0x83, 0xd5, 0x68, 0x10, 0x62, 0xcb, 0x71, 0xfd,
+	0x9e, 0xd9, 0xb5, 0x6c, 0x12, 0x84, 0xbc, 0x4a, 0x2f, 0x1b, 0x55, 0x29, 0x78, 0xcc, 0xc7, 0xc7,
+	0x6d, 0xd2, 0xf4, 0xd2, 0x12, 0xdd, 0xb9, 0x4c, 0x1d, 0x99, 0xec, 0xce, 0x65, 0x74, 0x2a, 0xe9,
+	0xc2, 0x72, 0xdc, 0x26, 0xcd, 0x72, 0x17, 0xb6, 0x49, 0xd5, 0x86, 0xe4, 0xb4, 0x49, 0x73, 0x98,
+	0xdf, 0xc5, 0xec, 0x0f, 0xdd, 0x26, 0x7d, 0x0f, 0x81, 0x90, 0x6d, 0xd2, 0x0b, 0xf9, 0xf6, 0xce,
+	0x06, 0x2c, 0x18, 0xaf, 0xbf, 0x75, 0x7d, 0x27, 0x18, 0xa1, 0x79, 0x98, 0x31, 0x5e, 0xff, 0xb4,
+	0x3a, 0xc5, 0x7f, 0xec, 0x54, 0xb5, 0x3b, 0x7d, 0x58, 0x53, 0xd4, 0x34, 0x08, 0x60, 0xee, 0xb0,
+	0xd3, 0x3e, 0xd8, 0xdf, 0xad, 0x4e, 0xd1, 0xdf, 0xcf, 0xf6, 0xf6, 0x8f, 0x5e, 0x76, 0xaa, 0x1a,
+	0x5a, 0x80, 0xd9, 0xa7, 0x07, 0x47, 0x46, 0x75, 0x9a, 0x32, 0xec, 0xb6, 0xbe, 0xab, 0xce, 0xd0,
+	0xa1, 0x6f, 0x3b, 0x9d, 0xaf, 0xab, 0xb3, 0x68, 0x11, 0x4a, 0xcf, 0x0e, 0xf6, 0x5f, 0x3e, 0xad,
+	0x96, 0xd0, 0x12, 0xcc, 0xbf, 0x38, 0x6a, 0x19, 0x2f, 0x3b, 0x46, 0x75, 0x8e, 0x22, 0xbe, 0xeb,
+	0xb4, 0x8c, 0xea, 0xfc, 0xce, 0xbf, 0x6b, 0x70, 0x69, 0x1f, 0x93, 0x51, 0x10, 0x9e, 0x1c, 0xb2,
+	0x8f, 0x41, 0xa2, 0xfb, 0x8f, 0x7e, 0x15, 0xdf, 0x59, 0xd2, 0x9f, 0x03, 0xd0, 0x26, 0xf5, 0x47,
+	0xc1, 0xd7, 0xa0, 0x7a, 0x23, 0x1f, 0xc0, 0xb3, 0x47, 0x9f, 0x42, 0x06, 0xbb, 0xd1, 0x64, 0x98,
+	0x37, 0x98, 0xa7, 0x73, 0xbe, 0xed, 0xd4, 0xaf, 0xe7, 0x48, 0x25, 0xe7, 0x8b, 0xb8, 0x9c, 0x57,
+	0x19, 0x5c, 0xf0, 0xd5, 0xa4, 0x7e, 0xe5, 0x5c, 0x02, 0x75, 0xbc, 0x01, 0x39, 0xe3, 0x94, 0xaa,
+	0x4f, 0x22, 0x9c, 0xb2, 0xe0, 0x63, 0x49, 0x01, 0xa5, 0x74, 0x6b, 0xba, 0xa3, 0x9e, 0x74, 0xab,
+	0xb2, 0xd7, 0x9e, 0x74, 0xab, 0xfa, 0xdb, 0x85, 0x74, 0x6b, 0x86, 0x39, 0x76, 0xab, 0x9a, 0xf6,
+	0x7a, 0x8e, 0xf4, 0xbc, 0x5b, 0x55, 0x06, 0x17, 0x7c, 0x78, 0xb8, 0x88, 0x5b, 0x55, 0x94, 0x05,
+	0xdf, 0x1b, 0x0a, 0x28, 0x5f, 0xa7, 0xfb, 0xb3, 0x31, 0xe3, 0x47, 0x63, 0xa7, 0xa9, 0x7a, 0xd7,
+	0xf5, 0xcd, 0x5c, 0xb9, 0x5c, 0xff, 0x41, 0xa2, 0x7d, 0x1b, 0xd3, 0xae, 0x0b, 0xa7, 0x29, 0x39,
+	0x37, 0xd4, 0xc2, 0x04, 0xe1, 0x9a, 0xa2, 0x4b, 0xcf, 0x4d, 0xcd, 0x6f, 0xdf, 0x17, 0xac, 0xfd,
+	0x20, 0xdd, 0x48, 0x4d, 0x11, 0xe6, 0xf7, 0xed, 0x0b, 0x08, 0x5b, 0xb0, 0x9c, 0xf4, 0x09, 0xba,
+	0x9a, 0xf5, 0xd2, 0x64, 0x8a, 0x07, 0xb0, 0x28, 0x5d, 0x80, 0x2e, 0xa5, 0x3c, 0x12, 0x2b, 0x5f,
+	0xce, 0x8c, 0x4a, 0x07, 0xb5, 0x60, 0x39, 0xe9, 0x07, 0x3e, 0xbd, 0xa2, 0xcb, 0x5c, 0xbc, 0x82,
+	0xe4, 0xca, 0x39, 0x85, 0xa2, 0xdb, 0x5c, 0x40, 0xd1, 0x81, 0x4a, 0xba, 0x63, 0x8a, 0xae, 0xb1,
+	0xeb, 0xa6, 0xaa, 0xcf, 0x59, 0x40, 0xb3, 0x07, 0xd5, 0x6c, 0x73, 0x94, 0xa7, 0x4f, 0x4e, 0xcb,
+	0xb4, 0x38, 0xc7, 0x15, 0xcd, 0x4f, 0x1e, 0xe7, 0xfc, 0x66, 0x2a, 0xcf, 0xf1, 0x82, 0xae, 0xa9,
+	0x3e, 0x85, 0x0e, 0xe1, 0xb2, 0xf2, 0x0a, 0x87, 0x1a, 0xd9, 0xc8, 0x67, 0x6f, 0x77, 0x85, 0x3b,
+	0xdd, 0xb5, 0xdc, 0xeb, 0x1c, 0xba, 0x45, 0x89, 0x27, 0xdd, 0xf6, 0x0a, 0xc8, 0x23, 0xd8, 0x28,
+	0xba, 0xae, 0xa1, 0xdb, 0xa9, 0x45, 0xe7, 0x5f, 0x08, 0xeb, 0x5b, 0x93, 0x81, 0xd2, 0x4d, 0x7c,
+	0xd2, 0xdc, 0x0b, 0x99, 0x9c, 0x74, 0xd2, 0x95, 0x4f, 0x4e, 0x3a, 0xf1, 0x6e, 0xa7, 0x4f, 0xa1,
+	0x5f, 0xb2, 0xfd, 0x27, 0xd5, 0x90, 0x46, 0x39, 0x7e, 0x91, 0x5b, 0x8f, 0xb2, 0x7d, 0xcd, 0x43,
+	0x92, 0xdb, 0xa5, 0xe6, 0x21, 0x99, 0xd4, 0xc4, 0x2e, 0x08, 0xc9, 0x11, 0x5c, 0x51, 0xb7, 0xa5,
+	0xd1, 0x0d, 0xfe, 0xdf, 0x07, 0x05, 0x2d, 0xeb, 0x02, 0xda, 0x36, 0x94, 0x53, 0x45, 0x2e, 0xaa,
+	0x8d, 0xed, 0x4c, 0xdf, 0x67, 0x0b, 0x48, 0xbe, 0x02, 0x18, 0x17, 0xb3, 0x28, 0xde, 0x79, 0xce,
+	0xa9, 0x67, 0x86, 0xa5, 0xdf, 0xda, 0x50, 0x4e, 0xd5, 0x8e, 0xdc, 0x06, 0x55, 0xf3, 0xb0, 0x78,
+	0x21, 0xa9, 0x22, 0x91, 0x93, 0xa8, 0x5a, 0x88, 0x17, 0x29, 0x1f, 0x32, 0xf7, 0xb5, 0xcd, 0x73,
+	0x4e, 0xc9, 0x2f, 0x1f, 0xd4, 0x35, 0xbd, 0x2c, 0x1f, 0x32, 0xcc, 0x1b, 0x69, 0xaf, 0xe4, 0x94,
+	0x0f, 0xb9, 0x9c, 0x2f, 0x32, 0x4d, 0x56, 0x45, 0xf9, 0xa0, 0x66, 0xbe, 0x40, 0xf9, 0xa0, 0xa2,
+	0x2c, 0xa8, 0xc3, 0x0b, 0x28, 0xbf, 0x81, 0x95, 0x4c, 0x83, 0x0e, 0xd5, 0xd3, 0x2b, 0x4b, 0x76,
+	0x2a, 0xeb, 0xeb, 0x4a, 0x99, 0x5c, 0x73, 0x1f, 0xae, 0xe5, 0xf6, 0x4d, 0xf8, 0x6b, 0x36, 0xa9,
+	0x35, 0x53, 0xff, 0x78, 0x02, 0x2a, 0x9e, 0xeb, 0x27, 0x1a, 0x72, 0xa1, 0x96, 0xd7, 0xbe, 0x40,
+	0x37, 0xd5, 0x34, 0xe9, 0x13, 0xe7, 0x56, 0x31, 0x28, 0x31, 0xd5, 0x23, 0xf6, 0x1a, 0x89, 0x06,
+	0x44, 0xee, 0x2e, 0x14, 0xbf, 0x47, 0x99, 0x46, 0x85, 0x3e, 0x75, 0x3c, 0xc7, 0x90, 0x5f, 0xfc,
+	0x37, 0x00, 0x00, 0xff, 0xff, 0x12, 0x29, 0x14, 0xec, 0x12, 0x27, 0x00, 0x00,
 }

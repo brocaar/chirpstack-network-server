@@ -29,7 +29,7 @@ func RequestDevStatus(ds *storage.DeviceSession) storage.MACCommandBlock {
 	return block
 }
 
-func handleDevStatusAns(ds *storage.DeviceSession, sp storage.ServiceProfile, asClient as.ApplicationServerClient, block storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
+func handleDevStatusAns(ds *storage.DeviceSession, sp storage.ServiceProfile, asClient as.ApplicationServerServiceClient, block storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 	if len(block.MACCommands) != 1 {
 		return nil, fmt.Errorf("exactly one mac-command expected, got %d", len(block.MACCommands))
 	}

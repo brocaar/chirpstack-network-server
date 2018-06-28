@@ -36,9 +36,9 @@ func TestDevice(t *testing.T) {
 			Convey("When creating a device", func() {
 				d := Device{
 					DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-					ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
-					DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
-					RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+					ServiceProfileID: sp.ID,
+					DeviceProfileID:  dp.ID,
+					RoutingProfileID: rp.ID,
 					SkipFCntCheck:    true,
 				}
 				So(CreateDevice(db, &d), ShouldBeNil)
@@ -64,9 +64,9 @@ func TestDevice(t *testing.T) {
 					rpNew := RoutingProfile{}
 					So(CreateRoutingProfile(db, &rpNew), ShouldBeNil)
 
-					d.ServiceProfileID = spNew.ServiceProfile.ServiceProfileID
-					d.DeviceProfileID = dpNew.DeviceProfile.DeviceProfileID
-					d.RoutingProfileID = rpNew.RoutingProfile.RoutingProfileID
+					d.ServiceProfileID = spNew.ID
+					d.DeviceProfileID = dpNew.ID
+					d.RoutingProfileID = rpNew.ID
 					d.SkipFCntCheck = false
 					So(UpdateDevice(db, &d), ShouldBeNil)
 					d.UpdatedAt = d.UpdatedAt.UTC().Truncate(time.Millisecond)

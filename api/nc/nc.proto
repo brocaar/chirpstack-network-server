@@ -2,63 +2,40 @@ syntax = "proto3";
 
 package nc;
 
-// NetworkController is the server to be implemeted by the network-controller.
-service NetworkController {
-	// HandleRXInfo publishes rx related meta-data.
-	rpc HandleRXInfo(HandleRXInfoRequest) returns (HandleRXInfoResponse) {}
+import "google/protobuf/empty.proto";
+import "github.com/brocaar/loraserver/api/gw/gw.proto";
 
-	// HandleDataUpMACCommand publishes a mac-command received by an end-device.
+// NetworkControllerService is the server to be implemeted by the network-controller.
+service NetworkControllerService {
+	// HandleUplinkMetaData handles uplink meta-rata.
+	rpc HandleUplinkMetaData(HandleUplinkMetaDataRequest) returns (google.protobuf.Empty) {}
+
+	// HandleUplinkMACCommand handles an uplink mac-command.
 	// This method will only be called in case the mac-command request was
 	// enqueued throught the API or when the CID is >= 0x80 (proprietary
 	// mac-command range).
-	rpc HandleDataUpMACCommand(HandleDataUpMACCommandRequest) returns (HandleDataUpMACCommandResponse) {}
+	rpc HandleUplinkMACCommand(HandleUplinkMACCommandRequest) returns (google.protobuf.Empty) {}
 }
 
-message DataRate {
-	string modulation = 1;
-	uint32 bandWidth = 2;
-	uint32 spreadFactor = 3;
-	uint32 bitrate = 4;
+message HandleUplinkMetaDataRequest {
+	// Device EUI (8 bytes).
+	bytes dev_eui = 1;
+
+	// TX meta-data.
+	gw.UplinkTXInfo tx_info = 2;
+
+	// RX meta-data.
+	repeated gw.UplinkRXInfo rx_info = 3;
 }
 
-message RXInfo {
-	bytes mac = 1;
-	string time = 2;
-	int32 rssi = 3;
-	double loRaSNR = 4;
-}
 
-message TXInfo {
-	int64 frequency = 1;
-	DataRate dataRate = 2;
-	bool adr = 3;
-	string codeRate = 4;
-}
-
-message HandleRXInfoRequest {
-	bytes devEUI = 1;
-	TXInfo txInfo = 3;
-	repeated RXInfo rxInfo = 4;
-}
-
-message HandleRXInfoResponse {}
-
-message HandleDataUpMACCommandRequest {
-	// DevEUI of the node.
-	bytes devEUI = 1;
+message HandleUplinkMACCommandRequest {
+	// Device EUI (8 bytes).
+	bytes dev_eui = 1;
 
 	// Command identifier (specified by the LoRaWAN specs).
-	uint32 cid = 5;
+	uint32 cid = 2;
 
 	// MAC-command payload(s).
 	repeated bytes commands = 6;
 }
-
-message HandleDataUpMACCommandResponse {}
-
-message HandleErrorRequest {
-	bytes devEUI = 1;
-	string error = 3;
-}
-
-message HandleErrorResponse {}

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/lorawan"
@@ -14,9 +15,9 @@ type Device struct {
 	DevEUI           lorawan.EUI64 `db:"dev_eui"`
 	CreatedAt        time.Time     `db:"created_at"`
 	UpdatedAt        time.Time     `db:"updated_at"`
-	DeviceProfileID  string        `db:"device_profile_id"`
-	ServiceProfileID string        `db:"service_profile_id"`
-	RoutingProfileID string        `db:"routing_profile_id"`
+	DeviceProfileID  uuid.UUID     `db:"device_profile_id"`
+	ServiceProfileID uuid.UUID     `db:"service_profile_id"`
+	RoutingProfileID uuid.UUID     `db:"routing_profile_id"`
 	SkipFCntCheck    bool          `db:"skip_fcnt_check"`
 }
 

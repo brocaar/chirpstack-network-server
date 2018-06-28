@@ -5,21 +5,22 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/brocaar/loraserver/api/nc"
+	"github.com/golang/protobuf/ptypes/empty"
 )
 
 // NopNetworkControllerClient is a dummy network-controller client which is
 // used when no network-controller is present / configured.
 type NopNetworkControllerClient struct{}
 
-// HandleRXInfo publishes rx related meta-data.
-func (n *NopNetworkControllerClient) HandleRXInfo(ctx context.Context, in *nc.HandleRXInfoRequest, opts ...grpc.CallOption) (*nc.HandleRXInfoResponse, error) {
-	return &nc.HandleRXInfoResponse{}, nil
+// HandleUplinkMetaData handles uplink meta-rata.
+func (n *NopNetworkControllerClient) HandleUplinkMetaData(ctx context.Context, in *nc.HandleUplinkMetaDataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return &empty.Empty{}, nil
 }
 
-// HandleDataUpMACCommand publishes a mac-command received by an end-device.
+// HandleUplinkMACCommand handles an uplink mac-command.
 // This method will only be called in case the mac-command request was
 // enqueued throught the API or when the CID is >= 0x80 (proprietary
 // mac-command range).
-func (n *NopNetworkControllerClient) HandleDataUpMACCommand(ctx context.Context, in *nc.HandleDataUpMACCommandRequest, opts ...grpc.CallOption) (*nc.HandleDataUpMACCommandResponse, error) {
-	return &nc.HandleDataUpMACCommandResponse{}, nil
+func (n *NopNetworkControllerClient) HandleUplinkMACCommand(ctx context.Context, in *nc.HandleUplinkMACCommandRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return &empty.Empty{}, nil
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/lorawan"
@@ -50,7 +51,7 @@ type Gateway struct {
 	LastSeenAt       *time.Time    `db:"last_seen_at"`
 	Location         GPSPoint      `db:"location"`
 	Altitude         float64       `db:"altitude"`
-	GatewayProfileID *string       `db:"gateway_profile_id"`
+	GatewayProfileID *uuid.UUID    `db:"gateway_profile_id"`
 }
 
 // Validate validates the data of the gateway.

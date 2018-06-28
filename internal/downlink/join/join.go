@@ -130,16 +130,16 @@ func sendJoinAcceptResponse(ctx *joinContext) error {
 }
 
 func logDownlinkFrame(ctx *joinContext) error {
-	frameLog := framelog.DownlinkFrameLog{
-		PHYPayload: ctx.PHYPayload,
-		TXInfo:     ctx.TXInfo,
+	downlinkFrame, err := framelog.CreateDownlinkFrame(ctx.Token, ctx.PHYPayload, ctx.TXInfo)
+	if err != nil {
+		return errors.Wrap(err, "create downlink frame error")
 	}
 
-	if err := framelog.LogDownlinkFrameForGateway(frameLog); err != nil {
+	if err := framelog.LogDownlinkFrameForGateway(downlinkFrame); err != nil {
 		log.WithError(err).Error("log downlink frame for gateway error")
 	}
 
-	if err := framelog.LogDownlinkFrameForDevEUI(ctx.DeviceSession.DevEUI, frameLog); err != nil {
+	if err := framelog.LogDownlinkFrameForDevEUI(ctx.DeviceSession.DevEUI, downlinkFrame); err != nil {
 		log.WithError(err).Error("log downlink frame for device error")
 	}
 

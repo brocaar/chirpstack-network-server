@@ -7,6 +7,7 @@ import (
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
+	uuid "github.com/satori/go.uuid"
 )
 
 // DeviceSessionOld defines the "old" device-session struct.
@@ -88,12 +89,16 @@ type DeviceSessionOld struct {
 }
 
 func migrateDeviceSessionOld(d DeviceSessionOld) DeviceSession {
+	dpID, _ := uuid.FromString(d.DeviceProfileID)
+	spID, _ := uuid.FromString(d.ServiceProfileID)
+	rpID, _ := uuid.FromString(d.RoutingProfileID)
+
 	out := DeviceSession{
 		MACVersion: "1.0.2",
 
-		DeviceProfileID:  d.DeviceProfileID,
-		ServiceProfileID: d.ServiceProfileID,
-		RoutingProfileID: d.RoutingProfileID,
+		DeviceProfileID:  dpID,
+		ServiceProfileID: spID,
+		RoutingProfileID: rpID,
 
 		DevAddr:     d.DevAddr,
 		DevEUI:      d.DevEUI,

@@ -58,32 +58,26 @@ func TestOTAAScenarios(t *testing.T) {
 		config.C.JoinServer.Pool = test.NewJoinServerPool(jsClient)
 		config.C.NetworkServer.Gateway.Backend.Backend = test.NewGatewayBackend()
 
-		sp := storage.ServiceProfile{
-			ServiceProfile: backend.ServiceProfile{},
-		}
+		sp := storage.ServiceProfile{}
 		So(storage.CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 		dp := storage.DeviceProfile{
-			DeviceProfile: backend.DeviceProfile{
-				MACVersion:   "1.0.2",
-				RXDelay1:     3,
-				RXDROffset1:  1,
-				RXDataRate2:  5,
-				SupportsJoin: true,
-			},
+			MACVersion:   "1.0.2",
+			RXDelay1:     3,
+			RXDROffset1:  1,
+			RXDataRate2:  5,
+			SupportsJoin: true,
 		}
 		So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
 
-		rp := storage.RoutingProfile{
-			RoutingProfile: backend.RoutingProfile{},
-		}
+		rp := storage.RoutingProfile{}
 		So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
 		d := storage.Device{
 			DevEUI:           lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
-			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
-			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
-			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+			DeviceProfileID:  dp.ID,
+			RoutingProfileID: rp.ID,
+			ServiceProfileID: sp.ID,
 		}
 		So(storage.CreateDevice(config.C.PostgreSQL.DB, &d), ShouldBeNil)
 
@@ -209,7 +203,7 @@ func TestOTAAScenarios(t *testing.T) {
 							ReceiverID:      "0102030405060708",
 							MessageType:     backend.JoinReq,
 						},
-						MACVersion: dp.DeviceProfile.MACVersion,
+						MACVersion: dp.MACVersion,
 						PHYPayload: backend.HEXBytes(jrBytes),
 						DevEUI:     d.DevEUI,
 						DLSettings: lorawan.DLSettings{
@@ -229,9 +223,9 @@ func TestOTAAScenarios(t *testing.T) {
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
 						MACVersion:            "1.0.2",
-						RoutingProfileID:      rp.RoutingProfile.RoutingProfileID,
-						DeviceProfileID:       dp.DeviceProfile.DeviceProfileID,
-						ServiceProfileID:      sp.ServiceProfile.ServiceProfileID,
+						RoutingProfileID:      rp.ID,
+						DeviceProfileID:       dp.ID,
+						ServiceProfileID:      sp.ID,
 						JoinEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 						DevEUI:                lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
 						FNwkSIntKey:           lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
@@ -306,9 +300,9 @@ func TestOTAAScenarios(t *testing.T) {
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
 						MACVersion:            "1.1.0",
-						RoutingProfileID:      rp.RoutingProfile.RoutingProfileID,
-						DeviceProfileID:       dp.DeviceProfile.DeviceProfileID,
-						ServiceProfileID:      sp.ServiceProfile.ServiceProfileID,
+						RoutingProfileID:      rp.ID,
+						DeviceProfileID:       dp.ID,
+						ServiceProfileID:      sp.ID,
 						JoinEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 						DevEUI:                lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
 						SNwkSIntKey:           lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
@@ -348,8 +342,8 @@ func TestOTAAScenarios(t *testing.T) {
 							ReceiverID:      "0102030405060708",
 							MessageType:     backend.JoinReq,
 						},
-						MACVersion: dp.DeviceProfile.MACVersion,
-						PHYPayload: backend.HEXBytes(jrBytes),
+						MACVersion: dp.MACVersion,
+						PHYPayload: jrBytes,
 						DevEUI:     d.DevEUI,
 						DLSettings: lorawan.DLSettings{
 							RX2DataRate: uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
@@ -368,9 +362,9 @@ func TestOTAAScenarios(t *testing.T) {
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
 						MACVersion:            "1.0.2",
-						RoutingProfileID:      rp.RoutingProfile.RoutingProfileID,
-						DeviceProfileID:       dp.DeviceProfile.DeviceProfileID,
-						ServiceProfileID:      sp.ServiceProfile.ServiceProfileID,
+						RoutingProfileID:      rp.ID,
+						DeviceProfileID:       dp.ID,
+						ServiceProfileID:      sp.ID,
 						JoinEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 						DevEUI:                lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
 						FNwkSIntKey:           lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
@@ -435,7 +429,7 @@ func TestOTAAScenarios(t *testing.T) {
 							ReceiverID:      "0102030405060708",
 							MessageType:     backend.JoinReq,
 						},
-						MACVersion: dp.DeviceProfile.MACVersion,
+						MACVersion: dp.MACVersion,
 						PHYPayload: backend.HEXBytes(jrBytes),
 						DevEUI:     d.DevEUI,
 						DLSettings: lorawan.DLSettings{
@@ -456,9 +450,9 @@ func TestOTAAScenarios(t *testing.T) {
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
 						MACVersion:            "1.0.2",
-						RoutingProfileID:      rp.RoutingProfile.RoutingProfileID,
-						DeviceProfileID:       dp.DeviceProfile.DeviceProfileID,
-						ServiceProfileID:      sp.ServiceProfile.ServiceProfileID,
+						RoutingProfileID:      rp.ID,
+						DeviceProfileID:       dp.ID,
+						ServiceProfileID:      sp.ID,
 						JoinEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 						DevEUI:                lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
 						FNwkSIntKey:           lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},

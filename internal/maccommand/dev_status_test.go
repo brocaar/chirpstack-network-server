@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -51,10 +50,8 @@ func TestDevStatusAns(t *testing.T) {
 					DevEUI: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 				},
 				ServiceProfile: storage.ServiceProfile{
-					ServiceProfile: backend.ServiceProfile{
-						ReportDevStatusBattery: true,
-						ReportDevStatusMargin:  true,
-					},
+					ReportDevStatusBattery: true,
+					ReportDevStatusMargin:  true,
 				},
 				ReceivedMACCommandBlock: storage.MACCommandBlock{
 					CID: lorawan.DevStatusAns,
@@ -80,9 +77,7 @@ func TestDevStatusAns(t *testing.T) {
 					DevEUI: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 				},
 				ServiceProfile: storage.ServiceProfile{
-					ServiceProfile: backend.ServiceProfile{
-						ReportDevStatusBattery: true,
-					},
+					ReportDevStatusBattery: true,
 				},
 				ReceivedMACCommandBlock: storage.MACCommandBlock{
 					CID: lorawan.DevStatusAns,
@@ -107,9 +102,7 @@ func TestDevStatusAns(t *testing.T) {
 					DevEUI: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 				},
 				ServiceProfile: storage.ServiceProfile{
-					ServiceProfile: backend.ServiceProfile{
-						ReportDevStatusMargin: true,
-					},
+					ReportDevStatusMargin: true,
 				},
 				ReceivedMACCommandBlock: storage.MACCommandBlock{
 					CID: lorawan.DevStatusAns,

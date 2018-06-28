@@ -2,22 +2,25 @@ syntax = "proto3";
 
 package as;
 
-// ApplicationServer is the server to be implemented by the application server.
-service ApplicationServer {
-    // HandleUplinkData publishes data received from an end-device.
-    rpc HandleUplinkData(HandleUplinkDataRequest) returns (HandleUplinkDataResponse) {}
+import "google/protobuf/empty.proto";
+import "github.com/brocaar/loraserver/api/gw/gw.proto";
+
+// ApplicationServerService is the service providing the application-server interface.
+service ApplicationServerService {
+    // HandleUplinkData handles uplink data received from an end-device.
+    rpc HandleUplinkData(HandleUplinkDataRequest) returns (google.protobuf.Empty) {}
 
     // HandleProprietaryUplink handles proprietary uplink payloads.
-    rpc HandleProprietaryUplink(HandleProprietaryUplinkRequest) returns (HandleProprietaryUplinkResponse) {}
+    rpc HandleProprietaryUplink(HandleProprietaryUplinkRequest) returns (google.protobuf.Empty) {}
 
-    // HandleError publishes an error message.
-    rpc HandleError(HandleErrorRequest) returns (HandleErrorResponse) {}
+    // HandleError handles an error message.
+    rpc HandleError(HandleErrorRequest) returns (google.protobuf.Empty) {}
 
-    // HandleDownlinkACK sends a downlink ACK or nACK response.
-    rpc HandleDownlinkACK(HandleDownlinkACKRequest) returns (HandleDownlinkACKResponse) {}
+    // HandleDownlinkACK handles a downlink ACK or nACK response.
+    rpc HandleDownlinkACK(HandleDownlinkACKRequest) returns (google.protobuf.Empty) {}
 
-    // SetDeviceStatus updates the device-status for the given device.
-    rpc SetDeviceStatus(SetDeviceStatusRequest) returns (SetDeviceStatusResponse) {}
+    // SetDeviceStatus updates the device-status for a device.
+    rpc SetDeviceStatus(SetDeviceStatusRequest) returns (google.protobuf.Empty) {}
 }
 
 enum RXWindow {
@@ -26,7 +29,7 @@ enum RXWindow {
 }
 
 enum ErrorType {
-    Generic = 0;
+    GENERIC = 0;
     OTAA = 1;
     DATA_UP_FCNT = 2;
     DATA_UP_MIC = 3;
@@ -34,62 +37,53 @@ enum ErrorType {
     DEVICE_QUEUE_ITEM_FCNT = 5;
 }
 
-message DataRate {
-    string modulation = 1;
-    uint32 bandWidth = 2;
-    uint32 spreadFactor = 3;
-    uint32 bitrate = 4;
-}
-
-message RXInfo {
-    bytes mac = 1;
-    string time = 2;
-    int32 rssi = 3;
-    double loRaSNR = 4;
-    string name = 5;
-    double latitude = 6;
-    double longitude = 7;
-    double altitude = 8;
-}
-
-message TXInfo {
-    int64 frequency = 1;
-    DataRate dataRate = 2;
-    bool adr = 3;
-    string codeRate = 4;
-}
 
 message HandleUplinkDataRequest {
-    bytes devEUI = 1;
-    bytes appEUI = 2;
-    uint32 fCnt = 3;
-    uint32 fPort = 4;
-    bytes data = 5;
-    TXInfo txInfo = 6;
-    repeated RXInfo rxInfo = 7;
+    // DevEUI EUI (8 bytes).
+    bytes dev_eui = 1;
+
+    // Join EUI used for OTAA activation (8 bytes).
+    bytes join_eui = 2;
+
+    // Frame-counter.
+    uint32 f_cnt = 3;
+
+    // Frame port.
+    uint32 f_port = 4;
+
+    // ADR enabled.
+    bool adr = 5;
+
+    // Data-rate.
+    uint32 dr = 6;
+
+    // TX meta-data.
+    gw.UplinkTXInfo tx_info = 7;
+
+    // RX meta-data.
+    repeated gw.UplinkRXInfo rx_info = 8;
+
+    // Received data (encrypted).
+    bytes data = 9;
 }
 
 message HandleProprietaryUplinkRequest {
     // MACPayload of the proprietary LoRaWAN frame.
-    bytes macPayload = 1;
+    bytes mac_payload = 1;
 
     // MIC of the proprietary LoRaWAN frame.
     bytes mic = 2;
 
     // TXInfo contains the TX related meta-data.
-    TXInfo txInfo = 3;
+    gw.UplinkTXInfo tx_info = 3;
 
     // RXInfo contains the RX related meta-data.
-    repeated RXInfo rxInfo = 4;
+    repeated gw.UplinkRXInfo rx_info = 4;
 }
 
-message HandleProprietaryUplinkResponse {}
-
-message HandleUplinkDataResponse {}
-
 message HandleErrorRequest {
-    // DevEUI of the device.
-    bytes devEUI = 1;
+    // Device EUI (8 bytes).
+    bytes dev_eui = 1;
 
     // Type of the error.
     ErrorType type = 3;
@@ -98,23 +92,19 @@ message HandleErrorRequest {
     string error = 4;
 
     // Frame-counter (if applicable) related to the error.
-    uint32 fCnt = 5;
+    uint32 f_cnt = 5;
 }
 
-message HandleErrorResponse {}
-
 message HandleDownlinkACKRequest {
-    // DevEUI of the device.
-    bytes devEUI = 1;
+    // Device EUI (8 bytes).
+    bytes dev_eui = 1;
 
     // Downlink frame-counter.
-    uint32 fCnt = 2;
+    uint32 f_cnt = 2;
 
     // Frame was acknowledged?
     bool acknowledged = 3;
 }
-
-message HandleDownlinkACKResponse {}
 
 message SetDeviceStatusRequest {
     // Device EUI (8 bytes).
@@ -132,5 +122,3 @@ message SetDeviceStatusRequest {
     // 256:     The device-status is not available.
     int32  margin = 3;
 }
-
-message SetDeviceStatusResponse {}

@@ -174,10 +174,10 @@ func TestHandleConfigurationUpdate(t *testing.T) {
 				},
 			}
 			So(CreateGatewayProfile(db, &gp), ShouldBeNil)
-			gp, err = GetGatewayProfile(db, gp.GatewayProfileID)
+			gp, err = GetGatewayProfile(db, gp.ID)
 			So(err, ShouldBeNil)
 
-			g.GatewayProfileID = &gp.GatewayProfileID
+			g.GatewayProfileID = &gp.ID
 			So(UpdateGateway(db, &g), ShouldBeNil)
 
 			Convey("When calling handleConfigurationUpdate", func() {

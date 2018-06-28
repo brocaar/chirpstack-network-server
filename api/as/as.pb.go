@@ -6,6 +6,8 @@ package as
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
+import gw "github.com/brocaar/loraserver/api/gw"
+import empty "github.com/golang/protobuf/ptypes/empty"
 
 import (
 	context "golang.org/x/net/context"
@@ -43,13 +45,13 @@ func (x RXWindow) String() string {
 	return proto.EnumName(RXWindow_name, int32(x))
 }
 func (RXWindow) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{0}
+	return fileDescriptor_as_bb25f16ab88cf09e, []int{0}
 }
 
 type ErrorType int32
 
 const (
-	ErrorType_Generic                ErrorType = 0
+	ErrorType_GENERIC                ErrorType = 0
 	ErrorType_OTAA                   ErrorType = 1
 	ErrorType_DATA_UP_FCNT           ErrorType = 2
 	ErrorType_DATA_UP_MIC            ErrorType = 3
@@ -58,7 +60,7 @@ const (
 )
 
 var ErrorType_name = map[int32]string{
-	0: "Generic",
+	0: "GENERIC",
 	1: "OTAA",
 	2: "DATA_UP_FCNT",
 	3: "DATA_UP_MIC",
@@ -66,7 +68,7 @@ var ErrorType_name = map[int32]string{
 	5: "DEVICE_QUEUE_ITEM_FCNT",
 }
 var ErrorType_value = map[string]int32{
-	"Generic":                0,
+	"GENERIC":                0,
 	"OTAA":                   1,
 	"DATA_UP_FCNT":           2,
 	"DATA_UP_MIC":            3,
@@ -78,245 +80,38 @@ func (x ErrorType) String() string {
 	return proto.EnumName(ErrorType_name, int32(x))
 }
 func (ErrorType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{1}
-}
-
-type DataRate struct {
-	Modulation           string   `protobuf:"bytes,1,opt,name=modulation,proto3" json:"modulation,omitempty"`
-	BandWidth            uint32   `protobuf:"varint,2,opt,name=bandWidth,proto3" json:"bandWidth,omitempty"`
-	SpreadFactor         uint32   `protobuf:"varint,3,opt,name=spreadFactor,proto3" json:"spreadFactor,omitempty"`
-	Bitrate              uint32   `protobuf:"varint,4,opt,name=bitrate,proto3" json:"bitrate,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *DataRate) Reset()         { *m = DataRate{} }
-func (m *DataRate) String() string { return proto.CompactTextString(m) }
-func (*DataRate) ProtoMessage()    {}
-func (*DataRate) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{0}
-}
-func (m *DataRate) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_DataRate.Unmarshal(m, b)
-}
-func (m *DataRate) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_DataRate.Marshal(b, m, deterministic)
-}
-func (dst *DataRate) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DataRate.Merge(dst, src)
-}
-func (m *DataRate) XXX_Size() int {
-	return xxx_messageInfo_DataRate.Size(m)
-}
-func (m *DataRate) XXX_DiscardUnknown() {
-	xxx_messageInfo_DataRate.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_DataRate proto.InternalMessageInfo
-
-func (m *DataRate) GetModulation() string {
-	if m != nil {
-		return m.Modulation
-	}
-	return ""
-}
-
-func (m *DataRate) GetBandWidth() uint32 {
-	if m != nil {
-		return m.BandWidth
-	}
-	return 0
-}
-
-func (m *DataRate) GetSpreadFactor() uint32 {
-	if m != nil {
-		return m.SpreadFactor
-	}
-	return 0
-}
-
-func (m *DataRate) GetBitrate() uint32 {
-	if m != nil {
-		return m.Bitrate
-	}
-	return 0
-}
-
-type RXInfo struct {
-	Mac                  []byte   `protobuf:"bytes,1,opt,name=mac,proto3" json:"mac,omitempty"`
-	Time                 string   `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
-	Rssi                 int32    `protobuf:"varint,3,opt,name=rssi,proto3" json:"rssi,omitempty"`
-	LoRaSNR              float64  `protobuf:"fixed64,4,opt,name=loRaSNR,proto3" json:"loRaSNR,omitempty"`
-	Name                 string   `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`
-	Latitude             float64  `protobuf:"fixed64,6,opt,name=latitude,proto3" json:"latitude,omitempty"`
-	Longitude            float64  `protobuf:"fixed64,7,opt,name=longitude,proto3" json:"longitude,omitempty"`
-	Altitude             float64  `protobuf:"fixed64,8,opt,name=altitude,proto3" json:"altitude,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *RXInfo) Reset()         { *m = RXInfo{} }
-func (m *RXInfo) String() string { return proto.CompactTextString(m) }
-func (*RXInfo) ProtoMessage()    {}
-func (*RXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{1}
-}
-func (m *RXInfo) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_RXInfo.Unmarshal(m, b)
-}
-func (m *RXInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_RXInfo.Marshal(b, m, deterministic)
-}
-func (dst *RXInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RXInfo.Merge(dst, src)
-}
-func (m *RXInfo) XXX_Size() int {
-	return xxx_messageInfo_RXInfo.Size(m)
-}
-func (m *RXInfo) XXX_DiscardUnknown() {
-	xxx_messageInfo_RXInfo.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RXInfo proto.InternalMessageInfo
-
-func (m *RXInfo) GetMac() []byte {
-	if m != nil {
-		return m.Mac
-	}
-	return nil
-}
-
-func (m *RXInfo) GetTime() string {
-	if m != nil {
-		return m.Time
-	}
-	return ""
-}
-
-func (m *RXInfo) GetRssi() int32 {
-	if m != nil {
-		return m.Rssi
-	}
-	return 0
-}
-
-func (m *RXInfo) GetLoRaSNR() float64 {
-	if m != nil {
-		return m.LoRaSNR
-	}
-	return 0
-}
-
-func (m *RXInfo) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *RXInfo) GetLatitude() float64 {
-	if m != nil {
-		return m.Latitude
-	}
-	return 0
-}
-
-func (m *RXInfo) GetLongitude() float64 {
-	if m != nil {
-		return m.Longitude
-	}
-	return 0
-}
-
-func (m *RXInfo) GetAltitude() float64 {
-	if m != nil {
-		return m.Altitude
-	}
-	return 0
-}
-
-type TXInfo struct {
-	Frequency            int64     `protobuf:"varint,1,opt,name=frequency,proto3" json:"frequency,omitempty"`
-	DataRate             *DataRate `protobuf:"bytes,2,opt,name=dataRate,proto3" json:"dataRate,omitempty"`
-	Adr                  bool      `protobuf:"varint,3,opt,name=adr,proto3" json:"adr,omitempty"`
-	CodeRate             string    `protobuf:"bytes,4,opt,name=codeRate,proto3" json:"codeRate,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
-	XXX_unrecognized     []byte    `json:"-"`
-	XXX_sizecache        int32     `json:"-"`
-}
-
-func (m *TXInfo) Reset()         { *m = TXInfo{} }
-func (m *TXInfo) String() string { return proto.CompactTextString(m) }
-func (*TXInfo) ProtoMessage()    {}
-func (*TXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{2}
-}
-func (m *TXInfo) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TXInfo.Unmarshal(m, b)
-}
-func (m *TXInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TXInfo.Marshal(b, m, deterministic)
-}
-func (dst *TXInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TXInfo.Merge(dst, src)
-}
-func (m *TXInfo) XXX_Size() int {
-	return xxx_messageInfo_TXInfo.Size(m)
-}
-func (m *TXInfo) XXX_DiscardUnknown() {
-	xxx_messageInfo_TXInfo.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_TXInfo proto.InternalMessageInfo
-
-func (m *TXInfo) GetFrequency() int64 {
-	if m != nil {
-		return m.Frequency
-	}
-	return 0
-}
-
-func (m *TXInfo) GetDataRate() *DataRate {
-	if m != nil {
-		return m.DataRate
-	}
-	return nil
-}
-
-func (m *TXInfo) GetAdr() bool {
-	if m != nil {
-		return m.Adr
-	}
-	return false
-}
-
-func (m *TXInfo) GetCodeRate() string {
-	if m != nil {
-		return m.CodeRate
-	}
-	return ""
+	return fileDescriptor_as_bb25f16ab88cf09e, []int{1}
 }
 
 type HandleUplinkDataRequest struct {
-	DevEUI               []byte    `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
-	AppEUI               []byte    `protobuf:"bytes,2,opt,name=appEUI,proto3" json:"appEUI,omitempty"`
-	FCnt                 uint32    `protobuf:"varint,3,opt,name=fCnt,proto3" json:"fCnt,omitempty"`
-	FPort                uint32    `protobuf:"varint,4,opt,name=fPort,proto3" json:"fPort,omitempty"`
-	Data                 []byte    `protobuf:"bytes,5,opt,name=data,proto3" json:"data,omitempty"`
-	TxInfo               *TXInfo   `protobuf:"bytes,6,opt,name=txInfo,proto3" json:"txInfo,omitempty"`
-	RxInfo               []*RXInfo `protobuf:"bytes,7,rep,name=rxInfo,proto3" json:"rxInfo,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
-	XXX_unrecognized     []byte    `json:"-"`
-	XXX_sizecache        int32     `json:"-"`
+	// DevEUI EUI (8 bytes).
+	DevEui []byte `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
+	// Join EUI used for OTAA activation (8 bytes).
+	JoinEui []byte `protobuf:"bytes,2,opt,name=join_eui,json=joinEui,proto3" json:"join_eui,omitempty"`
+	// Frame-counter.
+	FCnt uint32 `protobuf:"varint,3,opt,name=f_cnt,json=fCnt,proto3" json:"f_cnt,omitempty"`
+	// Frame port.
+	FPort uint32 `protobuf:"varint,4,opt,name=f_port,json=fPort,proto3" json:"f_port,omitempty"`
+	// ADR enabled.
+	Adr bool `protobuf:"varint,5,opt,name=adr,proto3" json:"adr,omitempty"`
+	// Data-rate.
+	Dr uint32 `protobuf:"varint,6,opt,name=dr,proto3" json:"dr,omitempty"`
+	// TX meta-data.
+	TxInfo *gw.UplinkTXInfo `protobuf:"bytes,7,opt,name=tx_info,json=txInfo,proto3" json:"tx_info,omitempty"`
+	// RX meta-data.
+	RxInfo []*gw.UplinkRXInfo `protobuf:"bytes,8,rep,name=rx_info,json=rxInfo,proto3" json:"rx_info,omitempty"`
+	// Received data (encrypted).
+	Data                 []byte   `protobuf:"bytes,9,opt,name=data,proto3" json:"data,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *HandleUplinkDataRequest) Reset()         { *m = HandleUplinkDataRequest{} }
 func (m *HandleUplinkDataRequest) String() string { return proto.CompactTextString(m) }
 func (*HandleUplinkDataRequest) ProtoMessage()    {}
 func (*HandleUplinkDataRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{3}
+	return fileDescriptor_as_bb25f16ab88cf09e, []int{0}
 }
 func (m *HandleUplinkDataRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleUplinkDataRequest.Unmarshal(m, b)
@@ -336,16 +131,16 @@ func (m *HandleUplinkDataRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_HandleUplinkDataRequest proto.InternalMessageInfo
 
-func (m *HandleUplinkDataRequest) GetDevEUI() []byte {
+func (m *HandleUplinkDataRequest) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
 
-func (m *HandleUplinkDataRequest) GetAppEUI() []byte {
+func (m *HandleUplinkDataRequest) GetJoinEui() []byte {
 	if m != nil {
-		return m.AppEUI
+		return m.JoinEui
 	}
 	return nil
 }
@@ -364,6 +159,34 @@ func (m *HandleUplinkDataRequest) GetFPort() uint32 {
 	return 0
 }
 
+func (m *HandleUplinkDataRequest) GetAdr() bool {
+	if m != nil {
+		return m.Adr
+	}
+	return false
+}
+
+func (m *HandleUplinkDataRequest) GetDr() uint32 {
+	if m != nil {
+		return m.Dr
+	}
+	return 0
+}
+
+func (m *HandleUplinkDataRequest) GetTxInfo() *gw.UplinkTXInfo {
+	if m != nil {
+		return m.TxInfo
+	}
+	return nil
+}
+
+func (m *HandleUplinkDataRequest) GetRxInfo() []*gw.UplinkRXInfo {
+	if m != nil {
+		return m.RxInfo
+	}
+	return nil
+}
+
 func (m *HandleUplinkDataRequest) GetData() []byte {
 	if m != nil {
 		return m.Data
@@ -371,39 +194,25 @@ func (m *HandleUplinkDataRequest) GetData() []byte {
 	return nil
 }
 
-func (m *HandleUplinkDataRequest) GetTxInfo() *TXInfo {
-	if m != nil {
-		return m.TxInfo
-	}
-	return nil
-}
-
-func (m *HandleUplinkDataRequest) GetRxInfo() []*RXInfo {
-	if m != nil {
-		return m.RxInfo
-	}
-	return nil
-}
-
 type HandleProprietaryUplinkRequest struct {
 	// MACPayload of the proprietary LoRaWAN frame.
-	MacPayload []byte `protobuf:"bytes,1,opt,name=macPayload,proto3" json:"macPayload,omitempty"`
+	MacPayload []byte `protobuf:"bytes,1,opt,name=mac_payload,json=macPayload,proto3" json:"mac_payload,omitempty"`
 	// MIC of the proprietary LoRaWAN frame.
 	Mic []byte `protobuf:"bytes,2,opt,name=mic,proto3" json:"mic,omitempty"`
 	// TXInfo contains the TX related meta-data.
-	TxInfo *TXInfo `protobuf:"bytes,3,opt,name=txInfo,proto3" json:"txInfo,omitempty"`
+	TxInfo *gw.UplinkTXInfo `protobuf:"bytes,3,opt,name=tx_info,json=txInfo,proto3" json:"tx_info,omitempty"`
 	// RXInfo contains the RX related meta-data.
-	RxInfo               []*RXInfo `protobuf:"bytes,4,rep,name=rxInfo,proto3" json:"rxInfo,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
-	XXX_unrecognized     []byte    `json:"-"`
-	XXX_sizecache        int32     `json:"-"`
+	RxInfo               []*gw.UplinkRXInfo `protobuf:"bytes,4,rep,name=rx_info,json=rxInfo,proto3" json:"rx_info,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
+	XXX_unrecognized     []byte             `json:"-"`
+	XXX_sizecache        int32              `json:"-"`
 }
 
 func (m *HandleProprietaryUplinkRequest) Reset()         { *m = HandleProprietaryUplinkRequest{} }
 func (m *HandleProprietaryUplinkRequest) String() string { return proto.CompactTextString(m) }
 func (*HandleProprietaryUplinkRequest) ProtoMessage()    {}
 func (*HandleProprietaryUplinkRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{4}
+	return fileDescriptor_as_bb25f16ab88cf09e, []int{1}
 }
 func (m *HandleProprietaryUplinkRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleProprietaryUplinkRequest.Unmarshal(m, b)
@@ -437,89 +246,29 @@ func (m *HandleProprietaryUplinkRequest) GetMic() []byte {
 	return nil
 }
 
-func (m *HandleProprietaryUplinkRequest) GetTxInfo() *TXInfo {
+func (m *HandleProprietaryUplinkRequest) GetTxInfo() *gw.UplinkTXInfo {
 	if m != nil {
 		return m.TxInfo
 	}
 	return nil
 }
 
-func (m *HandleProprietaryUplinkRequest) GetRxInfo() []*RXInfo {
+func (m *HandleProprietaryUplinkRequest) GetRxInfo() []*gw.UplinkRXInfo {
 	if m != nil {
 		return m.RxInfo
 	}
 	return nil
 }
 
-type HandleProprietaryUplinkResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *HandleProprietaryUplinkResponse) Reset()         { *m = HandleProprietaryUplinkResponse{} }
-func (m *HandleProprietaryUplinkResponse) String() string { return proto.CompactTextString(m) }
-func (*HandleProprietaryUplinkResponse) ProtoMessage()    {}
-func (*HandleProprietaryUplinkResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{5}
-}
-func (m *HandleProprietaryUplinkResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HandleProprietaryUplinkResponse.Unmarshal(m, b)
-}
-func (m *HandleProprietaryUplinkResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HandleProprietaryUplinkResponse.Marshal(b, m, deterministic)
-}
-func (dst *HandleProprietaryUplinkResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HandleProprietaryUplinkResponse.Merge(dst, src)
-}
-func (m *HandleProprietaryUplinkResponse) XXX_Size() int {
-	return xxx_messageInfo_HandleProprietaryUplinkResponse.Size(m)
-}
-func (m *HandleProprietaryUplinkResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_HandleProprietaryUplinkResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HandleProprietaryUplinkResponse proto.InternalMessageInfo
-
-type HandleUplinkDataResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *HandleUplinkDataResponse) Reset()         { *m = HandleUplinkDataResponse{} }
-func (m *HandleUplinkDataResponse) String() string { return proto.CompactTextString(m) }
-func (*HandleUplinkDataResponse) ProtoMessage()    {}
-func (*HandleUplinkDataResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{6}
-}
-func (m *HandleUplinkDataResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HandleUplinkDataResponse.Unmarshal(m, b)
-}
-func (m *HandleUplinkDataResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HandleUplinkDataResponse.Marshal(b, m, deterministic)
-}
-func (dst *HandleUplinkDataResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HandleUplinkDataResponse.Merge(dst, src)
-}
-func (m *HandleUplinkDataResponse) XXX_Size() int {
-	return xxx_messageInfo_HandleUplinkDataResponse.Size(m)
-}
-func (m *HandleUplinkDataResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_HandleUplinkDataResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HandleUplinkDataResponse proto.InternalMessageInfo
-
 type HandleErrorRequest struct {
-	// DevEUI of the device.
-	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	// Device EUI (8 bytes).
+	DevEui []byte `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
 	// Type of the error.
 	Type ErrorType `protobuf:"varint,3,opt,name=type,proto3,enum=as.ErrorType" json:"type,omitempty"`
 	// Error string describing the error.
 	Error string `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
 	// Frame-counter (if applicable) related to the error.
-	FCnt                 uint32   `protobuf:"varint,5,opt,name=fCnt,proto3" json:"fCnt,omitempty"`
+	FCnt                 uint32   `protobuf:"varint,5,opt,name=f_cnt,json=fCnt,proto3" json:"f_cnt,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -529,7 +278,7 @@ func (m *HandleErrorRequest) Reset()         { *m = HandleErrorRequest{} }
 func (m *HandleErrorRequest) String() string { return proto.CompactTextString(m) }
 func (*HandleErrorRequest) ProtoMessage()    {}
 func (*HandleErrorRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{7}
+	return fileDescriptor_as_bb25f16ab88cf09e, []int{2}
 }
 func (m *HandleErrorRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleErrorRequest.Unmarshal(m, b)
@@ -549,9 +298,9 @@ func (m *HandleErrorRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_HandleErrorRequest proto.InternalMessageInfo
 
-func (m *HandleErrorRequest) GetDevEUI() []byte {
+func (m *HandleErrorRequest) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
@@ -560,7 +309,7 @@ func (m *HandleErrorRequest) GetType() ErrorType {
 	if m != nil {
 		return m.Type
 	}
-	return ErrorType_Generic
+	return ErrorType_GENERIC
 }
 
 func (m *HandleErrorRequest) GetError() string {
@@ -577,41 +326,11 @@ func (m *HandleErrorRequest) GetFCnt() uint32 {
 	return 0
 }
 
-type HandleErrorResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *HandleErrorResponse) Reset()         { *m = HandleErrorResponse{} }
-func (m *HandleErrorResponse) String() string { return proto.CompactTextString(m) }
-func (*HandleErrorResponse) ProtoMessage()    {}
-func (*HandleErrorResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{8}
-}
-func (m *HandleErrorResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HandleErrorResponse.Unmarshal(m, b)
-}
-func (m *HandleErrorResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HandleErrorResponse.Marshal(b, m, deterministic)
-}
-func (dst *HandleErrorResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HandleErrorResponse.Merge(dst, src)
-}
-func (m *HandleErrorResponse) XXX_Size() int {
-	return xxx_messageInfo_HandleErrorResponse.Size(m)
-}
-func (m *HandleErrorResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_HandleErrorResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HandleErrorResponse proto.InternalMessageInfo
-
 type HandleDownlinkACKRequest struct {
-	// DevEUI of the device.
-	DevEUI []byte `protobuf:"bytes,1,opt,name=devEUI,proto3" json:"devEUI,omitempty"`
+	// Device EUI (8 bytes).
+	DevEui []byte `protobuf:"bytes,1,opt,name=dev_eui,json=devEui,proto3" json:"dev_eui,omitempty"`
 	// Downlink frame-counter.
-	FCnt uint32 `protobuf:"varint,2,opt,name=fCnt,proto3" json:"fCnt,omitempty"`
+	FCnt uint32 `protobuf:"varint,2,opt,name=f_cnt,json=fCnt,proto3" json:"f_cnt,omitempty"`
 	// Frame was acknowledged?
 	Acknowledged         bool     `protobuf:"varint,3,opt,name=acknowledged,proto3" json:"acknowledged,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -623,7 +342,7 @@ func (m *HandleDownlinkACKRequest) Reset()         { *m = HandleDownlinkACKReque
 func (m *HandleDownlinkACKRequest) String() string { return proto.CompactTextString(m) }
 func (*HandleDownlinkACKRequest) ProtoMessage()    {}
 func (*HandleDownlinkACKRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{9}
+	return fileDescriptor_as_bb25f16ab88cf09e, []int{3}
 }
 func (m *HandleDownlinkACKRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleDownlinkACKRequest.Unmarshal(m, b)
@@ -643,9 +362,9 @@ func (m *HandleDownlinkACKRequest) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_HandleDownlinkACKRequest proto.InternalMessageInfo
 
-func (m *HandleDownlinkACKRequest) GetDevEUI() []byte {
+func (m *HandleDownlinkACKRequest) GetDevEui() []byte {
 	if m != nil {
-		return m.DevEUI
+		return m.DevEui
 	}
 	return nil
 }
@@ -663,36 +382,6 @@ func (m *HandleDownlinkACKRequest) GetAcknowledged() bool {
 	}
 	return false
 }
-
-type HandleDownlinkACKResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *HandleDownlinkACKResponse) Reset()         { *m = HandleDownlinkACKResponse{} }
-func (m *HandleDownlinkACKResponse) String() string { return proto.CompactTextString(m) }
-func (*HandleDownlinkACKResponse) ProtoMessage()    {}
-func (*HandleDownlinkACKResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{10}
-}
-func (m *HandleDownlinkACKResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_HandleDownlinkACKResponse.Unmarshal(m, b)
-}
-func (m *HandleDownlinkACKResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_HandleDownlinkACKResponse.Marshal(b, m, deterministic)
-}
-func (dst *HandleDownlinkACKResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_HandleDownlinkACKResponse.Merge(dst, src)
-}
-func (m *HandleDownlinkACKResponse) XXX_Size() int {
-	return xxx_messageInfo_HandleDownlinkACKResponse.Size(m)
-}
-func (m *HandleDownlinkACKResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_HandleDownlinkACKResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_HandleDownlinkACKResponse proto.InternalMessageInfo
 
 type SetDeviceStatusRequest struct {
 	// Device EUI (8 bytes).
@@ -716,7 +405,7 @@ func (m *SetDeviceStatusRequest) Reset()         { *m = SetDeviceStatusRequest{}
 func (m *SetDeviceStatusRequest) String() string { return proto.CompactTextString(m) }
 func (*SetDeviceStatusRequest) ProtoMessage()    {}
 func (*SetDeviceStatusRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{11}
+	return fileDescriptor_as_bb25f16ab88cf09e, []int{4}
 }
 func (m *SetDeviceStatusRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SetDeviceStatusRequest.Unmarshal(m, b)
@@ -757,50 +446,12 @@ func (m *SetDeviceStatusRequest) GetMargin() int32 {
 	return 0
 }
 
-type SetDeviceStatusResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *SetDeviceStatusResponse) Reset()         { *m = SetDeviceStatusResponse{} }
-func (m *SetDeviceStatusResponse) String() string { return proto.CompactTextString(m) }
-func (*SetDeviceStatusResponse) ProtoMessage()    {}
-func (*SetDeviceStatusResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_as_819b983bab735c1a, []int{12}
-}
-func (m *SetDeviceStatusResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_SetDeviceStatusResponse.Unmarshal(m, b)
-}
-func (m *SetDeviceStatusResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_SetDeviceStatusResponse.Marshal(b, m, deterministic)
-}
-func (dst *SetDeviceStatusResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SetDeviceStatusResponse.Merge(dst, src)
-}
-func (m *SetDeviceStatusResponse) XXX_Size() int {
-	return xxx_messageInfo_SetDeviceStatusResponse.Size(m)
-}
-func (m *SetDeviceStatusResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_SetDeviceStatusResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_SetDeviceStatusResponse proto.InternalMessageInfo
-
 func init() {
-	proto.RegisterType((*DataRate)(nil), "as.DataRate")
-	proto.RegisterType((*RXInfo)(nil), "as.RXInfo")
-	proto.RegisterType((*TXInfo)(nil), "as.TXInfo")
 	proto.RegisterType((*HandleUplinkDataRequest)(nil), "as.HandleUplinkDataRequest")
 	proto.RegisterType((*HandleProprietaryUplinkRequest)(nil), "as.HandleProprietaryUplinkRequest")
-	proto.RegisterType((*HandleProprietaryUplinkResponse)(nil), "as.HandleProprietaryUplinkResponse")
-	proto.RegisterType((*HandleUplinkDataResponse)(nil), "as.HandleUplinkDataResponse")
 	proto.RegisterType((*HandleErrorRequest)(nil), "as.HandleErrorRequest")
-	proto.RegisterType((*HandleErrorResponse)(nil), "as.HandleErrorResponse")
 	proto.RegisterType((*HandleDownlinkACKRequest)(nil), "as.HandleDownlinkACKRequest")
-	proto.RegisterType((*HandleDownlinkACKResponse)(nil), "as.HandleDownlinkACKResponse")
 	proto.RegisterType((*SetDeviceStatusRequest)(nil), "as.SetDeviceStatusRequest")
-	proto.RegisterType((*SetDeviceStatusResponse)(nil), "as.SetDeviceStatusResponse")
 	proto.RegisterEnum("as.RXWindow", RXWindow_name, RXWindow_value)
 	proto.RegisterEnum("as.ErrorType", ErrorType_name, ErrorType_value)
 }
@@ -813,267 +464,258 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// ApplicationServerClient is the client API for ApplicationServer service.
+// ApplicationServerServiceClient is the client API for ApplicationServerService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type ApplicationServerClient interface {
-	// HandleUplinkData publishes data received from an end-device.
-	HandleUplinkData(ctx context.Context, in *HandleUplinkDataRequest, opts ...grpc.CallOption) (*HandleUplinkDataResponse, error)
+type ApplicationServerServiceClient interface {
+	// HandleUplinkData handles uplink data received from an end-device.
+	HandleUplinkData(ctx context.Context, in *HandleUplinkDataRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// HandleProprietaryUplink handles proprietary uplink payloads.
-	HandleProprietaryUplink(ctx context.Context, in *HandleProprietaryUplinkRequest, opts ...grpc.CallOption) (*HandleProprietaryUplinkResponse, error)
-	// HandleError publishes an error message.
-	HandleError(ctx context.Context, in *HandleErrorRequest, opts ...grpc.CallOption) (*HandleErrorResponse, error)
-	// HandleDownlinkACK sends a downlink ACK or nACK response.
-	HandleDownlinkACK(ctx context.Context, in *HandleDownlinkACKRequest, opts ...grpc.CallOption) (*HandleDownlinkACKResponse, error)
-	// SetDeviceStatus updates the device-status for the given device.
-	SetDeviceStatus(ctx context.Context, in *SetDeviceStatusRequest, opts ...grpc.CallOption) (*SetDeviceStatusResponse, error)
+	HandleProprietaryUplink(ctx context.Context, in *HandleProprietaryUplinkRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// HandleError handles an error message.
+	HandleError(ctx context.Context, in *HandleErrorRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// HandleDownlinkACK handles a downlink ACK or nACK response.
+	HandleDownlinkACK(ctx context.Context, in *HandleDownlinkACKRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	// SetDeviceStatus updates the device-status for a device.
+	SetDeviceStatus(ctx context.Context, in *SetDeviceStatusRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 }
 
-type applicationServerClient struct {
+type applicationServerServiceClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewApplicationServerClient(cc *grpc.ClientConn) ApplicationServerClient {
-	return &applicationServerClient{cc}
+func NewApplicationServerServiceClient(cc *grpc.ClientConn) ApplicationServerServiceClient {
+	return &applicationServerServiceClient{cc}
 }
 
-func (c *applicationServerClient) HandleUplinkData(ctx context.Context, in *HandleUplinkDataRequest, opts ...grpc.CallOption) (*HandleUplinkDataResponse, error) {
-	out := new(HandleUplinkDataResponse)
-	err := c.cc.Invoke(ctx, "/as.ApplicationServer/HandleUplinkData", in, out, opts...)
+func (c *applicationServerServiceClient) HandleUplinkData(ctx context.Context, in *HandleUplinkDataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/as.ApplicationServerService/HandleUplinkData", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *applicationServerClient) HandleProprietaryUplink(ctx context.Context, in *HandleProprietaryUplinkRequest, opts ...grpc.CallOption) (*HandleProprietaryUplinkResponse, error) {
-	out := new(HandleProprietaryUplinkResponse)
-	err := c.cc.Invoke(ctx, "/as.ApplicationServer/HandleProprietaryUplink", in, out, opts...)
+func (c *applicationServerServiceClient) HandleProprietaryUplink(ctx context.Context, in *HandleProprietaryUplinkRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/as.ApplicationServerService/HandleProprietaryUplink", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *applicationServerClient) HandleError(ctx context.Context, in *HandleErrorRequest, opts ...grpc.CallOption) (*HandleErrorResponse, error) {
-	out := new(HandleErrorResponse)
-	err := c.cc.Invoke(ctx, "/as.ApplicationServer/HandleError", in, out, opts...)
+func (c *applicationServerServiceClient) HandleError(ctx context.Context, in *HandleErrorRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/as.ApplicationServerService/HandleError", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *applicationServerClient) HandleDownlinkACK(ctx context.Context, in *HandleDownlinkACKRequest, opts ...grpc.CallOption) (*HandleDownlinkACKResponse, error) {
-	out := new(HandleDownlinkACKResponse)
-	err := c.cc.Invoke(ctx, "/as.ApplicationServer/HandleDownlinkACK", in, out, opts...)
+func (c *applicationServerServiceClient) HandleDownlinkACK(ctx context.Context, in *HandleDownlinkACKRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/as.ApplicationServerService/HandleDownlinkACK", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *applicationServerClient) SetDeviceStatus(ctx context.Context, in *SetDeviceStatusRequest, opts ...grpc.CallOption) (*SetDeviceStatusResponse, error) {
-	out := new(SetDeviceStatusResponse)
-	err := c.cc.Invoke(ctx, "/as.ApplicationServer/SetDeviceStatus", in, out, opts...)
+func (c *applicationServerServiceClient) SetDeviceStatus(ctx context.Context, in *SetDeviceStatusRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	out := new(empty.Empty)
+	err := c.cc.Invoke(ctx, "/as.ApplicationServerService/SetDeviceStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// ApplicationServerServer is the server API for ApplicationServer service.
-type ApplicationServerServer interface {
-	// HandleUplinkData publishes data received from an end-device.
-	HandleUplinkData(context.Context, *HandleUplinkDataRequest) (*HandleUplinkDataResponse, error)
+// ApplicationServerServiceServer is the server API for ApplicationServerService service.
+type ApplicationServerServiceServer interface {
+	// HandleUplinkData handles uplink data received from an end-device.
+	HandleUplinkData(context.Context, *HandleUplinkDataRequest) (*empty.Empty, error)
 	// HandleProprietaryUplink handles proprietary uplink payloads.
-	HandleProprietaryUplink(context.Context, *HandleProprietaryUplinkRequest) (*HandleProprietaryUplinkResponse, error)
-	// HandleError publishes an error message.
-	HandleError(context.Context, *HandleErrorRequest) (*HandleErrorResponse, error)
-	// HandleDownlinkACK sends a downlink ACK or nACK response.
-	HandleDownlinkACK(context.Context, *HandleDownlinkACKRequest) (*HandleDownlinkACKResponse, error)
-	// SetDeviceStatus updates the device-status for the given device.
-	SetDeviceStatus(context.Context, *SetDeviceStatusRequest) (*SetDeviceStatusResponse, error)
+	HandleProprietaryUplink(context.Context, *HandleProprietaryUplinkRequest) (*empty.Empty, error)
+	// HandleError handles an error message.
+	HandleError(context.Context, *HandleErrorRequest) (*empty.Empty, error)
+	// HandleDownlinkACK handles a downlink ACK or nACK response.
+	HandleDownlinkACK(context.Context, *HandleDownlinkACKRequest) (*empty.Empty, error)
+	// SetDeviceStatus updates the device-status for a device.
+	SetDeviceStatus(context.Context, *SetDeviceStatusRequest) (*empty.Empty, error)
 }
 
-func RegisterApplicationServerServer(s *grpc.Server, srv ApplicationServerServer) {
-	s.RegisterService(&_ApplicationServer_serviceDesc, srv)
+func RegisterApplicationServerServiceServer(s *grpc.Server, srv ApplicationServerServiceServer) {
+	s.RegisterService(&_ApplicationServerService_serviceDesc, srv)
 }
 
-func _ApplicationServer_HandleUplinkData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ApplicationServerService_HandleUplinkData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HandleUplinkDataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApplicationServerServer).HandleUplinkData(ctx, in)
+		return srv.(ApplicationServerServiceServer).HandleUplinkData(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/as.ApplicationServer/HandleUplinkData",
+		FullMethod: "/as.ApplicationServerService/HandleUplinkData",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServerServer).HandleUplinkData(ctx, req.(*HandleUplinkDataRequest))
+		return srv.(ApplicationServerServiceServer).HandleUplinkData(ctx, req.(*HandleUplinkDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationServer_HandleProprietaryUplink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ApplicationServerService_HandleProprietaryUplink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HandleProprietaryUplinkRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApplicationServerServer).HandleProprietaryUplink(ctx, in)
+		return srv.(ApplicationServerServiceServer).HandleProprietaryUplink(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/as.ApplicationServer/HandleProprietaryUplink",
+		FullMethod: "/as.ApplicationServerService/HandleProprietaryUplink",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServerServer).HandleProprietaryUplink(ctx, req.(*HandleProprietaryUplinkRequest))
+		return srv.(ApplicationServerServiceServer).HandleProprietaryUplink(ctx, req.(*HandleProprietaryUplinkRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationServer_HandleError_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ApplicationServerService_HandleError_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HandleErrorRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApplicationServerServer).HandleError(ctx, in)
+		return srv.(ApplicationServerServiceServer).HandleError(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/as.ApplicationServer/HandleError",
+		FullMethod: "/as.ApplicationServerService/HandleError",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServerServer).HandleError(ctx, req.(*HandleErrorRequest))
+		return srv.(ApplicationServerServiceServer).HandleError(ctx, req.(*HandleErrorRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationServer_HandleDownlinkACK_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ApplicationServerService_HandleDownlinkACK_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(HandleDownlinkACKRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApplicationServerServer).HandleDownlinkACK(ctx, in)
+		return srv.(ApplicationServerServiceServer).HandleDownlinkACK(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/as.ApplicationServer/HandleDownlinkACK",
+		FullMethod: "/as.ApplicationServerService/HandleDownlinkACK",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServerServer).HandleDownlinkACK(ctx, req.(*HandleDownlinkACKRequest))
+		return srv.(ApplicationServerServiceServer).HandleDownlinkACK(ctx, req.(*HandleDownlinkACKRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApplicationServer_SetDeviceStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ApplicationServerService_SetDeviceStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetDeviceStatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApplicationServerServer).SetDeviceStatus(ctx, in)
+		return srv.(ApplicationServerServiceServer).SetDeviceStatus(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/as.ApplicationServer/SetDeviceStatus",
+		FullMethod: "/as.ApplicationServerService/SetDeviceStatus",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApplicationServerServer).SetDeviceStatus(ctx, req.(*SetDeviceStatusRequest))
+		return srv.(ApplicationServerServiceServer).SetDeviceStatus(ctx, req.(*SetDeviceStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _ApplicationServer_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "as.ApplicationServer",
-	HandlerType: (*ApplicationServerServer)(nil),
+var _ApplicationServerService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "as.ApplicationServerService",
+	HandlerType: (*ApplicationServerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "HandleUplinkData",
-			Handler:    _ApplicationServer_HandleUplinkData_Handler,
+			Handler:    _ApplicationServerService_HandleUplinkData_Handler,
 		},
 		{
 			MethodName: "HandleProprietaryUplink",
-			Handler:    _ApplicationServer_HandleProprietaryUplink_Handler,
+			Handler:    _ApplicationServerService_HandleProprietaryUplink_Handler,
 		},
 		{
 			MethodName: "HandleError",
-			Handler:    _ApplicationServer_HandleError_Handler,
+			Handler:    _ApplicationServerService_HandleError_Handler,
 		},
 		{
 			MethodName: "HandleDownlinkACK",
-			Handler:    _ApplicationServer_HandleDownlinkACK_Handler,
+			Handler:    _ApplicationServerService_HandleDownlinkACK_Handler,
 		},
 		{
 			MethodName: "SetDeviceStatus",
-			Handler:    _ApplicationServer_SetDeviceStatus_Handler,
+			Handler:    _ApplicationServerService_SetDeviceStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "as.proto",
 }
 
-func init() { proto.RegisterFile("as.proto", fileDescriptor_as_819b983bab735c1a) }
+func init() { proto.RegisterFile("as.proto", fileDescriptor_as_bb25f16ab88cf09e) }
 
-var fileDescriptor_as_819b983bab735c1a = []byte{
-	// 835 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x55, 0xdd, 0x72, 0xdb, 0x44,
-	0x14, 0x8e, 0xfc, 0xef, 0x63, 0x97, 0xaa, 0x0b, 0x24, 0xaa, 0x12, 0x4a, 0x2a, 0x6e, 0x32, 0xbd,
-	0xc8, 0x0c, 0xe6, 0x05, 0xf0, 0xd8, 0x2a, 0x78, 0xa0, 0x6d, 0x58, 0xdb, 0x34, 0xc3, 0x8d, 0x67,
-	0xa3, 0xdd, 0x04, 0x51, 0x59, 0x2b, 0x56, 0xeb, 0x04, 0x5f, 0xc0, 0x25, 0x0f, 0xc1, 0x43, 0xf0,
-	0x18, 0xdc, 0xf2, 0x4a, 0xcc, 0xfe, 0x48, 0x56, 0x6a, 0x9b, 0xf4, 0xee, 0x9c, 0xef, 0xfc, 0x7d,
-	0xe7, 0x47, 0x2b, 0xe8, 0x90, 0xfc, 0x3c, 0x13, 0x5c, 0x72, 0x54, 0x23, 0x79, 0xf0, 0xa7, 0x03,
-	0x9d, 0x31, 0x91, 0x04, 0x13, 0xc9, 0xd0, 0x33, 0x80, 0x25, 0xa7, 0xab, 0x84, 0xc8, 0x98, 0xa7,
-	0x9e, 0x73, 0xea, 0x9c, 0x75, 0x71, 0x05, 0x41, 0x27, 0xd0, 0xbd, 0x22, 0x29, 0x7d, 0x1b, 0x53,
-	0xf9, 0xb3, 0x57, 0x3b, 0x75, 0xce, 0x1e, 0xe1, 0x0d, 0x80, 0x02, 0xe8, 0xe7, 0x99, 0x60, 0x84,
-	0xbe, 0x24, 0x91, 0xe4, 0xc2, 0xab, 0x6b, 0x87, 0x7b, 0x18, 0xf2, 0xa0, 0x7d, 0x15, 0x4b, 0x41,
-	0x24, 0xf3, 0x1a, 0xda, 0x5c, 0xa8, 0xc1, 0x3f, 0x0e, 0xb4, 0xf0, 0xe5, 0x24, 0xbd, 0xe6, 0xc8,
-	0x85, 0xfa, 0x92, 0x44, 0xba, 0x7e, 0x1f, 0x2b, 0x11, 0x21, 0x68, 0xc8, 0x78, 0xc9, 0x74, 0xcd,
-	0x2e, 0xd6, 0xb2, 0xc2, 0x44, 0x9e, 0xc7, 0xba, 0x4c, 0x13, 0x6b, 0x59, 0xa5, 0x4f, 0x38, 0x26,
-	0xd3, 0xd7, 0x58, 0xa7, 0x77, 0x70, 0xa1, 0x2a, 0xef, 0x94, 0x2c, 0x99, 0xd7, 0x34, 0x19, 0x94,
-	0x8c, 0x7c, 0xe8, 0xa8, 0xc6, 0xe4, 0x8a, 0x32, 0xaf, 0xa5, 0xdd, 0x4b, 0x5d, 0xb5, 0x9a, 0xf0,
-	0xf4, 0xc6, 0x18, 0xdb, 0xda, 0xb8, 0x01, 0x54, 0x24, 0x49, 0x6c, 0x64, 0xc7, 0x44, 0x16, 0x7a,
-	0xf0, 0x07, 0xb4, 0x66, 0xa6, 0x8f, 0x13, 0xe8, 0x5e, 0x0b, 0xf6, 0xeb, 0x8a, 0xa5, 0xd1, 0x5a,
-	0x77, 0x53, 0xc7, 0x1b, 0x00, 0x9d, 0x41, 0x87, 0xda, 0xc1, 0xeb, 0xbe, 0x7a, 0x83, 0xfe, 0x39,
-	0xc9, 0xcf, 0x8b, 0x65, 0xe0, 0xd2, 0xaa, 0xe6, 0x41, 0xa8, 0x99, 0x67, 0x07, 0x2b, 0x51, 0xd5,
-	0x8f, 0x38, 0x65, 0xb8, 0x98, 0x63, 0x17, 0x97, 0x7a, 0xf0, 0xaf, 0x03, 0x47, 0xdf, 0x92, 0x94,
-	0x26, 0x6c, 0x9e, 0x25, 0x71, 0xfa, 0x4e, 0x27, 0x54, 0x45, 0x73, 0x89, 0x0e, 0xa1, 0x45, 0xd9,
-	0x6d, 0x38, 0x9f, 0xd8, 0xe1, 0x5a, 0x4d, 0xe1, 0x24, 0xcb, 0x14, 0x5e, 0x33, 0xb8, 0xd1, 0xd4,
-	0xd4, 0xae, 0x47, 0xa9, 0xb4, 0xab, 0xd4, 0x32, 0xfa, 0x04, 0x9a, 0xd7, 0x17, 0x5c, 0x48, 0xbb,
-	0x40, 0xa3, 0x28, 0x4f, 0xc5, 0x57, 0xcf, 0xb7, 0x8f, 0xb5, 0x8c, 0x02, 0x68, 0xc9, 0xdf, 0xd4,
-	0x24, 0xf4, 0x74, 0x7b, 0x03, 0x50, 0xfd, 0x99, 0xd9, 0x60, 0x6b, 0x51, 0x3e, 0xc2, 0xf8, 0xb4,
-	0x4f, 0xeb, 0x85, 0x0f, 0xb6, 0x3e, 0xc6, 0x12, 0xfc, 0xe5, 0xc0, 0x33, 0xd3, 0xd1, 0x85, 0xe0,
-	0x99, 0x88, 0x99, 0x24, 0x62, 0x6d, 0x9a, 0x2b, 0x1a, 0x53, 0x97, 0x4b, 0xa2, 0x0b, 0xb2, 0x4e,
-	0x38, 0xa1, 0xb6, 0xb9, 0x0a, 0xa2, 0x4f, 0x2a, 0x8e, 0x6c, 0x77, 0x4a, 0xac, 0x90, 0xab, 0x7f,
-	0x00, 0xb9, 0xc6, 0x5e, 0x72, 0xcf, 0xe1, 0xf3, 0xbd, 0xdc, 0xf2, 0x8c, 0xa7, 0x39, 0x0b, 0x7c,
-	0xf0, 0xb6, 0x17, 0x62, 0x6d, 0x6b, 0x40, 0xc6, 0x16, 0x0a, 0xc1, 0xc5, 0x43, 0x7b, 0x7a, 0x0e,
-	0x0d, 0xb9, 0xce, 0x98, 0xa6, 0xfc, 0xd1, 0xe0, 0x91, 0xa2, 0xa3, 0xe3, 0x66, 0xeb, 0x8c, 0x61,
-	0x6d, 0x52, 0xeb, 0x61, 0x0a, 0xb2, 0x77, 0x61, 0x94, 0x72, 0x91, 0xcd, 0xcd, 0x22, 0x83, 0x4f,
-	0xe1, 0xe3, 0x7b, 0xa5, 0x2d, 0xa3, 0x5f, 0x0a, 0xb6, 0x63, 0x7e, 0x97, 0x2a, 0xbe, 0xc3, 0xd1,
-	0x77, 0x0f, 0xf1, 0x2a, 0xd2, 0xd7, 0x2a, 0x77, 0x12, 0x40, 0x9f, 0x44, 0xef, 0x52, 0x7e, 0x97,
-	0x30, 0x7a, 0xc3, 0xa8, 0x3d, 0xdf, 0x7b, 0x58, 0x70, 0x0c, 0x4f, 0x77, 0xd4, 0xb2, 0x44, 0x22,
-	0x38, 0x9c, 0x32, 0x39, 0x66, 0xb7, 0x71, 0xc4, 0xa6, 0x92, 0xc8, 0x55, 0x5e, 0xd0, 0x38, 0x82,
-	0x36, 0x65, 0xb7, 0x0b, 0xb6, 0x8a, 0xab, 0x3c, 0x56, 0xfa, 0xfb, 0xbf, 0x22, 0x52, 0x32, 0xb1,
-	0xb6, 0x54, 0x0a, 0x55, 0x31, 0x5f, 0x12, 0x71, 0x13, 0xa7, 0xf6, 0xbd, 0xb0, 0x5a, 0xf0, 0x14,
-	0x8e, 0xb6, 0x8a, 0x98, 0xfa, 0x2f, 0x4e, 0xa0, 0x83, 0x2f, 0xdf, 0xc6, 0x29, 0xe5, 0x77, 0xa8,
-	0x0d, 0x75, 0x7c, 0xf9, 0xa5, 0x7b, 0x60, 0x84, 0x81, 0xeb, 0xbc, 0xf8, 0x1d, 0xba, 0xe5, 0xe8,
-	0x51, 0x0f, 0xda, 0xdf, 0xb0, 0x94, 0x89, 0x38, 0x72, 0x0f, 0x50, 0x07, 0x1a, 0x6f, 0x66, 0xc3,
-	0xa1, 0xeb, 0x20, 0x17, 0xfa, 0xe3, 0xe1, 0x6c, 0xb8, 0x98, 0x5f, 0x2c, 0x5e, 0x8e, 0x5e, 0xcf,
-	0xdc, 0x1a, 0x7a, 0x0c, 0xbd, 0x02, 0x79, 0x35, 0x19, 0xb9, 0x75, 0xe4, 0xc3, 0xe1, 0x38, 0xfc,
-	0x71, 0x32, 0x0a, 0x17, 0x3f, 0xcc, 0xc3, 0x79, 0xb8, 0x98, 0xcc, 0xc2, 0x57, 0x8b, 0xe9, 0xe4,
-	0xa7, 0xd0, 0x6d, 0xec, 0xb6, 0xe9, 0x44, 0xcd, 0xc1, 0xdf, 0x75, 0x78, 0x32, 0xcc, 0xb2, 0x24,
-	0x8e, 0xf4, 0xd3, 0x3c, 0x65, 0xe2, 0x96, 0x09, 0xf4, 0x06, 0xdc, 0xf7, 0x2f, 0x0d, 0x1d, 0xab,
-	0x2b, 0xd9, 0xf3, 0x20, 0xf8, 0x27, 0xbb, 0x8d, 0x76, 0x03, 0x07, 0x88, 0x16, 0x6f, 0xc9, 0xd6,
-	0x75, 0xa3, 0x60, 0x13, 0xba, 0xef, 0xb3, 0xf4, 0xbf, 0xf8, 0x5f, 0x9f, 0xb2, 0xca, 0xd7, 0xd0,
-	0xab, 0x5c, 0x22, 0x3a, 0xdc, 0x44, 0x55, 0xbf, 0x0a, 0xff, 0x68, 0x0b, 0x2f, 0x33, 0x60, 0x78,
-	0xb2, 0x75, 0x48, 0xa8, 0xd2, 0xdc, 0xf6, 0x2d, 0xfb, 0x9f, 0xed, 0xb1, 0x96, 0x39, 0xbf, 0x87,
-	0xc7, 0xef, 0x9d, 0x06, 0xf2, 0x55, 0xcc, 0xee, 0xa3, 0xf4, 0x8f, 0x77, 0xda, 0x8a, 0x6c, 0x57,
-	0x2d, 0xfd, 0xcf, 0xfd, 0xea, 0xbf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x54, 0x1c, 0x6d, 0x78, 0x7f,
-	0x07, 0x00, 0x00,
+var fileDescriptor_as_bb25f16ab88cf09e = []byte{
+	// 693 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x54, 0xdb, 0x72, 0xda, 0x3a,
+	0x14, 0x8d, 0xb9, 0x67, 0x93, 0x8b, 0x8f, 0xce, 0x39, 0xc4, 0x87, 0x64, 0x4e, 0xa9, 0x9f, 0x68,
+	0x66, 0x6a, 0xa6, 0xf4, 0x03, 0x3a, 0x0c, 0xb8, 0x29, 0x93, 0x49, 0x4a, 0x0d, 0x34, 0x99, 0xbe,
+	0x78, 0x84, 0x2d, 0xbb, 0x6a, 0x8c, 0xe5, 0x0a, 0x01, 0x61, 0x3a, 0x7d, 0xec, 0x27, 0xf4, 0x23,
+	0xfa, 0x97, 0x1d, 0xcb, 0x26, 0x90, 0x1b, 0xe9, 0x0b, 0x48, 0x7b, 0x2f, 0x2d, 0x2d, 0xef, 0xbd,
+	0xb4, 0xa1, 0x84, 0x27, 0x46, 0xc4, 0x99, 0x60, 0x28, 0x83, 0x27, 0xd5, 0x43, 0x9f, 0x31, 0x3f,
+	0x20, 0x0d, 0x19, 0x19, 0x4d, 0xbd, 0x06, 0x19, 0x47, 0x62, 0x91, 0x00, 0xaa, 0x2f, 0x7d, 0x2a,
+	0x3e, 0x4f, 0x47, 0x86, 0xc3, 0xc6, 0x8d, 0x11, 0x67, 0x0e, 0xc6, 0xbc, 0x11, 0x30, 0x8e, 0x27,
+	0x84, 0xcf, 0x08, 0x6f, 0xe0, 0x88, 0x36, 0xfc, 0x79, 0xc3, 0x9f, 0x27, 0x70, 0xfd, 0x47, 0x06,
+	0x0e, 0xde, 0xe1, 0xd0, 0x0d, 0xc8, 0x30, 0x0a, 0x68, 0x78, 0xd5, 0xc1, 0x02, 0x5b, 0xe4, 0xeb,
+	0x94, 0x4c, 0x04, 0x3a, 0x80, 0xa2, 0x4b, 0x66, 0x36, 0x99, 0x52, 0x4d, 0xa9, 0x29, 0xf5, 0x1d,
+	0xab, 0xe0, 0x92, 0x99, 0x39, 0xa5, 0xe8, 0x3f, 0x28, 0x7d, 0x61, 0x34, 0x94, 0x99, 0x8c, 0xcc,
+	0x14, 0xe3, 0x7d, 0x9c, 0xfa, 0x1b, 0xf2, 0x9e, 0xed, 0x84, 0x42, 0xcb, 0xd6, 0x94, 0xfa, 0xae,
+	0x95, 0xf3, 0xda, 0xa1, 0x40, 0xff, 0x42, 0xc1, 0xb3, 0x23, 0xc6, 0x85, 0x96, 0x93, 0xd1, 0xbc,
+	0xd7, 0x63, 0x5c, 0x20, 0x15, 0xb2, 0xd8, 0xe5, 0x5a, 0xbe, 0xa6, 0xd4, 0x4b, 0x56, 0xbc, 0x44,
+	0x7b, 0x90, 0x71, 0xb9, 0x56, 0x90, 0xa0, 0x8c, 0xcb, 0xd1, 0x0b, 0x28, 0x8a, 0x6b, 0x9b, 0x86,
+	0x1e, 0xd3, 0x8a, 0x35, 0xa5, 0x5e, 0x6e, 0xaa, 0x86, 0x3f, 0x37, 0x12, 0xa5, 0x83, 0xcb, 0x6e,
+	0xe8, 0x31, 0xab, 0x20, 0xae, 0xe3, 0xff, 0x18, 0xca, 0x53, 0x68, 0xa9, 0x96, 0xbd, 0x0d, 0xb5,
+	0x52, 0x28, 0x4f, 0xa0, 0x08, 0x72, 0x2e, 0x16, 0x58, 0xdb, 0x96, 0xd2, 0xe5, 0x5a, 0xff, 0xa5,
+	0xc0, 0xff, 0x49, 0x1d, 0x7a, 0x9c, 0x45, 0x9c, 0x12, 0x81, 0xf9, 0x22, 0x3d, 0x9d, 0x96, 0xe3,
+	0x19, 0x94, 0xc7, 0xd8, 0xb1, 0x23, 0xbc, 0x08, 0x18, 0x76, 0xd3, 0x92, 0xc0, 0x18, 0x3b, 0xbd,
+	0x24, 0x12, 0x7f, 0xcf, 0x98, 0x3a, 0x69, 0x45, 0xe2, 0xe5, 0xba, 0xfe, 0xec, 0x9f, 0xeb, 0xcf,
+	0x6d, 0xd6, 0xaf, 0x7f, 0x03, 0x94, 0x48, 0x35, 0x39, 0x67, 0xfc, 0xc9, 0x6e, 0x3d, 0x87, 0x9c,
+	0x58, 0x44, 0x44, 0x2a, 0xd8, 0x6b, 0xee, 0x1a, 0x78, 0x62, 0xc8, 0x83, 0x83, 0x45, 0x44, 0x2c,
+	0x99, 0x42, 0xff, 0x40, 0x9e, 0xc4, 0x21, 0xd9, 0x9f, 0x6d, 0x2b, 0xd9, 0xac, 0x7a, 0x99, 0x5f,
+	0xf5, 0x52, 0x0f, 0x40, 0x4b, 0x2e, 0xef, 0xb0, 0x79, 0x18, 0x8b, 0x6b, 0xb5, 0x4f, 0x9f, 0x94,
+	0x70, 0xc3, 0x94, 0x59, 0x73, 0x85, 0x0e, 0x3b, 0xd8, 0xb9, 0x0a, 0xd9, 0x3c, 0x20, 0xae, 0x4f,
+	0x5c, 0xa9, 0xaf, 0x64, 0xdd, 0x8a, 0xe9, 0x0e, 0x54, 0xfa, 0x44, 0x74, 0xc8, 0x8c, 0x3a, 0xa4,
+	0x2f, 0xb0, 0x98, 0x4e, 0x9e, 0xbc, 0x4b, 0x83, 0xe2, 0x08, 0x0b, 0x41, 0xf8, 0x22, 0xbd, 0x6d,
+	0xb9, 0x45, 0x15, 0x28, 0x8c, 0x31, 0xf7, 0x69, 0x28, 0xaf, 0xca, 0x5b, 0xe9, 0xee, 0xf8, 0x08,
+	0x4a, 0xd6, 0xe5, 0x05, 0x0d, 0x5d, 0x36, 0x47, 0x45, 0xc8, 0x5a, 0x97, 0xaf, 0xd4, 0xad, 0x64,
+	0xd1, 0x54, 0x95, 0xe3, 0xef, 0xb0, 0x7d, 0x53, 0x2e, 0x54, 0x86, 0xe2, 0x89, 0x79, 0x6e, 0x5a,
+	0xdd, 0xb6, 0xba, 0x85, 0x4a, 0x90, 0x7b, 0x3f, 0x68, 0xb5, 0x54, 0x05, 0xa9, 0xb0, 0xd3, 0x69,
+	0x0d, 0x5a, 0xf6, 0xb0, 0x67, 0xbf, 0x6d, 0x9f, 0x0f, 0xd4, 0x0c, 0xda, 0x87, 0xf2, 0x32, 0x72,
+	0xd6, 0x6d, 0xab, 0x59, 0x54, 0x85, 0x4a, 0xc7, 0xfc, 0xd8, 0x6d, 0x9b, 0xf6, 0x87, 0xa1, 0x39,
+	0x34, 0xed, 0xee, 0xc0, 0x3c, 0xb3, 0xfb, 0xdd, 0x4f, 0xa6, 0x9a, 0x7b, 0x38, 0x27, 0x89, 0xf2,
+	0xcd, 0x9f, 0x59, 0xd0, 0x5a, 0x51, 0x14, 0x50, 0x07, 0x0b, 0xca, 0xc2, 0xbe, 0x7c, 0xc6, 0xf1,
+	0x2f, 0x75, 0x08, 0xea, 0x82, 0x7a, 0xf7, 0xf1, 0xa2, 0xc3, 0xb8, 0xc1, 0x8f, 0x3c, 0xe9, 0x6a,
+	0xc5, 0x48, 0x66, 0x87, 0xb1, 0x9c, 0x1d, 0x86, 0x19, 0xcf, 0x0e, 0x7d, 0x0b, 0x5d, 0x2c, 0xe7,
+	0xc0, 0x3d, 0xff, 0x23, 0x7d, 0xc5, 0xf8, 0xd8, 0xe3, 0xd8, 0x40, 0xfc, 0x06, 0xca, 0x6b, 0x6e,
+	0x45, 0x95, 0x15, 0xd9, 0xba, 0x7d, 0x37, 0x10, 0x9c, 0xc2, 0x5f, 0xf7, 0x1c, 0x87, 0x8e, 0x56,
+	0x34, 0xf7, 0x8d, 0xb8, 0x81, 0xec, 0x04, 0xf6, 0xef, 0x18, 0x0a, 0x55, 0x63, 0xaa, 0x87, 0x5d,
+	0xf6, 0x38, 0xd1, 0xa8, 0x20, 0x23, 0xaf, 0x7f, 0x07, 0x00, 0x00, 0xff, 0xff, 0xb9, 0xa3, 0xe4,
+	0x63, 0x9b, 0x05, 0x00, 0x00,
 }

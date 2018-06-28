@@ -9,7 +9,6 @@ import (
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
 	"github.com/brocaar/lorawan/band"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -40,15 +39,15 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 
 			d := storage.Device{
 				DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-				ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
-				DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
-				RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+				ServiceProfileID: sp.ID,
+				DeviceProfileID:  dp.ID,
+				RoutingProfileID: rp.ID,
 			}
 			So(storage.CreateDevice(db, &d), ShouldBeNil)
 
 			ctx := dataContext{
 				DeviceSession: storage.DeviceSession{
-					RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+					RoutingProfileID: rp.ID,
 					DevEUI:           d.DevEUI,
 					NFCntDown:        10,
 				},
@@ -87,7 +86,7 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 					Name: "no queue items",
 					ExpecteddataContext: dataContext{
 						DeviceSession: storage.DeviceSession{
-							RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+							RoutingProfileID: rp.ID,
 							DevEUI:           d.DevEUI,
 							NFCntDown:        12,
 						},
@@ -121,7 +120,7 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 					Name: "second queue item (confirmed)",
 					ExpecteddataContext: dataContext{
 						DeviceSession: storage.DeviceSession{
-							RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+							RoutingProfileID: rp.ID,
 							DevEUI:           d.DevEUI,
 							NFCntDown:        11,
 							ConfFCnt:         11,
@@ -251,9 +250,7 @@ func TestSetMACCommandsSet(t *testing.T) {
 				Context: dataContext{
 					RemainingPayloadSize: 200,
 					ServiceProfile: storage.ServiceProfile{
-						ServiceProfile: backend.ServiceProfile{
-							DevStatusReqFreq: 1,
-						},
+						DevStatusReqFreq: 1,
 					},
 					DeviceSession: storage.DeviceSession{
 						EnabledUplinkChannels: []int{0, 1, 2},
@@ -281,9 +278,7 @@ func TestSetMACCommandsSet(t *testing.T) {
 				Context: dataContext{
 					RemainingPayloadSize: 200,
 					DeviceProfile: storage.DeviceProfile{
-						DeviceProfile: backend.DeviceProfile{
-							SupportsClassB: true,
-						},
+						SupportsClassB: true,
 					},
 					DeviceSession: storage.DeviceSession{
 						PingSlotDR:            2,

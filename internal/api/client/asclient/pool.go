@@ -19,11 +19,11 @@ import (
 
 // Pool defines the application-server client pool.
 type Pool interface {
-	Get(hostname string, caCert, tlsCert, tlsKey []byte) (as.ApplicationServerClient, error)
+	Get(hostname string, caCert, tlsCert, tlsKey []byte) (as.ApplicationServerServiceClient, error)
 }
 
 type client struct {
-	client     as.ApplicationServerClient
+	client     as.ApplicationServerServiceClient
 	clientConn *grpc.ClientConn
 	caCert     []byte
 	tlsCert    []byte
@@ -43,7 +43,7 @@ func NewPool() Pool {
 }
 
 // Get Returns an ApplicationServerClient for the given server (hostname:ip).
-func (p *pool) Get(hostname string, caCert, tlsCert, tlsKey []byte) (as.ApplicationServerClient, error) {
+func (p *pool) Get(hostname string, caCert, tlsCert, tlsKey []byte) (as.ApplicationServerServiceClient, error) {
 	defer p.Unlock()
 	p.Lock()
 
@@ -79,7 +79,7 @@ func (p *pool) Get(hostname string, caCert, tlsCert, tlsKey []byte) (as.Applicat
 	return c.client, nil
 }
 
-func (p *pool) createClient(hostname string, caCert, tlsCert, tlsKey []byte) (*grpc.ClientConn, as.ApplicationServerClient, error) {
+func (p *pool) createClient(hostname string, caCert, tlsCert, tlsKey []byte) (*grpc.ClientConn, as.ApplicationServerServiceClient, error) {
 	logrusEntry := log.NewEntry(log.StandardLogger())
 	logrusOpts := []grpc_logrus.Option{
 		grpc_logrus.WithLevels(grpc_logrus.DefaultCodeToLevel),
@@ -124,5 +124,5 @@ func (p *pool) createClient(hostname string, caCert, tlsCert, tlsKey []byte) (*g
 		return nil, nil, errors.Wrap(err, "dial application-server api error")
 	}
 
-	return asClient, as.NewApplicationServerClient(asClient), nil
+	return asClient, as.NewApplicationServerServiceClient(asClient), nil
 }

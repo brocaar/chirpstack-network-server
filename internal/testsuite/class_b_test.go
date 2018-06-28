@@ -16,7 +16,6 @@ import (
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
 )
 
 type uplinkClassBTestCase struct {
@@ -59,29 +58,23 @@ func TestClassBUplink(t *testing.T) {
 
 		// service-profile
 		sp := storage.ServiceProfile{
-			ServiceProfile: backend.ServiceProfile{
-				AddGWMetadata: true,
-			},
+			AddGWMetadata: true,
 		}
 		So(storage.CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 		// device-profile
-		dp := storage.DeviceProfile{
-			DeviceProfile: backend.DeviceProfile{},
-		}
+		dp := storage.DeviceProfile{}
 		So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
 
 		// routing-profile
-		rp := storage.RoutingProfile{
-			RoutingProfile: backend.RoutingProfile{},
-		}
+		rp := storage.RoutingProfile{}
 		So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
 		// device
 		d := storage.Device{
-			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
-			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
-			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+			ServiceProfileID: sp.ID,
+			DeviceProfileID:  dp.ID,
+			RoutingProfileID: rp.ID,
 			DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 		}
 		So(storage.CreateDevice(config.C.PostgreSQL.DB, &d), ShouldBeNil)
@@ -262,37 +255,31 @@ func TestClassBDownlink(t *testing.T) {
 		config.C.NetworkServer.NetworkSettings.ClassB.PingSlotDR = 2
 		config.C.NetworkServer.NetworkSettings.ClassB.PingSlotFrequency = 868300000
 
-		sp := storage.ServiceProfile{
-			ServiceProfile: backend.ServiceProfile{},
-		}
+		sp := storage.ServiceProfile{}
 		So(storage.CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 		dp := storage.DeviceProfile{
-			DeviceProfile: backend.DeviceProfile{
-				SupportsClassB: true,
-			},
+			SupportsClassB: true,
 		}
 		So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
 
 		rp := storage.RoutingProfile{
-			RoutingProfile: backend.RoutingProfile{
-				ASID: "as-test:1234",
-			},
+			ASID: "as-test:1234",
 		}
 		So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
 		d := storage.Device{
 			DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
-			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
-			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			RoutingProfileID: rp.ID,
+			ServiceProfileID: sp.ID,
+			DeviceProfileID:  dp.ID,
 		}
 		So(storage.CreateDevice(config.C.PostgreSQL.DB, &d), ShouldBeNil)
 
 		sess := storage.DeviceSession{
-			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
-			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
-			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			RoutingProfileID: rp.ID,
+			ServiceProfileID: sp.ID,
+			DeviceProfileID:  dp.ID,
 			DevEUI:           d.DevEUI,
 			DevAddr:          lorawan.DevAddr{1, 2, 3, 4},
 			JoinEUI:          lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},

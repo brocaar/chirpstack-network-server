@@ -115,7 +115,12 @@ func logRejoinRequestFramesCollected(ctx *context) error {
 		macs = append(macs, p.MAC.String())
 	}
 
-	if err := framelog.LogUplinkFrameForDevEUI(ctx.DevEUI, ctx.RXPacket); err != nil {
+	uplinkFrameSet, err := framelog.CreateUplinkFrameSet(ctx.RXPacket)
+	if err != nil {
+		return errors.Wrap(err, "create uplink frame-set error")
+	}
+
+	if err := framelog.LogUplinkFrameForDevEUI(ctx.DevEUI, uplinkFrameSet); err != nil {
 		log.WithError(err).Error("log uplink frame for device error")
 	}
 
@@ -290,7 +295,7 @@ func setRejoin0PendingDeviceSession(ctx *context) error {
 		EnabledUplinkChannels: config.C.NetworkServer.Band.Band.GetStandardUplinkChannelIndices(),
 		ExtraUplinkChannels:   make(map[int]band.Channel),
 		UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
-		MaxSupportedDR:        ctx.ServiceProfile.ServiceProfile.DRMax,
+		MaxSupportedDR:        ctx.ServiceProfile.DRMax,
 		SkipFCntValidation:    ctx.Device.SkipFCntCheck,
 		PingSlotDR:            ctx.DeviceProfile.PingSlotDR,
 		PingSlotFrequency:     int(ctx.DeviceProfile.PingSlotFreq),

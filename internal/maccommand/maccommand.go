@@ -10,7 +10,7 @@ import (
 )
 
 // Handle handles a MACCommand sent by a node.
-func Handle(ds *storage.DeviceSession, dp storage.DeviceProfile, sp storage.ServiceProfile, asClient as.ApplicationServerClient, block storage.MACCommandBlock, pending *storage.MACCommandBlock, rxPacket models.RXPacket) ([]storage.MACCommandBlock, error) {
+func Handle(ds *storage.DeviceSession, dp storage.DeviceProfile, sp storage.ServiceProfile, asClient as.ApplicationServerServiceClient, block storage.MACCommandBlock, pending *storage.MACCommandBlock, rxPacket models.RXPacket) ([]storage.MACCommandBlock, error) {
 	switch block.CID {
 	case lorawan.LinkADRAns:
 		return handleLinkADRAns(ds, block, pending)

@@ -14,7 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/lorawan/backend"
 )
 
 // Templates used for generating Redis keys
@@ -22,19 +21,49 @@ const (
 	ServiceProfileKeyTempl = "lora:ns:sp:%s"
 )
 
+// RatePolicy defines the RatePolicy type.
+type RatePolicy string
+
+// Available rate policies.
+const (
+	Drop RatePolicy = "Drop"
+	Mark RatePolicy = "Mark"
+)
+
 // ServiceProfile defines the backend.ServiceProfile with some extra meta-data.
 type ServiceProfile struct {
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
-	backend.ServiceProfile
+	CreatedAt              time.Time  `db:"created_at"`
+	UpdatedAt              time.Time  `db:"updated_at"`
+	ID                     uuid.UUID  ` db:"service_profile_id"`
+	ULRate                 int        `db:"ul_rate"`
+	ULBucketSize           int        ` db:"ul_bucket_size"`
+	ULRatePolicy           RatePolicy ` db:"ul_rate_policy"`
+	DLRate                 int        ` db:"dl_rate"`
+	DLBucketSize           int        `db:"dl_bucket_size"`
+	DLRatePolicy           RatePolicy ` db:"dl_rate_policy"`
+	AddGWMetadata          bool       `db:"add_gw_metadata"`
+	DevStatusReqFreq       int        ` db:"dev_status_req_freq"` // Unit: requests-per-day
+	ReportDevStatusBattery bool       ` db:"report_dev_status_battery"`
+	ReportDevStatusMargin  bool       ` db:"report_dev_status_margin"`
+	DRMin                  int        ` db:"dr_min"`
+	DRMax                  int        ` db:"dr_max"`
+	ChannelMask            []byte     ` db:"channel_mask"`
+	PRAllowed              bool       ` db:"pr_allowed"`
+	HRAllowed              bool       `db:"hr_allowed"`
+	RAAllowed              bool       ` db:"ra_allowed"`
+	NwkGeoLoc              bool       ` db:"nwk_geo_loc"`
+	TargetPER              int        ` db:"target_per"` // Example: 10 indicates 10%
+	MinGWDiversity         int        ` db:"min_gw_diversity"`
 }
 
 // CreateServiceProfile creates the given service-profile.
 func CreateServiceProfile(db sqlx.Execer, sp *ServiceProfile) error {
 	now := time.Now()
-	if sp.ServiceProfile.ServiceProfileID == "" {
-		sp.ServiceProfile.ServiceProfileID = uuid.NewV4().String()
+
+	if sp.ID == uuid.Nil {
+		sp.ID = uuid.NewV4()
 	}
+
 	sp.CreatedAt = now
 	sp.UpdatedAt = now
 
@@ -66,33 +95,33 @@ func CreateServiceProfile(db sqlx.Execer, sp *ServiceProfile) error {
 		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
 		sp.CreatedAt,
 		sp.UpdatedAt,
-		sp.ServiceProfile.ServiceProfileID,
-		sp.ServiceProfile.ULRate,
-		sp.ServiceProfile.ULBucketSize,
-		sp.ServiceProfile.ULRatePolicy,
-		sp.ServiceProfile.DLRate,
-		sp.ServiceProfile.DLBucketSize,
-		sp.ServiceProfile.DLRatePolicy,
-		sp.ServiceProfile.AddGWMetadata,
-		sp.ServiceProfile.DevStatusReqFreq,
-		sp.ServiceProfile.ReportDevStatusBattery,
-		sp.ServiceProfile.ReportDevStatusMargin,
-		sp.ServiceProfile.DRMin,
-		sp.ServiceProfile.DRMax,
-		sp.ServiceProfile.ChannelMask,
-		sp.ServiceProfile.PRAllowed,
-		sp.ServiceProfile.HRAllowed,
-		sp.ServiceProfile.RAAllowed,
-		sp.ServiceProfile.NwkGeoLoc,
-		sp.ServiceProfile.TargetPER,
-		sp.ServiceProfile.MinGWDiversity,
+		sp.ID,
+		sp.ULRate,
+		sp.ULBucketSize,
+		sp.ULRatePolicy,
+		sp.DLRate,
+		sp.DLBucketSize,
+		sp.DLRatePolicy,
+		sp.AddGWMetadata,
+		sp.DevStatusReqFreq,
+		sp.ReportDevStatusBattery,
+		sp.ReportDevStatusMargin,
+		sp.DRMin,
+		sp.DRMax,
+		sp.ChannelMask,
+		sp.PRAllowed,
+		sp.HRAllowed,
+		sp.RAAllowed,
+		sp.NwkGeoLoc,
+		sp.TargetPER,
+		sp.MinGWDiversity,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
 	}
 
 	log.WithFields(log.Fields{
-		"service_profile_id": sp.ServiceProfile.ServiceProfileID,
+		"id": sp.ID,
 	}).Info("service-profile created")
 
 	return nil
@@ -112,7 +141,7 @@ func CreateServiceProfileCache(p *redis.Pool, sp ServiceProfile) error {
 	c := p.Get()
 	defer c.Close()
 
-	key := fmt.Sprintf(ServiceProfileKeyTempl, sp.ServiceProfileID)
+	key := fmt.Sprintf(ServiceProfileKeyTempl, sp.ID)
 	exp := int64(config.C.NetworkServer.DeviceSessionTTL) / int64(time.Millisecond)
 
 	_, err := c.Do("PSETEX", key, exp, buf.Bytes())
@@ -124,7 +153,7 @@ func CreateServiceProfileCache(p *redis.Pool, sp ServiceProfile) error {
 }
 
 // GetServiceProfileCache returns a cached service-profile.
-func GetServiceProfileCache(p *redis.Pool, id string) (ServiceProfile, error) {
+func GetServiceProfileCache(p *redis.Pool, id uuid.UUID) (ServiceProfile, error) {
 	var sp ServiceProfile
 	key := fmt.Sprintf(ServiceProfileKeyTempl, id)
 
@@ -148,7 +177,7 @@ func GetServiceProfileCache(p *redis.Pool, id string) (ServiceProfile, error) {
 }
 
 // FlushServiceProfileCache deletes a cached service-profile.
-func FlushServiceProfileCache(p *redis.Pool, id string) error {
+func FlushServiceProfileCache(p *redis.Pool, id uuid.UUID) error {
 	key := fmt.Sprintf(ServiceProfileKeyTempl, id)
 	c := p.Get()
 	defer c.Close()
@@ -163,7 +192,7 @@ func FlushServiceProfileCache(p *redis.Pool, id string) error {
 // GetAndCacheServiceProfile returns the service-profile from cache in case
 // available, else it will be retrieved from the database and then stored
 // in cache.
-func GetAndCacheServiceProfile(db sqlx.Queryer, p *redis.Pool, id string) (ServiceProfile, error) {
+func GetAndCacheServiceProfile(db sqlx.Queryer, p *redis.Pool, id uuid.UUID) (ServiceProfile, error) {
 	sp, err := GetServiceProfileCache(p, id)
 	if err == nil {
 		return sp, nil
@@ -171,7 +200,7 @@ func GetAndCacheServiceProfile(db sqlx.Queryer, p *redis.Pool, id string) (Servi
 
 	if err != ErrDoesNotExist {
 		log.WithFields(log.Fields{
-			"service_profile_id": id,
+			"id": id,
 		}).WithError(err).Error("get service-profile cache error")
 		// we don't return as we can fall-back onto db retrieval
 	}
@@ -184,7 +213,7 @@ func GetAndCacheServiceProfile(db sqlx.Queryer, p *redis.Pool, id string) (Servi
 	err = CreateServiceProfileCache(p, sp)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"service_profile_id": id,
+			"id": id,
 		}).WithError(err).Error("create service-profile cache error")
 	}
 
@@ -192,7 +221,7 @@ func GetAndCacheServiceProfile(db sqlx.Queryer, p *redis.Pool, id string) (Servi
 }
 
 // GetServiceProfile returns the service-profile matching the given id.
-func GetServiceProfile(db sqlx.Queryer, id string) (ServiceProfile, error) {
+func GetServiceProfile(db sqlx.Queryer, id uuid.UUID) (ServiceProfile, error) {
 	var sp ServiceProfile
 	err := sqlx.Get(db, &sp, "select * from service_profile where service_profile_id = $1", id)
 	if err != nil {
@@ -231,27 +260,27 @@ func UpdateServiceProfile(db sqlx.Execer, sp *ServiceProfile) error {
 			min_gw_diversity = $21
 		where
 			service_profile_id = $1`,
-		sp.ServiceProfile.ServiceProfileID,
+		sp.ID,
 		sp.UpdatedAt,
-		sp.ServiceProfile.ULRate,
-		sp.ServiceProfile.ULBucketSize,
-		sp.ServiceProfile.ULRatePolicy,
-		sp.ServiceProfile.DLRate,
-		sp.ServiceProfile.DLBucketSize,
-		sp.ServiceProfile.DLRatePolicy,
-		sp.ServiceProfile.AddGWMetadata,
-		sp.ServiceProfile.DevStatusReqFreq,
-		sp.ServiceProfile.ReportDevStatusBattery,
-		sp.ServiceProfile.ReportDevStatusMargin,
-		sp.ServiceProfile.DRMin,
-		sp.ServiceProfile.DRMax,
-		sp.ServiceProfile.ChannelMask,
-		sp.ServiceProfile.PRAllowed,
-		sp.ServiceProfile.HRAllowed,
-		sp.ServiceProfile.RAAllowed,
-		sp.ServiceProfile.NwkGeoLoc,
-		sp.ServiceProfile.TargetPER,
-		sp.ServiceProfile.MinGWDiversity,
+		sp.ULRate,
+		sp.ULBucketSize,
+		sp.ULRatePolicy,
+		sp.DLRate,
+		sp.DLBucketSize,
+		sp.DLRatePolicy,
+		sp.AddGWMetadata,
+		sp.DevStatusReqFreq,
+		sp.ReportDevStatusBattery,
+		sp.ReportDevStatusMargin,
+		sp.DRMin,
+		sp.DRMax,
+		sp.ChannelMask,
+		sp.PRAllowed,
+		sp.HRAllowed,
+		sp.RAAllowed,
+		sp.NwkGeoLoc,
+		sp.TargetPER,
+		sp.MinGWDiversity,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")
@@ -264,12 +293,12 @@ func UpdateServiceProfile(db sqlx.Execer, sp *ServiceProfile) error {
 		return ErrDoesNotExist
 	}
 
-	log.WithField("service_profile_id", sp.ServiceProfile.ServiceProfileID).Info("service-profile updated")
+	log.WithField("id", sp.ID).Info("service-profile updated")
 	return nil
 }
 
 // DeleteServiceProfile deletes the service-profile matching the given id.
-func DeleteServiceProfile(db sqlx.Execer, id string) error {
+func DeleteServiceProfile(db sqlx.Execer, id uuid.UUID) error {
 	res, err := db.Exec("delete from service_profile where service_profile_id = $1", id)
 	if err != nil {
 		return handlePSQLError(err, "delete error")
@@ -283,6 +312,6 @@ func DeleteServiceProfile(db sqlx.Execer, id string) error {
 		return ErrDoesNotExist
 	}
 
-	log.WithField("service_profile_id", id).Info("service-profile deleted")
+	log.WithField("id", id).Info("service-profile deleted")
 	return nil
 }

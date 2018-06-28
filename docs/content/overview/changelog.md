@@ -25,6 +25,10 @@ first :-)
   when it receives a `DevStatusAns` mac-command.
 * Device-sessions are stored using Protobuf encoding in Redis
   (more compact storage).
+* Cleanup of gRPC API methods and arguments to follow the Protobuf style-guide
+  and to make message re-usable. When you're integrating directly with the
+  LoRa Server gRPC API, then you must update your API client as these changes are
+  backwards incompatible!
 
 ## v1.0.1
 

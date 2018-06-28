@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package common;
+
+option go_package = "github.com/brocaar/loraserver/api/common";
+
+
+enum Modulation {
+    // LoRa
+    LORA = 0;
+
+    // FSK
+    FSK = 1;
+}
+
+enum Region {
+    // EU868
+    EU868 = 0;
+
+    // US915
+    US915 = 2;
+
+    // CN779
+    CN779 = 3;
+
+    // EU433
+    EU433 = 4;
+
+    // AU915
+    AU915 = 5;
+
+    // CN470
+    CN470 = 6;
+
+    // AS923
+    AS923 = 7;
+
+    // KR920
+    KR920 = 8;
+
+    // IN865
+    IN865 = 9;
+
+    // RU864
+    RU864 = 10;
+}

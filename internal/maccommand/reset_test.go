@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/lorawan/backend"
 	"github.com/brocaar/lorawan/band"
 
 	"github.com/brocaar/loraserver/internal/storage"
@@ -26,16 +25,14 @@ func TestReset(t *testing.T) {
 				Name:            "LoRaWAN 1.1 device",
 				DevMinorVersion: 1,
 				DeviceProfile: storage.DeviceProfile{
-					DeviceProfile: backend.DeviceProfile{
-						RXDelay1:           1,
-						RXDROffset1:        0,
-						RXDataRate2:        0,
-						RXFreq2:            868300000,
-						FactoryPresetFreqs: []backend.Frequency{868100000, 868300000, 868500000},
-						PingSlotDR:         2,
-						PingSlotFreq:       868100000,
-						PingSlotPeriod:     1,
-					},
+					RXDelay1:           1,
+					RXDROffset1:        0,
+					RXDataRate2:        0,
+					RXFreq2:            868300000,
+					FactoryPresetFreqs: []int{868100000, 868300000, 868500000},
+					PingSlotDR:         2,
+					PingSlotFreq:       868100000,
+					PingSlotPeriod:     1,
 				},
 				DeviceSession: storage.DeviceSession{
 					TXPowerIndex:             3,

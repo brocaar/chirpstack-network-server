@@ -3,12 +3,12 @@ package proprietary
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/as"
+	gwPB "github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -50,59 +50,38 @@ func setContextFromProprietaryPHYPayload(ctx *proprietaryContext) error {
 }
 
 func sendProprietaryPayloadToApplicationServer(ctx *proprietaryContext) error {
-	dataRate := ctx.RXPacket.TXInfo.DataRate
+	var macs []lorawan.EUI64
 
 	handleReq := as.HandleProprietaryUplinkRequest{
 		MacPayload: ctx.DataPayload.Bytes,
 		Mic:        ctx.RXPacket.PHYPayload.MIC[:],
-		TxInfo: &as.TXInfo{
-			Frequency: int64(ctx.RXPacket.TXInfo.Frequency),
-			CodeRate:  ctx.RXPacket.TXInfo.CodeRate,
-			DataRate: &as.DataRate{
-				Modulation:   string(dataRate.Modulation),
-				BandWidth:    uint32(dataRate.Bandwidth),
-				SpreadFactor: uint32(dataRate.SpreadFactor),
-				Bitrate:      uint32(dataRate.BitRate),
-			},
-		},
-	}
-
-	var macs []lorawan.EUI64
-	for i := range ctx.RXPacket.RXInfoSet {
-		macs = append(macs, ctx.RXPacket.RXInfoSet[i].MAC)
+		TxInfo:     ctx.RXPacket.GetGWUplinkTXInfo(),
+		RxInfo:     ctx.RXPacket.GetGWUplinkRXInfoSet(),
 	}
 
 	// get gateway info
+	for i := range handleReq.RxInfo {
+		var mac lorawan.EUI64
+		copy(mac[:], handleReq.RxInfo[i].GatewayId)
+		macs = append(macs, mac)
+	}
 	gws, err := storage.GetGatewaysForMACs(config.C.PostgreSQL.DB, macs)
 	if err != nil {
 		log.WithField("macs", macs).Warningf("get gateways for macs error: %s", err)
 		gws = make(map[lorawan.EUI64]storage.Gateway)
 	}
 
-	for _, rxInfo := range ctx.RXPacket.RXInfoSet {
-		// make sure we have a copy of the MAC byte slice, else every RxInfo
-		// slice item will get the same Mac
-		mac := make([]byte, 8)
-		copy(mac, rxInfo.MAC[:])
+	for i := range handleReq.RxInfo {
+		var mac lorawan.EUI64
+		copy(mac[:], handleReq.RxInfo[i].GatewayId)
 
-		asRxInfo := as.RXInfo{
-			Mac:     mac,
-			Rssi:    int32(rxInfo.RSSI),
-			LoRaSNR: rxInfo.LoRaSNR,
+		if gw, ok := gws[mac]; ok {
+			handleReq.RxInfo[i].Location = &gwPB.Location{
+				Latitude:  gw.Location.Latitude,
+				Longitude: gw.Location.Longitude,
+				Altitude:  gw.Altitude,
+			}
 		}
-
-		if rxInfo.Time != nil {
-			asRxInfo.Time = rxInfo.Time.Format(time.RFC3339Nano)
-		}
-
-		if gw, ok := gws[rxInfo.MAC]; ok {
-			asRxInfo.Name = gw.Name
-			asRxInfo.Latitude = gw.Location.Latitude
-			asRxInfo.Longitude = gw.Location.Longitude
-			asRxInfo.Altitude = gw.Altitude
-		}
-
-		handleReq.RxInfo = append(handleReq.RxInfo, &asRxInfo)
 	}
 
 	// send proprietary to all application servers, as the network-server

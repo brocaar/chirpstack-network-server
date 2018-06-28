@@ -13,7 +13,6 @@ import (
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
 )
 
 type classCTestCase struct {
@@ -47,30 +46,24 @@ func TestClassCScenarios(t *testing.T) {
 		config.C.NetworkServer.Gateway.Backend.Backend = test.NewGatewayBackend()
 		config.C.NetworkServer.NetworkSettings.RX2DR = 5
 
-		sp := storage.ServiceProfile{
-			ServiceProfile: backend.ServiceProfile{},
-		}
+		sp := storage.ServiceProfile{}
 		So(storage.CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 		dp := storage.DeviceProfile{
-			DeviceProfile: backend.DeviceProfile{
-				SupportsClassC: true,
-			},
+			SupportsClassC: true,
 		}
 		So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
 
 		rp := storage.RoutingProfile{
-			RoutingProfile: backend.RoutingProfile{
-				ASID: "as-test:1234",
-			},
+			ASID: "as-test:1234",
 		}
 		So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
 		d := storage.Device{
 			DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
-			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
-			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			RoutingProfileID: rp.ID,
+			ServiceProfileID: sp.ID,
+			DeviceProfileID:  dp.ID,
 		}
 		So(storage.CreateDevice(config.C.PostgreSQL.DB, &d), ShouldBeNil)
 
@@ -208,7 +201,7 @@ func TestClassCScenarios(t *testing.T) {
 				},
 				{
 					PreFunc: func(ds *storage.DeviceSession) {
-						sp.ServiceProfile.DevStatusReqFreq = 1
+						sp.DevStatusReqFreq = 1
 						So(storage.UpdateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 					},
 					Name:          "with mac-command",

@@ -3,8 +3,11 @@ package models
 import (
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
+
 	"github.com/brocaar/lorawan/band"
 
+	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/lorawan"
 )
@@ -18,6 +21,64 @@ type RXPacket struct {
 	PHYPayload lorawan.PHYPayload
 	TXInfo     TXInfo
 	RXInfoSet  RXInfoSet
+}
+
+// GetGWUplinkTXInfo returns the gw.UplinkTXInfo struct.
+// TODO: replace original TXInfo with this gw.UplinkTXInfo.
+func (r RXPacket) GetGWUplinkTXInfo() *gw.UplinkTXInfo {
+	txInfo := gw.UplinkTXInfo{
+		Frequency: uint32(r.TXInfo.Frequency),
+	}
+
+	switch r.TXInfo.DataRate.Modulation {
+	case band.LoRaModulation:
+		txInfo.Modulation = common.Modulation_LORA
+		txInfo.ModulationInfo = &gw.UplinkTXInfo_LoraModulationInfo{
+			LoraModulationInfo: &gw.LoRaModulationInfo{
+				Bandwidth:       uint32(r.TXInfo.DataRate.Bandwidth),
+				SpreadingFactor: uint32(r.TXInfo.DataRate.SpreadFactor),
+				CodeRate:        r.TXInfo.CodeRate,
+			},
+		}
+	case band.FSKModulation:
+		txInfo.Modulation = common.Modulation_FSK
+		txInfo.ModulationInfo = &gw.UplinkTXInfo_FskModulationInfo{
+			FskModulationInfo: &gw.FSKModulationInfo{
+				Bandwidth: uint32(r.TXInfo.DataRate.Bandwidth),
+				Bitrate:   uint32(r.TXInfo.DataRate.BitRate),
+			},
+		}
+	}
+
+	return &txInfo
+}
+
+// GetGWUplinkRXInfoSet returns the gw.UplinkTXInfo set.
+// TODO: replace original RXInfo with gw.UplinkTXInfo.
+func (r RXPacket) GetGWUplinkRXInfoSet() []*gw.UplinkRXInfo {
+	var out []*gw.UplinkRXInfo
+
+	for i := range r.RXInfoSet {
+		rxInfo := gw.UplinkRXInfo{
+			GatewayId: r.RXInfoSet[i].MAC[:],
+			Rssi:      int32(r.RXInfoSet[i].RSSI),
+			LoraSnr:   r.RXInfoSet[i].LoRaSNR,
+			Board:     uint32(r.RXInfoSet[i].Board),
+			Antenna:   uint32(r.RXInfoSet[i].Antenna),
+		}
+
+		if r.RXInfoSet[i].Time != nil {
+			rxInfo.Time, _ = ptypes.TimestampProto(*r.RXInfoSet[i].Time)
+		}
+
+		if r.RXInfoSet[i].TimeSinceGPSEpoch != nil {
+			rxInfo.TimeSinceGpsEpoch = ptypes.DurationProto(time.Duration(*r.RXInfoSet[i].TimeSinceGPSEpoch))
+		}
+
+		out = append(out, &rxInfo)
+	}
+
+	return out
 }
 
 // TXInfo defines the metadata used for the transmission.

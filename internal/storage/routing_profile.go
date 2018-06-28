@@ -6,26 +6,27 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/brocaar/lorawan/backend"
 )
 
 // RoutingProfile defines the backend.RoutingProfile with some extra meta-data.
 type RoutingProfile struct {
+	ID        uuid.UUID `json:"RoutingProfileID" db:"routing_profile_id"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
-	backend.RoutingProfile
-	CACert  string `db:"ca_cert"`
-	TLSCert string `db:"tls_cert"`
-	TLSKey  string `db:"tls_key"`
+	ASID      string    `json:"AS-ID" db:"as_id"` // Value can be IP address, DNS name, etc.
+	CACert    string    `db:"ca_cert"`
+	TLSCert   string    `db:"tls_cert"`
+	TLSKey    string    `db:"tls_key"`
 }
 
 // CreateRoutingProfile creates the given routing-profile.
 func CreateRoutingProfile(db sqlx.Execer, rp *RoutingProfile) error {
 	now := time.Now()
-	if rp.RoutingProfile.RoutingProfileID == "" {
-		rp.RoutingProfile.RoutingProfileID = uuid.NewV4().String()
+
+	if rp.ID == uuid.Nil {
+		rp.ID = uuid.NewV4()
 	}
+
 	rp.CreatedAt = now
 	rp.UpdatedAt = now
 
@@ -42,8 +43,8 @@ func CreateRoutingProfile(db sqlx.Execer, rp *RoutingProfile) error {
 		) values ($1, $2, $3, $4, $5, $6, $7)`,
 		rp.CreatedAt,
 		rp.UpdatedAt,
-		rp.RoutingProfile.RoutingProfileID,
-		rp.RoutingProfile.ASID,
+		rp.ID,
+		rp.ASID,
 		rp.CACert,
 		rp.TLSCert,
 		rp.TLSKey,
@@ -53,14 +54,14 @@ func CreateRoutingProfile(db sqlx.Execer, rp *RoutingProfile) error {
 	}
 
 	log.WithFields(log.Fields{
-		"routing_profile_id": rp.RoutingProfile.RoutingProfileID,
+		"id": rp.ID,
 	}).Info("routing-profile created")
 
 	return nil
 }
 
 // GetRoutingProfile returns the routing-profile matching the given id.
-func GetRoutingProfile(db sqlx.Queryer, id string) (RoutingProfile, error) {
+func GetRoutingProfile(db sqlx.Queryer, id uuid.UUID) (RoutingProfile, error) {
 	var rp RoutingProfile
 	err := sqlx.Get(db, &rp, "select * from routing_profile where routing_profile_id = $1", id)
 	if err != nil {
@@ -82,9 +83,9 @@ func UpdateRoutingProfile(db sqlx.Execer, rp *RoutingProfile) error {
 			tls_key = $6
 		where
 			routing_profile_id = $1`,
-		rp.RoutingProfile.RoutingProfileID,
+		rp.ID,
 		rp.UpdatedAt,
-		rp.RoutingProfile.ASID,
+		rp.ASID,
 		rp.CACert,
 		rp.TLSCert,
 		rp.TLSKey,
@@ -100,12 +101,12 @@ func UpdateRoutingProfile(db sqlx.Execer, rp *RoutingProfile) error {
 		return ErrDoesNotExist
 	}
 
-	log.WithField("routing_profile_id", rp.RoutingProfile.RoutingProfileID).Info("routing-profile updated")
+	log.WithField("id", rp.ID).Info("routing-profile updated")
 	return nil
 }
 
 // DeleteRoutingProfile deletes the routing-profile matching the given id.
-func DeleteRoutingProfile(db sqlx.Execer, id string) error {
+func DeleteRoutingProfile(db sqlx.Execer, id uuid.UUID) error {
 	res, err := db.Exec("delete from routing_profile where routing_profile_id = $1", id)
 	if err != nil {
 		return handlePSQLError(err, "delete error")
@@ -119,7 +120,7 @@ func DeleteRoutingProfile(db sqlx.Execer, id string) error {
 		return ErrDoesNotExist
 	}
 
-	log.WithField("routing_profile_id", id).Info("routing-profile deleted")
+	log.WithField("id", id).Info("routing-profile deleted")
 	return nil
 }
 

@@ -6,9 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
+
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/brocaar/loraserver/api/as"
+	commonPB "github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/common"
@@ -17,7 +20,6 @@ import (
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
 	"github.com/brocaar/lorawan/band"
 )
 
@@ -32,8 +34,8 @@ type uplinkTestCase struct {
 	DeviceQueueItems    []storage.DeviceQueueItem // items in the device-queue
 	ASHandleDataUpError error                     // application-client publish data-up error
 
-	ExpectedControllerHandleRXInfo            *nc.HandleRXInfoRequest            // expected network-controller publish rxinfo request
-	ExpectedControllerHandleDataUpMACCommands []nc.HandleDataUpMACCommandRequest // expected network-controller publish dataup mac-command requests
+	ExpectedControllerHandleRXInfo            *nc.HandleUplinkMetaDataRequest    // expected network-controller publish rxinfo request
+	ExpectedControllerHandleDataUpMACCommands []nc.HandleUplinkMACCommandRequest // expected network-controller publish dataup mac-command requests
 
 	ExpectedASHandleDataUp      *as.HandleUplinkDataRequest  // expected application-server data up request
 	ExpectedASHandleErrors      []as.HandleErrorRequest      // expected application-server error requests
@@ -97,29 +99,23 @@ func TestUplinkScenarios(t *testing.T) {
 
 		// service-profile
 		sp := storage.ServiceProfile{
-			ServiceProfile: backend.ServiceProfile{
-				AddGWMetadata: true,
-			},
+			AddGWMetadata: true,
 		}
 		So(storage.CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 		// device-profile
-		dp := storage.DeviceProfile{
-			DeviceProfile: backend.DeviceProfile{},
-		}
+		dp := storage.DeviceProfile{}
 		So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
 
 		// routing-profile
-		rp := storage.RoutingProfile{
-			RoutingProfile: backend.RoutingProfile{},
-		}
+		rp := storage.RoutingProfile{}
 		So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
 		// device
 		d := storage.Device{
-			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
-			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
-			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
+			ServiceProfileID: sp.ID,
+			DeviceProfileID:  dp.ID,
+			RoutingProfileID: rp.ID,
 			DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 		}
 		So(storage.CreateDevice(config.C.PostgreSQL.DB, &d), ShouldBeNil)
@@ -161,52 +157,63 @@ func TestUplinkScenarios(t *testing.T) {
 		var fPortZero uint8
 		var fPortOne uint8 = 1
 
-		expectedControllerHandleRXInfo := &nc.HandleRXInfoRequest{
-			DevEUI: ds.DevEUI[:],
-			TxInfo: &nc.TXInfo{
-				Frequency: int64(rxInfo.Frequency),
-				DataRate: &nc.DataRate{
-					Modulation:   string(rxInfo.DataRate.Modulation),
-					BandWidth:    uint32(rxInfo.DataRate.Bandwidth),
-					SpreadFactor: uint32(rxInfo.DataRate.SpreadFactor),
-					Bitrate:      uint32(rxInfo.DataRate.BitRate),
+		expectedApplicationPushDataUpNoData := &as.HandleUplinkDataRequest{
+			JoinEui: ds.JoinEUI[:],
+			DevEui:  ds.DevEUI[:],
+			FCnt:    10,
+			FPort:   1,
+			Data:    nil,
+			TxInfo: &gw.UplinkTXInfo{
+				Frequency:  uint32(rxInfo.Frequency),
+				Modulation: commonPB.Modulation_LORA,
+				ModulationInfo: &gw.UplinkTXInfo_LoraModulationInfo{
+					LoraModulationInfo: &gw.LoRaModulationInfo{
+						Bandwidth:       uint32(rxInfo.DataRate.Bandwidth),
+						SpreadingFactor: uint32(rxInfo.DataRate.SpreadFactor),
+						CodeRate:        rxInfo.CodeRate,
+					},
 				},
 			},
-			RxInfo: []*nc.RXInfo{
+			RxInfo: []*gw.UplinkRXInfo{
 				{
-					Mac:     rxInfo.MAC[:],
-					Time:    rxInfo.Time.Format(time.RFC3339Nano),
-					Rssi:    int32(rxInfo.RSSI),
-					LoRaSNR: rxInfo.LoRaSNR,
+					GatewayId: rxInfo.MAC[:],
+					Rssi:      int32(rxInfo.RSSI),
+					LoraSnr:   rxInfo.LoRaSNR,
+					Channel:   uint32(rxInfo.Channel),
+					RfChain:   uint32(rxInfo.RFChain),
+					Board:     uint32(rxInfo.Board),
+					Antenna:   uint32(rxInfo.Antenna),
+					Location: &gw.Location{
+						Latitude:  gw1.Location.Latitude,
+						Longitude: gw1.Location.Longitude,
+						Altitude:  gw1.Altitude,
+					},
 				},
 			},
 		}
 
-		expectedApplicationPushDataUpNoData := &as.HandleUplinkDataRequest{
-			AppEUI: ds.JoinEUI[:],
-			DevEUI: ds.DevEUI[:],
-			FCnt:   10,
-			FPort:  1,
-			Data:   nil,
-			TxInfo: &as.TXInfo{
-				Frequency: int64(rxInfo.Frequency),
-				DataRate: &as.DataRate{
-					Modulation:   string(rxInfo.DataRate.Modulation),
-					BandWidth:    uint32(rxInfo.DataRate.Bandwidth),
-					SpreadFactor: uint32(rxInfo.DataRate.SpreadFactor),
-					Bitrate:      uint32(rxInfo.DataRate.BitRate),
-				},
-			},
-			RxInfo: []*as.RXInfo{
+		if rxInfo.Time != nil {
+			expectedApplicationPushDataUpNoData.RxInfo[0].Time, _ = ptypes.TimestampProto(*rxInfo.Time)
+		}
+
+		if rxInfo.TimeSinceGPSEpoch != nil {
+			expectedApplicationPushDataUpNoData.RxInfo[0].TimeSinceGpsEpoch = ptypes.DurationProto(time.Duration(*rxInfo.TimeSinceGPSEpoch))
+		}
+
+		expectedControllerHandleRXInfo := &nc.HandleUplinkMetaDataRequest{
+			DevEui: ds.DevEUI[:],
+			TxInfo: expectedApplicationPushDataUpNoData.TxInfo,
+			RxInfo: []*gw.UplinkRXInfo{
 				{
-					Mac:       rxInfo.MAC[:],
-					Name:      gw1.Name,
-					Time:      rxInfo.Time.Format(time.RFC3339Nano),
-					Rssi:      int32(rxInfo.RSSI),
-					LoRaSNR:   rxInfo.LoRaSNR,
-					Altitude:  gw1.Altitude,
-					Latitude:  gw1.Location.Latitude,
-					Longitude: gw1.Location.Longitude,
+					GatewayId:         rxInfo.MAC[:],
+					Rssi:              int32(rxInfo.RSSI),
+					LoraSnr:           rxInfo.LoRaSNR,
+					Channel:           uint32(rxInfo.Channel),
+					RfChain:           uint32(rxInfo.RFChain),
+					Board:             uint32(rxInfo.Board),
+					Antenna:           uint32(rxInfo.Antenna),
+					Time:              expectedApplicationPushDataUpNoData.RxInfo[0].Time,
+					TimeSinceGpsEpoch: expectedApplicationPushDataUpNoData.RxInfo[0].TimeSinceGpsEpoch,
 				},
 			},
 		}
@@ -308,62 +315,17 @@ func TestUplinkScenarios(t *testing.T) {
 
 		Convey("Given a set of test-scenarios for relax frame-counter mode", func() {
 			expectedApplicationPushDataUpNoData := &as.HandleUplinkDataRequest{
-				AppEUI: ds.JoinEUI[:],
-				DevEUI: ds.DevEUI[:],
-				FCnt:   0,
-				FPort:  1,
-				Data:   nil,
-				TxInfo: &as.TXInfo{
-					Frequency: int64(rxInfo.Frequency),
-					DataRate: &as.DataRate{
-						Modulation:   string(rxInfo.DataRate.Modulation),
-						BandWidth:    uint32(rxInfo.DataRate.Bandwidth),
-						SpreadFactor: uint32(rxInfo.DataRate.SpreadFactor),
-						Bitrate:      uint32(rxInfo.DataRate.BitRate),
-					},
-				},
-				RxInfo: []*as.RXInfo{
-					{
-						Mac:       rxInfo.MAC[:],
-						Name:      gw1.Name,
-						Time:      rxInfo.Time.Format(time.RFC3339Nano),
-						Rssi:      int32(rxInfo.RSSI),
-						LoRaSNR:   rxInfo.LoRaSNR,
-						Altitude:  gw1.Altitude,
-						Latitude:  gw1.Location.Latitude,
-						Longitude: gw1.Location.Longitude,
-					},
-				},
+				JoinEui: ds.JoinEUI[:],
+				DevEui:  ds.DevEUI[:],
+				FCnt:    0,
+				FPort:   1,
+				Data:    nil,
+				TxInfo:  expectedApplicationPushDataUpNoData.TxInfo,
+				RxInfo:  expectedApplicationPushDataUpNoData.RxInfo,
 			}
 
-			expectedApplicationPushDataUpNoData7 := &as.HandleUplinkDataRequest{
-				AppEUI: ds.JoinEUI[:],
-				DevEUI: ds.DevEUI[:],
-				FCnt:   7,
-				FPort:  1,
-				Data:   nil,
-				TxInfo: &as.TXInfo{
-					Frequency: int64(rxInfo.Frequency),
-					DataRate: &as.DataRate{
-						Modulation:   string(rxInfo.DataRate.Modulation),
-						BandWidth:    uint32(rxInfo.DataRate.Bandwidth),
-						SpreadFactor: uint32(rxInfo.DataRate.SpreadFactor),
-						Bitrate:      uint32(rxInfo.DataRate.BitRate),
-					},
-				},
-				RxInfo: []*as.RXInfo{
-					{
-						Mac:       rxInfo.MAC[:],
-						Name:      gw1.Name,
-						Time:      rxInfo.Time.Format(time.RFC3339Nano),
-						Rssi:      int32(rxInfo.RSSI),
-						LoRaSNR:   rxInfo.LoRaSNR,
-						Altitude:  gw1.Altitude,
-						Latitude:  gw1.Location.Latitude,
-						Longitude: gw1.Location.Longitude,
-					},
-				},
-			}
+			expectedApplicationPushDataUpNoData7 := *expectedApplicationPushDataUpNoData
+			expectedApplicationPushDataUpNoData7.FCnt = 7
 
 			tests := []uplinkTestCase{
 				{
@@ -390,7 +352,7 @@ func TestUplinkScenarios(t *testing.T) {
 					},
 					ExpectedUplinkMIC:              lorawan.MIC{48, 94, 26, 239},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
-					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData7,
+					ExpectedASHandleDataUp:         &expectedApplicationPushDataUpNoData7,
 					ExpectedFCntUp:                 8,
 					ExpectedNFCntDown:              5,
 					ExpectedEnabledChannels:        []int{0, 1, 2},
@@ -529,7 +491,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedUplinkMIC:              lorawan.MIC{132, 250, 228, 10},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
-					ExpectedASHandleDownlinkACK:    &as.HandleDownlinkACKRequest{DevEUI: d.DevEUI[:], FCnt: 4, Acknowledged: true},
+					ExpectedASHandleDownlinkACK:    &as.HandleDownlinkACKRequest{DevEui: d.DevEUI[:], FCnt: 4, Acknowledged: true},
 					ExpectedFCntUp:                 11,
 					ExpectedNFCntDown:              5,
 					ExpectedEnabledChannels:        []int{0, 1, 2},
@@ -567,7 +529,7 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedUplinkMIC:              lorawan.MIC{132, 250, 228, 10},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
-					ExpectedASHandleDownlinkACK:    &as.HandleDownlinkACKRequest{DevEUI: d.DevEUI[:], FCnt: 4, Acknowledged: true},
+					ExpectedASHandleDownlinkACK:    &as.HandleDownlinkACKRequest{DevEui: d.DevEUI[:], FCnt: 4, Acknowledged: true},
 					ExpectedFCntUp:                 11,
 					ExpectedNFCntDown:              5,
 					ExpectedEnabledChannels:        []int{0, 1, 2},
@@ -773,9 +735,9 @@ func TestUplinkScenarios(t *testing.T) {
 					},
 					ExpectedUplinkMIC:              lorawan.MIC{218, 0, 109, 32},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
-					ExpectedControllerHandleDataUpMACCommands: []nc.HandleDataUpMACCommandRequest{
-						{DevEUI: ds.DevEUI[:], Cid: 128, Commands: [][]byte{{128, 1, 2, 3}}},
-						{DevEUI: ds.DevEUI[:], Cid: 129, Commands: [][]byte{{129, 4, 5}}},
+					ExpectedControllerHandleDataUpMACCommands: []nc.HandleUplinkMACCommandRequest{
+						{DevEui: ds.DevEUI[:], Cid: 128, Commands: [][]byte{{128, 1, 2, 3}}},
+						{DevEui: ds.DevEUI[:], Cid: 129, Commands: [][]byte{{129, 4, 5}}},
 					},
 					ExpectedFCntUp:          11,
 					ExpectedNFCntDown:       5,
@@ -809,9 +771,9 @@ func TestUplinkScenarios(t *testing.T) {
 					},
 					ExpectedUplinkMIC:              lorawan.MIC{205, 171, 205, 171},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
-					ExpectedControllerHandleDataUpMACCommands: []nc.HandleDataUpMACCommandRequest{
-						{DevEUI: ds.DevEUI[:], Cid: 128, Commands: [][]byte{{128, 1, 2, 3}}},
-						{DevEUI: ds.DevEUI[:], Cid: 129, Commands: [][]byte{{129, 4, 5}}},
+					ExpectedControllerHandleDataUpMACCommands: []nc.HandleUplinkMACCommandRequest{
+						{DevEui: ds.DevEUI[:], Cid: 128, Commands: [][]byte{{128, 1, 2, 3}}},
+						{DevEui: ds.DevEUI[:], Cid: 129, Commands: [][]byte{{129, 4, 5}}},
 					},
 					ExpectedFCntUp:          11,
 					ExpectedNFCntDown:       5,
@@ -840,9 +802,9 @@ func TestUplinkScenarios(t *testing.T) {
 					},
 					ExpectedUplinkMIC:              lorawan.MIC{161, 39, 115, 252},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
-					ExpectedControllerHandleDataUpMACCommands: []nc.HandleDataUpMACCommandRequest{
-						{DevEUI: ds.DevEUI[:], Cid: 128, Commands: [][]byte{{128, 1, 2, 3}}},
-						{DevEUI: ds.DevEUI[:], Cid: 129, Commands: [][]byte{{129, 4, 5}}},
+					ExpectedControllerHandleDataUpMACCommands: []nc.HandleUplinkMACCommandRequest{
+						{DevEui: ds.DevEUI[:], Cid: 128, Commands: [][]byte{{128, 1, 2, 3}}},
+						{DevEui: ds.DevEUI[:], Cid: 129, Commands: [][]byte{{129, 4, 5}}},
 					},
 					ExpectedFCntUp:          11,
 					ExpectedNFCntDown:       5,
@@ -889,7 +851,7 @@ func TestUplinkScenarios(t *testing.T) {
 						tc.ExpectedASHandleDataUp.Data = []byte{1, 2, 3, 4}
 
 						// set add gw meta-data to false
-						sp.ServiceProfile.AddGWMetadata = false
+						sp.AddGWMetadata = false
 						return storage.UpdateServiceProfile(config.C.PostgreSQL.DB, &sp)
 					},
 
@@ -929,7 +891,7 @@ func TestUplinkScenarios(t *testing.T) {
 			tests := []uplinkTestCase{
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
-						sp.ServiceProfile.DevStatusReqFreq = 1
+						sp.DevStatusReqFreq = 1
 						So(storage.UpdateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 						tc.ExpectedASHandleDataUp.Data = []byte{1, 2, 3, 4}
@@ -988,7 +950,7 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
-						sp.ServiceProfile.DevStatusReqFreq = 1
+						sp.DevStatusReqFreq = 1
 						So(storage.UpdateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 						tc.ExpectedASHandleDataUp.Data = []byte{1, 2, 3, 4}
@@ -1374,12 +1336,12 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedNFCntDown:              5, // payload has been discarded, nothing to transmit
 					ExpectedEnabledChannels:        []int{0, 1, 2},
 					ExpectedASHandleErrors: []as.HandleErrorRequest{
-						{DevEUI: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 5},
+						{DevEui: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 5},
 					},
 				},
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
-						sp.ServiceProfile.DevStatusReqFreq = 1
+						sp.DevStatusReqFreq = 1
 						So(storage.UpdateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 						return nil
 					},
@@ -1448,8 +1410,6 @@ func TestUplinkScenarios(t *testing.T) {
 			tests := []uplinkTestCase{
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
-						tc.ExpectedControllerHandleRXInfo.TxInfo.Adr = true
-
 						tc.DeviceSession.FCntUp = 10
 						return nil
 					},
@@ -1889,8 +1849,6 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
-						tc.ExpectedControllerHandleRXInfo.TxInfo.Adr = true
-
 						tc.DeviceSession.FCntUp = 10
 						tc.DeviceSession.EnabledUplinkChannels = []int{0, 1, 2, 3, 4, 5, 6, 7}
 						return nil

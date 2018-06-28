@@ -116,7 +116,7 @@ type Config struct {
 	}
 
 	NetworkController struct {
-		Client nc.NetworkControllerClient
+		Client nc.NetworkControllerServiceClient
 
 		Server  string
 		CACert  string `mapstructure:"ca_cert"`

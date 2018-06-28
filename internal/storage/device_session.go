@@ -13,6 +13,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 	proto "github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/internal/config"
@@ -55,9 +56,9 @@ type DeviceSession struct {
 	MACVersion string
 
 	// profile ids
-	DeviceProfileID  string
-	ServiceProfileID string
-	RoutingProfileID string
+	DeviceProfileID  uuid.UUID
+	ServiceProfileID uuid.UUID
+	RoutingProfileID uuid.UUID
 
 	// session data
 	DevAddr     lorawan.DevAddr
@@ -484,9 +485,9 @@ func deviceSessionToDeviceSessionPB(d DeviceSession) DeviceSessionPB {
 	out := DeviceSessionPB{
 		MacVersion: d.MACVersion,
 
-		DeviceProfileId:  d.DeviceProfileID,
-		ServiceProfileId: d.ServiceProfileID,
-		RoutingProfileId: d.RoutingProfileID,
+		DeviceProfileId:  d.DeviceProfileID.String(),
+		ServiceProfileId: d.ServiceProfileID.String(),
+		RoutingProfileId: d.RoutingProfileID.String(),
 
 		DevAddr:     d.DevAddr[:],
 		DevEui:      d.DevEUI[:],
@@ -575,12 +576,16 @@ func deviceSessionToDeviceSessionPB(d DeviceSession) DeviceSessionPB {
 }
 
 func deviceSessionPBToDeviceSession(d DeviceSessionPB) DeviceSession {
+	dpID, _ := uuid.FromString(d.DeviceProfileId)
+	rpID, _ := uuid.FromString(d.RoutingProfileId)
+	spID, _ := uuid.FromString(d.ServiceProfileId)
+
 	out := DeviceSession{
 		MACVersion: d.MacVersion,
 
-		DeviceProfileID:  d.DeviceProfileId,
-		ServiceProfileID: d.ServiceProfileId,
-		RoutingProfileID: d.RoutingProfileId,
+		DeviceProfileID:  dpID,
+		ServiceProfileID: spID,
+		RoutingProfileID: rpID,
 
 		FCntUp:             d.FCntUp,
 		NFCntDown:          d.NFCntDown,

@@ -5,18 +5,16 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/uplink"
-	"github.com/brocaar/lorawan/backend"
-
 	"github.com/brocaar/loraserver/api/as"
-
+	commonPB "github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -59,12 +57,12 @@ func TestSendProprietaryPayloadScenarios(t *testing.T) {
 				{
 					Name: "send proprietary payload",
 					SendProprietaryPayloadRequest: ns.SendProprietaryPayloadRequest{
-						MacPayload:  []byte{1, 2, 3, 4},
-						Mic:         []byte{5, 6, 7, 8},
-						GatewayMACs: [][]byte{{8, 7, 6, 5, 4, 3, 2, 1}},
-						IPol:        true,
-						Frequency:   868100000,
-						Dr:          5,
+						MacPayload:            []byte{1, 2, 3, 4},
+						Mic:                   []byte{5, 6, 7, 8},
+						GatewayMacs:           [][]byte{{8, 7, 6, 5, 4, 3, 2, 1}},
+						PolarizationInversion: true,
+						Frequency:             868100000,
+						Dr:                    5,
 					},
 					ExpectedTXInfo: gw.TXInfo{
 						MAC:         lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
@@ -122,9 +120,7 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 
 		// the routing profile is needed as the ns will send the proprietary
 		// frame to all application-servers.
-		rp := storage.RoutingProfile{
-			RoutingProfile: backend.RoutingProfile{},
-		}
+		rp := storage.RoutingProfile{}
 		So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
 		g := storage.Gateway{
@@ -166,24 +162,27 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 					ExpectedApplicationHandleProprietaryUp: &as.HandleProprietaryUplinkRequest{
 						MacPayload: []byte{1, 2, 3, 4},
 						Mic:        []byte{5, 6, 7, 8},
-						TxInfo: &as.TXInfo{
-							Frequency: 868100000,
-							DataRate: &as.DataRate{
-								Modulation:   "LORA",
-								BandWidth:    125,
-								SpreadFactor: 12,
+						TxInfo: &gw.UplinkTXInfo{
+							Frequency:  868100000,
+							Modulation: commonPB.Modulation_LORA,
+							ModulationInfo: &gw.UplinkTXInfo_LoraModulationInfo{
+								LoraModulationInfo: &gw.LoRaModulationInfo{
+									Bandwidth:       125,
+									SpreadingFactor: 12,
+									CodeRate:        "4/5",
+								},
 							},
-							CodeRate: "4/5",
 						},
-						RxInfo: []*as.RXInfo{
+						RxInfo: []*gw.UplinkRXInfo{
 							{
-								Mac:       []byte{1, 2, 3, 4, 5, 6, 7, 8},
+								GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 								Rssi:      -10,
-								LoRaSNR:   5,
-								Name:      "test-gw",
-								Latitude:  1.1234,
-								Longitude: 2.345,
-								Altitude:  10,
+								LoraSnr:   5,
+								Location: &gw.Location{
+									Latitude:  1.1234,
+									Longitude: 2.345,
+									Altitude:  10,
+								},
 							},
 						},
 					},

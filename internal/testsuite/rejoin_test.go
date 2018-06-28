@@ -67,39 +67,33 @@ func TestRejoinScenarios(t *testing.T) {
 		config.C.JoinServer.Pool = test.NewJoinServerPool(jsClient)
 		config.C.NetworkServer.Gateway.Backend.Backend = test.NewGatewayBackend()
 
-		sp := storage.ServiceProfile{
-			ServiceProfile: backend.ServiceProfile{},
-		}
+		sp := storage.ServiceProfile{}
 		So(storage.CreateServiceProfile(db, &sp), ShouldBeNil)
 
 		dp := storage.DeviceProfile{
-			DeviceProfile: backend.DeviceProfile{
-				MACVersion:   "1.1.0",
-				RXDelay1:     3,
-				RXDROffset1:  1,
-				RXDataRate2:  5,
-				SupportsJoin: true,
-			},
+			MACVersion:   "1.1.0",
+			RXDelay1:     3,
+			RXDROffset1:  1,
+			RXDataRate2:  5,
+			SupportsJoin: true,
 		}
 		So(storage.CreateDeviceProfile(db, &dp), ShouldBeNil)
 
-		rp := storage.RoutingProfile{
-			RoutingProfile: backend.RoutingProfile{},
-		}
+		rp := storage.RoutingProfile{}
 		So(storage.CreateRoutingProfile(db, &rp), ShouldBeNil)
 
 		d := storage.Device{
 			DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
-			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
-			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
+			DeviceProfileID:  dp.ID,
+			RoutingProfileID: rp.ID,
+			ServiceProfileID: sp.ID,
 		}
 		So(storage.CreateDevice(db, &d), ShouldBeNil)
 
 		ds := storage.DeviceSession{
-			DeviceProfileID:       dp.DeviceProfile.DeviceProfileID,
-			ServiceProfileID:      sp.ServiceProfile.ServiceProfileID,
-			RoutingProfileID:      rp.RoutingProfile.RoutingProfileID,
+			DeviceProfileID:       dp.ID,
+			ServiceProfileID:      sp.ID,
+			RoutingProfileID:      rp.ID,
 			DevEUI:                d.DevEUI,
 			JoinEUI:               lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
 			SNwkSIntKey:           lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
