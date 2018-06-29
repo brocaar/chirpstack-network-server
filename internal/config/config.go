@@ -59,6 +59,7 @@ type Config struct {
 			DisableMACCommands          bool    `mapstructure:"disable_mac_commands"`
 			EnabledUplinkChannelsLegacy string  `mapstructure:"enabled_uplink_channels_legacy"`
 			ExtraChannelsLegacy         []int   `mapstructure:"extra_channels_legacy"`
+			DisableADR                  bool    `mapstructure:"disable_adr"`
 
 			ExtraChannels []struct {
 				Frequency int

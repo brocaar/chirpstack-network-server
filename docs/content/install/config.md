@@ -288,6 +288,9 @@ get_downlink_data_delay="100ms"
   # min_dr=0
   # max_dr=5
 
+	#Disable adr for the whole network.
+	disable_adr=false
+
 
   # Class B settings
   [network_server.network_settings.class_b]
