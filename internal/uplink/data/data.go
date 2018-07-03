@@ -33,12 +33,12 @@ var tasks = []func(*dataContext) error{
 	getServiceProfile,
 	setADR,
 	setUplinkDataRate,
-	appendMetaDataToUplinkHistory,
 	getApplicationServerClientForDataUp,
 	setBeaconLocked,
 	sendRXInfoToNetworkController,
 	handleFOptsMACCommands,
 	handleFRMPayloadMACCommands,
+	appendMetaDataToUplinkHistory,
 	sendFRMPayloadToApplicationServer,
 	setLastRXInfoSet,
 	syncUplinkFCnt,
@@ -172,6 +172,12 @@ func setUplinkDataRate(ctx *dataContext) error {
 	return nil
 }
 
+// appendMetaDataToUplinkHistory appends uplink related meta-data to the
+// uplink history in the device-session.
+// As this also stores the TXPower, this function must be called after
+// processing the mac-commands (we might have asked the device to change
+// its TXPower and if one of the mac-commands contains a LinkADRReq ACK
+// this will update the TXPowerIndex on the device-session).
 func appendMetaDataToUplinkHistory(ctx *dataContext) error {
 	var maxSNR float64
 	for i, rxInfo := range ctx.RXPacket.RXInfoSet {
@@ -186,6 +192,7 @@ func appendMetaDataToUplinkHistory(ctx *dataContext) error {
 		FCnt:         ctx.MACPayload.FHDR.FCnt,
 		GatewayCount: len(ctx.RXPacket.RXInfoSet),
 		MaxSNR:       maxSNR,
+		TXPowerIndex: ctx.DeviceSession.TXPowerIndex,
 	})
 
 	return nil
