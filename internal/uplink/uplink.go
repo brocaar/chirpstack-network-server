@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
@@ -13,6 +14,7 @@ import (
 	"github.com/brocaar/loraserver/internal/uplink/data"
 	"github.com/brocaar/loraserver/internal/uplink/join"
 	"github.com/brocaar/loraserver/internal/uplink/proprietary"
+	"github.com/brocaar/loraserver/internal/uplink/rejoin"
 	"github.com/brocaar/lorawan"
 )
 
@@ -69,13 +71,20 @@ func HandleRXPacket(rxPacket gw.RXPacket) error {
 
 func collectPackets(rxPacket gw.RXPacket) error {
 	return collectAndCallOnce(config.C.Redis.Pool, rxPacket, func(rxPacket models.RXPacket) error {
-		if err := framelog.LogUplinkFrameForGateways(rxPacket); err != nil {
+		uplinkFrameSet, err := framelog.CreateUplinkFrameSet(rxPacket)
+		if err != nil {
+			return errors.Wrap(err, "create uplink frame-set error")
+		}
+
+		if err := framelog.LogUplinkFrameForGateways(uplinkFrameSet); err != nil {
 			log.WithError(err).Error("log uplink frames for gateways error")
 		}
 
 		switch rxPacket.PHYPayload.MHDR.MType {
 		case lorawan.JoinRequest:
 			return join.Handle(rxPacket)
+		case lorawan.RejoinRequest:
+			return rejoin.Handle(rxPacket)
 		case lorawan.UnconfirmedDataUp, lorawan.ConfirmedDataUp:
 			return data.Handle(rxPacket)
 		case lorawan.Proprietary:

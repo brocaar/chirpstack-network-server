@@ -2,10 +2,15 @@ syntax = "proto3";
 
 package ns;
 
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "github.com/brocaar/loraserver/api/common/common.proto";
+import "github.com/brocaar/loraserver/api/gw/gw.proto";
 import "profiles.proto";
 
-// NetworkServer is the network-server service.
-service NetworkServer {
+
+// NetworkServerService provides the network-server API methods.
+service NetworkServerService {
     // CreateServiceProfile creates the given service-profile.
     rpc CreateServiceProfile(CreateServiceProfileRequest) returns (CreateServiceProfileResponse) {}
 
@@ -13,10 +18,10 @@ service NetworkServer {
     rpc GetServiceProfile(GetServiceProfileRequest) returns (GetServiceProfileResponse) {}
 
     // UpdateServiceProfile updates the given service-profile.
-    rpc UpdateServiceProfile(UpdateServiceProfileRequest) returns (UpdateServiceProfileResponse) {}
+    rpc UpdateServiceProfile(UpdateServiceProfileRequest) returns (google.protobuf.Empty) {}
 
     // DeleteServiceProfile deletes the service-profile matching the given id.
-    rpc DeleteServiceProfile(DeleteServiceProfileRequest) returns (DeleteServiceProfileResponse) {}
+    rpc DeleteServiceProfile(DeleteServiceProfileRequest) returns (google.protobuf.Empty) {}
 
     // CreateRoutingProfile creates the given routing-profile.
     rpc CreateRoutingProfile(CreateRoutingProfileRequest) returns (CreateRoutingProfileResponse) {}
@@ -25,10 +30,10 @@ service NetworkServer {
     rpc GetRoutingProfile(GetRoutingProfileRequest) returns (GetRoutingProfileResponse) {}
 
     // UpdateRoutingProfile updates the given routing-profile.
-    rpc UpdateRoutingProfile(UpdateRoutingProfileRequest) returns (UpdateRoutingProfileResponse) {}
+    rpc UpdateRoutingProfile(UpdateRoutingProfileRequest) returns (google.protobuf.Empty) {}
 
     // DeleteRoutingProfile deletes the routing-profile matching the given id.
-    rpc DeleteRoutingProfile(DeleteRoutingProfileRequest) returns (DeleteRoutingProfileResponse) {}
+    rpc DeleteRoutingProfile(DeleteRoutingProfileRequest) returns (google.protobuf.Empty) {}
 
     // CreateDeviceProfile creates the given device-profile.
     rpc CreateDeviceProfile(CreateDeviceProfileRequest) returns (CreateDeviceProfileResponse) {}
@@ -37,37 +42,37 @@ service NetworkServer {
     rpc GetDeviceProfile(GetDeviceProfileRequest) returns (GetDeviceProfileResponse) {}
 
     // UpdateDeviceProfile updates the given device-profile.
-    rpc UpdateDeviceProfile(UpdateDeviceProfileRequest) returns (UpdateDeviceProfileResponse) {}
+    rpc UpdateDeviceProfile(UpdateDeviceProfileRequest) returns (google.protobuf.Empty) {}
 
     // DeleteDeviceProfile deletes the device-profile matching the given id.
-    rpc DeleteDeviceProfile(DeleteDeviceProfileRequest) returns (DeleteDeviceProfileResponse) {}
+    rpc DeleteDeviceProfile(DeleteDeviceProfileRequest) returns (google.protobuf.Empty) {}
 
     // CreateDevice creates the given device.
-    rpc CreateDevice(CreateDeviceRequest) returns (CreateDeviceResponse) {}
+    rpc CreateDevice(CreateDeviceRequest) returns (google.protobuf.Empty) {}
 
     // GetDevice returns the device matching the given DevEUI.
     rpc GetDevice(GetDeviceRequest) returns (GetDeviceResponse) {}
 
     // UpdateDevice updates the given device.
-    rpc UpdateDevice(UpdateDeviceRequest) returns (UpdateDeviceResponse) {}
+    rpc UpdateDevice(UpdateDeviceRequest) returns (google.protobuf.Empty) {}
 
     // DeleteDevice deletes the device matching the given DevEUI.
-    rpc DeleteDevice(DeleteDeviceRequest) returns (DeleteDeviceResponse) {}
+    rpc DeleteDevice(DeleteDeviceRequest) returns (google.protobuf.Empty) {}
 
     // ActivateDevice activates a device (ABP).
-    rpc ActivateDevice(ActivateDeviceRequest) returns (ActivateDeviceResponse) {}
+    rpc ActivateDevice(ActivateDeviceRequest) returns (google.protobuf.Empty) {}
 
     // DeactivateDevice de-activates a device.
-    rpc DeactivateDevice(DeactivateDeviceRequest) returns (DeactivateDeviceResponse) {}
+    rpc DeactivateDevice(DeactivateDeviceRequest) returns (google.protobuf.Empty) {}
 
     // GetDeviceActivation returns the device activation details.
     rpc GetDeviceActivation(GetDeviceActivationRequest) returns (GetDeviceActivationResponse) {}
 
     // CreateDeviceQueueItem creates the given device-queue item.
-    rpc CreateDeviceQueueItem(CreateDeviceQueueItemRequest) returns (CreateDeviceQueueItemResponse) {}
+    rpc CreateDeviceQueueItem(CreateDeviceQueueItemRequest) returns (google.protobuf.Empty) {}
 
     // FlushDeviceQueueForDevEUI flushes the device-queue for the given DevEUI.
-    rpc FlushDeviceQueueForDevEUI(FlushDeviceQueueForDevEUIRequest) returns (FlushDeviceQueueForDevEUIResponse) {}
+    rpc FlushDeviceQueueForDevEUI(FlushDeviceQueueForDevEUIRequest) returns (google.protobuf.Empty) {}
 
     // GetDeviceQueueItemsForDevEUI returns all device-queue items for the given DevEUI.
     rpc GetDeviceQueueItemsForDevEUI(GetDeviceQueueItemsForDevEUIRequest) returns (GetDeviceQueueItemsForDevEUIResponse) {}
@@ -77,25 +82,25 @@ service NetworkServer {
     rpc GetNextDownlinkFCntForDevEUI(GetNextDownlinkFCntForDevEUIRequest) returns (GetNextDownlinkFCntForDevEUIResponse) {}
 
     // GetRandomDevAddr returns a random DevAddr taking the NwkID prefix into account.
-    rpc GetRandomDevAddr(GetRandomDevAddrRequest) returns (GetRandomDevAddrResponse) {}
+    rpc GetRandomDevAddr(google.protobuf.Empty) returns (GetRandomDevAddrResponse) {}
 
     // CreateMACCommandQueueItem adds the downlink mac-command to the queue.
-    rpc CreateMACCommandQueueItem(CreateMACCommandQueueItemRequest) returns (CreateMACCommandQueueItemResponse) {}
+    rpc CreateMACCommandQueueItem(CreateMACCommandQueueItemRequest) returns (google.protobuf.Empty) {}
 
-	// SendProprietaryPayload send a payload using the 'Proprietary' LoRaWAN message-type.
-	rpc SendProprietaryPayload(SendProprietaryPayloadRequest) returns (SendProprietaryPayloadResponse) {}
+    // SendProprietaryPayload send a payload using the 'Proprietary' LoRaWAN message-type.
+    rpc SendProprietaryPayload(SendProprietaryPayloadRequest) returns (google.protobuf.Empty) {}
 
     // CreateGateway creates the given gateway.
-    rpc CreateGateway(CreateGatewayRequest) returns (CreateGatewayResponse) {}
+    rpc CreateGateway(CreateGatewayRequest) returns (google.protobuf.Empty) {}
 
     // GetGateway returns data for a particular gateway.
     rpc GetGateway(GetGatewayRequest) returns (GetGatewayResponse) {}
 
     // UpdateGateway updates an existing gateway.
-    rpc UpdateGateway(UpdateGatewayRequest) returns (UpdateGatewayResponse) {}
+    rpc UpdateGateway(UpdateGatewayRequest) returns (google.protobuf.Empty) {}
 
     // DeleteGateway deletes a gateway.
-    rpc DeleteGateway(DeleteGatewayRequest) returns (DeleteGatewayResponse) {}
+    rpc DeleteGateway(DeleteGatewayRequest) returns (google.protobuf.Empty) {}
 
     // CreateGatewayProfile creates the given gateway-profile.
     rpc CreateGatewayProfile(CreateGatewayProfileRequest) returns (CreateGatewayProfileResponse) {}
@@ -104,10 +109,10 @@ service NetworkServer {
     rpc GetGatewayProfile(GetGatewayProfileRequest) returns (GetGatewayProfileResponse) {}
 
     // UpdateGatewayProfile updates the given gateway-profile.
-    rpc UpdateGatewayProfile(UpdateGatewayProfileRequest) returns (UpdateGatewayProfileResponse) {}
+    rpc UpdateGatewayProfile(UpdateGatewayProfileRequest) returns (google.protobuf.Empty) {}
 
     // DeleteGatewayProfile deletes the gateway-profile matching a given id.
-    rpc DeleteGatewayProfile(DeleteGatewayProfileRequest) returns (DeleteGatewayProfileResponse) {}
+    rpc DeleteGatewayProfile(DeleteGatewayProfileRequest) returns (google.protobuf.Empty) {}
 
     // GetGatewayStats returns stats of an existing gateway.
     rpc GetGatewayStats(GetGatewayStatsRequest) returns (GetGatewayStatsResponse) {}
@@ -119,7 +124,7 @@ service NetworkServer {
     rpc StreamFrameLogsForDevice(StreamFrameLogsForDeviceRequest) returns (stream StreamFrameLogsForDeviceResponse) {}
 
     // GetVersion returns the LoRa Server version.
-    rpc GetVersion(GetVersionRequest) returns (GetVersionResponse) {}
+    rpc GetVersion(google.protobuf.Empty) returns (GetVersionResponse) {}
 }
 
 enum RXWindow {
@@ -130,263 +135,224 @@ enum RXWindow {
     RX2 = 1;
 }
 
-enum Modulation {
-    // LoRa
-    LORA = 0;
-
-    // FSK
-    FSK = 1;
-}
-
-enum Region {
-    // EU868
-    EU868 = 0;
-
-    // US915
-    US915 = 2;
-
-    // CN779
-    CN779 = 3;
-
-    // EU433
-    EU433 = 4;
-
-    // AU915
-    AU915 = 5;
-
-    // CN470
-    CN470 = 6;
-
-    // AS923
-    AS923 = 7;
-
-    // KR920
-    KR920 = 8;
-
-    // IN865
-    IN865 = 9;
-
-    // RU864
-    RU864 = 10;
-}
-
-
 message CreateServiceProfileRequest {
-    ServiceProfile serviceProfile = 1;
+    // Service-profile object to create.
+    ServiceProfile service_profile = 1;
 }
 
 message CreateServiceProfileResponse {
-    string serviceProfileID = 1;
+    // ID of the created service-profile.
+    bytes id = 1;
 }
 
 message GetServiceProfileRequest {
-    string serviceProfileID = 1;
+    // ID of the service-profile.
+    bytes id = 1;
 }
 
 message GetServiceProfileResponse {
-    ServiceProfile serviceProfile = 1;
-    string createdAt = 2;
-    string updatedAt = 3;
+    // Service-profile object.
+    ServiceProfile service_profile = 1;
+
+    // Created at timestamp.
+    google.protobuf.Timestamp created_at = 2;
+
+    // Last update timestamp.
+    google.protobuf.Timestamp updated_at = 3;
 }
 
 message UpdateServiceProfileRequest {
-    ServiceProfile serviceProfile = 1;
+    // Service-profile object to update.
+    ServiceProfile service_profile = 1;
 }
-
-message UpdateServiceProfileResponse {}
 
 message DeleteServiceProfileRequest {
-    string serviceProfileID = 1;
+    // ID of the service-profile.
+    bytes id = 1;
 }
 
-message DeleteServiceProfileResponse {}
-
-message RoutingProfile {
-	string routingProfileID = 1;
-    string asID = 2;
-}
 
 message CreateRoutingProfileRequest {
-    RoutingProfile routingProfile = 1;
+    // Routing-profile object to create.
+    RoutingProfile routing_profile = 1;
 
-    // ca certificate for connecting to lora-app-server
-    string caCert = 2;
-
-    // tls certificate for connecting to lora-app-server
-    string tlsCert = 3;
-
-    // tls key for connecting to lora-app-server
-    string tlsKey = 4;
 }
 
 message CreateRoutingProfileResponse {
-    string routingProfileID = 1;
+    // ID of the created routing-profile.
+    bytes id = 1;
 }
 
 message GetRoutingProfileRequest {
-    string routingProfileID = 1;
+    // ID of the routing-profile.
+    bytes id = 1;
 }
 
 message GetRoutingProfileResponse {
-    RoutingProfile routingProfile = 1;
-    string createdAt = 2;
-    string updatedAt = 3;
+    // Routing-profile object.
+    RoutingProfile routing_profile = 1;
 
-    // ca certificate for connecting to lora-app-server
-    string caCert = 4;
+    // Created at timestamp.
+    google.protobuf.Timestamp created_at = 2;
 
-    // tls certificate for connecting to lora-app-server
-    string tlsCert = 5;
+    // Last update timestamp.
+    google.protobuf.Timestamp updated_at = 3;
 }
 
 message UpdateRoutingProfileRequest {
-    RoutingProfile routingProfile = 1;
-
-    // ca certificate for connecting to lora-app-server
-    string caCert = 2;
-
-    // tls certificate for connecting to lora-app-server
-    string tlsCert = 3;
-
-    // tls key for connecting to lora-app-server
-    string tlsKey = 4;
+    // Routing-profile object to update.
+    RoutingProfile routing_profile = 1;
 }
-
-message UpdateRoutingProfileResponse {}
 
 message DeleteRoutingProfileRequest {
-    string routingProfileID = 1;
+    // Routing-profile ID.
+    bytes id = 1;
 }
 
-message DeleteRoutingProfileResponse {}
-
 message CreateDeviceProfileRequest {
-    DeviceProfile deviceProfile = 1;
+    // Device-profile object to create.
+    DeviceProfile device_profile = 1;
 }
 
 message CreateDeviceProfileResponse {
-    string deviceProfileID = 1;
+    // ID of the created device-profile.
+    bytes id = 1;
 }
 
 message GetDeviceProfileRequest {
-    string deviceProfileID = 1;
+    // Device-profile ID.
+    bytes id = 1;
 }
 
 message GetDeviceProfileResponse {
-    DeviceProfile deviceProfile = 1;
-    string createdAt = 2;
-    string updatedAt = 3;
+    // Device-profile object.
+    DeviceProfile device_profile = 1;
+
+    // Created at timestamp.
+    google.protobuf.Timestamp created_at = 2;
+
+    // Last update timestamp.
+    google.protobuf.Timestamp updated_at = 3;
 }
 
 message UpdateDeviceProfileRequest {
-    DeviceProfile deviceProfile = 1;
+    // Device-profile object to update.
+    DeviceProfile device_profile = 1;
 }
-
-message UpdateDeviceProfileResponse {}
 
 message DeleteDeviceProfileRequest {
-    string deviceProfileID = 1;
+    // Device-profile ID.
+    bytes id = 1;
 }
 
-message DeleteDeviceProfileResponse {}
-
 message Device {
-    bytes devEUI = 1;
-    string deviceProfileID = 2;
-    string serviceProfileID = 3;
-    string routingProfileID = 4;
-    bool skipFCntCheck = 5;
+    // DevEUI.
+    bytes dev_eui = 1;
+
+    // Device-profile ID.
+    bytes device_profile_id = 2;
+
+    // Service-profile ID.
+    bytes service_profile_id = 3;
+
+    // Routing-profile ID.
+    bytes routing_profile_id = 4;
+
+    // Skip frame-counter check.
+    // Note that turning this on is insecure and is intended for debugging only.
+    bool skip_f_cnt_check = 5;
 }
 
 message CreateDeviceRequest {
+    // Device object to create.
     Device device = 1;
 }
 
-message CreateDeviceResponse {}
-
 message GetDeviceRequest {
-    bytes devEUI = 1;
+    // DevEUI.
+    bytes dev_eui = 1;
 }
 
 message GetDeviceResponse {
+    // Device object.
     Device device = 1;
-    string createdAt = 2;
-    string updatedAt = 3;
+
+    // Created at timestamp.
+    google.protobuf.Timestamp created_at = 2;
+
+    // Last update timestamp.
+    google.protobuf.Timestamp updated_at = 3;
 }
 
 message UpdateDeviceRequest {
+    // Device object to update.
     Device device = 1;
 }
 
-message UpdateDeviceResponse {}
-
 message DeleteDeviceRequest {
-    bytes devEUI = 1;
+    // DevEUI.
+    bytes dev_eui = 1;
 }
 
-message DeleteDeviceResponse {}
+message DeviceActivation {
+    // DevEUI.
+    bytes dev_eui = 1;
 
-message ActivateDeviceRequest {
-    // Device EUI (8 bytes).
-    bytes devEUI = 1;
+    // Device address (DevAddr).
+    bytes dev_addr = 2;
 
-    // The address of the device (4 bytes).
-    bytes devAddr = 2;
+    // SNwkSIntKey (serving network-server session integrity key).
+    bytes s_nwk_s_int_key = 3;
 
-    // The network-session key (16 bytes).
-    bytes nwkSKey = 3;
+    // FNwkSIntKey (forwarding network-server session integrity key).
+    bytes f_nwk_s_int_key = 4;
+
+    // NwkSEncKey (network-server session encryption key).
+    bytes nwk_s_enc_key = 5;
 
     // The next expected uplink frame-counter.
-    uint32 fCntUp = 4;
+    uint32 f_cnt_up = 6;
 
-    // The frame-counter used for the next downlink frame.
-    uint32 fCntDown = 5;
+    // The network frame-counter used for the next downlink frame.
+    uint32 n_f_cnt_down = 7;
+
+    // The application frame-counter used for the next downlink frame (LoRaWAN 1.1).
+    uint32 a_f_cnt_down = 8;
 
     // Skip frame-counter checks (this is insecure, but could be helpful for debugging).
-    bool skipFCntCheck = 6;
+    bool skip_f_cnt_check = 9;
 }
 
-message ActivateDeviceResponse {}
+message ActivateDeviceRequest {
+    // Device-activation to activate a device (ABP).
+    DeviceActivation device_activation = 1;
+}
 
 message DeactivateDeviceRequest {
     // Device EUI (8 bytes).
-    bytes devEUI = 1;
+    bytes dev_eui = 1;
 }
-
-message DeactivateDeviceResponse {}
 
 message GetDeviceActivationRequest {
     // Device EUI (8 bytes).
-    bytes devEUI = 1;
+    bytes dev_eui = 1;
 }
 
 message GetDeviceActivationResponse {
-    // The address of the device (4 bytes).
-    bytes devAddr = 1;
-
-    // The network-session key (16 bytes).
-    bytes nwkSKey = 2;
-
-    // The next expected uplink frame-counter.
-    uint32 fCntUp = 3;
-
-    // The frame-counter used for the next downlink frame.
-    uint32 fCntDown = 4;
-
-    // Skip frame-counter checks (this is insecure, but could be helpful for debugging).
-    bool skipFCntCheck = 5;
+    // Device-activation object.
+    DeviceActivation device_activation = 1;
 }
 
 
-message GetRandomDevAddrRequest {}
-
 message GetRandomDevAddrResponse {
-    bytes devAddr = 1;
+    // Random device address (DevAddr).
+    // Note that this includes the NetID prefix of the network-server.
+    bytes dev_addr = 1;
 }
 
 message CreateMACCommandQueueItemRequest {
-    // DevEUI of the node.
-    bytes devEUI = 1;
+    // DevEUI EUI (8 bytes).
+    bytes dev_eui = 1;
 
     // Command identifier (specified by the LoRaWAN specs).
     uint32 cid = 4;
@@ -396,127 +362,74 @@ message CreateMACCommandQueueItemRequest {
     repeated bytes commands = 5;
 }
 
-message CreateMACCommandQueueItemResponse {}
-
 message SendProprietaryPayloadRequest {
-	// MACPayload of the proprietary LoRaWAN frame.
-	bytes macPayload = 1;
+    // MACPayload of the proprietary LoRaWAN frame.
+    bytes mac_payload = 1;
 
-	// MIC of the proprietary LoRaWAN frame (must be 4 bytes).
-	bytes mic = 2;
+    // MIC of the proprietary LoRaWAN frame (must be 4 bytes).
+    bytes mic = 2;
 
-	// Gateway MAC address(es) to use for transmitting the LoRaWAN frame.
-	repeated bytes gatewayMACs = 3;
+    // Gateway MAC address(es) to use for transmitting the LoRaWAN frame.
+    repeated bytes gateway_macs = 3;
 
-	// Set to true for sending as a gateway, or false for sending as a node.
-	// In the latter case the frame will be received by other gateways.
-	bool iPol = 4;
+    // Set to true for sending as a gateway, or false for sending as a node.
+    // In the latter case the frame will be received by other gateways.
+    bool polarization_inversion = 4;
 
-	// Frequency (Hz) to use for the transmission.
-	uint32 frequency = 5;
+    // Frequency (Hz) to use for the transmission.
+    uint32 frequency = 5;
 
-	// Data-rate to use for the transmission.
-	uint32 dr = 6;
+    // Data-rate to use for the transmission.
+    uint32 dr = 6;
 }
 
-message SendProprietaryPayloadResponse {}
+message Gateway {
+    // Gateway ID.
+    bytes id = 1;
 
-message CreateGatewayRequest {
-    // MAC address of the gateway.
-    bytes mac = 1;
-
-    // Name of the gateway.
-    string name = 2;
-
-    // Description for the gateway.
-    string description = 3;
-
-    // Latitude of the gateway.
-    double latitude = 4;
-
-    // Longitude of the gateway.
-    double longitude = 5;
-
-    // Altitude of the gateway.
-    double altitude = 6;
+    // Gateway location.
+    gw.Location location = 2;
 
     // ID of the gateway-profile (optional).
-    string gatewayProfileID = 8;
+    bytes gateway_profile_id = 3;
 }
 
-message CreateGatewayResponse {}
+message CreateGatewayRequest {
+    // Gateway object to create.
+    Gateway gateway = 1;
+}
 
 message GetGatewayRequest {
-    // MAC address of the gateway.
-    bytes mac = 1;
+    // Gateway ID.
+    bytes id = 1;
 }
 
 message GetGatewayResponse {
-    // MAC address of the gateway.
-    bytes mac = 1;
+    // Gateway object.
+    Gateway gateway = 1;
 
-    // Name of the gateway.
-    string name = 2;
+    // Created at timestamp.
+    google.protobuf.Timestamp created_at = 2;
 
-    // Description for the gateway.
-    string description = 3;
+    // Last update timestamp.
+    google.protobuf.Timestamp updated_at = 3;
 
-    // Latitude of the gateway.
-    double latitude = 4;
+    // First seen timestamp.
+    google.protobuf.Timestamp first_seen_at = 4;
 
-    // Longitude of the gateway.
-    double longitude = 5;
-
-    // Altitude of the gateway.
-    double altitude = 6;
-
-    // The timestamp when the gateway was created.
-    string createdAt = 7;
-
-    // The timestamp when the gateway was last updated.
-    string updatedAt = 8;
-
-    // The timestamp when the gateway was first seen.
-    string firstSeenAt = 9;
-
-    // The timestamp when the gateway was last seen.
-    string lastSeenAt = 10;
-
-    // ID of the gateway-profile (optional).
-    string gatewayProfileID = 12;
+    // Last seen timestamp.
+    google.protobuf.Timestamp last_seen_at = 5;
 }
 
 message UpdateGatewayRequest {
-    // MAC address of the gateway.
-    bytes mac = 1;
-
-    // Name of the gateway.
-    string name = 2;
-
-    // Description for the gateway.
-    string description = 3;
-
-    // Latitude of the gateway.
-    double latitude = 4;
-
-    // Longitude of the gateway.
-    double longitude = 5;
-
-    // Altitude of the gateway.
-    double altitude = 6;
-
-    // ID of the gateway-profile.
-    string gatewayProfileID = 8;
+    // Gateway object to update.
+    Gateway gateway = 1;
 }
-
-message UpdateGatewayResponse {}
 
 message DeleteGatewayRequest {
-    // MAC address of the gateway.
-    bytes mac = 1;
+    // Gateway ID.
+    bytes id = 1;
 }
-
-message DeleteGatewayResponse {}
 
 enum AggregationInterval {
     SECOND = 0;
@@ -531,33 +444,33 @@ enum AggregationInterval {
 
 message GatewayStats {
     // Timestamp of the (aggregated) measurement.
-    string timestamp = 1;
+    google.protobuf.Timestamp timestamp = 1;
 
     // Packets received by the gateway.
-    int32 rxPacketsReceived = 2;
+    int32 rx_packets_received = 2;
 
     // Packets received by the gateway that passed the CRC check.
-    int32 rxPacketsReceivedOK = 3;
+    int32 rx_packets_received_ok = 3;
 
     // Packets received by the gateway for transmission.
-    int32 txPacketsReceived = 4;
+    int32 tx_packets_received = 4;
 
     // Packets transmitted by the gateway.
-    int32 txPacketsEmitted = 5;
+    int32 tx_packets_emitted = 5;
 }
 
 message GetGatewayStatsRequest {
     // MAC address of the gateway.
-    bytes mac = 1;
+    bytes gateway_id = 1;
 
     // Aggregation interval.
     AggregationInterval interval = 2;
 
     // Timestamp to start from.
-    string startTimestamp = 3;
+    google.protobuf.Timestamp start_timestamp = 3;
 
     // Timestamp until to get from.
-    string endTimestamp = 4;
+    google.protobuf.Timestamp end_timestamp = 4;
 }
 
 message GetGatewayStatsResponse {
@@ -566,16 +479,16 @@ message GetGatewayStatsResponse {
 
 message DeviceQueueItem {
     // DevEUI of the device.
-    bytes devEUI = 1;
+    bytes dev_eui = 1;
 
     // The encrypted FRMPayload bytes.
-    bytes frmPayload = 2;
+    bytes frm_payload = 2;
 
     // The FCnt of the payload.
-    uint32 fCnt = 3;
+    uint32 f_cnt = 3;
 
     // The FPort of the payload.
-    uint32 fPort = 4;
+    uint32 f_port = 4;
 
     // When set to true, LoRa Server will wait for the device to ack the
     // received frame.
@@ -586,18 +499,14 @@ message CreateDeviceQueueItemRequest {
     DeviceQueueItem item = 1;
 }
 
-message CreateDeviceQueueItemResponse {}
-
 message FlushDeviceQueueForDevEUIRequest {
     // DevEUI of the device.
-    bytes devEUI = 1;
+    bytes dev_eui = 1;
 }
-
-message FlushDeviceQueueForDevEUIResponse {}
 
 message GetDeviceQueueItemsForDevEUIRequest {
     // DevEUI of the device.
-    bytes devEUI = 1;
+    bytes dev_eui = 1;
 }
 
 message GetDeviceQueueItemsForDevEUIResponse {
@@ -606,158 +515,54 @@ message GetDeviceQueueItemsForDevEUIResponse {
 
 message GetNextDownlinkFCntForDevEUIRequest {
     // DevEUI of the device.
-    bytes devEUI = 1;
+    bytes dev_eui = 1;
 }
 
 message GetNextDownlinkFCntForDevEUIResponse {
     // The frame-counter to use.
-    uint32 fCnt = 1;
+    uint32 f_cnt = 1;
 }
 
 message StreamFrameLogsForGatewayRequest {
     // MAC address of the gateway.
-    bytes mac = 1;
+    bytes gateway_id = 1;
 }
 
 message StreamFrameLogsForGatewayResponse {
-    // Contains zero or one uplink frame.
-    repeated UplinkFrameLog uplinkFrames = 1;
+    oneof frame {
+        // Contains an uplink frame.
+        gw.UplinkFrameSet uplink_frame_set = 1;
 
-    // Contains zero or one downlink frame.
-    repeated DownlinkFrameLog downlinkFrames = 2;
+        // Contains a downlink frame.
+        gw.DownlinkFrame downlink_frame = 2;
+    }
 }
 
 message StreamFrameLogsForDeviceRequest {
     // DevEUI of the device.
-    bytes devEUI = 1;
+    bytes dev_eui = 1;
 }
 
 message StreamFrameLogsForDeviceResponse {
-    // Contains zero or one uplink frame.
-    repeated UplinkFrameLog uplinkFrames = 1;
+    oneof frame {
+        // Contains an uplink frame.
+        gw.UplinkFrameSet uplink_frame_set = 1;
 
-    // Contains zero or one downlink frame.
-    repeated DownlinkFrameLog downlinkFrames = 2;
+        // Contains a downlink frame.
+        gw.DownlinkFrame downlink_frame = 2;
+    }
 }
-
-message DataRate {
-    // The used modulation (LORA or FSK).
-    string modulation = 1;
-
-    // Bandwidth (in kHz).
-    uint32 bandwidth = 2;
-
-    // Used spread-factor.
-    uint32 spreadFactor = 3;
-
-    // Bitrate (used for FSK modulation).
-    uint32 bitrate = 4;
-}
-
-
-message UplinkTXInfo {
-    // TX frequency (in Hz).
-    uint32 frequency = 1;
-
-    // Data-rate.
-    DataRate dataRate = 2;
-
-    // Code rate.
-    string codeRate = 3;
-}
-
-message UplinkRXInfo {
-    // Gateway MAC.
-    bytes mac = 1;
-
-    // Time when the frame was received (if available).
-    string time = 2;
-
-    // Time when the frame was received as time since GPS epoch (if available).
-    string timeSinceGPSEpoch = 3;
-
-    // Gateway internal timestamp.
-    uint32 timestamp = 4;
-
-    // RSSI.
-    int32 rssi = 5;
-
-    // LoRa SNR.
-    float loRaSNR = 6;
-
-    // The board identifier that received the uplink frame.
-    uint32 board = 7;
-
-    // THe antenna identifier that received the uplink frame.
-    uint32 antenna = 8;
-}
-
-message UplinkFrameLog {
-    // TX information of the uplink.
-    UplinkTXInfo txInfo = 1;
-
-    // RX information of the uplink.
-    repeated UplinkRXInfo rxInfo = 2;
-
-    // LoRaWAN PHYPayload.
-    bytes phyPayload = 3;
-}
-
-message DownlinkTXInfo {
-    // Gateway MAC.
-    bytes mac = 1;
-
-    // Frame must be sent immediately.
-    bool immediately = 2;
-
-    // Transmit frame at the given time since GPS epoch.
-    string timeSinceGPSEpoch = 3;
-
-    // Transmit the frame at the given gateway internal timestamp.
-    uint32 timestamp = 4;
-
-    // TX frequency (in Hz).
-    uint32 frequency = 5;
-
-    // TX power (in dBm).
-    int32 power = 6;
-
-    // Data-rate.
-    DataRate dataRate = 7;
-
-    // Code rate.
-    string codeRate = 8;
-
-    // Lora modulation polarization inversion.
-    bool iPol = 9;
-
-    // The board identifier that received the uplink frame.
-    uint32 board = 10;
-
-    // THe antenna identifier that received the uplink frame.
-    uint32 antenna = 11;
-}
-
-message DownlinkFrameLog {
-    // TX information of the downlink.
-    DownlinkTXInfo txInfo = 1;
-
-    // LoRaWAN PHYPayload.
-    bytes phyPayload = 2;
-}
-
-message GetVersionRequest {}
 
 message GetVersionResponse {
     // LoRa Server version.
     string version = 1;
 
     // Region configured for this network-server.
-    Region region = 2;
+    common.Region region = 2;
 }
 message GatewayProfile {
     // ID of the gateway-profile.
-    string gatewayProfileID = 1;
+    bytes id = 1;
 
     // Default channels (channels specified by the LoRaWAN Regional Parameters
     // specification) enabled for this configuration.
@@ -765,12 +570,12 @@ message GatewayProfile {
 
     // Extra channels added to the channel-configuration (in case the LoRaWAN
     // region supports adding custom channels).
-    repeated GatewayProfileExtraChannel extraChannels = 3;
+    repeated GatewayProfileExtraChannel extra_channels = 3;
 }
 
 message GatewayProfileExtraChannel {
     // Modulation.
-    Modulation modulation = 1;
+    common.Modulation modulation = 1;
 
     // Frequency.
     uint32 frequency = 2;
@@ -782,38 +587,41 @@ message GatewayProfileExtraChannel {
     uint32 bitrate = 4;
 
     // Spreading factors (in case of LoRa modulation).
-    repeated uint32 spreadingFactors = 5;
+    repeated uint32 spreading_factors = 5;
 }
 
 message CreateGatewayProfileRequest {
-    GatewayProfile gatewayProfile = 1;
+    // Gateway-profile object to create.
+    GatewayProfile gateway_profile = 1;
 }
 
 message CreateGatewayProfileResponse {
     // ID of the create configuration object.
-    string gatewayProfileID = 1;
+    bytes id = 1;
 }
 
 message GetGatewayProfileRequest {
-    // ID of the gateway-profile.
-    string gatewayProfileID = 1;
+    // Gateway-profile ID.
+    bytes id = 1;
 }
 
 message GetGatewayProfileResponse {
-    GatewayProfile gatewayProfile = 1;
-    string createdAt = 2;
-    string updatedAt = 3;
+    // Gateway-profile object.
+    GatewayProfile gateway_profile = 1;
+
+    // Created at timestamp.
+    google.protobuf.Timestamp created_at = 2;
+
+    // Last update timestamp.
+    google.protobuf.Timestamp updated_at = 3;
 }
 
 message UpdateGatewayProfileRequest {
-    GatewayProfile gatewayProfile = 1;
+    // Gateway-profile object to update.
+    GatewayProfile gateway_profile = 1;
 }
-
-message UpdateGatewayProfileResponse {}
 
 message DeleteGatewayProfileRequest {
-    // ID of the gateway-profile.
-    string gatewayProfileID = 1;
+    // Gateway-profile ID.
+    bytes id = 1;
 }
-
-message DeleteGatewayProfileResponse {}

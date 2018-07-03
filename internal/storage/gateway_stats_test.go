@@ -75,8 +75,7 @@ func TestGatewayStatsAggregation(t *testing.T) {
 
 		Convey("Given a gateway in the database", func() {
 			gw := Gateway{
-				MAC:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-				Name: "test-gateway",
+				MAC: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			}
 			So(CreateGateway(db, &gw), ShouldBeNil)
 
@@ -141,8 +140,7 @@ func TestHandleConfigurationUpdate(t *testing.T) {
 		test.MustResetDB(db)
 
 		g := Gateway{
-			MAC:  lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-			Name: "test-gw",
+			MAC: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 		}
 		So(CreateGateway(db, &g), ShouldBeNil)
 
@@ -174,10 +172,10 @@ func TestHandleConfigurationUpdate(t *testing.T) {
 				},
 			}
 			So(CreateGatewayProfile(db, &gp), ShouldBeNil)
-			gp, err = GetGatewayProfile(db, gp.GatewayProfileID)
+			gp, err = GetGatewayProfile(db, gp.ID)
 			So(err, ShouldBeNil)
 
-			g.GatewayProfileID = &gp.GatewayProfileID
+			g.GatewayProfileID = &gp.ID
 			So(UpdateGateway(db, &g), ShouldBeNil)
 
 			Convey("When calling handleConfigurationUpdate", func() {

@@ -304,6 +304,26 @@ get_downlink_data_delay="100ms"
   ping_slot_frequency=0
 
 
+  # Rejoin-request settings
+  #
+  # When enabled, LoRa Server will request the device to send a rejoin-request
+  # every time when one of the 2 conditions below is met (frame count or time).
+  [network_server.network_settings.rejoin_request]
+  # Request device to periodically send rejoin-requests
+  enabled=false
+
+  # The device must send a rejoin-request type 0 at least every 2^(max_count_n + 4)
+  # uplink messages. Valid values are 0 to 15.
+  max_count_n=0
+
+  # The device must send a rejoin-request type 0 at least every 2^(max_time_n + 10)
+  # seconds. Valid values are 0 to 15.
+  #
+  # 0  = roughly 17 minutes
+  # 15 = about 1 year
+  max_time_n=0
+
+
   # Network-server API
   #
   # This is the network-server API that is used by LoRa App Server or other

@@ -1,19 +1,17 @@
 package framelog
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
 	"fmt"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	proto "github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/lorawan"
 )
 
@@ -24,44 +22,35 @@ const (
 	deviceFrameLogDownlinkPubSubKeyTempl  = "lora:ns:device:%s:pubsub:frame:downlink"
 )
 
-// UplinkFrameLog contains the details of an uplink frame.
-type UplinkFrameLog struct {
-	PHYPayload lorawan.PHYPayload
-	TXInfo     models.TXInfo
-	RXInfoSet  []models.RXInfo
-}
-
-// DownlinkFrameLog contains the details of a downlink frame.
-type DownlinkFrameLog struct {
-	PHYPayload lorawan.PHYPayload
-	TXInfo     gw.TXInfo
-}
-
 // FrameLog contains either an uplink or downlink frame.
 type FrameLog struct {
-	UplinkFrame   *UplinkFrameLog
-	DownlinkFrame *DownlinkFrameLog
+	UplinkFrame   *gw.UplinkFrameSet
+	DownlinkFrame *gw.DownlinkFrame
 }
 
 // LogUplinkFrameForGateways logs the given frame to all the gateway pub-sub keys.
-func LogUplinkFrameForGateways(rxPacket models.RXPacket) error {
+func LogUplinkFrameForGateways(uplinkFrameSet gw.UplinkFrameSet) error {
 	c := config.C.Redis.Pool.Get()
 	defer c.Close()
 
 	c.Send("MULTI")
-	for _, rx := range rxPacket.RXInfoSet {
-		frameLog := UplinkFrameLog{
-			PHYPayload: rxPacket.PHYPayload,
-			TXInfo:     rxPacket.TXInfo,
-			RXInfoSet:  []models.RXInfo{rx},
+	for _, rx := range uplinkFrameSet.RxInfo {
+		var mac lorawan.EUI64
+		copy(mac[:], rx.GatewayId)
+
+		frameLog := gw.UplinkFrameSet{
+			PhyPayload: uplinkFrameSet.PhyPayload,
+			TxInfo:     uplinkFrameSet.TxInfo,
+			RxInfo:     []*gw.UplinkRXInfo{rx},
 		}
 
-		key := fmt.Sprintf(gatewayFrameLogUplinkPubSubKeyTempl, rx.MAC)
-		var buf bytes.Buffer
-		if err := gob.NewEncoder(&buf).Encode(frameLog); err != nil {
-			return errors.Wrap(err, "gob encode error")
+		b, err := proto.Marshal(&frameLog)
+		if err != nil {
+			return errors.Wrap(err, "marshal uplink frame-set error")
 		}
-		c.Send("PUBLISH", key, buf.Bytes())
+
+		key := fmt.Sprintf(gatewayFrameLogUplinkPubSubKeyTempl, mac)
+		c.Send("PUBLISH", key, b)
 	}
 	_, err := c.Do("EXEC")
 	if err != nil {
@@ -72,17 +61,21 @@ func LogUplinkFrameForGateways(rxPacket models.RXPacket) error {
 }
 
 // LogDownlinkFrameForGateway logs the given frame to the gateway pub-sub key.
-func LogDownlinkFrameForGateway(frame DownlinkFrameLog) error {
+func LogDownlinkFrameForGateway(frame gw.DownlinkFrame) error {
+	var mac lorawan.EUI64
+	copy(mac[:], frame.TxInfo.GatewayId)
+
 	c := config.C.Redis.Pool.Get()
 	defer c.Close()
 
-	key := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, frame.TXInfo.MAC)
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(frame); err != nil {
-		return errors.Wrap(err, "gob encode error")
+	key := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, mac)
+
+	b, err := proto.Marshal(&frame)
+	if err != nil {
+		return errors.Wrap(err, "marshal downlink frame error")
 	}
 
-	_, err := c.Do("PUBLISH", key, buf.Bytes())
+	_, err = c.Do("PUBLISH", key, b)
 	if err != nil {
 		return errors.Wrap(err, "publish frame to gateway channel error")
 	}
@@ -90,17 +83,18 @@ func LogDownlinkFrameForGateway(frame DownlinkFrameLog) error {
 }
 
 // LogDownlinkFrameForDevEUI logs the given frame to the device pub-sub key.
-func LogDownlinkFrameForDevEUI(devEUI lorawan.EUI64, frame DownlinkFrameLog) error {
+func LogDownlinkFrameForDevEUI(devEUI lorawan.EUI64, frame gw.DownlinkFrame) error {
 	c := config.C.Redis.Pool.Get()
 	defer c.Close()
 
 	key := fmt.Sprintf(deviceFrameLogDownlinkPubSubKeyTempl, devEUI)
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(frame); err != nil {
-		return errors.Wrap(err, "gob encode error")
+
+	b, err := proto.Marshal(&frame)
+	if err != nil {
+		return errors.Wrap(err, "marshal downlink frame error")
 	}
 
-	_, err := c.Do("PUBLISH", key, buf.Bytes())
+	_, err = c.Do("PUBLISH", key, b)
 	if err != nil {
 		return errors.Wrap(err, "publish frame to device channel error")
 	}
@@ -108,22 +102,17 @@ func LogDownlinkFrameForDevEUI(devEUI lorawan.EUI64, frame DownlinkFrameLog) err
 }
 
 // LogUplinkFrameForDevEUI logs the given frame to the pub-sub key of the given DevEUI.
-func LogUplinkFrameForDevEUI(devEUI lorawan.EUI64, rxPacket models.RXPacket) error {
+func LogUplinkFrameForDevEUI(devEUI lorawan.EUI64, frame gw.UplinkFrameSet) error {
 	c := config.C.Redis.Pool.Get()
 	defer c.Close()
 
-	frameLog := UplinkFrameLog{
-		PHYPayload: rxPacket.PHYPayload,
-		TXInfo:     rxPacket.TXInfo,
-		RXInfoSet:  rxPacket.RXInfoSet,
+	b, err := proto.Marshal(&frame)
+	if err != nil {
+		return errors.Wrap(err, "marshal uplink frame error")
 	}
-	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(frameLog); err != nil {
-		return errors.Wrap(err, "gob encode error")
-	}
-	key := fmt.Sprintf(deviceFrameLogUplinkPubSubKeyTempl, devEUI)
 
-	_, err := c.Do("PUBLISH", key, buf.Bytes())
+	key := fmt.Sprintf(deviceFrameLogUplinkPubSubKeyTempl, devEUI)
+	_, err = c.Do("PUBLISH", key, b)
 	if err != nil {
 		return errors.Wrap(err, "publish frame to device channel error")
 	}
@@ -209,16 +198,16 @@ func redisMessageToFrameLog(msg redis.Message, uplinkKey, downlinkKey string) (F
 	var fl FrameLog
 
 	if msg.Channel == uplinkKey {
-		fl.UplinkFrame = &UplinkFrameLog{}
-		if err := gob.NewDecoder(bytes.NewReader(msg.Data)).Decode(fl.UplinkFrame); err != nil {
-			return fl, errors.Wrap(err, "gob decode uplink frame error")
+		fl.UplinkFrame = &gw.UplinkFrameSet{}
+		if err := proto.Unmarshal(msg.Data, fl.UplinkFrame); err != nil {
+			return fl, errors.Wrap(err, "unmarshal uplink frame-set error")
 		}
 	}
 
 	if msg.Channel == downlinkKey {
-		fl.DownlinkFrame = &DownlinkFrameLog{}
-		if err := gob.NewDecoder(bytes.NewReader(msg.Data)).Decode(fl.DownlinkFrame); err != nil {
-			return fl, errors.Wrap(err, "gob decode downlink frame error")
+		fl.DownlinkFrame = &gw.DownlinkFrame{}
+		if err := proto.Unmarshal(msg.Data, fl.DownlinkFrame); err != nil {
+			return fl, errors.Wrap(err, "unmarshal downlink frame error")
 		}
 	}
 

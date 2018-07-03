@@ -10,11 +10,9 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink"
-	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
 )
 
 type classCTestCase struct {
@@ -48,30 +46,24 @@ func TestClassCScenarios(t *testing.T) {
 		config.C.NetworkServer.Gateway.Backend.Backend = test.NewGatewayBackend()
 		config.C.NetworkServer.NetworkSettings.RX2DR = 5
 
-		sp := storage.ServiceProfile{
-			ServiceProfile: backend.ServiceProfile{},
-		}
+		sp := storage.ServiceProfile{}
 		So(storage.CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 		dp := storage.DeviceProfile{
-			DeviceProfile: backend.DeviceProfile{
-				SupportsClassC: true,
-			},
+			SupportsClassC: true,
 		}
 		So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
 
 		rp := storage.RoutingProfile{
-			RoutingProfile: backend.RoutingProfile{
-				ASID: "as-test:1234",
-			},
+			ASID: "as-test:1234",
 		}
 		So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
 		d := storage.Device{
 			DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-			RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
-			ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
-			DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+			RoutingProfileID: rp.ID,
+			ServiceProfileID: sp.ID,
+			DeviceProfileID:  dp.ID,
 		}
 		So(storage.CreateDevice(config.C.PostgreSQL.DB, &d), ShouldBeNil)
 
@@ -82,12 +74,13 @@ func TestClassCScenarios(t *testing.T) {
 			DevEUI:           d.DevEUI,
 			DevAddr:          lorawan.DevAddr{1, 2, 3, 4},
 			JoinEUI:          lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
-			NwkSKey:          lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FNwkSIntKey:      lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			SNwkSIntKey:      lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			NwkSEncKey:       lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 			FCntUp:           8,
-			FCntDown:         5,
-			LastRXInfoSet: []models.RXInfo{
-				{MAC: lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}},
-				{MAC: lorawan.EUI64{2, 1, 2, 1, 2, 1, 2, 1}},
+			NFCntDown:        5,
+			UplinkGatewayHistory: map[lorawan.EUI64]storage.UplinkGatewayHistory{
+				lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}: storage.UplinkGatewayHistory{},
 			},
 			EnabledUplinkChannels: []int{0, 1, 2},
 			RX2DR:        5,
@@ -208,7 +201,7 @@ func TestClassCScenarios(t *testing.T) {
 				},
 				{
 					PreFunc: func(ds *storage.DeviceSession) {
-						sp.ServiceProfile.DevStatusReqFreq = 1
+						sp.DevStatusReqFreq = 1
 						So(storage.UpdateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 					},
 					Name:          "with mac-command",
@@ -233,8 +226,8 @@ func TestClassCScenarios(t *testing.T) {
 								FCtrl: lorawan.FCtrl{
 									ADR: true,
 								},
-								FOpts: []lorawan.MACCommand{
-									{CID: lorawan.CID(6)},
+								FOpts: []lorawan.Payload{
+									&lorawan.MACCommand{CID: lorawan.CID(6)},
 								},
 							},
 							FPort: &fPortTen,
@@ -277,7 +270,7 @@ func TestClassCScenarios(t *testing.T) {
 						sess, err := storage.GetDeviceSession(config.C.Redis.Pool, t.DeviceSession.DevEUI)
 						So(err, ShouldBeNil)
 						So(sess.FCntUp, ShouldEqual, t.ExpectedFCntUp)
-						So(sess.FCntDown, ShouldEqual, t.ExpectedFCntDown)
+						So(sess.NFCntDown, ShouldEqual, t.ExpectedFCntDown)
 					})
 
 					if t.ExpectedTXInfo != nil && t.ExpectedPHYPayload != nil {

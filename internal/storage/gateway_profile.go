@@ -26,11 +26,11 @@ type ExtraChannel struct {
 
 // GatewayProfile defines a gateway-profile.
 type GatewayProfile struct {
-	GatewayProfileID string         `db:"gateway_profile_id"`
-	CreatedAt        time.Time      `db:"created_at"`
-	UpdatedAt        time.Time      `db:"updated_at"`
-	Channels         []int64        `db:"channels"`
-	ExtraChannels    []ExtraChannel `db:"-"`
+	ID            uuid.UUID      `db:"gateway_profile_id"`
+	CreatedAt     time.Time      `db:"created_at"`
+	UpdatedAt     time.Time      `db:"updated_at"`
+	Channels      []int64        `db:"channels"`
+	ExtraChannels []ExtraChannel `db:"-"`
 }
 
 // GetVersion returns the gateway-profile version.
@@ -46,8 +46,8 @@ func CreateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 	c.CreatedAt = now
 	c.UpdatedAt = now
 
-	if c.GatewayProfileID == "" {
-		c.GatewayProfileID = uuid.NewV4().String()
+	if c.ID == uuid.Nil {
+		c.ID = uuid.NewV4()
 	}
 
 	_, err := db.Exec(`
@@ -57,7 +57,7 @@ func CreateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 			updated_at,
 			channels
 		) values ($1, $2, $3, $4)`,
-		c.GatewayProfileID,
+		c.ID,
 		c.CreatedAt,
 		c.UpdatedAt,
 		pq.Array(c.Channels),
@@ -76,7 +76,7 @@ func CreateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 				bitrate,
 				spreading_factors
 			) values ($1, $2, $3, $4, $5, $6)`,
-			c.GatewayProfileID,
+			c.ID,
 			ec.Modulation,
 			ec.Frequency,
 			ec.Bandwidth,
@@ -89,7 +89,7 @@ func CreateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 	}
 
 	log.WithFields(log.Fields{
-		"gateway_profile_id": c.GatewayProfileID,
+		"id": c.ID,
 	}).Info("gateway-profile created")
 
 	return nil
@@ -97,7 +97,7 @@ func CreateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 
 // GetGatewayProfile returns the gateway-profile matching the
 // given ID.
-func GetGatewayProfile(db sqlx.Queryer, id string) (GatewayProfile, error) {
+func GetGatewayProfile(db sqlx.Queryer, id uuid.UUID) (GatewayProfile, error) {
 	var c GatewayProfile
 	err := db.QueryRowx(`
 		select
@@ -110,7 +110,7 @@ func GetGatewayProfile(db sqlx.Queryer, id string) (GatewayProfile, error) {
 			gateway_profile_id = $1`,
 		id,
 	).Scan(
-		&c.GatewayProfileID,
+		&c.ID,
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		pq.Array(&c.Channels),
@@ -167,7 +167,7 @@ func UpdateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 			channels = $3
 		where
 			gateway_profile_id = $1`,
-		c.GatewayProfileID,
+		c.ID,
 		c.UpdatedAt,
 		pq.Array(c.Channels),
 	)
@@ -191,7 +191,7 @@ func UpdateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 		delete from gateway_profile_extra_channel
 		where
 			gateway_profile_id = $1`,
-		c.GatewayProfileID,
+		c.ID,
 	)
 	if err != nil {
 		return handlePSQLError(err, "delete error")
@@ -206,7 +206,7 @@ func UpdateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 				bitrate,
 				spreading_factors
 			) values ($1, $2, $3, $4, $5, $6)`,
-			c.GatewayProfileID,
+			c.ID,
 			ec.Modulation,
 			ec.Frequency,
 			ec.Bandwidth,
@@ -219,7 +219,7 @@ func UpdateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 	}
 
 	log.WithFields(log.Fields{
-		"gateway_profile_id": c.GatewayProfileID,
+		"id": c.ID,
 	}).Info("gateway-profile updated")
 
 	return nil
@@ -227,7 +227,7 @@ func UpdateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 
 // DeleteGatewayProfile deletes the gateway-profile matching the
 // given ID.
-func DeleteGatewayProfile(db sqlx.Execer, id string) error {
+func DeleteGatewayProfile(db sqlx.Execer, id uuid.UUID) error {
 	res, err := db.Exec(`
 		delete from gateway_profile
 		where
@@ -247,7 +247,7 @@ func DeleteGatewayProfile(db sqlx.Execer, id string) error {
 	}
 
 	log.WithFields(log.Fields{
-		"gateway_profile_id": id,
+		"id": id,
 	}).Info("gateway-profile deleted")
 
 	return nil

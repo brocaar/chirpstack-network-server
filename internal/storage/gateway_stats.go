@@ -156,7 +156,6 @@ func HandleGatewayStatsPacket(db *common.DBLogger, stats gw.GatewayStatsPacket) 
 
 			gw = Gateway{
 				MAC:         stats.MAC,
-				Name:        stats.MAC.String(),
 				FirstSeenAt: &now,
 				LastSeenAt:  &now,
 				Location:    location,

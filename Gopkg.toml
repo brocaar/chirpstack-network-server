@@ -13,7 +13,8 @@
   name = "github.com/garyburd/redigo"
   version = "1.4.0"
 
-[[constraint]]
+# override is needed because of grpc-middleware having constraint on master branch
+[[override]]
   version = "v1.1.0"
   name = "github.com/golang/protobuf"
 

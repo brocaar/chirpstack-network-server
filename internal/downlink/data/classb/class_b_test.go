@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
 
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
@@ -146,9 +145,7 @@ func TestScheduleDeviceQueueToPingSlotsForDevEUI(t *testing.T) {
 			So(storage.CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
 			dp := storage.DeviceProfile{
-				DeviceProfile: backend.DeviceProfile{
-					ClassBTimeout: 30,
-				},
+				ClassBTimeout: 30,
 			}
 			So(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
 
@@ -157,9 +154,9 @@ func TestScheduleDeviceQueueToPingSlotsForDevEUI(t *testing.T) {
 
 			d := storage.Device{
 				DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-				RoutingProfileID: rp.RoutingProfile.RoutingProfileID,
-				ServiceProfileID: sp.ServiceProfile.ServiceProfileID,
-				DeviceProfileID:  dp.DeviceProfile.DeviceProfileID,
+				RoutingProfileID: rp.ID,
+				ServiceProfileID: sp.ID,
+				DeviceProfileID:  dp.ID,
 			}
 			So(storage.CreateDevice(config.C.PostgreSQL.DB, &d), ShouldBeNil)
 

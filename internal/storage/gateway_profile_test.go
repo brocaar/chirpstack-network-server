@@ -42,7 +42,7 @@ func TestGatewayProfile(t *testing.T) {
 			gc.UpdatedAt = gc.UpdatedAt.UTC().Truncate(time.Millisecond)
 
 			Convey("Then it can be retrieved", func() {
-				gc2, err := GetGatewayProfile(db, gc.GatewayProfileID)
+				gc2, err := GetGatewayProfile(db, gc.ID)
 				So(err, ShouldBeNil)
 
 				gc2.CreatedAt = gc2.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -51,8 +51,8 @@ func TestGatewayProfile(t *testing.T) {
 			})
 
 			Convey("Then it can be deleted", func() {
-				So(DeleteGatewayProfile(db, gc.GatewayProfileID), ShouldBeNil)
-				_, err := GetGatewayProfile(db, gc.GatewayProfileID)
+				So(DeleteGatewayProfile(db, gc.ID), ShouldBeNil)
+				_, err := GetGatewayProfile(db, gc.ID)
 				So(err, ShouldEqual, ErrDoesNotExist)
 			})
 
@@ -75,7 +75,7 @@ func TestGatewayProfile(t *testing.T) {
 				So(UpdateGatewayProfile(db, &gc), ShouldBeNil)
 				gc.UpdatedAt = gc.UpdatedAt.UTC().Truncate(time.Millisecond)
 
-				gc2, err := GetGatewayProfile(db, gc.GatewayProfileID)
+				gc2, err := GetGatewayProfile(db, gc.ID)
 				So(err, ShouldBeNil)
 				gc2.CreatedAt = gc2.CreatedAt.UTC().Truncate(time.Millisecond)
 				gc2.UpdatedAt = gc2.UpdatedAt.UTC().Truncate(time.Millisecond)

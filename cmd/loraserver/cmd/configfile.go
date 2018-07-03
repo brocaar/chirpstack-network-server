@@ -241,8 +241,8 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   max_dr={{ $element.MaxDR }}
 {{ end }}
 
-#Disable adr for the whole network.
-disable_adr={{ .NetworkServer.NetworkSettings.DisableADR }}
+	#Disable adr for the whole network.
+	disable_adr={{ .NetworkServer.NetworkSettings.DisableADR }}
 
   # Class B settings
   [network_server.network_settings.class_b]
@@ -254,6 +254,26 @@ disable_adr={{ .NetworkServer.NetworkSettings.DisableADR }}
   # Set this to 0 to use the default frequency plan for the configured region
   # (which could be frequency hopping).
   ping_slot_frequency={{ .NetworkServer.NetworkSettings.ClassB.PingSlotFrequency }}
+
+
+  # Rejoin-request settings
+  #
+  # When enabled, LoRa Server will request the device to send a rejoin-request
+  # every time when one of the 2 conditions below is met (frame count or time).
+  [network_server.network_settings.rejoin_request]
+  # Request device to periodically send rejoin-requests
+  enabled={{ .NetworkServer.NetworkSettings.RejoinRequest.Enabled }}
+
+  # The device must send a rejoin-request type 0 at least every 2^(max_count_n + 4)
+  # uplink messages. Valid values are 0 to 15.
+  max_count_n={{ .NetworkServer.NetworkSettings.RejoinRequest.MaxCountN }}
+
+  # The device must send a rejoin-request type 0 at least every 2^(max_time_n + 10)
+  # seconds. Valid values are 0 to 15.
+  #
+  # 0  = roughly 17 minutes
+  # 15 = about 1 year
+  max_time_n={{ .NetworkServer.NetworkSettings.RejoinRequest.MaxTimeN }}
 
 
   # Network-server API

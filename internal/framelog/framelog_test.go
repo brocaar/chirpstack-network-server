@@ -8,10 +8,10 @@ import (
 
 	"github.com/brocaar/lorawan"
 
+	commonPB "github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/test"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -43,22 +43,43 @@ func TestFrameLog(t *testing.T) {
 			time.Sleep(time.Millisecond * 100)
 
 			Convey("When calling LogUplinkFrameForGateways", func() {
-				rxPacket := models.RXPacket{
-					RXInfoSet: []models.RXInfo{
+				uplinkFrameSet := gw.UplinkFrameSet{
+					PhyPayload: []byte{1, 2, 3, 4},
+					TxInfo: &gw.UplinkTXInfo{
+						Frequency:  868100000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.UplinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								SpreadingFactor: 7,
+							},
+						},
+					},
+					RxInfo: []*gw.UplinkRXInfo{
 						{
-							MAC: mac,
+							GatewayId: mac[:],
+							LoraSnr:   5.5,
 						},
 					},
 				}
-
-				So(LogUplinkFrameForGateways(rxPacket), ShouldBeNil)
+				So(LogUplinkFrameForGateways(uplinkFrameSet), ShouldBeNil)
 
 				Convey("Then the frame has been logged", func() {
 					So(<-logChannel, ShouldResemble, FrameLog{
-						UplinkFrame: &UplinkFrameLog{
-							RXInfoSet: []models.RXInfo{
+						UplinkFrame: &gw.UplinkFrameSet{
+							PhyPayload: []byte{1, 2, 3, 4},
+							TxInfo: &gw.UplinkTXInfo{
+								Frequency:  868100000,
+								Modulation: commonPB.Modulation_LORA,
+								ModulationInfo: &gw.UplinkTXInfo_LoraModulationInfo{
+									LoraModulationInfo: &gw.LoRaModulationInfo{
+										SpreadingFactor: 7,
+									},
+								},
+							},
+							RxInfo: []*gw.UplinkRXInfo{
 								{
-									MAC: mac,
+									GatewayId: mac[:],
+									LoraSnr:   5.5,
 								},
 							},
 						},
@@ -67,16 +88,18 @@ func TestFrameLog(t *testing.T) {
 			})
 
 			Convey("When calling LogDownlinkFrameForGateway", func() {
-				frameLog := DownlinkFrameLog{
-					TXInfo: gw.TXInfo{
-						MAC: mac,
+				downlinkFrame := gw.DownlinkFrame{
+					PhyPayload: []byte{1, 2, 3, 4},
+					TxInfo: &gw.DownlinkTXInfo{
+						GatewayId: mac[:],
 					},
 				}
-				So(LogDownlinkFrameForGateway(frameLog), ShouldBeNil)
+				So(LogDownlinkFrameForGateway(downlinkFrame), ShouldBeNil)
+				downlinkFrame.TxInfo.XXX_sizecache = 0
 
 				Convey("Then the frame has been logged", func() {
 					So(<-logChannel, ShouldResemble, FrameLog{
-						DownlinkFrame: &frameLog,
+						DownlinkFrame: &downlinkFrame,
 					})
 				})
 			})
@@ -98,21 +121,43 @@ func TestFrameLog(t *testing.T) {
 			time.Sleep(time.Millisecond * 100)
 
 			Convey("When calling LogUplinkFrameForDevEUI", func() {
-				rxPacket := models.RXPacket{
-					RXInfoSet: []models.RXInfo{
+				uplinkFrameSet := gw.UplinkFrameSet{
+					PhyPayload: []byte{1, 2, 3, 4},
+					TxInfo: &gw.UplinkTXInfo{
+						Frequency:  868100000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.UplinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								SpreadingFactor: 7,
+							},
+						},
+					},
+					RxInfo: []*gw.UplinkRXInfo{
 						{
-							MAC: mac,
+							GatewayId: mac[:],
+							LoraSnr:   5.5,
 						},
 					},
 				}
-				So(LogUplinkFrameForDevEUI(devEUI, rxPacket), ShouldBeNil)
+				So(LogUplinkFrameForDevEUI(devEUI, uplinkFrameSet), ShouldBeNil)
 
 				Convey("Then the frame has been logged", func() {
 					So(<-logChannel, ShouldResemble, FrameLog{
-						UplinkFrame: &UplinkFrameLog{
-							RXInfoSet: []models.RXInfo{
+						UplinkFrame: &gw.UplinkFrameSet{
+							PhyPayload: []byte{1, 2, 3, 4},
+							TxInfo: &gw.UplinkTXInfo{
+								Frequency:  868100000,
+								Modulation: commonPB.Modulation_LORA,
+								ModulationInfo: &gw.UplinkTXInfo_LoraModulationInfo{
+									LoraModulationInfo: &gw.LoRaModulationInfo{
+										SpreadingFactor: 7,
+									},
+								},
+							},
+							RxInfo: []*gw.UplinkRXInfo{
 								{
-									MAC: mac,
+									GatewayId: mac[:],
+									LoraSnr:   5.5,
 								},
 							},
 						},
@@ -121,16 +166,18 @@ func TestFrameLog(t *testing.T) {
 			})
 
 			Convey("When calling LogDownlinkFrameForDevEUI", func() {
-				frameLog := DownlinkFrameLog{
-					TXInfo: gw.TXInfo{
-						MAC: mac,
+				downlinkFrame := gw.DownlinkFrame{
+					PhyPayload: []byte{1, 2, 3, 4},
+					TxInfo: &gw.DownlinkTXInfo{
+						GatewayId: mac[:],
 					},
 				}
-				So(LogDownlinkFrameForDevEUI(devEUI, frameLog), ShouldBeNil)
+				So(LogDownlinkFrameForDevEUI(devEUI, downlinkFrame), ShouldBeNil)
+				downlinkFrame.TxInfo.XXX_sizecache = 0
 
 				Convey("Then the frame has been logged", func() {
 					So(<-logChannel, ShouldResemble, FrameLog{
-						DownlinkFrame: &frameLog,
+						DownlinkFrame: &downlinkFrame,
 					})
 				})
 			})

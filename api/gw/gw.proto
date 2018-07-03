@@ -1,0 +1,164 @@
+syntax = "proto3";
+
+package gw;
+
+option go_package = "github.com/brocaar/loraserver/api/gw";
+
+import "github.com/brocaar/loraserver/api/common/common.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+
+message UplinkTXInfo {
+	// Frequency (Hz).
+	uint32 frequency = 1;
+
+    // Modulation.
+    common.Modulation modulation = 2;
+
+    oneof modulation_info {
+        // LoRa modulation information.
+        LoRaModulationInfo lora_modulation_info = 3;
+
+        // FSK modulation information.
+        FSKModulationInfo fsk_modulation_info = 4;
+    }
+}
+
+message LoRaModulationInfo {
+    // Bandwidth.
+    uint32 bandwidth = 1;
+
+    // Speading-factor.
+    uint32 spreading_factor = 2;
+
+    // Code-rate.
+    string code_rate = 3;
+
+    // Polarization inversion.
+    bool polarization_inversion = 4;
+}
+
+message FSKModulationInfo {
+    // Bandwidth.
+    uint32 bandwidth = 1;
+
+    // Bitrate.
+    uint32 bitrate = 2;
+}
+
+message Location {
+    // Latitude.
+    double latitude = 1;
+
+    // Longitude.
+    double longitude = 2;
+
+    // Altitude.
+    double altitude = 3;
+}
+
+message UplinkRXInfo {
+    // Gateway ID.
+    bytes gateway_id = 1;
+
+    // RX time (only set when the gateway has a GPS module).
+    google.protobuf.Timestamp time = 2;
+
+    // RX time since GPS epoch (only set when the gateway has a GPS module).
+    google.protobuf.Duration time_since_gps_epoch = 3;
+
+    // Gateway internal timestamp.
+    uint32 timestamp = 4;
+
+    // RSSI.
+    int32 rssi = 5;
+
+    // LoRa SNR.
+    double lora_snr = 6;
+
+    // Channel.
+    uint32 channel = 7;
+
+    // RF Chain.
+    uint32 rf_chain = 8;
+
+    // Board.
+    uint32 board = 9;
+
+    // Antenna.
+    uint32 antenna = 10;
+
+    // Location.
+    Location location = 11;
+}
+
+message DownlinkTXInfo {
+    // Gateway ID.
+    bytes gateway_id = 1;
+
+    // Frame must be sent immediately.
+    bool immediately = 2;
+
+    // Emit frame at the given time since GPS epoch.
+    google.protobuf.Duration time_since_gps_epoch = 3;
+
+    // Emit the frame at the given gateway internal timestamp.
+    uint32 timestamp = 4;
+
+    // TX frequency (in Hz).
+    uint32 frequency = 5;
+
+    // TX power (in dBm).
+    int32 power = 6;
+
+    // Modulation.
+    common.Modulation modulation = 7;
+
+    oneof modulation_info {
+        // LoRa modulation information.
+        LoRaModulationInfo lora_modulation_info = 8;
+
+        // FSK modulation information.
+        FSKModulationInfo fsk_modulation_info = 9;
+    }
+
+    // The board identifier for emitting the frame.
+    uint32 board = 10;
+
+    // The antenna identifier for emitting the frame.
+    uint32 antenna = 11;
+}
+
+message UplinkFrame {
+    // PHYPayload.
+    bytes phy_payload = 1;
+
+    // TX meta-data.
+    UplinkTXInfo tx_info = 2;
+
+    // RX meta-data.
+    UplinkRXInfo rx_info = 3;
+}
+
+message UplinkFrameSet {
+    // PHYPayload.
+    bytes phy_payload = 1;
+
+    // TX meta-data.
+    UplinkTXInfo tx_info = 2;
+
+    // RX meta-data set.
+    repeated UplinkRXInfo rx_info = 3;
+}
+
+message DownlinkFrame {
+    // PHYPayload.
+    bytes phy_payload = 1;
+
+    // TX meta-data.
+    DownlinkTXInfo tx_info = 2;
+
+    // Token (uint16 value).
+    uint32 token = 3;
+}

@@ -7,6 +7,29 @@ menu:
 ---
 # Changelog
 
+## v2.0.0 (in development)
+
+### Upgrade nodes
+
+Before upgrading to v2, first make sure you have the latest v1 installed and running
+(including LoRa App Server). As always, it is recommended to make a backup
+first :-)
+
+### Features
+
+* LoRaWAN 1.1 support!
+
+### Changes
+
+* LoRa Server calls the `SetDeviceStatus` API method of LoRa App Server
+  when it receives a `DevStatusAns` mac-command.
+* Device-sessions are stored using Protobuf encoding in Redis
+  (more compact storage).
+* Cleanup of gRPC API methods and arguments to follow the Protobuf style-guide
+  and to make message re-usable. When you're integrating directly with the
+  LoRa Server gRPC API, then you must update your API client as these changes are
+  backwards incompatible!
+
 ## v1.0.1
 
 ### Features

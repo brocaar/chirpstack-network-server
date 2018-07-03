@@ -6,7 +6,6 @@ import (
 
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
@@ -273,8 +272,8 @@ func TestADR(t *testing.T) {
 							EnabledUplinkChannels: []int{0, 1, 2},
 							DR:  2,
 							ADR: true,
-							LastRXInfoSet: models.RXInfoSet{
-								{LoRaSNR: -7},
+							UplinkHistory: []storage.UplinkHistory{
+								{MaxSNR: -7},
 							},
 						},
 						Expected:      []storage.MACCommandBlock{macBlock},
@@ -289,8 +288,8 @@ func TestADR(t *testing.T) {
 							DR:           5,
 							TXPowerIndex: 3,
 							ADR:          true,
-							LastRXInfoSet: models.RXInfoSet{
-								{LoRaSNR: 1},
+							UplinkHistory: []storage.UplinkHistory{
+								{MaxSNR: 1, TXPowerIndex: 3},
 							},
 						},
 						Expected: []storage.MACCommandBlock{
@@ -325,8 +324,8 @@ func TestADR(t *testing.T) {
 							TXPowerIndex: 4,
 							NbTrans:      3,
 							ADR:          true,
-							LastRXInfoSet: models.RXInfoSet{
-								{LoRaSNR: -5},
+							UplinkHistory: []storage.UplinkHistory{
+								{MaxSNR: -5, TXPowerIndex: 4},
 							},
 						},
 						Expected: []storage.MACCommandBlock{
@@ -357,8 +356,8 @@ func TestADR(t *testing.T) {
 							EnabledUplinkChannels: []int{0, 1, 2},
 							DR:  2,
 							ADR: true,
-							LastRXInfoSet: models.RXInfoSet{
-								{LoRaSNR: -7},
+							UplinkHistory: []storage.UplinkHistory{
+								{MaxSNR: -7, TXPowerIndex: 0},
 							},
 						},
 						LinkADRReqBlock: &storage.MACCommandBlock{
@@ -400,8 +399,8 @@ func TestADR(t *testing.T) {
 							EnabledUplinkChannels: []int{0, 1, 2, 3, 4, 6},
 							DR:  2,
 							ADR: true,
-							LastRXInfoSet: models.RXInfoSet{
-								{LoRaSNR: -7},
+							UplinkHistory: []storage.UplinkHistory{
+								{MaxSNR: -7, TXPowerIndex: 0},
 							},
 						},
 						Expected: []storage.MACCommandBlock{
@@ -416,8 +415,8 @@ func TestADR(t *testing.T) {
 							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							DR:      2,
 							ADR:     false,
-							LastRXInfoSet: models.RXInfoSet{
-								{LoRaSNR: -7},
+							UplinkHistory: []storage.UplinkHistory{
+								{MaxSNR: -7, TXPowerIndex: 0},
 							},
 						},
 						ExpectedError: nil,
@@ -429,13 +428,11 @@ func TestADR(t *testing.T) {
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							EnabledUplinkChannels: []int{0, 1, 2},
 							UplinkHistory: []storage.UplinkHistory{
-								{FCnt: 1, MaxSNR: -7, GatewayCount: 1},
+								{MaxSNR: -7, TXPowerIndex: 0},
+								{MaxSNR: -15, TXPowerIndex: 0},
 							},
 							DR:  2,
 							ADR: true,
-							LastRXInfoSet: models.RXInfoSet{
-								{LoRaSNR: -15},
-							},
 						},
 						Expected:      []storage.MACCommandBlock{macBlock},
 						ExpectedError: nil,
@@ -450,12 +447,10 @@ func TestADR(t *testing.T) {
 							TXPowerIndex: 3,
 							NbTrans:      1,
 							UplinkHistory: []storage.UplinkHistory{
-								{FCnt: 1, MaxSNR: 7, GatewayCount: 1, TXPowerIndex: 0},
+								{MaxSNR: 7, TXPowerIndex: 0},
+								{MaxSNR: -5, TXPowerIndex: 3},
 							},
 							ADR: true,
-							LastRXInfoSet: models.RXInfoSet{
-								{LoRaSNR: -5},
-							},
 						},
 						ExpectedError: nil,
 					},
@@ -473,6 +468,59 @@ func TestADR(t *testing.T) {
 						So(blocks, ShouldResemble, tst.Expected)
 					})
 				}
+			})
+
+			Convey("Given an ADR request when ADR is disabled", func() {
+
+				config.C.NetworkServer.NetworkSettings.DisableADR = true
+
+				macBlock := storage.MACCommandBlock{
+					CID: lorawan.LinkADRReq,
+					MACCommands: []lorawan.MACCommand{
+						{
+							CID: lorawan.LinkADRReq,
+							Payload: &lorawan.LinkADRReqPayload{
+								DataRate: 0,
+								TXPower:  0,
+								ChMask:   lorawan.ChMask{true, true, true}, // ADR applies to first three standard channels
+								Redundancy: lorawan.Redundancy{
+									ChMaskCntl: 0, // first block of 16 channels
+									NbRep:      0,
+								},
+							},
+						},
+					},
+				}
+
+				ds := storage.DeviceSession{
+					DevAddr:               [4]byte{1, 2, 3, 4},
+					DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+					EnabledUplinkChannels: []int{0, 1, 2},
+					DR:           5,
+					TXPowerIndex: 3,
+					ADR:          true,
+					UplinkHistory: []storage.UplinkHistory{
+						{MaxSNR: 1, TXPowerIndex: 3},
+					},
+				}
+
+				larb := &storage.MACCommandBlock{
+					CID: lorawan.LinkADRReq,
+					MACCommands: storage.MACCommands{
+						lorawan.MACCommand{
+							CID: lorawan.LinkADRReq,
+							Payload: &lorawan.LinkADRReqPayload{
+								ChMask: lorawan.ChMask{true, true, true},
+							},
+						},
+					},
+				}
+
+				blocks, err := HandleADR(ds, larb)
+
+				So(err, ShouldBeNil)
+				So(blocks, ShouldResemble, []storage.MACCommandBlock{macBlock})
+
 			})
 		})
 	})

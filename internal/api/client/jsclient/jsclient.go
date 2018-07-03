@@ -18,6 +18,7 @@ import (
 // Client defines the join-server client interface.
 type Client interface {
 	JoinReq(pl backend.JoinReqPayload) (backend.JoinAnsPayload, error)
+	RejoinReq(pl backend.RejoinReqPayload) (backend.RejoinAnsPayload, error)
 }
 
 type client struct {
@@ -28,6 +29,33 @@ type client struct {
 // JoinReq issues a join-request.
 func (c *client) JoinReq(pl backend.JoinReqPayload) (backend.JoinAnsPayload, error) {
 	var ans backend.JoinAnsPayload
+
+	b, err := json.Marshal(pl)
+	if err != nil {
+		return ans, errors.Wrap(err, "marshal request error")
+	}
+
+	resp, err := c.httpClient.Post(c.server, "application/json", bytes.NewReader(b))
+	if err != nil {
+		return ans, errors.Wrap(err, "http post error")
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&ans)
+	if err != nil {
+		return ans, errors.Wrap(err, "unmarshal response error")
+	}
+
+	if ans.Result.ResultCode != backend.Success {
+		return ans, fmt.Errorf("response error, code: %s, description: %s", ans.Result.ResultCode, ans.Result.Description)
+	}
+
+	return ans, nil
+}
+
+// RejoinReq issues a rejoin-request.
+func (c *client) RejoinReq(pl backend.RejoinReqPayload) (backend.RejoinAnsPayload, error) {
+	var ans backend.RejoinAnsPayload
 
 	b, err := json.Marshal(pl)
 	if err != nil {

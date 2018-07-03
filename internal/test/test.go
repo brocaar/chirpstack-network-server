@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	"github.com/golang/protobuf/ptypes/empty"
 	migrate "github.com/rubenv/sql-migrate"
 	log "github.com/sirupsen/logrus"
 	context "golang.org/x/net/context"
@@ -182,15 +183,19 @@ func (p *JoinServerPool) Get(joinEUI lorawan.EUI64) (jsclient.Client, error) {
 
 // JoinServerClient is a join-server client for testing.
 type JoinServerClient struct {
-	JoinReqPayloadChan chan backend.JoinReqPayload
-	JoinReqError       error
-	JoinAnsPayload     backend.JoinAnsPayload
+	JoinReqPayloadChan   chan backend.JoinReqPayload
+	RejoinReqPayloadChan chan backend.RejoinReqPayload
+	JoinReqError         error
+	RejoinReqError       error
+	JoinAnsPayload       backend.JoinAnsPayload
+	RejoinAnsPayload     backend.RejoinAnsPayload
 }
 
 // NewJoinServerClient creates a new join-server client.
 func NewJoinServerClient() *JoinServerClient {
 	return &JoinServerClient{
-		JoinReqPayloadChan: make(chan backend.JoinReqPayload, 100),
+		JoinReqPayloadChan:   make(chan backend.JoinReqPayload, 100),
+		RejoinReqPayloadChan: make(chan backend.RejoinReqPayload, 100),
 	}
 }
 
@@ -200,14 +205,20 @@ func (c *JoinServerClient) JoinReq(pl backend.JoinReqPayload) (backend.JoinAnsPa
 	return c.JoinAnsPayload, c.JoinReqError
 }
 
+// RejoinReq method.
+func (c *JoinServerClient) RejoinReq(pl backend.RejoinReqPayload) (backend.RejoinAnsPayload, error) {
+	c.RejoinReqPayloadChan <- pl
+	return c.RejoinAnsPayload, c.RejoinReqError
+}
+
 // ApplicationServerPool is an application-server pool for testing.
 type ApplicationServerPool struct {
-	Client      as.ApplicationServerClient
+	Client      as.ApplicationServerServiceClient
 	GetHostname string
 }
 
 // Get returns the Client.
-func (p *ApplicationServerPool) Get(hostname string, caCert, tlsCert, tlsKey []byte) (as.ApplicationServerClient, error) {
+func (p *ApplicationServerPool) Get(hostname string, caCert, tlsCert, tlsKey []byte) (as.ApplicationServerServiceClient, error) {
 	p.GetHostname = hostname
 	return p.Client, nil
 }
@@ -225,16 +236,19 @@ type ApplicationClient struct {
 	HandleDataUpErr        error
 	HandleProprietaryUpErr error
 	HandleDownlinkACKErr   error
+	SetDeviceStatusError   error
 
 	HandleDataUpChan        chan as.HandleUplinkDataRequest
 	HandleProprietaryUpChan chan as.HandleProprietaryUplinkRequest
 	HandleErrorChan         chan as.HandleErrorRequest
 	HandleDownlinkACKChan   chan as.HandleDownlinkACKRequest
+	SetDeviceStatusChan     chan as.SetDeviceStatusRequest
 
-	HandleDataUpResponse        as.HandleUplinkDataResponse
-	HandleProprietaryUpResponse as.HandleProprietaryUplinkResponse
-	HandleErrorResponse         as.HandleErrorResponse
-	HandleDownlinkACKResponse   as.HandleDownlinkACKResponse
+	HandleDataUpResponse        empty.Empty
+	HandleProprietaryUpResponse empty.Empty
+	HandleErrorResponse         empty.Empty
+	HandleDownlinkACKResponse   empty.Empty
+	SetDeviceStatusResponse     empty.Empty
 }
 
 // NewApplicationClient returns a new ApplicationClient.
@@ -244,11 +258,12 @@ func NewApplicationClient() *ApplicationClient {
 		HandleProprietaryUpChan: make(chan as.HandleProprietaryUplinkRequest, 100),
 		HandleErrorChan:         make(chan as.HandleErrorRequest, 100),
 		HandleDownlinkACKChan:   make(chan as.HandleDownlinkACKRequest, 100),
+		SetDeviceStatusChan:     make(chan as.SetDeviceStatusRequest, 100),
 	}
 }
 
 // HandleUplinkData method.
-func (t *ApplicationClient) HandleUplinkData(ctx context.Context, in *as.HandleUplinkDataRequest, opts ...grpc.CallOption) (*as.HandleUplinkDataResponse, error) {
+func (t *ApplicationClient) HandleUplinkData(ctx context.Context, in *as.HandleUplinkDataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	if t.HandleDataUpErr != nil {
 		return nil, t.HandleDataUpErr
 	}
@@ -257,7 +272,7 @@ func (t *ApplicationClient) HandleUplinkData(ctx context.Context, in *as.HandleU
 }
 
 // HandleProprietaryUplink method.
-func (t *ApplicationClient) HandleProprietaryUplink(ctx context.Context, in *as.HandleProprietaryUplinkRequest, opts ...grpc.CallOption) (*as.HandleProprietaryUplinkResponse, error) {
+func (t *ApplicationClient) HandleProprietaryUplink(ctx context.Context, in *as.HandleProprietaryUplinkRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	if t.HandleProprietaryUpErr != nil {
 		return nil, t.HandleProprietaryUpErr
 	}
@@ -266,42 +281,48 @@ func (t *ApplicationClient) HandleProprietaryUplink(ctx context.Context, in *as.
 }
 
 // HandleError method.
-func (t *ApplicationClient) HandleError(ctx context.Context, in *as.HandleErrorRequest, opts ...grpc.CallOption) (*as.HandleErrorResponse, error) {
+func (t *ApplicationClient) HandleError(ctx context.Context, in *as.HandleErrorRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	t.HandleErrorChan <- *in
 	return &t.HandleErrorResponse, nil
 }
 
 // HandleDownlinkACK method.
-func (t *ApplicationClient) HandleDownlinkACK(ctx context.Context, in *as.HandleDownlinkACKRequest, opts ...grpc.CallOption) (*as.HandleDownlinkACKResponse, error) {
+func (t *ApplicationClient) HandleDownlinkACK(ctx context.Context, in *as.HandleDownlinkACKRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	t.HandleDownlinkACKChan <- *in
 	return &t.HandleDownlinkACKResponse, nil
 }
 
+// SetDeviceStatus method.
+func (t *ApplicationClient) SetDeviceStatus(ctx context.Context, in *as.SetDeviceStatusRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	t.SetDeviceStatusChan <- *in
+	return &t.SetDeviceStatusResponse, t.SetDeviceStatusError
+}
+
 // NetworkControllerClient is a network-controller client for testing.
 type NetworkControllerClient struct {
-	HandleRXInfoChan           chan nc.HandleRXInfoRequest
-	HandleDataUpMACCommandChan chan nc.HandleDataUpMACCommandRequest
+	HandleRXInfoChan           chan nc.HandleUplinkMetaDataRequest
+	HandleDataUpMACCommandChan chan nc.HandleUplinkMACCommandRequest
 
-	HandleRXInfoResponse           nc.HandleRXInfoResponse
-	HandleDataUpMACCommandResponse nc.HandleDataUpMACCommandResponse
+	HandleRXInfoResponse           empty.Empty
+	HandleDataUpMACCommandResponse empty.Empty
 }
 
 // NewNetworkControllerClient returns a new NetworkControllerClient.
 func NewNetworkControllerClient() *NetworkControllerClient {
 	return &NetworkControllerClient{
-		HandleRXInfoChan:           make(chan nc.HandleRXInfoRequest, 100),
-		HandleDataUpMACCommandChan: make(chan nc.HandleDataUpMACCommandRequest, 100),
+		HandleRXInfoChan:           make(chan nc.HandleUplinkMetaDataRequest, 100),
+		HandleDataUpMACCommandChan: make(chan nc.HandleUplinkMACCommandRequest, 100),
 	}
 }
 
-// HandleRXInfo method.
-func (t *NetworkControllerClient) HandleRXInfo(ctx context.Context, in *nc.HandleRXInfoRequest, opts ...grpc.CallOption) (*nc.HandleRXInfoResponse, error) {
+// HandleUplinkMetaData method.
+func (t *NetworkControllerClient) HandleUplinkMetaData(ctx context.Context, in *nc.HandleUplinkMetaDataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	t.HandleRXInfoChan <- *in
-	return &t.HandleRXInfoResponse, nil
+	return &empty.Empty{}, nil
 }
 
-// HandleDataUpMACCommand method.
-func (t *NetworkControllerClient) HandleDataUpMACCommand(ctx context.Context, in *nc.HandleDataUpMACCommandRequest, opts ...grpc.CallOption) (*nc.HandleDataUpMACCommandResponse, error) {
+// HandleUplinkMACCommand method.
+func (t *NetworkControllerClient) HandleUplinkMACCommand(ctx context.Context, in *nc.HandleUplinkMACCommandRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	t.HandleDataUpMACCommandChan <- *in
-	return &t.HandleDataUpMACCommandResponse, nil
+	return &empty.Empty{}, nil
 }
