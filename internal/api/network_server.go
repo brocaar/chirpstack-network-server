@@ -820,7 +820,7 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 	}
 
 	if req.Gateway.Location == nil {
-		return nil, grpc.Errorf(codes.InvalidArgument, "gateway.location most not be nil")
+		return nil, grpc.Errorf(codes.InvalidArgument, "gateway.location must not be nil")
 	}
 
 	var mac lorawan.EUI64
