@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/brocaar/loraserver/api/common"
+	gwPB "github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink/data/classb"
@@ -818,20 +819,22 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 		return nil, grpc.Errorf(codes.InvalidArgument, "gateway must not be nil")
 	}
 
+	if req.Gateway.Location == nil {
+		return nil, grpc.Errorf(codes.InvalidArgument, "gateway.location most not be nil")
+	}
+
 	var mac lorawan.EUI64
 	var gpID uuid.UUID
 	copy(mac[:], req.Gateway.Id)
 	copy(gpID[:], req.Gateway.GatewayProfileId)
 
 	gw := storage.Gateway{
-		MAC:         mac,
-		Name:        req.Gateway.Name,
-		Description: req.Gateway.Description,
+		MAC: mac,
 		Location: storage.GPSPoint{
-			Latitude:  req.Gateway.Latitude,
-			Longitude: req.Gateway.Longitude,
+			Latitude:  req.Gateway.Location.Latitude,
+			Longitude: req.Gateway.Location.Longitude,
 		},
-		Altitude: req.Gateway.Altitude,
+		Altitude: req.Gateway.Location.Altitude,
 	}
 	if len(req.Gateway.GatewayProfileId) != 0 {
 		gw.GatewayProfileID = &gpID
@@ -864,6 +867,10 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 		return nil, grpc.Errorf(codes.InvalidArgument, "gateway must not be nil")
 	}
 
+	if req.Gateway.Location == nil {
+		return nil, grpc.Errorf(codes.InvalidArgument, "gateway.location must not be nil")
+	}
+
 	var mac lorawan.EUI64
 	var gpID uuid.UUID
 
@@ -881,13 +888,11 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 		gw.GatewayProfileID = nil
 	}
 
-	gw.Name = req.Gateway.Name
-	gw.Description = req.Gateway.Description
 	gw.Location = storage.GPSPoint{
-		Latitude:  req.Gateway.Latitude,
-		Longitude: req.Gateway.Longitude,
+		Latitude:  req.Gateway.Location.Latitude,
+		Longitude: req.Gateway.Location.Longitude,
 	}
-	gw.Altitude = req.Gateway.Altitude
+	gw.Altitude = req.Gateway.Location.Altitude
 
 	err = storage.UpdateGateway(config.C.PostgreSQL.DB, &gw)
 	if err != nil {
@@ -1360,12 +1365,12 @@ func gwToResp(gw storage.Gateway) *ns.GetGatewayResponse {
 
 	resp := ns.GetGatewayResponse{
 		Gateway: &ns.Gateway{
-			Id:          gw.MAC[:],
-			Name:        gw.Name,
-			Description: gw.Description,
-			Latitude:    gw.Location.Latitude,
-			Longitude:   gw.Location.Longitude,
-			Altitude:    gw.Altitude,
+			Id: gw.MAC[:],
+			Location: &gwPB.Location{
+				Latitude:  gw.Location.Latitude,
+				Longitude: gw.Location.Longitude,
+				Altitude:  gw.Altitude,
+			},
 		},
 	}
 

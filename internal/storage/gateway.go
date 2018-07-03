@@ -3,7 +3,6 @@ package storage
 import (
 	"database/sql/driver"
 	"fmt"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -15,8 +14,6 @@ import (
 
 	"github.com/brocaar/lorawan"
 )
-
-var gatewayNameRegexp = regexp.MustCompile(`^[\w-]+$`)
 
 // GPSPoint contains a GPS point.
 type GPSPoint struct {
@@ -43,8 +40,6 @@ func (l *GPSPoint) Scan(src interface{}) error {
 // Gateway represents a gateway.
 type Gateway struct {
 	MAC              lorawan.EUI64 `db:"mac"`
-	Name             string        `db:"name"`
-	Description      string        `db:"description"`
 	CreatedAt        time.Time     `db:"created_at"`
 	UpdatedAt        time.Time     `db:"updated_at"`
 	FirstSeenAt      *time.Time    `db:"first_seen_at"`
@@ -56,9 +51,6 @@ type Gateway struct {
 
 // Validate validates the data of the gateway.
 func (g Gateway) Validate() error {
-	if !gatewayNameRegexp.MatchString(g.Name) {
-		return ErrInvalidName
-	}
 	return nil
 }
 
@@ -72,8 +64,6 @@ func CreateGateway(db sqlx.Execer, gw *Gateway) error {
 	_, err := db.Exec(`
 		insert into gateway (
 			mac,
-			name,
-			description,
 			created_at,
 			updated_at,
 			first_seen_at,
@@ -81,10 +71,9 @@ func CreateGateway(db sqlx.Execer, gw *Gateway) error {
 			location,
 			altitude,
 			gateway_profile_id
-		) values ($1, $2, $3, $4, $4, $5, $6, $7, $8, $9)`,
+		) values ($1, $2, $3, $4, $5, $6, $7, $8)`,
 		gw.MAC[:],
-		gw.Name,
-		gw.Description,
+		now,
 		now,
 		gw.FirstSeenAt,
 		gw.LastSeenAt,
@@ -120,18 +109,14 @@ func UpdateGateway(db sqlx.Execer, gw *Gateway) error {
 	now := time.Now()
 	res, err := db.Exec(`
 		update gateway set
-			name = $2,
-			description = $3,
-			updated_at = $4,
-			first_seen_at = $5,
-			last_seen_at = $6,
-			location = $7,
-			altitude = $8,
-			gateway_profile_id = $9
+			updated_at = $2,
+			first_seen_at = $3,
+			last_seen_at = $4,
+			location = $5,
+			altitude = $6,
+			gateway_profile_id = $7
 		where mac = $1`,
 		gw.MAC[:],
-		gw.Name,
-		gw.Description,
 		now,
 		gw.FirstSeenAt,
 		gw.LastSeenAt,

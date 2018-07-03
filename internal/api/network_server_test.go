@@ -872,17 +872,18 @@ func TestNetworkServerAPI(t *testing.T) {
 		Convey("When calling CreateGateway", func() {
 			req := ns.CreateGatewayRequest{
 				Gateway: &ns.Gateway{
-					Id:          []byte{1, 2, 3, 4, 5, 6, 7, 8},
-					Name:        "test-gateway",
-					Description: "rooftop gateway",
-					Latitude:    1.1234,
-					Longitude:   1.1235,
-					Altitude:    15.5,
+					Id: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+					Location: &gw.Location{
+						Latitude:  1.1234,
+						Longitude: 1.1235,
+						Altitude:  15.5,
+					},
 				},
 			}
 
 			_, err := api.CreateGateway(ctx, &req)
 			So(err, ShouldBeNil)
+			req.Gateway.Location.XXX_sizecache = 0
 
 			Convey("Then the gateway has been created", func() {
 				resp, err := api.GetGateway(ctx, &ns.GetGatewayRequest{Id: req.Gateway.Id})
@@ -898,16 +899,17 @@ func TestNetworkServerAPI(t *testing.T) {
 			Convey("Then UpdateGateway updates the gateway", func() {
 				req := ns.UpdateGatewayRequest{
 					Gateway: &ns.Gateway{
-						Id:          []byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Name:        "test-gateway-updated",
-						Description: "garden gateway",
-						Latitude:    1.1235,
-						Longitude:   1.1236,
-						Altitude:    15.7,
+						Id: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+						Location: &gw.Location{
+							Latitude:  1.1235,
+							Longitude: 1.1236,
+							Altitude:  15.7,
+						},
 					},
 				}
 				_, err := api.UpdateGateway(ctx, &req)
 				So(err, ShouldBeNil)
+				req.Gateway.Location.XXX_sizecache = 0
 
 				resp, err := api.GetGateway(ctx, &ns.GetGatewayRequest{Id: req.Gateway.Id})
 				So(err, ShouldBeNil)

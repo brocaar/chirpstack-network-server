@@ -87,8 +87,7 @@ func TestUplinkScenarios(t *testing.T) {
 		config.C.NetworkController.Client = test.NewNetworkControllerClient()
 
 		gw1 := storage.Gateway{
-			MAC:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Name: "test-gateway",
+			MAC: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			Location: storage.GPSPoint{
 				Latitude:  1.1234,
 				Longitude: 1.1235,

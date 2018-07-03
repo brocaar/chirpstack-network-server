@@ -387,23 +387,11 @@ message Gateway {
     // Gateway ID.
     bytes id = 1;
 
-    // Name of the gateway.
-    string name = 2;
-
-    // Description for the gateway.
-    string description = 3;
-
-    // Latitude of the gateway.
-    double latitude = 4;
-
-    // Longitude of the gateway.
-    double longitude = 5;
-
-    // Altitude of the gateway.
-    double altitude = 6;
+    // Gateway location.
+    gw.Location location = 2;
 
     // ID of the gateway-profile (optional).
-    bytes gateway_profile_id = 7;
+    bytes gateway_profile_id = 3;
 }
 
 message CreateGatewayRequest {
