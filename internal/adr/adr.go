@@ -22,14 +22,6 @@ var pktLossRateTable = [][3]uint8{
 // in the device-session.
 func HandleADR(ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 
-	/*log.Infoln("handling adr")
-
-	//If ADR is disabled network wise, just return nil
-	if config.C.NetworkServer.NetworkSettings.DisableADR {
-		log.Infoln("adr is disabled")
-		return nil, nil
-	}*/
-
 	var maxSNR float64
 	for i, rxInfo := range ds.LastRXInfoSet {
 		// as the default value is 0 and the LoRaSNR can be negative, we always
