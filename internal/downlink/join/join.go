@@ -111,7 +111,11 @@ func getJoinAcceptTXInfo(ctx *joinContext) error {
 	}
 
 	ctx.TXInfo.Timestamp = &timestamp
-	ctx.TXInfo.Power = config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.TXInfo.Frequency)
+	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
+		ctx.TXInfo.Power = config.C.NetworkServer.NetworkSettings.DownlinkTXPower
+	} else {
+		ctx.TXInfo.Power = config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.TXInfo.Frequency)
+	}
 
 	return nil
 }

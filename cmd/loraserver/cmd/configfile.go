@@ -184,6 +184,16 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # options of the configured network_server.band.name.
   rx2_frequency={{ .NetworkServer.NetworkSettings.RX2Frequency }}
 
+  # Downlink TX Power (dBm)
+  #
+  # When set to -1, the downlink TX Power from the configured band will
+  # be used.
+  #
+  # Please consult the LoRaWAN Regional Parameters and local regulations
+  # for valid and legal options. Note that the configured TX Power must be
+  # supported by your gateway(s).
+  downlink_tx_power={{ .NetworkServer.NetworkSettings.DownlinkTXPower }}
+
   # Disable mac-commands
   #
   # When set, uplink mac-commands are ignored and the network-server will not

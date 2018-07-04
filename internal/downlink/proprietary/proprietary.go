@@ -64,7 +64,12 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 		return errors.Wrap(err, "get data-rate error")
 	}
 
-	txPower := config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.Frequency)
+	var txPower int
+	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
+		txPower = config.C.NetworkServer.NetworkSettings.DownlinkTXPower
+	} else {
+		txPower = config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.Frequency)
+	}
 
 	phy := lorawan.PHYPayload{
 		MHDR: lorawan.MHDR{

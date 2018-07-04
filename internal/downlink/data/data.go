@@ -864,7 +864,12 @@ func getDataDownTXInfoAndDR(ds storage.DeviceSession, lastTXInfo models.TXInfo, 
 	}
 
 	txInfo.Timestamp = &timestamp
-	txInfo.Power = config.C.NetworkServer.Band.Band.GetDownlinkTXPower(txInfo.Frequency)
+
+	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
+		txInfo.Power = config.C.NetworkServer.NetworkSettings.DownlinkTXPower
+	} else {
+		txInfo.Power = config.C.NetworkServer.Band.Band.GetDownlinkTXPower(txInfo.Frequency)
+	}
 
 	// when we received a FSK modulated uplink, and reply using LoRa modulation
 	// we need to set the CodeRate as this is not set on the FSK uplink.
