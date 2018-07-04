@@ -21,8 +21,9 @@ var pktLossRateTable = [][3]uint8{
 // HandleADR handles ADR in case requested by the node and configured
 // in the device-session.
 func HandleADR(ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
-	// if the node has ADR disabled
-	if !ds.ADR {
+
+	// if the node has ADR disabled or it's disabled gloablly
+	if !ds.ADR || config.C.NetworkServer.NetworkSettings.DisableADR {
 		if linkADRReqBlock == nil {
 			return nil, nil
 		}

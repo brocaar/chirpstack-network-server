@@ -241,6 +241,9 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   max_dr={{ $element.MaxDR }}
 {{ end }}
 
+	#Disable adr for the whole network.
+	disable_adr={{ .NetworkServer.NetworkSettings.DisableADR }}
+
   # Class B settings
   [network_server.network_settings.class_b]
   # Ping-slot data-rate.

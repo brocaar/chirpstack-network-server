@@ -66,6 +66,7 @@ func init() {
 	viper.SetDefault("network_server.network_settings.rx1_delay", 1)
 	viper.SetDefault("network_server.network_settings.rx2_frequency", -1)
 	viper.SetDefault("network_server.network_settings.rx2_dr", -1)
+	viper.SetDefault("network_server.network_settings.disable_adr", false)
 	viper.SetDefault("network_server.gateway.backend.mqtt.uplink_topic_template", "gateway/+/rx")
 	viper.SetDefault("network_server.gateway.backend.mqtt.downlink_topic_template", "gateway/{{ .MAC }}/tx")
 	viper.SetDefault("network_server.gateway.backend.mqtt.stats_topic_template", "gateway/+/stats")
