@@ -32,9 +32,14 @@ func HandleADR(ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBloc
 
 	// get the max SNR from the UplinkHistory
 	var snrM float64 = -999
+	var historyCount int
 	for _, uh := range ds.UplinkHistory {
-		if uh.MaxSNR > snrM && uh.TXPowerIndex == ds.TXPowerIndex {
-			snrM = uh.MaxSNR
+		if uh.TXPowerIndex == ds.TXPowerIndex {
+			historyCount++
+
+			if uh.MaxSNR > snrM {
+				snrM = uh.MaxSNR
+			}
 		}
 	}
 
@@ -58,6 +63,13 @@ func HandleADR(ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBloc
 
 	snrMargin := snrM - requiredSNR - config.C.NetworkServer.NetworkSettings.InstallationMargin
 	nStep := int(snrMargin / 3)
+
+	// In case of negative steps the ADR algorithm will increase the TXPower
+	// if possible. To avoid up / down / up / down TXPower changes, wait until
+	// we have a full history table before making adjustments.
+	if nStep < 0 && historyCount != storage.UplinkHistorySize {
+		return nil, nil
+	}
 
 	maxSupportedDR := getMaxSupportedDRForNode(ds)
 	maxSupportedTXPowerOffsetIndex := getMaxSupportedTXPowerOffsetIndexForNode(ds)
