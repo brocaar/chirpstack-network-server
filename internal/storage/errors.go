@@ -14,6 +14,7 @@ var (
 	ErrDoesNotExistOrFCntOrMICInvalid = errors.New("device-session does not exist or invalid fcnt or mic")
 	ErrInvalidAggregationInterval     = errors.New("invalid aggregation interval")
 	ErrInvalidName                    = errors.New("invalid gateway name")
+	ErrInvalidFPort                   = errors.New("invalid fPort (must be > 0)")
 )
 
 func handlePSQLError(err error, description string) error {

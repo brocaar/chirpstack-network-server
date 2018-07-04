@@ -32,8 +32,20 @@ type DeviceQueueItem struct {
 	TimeoutAfter            *time.Time     `db:"timeout_after"`
 }
 
+// Validate validates the DeviceQueueItem.
+func (d DeviceQueueItem) Validate() error {
+	if d.FPort == 0 {
+		return ErrInvalidFPort
+	}
+	return nil
+}
+
 // CreateDeviceQueueItem adds the given item to the device queue.
 func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
+	if err := qi.Validate(); err != nil {
+		return err
+	}
+
 	now := time.Now()
 	qi.CreatedAt = now
 	qi.UpdatedAt = now

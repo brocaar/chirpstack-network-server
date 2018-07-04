@@ -24,6 +24,7 @@ var errToCode = map[error]codes.Code{
 	storage.ErrDoesNotExist:                   codes.NotFound,
 	storage.ErrInvalidName:                    codes.InvalidArgument,
 	storage.ErrInvalidAggregationInterval:     codes.InvalidArgument,
+	storage.ErrInvalidFPort:                   codes.InvalidArgument,
 }
 
 func errToRPCError(err error) error {

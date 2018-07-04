@@ -16,6 +16,32 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
+func TestDeviceQueueItemValidate(t *testing.T) {
+	Convey("Given a test-set", t, func() {
+		tests := []struct {
+			Item          DeviceQueueItem
+			ExpectedError error
+		}{
+			{
+				Item: DeviceQueueItem{
+					FPort: 0,
+				},
+				ExpectedError: ErrInvalidFPort,
+			},
+			{
+				Item: DeviceQueueItem{
+					FPort: 1,
+				},
+				ExpectedError: nil,
+			},
+		}
+
+		for _, test := range tests {
+			So(test.Item.Validate(), ShouldResemble, test.ExpectedError)
+		}
+	})
+}
+
 func TestDeviceQueue(t *testing.T) {
 	conf := test.GetConfig()
 	db, err := common.OpenDatabase(conf.PostgresDSN)
