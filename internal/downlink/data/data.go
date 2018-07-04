@@ -649,7 +649,7 @@ func setPHYPayload(ctx *dataContext) error {
 		FHDR: lorawan.FHDR{
 			DevAddr: ctx.DeviceSession.DevAddr,
 			FCtrl: lorawan.FCtrl{
-				ADR:      true,
+				ADR:      !config.C.NetworkServer.NetworkSettings.DisableADR,
 				ACK:      ctx.ACK,
 				FPending: ctx.MoreData,
 			},

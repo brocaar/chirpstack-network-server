@@ -243,6 +243,11 @@ get_downlink_data_delay="100ms"
   # send mac-commands to the devices. This is intended for testing only.
   disable_mac_commands=false
 
+  # Disable ADR
+  #
+  # When set, this globally disables ADR.
+  disable_adr=false
+
   # Enable only a given sub-set of channels
   #
   # Use this when ony a sub-set of the by default enabled channels are being
@@ -287,9 +292,6 @@ get_downlink_data_delay="100ms"
   # frequency=867900000
   # min_dr=0
   # max_dr=5
-
-	#Disable adr for the whole network.
-	disable_adr=false
 
 
   # Class B settings

@@ -190,6 +190,11 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # send mac-commands to the devices. This is intended for testing only.
   disable_mac_commands={{ .NetworkServer.NetworkSettings.DisableMACCommands }}
 
+  # Disable ADR
+  #
+  # When set, this globally disables ADR.
+  disable_adr={{ .NetworkServer.NetworkSettings.DisableADR }}
+
   # Enable only a given sub-set of channels
   #
   # Use this when ony a sub-set of the by default enabled channels are being
@@ -240,9 +245,6 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   min_dr={{ $element.MinDR }}
   max_dr={{ $element.MaxDR }}
 {{ end }}
-
-	#Disable adr for the whole network.
-	disable_adr={{ .NetworkServer.NetworkSettings.DisableADR }}
 
   # Class B settings
   [network_server.network_settings.class_b]

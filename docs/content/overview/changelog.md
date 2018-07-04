@@ -29,6 +29,7 @@ first :-)
   and to make message re-usable. When you're integrating directly with the
   LoRa Server gRPC API, then you must update your API client as these changes are
   backwards incompatible!
+* Flag added to globally disable ADR.
 
 ## v1.0.1
 
