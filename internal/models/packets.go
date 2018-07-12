@@ -65,6 +65,8 @@ func (r RXPacket) GetGWUplinkRXInfoSet() []*gw.UplinkRXInfo {
 			LoraSnr:   r.RXInfoSet[i].LoRaSNR,
 			Board:     uint32(r.RXInfoSet[i].Board),
 			Antenna:   uint32(r.RXInfoSet[i].Antenna),
+			RfChain:   uint32(r.RXInfoSet[i].RFChain),
+			Channel:   uint32(r.RXInfoSet[i].Channel),
 		}
 
 		if r.RXInfoSet[i].Time != nil {
@@ -98,6 +100,8 @@ type RXInfo struct {
 	LoRaSNR           float64
 	Board             int
 	Antenna           int
+	RFChain           int
+	Channel           int
 }
 
 // RXInfoSet implements a sortable slice of RXInfo elements.
