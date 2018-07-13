@@ -113,8 +113,9 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 			Board:             packet.RXInfo.Board,
 			Antenna:           packet.RXInfo.Antenna,
 			RFChain:           packet.RXInfo.RFChain,
-			Channel:           packet.RXInfo.RFChain,
+			Channel:           packet.RXInfo.Channel,
 		})
+
 	}
 
 	sort.Sort(out.RXInfoSet)
