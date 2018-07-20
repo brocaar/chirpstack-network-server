@@ -18,6 +18,10 @@ first :-)
 ### Features
 
 * LoRaWAN 1.1 support!
+* Support for signaling received (encrypted) AppSKey from join-server to
+  application-server on security context change.
+* Support for Key Encryption Keys, used for handling encrypted keys from the
+  join-server.
 
 ### Changes
 

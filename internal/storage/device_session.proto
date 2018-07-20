@@ -2,6 +2,8 @@ syntax  = "proto3";
 
 package storage;
 
+import "github.com/brocaar/loraserver/api/common/common.proto";
+
 message DeviceSessionPBChannel {
     // Frequency (Hz).
     uint32 frequency = 1;
@@ -57,6 +59,9 @@ message DeviceSessionPB {
 
     // NwkSEncKey.
     bytes nwk_s_enc_key = 9;
+
+    // AppSKeyEnvelope contains the (encrypted) AppSKey key-envelope.
+    common.KeyEnvelope app_s_key_envelope = 45;
 
     // Uplink frame-counter.
     uint32 f_cnt_up = 10;

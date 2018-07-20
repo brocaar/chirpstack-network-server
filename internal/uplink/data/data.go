@@ -9,6 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/as"
+	"github.com/brocaar/loraserver/api/common"
 	gwPB "github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/config"
@@ -42,7 +43,7 @@ var tasks = []func(*dataContext) error{
 	sendFRMPayloadToApplicationServer,
 	setLastRXInfoSet,
 	syncUplinkFCnt,
-	saveNodeSession,
+	saveDeviceSession,
 	handleUplinkACK,
 	handleDownlink,
 }
@@ -337,6 +338,18 @@ func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 	}
 	publishDataUpReq.Dr = uint32(dr)
 
+	if ctx.DeviceSession.AppSKeyEvelope != nil {
+		publishDataUpReq.DeviceActivationContext = &as.DeviceActivationContext{
+			DevAddr: ctx.DeviceSession.DevAddr[:],
+			AppSKey: &common.KeyEnvelope{
+				KekLabel: ctx.DeviceSession.AppSKeyEvelope.KEKLabel,
+				AesKey:   ctx.DeviceSession.AppSKeyEvelope.AESKey,
+			},
+		}
+
+		ctx.DeviceSession.AppSKeyEvelope = nil
+	}
+
 	if ctx.ServiceProfile.AddGWMetadata {
 		var macs []lorawan.EUI64
 		publishDataUpReq.RxInfo = ctx.RXPacket.GetGWUplinkRXInfoSet()
@@ -410,7 +423,7 @@ func syncUplinkFCnt(ctx *dataContext) error {
 	return nil
 }
 
-func saveNodeSession(ctx *dataContext) error {
+func saveDeviceSession(ctx *dataContext) error {
 	// save node-session
 	return storage.SaveDeviceSession(config.C.Redis.Pool, ctx.DeviceSession)
 }

@@ -172,6 +172,9 @@ func TestRejoinScenarios(t *testing.T) {
 						rejoinDS.SNwkSIntKey = lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1}
 						rejoinDS.FNwkSIntKey = lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 						rejoinDS.NwkSEncKey = lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3}
+						rejoinDS.AppSKeyEvelope = &storage.KeyEnvelope{
+							AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4},
+						}
 
 						tc.ExpectedDeviceSession.RejoinCount0 = 124
 						tc.ExpectedDeviceSession.PendingRejoinDeviceSession = &rejoinDS
@@ -204,13 +207,124 @@ func TestRejoinScenarios(t *testing.T) {
 							ResultCode: backend.Success,
 						},
 						SNwkSIntKey: &backend.KeyEnvelope{
-							AESKey: lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
+							AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
 						},
 						FNwkSIntKey: &backend.KeyEnvelope{
-							AESKey: lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+							AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
 						},
 						NwkSEncKey: &backend.KeyEnvelope{
-							AESKey: lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
+							AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
+						},
+						AppSKey: &backend.KeyEnvelope{
+							AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4},
+						},
+					},
+					ExpectedRejoinReqPayload: backend.RejoinReqPayload{
+						BasePayload: backend.BasePayload{
+							ProtocolVersion: backend.ProtocolVersion1_0,
+							SenderID:        "030201",
+							ReceiverID:      "0807060504030201",
+							MessageType:     backend.RejoinReq,
+						},
+						MACVersion: "1.1.0",
+						PHYPayload: backend.HEXBytes(rjBytes),
+						DevEUI:     d.DevEUI,
+						DLSettings: lorawan.DLSettings{
+							OptNeg:      true,
+							RX2DataRate: 3,
+							RX1DROffset: 2,
+						},
+						RxDelay: 1,
+						// CFList is set in the BeforeFunc
+					},
+					ExpectedTXInfo: gw.TXInfo{
+						MAC:       lorawan.EUI64{1, 1, 1, 1, 2, 2, 2, 2},
+						Timestamp: &fiveSec,
+						Frequency: c0.Frequency,
+						Power:     14,
+						DataRate:  c0MinDR,
+					},
+					ExpectedPHYPayload:    jaPHY,
+					ExpectedDeviceSession: ds,
+				},
+				{
+					BeforeFunc: func(tc *rejoinTestCase) error {
+						config.C.JoinServer.KEK.Set = []struct {
+							Label string
+							KEK   lorawan.AES128Key `mapstructure:"kek"`
+						}{
+							{
+								Label: "010203",
+							},
+						}
+
+						rejoinDS := ds
+						rejoinDS.RXDelay = 1
+						rejoinDS.RX1DROffset = 2
+						rejoinDS.RX2DR = 3
+						rejoinDS.RX2Frequency = 869525000
+						rejoinDS.FCntUp = 0
+						rejoinDS.NFCntDown = 0
+						rejoinDS.AFCntDown = 0
+						rejoinDS.EnabledUplinkChannels = []int{0, 1, 2, 3, 4, 5}
+						rejoinDS.ExtraUplinkChannels = map[int]band.Channel{
+							3: {Frequency: 867100000, MaxDR: 5},
+							4: {Frequency: 867300000, MaxDR: 5},
+							5: {Frequency: 867500000, MaxDR: 5},
+						}
+						rejoinDS.SNwkSIntKey = lorawan.AES128Key{88, 148, 152, 153, 48, 146, 207, 219, 95, 210, 224, 42, 199, 81, 11, 241}
+						rejoinDS.FNwkSIntKey = lorawan.AES128Key{83, 127, 138, 174, 137, 108, 121, 224, 21, 209, 2, 208, 98, 134, 53, 78}
+						rejoinDS.NwkSEncKey = lorawan.AES128Key{152, 152, 40, 60, 79, 102, 235, 108, 111, 213, 22, 88, 130, 4, 108, 64}
+						rejoinDS.AppSKeyEvelope = &storage.KeyEnvelope{
+							KEKLabel: "lora-app-server",
+							AESKey:   []byte{248, 215, 201, 250, 55, 176, 209, 198, 53, 78, 109, 184, 225, 157, 157, 122, 180, 229, 199, 88, 30, 159, 30, 32},
+						}
+
+						tc.ExpectedDeviceSession.RejoinCount0 = 124
+						tc.ExpectedDeviceSession.PendingRejoinDeviceSession = &rejoinDS
+
+						cFList := lorawan.CFList{
+							CFListType: lorawan.CFListChannel,
+							Payload: &lorawan.CFListChannelPayload{
+								Channels: [5]uint32{
+									867100000,
+									867300000,
+									867500000,
+								},
+							},
+						}
+						cFListB, err := cFList.MarshalBinary()
+						if err != nil {
+							return err
+						}
+						tc.ExpectedRejoinReqPayload.CFList = backend.HEXBytes(cFListB)
+
+						return nil
+					},
+					Name:          "valid rejoin-request type 0 (with KEK)",
+					DeviceSession: ds,
+					RXInfo:        rxInfo,
+					PHYPayload:    rjPHY,
+					JoinServerRejoinAnsPayload: backend.RejoinAnsPayload{
+						PHYPayload: backend.HEXBytes(jaBytes),
+						Result: backend.Result{
+							ResultCode: backend.Success,
+						},
+						SNwkSIntKey: &backend.KeyEnvelope{
+							KEKLabel: "010203",
+							AESKey:   []byte{246, 176, 184, 31, 61, 48, 41, 18, 85, 145, 192, 176, 184, 141, 118, 201, 59, 72, 172, 164, 4, 22, 133, 211},
+						},
+						FNwkSIntKey: &backend.KeyEnvelope{
+							KEKLabel: "010203",
+							AESKey:   []byte{87, 85, 230, 195, 36, 30, 231, 230, 100, 111, 15, 254, 135, 120, 122, 0, 44, 249, 228, 176, 131, 73, 143, 0},
+						},
+						NwkSEncKey: &backend.KeyEnvelope{
+							KEKLabel: "010203",
+							AESKey:   []byte{78, 225, 236, 219, 189, 151, 82, 239, 109, 226, 140, 65, 233, 189, 174, 37, 39, 206, 241, 242, 2, 127, 157, 247},
+						},
+						AppSKey: &backend.KeyEnvelope{
+							KEKLabel: "lora-app-server",
+							AESKey:   []byte{248, 215, 201, 250, 55, 176, 209, 198, 53, 78, 109, 184, 225, 157, 157, 122, 180, 229, 199, 88, 30, 159, 30, 32},
 						},
 					},
 					ExpectedRejoinReqPayload: backend.RejoinReqPayload{
@@ -315,6 +429,9 @@ func TestRejoinScenarios(t *testing.T) {
 						rejoinDS.SNwkSIntKey = lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1}
 						rejoinDS.FNwkSIntKey = lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2}
 						rejoinDS.NwkSEncKey = lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3}
+						rejoinDS.AppSKeyEvelope = &storage.KeyEnvelope{
+							AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4},
+						}
 						rejoinDS.RejoinCount0 = 0
 
 						tc.ExpectedDeviceSession.RejoinCount0 = 124
@@ -331,13 +448,88 @@ func TestRejoinScenarios(t *testing.T) {
 							ResultCode: backend.Success,
 						},
 						SNwkSIntKey: &backend.KeyEnvelope{
-							AESKey: lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
+							AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
 						},
 						FNwkSIntKey: &backend.KeyEnvelope{
-							AESKey: lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+							AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
 						},
 						NwkSEncKey: &backend.KeyEnvelope{
-							AESKey: lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
+							AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
+						},
+						AppSKey: &backend.KeyEnvelope{
+							AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4},
+						},
+					},
+					ExpectedRejoinReqPayload: backend.RejoinReqPayload{
+						BasePayload: backend.BasePayload{
+							ProtocolVersion: backend.ProtocolVersion1_0,
+							SenderID:        "030201",
+							ReceiverID:      "0807060504030201",
+							MessageType:     backend.RejoinReq,
+						},
+						MACVersion: "1.1.0",
+						PHYPayload: backend.HEXBytes(rjBytes),
+						DevEUI:     d.DevEUI,
+						DLSettings: lorawan.DLSettings{
+							OptNeg:      true,
+							RX2DataRate: 3,
+							RX1DROffset: 2,
+						},
+						RxDelay: 1,
+					},
+					ExpectedTXInfo: gw.TXInfo{
+						MAC:       lorawan.EUI64{1, 1, 1, 1, 2, 2, 2, 2},
+						Timestamp: &fiveSec,
+						Frequency: c0.Frequency,
+						Power:     14,
+						DataRate:  c0MinDR,
+					},
+					ExpectedPHYPayload:    jaPHY,
+					ExpectedDeviceSession: ds,
+				},
+				{
+					BeforeFunc: func(tc *rejoinTestCase) error {
+						rejoinDS := ds
+						rejoinDS.FCntUp = 0
+						rejoinDS.NFCntDown = 0
+						rejoinDS.AFCntDown = 0
+						rejoinDS.SNwkSIntKey = lorawan.AES128Key{88, 148, 152, 153, 48, 146, 207, 219, 95, 210, 224, 42, 199, 81, 11, 241}
+						rejoinDS.FNwkSIntKey = lorawan.AES128Key{83, 127, 138, 174, 137, 108, 121, 224, 21, 209, 2, 208, 98, 134, 53, 78}
+						rejoinDS.NwkSEncKey = lorawan.AES128Key{152, 152, 40, 60, 79, 102, 235, 108, 111, 213, 22, 88, 130, 4, 108, 64}
+						rejoinDS.AppSKeyEvelope = &storage.KeyEnvelope{
+							KEKLabel: "lora-app-server",
+							AESKey:   []byte{248, 215, 201, 250, 55, 176, 209, 198, 53, 78, 109, 184, 225, 157, 157, 122, 180, 229, 199, 88, 30, 159, 30, 32},
+						}
+						rejoinDS.RejoinCount0 = 0
+
+						tc.ExpectedDeviceSession.RejoinCount0 = 124
+						tc.ExpectedDeviceSession.PendingRejoinDeviceSession = &rejoinDS
+						return nil
+					},
+					Name:          "valid rejoin-request type 2 (with KEK)",
+					DeviceSession: ds,
+					RXInfo:        rxInfo,
+					PHYPayload:    rjPHY,
+					JoinServerRejoinAnsPayload: backend.RejoinAnsPayload{
+						PHYPayload: backend.HEXBytes(jaBytes),
+						Result: backend.Result{
+							ResultCode: backend.Success,
+						},
+						SNwkSIntKey: &backend.KeyEnvelope{
+							KEKLabel: "010203",
+							AESKey:   []byte{246, 176, 184, 31, 61, 48, 41, 18, 85, 145, 192, 176, 184, 141, 118, 201, 59, 72, 172, 164, 4, 22, 133, 211},
+						},
+						FNwkSIntKey: &backend.KeyEnvelope{
+							KEKLabel: "010203",
+							AESKey:   []byte{87, 85, 230, 195, 36, 30, 231, 230, 100, 111, 15, 254, 135, 120, 122, 0, 44, 249, 228, 176, 131, 73, 143, 0},
+						},
+						NwkSEncKey: &backend.KeyEnvelope{
+							KEKLabel: "010203",
+							AESKey:   []byte{78, 225, 236, 219, 189, 151, 82, 239, 109, 226, 140, 65, 233, 189, 174, 37, 39, 206, 241, 242, 2, 127, 157, 247},
+						},
+						AppSKey: &backend.KeyEnvelope{
+							KEKLabel: "lora-app-server",
+							AESKey:   []byte{248, 215, 201, 250, 55, 176, 209, 198, 53, 78, 109, 184, 225, 157, 157, 122, 180, 229, 199, 88, 30, 159, 30, 32},
 						},
 					},
 					ExpectedRejoinReqPayload: backend.RejoinReqPayload{

@@ -111,6 +111,13 @@ type Config struct {
 			TLSCert string `mapstructure:"tls_cert"`
 			TLSKey  string `mapstructure:"tls_key"`
 		}
+
+		KEK struct {
+			Set []struct {
+				Label string
+				KEK   string `mapstructure:"kek"`
+			}
+		} `mapstructure:"kek"`
 	} `mapstructure:"join_server"`
 
 	ApplicationServer struct {

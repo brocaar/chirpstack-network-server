@@ -302,22 +302,49 @@ func setRejoin0PendingDeviceSession(ctx *context) error {
 		NbTrans:               1,
 	}
 
+	if ctx.RejoinAnsPayload.AppSKey != nil {
+		pendingDS.AppSKeyEvelope = &storage.KeyEnvelope{
+			KEKLabel: ctx.RejoinAnsPayload.AppSKey.KEKLabel,
+			AESKey:   ctx.RejoinAnsPayload.AppSKey.AESKey,
+		}
+	}
+
 	if ctx.RejoinAnsPayload.NwkSKey != nil {
-		pendingDS.SNwkSIntKey = ctx.RejoinAnsPayload.NwkSKey.AESKey
-		pendingDS.FNwkSIntKey = ctx.RejoinAnsPayload.NwkSKey.AESKey
-		pendingDS.NwkSEncKey = ctx.RejoinAnsPayload.NwkSKey.AESKey
+		key, err := unwrapNSKeyEnvelope(ctx.RejoinAnsPayload.NwkSKey)
+		if err != nil {
+			return err
+		}
+
+		pendingDS.SNwkSIntKey = key
+		pendingDS.FNwkSIntKey = key
+		pendingDS.NwkSEncKey = key
 	}
 
 	if ctx.RejoinAnsPayload.SNwkSIntKey != nil {
-		pendingDS.SNwkSIntKey = ctx.RejoinAnsPayload.SNwkSIntKey.AESKey
+		key, err := unwrapNSKeyEnvelope(ctx.RejoinAnsPayload.SNwkSIntKey)
+		if err != nil {
+			return err
+		}
+
+		pendingDS.SNwkSIntKey = key
 	}
 
 	if ctx.RejoinAnsPayload.FNwkSIntKey != nil {
-		pendingDS.FNwkSIntKey = ctx.RejoinAnsPayload.FNwkSIntKey.AESKey
+		key, err := unwrapNSKeyEnvelope(ctx.RejoinAnsPayload.FNwkSIntKey)
+		if err != nil {
+			return err
+		}
+
+		pendingDS.FNwkSIntKey = key
 	}
 
 	if ctx.RejoinAnsPayload.NwkSEncKey != nil {
-		pendingDS.NwkSEncKey = ctx.RejoinAnsPayload.NwkSEncKey.AESKey
+		key, err := unwrapNSKeyEnvelope(ctx.RejoinAnsPayload.NwkSEncKey)
+		if err != nil {
+			return err
+		}
+
+		pendingDS.NwkSEncKey = key
 	}
 
 	if cfList := config.C.NetworkServer.Band.Band.GetCFList(ctx.DeviceSession.MACVersion); cfList != nil && cfList.CFListType == lorawan.CFListChannel {
@@ -374,22 +401,49 @@ func setRejoin2PendingDeviceSession(ctx *context) error {
 	pendingDS.AFCntDown = 0
 	pendingDS.RejoinCount0 = 0
 
+	if ctx.RejoinAnsPayload.AppSKey != nil {
+		pendingDS.AppSKeyEvelope = &storage.KeyEnvelope{
+			KEKLabel: ctx.RejoinAnsPayload.AppSKey.KEKLabel,
+			AESKey:   ctx.RejoinAnsPayload.AppSKey.AESKey,
+		}
+	}
+
 	if ctx.RejoinAnsPayload.NwkSKey != nil {
-		pendingDS.SNwkSIntKey = ctx.RejoinAnsPayload.NwkSKey.AESKey
-		pendingDS.FNwkSIntKey = ctx.RejoinAnsPayload.NwkSKey.AESKey
-		pendingDS.NwkSEncKey = ctx.RejoinAnsPayload.NwkSKey.AESKey
+		key, err := unwrapNSKeyEnvelope(ctx.RejoinAnsPayload.NwkSKey)
+		if err != nil {
+			return err
+		}
+
+		pendingDS.SNwkSIntKey = key
+		pendingDS.FNwkSIntKey = key
+		pendingDS.NwkSEncKey = key
 	}
 
 	if ctx.RejoinAnsPayload.SNwkSIntKey != nil {
-		pendingDS.SNwkSIntKey = ctx.RejoinAnsPayload.SNwkSIntKey.AESKey
+		key, err := unwrapNSKeyEnvelope(ctx.RejoinAnsPayload.SNwkSIntKey)
+		if err != nil {
+			return err
+		}
+
+		pendingDS.SNwkSIntKey = key
 	}
 
 	if ctx.RejoinAnsPayload.FNwkSIntKey != nil {
-		pendingDS.FNwkSIntKey = ctx.RejoinAnsPayload.FNwkSIntKey.AESKey
+		key, err := unwrapNSKeyEnvelope(ctx.RejoinAnsPayload.FNwkSIntKey)
+		if err != nil {
+			return err
+		}
+
+		pendingDS.FNwkSIntKey = key
 	}
 
 	if ctx.RejoinAnsPayload.NwkSEncKey != nil {
-		pendingDS.NwkSEncKey = ctx.RejoinAnsPayload.NwkSEncKey.AESKey
+		key, err := unwrapNSKeyEnvelope(ctx.RejoinAnsPayload.NwkSEncKey)
+		if err != nil {
+			return err
+		}
+
+		pendingDS.NwkSEncKey = key
 	}
 
 	ctx.DeviceSession.PendingRejoinDeviceSession = &pendingDS

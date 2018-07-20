@@ -1,4 +1,4 @@
-//go:generate protoc -I . --go_out=plugins=grpc:. device_session.proto
+//go:generate protoc -I=. -I=$GOPATH/src --go_out=plugins=grpc:. device_session.proto
 
 package storage
 
@@ -16,6 +16,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
+	commonPB "github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -50,6 +51,12 @@ type UplinkHistory struct {
 // This is used for Class-B and Class-C downlinks.
 type UplinkGatewayHistory struct{}
 
+// KeyEnvelope defined a key-envelope.
+type KeyEnvelope struct {
+	KEKLabel string
+	AESKey   []byte
+}
+
 // DeviceSession defines a device-session.
 type DeviceSession struct {
 	// MAC version
@@ -61,16 +68,17 @@ type DeviceSession struct {
 	RoutingProfileID uuid.UUID
 
 	// session data
-	DevAddr     lorawan.DevAddr
-	DevEUI      lorawan.EUI64
-	JoinEUI     lorawan.EUI64
-	FNwkSIntKey lorawan.AES128Key
-	SNwkSIntKey lorawan.AES128Key
-	NwkSEncKey  lorawan.AES128Key
-	FCntUp      uint32
-	NFCntDown   uint32
-	AFCntDown   uint32
-	ConfFCnt    uint32
+	DevAddr        lorawan.DevAddr
+	DevEUI         lorawan.EUI64
+	JoinEUI        lorawan.EUI64
+	FNwkSIntKey    lorawan.AES128Key
+	SNwkSIntKey    lorawan.AES128Key
+	NwkSEncKey     lorawan.AES128Key
+	AppSKeyEvelope *KeyEnvelope
+	FCntUp         uint32
+	NFCntDown      uint32
+	AFCntDown      uint32
+	ConfFCnt       uint32
 
 	// Only used by ABP activation
 	SkipFCntValidation bool
@@ -273,7 +281,7 @@ func ValidateAndGetFullFCntUp(s DeviceSession, fCntUp uint32) (uint32, bool) {
 // SaveDeviceSession saves the device-session. In case it doesn't exist yet
 // it will be created.
 func SaveDeviceSession(p *redis.Pool, s DeviceSession) error {
-	dsPB := deviceSessionToDeviceSessionPB(s)
+	dsPB := deviceSessionToPB(s)
 	b, err := proto.Marshal(&dsPB)
 	if err != nil {
 		return errors.Wrap(err, "protobuf encode error")
@@ -330,7 +338,7 @@ func GetDeviceSession(p *redis.Pool, devEUI lorawan.EUI64) (DeviceSession, error
 		return migrateDeviceSessionOld(dsOld), nil
 	}
 
-	return deviceSessionPBToDeviceSession(dsPB), nil
+	return deviceSessionFromPB(dsPB), nil
 }
 
 // DeleteDeviceSession deletes the device-session matching the given DevEUI.
@@ -481,7 +489,7 @@ func DeviceSessionExists(p *redis.Pool, devEUI lorawan.EUI64) (bool, error) {
 	return false, nil
 }
 
-func deviceSessionToDeviceSessionPB(d DeviceSession) DeviceSessionPB {
+func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
 	out := DeviceSessionPB{
 		MacVersion: d.MACVersion,
 
@@ -533,6 +541,13 @@ func deviceSessionToDeviceSessionPB(d DeviceSession) DeviceSessionPB {
 		RejoinCount_0: uint32(d.RejoinCount0),
 	}
 
+	if d.AppSKeyEvelope != nil {
+		out.AppSKeyEnvelope = &commonPB.KeyEnvelope{
+			KekLabel: d.AppSKeyEvelope.KEKLabel,
+			AesKey:   d.AppSKeyEvelope.AESKey,
+		}
+	}
+
 	for _, c := range d.EnabledUplinkChannels {
 		out.EnabledUplinkChannels = append(out.EnabledUplinkChannels, uint32(c))
 	}
@@ -563,7 +578,7 @@ func deviceSessionToDeviceSessionPB(d DeviceSession) DeviceSessionPB {
 	}
 
 	if d.PendingRejoinDeviceSession != nil {
-		dsPB := deviceSessionToDeviceSessionPB(*d.PendingRejoinDeviceSession)
+		dsPB := deviceSessionToPB(*d.PendingRejoinDeviceSession)
 		b, err := proto.Marshal(&dsPB)
 		if err != nil {
 			log.WithField("dev_eui", d.DevEUI).WithError(err).Error("protobuf encode error")
@@ -575,7 +590,7 @@ func deviceSessionToDeviceSessionPB(d DeviceSession) DeviceSessionPB {
 	return out
 }
 
-func deviceSessionPBToDeviceSession(d DeviceSessionPB) DeviceSession {
+func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
 	dpID, _ := uuid.FromString(d.DeviceProfileId)
 	rpID, _ := uuid.FromString(d.RoutingProfileId)
 	spID, _ := uuid.FromString(d.ServiceProfileId)
@@ -636,6 +651,13 @@ func deviceSessionPBToDeviceSession(d DeviceSessionPB) DeviceSession {
 	copy(out.SNwkSIntKey[:], d.SNwkSIntKey)
 	copy(out.NwkSEncKey[:], d.NwkSEncKey)
 
+	if d.AppSKeyEnvelope != nil {
+		out.AppSKeyEvelope = &KeyEnvelope{
+			KEKLabel: d.AppSKeyEnvelope.KekLabel,
+			AESKey:   d.AppSKeyEnvelope.AesKey,
+		}
+	}
+
 	for _, c := range d.EnabledUplinkChannels {
 		out.EnabledUplinkChannels = append(out.EnabledUplinkChannels, int(c))
 	}
@@ -674,7 +696,7 @@ func deviceSessionPBToDeviceSession(d DeviceSessionPB) DeviceSession {
 		if err := proto.Unmarshal(d.PendingRejoinDeviceSession, &dsPB); err != nil {
 			log.WithField("dev_eui", out.DevEUI).WithError(err).Error("decode pending rejoin device-session error")
 		} else {
-			ds := deviceSessionPBToDeviceSession(dsPB)
+			ds := deviceSessionFromPB(dsPB)
 			out.PendingRejoinDeviceSession = &ds
 		}
 	}

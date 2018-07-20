@@ -428,6 +428,48 @@ func TestUplinkScenarios(t *testing.T) {
 				},
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
+						tc.DeviceSession.AppSKeyEvelope = &storage.KeyEnvelope{
+							KEKLabel: "lora-app-server",
+							AESKey:   []byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+						}
+
+						tc.ExpectedASHandleDataUp.Data = []byte{1, 2, 3, 4}
+						tc.ExpectedASHandleDataUp.DeviceActivationContext = &as.DeviceActivationContext{
+							DevAddr: tc.DeviceSession.DevAddr[:],
+							AppSKey: &commonPB.KeyEnvelope{
+								KekLabel: "lora-app-server",
+								AesKey:   []byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+							},
+						}
+						return nil
+					},
+
+					Name:          "unconfirmed uplink data with payload + AppSKey envelope",
+					DeviceSession: ds,
+					RXInfo:        rxInfo,
+					PHYPayload: lorawan.PHYPayload{
+						MHDR: lorawan.MHDR{
+							MType: lorawan.UnconfirmedDataUp,
+							Major: lorawan.LoRaWANR1,
+						},
+						MACPayload: &lorawan.MACPayload{
+							FHDR: lorawan.FHDR{
+								DevAddr: ds.DevAddr,
+								FCnt:    10,
+							},
+							FPort:      &fPortOne,
+							FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+						},
+					},
+					ExpectedUplinkMIC:              lorawan.MIC{104, 147, 35, 121},
+					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
+					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
+					ExpectedFCntUp:                 11,
+					ExpectedNFCntDown:              5,
+					ExpectedEnabledChannels:        []int{0, 1, 2},
+				},
+				{
+					BeforeFunc: func(tc *uplinkTestCase) error {
 						tc.ExpectedASHandleDataUp.Data = []byte{1, 2, 3, 4}
 						tc.DeviceSession.MACVersion = "1.1.0"
 

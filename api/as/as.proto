@@ -3,6 +3,7 @@ syntax = "proto3";
 package as;
 
 import "google/protobuf/empty.proto";
+import "github.com/brocaar/loraserver/api/common/common.proto";
 import "github.com/brocaar/loraserver/api/gw/gw.proto";
 
 // ApplicationServerService is the service providing the application-server interface.
@@ -38,6 +39,15 @@ enum ErrorType {
 }
 
 
+message DeviceActivationContext {
+    // Assigned Device Address.
+    bytes dev_addr = 1;
+
+    // Application session key (envelope).
+    common.KeyEnvelope app_s_key = 2;
+}
+
+
 message HandleUplinkDataRequest {
     // DevEUI EUI (8 bytes).
     bytes dev_eui = 1;
@@ -65,6 +75,12 @@ message HandleUplinkDataRequest {
 
     // Received data (encrypted).
     bytes data = 9;
+
+    // Device activation context.
+    // 
+    // This field is only set on the first uplink frame when the security
+    // context has changed (e.g. a new OTAA (re)activation).
+    DeviceActivationContext device_activation_context = 10;
 }
 
 message HandleProprietaryUplinkRequest {

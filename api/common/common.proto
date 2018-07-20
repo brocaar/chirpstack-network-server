@@ -44,3 +44,15 @@ enum Region {
     // RU864
     RU864 = 10;
 }
+
+
+message KeyEnvelope {
+    // KEK label.
+    string kek_label = 1;
+
+    // AES key (when the kek_label is set, this key is encrypted using a key
+    // known to the join-server and application-server.
+    // For more information please refer to the LoRaWAN Backend Interface
+    // 'Key Transport Security' section.
+    bytes aes_key = 2;
+}

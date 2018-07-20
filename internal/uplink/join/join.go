@@ -27,7 +27,7 @@ var tasks = []func(*context) error{
 	getRandomDevAddr,
 	getJoinAcceptFromAS,
 	flushDeviceQueue,
-	createNodeSession,
+	createDeviceSession,
 	createDeviceActivation,
 	sendJoinAcceptDownlink,
 }
@@ -207,8 +207,8 @@ func flushDeviceQueue(ctx *context) error {
 	return nil
 }
 
-func createNodeSession(ctx *context) error {
-	ctx.DeviceSession = storage.DeviceSession{
+func createDeviceSession(ctx *context) error {
+	ds := storage.DeviceSession{
 		DeviceProfileID:  ctx.Device.DeviceProfileID,
 		ServiceProfileID: ctx.Device.ServiceProfileID,
 		RoutingProfileID: ctx.Device.RoutingProfileID,
@@ -232,22 +232,49 @@ func createNodeSession(ctx *context) error {
 		NbTrans:               1,
 	}
 
+	if ctx.JoinAnsPayload.AppSKey != nil {
+		ds.AppSKeyEvelope = &storage.KeyEnvelope{
+			KEKLabel: ctx.JoinAnsPayload.AppSKey.KEKLabel,
+			AESKey:   ctx.JoinAnsPayload.AppSKey.AESKey,
+		}
+	}
+
 	if ctx.JoinAnsPayload.NwkSKey != nil {
-		ctx.DeviceSession.SNwkSIntKey = ctx.JoinAnsPayload.NwkSKey.AESKey
-		ctx.DeviceSession.FNwkSIntKey = ctx.JoinAnsPayload.NwkSKey.AESKey
-		ctx.DeviceSession.NwkSEncKey = ctx.JoinAnsPayload.NwkSKey.AESKey
+		key, err := unwrapNSKeyEnvelope(ctx.JoinAnsPayload.NwkSKey)
+		if err != nil {
+			return err
+		}
+
+		ds.SNwkSIntKey = key
+		ds.FNwkSIntKey = key
+		ds.NwkSEncKey = key
 	}
 
 	if ctx.JoinAnsPayload.SNwkSIntKey != nil {
-		ctx.DeviceSession.SNwkSIntKey = ctx.JoinAnsPayload.SNwkSIntKey.AESKey
+		key, err := unwrapNSKeyEnvelope(ctx.JoinAnsPayload.SNwkSIntKey)
+		if err != nil {
+			return err
+		}
+
+		ds.SNwkSIntKey = key
 	}
 
 	if ctx.JoinAnsPayload.FNwkSIntKey != nil {
-		ctx.DeviceSession.FNwkSIntKey = ctx.JoinAnsPayload.FNwkSIntKey.AESKey
+		key, err := unwrapNSKeyEnvelope(ctx.JoinAnsPayload.FNwkSIntKey)
+		if err != nil {
+			return err
+		}
+
+		ds.FNwkSIntKey = key
 	}
 
 	if ctx.JoinAnsPayload.NwkSEncKey != nil {
-		ctx.DeviceSession.NwkSEncKey = ctx.JoinAnsPayload.NwkSEncKey.AESKey
+		key, err := unwrapNSKeyEnvelope(ctx.JoinAnsPayload.NwkSEncKey)
+		if err != nil {
+			return err
+		}
+
+		ds.NwkSEncKey = key
 	}
 
 	if cfList := config.C.NetworkServer.Band.Band.GetCFList(ctx.DeviceProfile.MACVersion); cfList != nil && cfList.CFListType == lorawan.CFListChannel {
@@ -271,7 +298,7 @@ func createNodeSession(ctx *context) error {
 			}
 
 			// add extra channel to enabled channels
-			ctx.DeviceSession.EnabledUplinkChannels = append(ctx.DeviceSession.EnabledUplinkChannels, i)
+			ds.EnabledUplinkChannels = append(ds.EnabledUplinkChannels, i)
 
 			// add extra channel to extra uplink channels, so that we can
 			// keep track on frequency and data-rate changes
@@ -279,13 +306,15 @@ func createNodeSession(ctx *context) error {
 			if err != nil {
 				return errors.Wrap(err, "get uplink channel error")
 			}
-			ctx.DeviceSession.ExtraUplinkChannels[i] = c
+			ds.ExtraUplinkChannels[i] = c
 		}
 	}
 
 	if ctx.DeviceProfile.PingSlotPeriod != 0 {
-		ctx.DeviceSession.PingSlotNb = (1 << 12) / ctx.DeviceProfile.PingSlotPeriod
+		ds.PingSlotNb = (1 << 12) / ctx.DeviceProfile.PingSlotPeriod
 	}
+
+	ctx.DeviceSession = ds
 
 	if err := storage.SaveDeviceSession(config.C.Redis.Pool, ctx.DeviceSession); err != nil {
 		return errors.Wrap(err, "save node-session error")

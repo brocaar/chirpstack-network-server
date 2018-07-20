@@ -415,6 +415,26 @@ tls_cert="{{ .JoinServer.Default.TLSCert }}"
 tls_key="{{ .JoinServer.Default.TLSKey }}"
 
 
+# Join-server KEK set.
+#
+# These KEKs (Key Encryption Keys) are used to decrypt the network related
+# session-keys received from the join-server on a (re)join-accept.
+# Please refer to the LoRaWAN Backend Interface specification
+# 'Key Transport Security' section for more information.
+#
+# Example (the [[join_server.kek.set]] can be repeated):
+# [[join_server.kek.set]]
+# # KEK label.
+# label="000000"
+
+# # Key Encryption Key.
+# kek="01020304050607080102030405060708"
+{{ range $index, $element := .JoinServer.KEK.Set }}
+[[join_server.kek.set]]
+label="{{ $element.Label }}"
+kek="{{ $element.KEK }}"
+{{ end }}
+
 # Network-controller configuration.
 [network_controller]
 # hostname:port of the network-controller api server (optional)
