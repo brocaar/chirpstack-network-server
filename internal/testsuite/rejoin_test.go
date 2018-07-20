@@ -251,10 +251,11 @@ func TestRejoinScenarios(t *testing.T) {
 					BeforeFunc: func(tc *rejoinTestCase) error {
 						config.C.JoinServer.KEK.Set = []struct {
 							Label string
-							KEK   lorawan.AES128Key `mapstructure:"kek"`
+							KEK   string `mapstructure:"kek"`
 						}{
 							{
 								Label: "010203",
+								KEK:   "00000000000000000000000000000000",
 							},
 						}
 
