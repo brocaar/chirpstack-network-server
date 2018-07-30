@@ -53,7 +53,7 @@ sudo apt-get update
 The stable distribution contains releases that are considered stable.
 
 ```bash
-sudo echo "deb https://artifacts.loraserver.io/packages/1.x/deb stable main" | sudo tee /etc/apt/sources.list.d/loraserver.list
+sudo echo "deb https://artifacts.loraserver.io/packages/2.x/deb stable main" | sudo tee /etc/apt/sources.list.d/loraserver.list
 sudo apt-get update
 ```
 

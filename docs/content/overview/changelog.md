@@ -7,7 +7,7 @@ menu:
 ---
 # Changelog
 
-## v2.0.0 (in development)
+## v2.0.0
 
 ### Upgrade nodes
 
