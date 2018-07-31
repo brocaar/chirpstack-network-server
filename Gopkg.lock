@@ -11,7 +11,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1f6d2e8a529e7a05e9efb20b7aca2ce3876d0b3c9e79b3218637e3f7b138651f"
+  digest = "1:1999a8214b5cf01d5a3e71a763714db92f4d7ff96db0e0838be1feb78a4aa11a"
   name = "github.com/brocaar/lorawan"
   packages = [
     ".",
@@ -23,7 +23,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4e8c8dcc6d806023078d11a9bec6a292e40dbce137a3c2eb917de9b2fc013e47"
+  digest = "1:34ba4f73b4f539f5ee3e2aee6399c99b8295b0159b8bb021a78f82b008369edf"
   name = "github.com/eclipse/paho.mqtt.golang"
   packages = [
     ".",
@@ -41,7 +41,7 @@
   version = "v1.4.7"
 
 [[projects]]
-  digest = "1:b836c25b7939c6e7bbb2c2e3ebbcf607000792eaf84c2e173328c85bb64ef026"
+  digest = "1:d28347c2e8e3b4db1dc17f8188d997402c59ad85bd33288b5b92515d6d89d072"
   name = "github.com/garyburd/redigo"
   packages = [
     "internal",
@@ -52,7 +52,7 @@
   version = "v1.4.0"
 
 [[projects]]
-  digest = "1:5aa861fab3707e89eb00c48826a80706de5c52cc7a5fc5688a9ba422c48de44e"
+  digest = "1:b94bab36a8de2c47e633a8b822bc12cb78eaeaf66a929bcc32b7297de883c02e"
   name = "github.com/golang/protobuf"
   packages = [
     "jsonpb",
@@ -70,6 +70,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:a528e09bffd7a23a0d2d25a1da6a1fb067ac7b6cfea7fc8cbd58af2750c68e0e"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "dec09d789f3dba190787f8b4454c7d3c936fed9e"
+
+[[projects]]
+  branch = "master"
   digest = "1:f14d1b50e0075fb00177f12a96dd7addf93d1e2883c25befd17285b779549795"
   name = "github.com/gopherjs/gopherjs"
   packages = ["js"]
@@ -78,7 +86,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:53dcd08f59897bed5314c025dd57b43af1025c5685e27cd5a1565d7e289450df"
+  digest = "1:ade4a17a74189afeaca389d452a1b20207b6642471548158f488a38da287cf1a"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   packages = [
     ".",
@@ -92,7 +100,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5b0a30001d1ff3fbfd92029178ff1d16731f19e886f3b17e6a77989cde9e1441"
+  digest = "1:9d28dd6ad84cf6c3e47e36b50761fb5092922a3ff15e775094d1694cb0deb64e"
   name = "github.com/hashicorp/hcl"
   packages = [
     ".",
@@ -119,7 +127,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:489536052bc7744088c06ea72c3167a1adccfa206056489700daecafdad26a26"
+  digest = "1:db71ee03c191f7f07cb8840e8072bfdef25248108d52d2c529cabb9f0f76a5ae"
   name = "github.com/jacobsa/crypto"
   packages = [
     "cmac",
@@ -130,7 +138,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ca9462277fbf7d2a0cd4e22b7269a9b8ffe0f78a4e18fd6826cb9df90ec01c8a"
+  digest = "1:920a01daad13b3c03edcba925e90c2ed089b9661292350d49f5affa96b5345d2"
   name = "github.com/jmoiron/sqlx"
   packages = [
     ".",
@@ -149,7 +157,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:af81271b2d216c13c4b31a9df3a533f7236e88ba0e8fa371fef7edaef14d9dd4"
+  digest = "1:47315d803e900380830af8fb6c4122ad4c995045fd0b96a6218c804ed60ee65f"
   name = "github.com/lib/pq"
   packages = [
     ".",
@@ -202,14 +210,6 @@
   revision = "6edbfbd6a369ee82463312ec67b2c92f97a1d4dc"
 
 [[projects]]
-  digest = "1:6bc0652ea6e39e22ccd522458b8bdd8665bf23bdc5a20eec90056e4dc7e273ca"
-  name = "github.com/satori/go.uuid"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
-
-[[projects]]
   digest = "1:6201742366c1518fc5f0df9ccdb4d193fc8a2aef2cc57bf164c9bca23bd5f869"
   name = "github.com/sirupsen/logrus"
   packages = ["."]
@@ -218,7 +218,7 @@
   version = "v1.0.4"
 
 [[projects]]
-  digest = "1:8e059ba57bf50718652c005894a680ff47e8201760e9ee658091754daaebd578"
+  digest = "1:268d9458e12861d01186d9cee12870f8586d11de8a5a152f3f95d4c7573e0cb8"
   name = "github.com/smartystreets/assertions"
   packages = [
     ".",
@@ -230,7 +230,7 @@
   version = "1.8.1"
 
 [[projects]]
-  digest = "1:d7b05f2a6c2f3fc4d4d8018ada93d00847d30a0bbbf17d7b385bccad163e68f1"
+  digest = "1:7efd0b2309cdd6468029fa30c808c50a820c9344df07e1a4bbdaf18f282907aa"
   name = "github.com/smartystreets/goconvey"
   packages = [
     "convey",
@@ -242,7 +242,7 @@
   version = "1.6.3"
 
 [[projects]]
-  digest = "1:5acbd68f7ea50fa49d973127d8eee280fed9c6e8db1a197d782d61afed9fe3bb"
+  digest = "1:39da3da7a735176ff518f7a6d8de9e4e03cb760dc7ef0b7b8dae6fc61406295c"
   name = "github.com/spf13/afero"
   packages = [
     ".",
@@ -262,7 +262,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0c83c5f01c03f8d035e3bee9943d27710d82b4ddf8477570792274b671bf4738"
+  digest = "1:34621b5455af57087bc5006bf8d5428bccd51225472fa58d74b2feace68c739a"
   name = "github.com/spf13/cobra"
   packages = ["."]
   pruneopts = "NUT"
@@ -302,7 +302,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:95bd62b8ffb48344efc181dc1882a4c67b4c9b6bf0ab24386110ee5dd3a785bc"
+  digest = "1:2934eda910dc36b3e12c2eaa8371322fb30dd4865f8a345a157119c688324673"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -320,7 +320,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b518ec6d041ce66d3452fbf8ccf603e8513ab12359397b1f958e23d72d08a65f"
+  digest = "1:4e67fdd7a13cbdb3c0dff0a7505abbdf4f42b12b27da350d66bffdc700db2899"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -331,7 +331,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a0f29009397dc27c9dc8440f0945d49e5cbb9b72d0b0fc745474d9bfdea2d9f8"
+  digest = "1:e7071ed636b5422cc51c0e3a6cebc229d6c9fffc528814b519a980641422d619"
   name = "golang.org/x/text"
   packages = [
     "collate",
@@ -361,7 +361,7 @@
   revision = "a8101f21cf983e773d0c1133ebc5424792003214"
 
 [[projects]]
-  digest = "1:9f3dd495b7966784f5ca8e08a01228e617581dead1baeb8f0bde88bf4c061206"
+  digest = "1:4fe8befdb2e04f50121183fd62c017aa8f70e09eae083d132060e4274f704f25"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -422,6 +422,7 @@
     "github.com/golang/protobuf/ptypes/duration",
     "github.com/golang/protobuf/ptypes/empty",
     "github.com/golang/protobuf/ptypes/timestamp",
+    "github.com/google/uuid",
     "github.com/grpc-ecosystem/go-grpc-middleware",
     "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus",
     "github.com/grpc-ecosystem/go-grpc-middleware/tags",
@@ -429,7 +430,6 @@
     "github.com/lib/pq",
     "github.com/pkg/errors",
     "github.com/rubenv/sql-migrate",
-    "github.com/satori/go.uuid",
     "github.com/sirupsen/logrus",
     "github.com/smartystreets/goconvey/convey",
     "github.com/spf13/cobra",

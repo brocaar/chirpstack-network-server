@@ -5,8 +5,8 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -102,7 +102,7 @@ func (n *NetworkServerAPI) CreateServiceProfile(ctx context.Context, req *ns.Cre
 	}
 
 	return &ns.CreateServiceProfileResponse{
-		Id: sp.ID.Bytes(),
+		Id: sp.ID[:],
 	}, nil
 }
 
@@ -118,7 +118,7 @@ func (n *NetworkServerAPI) GetServiceProfile(ctx context.Context, req *ns.GetSer
 
 	resp := ns.GetServiceProfileResponse{
 		ServiceProfile: &ns.ServiceProfile{
-			Id:                     sp.ID.Bytes(),
+			Id:                     sp.ID[:],
 			UlRate:                 uint32(sp.ULRate),
 			UlBucketSize:           uint32(sp.ULBucketSize),
 			DlRate:                 uint32(sp.DLRate),
@@ -260,7 +260,7 @@ func (n *NetworkServerAPI) CreateRoutingProfile(ctx context.Context, req *ns.Cre
 	}
 
 	return &ns.CreateRoutingProfileResponse{
-		Id: rp.ID.Bytes(),
+		Id: rp.ID[:],
 	}, nil
 }
 
@@ -276,7 +276,7 @@ func (n *NetworkServerAPI) GetRoutingProfile(ctx context.Context, req *ns.GetRou
 
 	resp := ns.GetRoutingProfileResponse{
 		RoutingProfile: &ns.RoutingProfile{
-			Id:      rp.ID.Bytes(),
+			Id:      rp.ID[:],
 			AsId:    rp.ASID,
 			CaCert:  rp.CACert,
 			TlsCert: rp.TLSCert,
@@ -393,7 +393,7 @@ func (n *NetworkServerAPI) CreateDeviceProfile(ctx context.Context, req *ns.Crea
 	}
 
 	return &ns.CreateDeviceProfileResponse{
-		Id: dp.ID.Bytes(),
+		Id: dp.ID[:],
 	}, nil
 }
 
@@ -414,7 +414,7 @@ func (n *NetworkServerAPI) GetDeviceProfile(ctx context.Context, req *ns.GetDevi
 
 	resp := ns.GetDeviceProfileResponse{
 		DeviceProfile: &ns.DeviceProfile{
-			Id:                 dp.ID.Bytes(),
+			Id:                 dp.ID[:],
 			SupportsClassB:     dp.SupportsClassB,
 			ClassBTimeout:      uint32(dp.ClassBTimeout),
 			PingSlotPeriod:     uint32(dp.PingSlotPeriod),
@@ -1075,7 +1075,7 @@ func (n *NetworkServerAPI) CreateGatewayProfile(ctx context.Context, req *ns.Cre
 		return nil, errToRPCError(err)
 	}
 
-	return &ns.CreateGatewayProfileResponse{Id: gc.ID.Bytes()}, nil
+	return &ns.CreateGatewayProfileResponse{Id: gc.ID[:]}, nil
 }
 
 // GetGatewayProfile returns the gateway-profile given an id.
@@ -1090,7 +1090,7 @@ func (n *NetworkServerAPI) GetGatewayProfile(ctx context.Context, req *ns.GetGat
 
 	out := ns.GetGatewayProfileResponse{
 		GatewayProfile: &ns.GatewayProfile{
-			Id: gc.ID.Bytes(),
+			Id: gc.ID[:],
 		},
 	}
 
@@ -1386,7 +1386,7 @@ func gwToResp(gw storage.Gateway) *ns.GetGatewayResponse {
 	}
 
 	if gw.GatewayProfileID != nil {
-		resp.Gateway.GatewayProfileId = gw.GatewayProfileID.Bytes()
+		resp.Gateway.GatewayProfileId = gw.GatewayProfileID[:]
 	}
 
 	return &resp

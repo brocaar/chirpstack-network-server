@@ -8,7 +8,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -430,9 +430,9 @@ func TestNetworkServerAPI(t *testing.T) {
 				_, err := api.CreateDevice(ctx, &ns.CreateDeviceRequest{
 					Device: &ns.Device{
 						DevEui:           devEUI[:],
-						DeviceProfileId:  dp.ID.Bytes(),
-						ServiceProfileId: sp.ID.Bytes(),
-						RoutingProfileId: rp.ID.Bytes(),
+						DeviceProfileId:  dp.ID[:],
+						ServiceProfileId: sp.ID[:],
+						RoutingProfileId: rp.ID[:],
 						SkipFCntCheck:    true,
 					},
 				})
@@ -445,9 +445,9 @@ func TestNetworkServerAPI(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(resp.Device, ShouldResemble, &ns.Device{
 						DevEui:           devEUI[:],
-						DeviceProfileId:  dp.ID.Bytes(),
-						ServiceProfileId: sp.ID.Bytes(),
-						RoutingProfileId: rp.ID.Bytes(),
+						DeviceProfileId:  dp.ID[:],
+						ServiceProfileId: sp.ID[:],
+						RoutingProfileId: rp.ID[:],
 						SkipFCntCheck:    true,
 					})
 				})
@@ -463,8 +463,8 @@ func TestNetworkServerAPI(t *testing.T) {
 					_, err = api.UpdateDevice(ctx, &ns.UpdateDeviceRequest{
 						Device: &ns.Device{
 							DevEui:           devEUI[:],
-							DeviceProfileId:  dp.ID.Bytes(),
-							ServiceProfileId: sp.ID.Bytes(),
+							DeviceProfileId:  dp.ID[:],
+							ServiceProfileId: sp.ID[:],
 							RoutingProfileId: rp2Resp.Id,
 							SkipFCntCheck:    true,
 						},
@@ -477,8 +477,8 @@ func TestNetworkServerAPI(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(resp.Device, ShouldResemble, &ns.Device{
 						DevEui:           devEUI[:],
-						DeviceProfileId:  dp.ID.Bytes(),
-						ServiceProfileId: sp.ID.Bytes(),
+						DeviceProfileId:  dp.ID[:],
+						ServiceProfileId: sp.ID[:],
 						RoutingProfileId: rp2Resp.Id,
 						SkipFCntCheck:    true,
 					})

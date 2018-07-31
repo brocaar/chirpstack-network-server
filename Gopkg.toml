@@ -35,8 +35,8 @@
   name = "github.com/rubenv/sql-migrate"
 
 [[constraint]]
-  name = "github.com/satori/go.uuid"
-  version = "1.2.0"
+  branch = "master"
+  name = "github.com/google/uuid"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
