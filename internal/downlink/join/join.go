@@ -68,6 +68,8 @@ func getJoinAcceptTXInfo(ctx *joinContext) error {
 	ctx.TXInfo = gw.TXInfo{
 		MAC:      rxInfo.MAC,
 		CodeRate: ctx.RXPacket.TXInfo.CodeRate,
+		Board:    rxInfo.Board,
+		Antenna:  rxInfo.Antenna,
 	}
 
 	var timestamp uint32

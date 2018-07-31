@@ -325,6 +325,8 @@ func getDataTXInfoForRX2(ctx *dataContext) error {
 		return errors.Wrap(err, "get data-rate error")
 	}
 
+	rxInfo := ctx.RXPacket.RXInfoSet[0]
+
 	ctx.TXInfo = gw.TXInfo{
 		MAC:         mac,
 		Immediately: true,
@@ -332,6 +334,8 @@ func getDataTXInfoForRX2(ctx *dataContext) error {
 		Power:       config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.DeviceSession.RX2Frequency),
 		DataRate:    dr,
 		CodeRate:    defaultCodeRate,
+		Board:       rxInfo.Board,
+		Antenna:     rxInfo.Antenna,
 	}
 	ctx.DataRate = int(ctx.DeviceSession.RX2DR)
 
@@ -356,12 +360,16 @@ func setTXInfoForClassB(ctx *dataContext) error {
 		return errors.Wrap(err, "get data-rate error")
 	}
 
+	rxInfo := ctx.RXPacket.RXInfoSet[0]
+
 	ctx.TXInfo = gw.TXInfo{
 		MAC:       mac,
 		Frequency: ctx.DeviceSession.PingSlotFrequency,
 		Power:     config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.DeviceSession.PingSlotFrequency),
 		DataRate:  dr,
 		CodeRate:  defaultCodeRate,
+		Board:     rxInfo.Board,
+		Antenna:   rxInfo.Antenna,
 	}
 	ctx.DataRate = ctx.DeviceSession.PingSlotDR
 
@@ -812,6 +820,8 @@ func getDataDownTXInfoAndDR(ds storage.DeviceSession, lastTXInfo models.TXInfo, 
 	txInfo := gw.TXInfo{
 		MAC:      rxInfo.MAC,
 		CodeRate: lastTXInfo.CodeRate,
+		Board:    rxInfo.Board,
+		Antenna:  rxInfo.Antenna,
 	}
 
 	var timestamp uint32
