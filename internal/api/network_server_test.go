@@ -430,9 +430,9 @@ func TestNetworkServerAPI(t *testing.T) {
 				_, err := api.CreateDevice(ctx, &ns.CreateDeviceRequest{
 					Device: &ns.Device{
 						DevEui:           devEUI[:],
-						DeviceProfileId:  dp.ID[:],
-						ServiceProfileId: sp.ID[:],
-						RoutingProfileId: rp.ID[:],
+						DeviceProfileId:  dp.ID.Bytes(),
+						ServiceProfileId: sp.ID.Bytes(),
+						RoutingProfileId: rp.ID.Bytes(),
 						SkipFCntCheck:    true,
 					},
 				})
@@ -445,9 +445,9 @@ func TestNetworkServerAPI(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(resp.Device, ShouldResemble, &ns.Device{
 						DevEui:           devEUI[:],
-						DeviceProfileId:  dp.ID[:],
-						ServiceProfileId: sp.ID[:],
-						RoutingProfileId: rp.ID[:],
+						DeviceProfileId:  dp.ID.Bytes(),
+						ServiceProfileId: sp.ID.Bytes(),
+						RoutingProfileId: rp.ID.Bytes(),
 						SkipFCntCheck:    true,
 					})
 				})
@@ -463,8 +463,8 @@ func TestNetworkServerAPI(t *testing.T) {
 					_, err = api.UpdateDevice(ctx, &ns.UpdateDeviceRequest{
 						Device: &ns.Device{
 							DevEui:           devEUI[:],
-							DeviceProfileId:  dp.ID[:],
-							ServiceProfileId: sp.ID[:],
+							DeviceProfileId:  dp.ID.Bytes(),
+							ServiceProfileId: sp.ID.Bytes(),
 							RoutingProfileId: rp2Resp.Id,
 							SkipFCntCheck:    true,
 						},
@@ -477,8 +477,8 @@ func TestNetworkServerAPI(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(resp.Device, ShouldResemble, &ns.Device{
 						DevEui:           devEUI[:],
-						DeviceProfileId:  dp.ID[:],
-						ServiceProfileId: sp.ID[:],
+						DeviceProfileId:  dp.ID.Bytes(),
+						ServiceProfileId: sp.ID.Bytes(),
 						RoutingProfileId: rp2Resp.Id,
 						SkipFCntCheck:    true,
 					})

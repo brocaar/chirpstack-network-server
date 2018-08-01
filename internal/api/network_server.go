@@ -102,7 +102,7 @@ func (n *NetworkServerAPI) CreateServiceProfile(ctx context.Context, req *ns.Cre
 	}
 
 	return &ns.CreateServiceProfileResponse{
-		Id: sp.ID[:],
+		Id: sp.ID.Bytes(),
 	}, nil
 }
 
@@ -118,7 +118,7 @@ func (n *NetworkServerAPI) GetServiceProfile(ctx context.Context, req *ns.GetSer
 
 	resp := ns.GetServiceProfileResponse{
 		ServiceProfile: &ns.ServiceProfile{
-			Id:                     sp.ID[:],
+			Id:                     sp.ID.Bytes(),
 			UlRate:                 uint32(sp.ULRate),
 			UlBucketSize:           uint32(sp.ULBucketSize),
 			DlRate:                 uint32(sp.DLRate),
@@ -260,7 +260,7 @@ func (n *NetworkServerAPI) CreateRoutingProfile(ctx context.Context, req *ns.Cre
 	}
 
 	return &ns.CreateRoutingProfileResponse{
-		Id: rp.ID[:],
+		Id: rp.ID.Bytes(),
 	}, nil
 }
 
@@ -276,7 +276,7 @@ func (n *NetworkServerAPI) GetRoutingProfile(ctx context.Context, req *ns.GetRou
 
 	resp := ns.GetRoutingProfileResponse{
 		RoutingProfile: &ns.RoutingProfile{
-			Id:      rp.ID[:],
+			Id:      rp.ID.Bytes(),
 			AsId:    rp.ASID,
 			CaCert:  rp.CACert,
 			TlsCert: rp.TLSCert,
@@ -414,7 +414,7 @@ func (n *NetworkServerAPI) GetDeviceProfile(ctx context.Context, req *ns.GetDevi
 
 	resp := ns.GetDeviceProfileResponse{
 		DeviceProfile: &ns.DeviceProfile{
-			Id:                 dp.ID[:],
+			Id:                 dp.ID.Bytes(),
 			SupportsClassB:     dp.SupportsClassB,
 			ClassBTimeout:      uint32(dp.ClassBTimeout),
 			PingSlotPeriod:     uint32(dp.PingSlotPeriod),
@@ -1075,7 +1075,7 @@ func (n *NetworkServerAPI) CreateGatewayProfile(ctx context.Context, req *ns.Cre
 		return nil, errToRPCError(err)
 	}
 
-	return &ns.CreateGatewayProfileResponse{Id: gc.ID[:]}, nil
+	return &ns.CreateGatewayProfileResponse{Id: gc.ID.Bytes()}, nil
 }
 
 // GetGatewayProfile returns the gateway-profile given an id.
@@ -1090,7 +1090,7 @@ func (n *NetworkServerAPI) GetGatewayProfile(ctx context.Context, req *ns.GetGat
 
 	out := ns.GetGatewayProfileResponse{
 		GatewayProfile: &ns.GatewayProfile{
-			Id: gc.ID[:],
+			Id: gc.ID.Bytes(),
 		},
 	}
 
