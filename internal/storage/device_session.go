@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	"github.com/gofrs/uuid"
 	proto "github.com/golang/protobuf/proto"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -591,9 +591,9 @@ func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
 }
 
 func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
-	dpID, _ := uuid.Parse(d.DeviceProfileId)
-	rpID, _ := uuid.Parse(d.RoutingProfileId)
-	spID, _ := uuid.Parse(d.ServiceProfileId)
+	dpID, _ := uuid.FromString(d.DeviceProfileId)
+	rpID, _ := uuid.FromString(d.RoutingProfileId)
+	spID, _ := uuid.FromString(d.ServiceProfileId)
 
 	out := DeviceSession{
 		MACVersion: d.MacVersion,

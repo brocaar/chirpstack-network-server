@@ -3,9 +3,9 @@ package api
 import (
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"

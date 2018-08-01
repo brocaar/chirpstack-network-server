@@ -3,7 +3,7 @@ package storage
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 

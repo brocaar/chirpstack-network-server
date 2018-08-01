@@ -11,7 +11,7 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
@@ -54,7 +54,7 @@ func CreateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
 	now := time.Now()
 
 	if dp.ID == uuid.Nil {
-		dp.ID = uuid.New()
+		dp.ID = uuid.Must(uuid.NewV4())
 	}
 
 	dp.CreatedAt = now

@@ -71,7 +71,7 @@
 [[projects]]
   branch = "master"
   digest = "1:a528e09bffd7a23a0d2d25a1da6a1fb067ac7b6cfea7fc8cbd58af2750c68e0e"
-  name = "github.com/google/uuid"
+  name = "github.com/gofrs/uuid"
   packages = ["."]
   pruneopts = "NUT"
   revision = "dec09d789f3dba190787f8b4454c7d3c936fed9e"
@@ -422,7 +422,7 @@
     "github.com/golang/protobuf/ptypes/duration",
     "github.com/golang/protobuf/ptypes/empty",
     "github.com/golang/protobuf/ptypes/timestamp",
-    "github.com/google/uuid",
+    "github.com/gofrs/uuid",
     "github.com/grpc-ecosystem/go-grpc-middleware",
     "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus",
     "github.com/grpc-ecosystem/go-grpc-middleware/tags",

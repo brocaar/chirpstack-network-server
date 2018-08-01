@@ -9,7 +9,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 	"github.com/pkg/errors"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
@@ -61,7 +61,7 @@ func CreateServiceProfile(db sqlx.Execer, sp *ServiceProfile) error {
 	now := time.Now()
 
 	if sp.ID == uuid.Nil {
-		sp.ID = uuid.New()
+		sp.ID = uuid.Must(uuid.NewV4())
 	}
 
 	sp.CreatedAt = now

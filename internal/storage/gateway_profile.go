@@ -3,7 +3,7 @@ package storage
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	log "github.com/sirupsen/logrus"
@@ -47,7 +47,7 @@ func CreateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 	c.UpdatedAt = now
 
 	if c.ID == uuid.Nil {
-		c.ID = uuid.New()
+		c.ID = uuid.Must(uuid.NewV4())
 	}
 
 	_, err := db.Exec(`
