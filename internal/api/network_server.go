@@ -393,7 +393,7 @@ func (n *NetworkServerAPI) CreateDeviceProfile(ctx context.Context, req *ns.Crea
 	}
 
 	return &ns.CreateDeviceProfileResponse{
-		Id: dp.ID[:],
+		Id: dp.ID.Bytes(),
 	}, nil
 }
 
@@ -1386,7 +1386,7 @@ func gwToResp(gw storage.Gateway) *ns.GetGatewayResponse {
 	}
 
 	if gw.GatewayProfileID != nil {
-		resp.Gateway.GatewayProfileId = gw.GatewayProfileID[:]
+		resp.Gateway.GatewayProfileId = gw.GatewayProfileID.Bytes()
 	}
 
 	return &resp
