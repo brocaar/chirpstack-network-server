@@ -3,8 +3,8 @@ package storage
 import (
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,7 +24,7 @@ func CreateRoutingProfile(db sqlx.Execer, rp *RoutingProfile) error {
 	now := time.Now()
 
 	if rp.ID == uuid.Nil {
-		rp.ID = uuid.NewV4()
+		rp.ID = uuid.Must(uuid.NewV4())
 	}
 
 	rp.CreatedAt = now

@@ -7,7 +7,7 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/test"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/brocaar/loraserver/internal/gps"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/internal/config"

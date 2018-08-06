@@ -7,7 +7,7 @@ import (
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 // DeviceSessionOld defines the "old" device-session struct.

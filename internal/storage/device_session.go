@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
+	"github.com/gofrs/uuid"
 	proto "github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
 	log "github.com/sirupsen/logrus"
 
 	commonPB "github.com/brocaar/loraserver/api/common"
