@@ -11,7 +11,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1999a8214b5cf01d5a3e71a763714db92f4d7ff96db0e0838be1feb78a4aa11a"
+  digest = "1:1f6d2e8a529e7a05e9efb20b7aca2ce3876d0b3c9e79b3218637e3f7b138651f"
   name = "github.com/brocaar/lorawan"
   packages = [
     ".",
@@ -23,7 +23,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4a2f7ee2663631376475da676508b9dc57bc2844d7b8ef27aa4f4c40370bf9d2"
+  digest = "1:098333c9b1bcb5fe6b4e97698ec6ff89dc6840efbe6083002fdda773c82676db"
   name = "github.com/eclipse/paho.mqtt.golang"
   packages = [
     ".",
@@ -41,7 +41,7 @@
   version = "v1.4.7"
 
 [[projects]]
-  digest = "1:0594af97b2f4cec6554086eeace6597e20a4b69466eb4ada25adf9f4300dddd2"
+  digest = "1:f26133af0db0007ccbd4830a033f7124c38cbab8afecd06452f17c6b7fd4c3a9"
   name = "github.com/garyburd/redigo"
   packages = [
     "internal",
@@ -60,7 +60,7 @@
   revision = "540727032f71d0f1ba9a74a8e0216fbb4356e2ed"
 
 [[projects]]
-  digest = "1:b94bab36a8de2c47e633a8b822bc12cb78eaeaf66a929bcc32b7297de883c02e"
+  digest = "1:5aa861fab3707e89eb00c48826a80706de5c52cc7a5fc5688a9ba422c48de44e"
   name = "github.com/golang/protobuf"
   packages = [
     "jsonpb",
@@ -86,7 +86,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:fdd5eb4503e8d129faf7413aaf6474c49b503e793adcee9be608afc695bf1b76"
+  digest = "1:b22d7f52906bc8aad9590edbec810c1dd2606d9f2488e89a5b6bd9391a58e60c"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   packages = [
     ".",
@@ -101,7 +101,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:11c6c696067d3127ecf332b10f89394d386d9083f82baf71f40f2da31841a009"
+  digest = "1:02e4365951e1bc55bd6505938ea88e12b5a9d5dfedcb1ae35d5a3833e502833e"
   name = "github.com/hashicorp/hcl"
   packages = [
     ".",
@@ -128,7 +128,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:db71ee03c191f7f07cb8840e8072bfdef25248108d52d2c529cabb9f0f76a5ae"
+  digest = "1:489536052bc7744088c06ea72c3167a1adccfa206056489700daecafdad26a26"
   name = "github.com/jacobsa/crypto"
   packages = [
     "cmac",
@@ -139,7 +139,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f8670bc82b370c3dd4a64699bc7157cb66bb7c4f43be06edd5e7e4cc134bfa57"
+  digest = "1:b919f4c905c26cd93c30fc6820b9d41640c1dbbee686961792413a7ab771a0b3"
   name = "github.com/jmoiron/sqlx"
   packages = [
     ".",
@@ -158,7 +158,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6415011db6d5f89961c38446f3552c74749462bef94904534c55e3dda1affeb9"
+  digest = "1:2c52c3bfa3e106abd7df09126db04bd385aa0f3c250508d8568896253e80cb10"
   name = "github.com/lib/pq"
   packages = [
     ".",
@@ -219,7 +219,7 @@
   version = "v1.0.6"
 
 [[projects]]
-  digest = "1:1f0b284a6858827de4c27c66b49b2b25df3e16b031c2b57b7892273131e7dd2b"
+  digest = "1:b30ad26bddf581183c647edeb71825400ecbd24bff8ae3bbec011ea018e37319"
   name = "github.com/smartystreets/assertions"
   packages = [
     ".",
@@ -231,7 +231,7 @@
   version = "1.8.3"
 
 [[projects]]
-  digest = "1:7efd0b2309cdd6468029fa30c808c50a820c9344df07e1a4bbdaf18f282907aa"
+  digest = "1:d7b05f2a6c2f3fc4d4d8018ada93d00847d30a0bbbf17d7b385bccad163e68f1"
   name = "github.com/smartystreets/goconvey"
   packages = [
     "convey",
@@ -243,7 +243,7 @@
   version = "1.6.3"
 
 [[projects]]
-  digest = "1:330e9062b308ac597e28485699c02223bd052437a6eed32a173c9227dcb9d95a"
+  digest = "1:a36d61943d51cd4a1d7ecaf6993190527535a57382114ebf6549956b3e4cb612"
   name = "github.com/spf13/afero"
   packages = [
     ".",
@@ -263,7 +263,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:343d44e06621142ab09ae0c76c1799104cdfddd3ffb445d78b1adf8dc3ffaf3d"
+  digest = "1:2c3b60fc961b7ddca4336bb7bb39146cb73ea2ad73d4afc6b4ffea05571e712a"
   name = "github.com/spf13/cobra"
   packages = ["."]
   pruneopts = "NUT"
@@ -303,7 +303,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c158ab109a0f317e5ba6bb20c20cba2333a0bcffdb39319ed34347b1e3d863db"
+  digest = "1:f7a00fbadcd6a5528e3f107dc762565aa6ddb2f9a3bcae7ed1f02b9b733ee90f"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -322,7 +322,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:43a352083eca9cd2a8e74419460d5767885501265cfca9c7204cc085aead1361"
+  digest = "1:ce550ba55758c330b8152972202835a80cbd0122be793664808142e6166598cd"
   name = "golang.org/x/sys"
   packages = [
     "unix",
@@ -332,7 +332,7 @@
   revision = "bd9dbc187b6e1dacfdd2722a87e83093c2d7bd6e"
 
 [[projects]]
-  digest = "1:e7071ed636b5422cc51c0e3a6cebc229d6c9fffc528814b519a980641422d619"
+  digest = "1:a0f29009397dc27c9dc8440f0945d49e5cbb9b72d0b0fc745474d9bfdea2d9f8"
   name = "golang.org/x/text"
   packages = [
     "collate",
@@ -363,7 +363,7 @@
   revision = "daca94659cb50e9f37c1b834680f2e46358f10b0"
 
 [[projects]]
-  digest = "1:c2d756dba3cf0bc2d50ff9b3e4b80cd327436cf678386a51c8417d084625a51d"
+  digest = "1:77ce454715387a609a4a4d97fe77d98f37d8b8fb69762784bdda6e228106f71c"
   name = "google.golang.org/grpc"
   packages = [
     ".",

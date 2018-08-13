@@ -34,6 +34,7 @@ import (
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/migrations"
+	"github.com/brocaar/loraserver/internal/migrations/code"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
@@ -59,6 +60,7 @@ func run(cmd *cobra.Command, args []string) error {
 		setJoinServer,
 		setNetworkController,
 		runDatabaseMigrations,
+		fixV2RedisCache,
 		startAPIServer,
 		startLoRaServer(server),
 		startStatsServer(gwStats),
@@ -378,5 +380,11 @@ func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCer
 	return credentials.NewTLS(&tls.Config{
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      caCertPool,
+	})
+}
+
+func fixV2RedisCache() error {
+	return code.Migrate(config.C.PostgreSQL.DB, "v1_to_v2_flush_profiles_cache", func() error {
+		return code.FlushProfilesCache(config.C.Redis.Pool, config.C.PostgreSQL.DB)
 	})
 }
