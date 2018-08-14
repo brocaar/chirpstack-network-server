@@ -61,11 +61,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d8e1fa697a7bc54507f6ddff7699b6a56f009c3ed7267f0d3719d678fdc56dc6"
+  digest = "1:c85dc5b247d8d2646a3061054820e20195530690c8dfbca620db3e0ec58ba236"
   name = "github.com/gofrs/uuid"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "540727032f71d0f1ba9a74a8e0216fbb4356e2ed"
+  revision = "c52a24014454cb81a53adfe807a68f6a20b49d74"
 
 [[projects]]
   digest = "1:5aa861fab3707e89eb00c48826a80706de5c52cc7a5fc5688a9ba422c48de44e"
@@ -291,40 +291,31 @@
   name = "github.com/spf13/jwalterweatherman"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "7c0cea34c8ece3fbeb2b27ab9b59511d360fb394"
+  revision = "14d3d4c518341bea657dd8a226f5121c0ff8c9f2"
 
 [[projects]]
-  digest = "1:15e5c398fbd9d2c439b635a08ac161b13d04f0c2aa587fe256b65dc0c3efe8b7"
+  digest = "1:e3707aeaccd2adc89eba6c062fec72116fe1fc1ba71097da85b4d8ae1668a675"
   name = "github.com/spf13/pflag"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
-  version = "v1.0.1"
+  revision = "9a97c102cda95a86cec2345a6f09f55a939babf5"
+  version = "v1.0.2"
 
 [[projects]]
   branch = "master"
-  digest = "1:8298174246e0007a03be0e1679c3a9f00b204574cdcad698757113730753f745"
+  digest = "1:454979540e2a1582f375a17c106cf4e11e3bcac4baffb4af23e515c87f87de13"
   name = "github.com/spf13/viper"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "d493c32b69b8c6f2377bf30bc4d70267ffbc0793"
+  revision = "907c19d40d9a6c9bb55f040ff4ae45271a4754b9"
 
 [[projects]]
-  digest = "1:60a46e2410edbf02b419f833372dd1d24d7aa1b916a990a7370e792fada1eadd"
-  name = "github.com/stretchr/objx"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "477a77ecc69700c7cdeb1fa9e129548e1c1c393c"
-  version = "v0.1.1"
-
-[[projects]]
-  digest = "1:b64a47326424a11e4c345f8c43882ef36f3782cb5902e205fcd50948afecd447"
+  digest = "1:ea401d5768217268c640bfbdf50bc58780b948866e79ffac57b07e310a560510"
   name = "github.com/stretchr/testify"
   packages = [
-    ".",
     "assert",
-    "http",
-    "mock",
+    "require",
+    "suite",
   ]
   pruneopts = "NUT"
   revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
@@ -336,11 +327,11 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "NUT"
-  revision = "c126467f60eb25f8f27e5a981f32a87e3965053f"
+  revision = "de0752318171da717af4ce24d0a2e8626afaeb11"
 
 [[projects]]
   branch = "master"
-  digest = "1:f7a00fbadcd6a5528e3f107dc762565aa6ddb2f9a3bcae7ed1f02b9b733ee90f"
+  digest = "1:8919c6fc70e61c099dfd1ed0cd962752d7576c4233d99c7f6a403bbafedde60c"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -355,18 +346,18 @@
     "websocket",
   ]
   pruneopts = "NUT"
-  revision = "49c15d80dfbc983ea25246ee959d970efe09ec09"
+  revision = "c39426892332e1bb5ec0a434a079bf82f5d30c54"
 
 [[projects]]
   branch = "master"
-  digest = "1:ce550ba55758c330b8152972202835a80cbd0122be793664808142e6166598cd"
+  digest = "1:24358f5adb715f92035d7a2e08f178d4cba2e44b163b06242e01efd9fdcd2372"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "NUT"
-  revision = "bd9dbc187b6e1dacfdd2722a87e83093c2d7bd6e"
+  revision = "4e1fef5609515ec7a2cee7b5de30ba6d9b438cbf"
 
 [[projects]]
   digest = "1:a0f29009397dc27c9dc8440f0945d49e5cbb9b72d0b0fc745474d9bfdea2d9f8"
@@ -397,7 +388,7 @@
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
   pruneopts = "NUT"
-  revision = "daca94659cb50e9f37c1b834680f2e46358f10b0"
+  revision = "383e8b2c3b9e36c4076b235b32537292176bae20"
 
 [[projects]]
   digest = "1:77ce454715387a609a4a4d97fe77d98f37d8b8fb69762784bdda6e228106f71c"
@@ -477,7 +468,8 @@
     "github.com/smartystreets/goconvey/convey",
     "github.com/spf13/cobra",
     "github.com/spf13/viper",
-    "github.com/stretchr/testify",
+    "github.com/stretchr/testify/require",
+    "github.com/stretchr/testify/suite",
     "golang.org/x/net/context",
     "google.golang.org/grpc",
     "google.golang.org/grpc/codes",
