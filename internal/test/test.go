@@ -6,6 +6,7 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/jmoiron/sqlx"
 	migrate "github.com/rubenv/sql-migrate"
 	log "github.com/sirupsen/logrus"
 	context "golang.org/x/net/context"
@@ -326,4 +327,62 @@ func (t *NetworkControllerClient) HandleUplinkMetaData(ctx context.Context, in *
 func (t *NetworkControllerClient) HandleUplinkMACCommand(ctx context.Context, in *nc.HandleUplinkMACCommandRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	t.HandleDataUpMACCommandChan <- *in
 	return &empty.Empty{}, nil
+}
+
+// DatabaseTestSuiteBase provides the setup and teardown of the database
+// for every test-run.
+type DatabaseTestSuiteBase struct {
+	db *common.DBLogger
+	tx *common.TxLogger
+	p  *redis.Pool
+}
+
+// SetupSuite is called once before starting the test-suite.
+func (b *DatabaseTestSuiteBase) SetupSuite() {
+	conf := GetConfig()
+	db, err := common.OpenDatabase(conf.PostgresDSN)
+	if err != nil {
+		panic(err)
+	}
+	b.db = db
+	MustResetDB(db)
+
+	b.p = common.NewRedisPool(conf.RedisURL)
+
+	config.C.PostgreSQL.DB = db
+	config.C.Redis.Pool = b.p
+}
+
+// SetupTest is called before every test.
+func (b *DatabaseTestSuiteBase) SetupTest() {
+	tx, err := b.db.Beginx()
+	if err != nil {
+		panic(err)
+	}
+	b.tx = tx
+
+	MustFlushRedis(b.p)
+}
+
+// TearDownTest is called after every test.
+func (b *DatabaseTestSuiteBase) TearDownTest() {
+	if err := b.tx.Rollback(); err != nil {
+		panic(err)
+	}
+}
+
+// Tx returns a database transaction (which is rolled back after every
+// test).
+func (b *DatabaseTestSuiteBase) Tx() sqlx.Ext {
+	return b.tx
+}
+
+// DB returns the database.
+func (b *DatabaseTestSuiteBase) DB() *common.DBLogger {
+	return b.db
+}
+
+// RedisPool returns the redis.Pool object.
+func (b *DatabaseTestSuiteBase) RedisPool() *redis.Pool {
+	return b.p
 }
