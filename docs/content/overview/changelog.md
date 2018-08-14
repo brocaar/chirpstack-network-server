@@ -7,6 +7,14 @@ menu:
 ---
 # Changelog
 
+## v2.0.1
+
+### Bugfixes
+
+* Use `gofrs/uuid` UUID library as `satori/go.uuid` is not truly random. ([#342](https://github.com/brocaar/loraserver/pull/342))
+* Flush device- and service-profile cache when migrating from v1 to v2. ([lora-app-server#254](https://github.com/brocaar/lora-app-server/issues/254))
+* Set `board` and `antenna` on downlink. ([#341](https://github.com/brocaar/loraserver/pull/341))
+
 ## v2.0.0
 
 ### Upgrade nodes
