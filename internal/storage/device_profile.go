@@ -54,7 +54,11 @@ func CreateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
 	now := time.Now()
 
 	if dp.ID == uuid.Nil {
-		dp.ID = uuid.Must(uuid.NewV4())
+		var err error
+		dp.ID, err = uuid.NewV4()
+		if err != nil {
+			return errors.Wrap(err, "new uuid v4 error")
+		}
 	}
 
 	dp.CreatedAt = now

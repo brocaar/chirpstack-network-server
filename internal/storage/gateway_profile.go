@@ -6,6 +6,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -47,7 +48,11 @@ func CreateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 	c.UpdatedAt = now
 
 	if c.ID == uuid.Nil {
-		c.ID = uuid.Must(uuid.NewV4())
+		var err error
+		c.ID, err = uuid.NewV4()
+		if err != nil {
+			return errors.Wrap(err, "new uuid v4 error")
+		}
 	}
 
 	_, err := db.Exec(`

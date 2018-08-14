@@ -61,7 +61,11 @@ func CreateServiceProfile(db sqlx.Execer, sp *ServiceProfile) error {
 	now := time.Now()
 
 	if sp.ID == uuid.Nil {
-		sp.ID = uuid.Must(uuid.NewV4())
+		var err error
+		sp.ID, err = uuid.NewV4()
+		if err != nil {
+			return errors.Wrap(err, "new uuid v4 error")
+		}
 	}
 
 	sp.CreatedAt = now

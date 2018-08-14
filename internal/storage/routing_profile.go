@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,7 +25,11 @@ func CreateRoutingProfile(db sqlx.Execer, rp *RoutingProfile) error {
 	now := time.Now()
 
 	if rp.ID == uuid.Nil {
-		rp.ID = uuid.Must(uuid.NewV4())
+		var err error
+		rp.ID, err = uuid.NewV4()
+		if err != nil {
+			return errors.Wrap(err, "new uuid v4 error")
+		}
 	}
 
 	rp.CreatedAt = now
