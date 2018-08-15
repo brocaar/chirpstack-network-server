@@ -7,6 +7,12 @@ menu:
 ---
 # Changelog
 
+## v2.0.2
+
+### Bugfixes
+
+* Fix flush device- and service-profile cache on clean database. ([#345](https://github.com/brocaar/loraserver/issues/345))
+
 ## v2.0.1
 
 ### Bugfixes

@@ -38,9 +38,11 @@ func FlushProfilesCache(p *redis.Pool, db sqlx.Queryer) error {
 		keys = append(keys, fmt.Sprintf(storage.DeviceProfileKeyTempl, id))
 	}
 
-	_, err = redis.Int(c.Do("DEL", keys...))
-	if err != nil {
-		return errors.Wrap(err, "delete device-profiles from cache error")
+	if len(keys) != 0 {
+		_, err = redis.Int(c.Do("DEL", keys...))
+		if err != nil {
+			return errors.Wrap(err, "delete device-profiles from cache error")
+		}
 	}
 
 	// service-profiles
@@ -59,9 +61,11 @@ func FlushProfilesCache(p *redis.Pool, db sqlx.Queryer) error {
 		keys = append(keys, fmt.Sprintf(storage.ServiceProfileKeyTempl, id))
 	}
 
-	_, err = redis.Int(c.Do("DEL", keys...))
-	if err != nil {
-		return errors.Wrap(err, "delete service-profiles from cache error")
+	if len(keys) != 0 {
+		_, err = redis.Int(c.Do("DEL", keys...))
+		if err != nil {
+			return errors.Wrap(err, "delete service-profiles from cache error")
+		}
 	}
 
 	log.Info("service-profile and device-profile redis cache flushed")
