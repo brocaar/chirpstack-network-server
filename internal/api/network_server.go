@@ -13,7 +13,6 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/brocaar/loraserver/api/common"
-	gwPB "github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink/data/classb"
@@ -1366,7 +1365,7 @@ func gwToResp(gw storage.Gateway) *ns.GetGatewayResponse {
 	resp := ns.GetGatewayResponse{
 		Gateway: &ns.Gateway{
 			Id: gw.MAC[:],
-			Location: &gwPB.Location{
+			Location: &common.Location{
 				Latitude:  gw.Location.Latitude,
 				Longitude: gw.Location.Longitude,
 				Altitude:  gw.Altitude,

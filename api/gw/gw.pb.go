@@ -21,6 +21,35 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
+type FineTimestampType int32
+
+const (
+	// No fine-timestamp available.
+	FineTimestampType_NONE FineTimestampType = 0
+	// Encrypted fine-timestamp.
+	FineTimestampType_ENCRYPTED FineTimestampType = 1
+	// Plain fine-timestamp.
+	FineTimestampType_PLAIN FineTimestampType = 2
+)
+
+var FineTimestampType_name = map[int32]string{
+	0: "NONE",
+	1: "ENCRYPTED",
+	2: "PLAIN",
+}
+var FineTimestampType_value = map[string]int32{
+	"NONE":      0,
+	"ENCRYPTED": 1,
+	"PLAIN":     2,
+}
+
+func (x FineTimestampType) String() string {
+	return proto.EnumName(FineTimestampType_name, int32(x))
+}
+func (FineTimestampType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_gw_492d8b75bb895de0, []int{0}
+}
+
 type UplinkTXInfo struct {
 	// Frequency (Hz).
 	Frequency uint32 `protobuf:"varint,1,opt,name=frequency,proto3" json:"frequency,omitempty"`
@@ -39,7 +68,7 @@ func (m *UplinkTXInfo) Reset()         { *m = UplinkTXInfo{} }
 func (m *UplinkTXInfo) String() string { return proto.CompactTextString(m) }
 func (*UplinkTXInfo) ProtoMessage()    {}
 func (*UplinkTXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_90ea3f7651ea710d, []int{0}
+	return fileDescriptor_gw_492d8b75bb895de0, []int{0}
 }
 func (m *UplinkTXInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UplinkTXInfo.Unmarshal(m, b)
@@ -64,7 +93,7 @@ type isUplinkTXInfo_ModulationInfo interface {
 }
 
 type UplinkTXInfo_LoraModulationInfo struct {
-	LoraModulationInfo *LoRaModulationInfo `protobuf:"bytes,3,opt,name=lora_modulation_info,json=loraModulationInfo,proto3,oneof"`
+	LoraModulationInfo *LoRaModulationInfo `protobuf:"bytes,3,opt,name=lora_modulation_info,json=loRaModulationInfo,proto3,oneof"`
 }
 type UplinkTXInfo_FskModulationInfo struct {
 	FskModulationInfo *FSKModulationInfo `protobuf:"bytes,4,opt,name=fsk_modulation_info,json=fskModulationInfo,proto3,oneof"`
@@ -200,7 +229,7 @@ func (m *LoRaModulationInfo) Reset()         { *m = LoRaModulationInfo{} }
 func (m *LoRaModulationInfo) String() string { return proto.CompactTextString(m) }
 func (*LoRaModulationInfo) ProtoMessage()    {}
 func (*LoRaModulationInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_90ea3f7651ea710d, []int{1}
+	return fileDescriptor_gw_492d8b75bb895de0, []int{1}
 }
 func (m *LoRaModulationInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LoRaModulationInfo.Unmarshal(m, b)
@@ -262,7 +291,7 @@ func (m *FSKModulationInfo) Reset()         { *m = FSKModulationInfo{} }
 func (m *FSKModulationInfo) String() string { return proto.CompactTextString(m) }
 func (*FSKModulationInfo) ProtoMessage()    {}
 func (*FSKModulationInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_90ea3f7651ea710d, []int{2}
+	return fileDescriptor_gw_492d8b75bb895de0, []int{2}
 }
 func (m *FSKModulationInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FSKModulationInfo.Unmarshal(m, b)
@@ -296,76 +325,218 @@ func (m *FSKModulationInfo) GetBitrate() uint32 {
 	return 0
 }
 
-type Location struct {
-	// Latitude.
-	Latitude float64 `protobuf:"fixed64,1,opt,name=latitude,proto3" json:"latitude,omitempty"`
-	// Longitude.
-	Longitude float64 `protobuf:"fixed64,2,opt,name=longitude,proto3" json:"longitude,omitempty"`
-	// Altitude.
-	Altitude             float64  `protobuf:"fixed64,3,opt,name=altitude,proto3" json:"altitude,omitempty"`
+type EncryptedFineTimestamp struct {
+	// AES key index used for encrypting the fine timestamp.
+	AesKeyIndex uint32 `protobuf:"varint,1,opt,name=aes_key_index,json=aesKeyIndex,proto3" json:"aes_key_index,omitempty"`
+	// Encrypted 'main' fine-timestamp (ns precision part of the timestamp).
+	EncryptedNs []byte `protobuf:"bytes,2,opt,name=encrypted_ns,json=encryptedNS,proto3" json:"encrypted_ns,omitempty"`
+	// FPGA ID.
+	FpgaId               []byte   `protobuf:"bytes,3,opt,name=fpga_id,json=fpgaID,proto3" json:"fpga_id,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *Location) Reset()         { *m = Location{} }
-func (m *Location) String() string { return proto.CompactTextString(m) }
-func (*Location) ProtoMessage()    {}
-func (*Location) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_90ea3f7651ea710d, []int{3}
+func (m *EncryptedFineTimestamp) Reset()         { *m = EncryptedFineTimestamp{} }
+func (m *EncryptedFineTimestamp) String() string { return proto.CompactTextString(m) }
+func (*EncryptedFineTimestamp) ProtoMessage()    {}
+func (*EncryptedFineTimestamp) Descriptor() ([]byte, []int) {
+	return fileDescriptor_gw_492d8b75bb895de0, []int{3}
 }
-func (m *Location) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Location.Unmarshal(m, b)
+func (m *EncryptedFineTimestamp) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_EncryptedFineTimestamp.Unmarshal(m, b)
 }
-func (m *Location) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Location.Marshal(b, m, deterministic)
+func (m *EncryptedFineTimestamp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_EncryptedFineTimestamp.Marshal(b, m, deterministic)
 }
-func (dst *Location) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Location.Merge(dst, src)
+func (dst *EncryptedFineTimestamp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_EncryptedFineTimestamp.Merge(dst, src)
 }
-func (m *Location) XXX_Size() int {
-	return xxx_messageInfo_Location.Size(m)
+func (m *EncryptedFineTimestamp) XXX_Size() int {
+	return xxx_messageInfo_EncryptedFineTimestamp.Size(m)
 }
-func (m *Location) XXX_DiscardUnknown() {
-	xxx_messageInfo_Location.DiscardUnknown(m)
+func (m *EncryptedFineTimestamp) XXX_DiscardUnknown() {
+	xxx_messageInfo_EncryptedFineTimestamp.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Location proto.InternalMessageInfo
+var xxx_messageInfo_EncryptedFineTimestamp proto.InternalMessageInfo
 
-func (m *Location) GetLatitude() float64 {
+func (m *EncryptedFineTimestamp) GetAesKeyIndex() uint32 {
 	if m != nil {
-		return m.Latitude
+		return m.AesKeyIndex
 	}
 	return 0
 }
 
-func (m *Location) GetLongitude() float64 {
+func (m *EncryptedFineTimestamp) GetEncryptedNs() []byte {
 	if m != nil {
-		return m.Longitude
+		return m.EncryptedNs
+	}
+	return nil
+}
+
+func (m *EncryptedFineTimestamp) GetFpgaId() []byte {
+	if m != nil {
+		return m.FpgaId
+	}
+	return nil
+}
+
+type PlainFineTimestamp struct {
+	// Full timestamp.
+	Time                 *timestamp.Timestamp `protobuf:"bytes,1,opt,name=time,proto3" json:"time,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}             `json:"-"`
+	XXX_unrecognized     []byte               `json:"-"`
+	XXX_sizecache        int32                `json:"-"`
+}
+
+func (m *PlainFineTimestamp) Reset()         { *m = PlainFineTimestamp{} }
+func (m *PlainFineTimestamp) String() string { return proto.CompactTextString(m) }
+func (*PlainFineTimestamp) ProtoMessage()    {}
+func (*PlainFineTimestamp) Descriptor() ([]byte, []int) {
+	return fileDescriptor_gw_492d8b75bb895de0, []int{4}
+}
+func (m *PlainFineTimestamp) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_PlainFineTimestamp.Unmarshal(m, b)
+}
+func (m *PlainFineTimestamp) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_PlainFineTimestamp.Marshal(b, m, deterministic)
+}
+func (dst *PlainFineTimestamp) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_PlainFineTimestamp.Merge(dst, src)
+}
+func (m *PlainFineTimestamp) XXX_Size() int {
+	return xxx_messageInfo_PlainFineTimestamp.Size(m)
+}
+func (m *PlainFineTimestamp) XXX_DiscardUnknown() {
+	xxx_messageInfo_PlainFineTimestamp.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_PlainFineTimestamp proto.InternalMessageInfo
+
+func (m *PlainFineTimestamp) GetTime() *timestamp.Timestamp {
+	if m != nil {
+		return m.Time
+	}
+	return nil
+}
+
+type GatewayStats struct {
+	// Gateway ID.
+	GatewayId []byte `protobuf:"bytes,1,opt,name=gateway_id,json=gatewayID,proto3" json:"gateway_id,omitempty"`
+	// Gateway time.
+	Time *timestamp.Timestamp `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
+	// Gateway location.
+	Location *common.Location `protobuf:"bytes,3,opt,name=location,proto3" json:"location,omitempty"`
+	// Gateway configuration version (this maps to the config_version sent
+	// by LoRa Server to the gateway).
+	ConfigVersion string `protobuf:"bytes,4,opt,name=config_version,json=configVersion,proto3" json:"config_version,omitempty"`
+	// Number of radio packets received.
+	RxPacketsReceived uint32 `protobuf:"varint,5,opt,name=rx_packets_received,json=rxPacketsReceived,proto3" json:"rx_packets_received,omitempty"`
+	// Number of radio packets received with valid PHY CRC.
+	RxPacketsReceivedOk uint32 `protobuf:"varint,6,opt,name=rx_packets_received_ok,json=rxPacketsReceivedOK,proto3" json:"rx_packets_received_ok,omitempty"`
+	// Number of downlink packets received for transmission.
+	TxPacketsReceived uint32 `protobuf:"varint,7,opt,name=tx_packets_received,json=txPacketsReceived,proto3" json:"tx_packets_received,omitempty"`
+	// Number of downlink packets emitted.
+	TxPacketsEmitted     uint32   `protobuf:"varint,8,opt,name=tx_packets_emitted,json=txPacketsEmitted,proto3" json:"tx_packets_emitted,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GatewayStats) Reset()         { *m = GatewayStats{} }
+func (m *GatewayStats) String() string { return proto.CompactTextString(m) }
+func (*GatewayStats) ProtoMessage()    {}
+func (*GatewayStats) Descriptor() ([]byte, []int) {
+	return fileDescriptor_gw_492d8b75bb895de0, []int{5}
+}
+func (m *GatewayStats) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GatewayStats.Unmarshal(m, b)
+}
+func (m *GatewayStats) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GatewayStats.Marshal(b, m, deterministic)
+}
+func (dst *GatewayStats) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GatewayStats.Merge(dst, src)
+}
+func (m *GatewayStats) XXX_Size() int {
+	return xxx_messageInfo_GatewayStats.Size(m)
+}
+func (m *GatewayStats) XXX_DiscardUnknown() {
+	xxx_messageInfo_GatewayStats.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GatewayStats proto.InternalMessageInfo
+
+func (m *GatewayStats) GetGatewayId() []byte {
+	if m != nil {
+		return m.GatewayId
+	}
+	return nil
+}
+
+func (m *GatewayStats) GetTime() *timestamp.Timestamp {
+	if m != nil {
+		return m.Time
+	}
+	return nil
+}
+
+func (m *GatewayStats) GetLocation() *common.Location {
+	if m != nil {
+		return m.Location
+	}
+	return nil
+}
+
+func (m *GatewayStats) GetConfigVersion() string {
+	if m != nil {
+		return m.ConfigVersion
+	}
+	return ""
+}
+
+func (m *GatewayStats) GetRxPacketsReceived() uint32 {
+	if m != nil {
+		return m.RxPacketsReceived
 	}
 	return 0
 }
 
-func (m *Location) GetAltitude() float64 {
+func (m *GatewayStats) GetRxPacketsReceivedOk() uint32 {
 	if m != nil {
-		return m.Altitude
+		return m.RxPacketsReceivedOk
+	}
+	return 0
+}
+
+func (m *GatewayStats) GetTxPacketsReceived() uint32 {
+	if m != nil {
+		return m.TxPacketsReceived
+	}
+	return 0
+}
+
+func (m *GatewayStats) GetTxPacketsEmitted() uint32 {
+	if m != nil {
+		return m.TxPacketsEmitted
 	}
 	return 0
 }
 
 type UplinkRXInfo struct {
 	// Gateway ID.
-	GatewayId []byte `protobuf:"bytes,1,opt,name=gateway_id,json=gatewayId,proto3" json:"gateway_id,omitempty"`
+	GatewayId []byte `protobuf:"bytes,1,opt,name=gateway_id,json=gatewayID,proto3" json:"gateway_id,omitempty"`
 	// RX time (only set when the gateway has a GPS module).
 	Time *timestamp.Timestamp `protobuf:"bytes,2,opt,name=time,proto3" json:"time,omitempty"`
 	// RX time since GPS epoch (only set when the gateway has a GPS module).
-	TimeSinceGpsEpoch *duration.Duration `protobuf:"bytes,3,opt,name=time_since_gps_epoch,json=timeSinceGpsEpoch,proto3" json:"time_since_gps_epoch,omitempty"`
+	TimeSinceGpsEpoch *duration.Duration `protobuf:"bytes,3,opt,name=time_since_gps_epoch,json=timeSinceGPSEpoch,proto3" json:"time_since_gps_epoch,omitempty"`
 	// Gateway internal timestamp.
 	Timestamp uint32 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// RSSI.
 	Rssi int32 `protobuf:"varint,5,opt,name=rssi,proto3" json:"rssi,omitempty"`
 	// LoRa SNR.
-	LoraSnr float64 `protobuf:"fixed64,6,opt,name=lora_snr,json=loraSnr,proto3" json:"lora_snr,omitempty"`
+	LoraSnr float64 `protobuf:"fixed64,6,opt,name=lora_snr,json=loRaSNR,proto3" json:"lora_snr,omitempty"`
 	// Channel.
 	Channel uint32 `protobuf:"varint,7,opt,name=channel,proto3" json:"channel,omitempty"`
 	// RF Chain.
@@ -375,17 +546,25 @@ type UplinkRXInfo struct {
 	// Antenna.
 	Antenna uint32 `protobuf:"varint,10,opt,name=antenna,proto3" json:"antenna,omitempty"`
 	// Location.
-	Location             *Location `protobuf:"bytes,11,opt,name=location,proto3" json:"location,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
-	XXX_unrecognized     []byte    `json:"-"`
-	XXX_sizecache        int32     `json:"-"`
+	Location *common.Location `protobuf:"bytes,11,opt,name=location,proto3" json:"location,omitempty"`
+	// Fine-timestamp type.
+	FineTimestampType FineTimestampType `protobuf:"varint,12,opt,name=fine_timestamp_type,json=fineTimestampType,proto3,enum=gw.FineTimestampType" json:"fine_timestamp_type,omitempty"`
+	// Fine-timestamp data.
+	//
+	// Types that are valid to be assigned to FineTimestamp:
+	//	*UplinkRXInfo_EncryptedFineTimestamp
+	//	*UplinkRXInfo_PlainFineTimestamp
+	FineTimestamp        isUplinkRXInfo_FineTimestamp `protobuf_oneof:"fine_timestamp"`
+	XXX_NoUnkeyedLiteral struct{}                     `json:"-"`
+	XXX_unrecognized     []byte                       `json:"-"`
+	XXX_sizecache        int32                        `json:"-"`
 }
 
 func (m *UplinkRXInfo) Reset()         { *m = UplinkRXInfo{} }
 func (m *UplinkRXInfo) String() string { return proto.CompactTextString(m) }
 func (*UplinkRXInfo) ProtoMessage()    {}
 func (*UplinkRXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_90ea3f7651ea710d, []int{4}
+	return fileDescriptor_gw_492d8b75bb895de0, []int{6}
 }
 func (m *UplinkRXInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UplinkRXInfo.Unmarshal(m, b)
@@ -404,6 +583,27 @@ func (m *UplinkRXInfo) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_UplinkRXInfo proto.InternalMessageInfo
+
+type isUplinkRXInfo_FineTimestamp interface {
+	isUplinkRXInfo_FineTimestamp()
+}
+
+type UplinkRXInfo_EncryptedFineTimestamp struct {
+	EncryptedFineTimestamp *EncryptedFineTimestamp `protobuf:"bytes,13,opt,name=encrypted_fine_timestamp,json=encryptedFineTimestamp,proto3,oneof"`
+}
+type UplinkRXInfo_PlainFineTimestamp struct {
+	PlainFineTimestamp *PlainFineTimestamp `protobuf:"bytes,14,opt,name=plain_fine_timestamp,json=plainFineTimestamp,proto3,oneof"`
+}
+
+func (*UplinkRXInfo_EncryptedFineTimestamp) isUplinkRXInfo_FineTimestamp() {}
+func (*UplinkRXInfo_PlainFineTimestamp) isUplinkRXInfo_FineTimestamp()     {}
+
+func (m *UplinkRXInfo) GetFineTimestamp() isUplinkRXInfo_FineTimestamp {
+	if m != nil {
+		return m.FineTimestamp
+	}
+	return nil
+}
 
 func (m *UplinkRXInfo) GetGatewayId() []byte {
 	if m != nil {
@@ -475,20 +675,115 @@ func (m *UplinkRXInfo) GetAntenna() uint32 {
 	return 0
 }
 
-func (m *UplinkRXInfo) GetLocation() *Location {
+func (m *UplinkRXInfo) GetLocation() *common.Location {
 	if m != nil {
 		return m.Location
 	}
 	return nil
 }
 
+func (m *UplinkRXInfo) GetFineTimestampType() FineTimestampType {
+	if m != nil {
+		return m.FineTimestampType
+	}
+	return FineTimestampType_NONE
+}
+
+func (m *UplinkRXInfo) GetEncryptedFineTimestamp() *EncryptedFineTimestamp {
+	if x, ok := m.GetFineTimestamp().(*UplinkRXInfo_EncryptedFineTimestamp); ok {
+		return x.EncryptedFineTimestamp
+	}
+	return nil
+}
+
+func (m *UplinkRXInfo) GetPlainFineTimestamp() *PlainFineTimestamp {
+	if x, ok := m.GetFineTimestamp().(*UplinkRXInfo_PlainFineTimestamp); ok {
+		return x.PlainFineTimestamp
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*UplinkRXInfo) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _UplinkRXInfo_OneofMarshaler, _UplinkRXInfo_OneofUnmarshaler, _UplinkRXInfo_OneofSizer, []interface{}{
+		(*UplinkRXInfo_EncryptedFineTimestamp)(nil),
+		(*UplinkRXInfo_PlainFineTimestamp)(nil),
+	}
+}
+
+func _UplinkRXInfo_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*UplinkRXInfo)
+	// fine_timestamp
+	switch x := m.FineTimestamp.(type) {
+	case *UplinkRXInfo_EncryptedFineTimestamp:
+		b.EncodeVarint(13<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.EncryptedFineTimestamp); err != nil {
+			return err
+		}
+	case *UplinkRXInfo_PlainFineTimestamp:
+		b.EncodeVarint(14<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.PlainFineTimestamp); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("UplinkRXInfo.FineTimestamp has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _UplinkRXInfo_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*UplinkRXInfo)
+	switch tag {
+	case 13: // fine_timestamp.encrypted_fine_timestamp
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(EncryptedFineTimestamp)
+		err := b.DecodeMessage(msg)
+		m.FineTimestamp = &UplinkRXInfo_EncryptedFineTimestamp{msg}
+		return true, err
+	case 14: // fine_timestamp.plain_fine_timestamp
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(PlainFineTimestamp)
+		err := b.DecodeMessage(msg)
+		m.FineTimestamp = &UplinkRXInfo_PlainFineTimestamp{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _UplinkRXInfo_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*UplinkRXInfo)
+	// fine_timestamp
+	switch x := m.FineTimestamp.(type) {
+	case *UplinkRXInfo_EncryptedFineTimestamp:
+		s := proto.Size(x.EncryptedFineTimestamp)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *UplinkRXInfo_PlainFineTimestamp:
+		s := proto.Size(x.PlainFineTimestamp)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
 type DownlinkTXInfo struct {
 	// Gateway ID.
-	GatewayId []byte `protobuf:"bytes,1,opt,name=gateway_id,json=gatewayId,proto3" json:"gateway_id,omitempty"`
+	GatewayId []byte `protobuf:"bytes,1,opt,name=gateway_id,json=gatewayID,proto3" json:"gateway_id,omitempty"`
 	// Frame must be sent immediately.
 	Immediately bool `protobuf:"varint,2,opt,name=immediately,proto3" json:"immediately,omitempty"`
 	// Emit frame at the given time since GPS epoch.
-	TimeSinceGpsEpoch *duration.Duration `protobuf:"bytes,3,opt,name=time_since_gps_epoch,json=timeSinceGpsEpoch,proto3" json:"time_since_gps_epoch,omitempty"`
+	TimeSinceGpsEpoch *duration.Duration `protobuf:"bytes,3,opt,name=time_since_gps_epoch,json=timeSinceGPSEpoch,proto3" json:"time_since_gps_epoch,omitempty"`
 	// Emit the frame at the given gateway internal timestamp.
 	Timestamp uint32 `protobuf:"varint,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// TX frequency (in Hz).
@@ -514,7 +809,7 @@ func (m *DownlinkTXInfo) Reset()         { *m = DownlinkTXInfo{} }
 func (m *DownlinkTXInfo) String() string { return proto.CompactTextString(m) }
 func (*DownlinkTXInfo) ProtoMessage()    {}
 func (*DownlinkTXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_90ea3f7651ea710d, []int{5}
+	return fileDescriptor_gw_492d8b75bb895de0, []int{7}
 }
 func (m *DownlinkTXInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DownlinkTXInfo.Unmarshal(m, b)
@@ -539,7 +834,7 @@ type isDownlinkTXInfo_ModulationInfo interface {
 }
 
 type DownlinkTXInfo_LoraModulationInfo struct {
-	LoraModulationInfo *LoRaModulationInfo `protobuf:"bytes,8,opt,name=lora_modulation_info,json=loraModulationInfo,proto3,oneof"`
+	LoraModulationInfo *LoRaModulationInfo `protobuf:"bytes,8,opt,name=lora_modulation_info,json=loRaModulationInfo,proto3,oneof"`
 }
 type DownlinkTXInfo_FskModulationInfo struct {
 	FskModulationInfo *FSKModulationInfo `protobuf:"bytes,9,opt,name=fsk_modulation_info,json=fskModulationInfo,proto3,oneof"`
@@ -722,7 +1017,7 @@ func (m *UplinkFrame) Reset()         { *m = UplinkFrame{} }
 func (m *UplinkFrame) String() string { return proto.CompactTextString(m) }
 func (*UplinkFrame) ProtoMessage()    {}
 func (*UplinkFrame) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_90ea3f7651ea710d, []int{6}
+	return fileDescriptor_gw_492d8b75bb895de0, []int{8}
 }
 func (m *UplinkFrame) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UplinkFrame.Unmarshal(m, b)
@@ -779,7 +1074,7 @@ func (m *UplinkFrameSet) Reset()         { *m = UplinkFrameSet{} }
 func (m *UplinkFrameSet) String() string { return proto.CompactTextString(m) }
 func (*UplinkFrameSet) ProtoMessage()    {}
 func (*UplinkFrameSet) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_90ea3f7651ea710d, []int{7}
+	return fileDescriptor_gw_492d8b75bb895de0, []int{9}
 }
 func (m *UplinkFrameSet) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UplinkFrameSet.Unmarshal(m, b)
@@ -836,7 +1131,7 @@ func (m *DownlinkFrame) Reset()         { *m = DownlinkFrame{} }
 func (m *DownlinkFrame) String() string { return proto.CompactTextString(m) }
 func (*DownlinkFrame) ProtoMessage()    {}
 func (*DownlinkFrame) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_90ea3f7651ea710d, []int{8}
+	return fileDescriptor_gw_492d8b75bb895de0, []int{10}
 }
 func (m *DownlinkFrame) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DownlinkFrame.Unmarshal(m, b)
@@ -877,71 +1172,477 @@ func (m *DownlinkFrame) GetToken() uint32 {
 	return 0
 }
 
+type DownlinkTXAck struct {
+	// Gateway ID.
+	GatewayId []byte `protobuf:"bytes,1,opt,name=gateway_id,json=gatewayId,proto3" json:"gateway_id,omitempty"`
+	// Token (uint16 value).
+	Token uint32 `protobuf:"varint,2,opt,name=token,proto3" json:"token,omitempty"`
+	// Error.
+	Error                string   `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *DownlinkTXAck) Reset()         { *m = DownlinkTXAck{} }
+func (m *DownlinkTXAck) String() string { return proto.CompactTextString(m) }
+func (*DownlinkTXAck) ProtoMessage()    {}
+func (*DownlinkTXAck) Descriptor() ([]byte, []int) {
+	return fileDescriptor_gw_492d8b75bb895de0, []int{11}
+}
+func (m *DownlinkTXAck) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_DownlinkTXAck.Unmarshal(m, b)
+}
+func (m *DownlinkTXAck) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_DownlinkTXAck.Marshal(b, m, deterministic)
+}
+func (dst *DownlinkTXAck) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DownlinkTXAck.Merge(dst, src)
+}
+func (m *DownlinkTXAck) XXX_Size() int {
+	return xxx_messageInfo_DownlinkTXAck.Size(m)
+}
+func (m *DownlinkTXAck) XXX_DiscardUnknown() {
+	xxx_messageInfo_DownlinkTXAck.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DownlinkTXAck proto.InternalMessageInfo
+
+func (m *DownlinkTXAck) GetGatewayId() []byte {
+	if m != nil {
+		return m.GatewayId
+	}
+	return nil
+}
+
+func (m *DownlinkTXAck) GetToken() uint32 {
+	if m != nil {
+		return m.Token
+	}
+	return 0
+}
+
+func (m *DownlinkTXAck) GetError() string {
+	if m != nil {
+		return m.Error
+	}
+	return ""
+}
+
+type GatewayConfiguration struct {
+	// Gateway ID.
+	GatewayId []byte `protobuf:"bytes,1,opt,name=gateway_id,json=gatewayID,proto3" json:"gateway_id,omitempty"`
+	// Configuration version.
+	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	// Channels.
+	Channels             []*ChannelConfiguration `protobuf:"bytes,3,rep,name=channels,proto3" json:"channels,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}                `json:"-"`
+	XXX_unrecognized     []byte                  `json:"-"`
+	XXX_sizecache        int32                   `json:"-"`
+}
+
+func (m *GatewayConfiguration) Reset()         { *m = GatewayConfiguration{} }
+func (m *GatewayConfiguration) String() string { return proto.CompactTextString(m) }
+func (*GatewayConfiguration) ProtoMessage()    {}
+func (*GatewayConfiguration) Descriptor() ([]byte, []int) {
+	return fileDescriptor_gw_492d8b75bb895de0, []int{12}
+}
+func (m *GatewayConfiguration) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GatewayConfiguration.Unmarshal(m, b)
+}
+func (m *GatewayConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GatewayConfiguration.Marshal(b, m, deterministic)
+}
+func (dst *GatewayConfiguration) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GatewayConfiguration.Merge(dst, src)
+}
+func (m *GatewayConfiguration) XXX_Size() int {
+	return xxx_messageInfo_GatewayConfiguration.Size(m)
+}
+func (m *GatewayConfiguration) XXX_DiscardUnknown() {
+	xxx_messageInfo_GatewayConfiguration.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GatewayConfiguration proto.InternalMessageInfo
+
+func (m *GatewayConfiguration) GetGatewayId() []byte {
+	if m != nil {
+		return m.GatewayId
+	}
+	return nil
+}
+
+func (m *GatewayConfiguration) GetVersion() string {
+	if m != nil {
+		return m.Version
+	}
+	return ""
+}
+
+func (m *GatewayConfiguration) GetChannels() []*ChannelConfiguration {
+	if m != nil {
+		return m.Channels
+	}
+	return nil
+}
+
+type ChannelConfiguration struct {
+	// Frequency (Hz).
+	Frequency uint32 `protobuf:"varint,1,opt,name=frequency,proto3" json:"frequency,omitempty"`
+	// Channel modulation.
+	Modulation common.Modulation `protobuf:"varint,2,opt,name=modulation,proto3,enum=common.Modulation" json:"modulation,omitempty"`
+	// Types that are valid to be assigned to ModulationConfig:
+	//	*ChannelConfiguration_LoraModulationConfig
+	//	*ChannelConfiguration_FskModulationConfig
+	ModulationConfig     isChannelConfiguration_ModulationConfig `protobuf_oneof:"modulation_config"`
+	XXX_NoUnkeyedLiteral struct{}                                `json:"-"`
+	XXX_unrecognized     []byte                                  `json:"-"`
+	XXX_sizecache        int32                                   `json:"-"`
+}
+
+func (m *ChannelConfiguration) Reset()         { *m = ChannelConfiguration{} }
+func (m *ChannelConfiguration) String() string { return proto.CompactTextString(m) }
+func (*ChannelConfiguration) ProtoMessage()    {}
+func (*ChannelConfiguration) Descriptor() ([]byte, []int) {
+	return fileDescriptor_gw_492d8b75bb895de0, []int{13}
+}
+func (m *ChannelConfiguration) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ChannelConfiguration.Unmarshal(m, b)
+}
+func (m *ChannelConfiguration) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ChannelConfiguration.Marshal(b, m, deterministic)
+}
+func (dst *ChannelConfiguration) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChannelConfiguration.Merge(dst, src)
+}
+func (m *ChannelConfiguration) XXX_Size() int {
+	return xxx_messageInfo_ChannelConfiguration.Size(m)
+}
+func (m *ChannelConfiguration) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChannelConfiguration.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ChannelConfiguration proto.InternalMessageInfo
+
+type isChannelConfiguration_ModulationConfig interface {
+	isChannelConfiguration_ModulationConfig()
+}
+
+type ChannelConfiguration_LoraModulationConfig struct {
+	LoraModulationConfig *LoRaModulationConfig `protobuf:"bytes,3,opt,name=lora_modulation_config,json=loRaModulationConfig,proto3,oneof"`
+}
+type ChannelConfiguration_FskModulationConfig struct {
+	FskModulationConfig *FSKModulationConfig `protobuf:"bytes,4,opt,name=fsk_modulation_config,json=fskModulationConfig,proto3,oneof"`
+}
+
+func (*ChannelConfiguration_LoraModulationConfig) isChannelConfiguration_ModulationConfig() {}
+func (*ChannelConfiguration_FskModulationConfig) isChannelConfiguration_ModulationConfig()  {}
+
+func (m *ChannelConfiguration) GetModulationConfig() isChannelConfiguration_ModulationConfig {
+	if m != nil {
+		return m.ModulationConfig
+	}
+	return nil
+}
+
+func (m *ChannelConfiguration) GetFrequency() uint32 {
+	if m != nil {
+		return m.Frequency
+	}
+	return 0
+}
+
+func (m *ChannelConfiguration) GetModulation() common.Modulation {
+	if m != nil {
+		return m.Modulation
+	}
+	return common.Modulation_LORA
+}
+
+func (m *ChannelConfiguration) GetLoraModulationConfig() *LoRaModulationConfig {
+	if x, ok := m.GetModulationConfig().(*ChannelConfiguration_LoraModulationConfig); ok {
+		return x.LoraModulationConfig
+	}
+	return nil
+}
+
+func (m *ChannelConfiguration) GetFskModulationConfig() *FSKModulationConfig {
+	if x, ok := m.GetModulationConfig().(*ChannelConfiguration_FskModulationConfig); ok {
+		return x.FskModulationConfig
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*ChannelConfiguration) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _ChannelConfiguration_OneofMarshaler, _ChannelConfiguration_OneofUnmarshaler, _ChannelConfiguration_OneofSizer, []interface{}{
+		(*ChannelConfiguration_LoraModulationConfig)(nil),
+		(*ChannelConfiguration_FskModulationConfig)(nil),
+	}
+}
+
+func _ChannelConfiguration_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*ChannelConfiguration)
+	// modulation_config
+	switch x := m.ModulationConfig.(type) {
+	case *ChannelConfiguration_LoraModulationConfig:
+		b.EncodeVarint(3<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.LoraModulationConfig); err != nil {
+			return err
+		}
+	case *ChannelConfiguration_FskModulationConfig:
+		b.EncodeVarint(4<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.FskModulationConfig); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("ChannelConfiguration.ModulationConfig has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _ChannelConfiguration_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*ChannelConfiguration)
+	switch tag {
+	case 3: // modulation_config.lora_modulation_config
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(LoRaModulationConfig)
+		err := b.DecodeMessage(msg)
+		m.ModulationConfig = &ChannelConfiguration_LoraModulationConfig{msg}
+		return true, err
+	case 4: // modulation_config.fsk_modulation_config
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(FSKModulationConfig)
+		err := b.DecodeMessage(msg)
+		m.ModulationConfig = &ChannelConfiguration_FskModulationConfig{msg}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _ChannelConfiguration_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*ChannelConfiguration)
+	// modulation_config
+	switch x := m.ModulationConfig.(type) {
+	case *ChannelConfiguration_LoraModulationConfig:
+		s := proto.Size(x.LoraModulationConfig)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *ChannelConfiguration_FskModulationConfig:
+		s := proto.Size(x.FskModulationConfig)
+		n += 1 // tag and wire
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
+type LoRaModulationConfig struct {
+	// Bandwidth.
+	Bandwidth uint32 `protobuf:"varint,1,opt,name=bandwidth,proto3" json:"bandwidth,omitempty"`
+	// Spreading-factors.
+	SpreadingFactors     []uint32 `protobuf:"varint,2,rep,packed,name=spreading_factors,json=spreadingFactors,proto3" json:"spreading_factors,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *LoRaModulationConfig) Reset()         { *m = LoRaModulationConfig{} }
+func (m *LoRaModulationConfig) String() string { return proto.CompactTextString(m) }
+func (*LoRaModulationConfig) ProtoMessage()    {}
+func (*LoRaModulationConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_gw_492d8b75bb895de0, []int{14}
+}
+func (m *LoRaModulationConfig) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_LoRaModulationConfig.Unmarshal(m, b)
+}
+func (m *LoRaModulationConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_LoRaModulationConfig.Marshal(b, m, deterministic)
+}
+func (dst *LoRaModulationConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_LoRaModulationConfig.Merge(dst, src)
+}
+func (m *LoRaModulationConfig) XXX_Size() int {
+	return xxx_messageInfo_LoRaModulationConfig.Size(m)
+}
+func (m *LoRaModulationConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_LoRaModulationConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_LoRaModulationConfig proto.InternalMessageInfo
+
+func (m *LoRaModulationConfig) GetBandwidth() uint32 {
+	if m != nil {
+		return m.Bandwidth
+	}
+	return 0
+}
+
+func (m *LoRaModulationConfig) GetSpreadingFactors() []uint32 {
+	if m != nil {
+		return m.SpreadingFactors
+	}
+	return nil
+}
+
+type FSKModulationConfig struct {
+	// Bandwidth.
+	Bandwidth uint32 `protobuf:"varint,1,opt,name=bandwidth,proto3" json:"bandwidth,omitempty"`
+	// Bitrate.
+	Bitrate              uint32   `protobuf:"varint,2,opt,name=bitrate,proto3" json:"bitrate,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *FSKModulationConfig) Reset()         { *m = FSKModulationConfig{} }
+func (m *FSKModulationConfig) String() string { return proto.CompactTextString(m) }
+func (*FSKModulationConfig) ProtoMessage()    {}
+func (*FSKModulationConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptor_gw_492d8b75bb895de0, []int{15}
+}
+func (m *FSKModulationConfig) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_FSKModulationConfig.Unmarshal(m, b)
+}
+func (m *FSKModulationConfig) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_FSKModulationConfig.Marshal(b, m, deterministic)
+}
+func (dst *FSKModulationConfig) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FSKModulationConfig.Merge(dst, src)
+}
+func (m *FSKModulationConfig) XXX_Size() int {
+	return xxx_messageInfo_FSKModulationConfig.Size(m)
+}
+func (m *FSKModulationConfig) XXX_DiscardUnknown() {
+	xxx_messageInfo_FSKModulationConfig.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FSKModulationConfig proto.InternalMessageInfo
+
+func (m *FSKModulationConfig) GetBandwidth() uint32 {
+	if m != nil {
+		return m.Bandwidth
+	}
+	return 0
+}
+
+func (m *FSKModulationConfig) GetBitrate() uint32 {
+	if m != nil {
+		return m.Bitrate
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*UplinkTXInfo)(nil), "gw.UplinkTXInfo")
 	proto.RegisterType((*LoRaModulationInfo)(nil), "gw.LoRaModulationInfo")
 	proto.RegisterType((*FSKModulationInfo)(nil), "gw.FSKModulationInfo")
-	proto.RegisterType((*Location)(nil), "gw.Location")
+	proto.RegisterType((*EncryptedFineTimestamp)(nil), "gw.EncryptedFineTimestamp")
+	proto.RegisterType((*PlainFineTimestamp)(nil), "gw.PlainFineTimestamp")
+	proto.RegisterType((*GatewayStats)(nil), "gw.GatewayStats")
 	proto.RegisterType((*UplinkRXInfo)(nil), "gw.UplinkRXInfo")
 	proto.RegisterType((*DownlinkTXInfo)(nil), "gw.DownlinkTXInfo")
 	proto.RegisterType((*UplinkFrame)(nil), "gw.UplinkFrame")
 	proto.RegisterType((*UplinkFrameSet)(nil), "gw.UplinkFrameSet")
 	proto.RegisterType((*DownlinkFrame)(nil), "gw.DownlinkFrame")
+	proto.RegisterType((*DownlinkTXAck)(nil), "gw.DownlinkTXAck")
+	proto.RegisterType((*GatewayConfiguration)(nil), "gw.GatewayConfiguration")
+	proto.RegisterType((*ChannelConfiguration)(nil), "gw.ChannelConfiguration")
+	proto.RegisterType((*LoRaModulationConfig)(nil), "gw.LoRaModulationConfig")
+	proto.RegisterType((*FSKModulationConfig)(nil), "gw.FSKModulationConfig")
+	proto.RegisterEnum("gw.FineTimestampType", FineTimestampType_name, FineTimestampType_value)
 }
 
-func init() { proto.RegisterFile("gw.proto", fileDescriptor_gw_90ea3f7651ea710d) }
+func init() { proto.RegisterFile("gw.proto", fileDescriptor_gw_492d8b75bb895de0) }
 
-var fileDescriptor_gw_90ea3f7651ea710d = []byte{
-	// 802 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x55, 0x5b, 0x8f, 0xdb, 0x44,
-	0x14, 0xc6, 0x9b, 0xcd, 0xc6, 0x39, 0xd9, 0x6c, 0xbb, 0x43, 0x5a, 0xb9, 0xe1, 0xd2, 0x28, 0x42,
-	0x28, 0x2b, 0x24, 0x47, 0x0a, 0xea, 0x1f, 0x28, 0x65, 0xcb, 0xd2, 0x22, 0xa1, 0x49, 0x91, 0x10,
-	0x2f, 0x66, 0x62, 0x8f, 0x9d, 0x51, 0xec, 0x19, 0x33, 0x9e, 0xac, 0x37, 0x3c, 0x83, 0xe0, 0xef,
-	0xf0, 0xfb, 0x78, 0x41, 0x33, 0x63, 0x27, 0x4e, 0x02, 0x2c, 0x88, 0xcb, 0x53, 0x72, 0xbe, 0x73,
-	0x99, 0xef, 0x5c, 0x0d, 0x6e, 0x52, 0xfa, 0xb9, 0x14, 0x4a, 0xa0, 0x93, 0xa4, 0x1c, 0x3e, 0x4b,
-	0x98, 0x5a, 0xae, 0x17, 0x7e, 0x28, 0xb2, 0xe9, 0x42, 0x8a, 0x90, 0x10, 0x39, 0x4d, 0x85, 0x24,
-	0x05, 0x95, 0xb7, 0x54, 0x4e, 0x49, 0xce, 0xa6, 0xa1, 0xc8, 0x32, 0xc1, 0xab, 0x1f, 0xeb, 0x3a,
-	0x7c, 0x9a, 0x08, 0x91, 0xa4, 0x74, 0x6a, 0xa4, 0xc5, 0x3a, 0x9e, 0x2a, 0x96, 0xd1, 0x42, 0x91,
-	0x2c, 0xaf, 0x0c, 0xde, 0x3f, 0x34, 0x88, 0xd6, 0x92, 0x28, 0x56, 0x07, 0x18, 0xff, 0x7c, 0x02,
-	0xe7, 0x5f, 0xe5, 0x29, 0xe3, 0xab, 0x37, 0x5f, 0xdf, 0xf0, 0x58, 0xa0, 0x77, 0xa1, 0x1b, 0x4b,
-	0xfa, 0xdd, 0x9a, 0xf2, 0x70, 0xe3, 0x39, 0x23, 0x67, 0xd2, 0xc7, 0x3b, 0x00, 0xcd, 0x00, 0x32,
-	0x11, 0xad, 0x53, 0x13, 0xc2, 0x3b, 0x19, 0x39, 0x93, 0x8b, 0x19, 0xf2, 0x2b, 0x4a, 0x5f, 0x6c,
-	0x35, 0xb8, 0x61, 0x85, 0x3e, 0x87, 0x81, 0xce, 0x24, 0xd8, 0x41, 0x01, 0xe3, 0xb1, 0xf0, 0x5a,
-	0x23, 0x67, 0xd2, 0x9b, 0x3d, 0xf6, 0x93, 0xd2, 0x7f, 0x2d, 0x30, 0xd9, 0x79, 0x6b, 0x1e, 0x9f,
-	0xbd, 0x85, 0x91, 0xf6, 0xda, 0x47, 0xd1, 0x4b, 0x78, 0x3b, 0x2e, 0x56, 0x47, 0xa1, 0x4e, 0x4d,
-	0xa8, 0x47, 0x3a, 0xd4, 0xf5, 0xfc, 0xd5, 0x51, 0xa4, 0xcb, 0xb8, 0x58, 0xed, 0x83, 0xcf, 0x2f,
-	0xe1, 0xc1, 0x41, 0x90, 0xf1, 0x2f, 0x0e, 0xa0, 0x63, 0x22, 0xba, 0x20, 0x0b, 0xc2, 0xa3, 0x92,
-	0x45, 0x6a, 0x59, 0x17, 0x64, 0x0b, 0xa0, 0x2b, 0x78, 0x58, 0xe4, 0x92, 0x92, 0x88, 0xf1, 0x24,
-	0x88, 0x49, 0xa8, 0x84, 0x34, 0x65, 0xe9, 0xe3, 0x07, 0x5b, 0xfc, 0xda, 0xc0, 0xe8, 0x1d, 0xe8,
-	0x86, 0x22, 0xa2, 0x81, 0x24, 0x8a, 0x9a, 0xe4, 0xbb, 0xd8, 0xd5, 0x00, 0x26, 0x8a, 0xa2, 0x67,
-	0xf0, 0x38, 0x17, 0x29, 0x91, 0xec, 0xfb, 0x9a, 0xd1, 0x2d, 0x95, 0x85, 0x2e, 0xb2, 0xce, 0xcd,
-	0xc5, 0x8f, 0x9a, 0xda, 0x9b, 0x5a, 0x39, 0x7e, 0x05, 0x97, 0x47, 0x09, 0xdf, 0xc3, 0xd8, 0x83,
-	0xce, 0x82, 0x29, 0x43, 0xc2, 0x12, 0xad, 0xc5, 0xf1, 0xb7, 0xe0, 0xbe, 0x16, 0xa1, 0x6d, 0xda,
-	0x10, 0x5c, 0x1d, 0x51, 0xad, 0x23, 0x6a, 0x42, 0x38, 0x78, 0x2b, 0xeb, 0xf8, 0xa9, 0xe0, 0x89,
-	0x55, 0x9e, 0x18, 0xe5, 0x0e, 0xd0, 0x9e, 0x24, 0xad, 0x3c, 0x5b, 0xd6, 0xb3, 0x96, 0xc7, 0x3f,
-	0xb6, 0xea, 0x69, 0xc3, 0x76, 0xda, 0xde, 0x03, 0x48, 0x88, 0xa2, 0x25, 0xd9, 0x04, 0x2c, 0x32,
-	0x0f, 0x9d, 0xe3, 0x6e, 0x85, 0xdc, 0x44, 0xc8, 0x87, 0x53, 0x3d, 0xd0, 0xe6, 0x91, 0xde, 0x6c,
-	0xe8, 0xdb, 0x61, 0xf6, 0xeb, 0x61, 0xf6, 0xdf, 0xd4, 0xd3, 0x8e, 0x8d, 0x9d, 0x1e, 0x35, 0xfd,
-	0x1b, 0x14, 0x8c, 0x87, 0x34, 0x48, 0xf2, 0x22, 0xa0, 0xb9, 0x08, 0x97, 0xd5, 0xa8, 0x3d, 0x39,
-	0xf2, 0x7f, 0x51, 0x2d, 0x03, 0xbe, 0xd4, 0x6e, 0x73, 0xed, 0xf5, 0x32, 0x2f, 0x3e, 0xd5, 0x3e,
-	0x3a, 0xcb, 0xed, 0x32, 0x99, 0x26, 0xf4, 0xf1, 0x0e, 0x40, 0x08, 0x4e, 0x65, 0x51, 0x30, 0xaf,
-	0x3d, 0x72, 0x26, 0x6d, 0x6c, 0xfe, 0xa3, 0x27, 0xe0, 0x9a, 0x41, 0x2f, 0xb8, 0xf4, 0xce, 0x4c,
-	0xe6, 0x1d, 0x2d, 0xcf, 0xb9, 0xd4, 0x45, 0x0f, 0x97, 0x84, 0x73, 0x9a, 0x7a, 0x1d, 0x5b, 0xf4,
-	0x4a, 0xd4, 0x4e, 0x32, 0x0e, 0xc2, 0x25, 0x61, 0xdc, 0x73, 0xad, 0x4a, 0xc6, 0x9f, 0x68, 0x11,
-	0x0d, 0xa0, 0xbd, 0x10, 0x44, 0x46, 0x5e, 0xd7, 0xe0, 0x56, 0xd0, 0xa1, 0x08, 0x57, 0x94, 0x73,
-	0xe2, 0x81, 0xb5, 0xaf, 0x44, 0x34, 0xd1, 0xef, 0xdb, 0xfe, 0x79, 0x3d, 0x93, 0xf1, 0xb9, 0x5d,
-	0x2e, 0x8b, 0xe1, 0xad, 0x76, 0xfc, 0x6b, 0x0b, 0x2e, 0x5e, 0x88, 0x92, 0x37, 0xf6, 0xfe, 0x9e,
-	0x4e, 0x8c, 0xa0, 0xc7, 0xb2, 0x8c, 0x46, 0x8c, 0x28, 0x9a, 0x6e, 0x4c, 0x43, 0x5c, 0xdc, 0x84,
-	0xfe, 0xc7, 0xda, 0xef, 0x9d, 0xa8, 0xf6, 0xe1, 0x89, 0x1a, 0x40, 0x3b, 0x17, 0x25, 0xb5, 0x2d,
-	0x68, 0x63, 0x2b, 0x1c, 0x1c, 0xae, 0xce, 0x3f, 0x3a, 0x5c, 0xee, 0xbf, 0x77, 0xb8, 0xba, 0x7f,
-	0xf7, 0x70, 0xed, 0x86, 0x02, 0xfe, 0x60, 0x28, 0x7a, 0x7b, 0x43, 0xf1, 0x7b, 0x87, 0xee, 0x07,
-	0x07, 0x7a, 0x76, 0x0b, 0xaf, 0x25, 0xc9, 0x28, 0x7a, 0x0a, 0xbd, 0x7c, 0xb9, 0x09, 0x72, 0xb2,
-	0x49, 0x05, 0xa9, 0x7b, 0x0f, 0xf9, 0x72, 0xf3, 0xa5, 0x45, 0xd0, 0x15, 0x74, 0xd4, 0x9d, 0x25,
-	0x6c, 0x37, 0xf1, 0xa1, 0x26, 0xdc, 0xfc, 0x6c, 0xe0, 0x33, 0x75, 0x67, 0xe8, 0x5d, 0x41, 0x47,
-	0xde, 0x35, 0xef, 0x7b, 0xc3, 0x14, 0x57, 0xa6, 0xd2, 0x98, 0x8e, 0x7f, 0x72, 0xe0, 0xa2, 0x41,
-	0x63, 0x4e, 0xd5, 0x7f, 0xc7, 0xa4, 0xf5, 0xa7, 0x4c, 0x0a, 0xe8, 0xd7, 0xdb, 0xf0, 0x17, 0x2b,
-	0xf2, 0xd1, 0x21, 0x0f, 0xa4, 0x83, 0xef, 0xaf, 0xd4, 0x96, 0xc9, 0x00, 0xda, 0x4a, 0xac, 0x28,
-	0x37, 0x15, 0xe9, 0x63, 0x2b, 0x3c, 0xff, 0xf0, 0x9b, 0x0f, 0xee, 0xff, 0xe6, 0x27, 0xe5, 0xe2,
-	0xcc, 0x6c, 0xcc, 0xc7, 0xbf, 0x05, 0x00, 0x00, 0xff, 0xff, 0x96, 0xa2, 0x8d, 0x51, 0x30, 0x08,
-	0x00, 0x00,
+var fileDescriptor_gw_492d8b75bb895de0 = []byte{
+	// 1237 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x57, 0x5b, 0x73, 0xda, 0x46,
+	0x14, 0x36, 0xd8, 0x18, 0x38, 0x18, 0x07, 0x16, 0xe2, 0x28, 0xe9, 0x25, 0xae, 0xa6, 0xed, 0x24,
+	0x4d, 0x06, 0xcf, 0x38, 0xcd, 0xf4, 0x39, 0xb6, 0x71, 0xe2, 0x38, 0x71, 0x98, 0xc5, 0xcd, 0xa4,
+	0x79, 0xd1, 0x2c, 0xd2, 0x4a, 0x68, 0x00, 0xad, 0xba, 0x5a, 0x07, 0xe8, 0x73, 0x6f, 0xbf, 0xa2,
+	0xff, 0xa1, 0x3f, 0xae, 0x4f, 0x7d, 0xe9, 0xec, 0xae, 0x24, 0x2e, 0xa2, 0x21, 0x6d, 0x93, 0x3e,
+	0xe1, 0xf3, 0xe9, 0xec, 0x77, 0xce, 0x9e, 0x3d, 0x37, 0x43, 0xc9, 0x1b, 0xb7, 0x42, 0xce, 0x04,
+	0x43, 0x79, 0x6f, 0x7c, 0xeb, 0xa1, 0xe7, 0x8b, 0xfe, 0x55, 0xaf, 0x65, 0xb3, 0xd1, 0x41, 0x8f,
+	0x33, 0x9b, 0x10, 0x7e, 0x30, 0x64, 0x9c, 0x44, 0x94, 0xbf, 0xa1, 0xfc, 0x80, 0x84, 0xfe, 0x81,
+	0xcd, 0x46, 0x23, 0x16, 0xc4, 0x3f, 0xfa, 0xe8, 0xad, 0xdb, 0x1e, 0x63, 0xde, 0x90, 0x1e, 0x28,
+	0xa9, 0x77, 0xe5, 0x1e, 0x08, 0x7f, 0x44, 0x23, 0x41, 0x46, 0x61, 0xac, 0xf0, 0xe9, 0xb2, 0x82,
+	0x73, 0xc5, 0x89, 0xf0, 0x13, 0x02, 0xf3, 0xd7, 0x3c, 0xec, 0x7c, 0x1b, 0x0e, 0xfd, 0x60, 0x70,
+	0xf9, 0xea, 0x2c, 0x70, 0x19, 0xfa, 0x18, 0xca, 0x2e, 0xa7, 0xdf, 0x5f, 0xd1, 0xc0, 0x9e, 0x1a,
+	0xb9, 0xfd, 0xdc, 0x9d, 0x2a, 0x9e, 0x01, 0xe8, 0x10, 0x60, 0xc4, 0x9c, 0xab, 0xa1, 0xa2, 0x30,
+	0xf2, 0xfb, 0xb9, 0x3b, 0xbb, 0x87, 0xa8, 0x15, 0xbb, 0xf4, 0x3c, 0xfd, 0x82, 0xe7, 0xb4, 0xd0,
+	0x53, 0x68, 0xca, 0x9b, 0x58, 0x33, 0xc8, 0xf2, 0x03, 0x97, 0x19, 0x9b, 0xfb, 0xb9, 0x3b, 0x95,
+	0xc3, 0xbd, 0x96, 0x37, 0x6e, 0x3d, 0x63, 0x98, 0xcc, 0x4e, 0x4b, 0x3f, 0x9e, 0x6c, 0x60, 0x34,
+	0xcc, 0xa0, 0xe8, 0x31, 0x34, 0xdc, 0x68, 0x90, 0xa1, 0xda, 0x52, 0x54, 0xd7, 0x25, 0xd5, 0x69,
+	0xf7, 0x3c, 0xc3, 0x54, 0x77, 0xa3, 0xc1, 0x22, 0x78, 0x54, 0x87, 0x6b, 0x4b, 0x24, 0xe6, 0xef,
+	0x39, 0x40, 0x59, 0x47, 0x64, 0x40, 0x7a, 0x24, 0x70, 0xc6, 0xbe, 0x23, 0xfa, 0x49, 0x40, 0x52,
+	0x00, 0xdd, 0x85, 0x5a, 0x14, 0x72, 0x4a, 0x1c, 0x3f, 0xf0, 0x2c, 0x97, 0xd8, 0x82, 0x71, 0x15,
+	0x96, 0x2a, 0xbe, 0x96, 0xe2, 0xa7, 0x0a, 0x46, 0x1f, 0x41, 0xd9, 0x66, 0x0e, 0xb5, 0x38, 0x11,
+	0x54, 0x5d, 0xbe, 0x8c, 0x4b, 0x12, 0xc0, 0x44, 0x50, 0xf4, 0x10, 0xf6, 0x42, 0x36, 0x24, 0xdc,
+	0xff, 0x21, 0xf1, 0xe8, 0x0d, 0xe5, 0x91, 0x0c, 0xb2, 0xbc, 0x5b, 0x09, 0x5f, 0x9f, 0xff, 0x7a,
+	0x96, 0x7c, 0x34, 0xcf, 0xa1, 0x9e, 0xb9, 0xf0, 0x1a, 0x8f, 0x0d, 0x28, 0xf6, 0x7c, 0xa1, 0x9c,
+	0xd0, 0x8e, 0x26, 0xa2, 0x39, 0x81, 0xbd, 0x76, 0x60, 0xf3, 0x69, 0x28, 0xa8, 0x73, 0xea, 0x07,
+	0xf4, 0x32, 0xc9, 0x25, 0x64, 0x42, 0x95, 0xd0, 0xc8, 0x1a, 0xd0, 0xa9, 0xe5, 0x07, 0x0e, 0x9d,
+	0xc4, 0xac, 0x15, 0x42, 0xa3, 0x73, 0x3a, 0x3d, 0x93, 0x10, 0xfa, 0x0c, 0x76, 0x68, 0x72, 0xda,
+	0x0a, 0x22, 0x45, 0xbe, 0x83, 0x2b, 0x29, 0x76, 0xd1, 0x45, 0x37, 0xa0, 0xe8, 0x86, 0x1e, 0xb1,
+	0x7c, 0x47, 0xdd, 0x7f, 0x07, 0x6f, 0x4b, 0xf1, 0xec, 0xc4, 0x3c, 0x01, 0xd4, 0x19, 0x12, 0x3f,
+	0x58, 0xb4, 0xda, 0x82, 0x2d, 0x99, 0xce, 0xca, 0x58, 0xe5, 0xf0, 0x56, 0x4b, 0xa7, 0x72, 0x2b,
+	0x49, 0xe5, 0x56, 0xaa, 0x89, 0x95, 0x9e, 0xf9, 0x47, 0x1e, 0x76, 0x1e, 0x13, 0x41, 0xc7, 0x64,
+	0xda, 0x15, 0x44, 0x44, 0xe8, 0x13, 0x00, 0x4f, 0xcb, 0xd2, 0x64, 0x4e, 0x99, 0x2c, 0xc7, 0xc8,
+	0xd9, 0x49, 0xca, 0x9f, 0x7f, 0x37, 0x7e, 0x74, 0x1f, 0x4a, 0x43, 0x66, 0xeb, 0xd4, 0xd7, 0xc9,
+	0x5b, 0x4b, 0x52, 0xff, 0x59, 0x8c, 0xe3, 0x54, 0x03, 0x7d, 0x01, 0xbb, 0x36, 0x0b, 0x5c, 0xdf,
+	0xb3, 0xe6, 0x5f, 0xb2, 0x8c, 0xab, 0x1a, 0x7d, 0xa9, 0x41, 0xd4, 0x82, 0x06, 0x9f, 0x58, 0x21,
+	0xb1, 0x07, 0x54, 0x44, 0x16, 0xa7, 0x36, 0xf5, 0xdf, 0x50, 0xc7, 0x28, 0xa8, 0x00, 0xd7, 0xf9,
+	0xa4, 0xa3, 0xbf, 0xe0, 0xf8, 0x03, 0x7a, 0x00, 0x7b, 0x2b, 0xf4, 0x2d, 0x36, 0x30, 0xb6, 0xd5,
+	0x91, 0x46, 0xe6, 0xc8, 0x8b, 0x73, 0x69, 0x44, 0xac, 0x30, 0x52, 0xd4, 0x46, 0x44, 0xc6, 0xc8,
+	0x7d, 0x40, 0x73, 0xfa, 0x74, 0xe4, 0x0b, 0x41, 0x1d, 0xa3, 0xa4, 0xd4, 0x6b, 0xa9, 0x7a, 0x5b,
+	0xe3, 0xe6, 0xcf, 0x85, 0xa4, 0x87, 0x60, 0xdd, 0x43, 0xde, 0x73, 0xdc, 0x9f, 0x42, 0x53, 0xfe,
+	0x5a, 0x91, 0x1f, 0xd8, 0xd4, 0xf2, 0xc2, 0xc8, 0xa2, 0x21, 0xb3, 0xfb, 0xf1, 0x1b, 0xdc, 0xcc,
+	0x9c, 0x3f, 0x89, 0x5b, 0x1c, 0xae, 0xcb, 0x63, 0x5d, 0x79, 0xea, 0x71, 0xa7, 0xdb, 0x96, 0x67,
+	0x64, 0x6d, 0xa4, 0x2d, 0x52, 0x3d, 0x48, 0x15, 0xcf, 0x00, 0x84, 0x60, 0x8b, 0x47, 0x91, 0xaf,
+	0xa2, 0x5f, 0xc0, 0xea, 0x6f, 0x74, 0x53, 0xbe, 0x3a, 0x27, 0x56, 0x14, 0x70, 0x15, 0xe2, 0x1c,
+	0x2e, 0xca, 0xc6, 0xd4, 0xbd, 0xc0, 0xb2, 0x94, 0xec, 0x3e, 0x09, 0x02, 0x3a, 0x8c, 0x43, 0x99,
+	0x88, 0xf2, 0x10, 0x77, 0x2d, 0xbb, 0x4f, 0xfc, 0x20, 0x0e, 0x5b, 0x91, 0xbb, 0xc7, 0x52, 0x44,
+	0x4d, 0x28, 0xf4, 0x18, 0xe1, 0x8e, 0x51, 0x56, 0xb8, 0x16, 0x24, 0x15, 0x09, 0x04, 0x0d, 0x02,
+	0x62, 0x80, 0xd6, 0x8f, 0xc5, 0x85, 0xac, 0xab, 0xac, 0xcd, 0xba, 0x36, 0x34, 0x5c, 0x3f, 0xa0,
+	0x56, 0x7a, 0x27, 0x4b, 0x4c, 0x43, 0x6a, 0xec, 0xa8, 0x4e, 0xad, 0x1b, 0xe4, 0x7c, 0x8d, 0x5d,
+	0x4e, 0x43, 0x8a, 0xeb, 0xee, 0x32, 0x84, 0x5e, 0x82, 0x31, 0x2b, 0xe6, 0x45, 0x42, 0xa3, 0x9a,
+	0x3c, 0xdb, 0xb8, 0xb5, 0xba, 0x5d, 0x3c, 0xd9, 0xc0, 0x7b, 0x74, 0x75, 0x23, 0x79, 0x0a, 0xcd,
+	0x50, 0x16, 0xfa, 0x32, 0xe7, 0xee, 0x6c, 0x16, 0x64, 0x1b, 0x81, 0x9c, 0x05, 0x61, 0x06, 0x3d,
+	0xaa, 0xc1, 0xee, 0x22, 0x8b, 0xf9, 0xe7, 0x26, 0xec, 0x9e, 0xb0, 0x71, 0x30, 0x37, 0xce, 0xd6,
+	0xa4, 0xe2, 0x3e, 0x54, 0xfc, 0xd1, 0x88, 0x3a, 0x3e, 0x11, 0x74, 0x38, 0x55, 0x19, 0x59, 0xc2,
+	0xf3, 0xd0, 0xff, 0x98, 0x7c, 0x0b, 0x93, 0xb7, 0xb0, 0x3c, 0x79, 0x9b, 0x50, 0x08, 0xd9, 0x98,
+	0xea, 0x1c, 0x2c, 0x60, 0x2d, 0x2c, 0xcd, 0xe3, 0xe2, 0x7f, 0x9a, 0xc7, 0xa5, 0xf7, 0x37, 0x8f,
+	0xcb, 0xff, 0x74, 0x1e, 0xcf, 0xaa, 0x02, 0xfe, 0xa6, 0x2a, 0x2a, 0x0b, 0x55, 0xb1, 0x6a, 0x7e,
+	0xff, 0x98, 0x83, 0x8a, 0x6e, 0x43, 0xa7, 0x9c, 0x8c, 0x28, 0xba, 0x0d, 0x95, 0xb0, 0x3f, 0xb5,
+	0x42, 0x32, 0x1d, 0x32, 0x92, 0xbc, 0x3d, 0x84, 0xfd, 0x69, 0x47, 0x23, 0xe8, 0x2e, 0x14, 0xc5,
+	0x44, 0x3b, 0x9c, 0x8f, 0x0b, 0xcb, 0x1b, 0xb7, 0xe6, 0xb7, 0x21, 0xbc, 0x2d, 0x26, 0xca, 0xbd,
+	0xbb, 0x50, 0xe4, 0x93, 0xf9, 0xb5, 0x65, 0x4e, 0x15, 0xc7, 0xaa, 0x5c, 0xa9, 0x9a, 0xbf, 0xe4,
+	0x60, 0x77, 0xce, 0x8d, 0x2e, 0x15, 0x1f, 0xce, 0x93, 0xcd, 0xb7, 0x7a, 0x12, 0x41, 0x35, 0xa9,
+	0x86, 0x77, 0x8c, 0xc8, 0xbd, 0x65, 0x3f, 0x90, 0x24, 0x5f, 0x2c, 0xa9, 0xd4, 0x93, 0x26, 0x14,
+	0x04, 0x1b, 0x50, 0x3d, 0x0b, 0xab, 0x58, 0x0b, 0xe6, 0xeb, 0x99, 0xd1, 0xcb, 0x57, 0x8f, 0xec,
+	0xc1, 0xdb, 0x2b, 0xd0, 0x99, 0xb1, 0xe4, 0xe7, 0x58, 0x24, 0x4a, 0x39, 0x67, 0x3c, 0xde, 0x93,
+	0xb4, 0x60, 0xfe, 0x94, 0x83, 0x66, 0x3c, 0xe0, 0x8f, 0xd5, 0x10, 0x8d, 0x6b, 0x6d, 0x5d, 0x95,
+	0x1b, 0x50, 0x4c, 0x66, 0x70, 0x5e, 0xf1, 0x25, 0x22, 0xfa, 0x1a, 0x4a, 0x71, 0xcb, 0x8e, 0xe2,
+	0x70, 0x1a, 0xf2, 0xc6, 0xc7, 0x1a, 0x5b, 0x30, 0x82, 0x53, 0x4d, 0xf3, 0xb7, 0x3c, 0x34, 0x57,
+	0xa9, 0x7c, 0x80, 0xe5, 0xb9, 0x03, 0x7b, 0xcb, 0xc5, 0xaa, 0xf7, 0x87, 0x38, 0x0f, 0x8d, 0x6c,
+	0xb9, 0x6a, 0x97, 0x9e, 0x6c, 0xe0, 0xe6, 0x70, 0x05, 0x8e, 0x9e, 0xc3, 0xf5, 0xa5, 0x92, 0x8d,
+	0x09, 0xf5, 0x12, 0x7d, 0x23, 0x53, 0xb4, 0x29, 0x5f, 0x63, 0xa1, 0x6c, 0x35, 0x7c, 0xd4, 0x80,
+	0x7a, 0x86, 0xca, 0x24, 0xd0, 0x5c, 0xe5, 0xd3, 0x9a, 0xcd, 0xf4, 0x1e, 0xd4, 0x97, 0x77, 0x69,
+	0xb9, 0x46, 0x6e, 0xca, 0xa5, 0x63, 0x69, 0x99, 0x8e, 0xcc, 0xe7, 0xd0, 0x58, 0xe1, 0xe5, 0xbf,
+	0xdd, 0x7d, 0xbf, 0xfa, 0x06, 0xea, 0x99, 0xc1, 0x88, 0x4a, 0xb0, 0x75, 0xf1, 0xe2, 0xa2, 0x5d,
+	0xdb, 0x40, 0x55, 0x28, 0xb7, 0x2f, 0x8e, 0xf1, 0x77, 0x9d, 0xcb, 0xf6, 0x49, 0x2d, 0x87, 0xca,
+	0x50, 0xe8, 0x3c, 0x7b, 0x74, 0x76, 0x51, 0xcb, 0x1f, 0x7d, 0xf9, 0xfa, 0xf3, 0xf5, 0xff, 0xba,
+	0x79, 0xe3, 0xde, 0xb6, 0x9a, 0x10, 0x0f, 0xfe, 0x0a, 0x00, 0x00, 0xff, 0xff, 0x8c, 0x0b, 0xec,
+	0x67, 0xf7, 0x0d, 0x00, 0x00,
 }

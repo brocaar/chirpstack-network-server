@@ -1,10 +1,10 @@
 package uplink
 
 import (
+	"encoding/base64"
 	"fmt"
 	"sync"
 
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
@@ -52,31 +52,30 @@ func (s *Server) Stop() error {
 // HandleRXPackets consumes received packets by the gateway and handles them
 // in a separate go-routine. Errors are logged.
 func HandleRXPackets(wg *sync.WaitGroup) {
-	for rxPacket := range config.C.NetworkServer.Gateway.Backend.Backend.RXPacketChan() {
-		go func(rxPacket gw.RXPacket) {
+	for uplinkFrame := range config.C.NetworkServer.Gateway.Backend.Backend.RXPacketChan() {
+		go func(uplinkFrame gw.UplinkFrame) {
 			wg.Add(1)
 			defer wg.Done()
-			if err := HandleRXPacket(rxPacket); err != nil {
-				data, _ := rxPacket.PHYPayload.MarshalText()
-				log.WithField("data_base64", string(data)).Errorf("processing rx packet error: %s", err)
+			if err := HandleRXPacket(uplinkFrame); err != nil {
+				data := base64.StdEncoding.EncodeToString(uplinkFrame.PhyPayload)
+				log.WithField("data_base64", data).WithError(err).Error("processing uplink frame error")
 			}
-		}(rxPacket)
+		}(uplinkFrame)
 	}
 }
 
 // HandleRXPacket handles a single rxpacket.
-func HandleRXPacket(rxPacket gw.RXPacket) error {
-	return collectPackets(rxPacket)
+func HandleRXPacket(uplinkFrame gw.UplinkFrame) error {
+	return collectPackets(uplinkFrame)
 }
 
-func collectPackets(rxPacket gw.RXPacket) error {
-	return collectAndCallOnce(config.C.Redis.Pool, rxPacket, func(rxPacket models.RXPacket) error {
-		uplinkFrameSet, err := framelog.CreateUplinkFrameSet(rxPacket)
-		if err != nil {
-			return errors.Wrap(err, "create uplink frame-set error")
-		}
-
-		if err := framelog.LogUplinkFrameForGateways(uplinkFrameSet); err != nil {
+func collectPackets(uplinkFrame gw.UplinkFrame) error {
+	return collectAndCallOnce(config.C.Redis.Pool, uplinkFrame, func(rxPacket models.RXPacket) error {
+		if err := framelog.LogUplinkFrameForGateways(gw.UplinkFrameSet{
+			PhyPayload: uplinkFrame.PhyPayload,
+			TxInfo:     rxPacket.TXInfo,
+			RxInfo:     rxPacket.RXInfoSet,
+		}); err != nil {
 			log.WithError(err).Error("log uplink frames for gateways error")
 		}
 

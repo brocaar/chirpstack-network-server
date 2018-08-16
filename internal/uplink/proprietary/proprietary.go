@@ -8,7 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/as"
-	gwPB "github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -55,8 +55,8 @@ func sendProprietaryPayloadToApplicationServer(ctx *proprietaryContext) error {
 	handleReq := as.HandleProprietaryUplinkRequest{
 		MacPayload: ctx.DataPayload.Bytes,
 		Mic:        ctx.RXPacket.PHYPayload.MIC[:],
-		TxInfo:     ctx.RXPacket.GetGWUplinkTXInfo(),
-		RxInfo:     ctx.RXPacket.GetGWUplinkRXInfoSet(),
+		TxInfo:     ctx.RXPacket.TXInfo,
+		RxInfo:     ctx.RXPacket.RXInfoSet,
 	}
 
 	// get gateway info
@@ -76,7 +76,7 @@ func sendProprietaryPayloadToApplicationServer(ctx *proprietaryContext) error {
 		copy(mac[:], handleReq.RxInfo[i].GatewayId)
 
 		if gw, ok := gws[mac]; ok {
-			handleReq.RxInfo[i].Location = &gwPB.Location{
+			handleReq.RxInfo[i].Location = &common.Location{
 				Latitude:  gw.Location.Latitude,
 				Longitude: gw.Location.Longitude,
 				Altitude:  gw.Altitude,

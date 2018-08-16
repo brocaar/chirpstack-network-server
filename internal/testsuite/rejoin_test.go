@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	. "github.com/smartystreets/goconvey/convey"
 
+	commonPB "github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
@@ -24,14 +26,15 @@ type rejoinTestCase struct {
 	BeforeFunc                 func(*rejoinTestCase) error
 	Name                       string
 	DeviceSession              storage.DeviceSession
-	RXInfo                     gw.RXInfo
+	TXInfo                     gw.UplinkTXInfo
+	RXInfo                     gw.UplinkRXInfo
 	PHYPayload                 lorawan.PHYPayload
 	JoinServerRejoinReqError   error
 	JoinServerRejoinAnsPayload backend.RejoinAnsPayload
 
 	ExpectedError            error
 	ExpectedRejoinReqPayload backend.RejoinReqPayload
-	ExpectedTXInfo           gw.TXInfo
+	ExpectedTXInfo           gw.DownlinkTXInfo
 	ExpectedPHYPayload       lorawan.PHYPayload
 	ExpectedDeviceSession    storage.DeviceSession
 }
@@ -110,14 +113,14 @@ func TestRejoinScenarios(t *testing.T) {
 		c0, err := config.C.NetworkServer.Band.Band.GetDownlinkChannel(0)
 		So(err, ShouldBeNil)
 
-		c0MinDR, err := config.C.NetworkServer.Band.Band.GetDataRate(0)
-		So(err, ShouldBeNil)
-
-		rxInfo := gw.RXInfo{
-			MAC:       lorawan.EUI64{1, 1, 1, 1, 2, 2, 2, 2},
-			Frequency: c0.Frequency,
-			DataRate:  c0MinDR,
+		rxInfo := gw.UplinkRXInfo{
+			GatewayId: []byte{1, 1, 1, 1, 2, 2, 2, 2},
 		}
+
+		txInfo := gw.UplinkTXInfo{
+			Frequency: uint32(c0.Frequency),
+		}
+		So(helpers.SetUplinkTXInfoDataRate(&txInfo, 0, config.C.NetworkServer.Band.Band), ShouldBeNil)
 
 		jsEncKey := lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
 		jsIntKey := lorawan.AES128Key{8, 7, 6, 5, 4, 3, 2, 1, 8, 7, 6, 5, 4, 3, 2, 1}
@@ -149,8 +152,6 @@ func TestRejoinScenarios(t *testing.T) {
 			So(jaPHY.EncryptJoinAcceptPayload(jsEncKey), ShouldBeNil)
 			jaBytes, err := jaPHY.MarshalBinary()
 			So(err, ShouldBeNil)
-
-			fiveSec := uint32(5000000)
 
 			tests := []rejoinTestCase{
 				{
@@ -199,6 +200,7 @@ func TestRejoinScenarios(t *testing.T) {
 					},
 					Name:          "valid rejoin-request type 0",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload:    rjPHY,
 					JoinServerRejoinAnsPayload: backend.RejoinAnsPayload{
@@ -237,12 +239,20 @@ func TestRejoinScenarios(t *testing.T) {
 						RxDelay: 1,
 						// CFList is set in the BeforeFunc
 					},
-					ExpectedTXInfo: gw.TXInfo{
-						MAC:       lorawan.EUI64{1, 1, 1, 1, 2, 2, 2, 2},
-						Timestamp: &fiveSec,
-						Frequency: c0.Frequency,
-						Power:     14,
-						DataRate:  c0MinDR,
+					ExpectedTXInfo: gw.DownlinkTXInfo{
+						GatewayId:  []byte{1, 1, 1, 1, 2, 2, 2, 2},
+						Timestamp:  5000000,
+						Frequency:  uint32(c0.Frequency),
+						Power:      14,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								CodeRate:              "4/5",
+								PolarizationInversion: true,
+							},
+						},
 					},
 					ExpectedPHYPayload:    jaPHY,
 					ExpectedDeviceSession: ds,
@@ -304,6 +314,7 @@ func TestRejoinScenarios(t *testing.T) {
 					},
 					Name:          "valid rejoin-request type 0 (with KEK)",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload:    rjPHY,
 					JoinServerRejoinAnsPayload: backend.RejoinAnsPayload{
@@ -346,12 +357,20 @@ func TestRejoinScenarios(t *testing.T) {
 						RxDelay: 1,
 						// CFList is set in the BeforeFunc
 					},
-					ExpectedTXInfo: gw.TXInfo{
-						MAC:       lorawan.EUI64{1, 1, 1, 1, 2, 2, 2, 2},
-						Timestamp: &fiveSec,
-						Frequency: c0.Frequency,
-						Power:     14,
-						DataRate:  c0MinDR,
+					ExpectedTXInfo: gw.DownlinkTXInfo{
+						GatewayId:  []byte{1, 1, 1, 1, 2, 2, 2, 2},
+						Timestamp:  5000000,
+						Frequency:  uint32(c0.Frequency),
+						Power:      14,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								CodeRate:              "4/5",
+								PolarizationInversion: true,
+							},
+						},
 					},
 					ExpectedPHYPayload:    jaPHY,
 					ExpectedDeviceSession: ds,
@@ -363,6 +382,7 @@ func TestRejoinScenarios(t *testing.T) {
 					},
 					Name:          "invalid rejoin-counter",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload:    rjPHY,
 					ExpectedError: errors.New("invalid RJcount0"),
@@ -370,6 +390,7 @@ func TestRejoinScenarios(t *testing.T) {
 				{
 					Name:                     "join-server returns error",
 					DeviceSession:            ds,
+					TXInfo:                   txInfo,
 					RXInfo:                   rxInfo,
 					PHYPayload:               rjPHY,
 					JoinServerRejoinReqError: errors.New("boom"),
@@ -418,8 +439,6 @@ func TestRejoinScenarios(t *testing.T) {
 			jaBytes, err := jaPHY.MarshalBinary()
 			So(err, ShouldBeNil)
 
-			fiveSec := uint32(5000000)
-
 			tests := []rejoinTestCase{
 				{
 					BeforeFunc: func(tc *rejoinTestCase) error {
@@ -441,6 +460,7 @@ func TestRejoinScenarios(t *testing.T) {
 					},
 					Name:          "valid rejoin-request type 2",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload:    rjPHY,
 					JoinServerRejoinAnsPayload: backend.RejoinAnsPayload{
@@ -478,12 +498,20 @@ func TestRejoinScenarios(t *testing.T) {
 						},
 						RxDelay: 1,
 					},
-					ExpectedTXInfo: gw.TXInfo{
-						MAC:       lorawan.EUI64{1, 1, 1, 1, 2, 2, 2, 2},
-						Timestamp: &fiveSec,
-						Frequency: c0.Frequency,
-						Power:     14,
-						DataRate:  c0MinDR,
+					ExpectedTXInfo: gw.DownlinkTXInfo{
+						GatewayId:  []byte{1, 1, 1, 1, 2, 2, 2, 2},
+						Timestamp:  5000000,
+						Frequency:  uint32(c0.Frequency),
+						Power:      14,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								CodeRate:              "4/5",
+								PolarizationInversion: true,
+							},
+						},
 					},
 					ExpectedPHYPayload:    jaPHY,
 					ExpectedDeviceSession: ds,
@@ -509,6 +537,7 @@ func TestRejoinScenarios(t *testing.T) {
 					},
 					Name:          "valid rejoin-request type 2 (with KEK)",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload:    rjPHY,
 					JoinServerRejoinAnsPayload: backend.RejoinAnsPayload{
@@ -550,12 +579,20 @@ func TestRejoinScenarios(t *testing.T) {
 						},
 						RxDelay: 1,
 					},
-					ExpectedTXInfo: gw.TXInfo{
-						MAC:       lorawan.EUI64{1, 1, 1, 1, 2, 2, 2, 2},
-						Timestamp: &fiveSec,
-						Frequency: c0.Frequency,
-						Power:     14,
-						DataRate:  c0MinDR,
+					ExpectedTXInfo: gw.DownlinkTXInfo{
+						GatewayId:  []byte{1, 1, 1, 1, 2, 2, 2, 2},
+						Timestamp:  5000000,
+						Frequency:  uint32(c0.Frequency),
+						Power:      14,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								CodeRate:              "4/5",
+								PolarizationInversion: true,
+							},
+						},
 					},
 					ExpectedPHYPayload:    jaPHY,
 					ExpectedDeviceSession: ds,
@@ -582,9 +619,13 @@ func runRejoinTests(asClient *test.ApplicationClient, jsClient *test.JoinServerC
 			// create device-session
 			So(storage.SaveDeviceSession(redisPool, t.DeviceSession), ShouldBeNil)
 
-			err := uplink.HandleRXPacket(gw.RXPacket{
-				RXInfo:     t.RXInfo,
-				PHYPayload: t.PHYPayload,
+			phyB, err := t.PHYPayload.MarshalBinary()
+			So(err, ShouldBeNil)
+
+			err = uplink.HandleRXPacket(gw.UplinkFrame{
+				PhyPayload: phyB,
+				RxInfo:     &t.RXInfo,
+				TxInfo:     &t.TXInfo,
 			})
 			if t.ExpectedError != nil {
 				So(err, ShouldNotBeNil)
@@ -610,14 +651,22 @@ func runRejoinTests(asClient *test.ApplicationClient, jsClient *test.JoinServerC
 				So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
 				txPacket := <-config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan
 
+				txPacket.TxInfo.XXX_sizecache = 0
+				modInfo := txPacket.TxInfo.GetLoraModulationInfo()
+				modInfo.XXX_sizecache = 0
+
 				So(txPacket.Token, ShouldNotEqual, 0)
-				So(txPacket.TXInfo, ShouldResemble, t.ExpectedTXInfo)
+				So(txPacket.TxInfo, ShouldResemble, &t.ExpectedTXInfo)
 			})
 
 			Convey("Then the expected PHYPayload was sent", func() {
 				So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
 				txPacket := <-config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan
-				So(txPacket.PHYPayload, ShouldResemble, t.ExpectedPHYPayload)
+
+				var phy lorawan.PHYPayload
+				So(phy.UnmarshalBinary(txPacket.PhyPayload), ShouldBeNil)
+
+				So(phy, ShouldResemble, t.ExpectedPHYPayload)
 			})
 
 			Convey("Then the device-session is as expected", func() {

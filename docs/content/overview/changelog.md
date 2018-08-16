@@ -7,6 +7,28 @@ menu:
 ---
 # Changelog
 
+## v2.1.0 (in development)
+
+### Features
+
+#### Updated data-format between LoRa Server and LoRa Gateway Bridge
+
+Note that this is a backwards compatible change as LoRa Server is able to
+automatically detect the used serizalization format based on the data sent by
+the LoRa Gateway Bridge.
+
+##### Protocol Buffer data serialization
+
+This adds support for the [Protocol Buffers](https://developers.google.com/protocol-buffers/)
+data serialization introduced by LoRa Gateway Bridge v2.5.0 to save on
+bandwidth between the LoRa Gateway Bridge and the MQTT.
+
+##### New JSON format
+
+The new JSON structure re-uses the messages defined for
+[Protocol Buffers](https://developers.google.com/protocol-buffers/docs/proto3#json)
+based serialization.
+
 ## v2.0.2
 
 ### Bugfixes

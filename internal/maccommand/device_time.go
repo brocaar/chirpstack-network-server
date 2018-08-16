@@ -3,6 +3,8 @@ package maccommand
 import (
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -16,10 +18,16 @@ func handleDeviceTimeReq(ds *storage.DeviceSession, rxPacket models.RXPacket) ([
 		return nil, errors.New("rx info-set contains zero items")
 	}
 
+	var err error
 	var timeSinceGPSEpoch time.Duration
+
 	for _, rxInfo := range rxPacket.RXInfoSet {
-		if rxInfo.TimeSinceGPSEpoch != nil {
-			timeSinceGPSEpoch = time.Duration(*rxInfo.TimeSinceGPSEpoch)
+		if rxInfo.TimeSinceGpsEpoch != nil {
+			timeSinceGPSEpoch, err = ptypes.Duration(rxInfo.TimeSinceGpsEpoch)
+			if err != nil {
+				log.WithError(err).Error("time since gps epoch to duration error")
+				continue
+			}
 		}
 	}
 

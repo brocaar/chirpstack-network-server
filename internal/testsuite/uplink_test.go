@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
-
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/brocaar/loraserver/api/as"
@@ -16,6 +16,7 @@ import (
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
@@ -27,8 +28,9 @@ type uplinkTestCase struct {
 	Name       string                         // name of the test
 	BeforeFunc func(tc *uplinkTestCase) error // function to run before the test
 
-	DeviceSession       storage.DeviceSession     // device-session
-	RXInfo              gw.RXInfo                 // rx-info of the "received" packet
+	DeviceSession       storage.DeviceSession // device-session
+	TXInfo              gw.UplinkTXInfo
+	RXInfo              gw.UplinkRXInfo           // rx-info of the "received" packet
 	PHYPayload          lorawan.PHYPayload        // (unencrypted) "received" PHYPayload
 	MACCommandPending   []storage.MACCommandBlock // pending mac-commands
 	DeviceQueueItems    []storage.DeviceQueueItem // items in the device-queue
@@ -42,7 +44,7 @@ type uplinkTestCase struct {
 	ExpectedASHandleDownlinkACK *as.HandleDownlinkACKRequest // expected application-server datadown ack request
 
 	ExpectedUplinkMIC           lorawan.MIC
-	ExpectedTXInfo              *gw.TXInfo          // expected tx-info (downlink)
+	ExpectedTXInfo              *gw.DownlinkTXInfo  // expected tx-info (downlink)
 	ExpectedPHYPayload          *lorawan.PHYPayload // expected (plaintext) PHYPayload (downlink)
 	ExpectedFCntUp              uint32              // expected uplink frame counter
 	ExpectedNFCntDown           uint32              // expected downlink frame counter
@@ -139,19 +141,20 @@ func TestUplinkScenarios(t *testing.T) {
 		}
 
 		now := time.Now().UTC().Truncate(time.Millisecond)
-		timeSinceEpoch := gw.Duration(10 * time.Second)
-		dr0, err := config.C.NetworkServer.Band.Band.GetDataRate(0)
-		So(err, ShouldBeNil)
 		c0, err := config.C.NetworkServer.Band.Band.GetUplinkChannel(0)
 		So(err, ShouldBeNil)
-		rxInfo := gw.RXInfo{
-			MAC:               [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Frequency:         c0.Frequency,
-			DataRate:          dr0,
-			LoRaSNR:           7,
-			Time:              &now,
-			TimeSinceGPSEpoch: &timeSinceEpoch,
+
+		rxInfo := gw.UplinkRXInfo{
+			GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			LoraSnr:   7,
 		}
+		rxInfo.Time, _ = ptypes.TimestampProto(now)
+		rxInfo.TimeSinceGpsEpoch = ptypes.DurationProto(10 * time.Second)
+
+		txInfo := gw.UplinkTXInfo{
+			Frequency: uint32(c0.Frequency),
+		}
+		So(helpers.SetUplinkTXInfoDataRate(&txInfo, 0, config.C.NetworkServer.Band.Band), ShouldBeNil)
 
 		var fPortZero uint8
 		var fPortOne uint8 = 1
@@ -162,59 +165,19 @@ func TestUplinkScenarios(t *testing.T) {
 			FCnt:    10,
 			FPort:   1,
 			Data:    nil,
-			TxInfo: &gw.UplinkTXInfo{
-				Frequency:  uint32(rxInfo.Frequency),
-				Modulation: commonPB.Modulation_LORA,
-				ModulationInfo: &gw.UplinkTXInfo_LoraModulationInfo{
-					LoraModulationInfo: &gw.LoRaModulationInfo{
-						Bandwidth:       uint32(rxInfo.DataRate.Bandwidth),
-						SpreadingFactor: uint32(rxInfo.DataRate.SpreadFactor),
-						CodeRate:        rxInfo.CodeRate,
-					},
-				},
-			},
-			RxInfo: []*gw.UplinkRXInfo{
-				{
-					GatewayId: rxInfo.MAC[:],
-					Rssi:      int32(rxInfo.RSSI),
-					LoraSnr:   rxInfo.LoRaSNR,
-					Channel:   uint32(rxInfo.Channel),
-					RfChain:   uint32(rxInfo.RFChain),
-					Board:     uint32(rxInfo.Board),
-					Antenna:   uint32(rxInfo.Antenna),
-					Location: &gw.Location{
-						Latitude:  gw1.Location.Latitude,
-						Longitude: gw1.Location.Longitude,
-						Altitude:  gw1.Altitude,
-					},
-				},
-			},
+			TxInfo:  &txInfo,
+			RxInfo:  []*gw.UplinkRXInfo{&rxInfo},
 		}
-
-		if rxInfo.Time != nil {
-			expectedApplicationPushDataUpNoData.RxInfo[0].Time, _ = ptypes.TimestampProto(*rxInfo.Time)
-		}
-
-		if rxInfo.TimeSinceGPSEpoch != nil {
-			expectedApplicationPushDataUpNoData.RxInfo[0].TimeSinceGpsEpoch = ptypes.DurationProto(time.Duration(*rxInfo.TimeSinceGPSEpoch))
+		expectedApplicationPushDataUpNoData.RxInfo[0].Location = &commonPB.Location{
+			Latitude:  gw1.Location.Latitude,
+			Longitude: gw1.Location.Longitude,
+			Altitude:  gw1.Altitude,
 		}
 
 		expectedControllerHandleRXInfo := &nc.HandleUplinkMetaDataRequest{
 			DevEui: ds.DevEUI[:],
 			TxInfo: expectedApplicationPushDataUpNoData.TxInfo,
-			RxInfo: []*gw.UplinkRXInfo{
-				{
-					GatewayId:         rxInfo.MAC[:],
-					Rssi:              int32(rxInfo.RSSI),
-					LoraSnr:           rxInfo.LoRaSNR,
-					Channel:           uint32(rxInfo.Channel),
-					RfChain:           uint32(rxInfo.RFChain),
-					Board:             uint32(rxInfo.Board),
-					Antenna:           uint32(rxInfo.Antenna),
-					Time:              expectedApplicationPushDataUpNoData.RxInfo[0].Time,
-					TimeSinceGpsEpoch: expectedApplicationPushDataUpNoData.RxInfo[0].TimeSinceGpsEpoch,
-				},
-			},
+			RxInfo: []*gw.UplinkRXInfo{&rxInfo},
 		}
 
 		Convey("Given a set of test-scenarios for error handling", func() {
@@ -222,6 +185,7 @@ func TestUplinkScenarios(t *testing.T) {
 				{
 					Name:          "the frame-counter is invalid",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -247,11 +211,12 @@ func TestUplinkScenarios(t *testing.T) {
 						tc.DeviceSession.MACVersion = "1.1.0"
 
 						// the MIC will be calculated for channel 0, we set it to channel 1
-						tc.RXInfo.Frequency = 868300000
+						tc.TXInfo.Frequency = 868300000
 						return nil
 					},
 					Name:          "the frequency is invalid (MIC)",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -276,17 +241,14 @@ func TestUplinkScenarios(t *testing.T) {
 					BeforeFunc: func(tc *uplinkTestCase) error {
 						tc.DeviceSession.MACVersion = "1.1.0"
 
-						dr, err := config.C.NetworkServer.Band.Band.GetDataRate(1)
-						if err != nil {
-							return err
-						}
-
 						// the MIC will be calculated for DR0, set it to DR1
-						tc.RXInfo.DataRate = dr
+						modInfo := tc.TXInfo.GetLoraModulationInfo()
+						modInfo.SpreadingFactor = 11
 						return nil
 					},
 					Name:          "the data-rate is invalid (MIC)",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -335,6 +297,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "the frame-counter is invalid but not 0",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -364,6 +327,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "the frame-counter is invalid and 0",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -392,8 +356,6 @@ func TestUplinkScenarios(t *testing.T) {
 
 		Convey("Given a set of test-scenarios for basic flows (nothing in the queue)", func() {
 			inTenMinutes := time.Now().Add(10 * time.Minute)
-			timestamp := rxInfo.Timestamp + 1000000
-			timestamp3S := rxInfo.Timestamp + 3000000
 
 			tests := []uplinkTestCase{
 				{
@@ -404,6 +366,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "unconfirmed uplink data with payload",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -446,6 +409,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "unconfirmed uplink data with payload + AppSKey envelope",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -478,6 +442,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "unconfirmed uplink data with payload (LoRaWAN 1.1)",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -511,6 +476,7 @@ func TestUplinkScenarios(t *testing.T) {
 						{DevEUI: d.DevEUI, FRMPayload: []byte{1}, FPort: 1, FCnt: 4, IsPending: true, TimeoutAfter: &inTenMinutes},
 					},
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -549,6 +515,7 @@ func TestUplinkScenarios(t *testing.T) {
 						{DevEUI: d.DevEUI, FRMPayload: []byte{1}, FPort: 1, FCnt: 4, IsPending: true, TimeoutAfter: &inTenMinutes},
 					},
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -578,6 +545,7 @@ func TestUplinkScenarios(t *testing.T) {
 				{
 					Name:          "unconfirmed uplink data without payload (just a FPort)",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -607,6 +575,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "confirmed uplink data with payload",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -625,13 +594,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedUplinkMIC:              lorawan.MIC{69, 90, 200, 95},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -656,6 +632,7 @@ func TestUplinkScenarios(t *testing.T) {
 				{
 					Name:          "confirmed uplink data without payload",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -673,13 +650,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedUplinkMIC:              lorawan.MIC{210, 52, 52, 94},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -709,6 +693,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "confirmed uplink data without payload (with RXDelay=3)",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -726,13 +711,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedUplinkMIC:              lorawan.MIC{210, 52, 52, 94},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp3S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 3000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -757,6 +749,7 @@ func TestUplinkScenarios(t *testing.T) {
 				{
 					Name:          "two uplink mac commands (FOpts)",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -792,6 +785,7 @@ func TestUplinkScenarios(t *testing.T) {
 					},
 					Name:          "two uplink mac commands (FOpts) (LoRaWAN 1.1)",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -823,6 +817,7 @@ func TestUplinkScenarios(t *testing.T) {
 				{
 					Name:          "two uplink mac commands (FRMPayload)",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -862,6 +857,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "unconfirmed uplink with FCnt rollover",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -898,6 +894,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "unconfirmed uplink data with payload (service-profile: no gateway info)",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -927,7 +924,6 @@ func TestUplinkScenarios(t *testing.T) {
 
 		Convey("Given a set of test-scenarios for mac-commands", func() {
 			var fPortThree uint8 = 3
-			timestamp1S := rxInfo.Timestamp + 1000000
 
 			tests := []uplinkTestCase{
 				{
@@ -941,6 +937,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "unconfirmed uplink data + two downlink mac commands in queue (FOpts)",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -959,13 +956,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedUplinkMIC:              lorawan.MIC{104, 147, 35, 121},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1000,6 +1004,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "unconfirmed uplink data + downlink mac command (FOpts) + unconfirmed data down",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					DeviceQueueItems: []storage.DeviceQueueItem{
 						{DevEUI: d.DevEUI, FPort: 3, FCnt: 5, FRMPayload: []byte{4, 5, 6}},
@@ -1021,13 +1026,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedUplinkMIC:              lorawan.MIC{104, 147, 35, 121},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1062,13 +1074,13 @@ func TestUplinkScenarios(t *testing.T) {
 
 		Convey("Given a set of test-scenarios for downlink queue (LoRaWAN 1.1)", func() {
 			var fPortTen uint8 = 10
-			timestamp1S := rxInfo.Timestamp + 1000000
 			ds.MACVersion = "1.1.0"
 
 			tests := []uplinkTestCase{
 				{
 					Name:          "unconfirmed uplink data + one unconfirmed downlink payload in queue",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					DeviceQueueItems: []storage.DeviceQueueItem{
 						{DevEUI: d.DevEUI, FPort: 10, FCnt: 3, FRMPayload: []byte{1, 2, 3, 4}},
@@ -1089,13 +1101,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedUplinkMIC:              lorawan.MIC{160, 195, 160, 195},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1124,6 +1143,7 @@ func TestUplinkScenarios(t *testing.T) {
 				{
 					Name:          "unconfirmed uplink data + one confirmed downlink payload in queue",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					DeviceQueueItems: []storage.DeviceQueueItem{
 						{DevEUI: d.DevEUI, FPort: 10, FCnt: 3, FRMPayload: []byte{1, 2, 3, 4}, Confirmed: true},
@@ -1144,13 +1164,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedUplinkMIC:              lorawan.MIC{160, 195, 160, 195},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1183,12 +1210,12 @@ func TestUplinkScenarios(t *testing.T) {
 
 		Convey("Given a set of test-scenarios for downlink queue (LoRaWAN 1.0)", func() {
 			var fPortTen uint8 = 10
-			timestamp1S := rxInfo.Timestamp + 1000000
 
 			tests := []uplinkTestCase{
 				{
 					Name:          "unconfirmed uplink data + one unconfirmed downlink payload in queue",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					DeviceQueueItems: []storage.DeviceQueueItem{
 						{DevEUI: d.DevEUI, FPort: 10, FCnt: 5, FRMPayload: []byte{1, 2, 3, 4}},
@@ -1209,13 +1236,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedUplinkMIC:              lorawan.MIC{160, 195, 68, 8},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1243,6 +1277,7 @@ func TestUplinkScenarios(t *testing.T) {
 				{
 					Name:          "unconfirmed uplink data + two unconfirmed downlink payloads in queue",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					DeviceQueueItems: []storage.DeviceQueueItem{
 						{DevEUI: d.DevEUI, FPort: 10, FCnt: 5, FRMPayload: []byte{1, 2, 3, 4}},
@@ -1264,13 +1299,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedUplinkMIC:              lorawan.MIC{160, 195, 68, 8},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1299,6 +1341,7 @@ func TestUplinkScenarios(t *testing.T) {
 				{
 					Name:          "unconfirmed uplink data + one confirmed downlink payload in queue",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					DeviceQueueItems: []storage.DeviceQueueItem{
 						{DevEUI: d.DevEUI, FPort: 10, FCnt: 5, FRMPayload: []byte{1, 2, 3, 4}, Confirmed: true},
@@ -1319,13 +1362,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedUplinkMIC:              lorawan.MIC{160, 195, 68, 8},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1353,6 +1403,7 @@ func TestUplinkScenarios(t *testing.T) {
 				{
 					Name:          "unconfirmed uplink data + downlink payload which exceeds the max payload size (for dr 0)",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					DeviceQueueItems: []storage.DeviceQueueItem{
 						{DevEUI: d.DevEUI, FPort: 10, FCnt: 5, FRMPayload: make([]byte, 52)},
@@ -1388,6 +1439,7 @@ func TestUplinkScenarios(t *testing.T) {
 					},
 					Name:          "unconfirmed uplink data + one unconfirmed downlink payload in queue (exactly max size for dr 0) + one mac command",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					DeviceQueueItems: []storage.DeviceQueueItem{
 						{DevEUI: d.DevEUI, FPort: 10, FCnt: 5, FRMPayload: make([]byte, 51)},
@@ -1408,13 +1460,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedUplinkMIC:              lorawan.MIC{160, 195, 68, 8},
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedASHandleDataUp:         expectedApplicationPushDataUpNoData,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1446,8 +1505,6 @@ func TestUplinkScenarios(t *testing.T) {
 		})
 
 		Convey("Given a set of test-scenarios for ADR", func() {
-			timestamp1S := rxInfo.Timestamp + 1000000
-
 			tests := []uplinkTestCase{
 				{
 					BeforeFunc: func(tc *uplinkTestCase) error {
@@ -1457,6 +1514,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "adr triggered",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1477,13 +1535,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedFCntUp:                 11,
 					ExpectedNFCntDown:              6,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1524,6 +1589,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "adr interval matches, but node does not support adr",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1554,6 +1620,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "acknowledgement of pending adr request",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					MACCommandPending: []storage.MACCommandBlock{
 						{
@@ -1605,6 +1672,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "negative acknowledgement of pending adr request",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					MACCommandPending: []storage.MACCommandBlock{
 						{
@@ -1649,6 +1717,7 @@ func TestUplinkScenarios(t *testing.T) {
 				{
 					Name:          "adr ack requested",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1669,13 +1738,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedFCntUp:                 11,
 					ExpectedNFCntDown:              6,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1702,6 +1778,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "channel re-configuration triggered",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1719,13 +1796,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedFCntUp:                 11,
 					ExpectedNFCntDown:              6,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1761,6 +1845,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "new channel re-configuration ack-ed",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					MACCommandPending: []storage.MACCommandBlock{
 						{
@@ -1813,6 +1898,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "new channel re-configuration not ack-ed",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					MACCommandPending: []storage.MACCommandBlock{
 						{
@@ -1854,13 +1940,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedFCntUp:                 11,
 					ExpectedNFCntDown:              6,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1897,6 +1990,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "channel re-configuration and adr triggered",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1917,13 +2011,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedFCntUp:                 11,
 					ExpectedNFCntDown:              6,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1966,7 +2067,6 @@ func TestUplinkScenarios(t *testing.T) {
 			sp.ReportDevStatusBattery = true
 			sp.ReportDevStatusMargin = true
 			So(storage.UpdateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
-			timestamp1S := rxInfo.Timestamp + 1000000
 
 			tests := []uplinkTestCase{
 				{
@@ -1977,6 +2077,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "must request device-status",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -1994,13 +2095,20 @@ func TestUplinkScenarios(t *testing.T) {
 					ExpectedControllerHandleRXInfo: expectedControllerHandleRXInfo,
 					ExpectedFCntUp:                 11,
 					ExpectedNFCntDown:              6,
-					ExpectedTXInfo: &gw.TXInfo{
-						CodeRate:  "4/5",
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp1S,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
+					ExpectedTXInfo: &gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Timestamp:  rxInfo.Timestamp + 1000000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								PolarizationInversion: true,
+								CodeRate:              "4/5",
+							},
+						},
 					},
 					ExpectedPHYPayload: &lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -2032,6 +2140,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "interval has not yet expired",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -2060,6 +2169,7 @@ func TestUplinkScenarios(t *testing.T) {
 
 					Name:          "device reports device-status",
 					DeviceSession: ds,
+					TXInfo:        txInfo,
 					RXInfo:        rxInfo,
 					PHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -2137,17 +2247,13 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 
 			So(t.PHYPayload.MIC[:], ShouldResemble, t.ExpectedUplinkMIC[:])
 
-			// marshal and unmarshal the PHYPayload to make sure the FCnt gets
-			// truncated to to 16 bit
-			var phy lorawan.PHYPayload
-			b, err := t.PHYPayload.MarshalBinary()
-			So(err, ShouldBeNil)
-			So(phy.UnmarshalBinary(b), ShouldBeNil)
+			phyB, err := t.PHYPayload.MarshalBinary()
 
 			// create RXPacket and call HandleRXPacket
-			rxPacket := gw.RXPacket{
-				RXInfo:     t.RXInfo,
-				PHYPayload: phy,
+			rxPacket := gw.UplinkFrame{
+				PhyPayload: phyB,
+				RxInfo:     &t.RXInfo,
+				TxInfo:     &t.TXInfo,
 			}
 			err = uplink.HandleRXPacket(rxPacket)
 			if err != nil {
@@ -2164,7 +2270,7 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 				Convey("Then the expected rx-info is published to the network-controller", func() {
 					So(config.C.NetworkController.Client.(*test.NetworkControllerClient).HandleRXInfoChan, ShouldHaveLength, 1)
 					pl := <-config.C.NetworkController.Client.(*test.NetworkControllerClient).HandleRXInfoChan
-					So(&pl, ShouldResemble, t.ExpectedControllerHandleRXInfo)
+					So(proto.Equal(&pl, t.ExpectedControllerHandleRXInfo), ShouldBeTrue)
 				})
 			} else {
 				So(config.C.NetworkController.Client.(*test.NetworkControllerClient).HandleRXInfoChan, ShouldHaveLength, 0)
@@ -2183,7 +2289,7 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 				Convey("Then the expected rx-payloads are received by the application-server", func() {
 					So(asClient.HandleDataUpChan, ShouldHaveLength, 1)
 					req := <-asClient.HandleDataUpChan
-					So(&req, ShouldResemble, t.ExpectedASHandleDataUp)
+					So(proto.Equal(&req, t.ExpectedASHandleDataUp), ShouldBeTrue)
 				})
 			} else {
 				So(asClient.HandleDataUpChan, ShouldHaveLength, 0)
@@ -2212,18 +2318,27 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 				Convey("Then the expected downlink txinfo is used", func() {
 					So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
 					txPacket := <-config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan
-					So(&txPacket.TXInfo, ShouldResemble, t.ExpectedTXInfo)
+					if !proto.Equal(txPacket.TxInfo, t.ExpectedTXInfo) {
+						// just to see the difference, instead of "false"
+						So(txPacket.TxInfo, ShouldResemble, t.ExpectedTXInfo)
+					}
 
 					if t.ExpectedPHYPayload != nil {
-						macPL, ok := txPacket.PHYPayload.MACPayload.(*lorawan.MACPayload)
+						var phy lorawan.PHYPayload
+						So(phy.UnmarshalBinary(txPacket.PhyPayload), ShouldBeNil)
+
+						macPL, ok := phy.MACPayload.(*lorawan.MACPayload)
 						if ok {
 							if macPL.FPort != nil && *macPL.FPort == 0 {
-								So(txPacket.PHYPayload.DecryptFRMPayload(t.DeviceSession.NwkSEncKey), ShouldBeNil)
+								So(phy.DecryptFRMPayload(t.DeviceSession.NwkSEncKey), ShouldBeNil)
 							}
 						}
+						t.ExpectedPHYPayload.MIC = phy.MIC
 
-						t.ExpectedPHYPayload.MIC = txPacket.PHYPayload.MIC
-						So(&txPacket.PHYPayload, ShouldResemble, t.ExpectedPHYPayload)
+						phyB, err := t.ExpectedPHYPayload.MarshalBinary()
+						So(err, ShouldBeNil)
+
+						So(txPacket.PhyPayload, ShouldResemble, phyB)
 					}
 				})
 			} else {
@@ -2250,10 +2365,12 @@ func runUplinkTests(asClient *test.ApplicationClient, tests []uplinkTestCase) {
 
 			if t.ExpectedHandleRXPacketError == nil {
 				Convey("Then the expected RXInfoSet has been added to the node-session", func() {
+					var gatewayID lorawan.EUI64
+					copy(gatewayID[:], t.RXInfo.GatewayId)
 					ns, err := storage.GetDeviceSession(config.C.Redis.Pool, t.DeviceSession.DevEUI)
 					So(err, ShouldBeNil)
 					So(ns.UplinkGatewayHistory, ShouldResemble, map[lorawan.EUI64]storage.UplinkGatewayHistory{
-						t.RXInfo.MAC: storage.UplinkGatewayHistory{},
+						gatewayID: storage.UplinkGatewayHistory{},
 					})
 				})
 			}

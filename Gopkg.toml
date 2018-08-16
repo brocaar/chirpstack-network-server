@@ -6,12 +6,8 @@
   name = "github.com/brocaar/lorawan"
 
 [[constraint]]
-  branch = "master"
+  version = "v1.1.1"
   name = "github.com/eclipse/paho.mqtt.golang"
-
-[[constraint]]
-  name = "github.com/garyburd/redigo"
-  version = "1.4.0"
 
 # override is needed because of grpc-middleware having constraint on master branch
 [[override]]
@@ -35,12 +31,12 @@
   name = "github.com/rubenv/sql-migrate"
 
 [[constraint]]
-  branch = "master"
+  version = "3.0.0"
   name = "github.com/gofrs/uuid"
 
 [[constraint]]
   name = "github.com/sirupsen/logrus"
-  version = "1.0.4"
+  version = "1.0.6"
 
 [[constraint]]
   name = "github.com/smartystreets/goconvey"
@@ -52,18 +48,18 @@
 
 [[constraint]]
   name = "google.golang.org/grpc"
-  version = "1.9.1"
+  version = "1.14.0"
 
 [[constraint]]
-  branch = "master"
+  version = "v1.0.0"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
 
 [[constraint]]
-  branch = "master"
+  version = "0.0.3"
   name = "github.com/spf13/cobra"
 
 [[constraint]]
-  branch = "master"
+  version = "v1.1.0"
   name = "github.com/spf13/viper"
 
 [prune]
@@ -77,4 +73,8 @@
 
 [[constraint]]
   name = "github.com/stretchr/testify"
-  version = "1.2.2"
+  version = "v1.2.2"
+
+[[constraint]]
+  name = "github.com/gomodule/redigo"
+  version = "2.0.0"

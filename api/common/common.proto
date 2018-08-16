@@ -56,3 +56,34 @@ message KeyEnvelope {
     // 'Key Transport Security' section.
     bytes aes_key = 2;
 }
+
+enum LocationSource {
+    // Unknown.
+    UNKNOWN = 0;
+
+    // GPS.
+    GPS = 1;
+
+    // Manually configured.
+    CONFIG = 2;
+
+    // Geo resolver.
+    GEO_RESOLVER = 3;
+}
+
+message Location {
+    // Latitude.
+    double latitude = 1;
+
+    // Longitude.
+    double longitude = 2;
+
+    // Altitude.
+    double altitude = 3;
+
+    // Location source.
+    LocationSource source = 4;
+
+    // Accuracy (in meters).
+    uint32 accuracy = 5;
+}

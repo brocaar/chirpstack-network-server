@@ -1,18 +1,21 @@
 package uplink
 
 import (
-	"bytes"
-	"encoding/gob"
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"time"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/golang/protobuf/proto"
+	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/models"
+	"github.com/brocaar/lorawan"
 )
 
 // Templates used for generating Redis keys
@@ -29,12 +32,12 @@ const (
 // It is safe to collect the same packet received by the same gateway twice.
 // Since the underlying storage type is a set, the result will always be a
 // unique set per gateway MAC and packet MIC.
-func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packet models.RXPacket) error) error {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(rxPacket); err != nil {
-		return fmt.Errorf("encode rx packet error: %s", err)
+func collectAndCallOnce(p *redis.Pool, rxPacket gw.UplinkFrame, callback func(packet models.RXPacket) error) error {
+	b, err := proto.Marshal(&rxPacket)
+	if err != nil {
+		return errors.Wrap(err, "marshal uplink frame error")
 	}
+
 	c := p.Get()
 	defer c.Close()
 
@@ -42,13 +45,9 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 	// in case the packet is received by multiple gateways, the set will contain
 	// each packet.
 	// The text representation of the PHYPayload is used as key.
-	phyB, err := rxPacket.PHYPayload.MarshalText()
-	if err != nil {
-		return errors.Wrap(err, "marshal to text error")
-	}
-
-	key := fmt.Sprintf(CollectKeyTempl, string(phyB))
-	lockKey := fmt.Sprintf(CollectLockKeyTempl, string(phyB))
+	phyKey := hex.EncodeToString(rxPacket.PhyPayload)
+	key := fmt.Sprintf(CollectKeyTempl, phyKey)
+	lockKey := fmt.Sprintf(CollectLockKeyTempl, phyKey)
 
 	// this way we can set a really low DeduplicationDelay for testing, without
 	// the risk that the set already expired in redis on read
@@ -58,11 +57,11 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 	}
 
 	c.Send("MULTI")
-	c.Send("SADD", key, buf.Bytes())
+	c.Send("SADD", key, b)
 	c.Send("PEXPIRE", key, int64(deduplicationTTL)/int64(time.Millisecond))
 	_, err = c.Do("EXEC")
 	if err != nil {
-		return fmt.Errorf("add rx packet to collect set error: %s", err)
+		return errors.Wrap(err, "add uplink frame to set error")
 	}
 
 	// acquire a lock on processing this packet
@@ -73,7 +72,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 			// so there is nothing to do anymore :-)
 			return nil
 		}
-		return fmt.Errorf("acquire lock error: %s", err)
+		return errors.Wrap(err, "acquire deduplication lock error")
 	}
 
 	// wait the configured amount of time, more packets might be received
@@ -83,41 +82,48 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.RXPacket, callback func(packe
 	// collect all packets from the set
 	payloads, err := redis.ByteSlices(c.Do("SMEMBERS", key))
 	if err != nil {
-		return fmt.Errorf("get collect set members error: %s", err)
+		return errors.Wrap(err, "get deduplication set members error")
 	}
 	if len(payloads) == 0 {
 		return errors.New("zero items in collect set")
 	}
 
 	var out models.RXPacket
-	for _, b := range payloads {
-		var packet gw.RXPacket
-		if err := gob.NewDecoder(bytes.NewReader(b)).Decode(&packet); err != nil {
-			return errors.Wrap(err, "decode rx packet error")
+	for i, b := range payloads {
+		var uplinkFrame gw.UplinkFrame
+		if err := proto.Unmarshal(b, &uplinkFrame); err != nil {
+			return errors.Wrap(err, "unmarshal uplink frame error")
 		}
 
-		out.PHYPayload = packet.PHYPayload
-		out.TXInfo = models.TXInfo{
-			Frequency: packet.RXInfo.Frequency,
-			DataRate:  packet.RXInfo.DataRate,
-			CodeRate:  packet.RXInfo.CodeRate,
+		if uplinkFrame.TxInfo == nil {
+			log.Warning("tx-info of uplink frame is empty, skipping")
+			continue
 		}
 
-		out.RXInfoSet = append(out.RXInfoSet, models.RXInfo{
-			MAC:               packet.RXInfo.MAC,
-			Time:              packet.RXInfo.Time,
-			TimeSinceGPSEpoch: packet.RXInfo.TimeSinceGPSEpoch,
-			Timestamp:         packet.RXInfo.Timestamp,
-			RSSI:              packet.RXInfo.RSSI,
-			LoRaSNR:           packet.RXInfo.LoRaSNR,
-			Board:             packet.RXInfo.Board,
-			Antenna:           packet.RXInfo.Antenna,
-			RFChain:           packet.RXInfo.RFChain,
-			Channel:           packet.RXInfo.Channel,
-		})
+		if uplinkFrame.RxInfo == nil {
+			log.Warning("rx-info of uplink frame is empty, skipping")
+			continue
+		}
 
+		if i == 0 {
+			var phy lorawan.PHYPayload
+			if err := phy.UnmarshalBinary(uplinkFrame.PhyPayload); err != nil {
+				return errors.Wrap(err, "unmarshal phypayload error")
+			}
+
+			out.PHYPayload = phy
+
+			dr, err := helpers.GetDataRateIndex(true, uplinkFrame.TxInfo, config.C.NetworkServer.Band.Band)
+			if err != nil {
+				return errors.Wrap(err, "get data-rate index error")
+			}
+			out.DR = dr
+		}
+
+		out.TXInfo = uplinkFrame.TxInfo
+		out.RXInfoSet = append(out.RXInfoSet, uplinkFrame.RxInfo)
 	}
 
-	sort.Sort(out.RXInfoSet)
+	sort.Sort(models.BySignalStrength(out.RXInfoSet))
 	return callback(out)
 }

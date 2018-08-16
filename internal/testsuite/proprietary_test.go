@@ -22,14 +22,15 @@ import (
 type sendProprietaryPayloadTestCase struct {
 	Name                          string
 	SendProprietaryPayloadRequest ns.SendProprietaryPayloadRequest
-	ExpectedTXInfo                gw.TXInfo
+	ExpectedTXInfo                gw.DownlinkTXInfo
 	ExpectedPHYPayload            lorawan.PHYPayload
 }
 
 type uplinkProprietaryPHYPayloadTestCase struct {
 	Name       string
 	PHYPayload lorawan.PHYPayload
-	RXInfo     gw.RXInfo
+	RXInfo     gw.UplinkRXInfo
+	TXInfo     gw.UplinkTXInfo
 
 	ExpectedApplicationHandleProprietaryUp *as.HandleProprietaryUplinkRequest
 }
@@ -49,10 +50,6 @@ func TestSendProprietaryPayloadScenarios(t *testing.T) {
 		api := api.NewNetworkServerAPI()
 
 		Convey("Given a set of send proprietary payload tests", func() {
-			trueBool := true
-			dr5, err := config.C.NetworkServer.Band.Band.GetDataRate(5)
-			So(err, ShouldBeNil)
-
 			tests := []sendProprietaryPayloadTestCase{
 				{
 					Name: "send proprietary payload",
@@ -64,14 +61,20 @@ func TestSendProprietaryPayloadScenarios(t *testing.T) {
 						Frequency:             868100000,
 						Dr:                    5,
 					},
-					ExpectedTXInfo: gw.TXInfo{
-						MAC:         lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
+					ExpectedTXInfo: gw.DownlinkTXInfo{
+						GatewayId:   []byte{8, 7, 6, 5, 4, 3, 2, 1},
 						Immediately: true,
 						Frequency:   868100000,
 						Power:       14,
-						DataRate:    dr5,
-						CodeRate:    "4/5",
-						IPol:        &trueBool,
+						Modulation:  commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       7,
+								CodeRate:              "4/5",
+								PolarizationInversion: true,
+							},
+						},
 					},
 					ExpectedPHYPayload: lorawan.PHYPayload{
 						MHDR: lorawan.MHDR{
@@ -92,8 +95,12 @@ func TestSendProprietaryPayloadScenarios(t *testing.T) {
 					Convey("Then the expected frame was sent", func() {
 						So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
 						txPacket := <-config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan
-						So(txPacket.TXInfo, ShouldResemble, t.ExpectedTXInfo)
-						So(txPacket.PHYPayload, ShouldResemble, t.ExpectedPHYPayload)
+
+						var phy lorawan.PHYPayload
+						So(phy.UnmarshalBinary(txPacket.PhyPayload), ShouldBeNil)
+
+						So(txPacket.TxInfo, ShouldResemble, &t.ExpectedTXInfo)
+						So(phy, ShouldResemble, t.ExpectedPHYPayload)
 					})
 				})
 			}
@@ -134,9 +141,6 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 		So(storage.CreateGateway(config.C.PostgreSQL.DB, &g), ShouldBeNil)
 
 		Convey("Given a set of testcases", func() {
-			dr0, err := config.C.NetworkServer.Band.Band.GetDataRate(0)
-			So(err, ShouldBeNil)
-
 			tests := []uplinkProprietaryPHYPayloadTestCase{
 				{
 					Name: "Uplink proprietary payload",
@@ -148,14 +152,22 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 						MACPayload: &lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}},
 						MIC:        lorawan.MIC{5, 6, 7, 8},
 					},
-					RXInfo: gw.RXInfo{
-						MAC:       lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+					TXInfo: gw.UplinkTXInfo{
+						Frequency:  868100000,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.UplinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:       125,
+								CodeRate:        "4/5",
+								SpreadingFactor: 12,
+							},
+						},
+					},
+					RXInfo: gw.UplinkRXInfo{
+						GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 						Timestamp: 12345,
-						Frequency: 868100000,
-						CodeRate:  "4/5",
-						RSSI:      -10,
-						LoRaSNR:   5,
-						DataRate:  dr0,
+						Rssi:      -10,
+						LoraSnr:   5,
 					},
 					ExpectedApplicationHandleProprietaryUp: &as.HandleProprietaryUplinkRequest{
 						MacPayload: []byte{1, 2, 3, 4},
@@ -176,7 +188,8 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 								GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 								Rssi:      -10,
 								LoraSnr:   5,
-								Location: &gw.Location{
+								Timestamp: 12345,
+								Location: &commonPB.Location{
 									Latitude:  1.1234,
 									Longitude: 2.345,
 									Altitude:  10,
@@ -189,15 +202,25 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 
 			for i, t := range tests {
 				Convey(fmt.Sprintf("Testing: %s [%d]", t.Name, i), func() {
-					rxPacket := gw.RXPacket{
-						RXInfo:     t.RXInfo,
-						PHYPayload: t.PHYPayload,
+					phyB, err := t.PHYPayload.MarshalBinary()
+					So(err, ShouldBeNil)
+
+					rxPacket := gw.UplinkFrame{
+						PhyPayload: phyB,
+						TxInfo:     &t.TXInfo,
+						RxInfo:     &t.RXInfo,
 					}
 					So(uplink.HandleRXPacket(rxPacket), ShouldBeNil)
 
 					if t.ExpectedApplicationHandleProprietaryUp != nil {
 						Convey("Then HandleProprietaryUp was called with the expected data", func() {
 							req := <-asClient.HandleProprietaryUpChan
+							req.TxInfo.XXX_sizecache = 0
+							modInfo := req.TxInfo.GetLoraModulationInfo()
+							modInfo.XXX_sizecache = 0
+							for i := range req.RxInfo {
+								req.RxInfo[i].XXX_sizecache = 0
+							}
 							So(&req, ShouldResemble, t.ExpectedApplicationHandleProprietaryUp)
 						})
 					}

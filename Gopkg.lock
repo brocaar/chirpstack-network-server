@@ -30,15 +30,15 @@
   version = "v1.1.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:098333c9b1bcb5fe6b4e97698ec6ff89dc6840efbe6083002fdda773c82676db"
+  digest = "1:c8763c19d97a782fcd2ed46e0f5eae9383b2bff93bc18816e039d9f32d4c2efd"
   name = "github.com/eclipse/paho.mqtt.golang"
   packages = [
     ".",
     "packets",
   ]
   pruneopts = "NUT"
-  revision = "88c4622b8e24c52f64a0caaa28e40b91629bb6e6"
+  revision = "36d01c2b4cbeb3d2a12063e4880ce30800af9560"
+  version = "v1.1.1"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
@@ -60,12 +60,12 @@
   version = "v1.6.0"
 
 [[projects]]
-  branch = "master"
   digest = "1:c85dc5b247d8d2646a3061054820e20195530690c8dfbca620db3e0ec58ba236"
   name = "github.com/gofrs/uuid"
   packages = ["."]
   pruneopts = "NUT"
   revision = "c52a24014454cb81a53adfe807a68f6a20b49d74"
+  version = "v3.0.0"
 
 [[projects]]
   digest = "1:5aa861fab3707e89eb00c48826a80706de5c52cc7a5fc5688a9ba422c48de44e"
@@ -85,6 +85,17 @@
   version = "v1.1.0"
 
 [[projects]]
+  digest = "1:ddf8e2ddc9ad3842eb15d70c60f793d41914a62d2d666171ce0e5ab593637a8f"
+  name = "github.com/gomodule/redigo"
+  packages = [
+    "internal",
+    "redis",
+  ]
+  pruneopts = "NUT"
+  revision = "9c11da706d9b7902c6da69c592f75637793fe121"
+  version = "v2.0.0"
+
+[[projects]]
   branch = "master"
   digest = "1:f14d1b50e0075fb00177f12a96dd7addf93d1e2883c25befd17285b779549795"
   name = "github.com/gopherjs/gopherjs"
@@ -93,7 +104,6 @@
   revision = "0892b62f0d9fb5857760c3cfca837207185117ee"
 
 [[projects]]
-  branch = "master"
   digest = "1:b22d7f52906bc8aad9590edbec810c1dd2606d9f2488e89a5b6bd9391a58e60c"
   name = "github.com/grpc-ecosystem/go-grpc-middleware"
   packages = [
@@ -105,7 +115,8 @@
     "tags/logrus",
   ]
   pruneopts = "NUT"
-  revision = "e9c5d9645c437ab1b204cff969a2c0fb16cd4276"
+  revision = "c250d6563d4d4c20252cd865923440e829844f4e"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -278,12 +289,12 @@
   version = "v1.2.0"
 
 [[projects]]
-  branch = "master"
   digest = "1:2c3b60fc961b7ddca4336bb7bb39146cb73ea2ad73d4afc6b4ffea05571e712a"
   name = "github.com/spf13/cobra"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "7c4570c3ebeb8129a1f7456d0908a8b676b6f9f1"
+  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
+  version = "v0.0.3"
 
 [[projects]]
   branch = "master"
@@ -302,12 +313,12 @@
   version = "v1.0.2"
 
 [[projects]]
-  branch = "master"
   digest = "1:454979540e2a1582f375a17c106cf4e11e3bcac4baffb4af23e515c87f87de13"
   name = "github.com/spf13/viper"
   packages = ["."]
   pruneopts = "NUT"
   revision = "907c19d40d9a6c9bb55f040ff4ae45271a4754b9"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:ea401d5768217268c640bfbdf50bc58780b948866e79ffac57b07e310a560510"
@@ -350,14 +361,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:24358f5adb715f92035d7a2e08f178d4cba2e44b163b06242e01efd9fdcd2372"
+  digest = "1:d62297f5b84262234ea9cecefedd2980329ac18345738f8185525d6a43434b62"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "NUT"
-  revision = "4e1fef5609515ec7a2cee7b5de30ba6d9b438cbf"
+  revision = "1c9583448a9c3aa0f9a6a5241bf73c0bd8aafded"
 
 [[projects]]
   digest = "1:a0f29009397dc27c9dc8440f0945d49e5cbb9b72d0b0fc745474d9bfdea2d9f8"
@@ -388,7 +399,7 @@
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
   pruneopts = "NUT"
-  revision = "383e8b2c3b9e36c4076b235b32537292176bae20"
+  revision = "d0a8f471bba2dbb160885b0000d814ee5d559bad"
 
 [[projects]]
   digest = "1:77ce454715387a609a4a4d97fe77d98f37d8b8fb69762784bdda6e228106f71c"
@@ -452,11 +463,13 @@
     "github.com/eclipse/paho.mqtt.golang",
     "github.com/garyburd/redigo/redis",
     "github.com/gofrs/uuid",
+    "github.com/golang/protobuf/jsonpb",
     "github.com/golang/protobuf/proto",
     "github.com/golang/protobuf/ptypes",
     "github.com/golang/protobuf/ptypes/duration",
     "github.com/golang/protobuf/ptypes/empty",
     "github.com/golang/protobuf/ptypes/timestamp",
+    "github.com/gomodule/redigo/redis",
     "github.com/grpc-ecosystem/go-grpc-middleware",
     "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus",
     "github.com/grpc-ecosystem/go-grpc-middleware/tags",

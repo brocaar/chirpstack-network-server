@@ -40,7 +40,7 @@ func (s *StatsHandler) Stop() error {
 // handleStatsPackets consumes received stats packets by the gateway.
 func handleStatsPackets(wg *sync.WaitGroup) {
 	for statsPacket := range config.C.NetworkServer.Gateway.Backend.Backend.StatsPacketChan() {
-		go func(stats gw.GatewayStatsPacket) {
+		go func(stats gw.GatewayStats) {
 			wg.Add(1)
 			defer wg.Done()
 			if err := storage.HandleGatewayStatsPacket(config.C.PostgreSQL.DB, stats); err != nil {

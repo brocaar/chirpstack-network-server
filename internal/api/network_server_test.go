@@ -873,7 +873,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			req := ns.CreateGatewayRequest{
 				Gateway: &ns.Gateway{
 					Id: []byte{1, 2, 3, 4, 5, 6, 7, 8},
-					Location: &gw.Location{
+					Location: &commonPB.Location{
 						Latitude:  1.1234,
 						Longitude: 1.1235,
 						Altitude:  15.5,
@@ -900,7 +900,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				req := ns.UpdateGatewayRequest{
 					Gateway: &ns.Gateway{
 						Id: []byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Location: &gw.Location{
+						Location: &commonPB.Location{
 							Latitude:  1.1235,
 							Longitude: 1.1236,
 							Altitude:  15.7,

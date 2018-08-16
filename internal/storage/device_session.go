@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/garyburd/redigo/redis"
 	"github.com/gofrs/uuid"
 	proto "github.com/golang/protobuf/proto"
+	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 

@@ -6,13 +6,15 @@ import (
 	"testing"
 	"time"
 
+	. "github.com/smartystreets/goconvey/convey"
+
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestCollectAndCallOnce(t *testing.T) {
@@ -81,9 +83,6 @@ func TestCollectAndCallOnce(t *testing.T) {
 					var received int
 					var called int
 
-					dr0, err := config.C.NetworkServer.Band.Band.GetDataRate(0)
-					So(err, ShouldBeNil)
-
 					cb := func(packet models.RXPacket) error {
 						called = called + 1
 						received = len(packet.RXInfoSet)
@@ -91,15 +90,21 @@ func TestCollectAndCallOnce(t *testing.T) {
 					}
 
 					var wg sync.WaitGroup
-					for _, g := range test.Gateways {
+					for gi := range test.Gateways {
+						g := test.Gateways[gi]
+						phyB, err := test.PHYPayload.MarshalBinary()
+						So(err, ShouldBeNil)
+
 						wg.Add(1)
-						packet := gw.RXPacket{
-							RXInfo: gw.RXInfo{
-								MAC:      g,
-								DataRate: dr0,
+						packet := gw.UplinkFrame{
+							RxInfo: &gw.UplinkRXInfo{
+								GatewayId: g[:],
 							},
-							PHYPayload: test.PHYPayload,
+							TxInfo:     &gw.UplinkTXInfo{},
+							PhyPayload: phyB,
 						}
+						So(helpers.SetUplinkTXInfoDataRate(packet.TxInfo, 0, config.C.NetworkServer.Band.Band), ShouldBeNil)
+
 						go func() {
 							err := collectAndCallOnce(p, packet, cb)
 							if err != nil {

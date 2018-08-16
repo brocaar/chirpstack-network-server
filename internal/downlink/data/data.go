@@ -3,8 +3,9 @@ package data
 import (
 	"crypto/rand"
 	"encoding/binary"
-	"fmt"
 	"time"
+
+	"github.com/golang/protobuf/ptypes"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -14,6 +15,7 @@ import (
 	"github.com/brocaar/loraserver/internal/channels"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
+	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -110,7 +112,7 @@ type dataContext struct {
 	DeviceSession storage.DeviceSession
 
 	// TXInfo holds the data needed for transmission.
-	TXInfo gw.TXInfo
+	TXInfo gw.DownlinkTXInfo
 
 	// DataRate holds the data-rate for transmission.
 	DataRate int
@@ -315,34 +317,32 @@ func getDataTXInfo(ctx *dataContext) error {
 }
 
 func getDataTXInfoForRX2(ctx *dataContext) error {
-	mac, err := ctx.DeviceSession.GetDownlinkGatewayMAC()
+	gatewayID, err := ctx.DeviceSession.GetDownlinkGatewayMAC()
 	if err != nil {
 		return err
 	}
 
-	dr, err := config.C.NetworkServer.Band.Band.GetDataRate(int(ctx.DeviceSession.RX2DR))
-	if err != nil {
-		return errors.Wrap(err, "get data-rate error")
+	var board, antenna uint32 = 0, 0
+
+	if ctx.RXPacket != nil && len(ctx.RXPacket.RXInfoSet) != 0 {
+		board = ctx.RXPacket.RXInfoSet[0].Board
+		antenna = ctx.RXPacket.RXInfoSet[0].Antenna
 	}
 
-	var board, antenna int = 0, 0
-
-	if ctx.RXPacket != nil {
-		rxInfo := ctx.RXPacket.RXInfoSet[0]
-		board = rxInfo.Board
-		antenna = rxInfo.Antenna
-	}
-
-	ctx.TXInfo = gw.TXInfo{
-		MAC:         mac,
+	ctx.TXInfo = gw.DownlinkTXInfo{
+		GatewayId:   gatewayID[:],
 		Immediately: true,
-		Frequency:   ctx.DeviceSession.RX2Frequency,
-		Power:       config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.DeviceSession.RX2Frequency),
-		DataRate:    dr,
-		CodeRate:    defaultCodeRate,
+		Frequency:   uint32(ctx.DeviceSession.RX2Frequency),
+		Power:       int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.DeviceSession.RX2Frequency)),
 		Board:       board,
 		Antenna:     antenna,
 	}
+
+	err = helpers.SetDownlinkTXInfoDataRate(&ctx.TXInfo, int(ctx.DeviceSession.RX2DR), config.C.NetworkServer.Band.Band)
+	if err != nil {
+		return errors.Wrap(err, "set downlink tx-info data-rate error")
+	}
+
 	ctx.DataRate = int(ctx.DeviceSession.RX2DR)
 
 	return nil
@@ -356,33 +356,31 @@ func checkBeaconLocked(ctx *dataContext) error {
 }
 
 func setTXInfoForClassB(ctx *dataContext) error {
-	mac, err := ctx.DeviceSession.GetDownlinkGatewayMAC()
+	gatewayID, err := ctx.DeviceSession.GetDownlinkGatewayMAC()
 	if err != nil {
 		return err
 	}
 
-	dr, err := config.C.NetworkServer.Band.Band.GetDataRate(ctx.DeviceSession.PingSlotDR)
-	if err != nil {
-		return errors.Wrap(err, "get data-rate error")
+	var board, antenna uint32 = 0, 0
+
+	if ctx.RXPacket != nil && len(ctx.RXPacket.RXInfoSet) != 0 {
+		board = ctx.RXPacket.RXInfoSet[0].Board
+		antenna = ctx.RXPacket.RXInfoSet[0].Antenna
 	}
 
-	var board, antenna int = 0, 0
-
-	if ctx.RXPacket != nil {
-		rxInfo := ctx.RXPacket.RXInfoSet[0]
-		board = rxInfo.Board
-		antenna = rxInfo.Antenna
-	}
-
-	ctx.TXInfo = gw.TXInfo{
-		MAC:       mac,
-		Frequency: ctx.DeviceSession.PingSlotFrequency,
-		Power:     config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.DeviceSession.PingSlotFrequency),
-		DataRate:  dr,
-		CodeRate:  defaultCodeRate,
+	ctx.TXInfo = gw.DownlinkTXInfo{
+		GatewayId: gatewayID[:],
+		Frequency: uint32(ctx.DeviceSession.PingSlotFrequency),
+		Power:     int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(ctx.DeviceSession.PingSlotFrequency))),
 		Board:     board,
 		Antenna:   antenna,
 	}
+
+	err = helpers.SetDownlinkTXInfoDataRate(&ctx.TXInfo, ctx.DeviceSession.PingSlotDR, config.C.NetworkServer.Band.Band)
+	if err != nil {
+		return errors.Wrap(err, "set downlink tx-info data-rate error")
+	}
+
 	ctx.DataRate = ctx.DeviceSession.PingSlotDR
 
 	return nil
@@ -442,15 +440,15 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 
 	// Update TXInfo with Class-B scheduling info
 	if ctx.RXPacket == nil && qi.EmitAtTimeSinceGPSEpoch != nil {
-		gwDuration := gw.Duration(*qi.EmitAtTimeSinceGPSEpoch)
-		ctx.TXInfo.TimeSinceGPSEpoch = &gwDuration
+		ctx.TXInfo.TimeSinceGpsEpoch = ptypes.DurationProto(*qi.EmitAtTimeSinceGPSEpoch)
 
 		if ctx.DeviceSession.PingSlotFrequency == 0 {
 			beaconTime := *qi.EmitAtTimeSinceGPSEpoch - (*qi.EmitAtTimeSinceGPSEpoch % (128 * time.Second))
-			ctx.TXInfo.Frequency, err = config.C.NetworkServer.Band.Band.GetPingSlotFrequency(ctx.DeviceSession.DevAddr, beaconTime)
+			freq, err := config.C.NetworkServer.Band.Band.GetPingSlotFrequency(ctx.DeviceSession.DevAddr, beaconTime)
 			if err != nil {
 				return errors.Wrap(err, "get ping-slot frequency error")
 			}
+			ctx.TXInfo.Frequency = uint32(freq)
 		}
 	}
 
@@ -772,11 +770,16 @@ func setMIC(ctx *dataContext) error {
 }
 
 func sendDataDown(ctx *dataContext) error {
+	phyB, err := ctx.PHYPayload.MarshalBinary()
+	if err != nil {
+		return errors.Wrap(err, "marshal phypayload error")
+	}
+
 	// send the packet to the gateway
-	if err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(gw.TXPacket{
-		Token:      ctx.Token,
-		TXInfo:     ctx.TXInfo,
-		PHYPayload: ctx.PHYPayload,
+	if err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(gw.DownlinkFrame{
+		Token:      uint32(ctx.Token),
+		TxInfo:     &ctx.TXInfo,
+		PhyPayload: phyB,
 	}); err != nil {
 		return errors.Wrap(err, "send tx packet to gateway error")
 	}
@@ -827,76 +830,48 @@ func checkLastDownlinkTimestamp(ctx *dataContext) error {
 	return nil
 }
 
-func getDataDownTXInfoAndDR(ds storage.DeviceSession, lastTXInfo models.TXInfo, rxInfo models.RXInfo) (gw.TXInfo, int, error) {
-	var dr int
-	txInfo := gw.TXInfo{
-		MAC:      rxInfo.MAC,
-		CodeRate: lastTXInfo.CodeRate,
-		Board:    rxInfo.Board,
-		Antenna:  rxInfo.Antenna,
+func getDataDownTXInfoAndDR(ds storage.DeviceSession, lastTXInfo *gw.UplinkTXInfo, rxInfo *gw.UplinkRXInfo) (gw.DownlinkTXInfo, int, error) {
+	txInfo := gw.DownlinkTXInfo{
+		GatewayId: rxInfo.GatewayId,
+		Board:     rxInfo.Board,
+		Antenna:   rxInfo.Antenna,
 	}
 
-	var timestamp uint32
-
-	if ds.RXWindow == storage.RX1 {
-		uplinkDR, err := config.C.NetworkServer.Band.Band.GetDataRateIndex(true, lastTXInfo.DataRate)
-		if err != nil {
-			return txInfo, 0, errors.Wrap(err, "get data-rate index error")
-		}
-
-		// get rx1 dr
-		dr, err = config.C.NetworkServer.Band.Band.GetRX1DataRateIndex(uplinkDR, int(ds.RX1DROffset))
-		if err != nil {
-			return txInfo, dr, errors.Wrap(err, "get rx1 data-rate index error")
-		}
-		txInfo.DataRate, err = config.C.NetworkServer.Band.Band.GetDataRate(dr)
-		if err != nil {
-			return txInfo, dr, errors.Wrap(err, "get data-rate error")
-		}
-
-		// get rx1 frequency
-		txInfo.Frequency, err = config.C.NetworkServer.Band.Band.GetRX1FrequencyForUplinkFrequency(lastTXInfo.Frequency)
-		if err != nil {
-			return txInfo, dr, errors.Wrap(err, "get rx1 frequency for uplink frequency error")
-		}
-
-		// get timestamp
-		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().ReceiveDelay1/time.Microsecond)
-		if ds.RXDelay > 0 {
-			timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
-		}
-	} else if ds.RXWindow == storage.RX2 {
-		var err error
-		txInfo.DataRate, err = config.C.NetworkServer.Band.Band.GetDataRate(int(ds.RX2DR))
-		if err != nil {
-			return txInfo, 0, fmt.Errorf("get data-rate error")
-		}
-
-		// rx2 frequency
-		txInfo.Frequency = ds.RX2Frequency
-
-		// rx2 timestamp (rx1 + 1 sec)
-		timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().ReceiveDelay1/time.Microsecond)
-		if ds.RXDelay > 0 {
-			timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
-		}
-		timestamp = timestamp + uint32(time.Second/time.Microsecond)
-	} else {
-		return txInfo, dr, fmt.Errorf("unknown RXWindow option %d", ds.RXWindow)
+	uplinkDR, err := helpers.GetDataRateIndex(true, lastTXInfo, config.C.NetworkServer.Band.Band)
+	if err != nil {
+		return txInfo, 0, errors.Wrap(err, "get data-rate index error")
 	}
 
-	txInfo.Timestamp = &timestamp
+	// get rx1 dr
+	dr, err := config.C.NetworkServer.Band.Band.GetRX1DataRateIndex(uplinkDR, int(ds.RX1DROffset))
+	if err != nil {
+		return txInfo, dr, errors.Wrap(err, "get rx1 data-rate index error")
+	}
+
+	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, dr, config.C.NetworkServer.Band.Band)
+	if err != nil {
+		return txInfo, dr, errors.Wrap(err, "set dowlink tx-info data-rate error")
+	}
+
+	// get rx1 frequency
+	freq, err := config.C.NetworkServer.Band.Band.GetRX1FrequencyForUplinkFrequency(int(lastTXInfo.Frequency))
+	if err != nil {
+		return txInfo, dr, errors.Wrap(err, "get rx1 frequency for uplink frequency error")
+	}
+	txInfo.Frequency = uint32(freq)
+
+	// get timestamp
+	timestamp := rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().ReceiveDelay1/time.Microsecond)
+	if ds.RXDelay > 0 {
+		timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
+	}
+
+	txInfo.Timestamp = timestamp
 
 	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
-		txInfo.Power = config.C.NetworkServer.NetworkSettings.DownlinkTXPower
+		txInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
 	} else {
-		txInfo.Power = config.C.NetworkServer.Band.Band.GetDownlinkTXPower(txInfo.Frequency)
-	}
-
-	// when we received a FSK modulated uplink, and reply using LoRa modulation
-	// we need to set the CodeRate as this is not set on the FSK uplink.
-	if txInfo.DataRate.Modulation == band.LoRaModulation && txInfo.CodeRate == "" {
-		txInfo.CodeRate = defaultCodeRate
+		txInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(txInfo.Frequency)))
 	}
 
 	return txInfo, dr, nil
@@ -904,12 +879,16 @@ func getDataDownTXInfoAndDR(ds storage.DeviceSession, lastTXInfo models.TXInfo, 
 
 // this is called after decrypting the mac-command in case of LoRaWAN 1.1
 func logDownlinkFrameForDevice(ctx *dataContext) error {
-	downlinkFrame, err := framelog.CreateDownlinkFrame(ctx.Token, ctx.PHYPayload, ctx.TXInfo)
+	phyB, err := ctx.PHYPayload.MarshalBinary()
 	if err != nil {
-		return errors.Wrap(err, "create downlink frame error")
+		return errors.Wrap(err, "marshal phypayload error")
 	}
 
-	if err := framelog.LogDownlinkFrameForDevEUI(ctx.DeviceSession.DevEUI, downlinkFrame); err != nil {
+	if err := framelog.LogDownlinkFrameForDevEUI(ctx.DeviceSession.DevEUI, gw.DownlinkFrame{
+		Token:      uint32(ctx.Token),
+		TxInfo:     &ctx.TXInfo,
+		PhyPayload: phyB,
+	}); err != nil {
 		log.WithError(err).Error("log downlink frame for device error")
 	}
 
@@ -918,12 +897,16 @@ func logDownlinkFrameForDevice(ctx *dataContext) error {
 
 // this is called before decrypting the mac-commands (as the key is unknown within the context of a gateway)
 func logDownlinkFrameForGateway(ctx *dataContext) error {
-	downlinkFrame, err := framelog.CreateDownlinkFrame(ctx.Token, ctx.PHYPayload, ctx.TXInfo)
+	phyB, err := ctx.PHYPayload.MarshalBinary()
 	if err != nil {
-		return errors.Wrap(err, "create downlink frame error")
+		return errors.Wrap(err, "marshal phypayload error")
 	}
 
-	if err := framelog.LogDownlinkFrameForGateway(downlinkFrame); err != nil {
+	if err := framelog.LogDownlinkFrameForGateway(gw.DownlinkFrame{
+		Token:      uint32(ctx.Token),
+		TxInfo:     &ctx.TXInfo,
+		PhyPayload: phyB,
+	}); err != nil {
 		log.WithError(err).Error("log downlink frame for gateway error")
 	}
 

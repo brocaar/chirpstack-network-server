@@ -3,6 +3,7 @@ package maccommand
 import (
 	"fmt"
 
+	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -15,12 +16,21 @@ func handleLinkCheckReq(ds *storage.DeviceSession, rxPacket models.RXPacket) ([]
 		return nil, errors.New("rx info-set contains zero items")
 	}
 
-	requiredSNR, ok := config.SpreadFactorToRequiredSNRTable[rxPacket.TXInfo.DataRate.SpreadFactor]
-	if !ok {
-		return nil, fmt.Errorf("sf %d not in sf to required snr table", rxPacket.TXInfo.DataRate.SpreadFactor)
+	if rxPacket.TXInfo.Modulation != common.Modulation_LORA {
+		return nil, fmt.Errorf("modulation %s not supported for LinkCheckReq mac-command", rxPacket.TXInfo.Modulation)
 	}
 
-	margin := rxPacket.RXInfoSet[0].LoRaSNR - requiredSNR
+	modInfo := rxPacket.TXInfo.GetLoraModulationInfo()
+	if modInfo == nil {
+		return nil, errors.New("lora_modulation_info must not be nil")
+	}
+
+	requiredSNR, ok := config.SpreadFactorToRequiredSNRTable[int(modInfo.SpreadingFactor)]
+	if !ok {
+		return nil, fmt.Errorf("sf %d not in sf to required snr table", modInfo.SpreadingFactor)
+	}
+
+	margin := rxPacket.RXInfoSet[0].LoraSnr - requiredSNR
 	if margin < 0 {
 		margin = 0
 	}

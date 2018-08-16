@@ -10,12 +10,12 @@ import (
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/common"
-	gwPB "github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/config"
 	datadown "github.com/brocaar/loraserver/internal/downlink/data"
 	"github.com/brocaar/loraserver/internal/downlink/data/classb"
 	"github.com/brocaar/loraserver/internal/framelog"
+	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -83,14 +83,14 @@ func setContextFromDataPHYPayload(ctx *dataContext) error {
 }
 
 func getDeviceSessionForPHYPayload(ctx *dataContext) error {
-	txDR, err := config.C.NetworkServer.Band.Band.GetDataRateIndex(true, ctx.RXPacket.TXInfo.DataRate)
+	txDR, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, config.C.NetworkServer.Band.Band)
 	if err != nil {
 		return errors.Wrap(err, "get data-rate index error")
 	}
 
 	var txCh int
 	for _, defaultChannel := range []bool{true, false} {
-		i, err := config.C.NetworkServer.Band.Band.GetUplinkChannelIndex(ctx.RXPacket.TXInfo.Frequency, defaultChannel)
+		i, err := config.C.NetworkServer.Band.Band.GetUplinkChannelIndex(int(ctx.RXPacket.TXInfo.Frequency), defaultChannel)
 		if err != nil {
 			continue
 		}
@@ -157,7 +157,7 @@ func setADR(ctx *dataContext) error {
 }
 
 func setUplinkDataRate(ctx *dataContext) error {
-	currentDR, err := config.C.NetworkServer.Band.Band.GetDataRateIndex(true, ctx.RXPacket.TXInfo.DataRate)
+	currentDR, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, config.C.NetworkServer.Band.Band)
 	if err != nil {
 		return errors.Wrap(err, "get data-rate error")
 	}
@@ -184,8 +184,8 @@ func appendMetaDataToUplinkHistory(ctx *dataContext) error {
 	for i, rxInfo := range ctx.RXPacket.RXInfoSet {
 		// as the default value is 0 and the LoRaSNR can be negative, we always
 		// set it when i == 0 (the first item from the slice)
-		if i == 0 || rxInfo.LoRaSNR > maxSNR {
-			maxSNR = rxInfo.LoRaSNR
+		if i == 0 || rxInfo.LoraSnr > maxSNR {
+			maxSNR = rxInfo.LoraSnr
 		}
 	}
 
@@ -329,10 +329,10 @@ func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 		JoinEui: ctx.DeviceSession.JoinEUI[:],
 		FCnt:    ctx.MACPayload.FHDR.FCnt,
 		Adr:     ctx.MACPayload.FHDR.FCtrl.ADR,
-		TxInfo:  ctx.RXPacket.GetGWUplinkTXInfo(),
+		TxInfo:  ctx.RXPacket.TXInfo,
 	}
 
-	dr, err := config.C.NetworkServer.Band.Band.GetDataRateIndex(true, ctx.RXPacket.TXInfo.DataRate)
+	dr, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, config.C.NetworkServer.Band.Band)
 	if err != nil {
 		errors.Wrap(err, "get data-rate error")
 	}
@@ -352,7 +352,7 @@ func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 
 	if ctx.ServiceProfile.AddGWMetadata {
 		var macs []lorawan.EUI64
-		publishDataUpReq.RxInfo = ctx.RXPacket.GetGWUplinkRXInfoSet()
+		publishDataUpReq.RxInfo = ctx.RXPacket.RXInfoSet
 
 		// get gateway info
 		for i := range publishDataUpReq.RxInfo {
@@ -373,7 +373,7 @@ func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 			copy(mac[:], publishDataUpReq.RxInfo[i].GatewayId)
 
 			if gw, ok := gws[mac]; ok {
-				publishDataUpReq.RxInfo[i].Location = &gwPB.Location{
+				publishDataUpReq.RxInfo[i].Location = &common.Location{
 					Latitude:  gw.Location.Latitude,
 					Longitude: gw.Location.Longitude,
 					Altitude:  gw.Altitude,
@@ -410,8 +410,9 @@ func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 
 func setLastRXInfoSet(ctx *dataContext) error {
 	if len(ctx.RXPacket.RXInfoSet) != 0 {
+		gatewayID := helpers.GetGatewayID(ctx.RXPacket.RXInfoSet[0])
 		ctx.DeviceSession.UplinkGatewayHistory = map[lorawan.EUI64]storage.UplinkGatewayHistory{
-			ctx.RXPacket.RXInfoSet[0].MAC: storage.UplinkGatewayHistory{},
+			gatewayID: storage.UplinkGatewayHistory{},
 		}
 	}
 	return nil
@@ -487,8 +488,8 @@ func handleDownlink(ctx *dataContext) error {
 func sendRXInfoPayload(ds storage.DeviceSession, rxPacket models.RXPacket) error {
 	rxInfoReq := nc.HandleUplinkMetaDataRequest{
 		DevEui: ds.DevEUI[:],
-		TxInfo: rxPacket.GetGWUplinkTXInfo(),
-		RxInfo: rxPacket.GetGWUplinkRXInfoSet(),
+		TxInfo: rxPacket.TXInfo,
+		RxInfo: rxPacket.RXInfoSet,
 	}
 
 	_, err := config.C.NetworkController.Client.HandleUplinkMetaData(context.Background(), &rxInfoReq)

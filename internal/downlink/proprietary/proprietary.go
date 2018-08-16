@@ -8,6 +8,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/lorawan"
 )
 
@@ -59,11 +60,6 @@ func setToken(ctx *proprietaryContext) error {
 }
 
 func sendProprietaryDown(ctx *proprietaryContext) error {
-	dr, err := config.C.NetworkServer.Band.Band.GetDataRate(ctx.DR)
-	if err != nil {
-		return errors.Wrap(err, "get data-rate error")
-	}
-
 	var txPower int
 	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
 		txPower = config.C.NetworkServer.NetworkSettings.DownlinkTXPower
@@ -79,22 +75,28 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 		MACPayload: &lorawan.DataPayload{Bytes: ctx.MACPayload},
 		MIC:        ctx.MIC,
 	}
+	phyB, err := phy.MarshalBinary()
+	if err != nil {
+		return errors.Wrap(err, "marshal phypayload error")
+	}
 
 	for _, mac := range ctx.GatewayMACs {
-		txInfo := gw.TXInfo{
-			MAC:         mac,
+		txInfo := gw.DownlinkTXInfo{
+			GatewayId:   mac[:],
 			Immediately: true,
-			Frequency:   ctx.Frequency,
-			Power:       txPower,
-			DataRate:    dr,
-			CodeRate:    defaultCodeRate,
-			IPol:        &ctx.IPol,
+			Frequency:   uint32(ctx.Frequency),
+			Power:       int32(txPower),
 		}
 
-		if err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(gw.TXPacket{
-			Token:      ctx.Token,
-			TXInfo:     txInfo,
-			PHYPayload: phy,
+		err = helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.DR, config.C.NetworkServer.Band.Band)
+		if err != nil {
+			return errors.Wrap(err, "set downlink tx-info data-rate error")
+		}
+
+		if err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(gw.DownlinkFrame{
+			Token:      uint32(ctx.Token),
+			TxInfo:     &txInfo,
+			PhyPayload: phyB,
 		}); err != nil {
 			return errors.Wrap(err, "send tx packet to gateway error")
 		}

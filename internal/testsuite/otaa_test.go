@@ -7,9 +7,11 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
+	commonPB "github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
@@ -20,8 +22,9 @@ import (
 
 type otaaTestCase struct {
 	BeforeFunc               func(*otaaTestCase) error
-	Name                     string                     // name of the test
-	RXInfo                   gw.RXInfo                  // rx-info of the "received" packet
+	Name                     string // name of the test
+	TXInfo                   gw.UplinkTXInfo
+	RXInfo                   gw.UplinkRXInfo            // rx-info of the "received" packet
 	PHYPayload               lorawan.PHYPayload         // received PHYPayload
 	JoinServerJoinReqError   error                      // error returned by the join-req method
 	JoinServerJoinAnsPayload backend.JoinAnsPayload     // join-server join-ans payload
@@ -32,7 +35,7 @@ type otaaTestCase struct {
 
 	ExpectedError          error                  // expected error
 	ExpectedJoinReqPayload backend.JoinReqPayload // expected join-request request
-	ExpectedTXInfo         gw.TXInfo              // expected tx-info
+	ExpectedTXInfo         gw.DownlinkTXInfo      // expected tx-info
 	ExpectedPHYPayload     lorawan.PHYPayload     // expected (plaintext) PHYPayload
 	ExpectedDeviceSession  storage.DeviceSession  // expected node-session
 }
@@ -86,13 +89,15 @@ func TestOTAAScenarios(t *testing.T) {
 		c0, err := config.C.NetworkServer.Band.Band.GetDownlinkChannel(0)
 		So(err, ShouldBeNil)
 
-		c0MinDR, err := config.C.NetworkServer.Band.Band.GetDataRate(c0.MinDR)
-		So(err, ShouldBeNil)
-
-		rxInfo := gw.RXInfo{
-			Frequency: c0.Frequency,
-			DataRate:  c0MinDR,
+		rxInfo := gw.UplinkRXInfo{
+			GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 		}
+
+		txInfo := gw.UplinkTXInfo{
+			Frequency: uint32(c0.Frequency),
+		}
+
+		So(helpers.SetUplinkTXInfoDataRate(&txInfo, 0, config.C.NetworkServer.Band.Band), ShouldBeNil)
 
 		jrPayload := lorawan.PHYPayload{
 			MHDR: lorawan.MHDR{
@@ -145,12 +150,11 @@ func TestOTAAScenarios(t *testing.T) {
 		So(jaPHY.DecryptJoinAcceptPayload(appKey), ShouldBeNil)
 
 		Convey("Given a set of test-scenarios", func() {
-			timestamp := rxInfo.Timestamp + 5000000
-
 			tests := []otaaTestCase{
 				{
 					Name:                   "join-server returns an error",
 					RXInfo:                 rxInfo,
+					TXInfo:                 txInfo,
 					PHYPayload:             jrPayload,
 					JoinServerJoinReqError: errors.New("invalid deveui"),
 					ExpectedError:          errors.New("join-request to join-server error: invalid deveui"),
@@ -158,6 +162,7 @@ func TestOTAAScenarios(t *testing.T) {
 				{
 					Name:       "device alreay activated with dev-nonce",
 					RXInfo:     rxInfo,
+					TXInfo:     txInfo,
 					PHYPayload: jrPayload,
 					DeviceActivations: []storage.DeviceActivation{
 						{
@@ -176,6 +181,7 @@ func TestOTAAScenarios(t *testing.T) {
 				{
 					Name:       "join-request accepted using (NwkSKey)",
 					RXInfo:     rxInfo,
+					TXInfo:     txInfo,
 					PHYPayload: jrPayload,
 					AppKey:     appKey,
 					JoinServerJoinAnsPayload: backend.JoinAnsPayload{
@@ -215,13 +221,20 @@ func TestOTAAScenarios(t *testing.T) {
 						},
 						RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
 					},
-					ExpectedTXInfo: gw.TXInfo{
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
-						CodeRate:  rxInfo.CodeRate,
+					ExpectedTXInfo: gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Timestamp:  rxInfo.Timestamp + 5000000,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								CodeRate:              "4/5",
+								PolarizationInversion: true,
+							},
+						},
 					},
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
@@ -252,6 +265,7 @@ func TestOTAAScenarios(t *testing.T) {
 					},
 					Name:       "join-request accepted (SNwkSIntKey, FNwkSIntKey, NwkSEncKey)",
 					RXInfo:     rxInfo,
+					TXInfo:     txInfo,
 					PHYPayload: jrPayload,
 					AppKey:     appKey,
 					JoinServerJoinAnsPayload: backend.JoinAnsPayload{
@@ -298,13 +312,20 @@ func TestOTAAScenarios(t *testing.T) {
 						},
 						RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
 					},
-					ExpectedTXInfo: gw.TXInfo{
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
-						CodeRate:  rxInfo.CodeRate,
+					ExpectedTXInfo: gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Timestamp:  rxInfo.Timestamp + 5000000,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								CodeRate:              "4/5",
+								PolarizationInversion: true,
+							},
+						},
 					},
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
@@ -344,6 +365,7 @@ func TestOTAAScenarios(t *testing.T) {
 						return storage.UpdateDeviceProfile(db, &dp)
 					},
 					Name:       "join-request accepted (SNwkSIntKey, FNwkSIntKey, NwkSEncKey with KEK)",
+					TXInfo:     txInfo,
 					RXInfo:     rxInfo,
 					PHYPayload: jrPayload,
 					AppKey:     appKey,
@@ -395,13 +417,20 @@ func TestOTAAScenarios(t *testing.T) {
 						},
 						RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
 					},
-					ExpectedTXInfo: gw.TXInfo{
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
-						CodeRate:  rxInfo.CodeRate,
+					ExpectedTXInfo: gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Timestamp:  rxInfo.Timestamp + 5000000,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								CodeRate:              "4/5",
+								PolarizationInversion: true,
+							},
+						},
 					},
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
@@ -433,6 +462,7 @@ func TestOTAAScenarios(t *testing.T) {
 					},
 					Name:       "join-request accepted + skip fcnt check",
 					RXInfo:     rxInfo,
+					TXInfo:     txInfo,
 					PHYPayload: jrPayload,
 					AppKey:     appKey,
 					JoinServerJoinAnsPayload: backend.JoinAnsPayload{
@@ -461,13 +491,20 @@ func TestOTAAScenarios(t *testing.T) {
 						},
 						RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
 					},
-					ExpectedTXInfo: gw.TXInfo{
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
-						CodeRate:  rxInfo.CodeRate,
+					ExpectedTXInfo: gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Timestamp:  rxInfo.Timestamp + 5000000,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								CodeRate:              "4/5",
+								PolarizationInversion: true,
+							},
+						},
 					},
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
@@ -511,6 +548,7 @@ func TestOTAAScenarios(t *testing.T) {
 					},
 					Name:          "join-request using rx1 and CFList",
 					RXInfo:        rxInfo,
+					TXInfo:        txInfo,
 					PHYPayload:    jrPayload,
 					AppKey:        appKey,
 					ExtraChannels: []int{868600000, 868700000, 868800000},
@@ -549,13 +587,20 @@ func TestOTAAScenarios(t *testing.T) {
 						RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
 						// CFList is set in the BeforeFunc
 					},
-					ExpectedTXInfo: gw.TXInfo{
-						MAC:       rxInfo.MAC,
-						Timestamp: &timestamp,
-						Frequency: rxInfo.Frequency,
-						Power:     14,
-						DataRate:  rxInfo.DataRate,
-						CodeRate:  rxInfo.CodeRate,
+					ExpectedTXInfo: gw.DownlinkTXInfo{
+						GatewayId:  rxInfo.GatewayId,
+						Timestamp:  rxInfo.Timestamp + 5000000,
+						Frequency:  txInfo.Frequency,
+						Power:      14,
+						Modulation: commonPB.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								Bandwidth:             125,
+								SpreadingFactor:       12,
+								CodeRate:              "4/5",
+								PolarizationInversion: true,
+							},
+						},
 					},
 					ExpectedPHYPayload: jaPHY,
 					ExpectedDeviceSession: storage.DeviceSession{
@@ -616,9 +661,13 @@ func runOTAATests(asClient *test.ApplicationClient, jsClient *test.JoinServerCli
 				So(storage.CreateDeviceQueueItem(config.C.PostgreSQL.DB, &qi), ShouldBeNil)
 			}
 
-			err = uplink.HandleRXPacket(gw.RXPacket{
-				RXInfo:     t.RXInfo,
-				PHYPayload: t.PHYPayload,
+			phyB, err := t.PHYPayload.MarshalBinary()
+			So(err, ShouldBeNil)
+
+			err = uplink.HandleRXPacket(gw.UplinkFrame{
+				RxInfo:     &t.RXInfo,
+				TxInfo:     &t.TXInfo,
+				PhyPayload: phyB,
 			})
 			if err != nil {
 				if t.ExpectedError == nil {
@@ -653,16 +702,22 @@ func runOTAATests(asClient *test.ApplicationClient, jsClient *test.JoinServerCli
 				So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
 				txPacket := <-config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan
 
+				txPacket.TxInfo.XXX_sizecache = 0
+				modInfo := txPacket.TxInfo.GetLoraModulationInfo()
+				modInfo.XXX_sizecache = 0
+
 				So(txPacket.Token, ShouldNotEqual, 0)
-				So(txPacket.TXInfo, ShouldResemble, t.ExpectedTXInfo)
+				So(txPacket.TxInfo, ShouldResemble, &t.ExpectedTXInfo)
 			})
 
 			Convey("Then the expected PHYPayload was sent", func() {
 				So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
 				txPacket := <-config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan
 
-				So(txPacket.PHYPayload.DecryptJoinAcceptPayload(t.AppKey), ShouldBeNil)
-				So(txPacket.PHYPayload, ShouldResemble, t.ExpectedPHYPayload)
+				var phy lorawan.PHYPayload
+				So(phy.UnmarshalBinary(txPacket.PhyPayload), ShouldBeNil)
+				So(phy.DecryptJoinAcceptPayload(t.AppKey), ShouldBeNil)
+				So(phy, ShouldResemble, t.ExpectedPHYPayload)
 			})
 
 			Convey("Then the expected device-session was created", func() {

@@ -4,41 +4,41 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/stretchr/testify/require"
+
+	"github.com/brocaar/loraserver/api/gw"
 )
 
 func TestRXInfoSet(t *testing.T) {
-	Convey("Given an unsorted RXInfoSet slice", t, func() {
-		rxInfoSet := RXInfoSet{
-			{LoRaSNR: 4, RSSI: 1},
-			{LoRaSNR: 0, RSSI: 10},
-			{LoRaSNR: 0, RSSI: 30},
-			{LoRaSNR: 0, RSSI: 20},
-			{LoRaSNR: 3, RSSI: 1},
-			{LoRaSNR: 3, RSSI: 3},
-			{LoRaSNR: 3, RSSI: 2},
-			{LoRaSNR: 6, RSSI: 5},
-			{LoRaSNR: 7, RSSI: 15},
-			{LoRaSNR: 8, RSSI: 10},
-		}
+	assert := require.New(t)
 
-		Convey("After sorting", func() {
-			sort.Sort(rxInfoSet)
+	rxInfoSet := []*gw.UplinkRXInfo{
+		{LoraSnr: 4, Rssi: 1},
+		{LoraSnr: 0, Rssi: 10},
+		{LoraSnr: 0, Rssi: 30},
+		{LoraSnr: 0, Rssi: 20},
+		{LoraSnr: 3, Rssi: 1},
+		{LoraSnr: 3, Rssi: 3},
+		{LoraSnr: 3, Rssi: 2},
+		{LoraSnr: 6, Rssi: 5},
+		{LoraSnr: 7, Rssi: 15},
+		{LoraSnr: 8, Rssi: 10},
+	}
 
-			Convey("Then the RXInfoSet is in the expected order", func() {
-				So(rxInfoSet, ShouldResemble, RXInfoSet{
-					{LoRaSNR: 7, RSSI: 15},
-					{LoRaSNR: 8, RSSI: 10},
-					{LoRaSNR: 6, RSSI: 5},
-					{LoRaSNR: 4, RSSI: 1},
-					{LoRaSNR: 3, RSSI: 3},
-					{LoRaSNR: 3, RSSI: 2},
-					{LoRaSNR: 3, RSSI: 1},
-					{LoRaSNR: 0, RSSI: 30},
-					{LoRaSNR: 0, RSSI: 20},
-					{LoRaSNR: 0, RSSI: 10},
-				})
-			})
-		})
-	})
+	sort.Sort(BySignalStrength(rxInfoSet))
+
+	rxInfoSetExpected := []*gw.UplinkRXInfo{
+		{LoraSnr: 7, Rssi: 15},
+		{LoraSnr: 8, Rssi: 10},
+		{LoraSnr: 6, Rssi: 5},
+		{LoraSnr: 4, Rssi: 1},
+		{LoraSnr: 3, Rssi: 3},
+		{LoraSnr: 3, Rssi: 2},
+		{LoraSnr: 3, Rssi: 1},
+		{LoraSnr: 0, Rssi: 30},
+		{LoraSnr: 0, Rssi: 20},
+		{LoraSnr: 0, Rssi: 10},
+	}
+
+	assert.Equal(rxInfoSetExpected, rxInfoSet)
 }

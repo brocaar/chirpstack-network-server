@@ -9,6 +9,17 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 
 
+enum FineTimestampType {
+    // No fine-timestamp available.
+    NONE = 0;
+
+    // Encrypted fine-timestamp.
+    ENCRYPTED = 1;
+
+    // Plain fine-timestamp.
+    PLAIN = 2;
+}
+
 message UplinkTXInfo {
 	// Frequency (Hz).
 	uint32 frequency = 1;
@@ -18,7 +29,7 @@ message UplinkTXInfo {
 
     oneof modulation_info {
         // LoRa modulation information.
-        LoRaModulationInfo lora_modulation_info = 3;
+        LoRaModulationInfo lora_modulation_info = 3 [json_name = "loRaModulationInfo"];
 
         // FSK modulation information.
         FSKModulationInfo fsk_modulation_info = 4;
@@ -47,26 +58,58 @@ message FSKModulationInfo {
     uint32 bitrate = 2;
 }
 
-message Location {
-    // Latitude.
-    double latitude = 1;
+message EncryptedFineTimestamp {
+    // AES key index used for encrypting the fine timestamp.
+    uint32 aes_key_index = 1;
 
-    // Longitude.
-    double longitude = 2;
+    // Encrypted 'main' fine-timestamp (ns precision part of the timestamp).
+    bytes encrypted_ns = 2 [json_name = "encryptedNS"];
 
-    // Altitude.
-    double altitude = 3;
+    // FPGA ID.
+    bytes fpga_id = 3 [json_name = "fpgaID"];
+}
+
+message PlainFineTimestamp {
+    // Full timestamp.
+    google.protobuf.Timestamp time = 1;
+}
+
+message GatewayStats {
+    // Gateway ID.
+    bytes gateway_id = 1 [json_name = "gatewayID"];
+
+    // Gateway time.
+    google.protobuf.Timestamp time = 2;
+
+    // Gateway location.
+    common.Location location = 3;
+
+    // Gateway configuration version (this maps to the config_version sent
+    // by LoRa Server to the gateway).
+    string config_version = 4;
+
+    // Number of radio packets received.
+    uint32 rx_packets_received = 5;
+
+    // Number of radio packets received with valid PHY CRC.
+    uint32 rx_packets_received_ok = 6 [json_name = "rxPacketsReceivedOK"];
+
+    // Number of downlink packets received for transmission.
+    uint32 tx_packets_received = 7;
+
+    // Number of downlink packets emitted.
+    uint32 tx_packets_emitted = 8;
 }
 
 message UplinkRXInfo {
     // Gateway ID.
-    bytes gateway_id = 1;
+    bytes gateway_id = 1 [json_name = "gatewayID"];
 
     // RX time (only set when the gateway has a GPS module).
     google.protobuf.Timestamp time = 2;
 
     // RX time since GPS epoch (only set when the gateway has a GPS module).
-    google.protobuf.Duration time_since_gps_epoch = 3;
+    google.protobuf.Duration time_since_gps_epoch = 3 [json_name = "timeSinceGPSEpoch"];
 
     // Gateway internal timestamp.
     uint32 timestamp = 4;
@@ -75,7 +118,7 @@ message UplinkRXInfo {
     int32 rssi = 5;
 
     // LoRa SNR.
-    double lora_snr = 6;
+    double lora_snr = 6 [json_name = "loRaSNR"];
 
     // Channel.
     uint32 channel = 7;
@@ -90,18 +133,30 @@ message UplinkRXInfo {
     uint32 antenna = 10;
 
     // Location.
-    Location location = 11;
+    common.Location location = 11;
+
+    // Fine-timestamp type.
+    FineTimestampType fine_timestamp_type = 12;
+
+    // Fine-timestamp data.
+    oneof fine_timestamp {
+        // Encrypted fine-timestamp data.
+        EncryptedFineTimestamp encrypted_fine_timestamp = 13;
+
+        // Plain fine-timestamp data.
+        PlainFineTimestamp plain_fine_timestamp = 14;
+    }
 }
 
 message DownlinkTXInfo {
     // Gateway ID.
-    bytes gateway_id = 1;
+    bytes gateway_id = 1 [json_name = "gatewayID"];
 
     // Frame must be sent immediately.
     bool immediately = 2;
 
     // Emit frame at the given time since GPS epoch.
-    google.protobuf.Duration time_since_gps_epoch = 3;
+    google.protobuf.Duration time_since_gps_epoch = 3 [json_name = "timeSinceGPSEpoch"];
 
     // Emit the frame at the given gateway internal timestamp.
     uint32 timestamp = 4;
@@ -117,7 +172,7 @@ message DownlinkTXInfo {
 
     oneof modulation_info {
         // LoRa modulation information.
-        LoRaModulationInfo lora_modulation_info = 8;
+        LoRaModulationInfo lora_modulation_info = 8 [json_name = "loRaModulationInfo"];
 
         // FSK modulation information.
         FSKModulationInfo fsk_modulation_info = 9;
@@ -161,4 +216,58 @@ message DownlinkFrame {
 
     // Token (uint16 value).
     uint32 token = 3;
+}
+
+message DownlinkTXAck {
+    // Gateway ID.
+    bytes gateway_id = 1;
+
+    // Token (uint16 value).
+    uint32 token = 2;
+
+    // Error.
+    string error = 3;
+}
+
+message GatewayConfiguration {
+    // Gateway ID.
+    bytes gateway_id = 1 [json_name = "gatewayID"];
+
+    // Configuration version.
+    string version = 2;
+
+    // Channels.
+    repeated ChannelConfiguration channels = 3;
+}
+
+message ChannelConfiguration {
+    // Frequency (Hz).
+    uint32 frequency = 1;
+
+    // Channel modulation.
+    common.Modulation modulation = 2;
+
+    oneof modulation_config {
+        // LoRa modulation config.
+        LoRaModulationConfig lora_modulation_config = 3 [json_name = "loRaModulationConfig"];
+
+        // FSK modulation config.
+        FSKModulationConfig fsk_modulation_config = 4;
+    }
+}
+
+message LoRaModulationConfig {
+    // Bandwidth.
+    uint32 bandwidth = 1;
+
+    // Spreading-factors.
+    repeated uint32 spreading_factors = 2;
+}
+
+message FSKModulationConfig {
+    // Bandwidth.
+    uint32 bandwidth = 1;
+
+    // Bitrate.
+    uint32 bitrate = 2;
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink"
+	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
@@ -24,7 +25,7 @@ type classCTestCase struct {
 	ExpectedSendDownlinkDataError error // expected error returned
 	ExpectedFCntUp                uint32
 	ExpectedFCntDown              uint32
-	ExpectedTXInfo                *gw.TXInfo
+	ExpectedTXInfo                *gw.DownlinkTXInfo
 	ExpectedPHYPayload            *lorawan.PHYPayload
 }
 
@@ -88,17 +89,14 @@ func TestClassCScenarios(t *testing.T) {
 		}
 
 		defaults := config.C.NetworkServer.Band.Band.GetDefaults()
-		rx2dr, err := config.C.NetworkServer.Band.Band.GetDataRate(int(sess.RX2DR))
-		So(err, ShouldBeNil)
 
-		txInfo := gw.TXInfo{
-			MAC:         lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2},
+		txInfo := gw.DownlinkTXInfo{
+			GatewayId:   []byte{1, 2, 1, 2, 1, 2, 1, 2},
 			Immediately: true,
-			Frequency:   defaults.RX2Frequency,
-			Power:       config.C.NetworkServer.Band.Band.GetDownlinkTXPower(defaults.RX2Frequency),
-			DataRate:    rx2dr,
-			CodeRate:    "4/5",
+			Frequency:   uint32(defaults.RX2Frequency),
+			Power:       int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(defaults.RX2Frequency)),
 		}
+		So(helpers.SetDownlinkTXInfoDataRate(&txInfo, 5, config.C.NetworkServer.Band.Band), ShouldBeNil)
 
 		fPortTen := uint8(10)
 
@@ -277,9 +275,17 @@ func TestClassCScenarios(t *testing.T) {
 						Convey("Then the expected frame was sent", func() {
 							So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 1)
 							txPacket := <-config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan
+							txPacket.TxInfo.XXX_sizecache = 0
+							modInfo := txPacket.TxInfo.GetLoraModulationInfo()
+							modInfo.XXX_sizecache = 0
+
 							So(txPacket.Token, ShouldNotEqual, 0)
-							So(txPacket.TXInfo, ShouldResemble, *t.ExpectedTXInfo)
-							So(txPacket.PHYPayload, ShouldResemble, *t.ExpectedPHYPayload)
+							So(txPacket.TxInfo, ShouldResemble, t.ExpectedTXInfo)
+
+							phyB, err := t.ExpectedPHYPayload.MarshalBinary()
+							So(err, ShouldBeNil)
+
+							So(txPacket.PhyPayload, ShouldResemble, phyB)
 						})
 					} else {
 						So(config.C.NetworkServer.Gateway.Backend.Backend.(*test.GatewayBackend).TXPacketChan, ShouldHaveLength, 0)

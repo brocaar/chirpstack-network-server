@@ -12,6 +12,7 @@ import (
 	"github.com/brocaar/loraserver/internal/config"
 	joindown "github.com/brocaar/loraserver/internal/downlink/join"
 	"github.com/brocaar/loraserver/internal/framelog"
+	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
@@ -110,9 +111,9 @@ func setContextFromRejoinRequestPHY(ctx *context) error {
 }
 
 func logRejoinRequestFramesCollected(ctx *context) error {
-	var macs []string
+	var gatewayIDs []string
 	for _, p := range ctx.RXPacket.RXInfoSet {
-		macs = append(macs, p.MAC.String())
+		gatewayIDs = append(gatewayIDs, helpers.GetGatewayID(p).String())
 	}
 
 	uplinkFrameSet, err := framelog.CreateUplinkFrameSet(ctx.RXPacket)
@@ -126,8 +127,8 @@ func logRejoinRequestFramesCollected(ctx *context) error {
 
 	log.WithFields(log.Fields{
 		"dev_eui":     ctx.DevEUI,
-		"gw_count":    len(macs),
-		"gw_macs":     strings.Join(macs, ", "),
+		"gw_count":    len(gatewayIDs),
+		"gw_ids":      strings.Join(gatewayIDs, ", "),
 		"mtype":       ctx.RXPacket.PHYPayload.MHDR.MType,
 		"rejoin_type": ctx.RejoinType,
 	}).Info("packet(s) collected")

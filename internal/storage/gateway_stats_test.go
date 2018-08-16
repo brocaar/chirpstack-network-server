@@ -4,16 +4,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/lorawan/band"
+	"github.com/golang/protobuf/ptypes"
+	"github.com/pkg/errors"
+	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/brocaar/lorawan"
-
+	commonPB "github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/test"
-	"github.com/pkg/errors"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 )
 
 func TestGatewayStatsAggregation(t *testing.T) {
@@ -30,20 +31,22 @@ func TestGatewayStatsAggregation(t *testing.T) {
 		test.MustResetDB(config.C.PostgreSQL.DB)
 
 		MustSetStatsAggregationIntervals([]string{"SECOND", "MINUTE"})
-		lat := float64(1.123)
-		long := float64(1.124)
-		alt := float64(15.3)
 
-		stats := gw.GatewayStatsPacket{
-			MAC:                 [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
-			Latitude:            &lat,
-			Longitude:           &long,
-			Altitude:            &alt,
-			RXPacketsReceived:   11,
-			RXPacketsReceivedOK: 9,
-			TXPacketsReceived:   13,
-			TXPacketsEmitted:    10,
+		now := time.Now()
+
+		stats := gw.GatewayStats{
+			GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Location: &commonPB.Location{
+				Latitude:  1.123,
+				Longitude: 1.124,
+				Altitude:  15.3,
+			},
+			RxPacketsReceived:   11,
+			RxPacketsReceivedOk: 9,
+			TxPacketsReceived:   13,
+			TxPacketsEmitted:    10,
 		}
+		stats.Time, _ = ptypes.TimestampProto(now)
 
 		Convey("When CreateGatewayOnStats=false", func() {
 			Convey("Then an error is returned on stats", func() {
@@ -59,17 +62,17 @@ func TestGatewayStatsAggregation(t *testing.T) {
 			Convey("Then the gateway is created automatically on stats", func() {
 				So(HandleGatewayStatsPacket(db, stats), ShouldBeNil)
 
-				gw, err := GetGateway(db, stats.MAC)
+				gw, err := GetGateway(db, lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8})
 				So(err, ShouldBeNil)
 				So(gw.CreatedAt, ShouldNotBeNil)
 				So(gw.UpdatedAt, ShouldNotBeNil)
 				So(gw.FirstSeenAt, ShouldNotBeNil)
 				So(gw.FirstSeenAt, ShouldResemble, gw.LastSeenAt)
 				So(gw.Location, ShouldResemble, GPSPoint{
-					Latitude:  lat,
-					Longitude: long,
+					Latitude:  1.123,
+					Longitude: 1.124,
 				})
-				So(gw.Altitude, ShouldResemble, alt)
+				So(gw.Altitude, ShouldResemble, 15.3)
 			})
 		})
 
@@ -82,7 +85,7 @@ func TestGatewayStatsAggregation(t *testing.T) {
 			Convey("When aggregating 3 stats over an interval of a second", func() {
 				start := time.Now().Truncate(time.Hour).In(time.UTC)
 				for i := 0; i < 3; i++ {
-					stats.Time = start.Add(time.Duration(i) * time.Second)
+					stats.Time, _ = ptypes.TimestampProto(start.Add(time.Duration(i) * time.Second))
 					So(HandleGatewayStatsPacket(db, stats), ShouldBeNil)
 				}
 
@@ -183,39 +186,59 @@ func TestHandleConfigurationUpdate(t *testing.T) {
 
 				Convey("Then the gateway-configuration was published", func() {
 					So(gwBackend.GatewayConfigPacketChan, ShouldHaveLength, 1)
-					So(<-gwBackend.GatewayConfigPacketChan, ShouldResemble, gw.GatewayConfigPacket{
-						Version: gp.GetVersion(),
-						MAC:     g.MAC,
-						Channels: []gw.Channel{
+					So(<-gwBackend.GatewayConfigPacketChan, ShouldResemble, gw.GatewayConfiguration{
+						Version:   gp.GetVersion(),
+						GatewayId: g.MAC[:],
+						Channels: []*gw.ChannelConfiguration{
 							{
-								Modulation:       band.LoRaModulation,
-								Frequency:        868100000,
-								Bandwidth:        125,
-								SpreadingFactors: []int{7, 8, 9, 10, 11, 12},
+								Frequency:  868100000,
+								Modulation: commonPB.Modulation_LORA,
+								ModulationConfig: &gw.ChannelConfiguration_LoraModulationConfig{
+									LoraModulationConfig: &gw.LoRaModulationConfig{
+										Bandwidth:        125,
+										SpreadingFactors: []uint32{7, 8, 9, 10, 11, 12},
+									},
+								},
 							},
 							{
-								Modulation:       band.LoRaModulation,
-								Frequency:        868300000,
-								Bandwidth:        125,
-								SpreadingFactors: []int{7, 8, 9, 10, 11, 12},
+								Frequency:  868300000,
+								Modulation: commonPB.Modulation_LORA,
+								ModulationConfig: &gw.ChannelConfiguration_LoraModulationConfig{
+									LoraModulationConfig: &gw.LoRaModulationConfig{
+										Bandwidth:        125,
+										SpreadingFactors: []uint32{7, 8, 9, 10, 11, 12},
+									},
+								},
 							},
 							{
-								Modulation:       band.LoRaModulation,
-								Frequency:        868500000,
-								Bandwidth:        125,
-								SpreadingFactors: []int{7, 8, 9, 10, 11, 12},
+								Frequency:  868500000,
+								Modulation: commonPB.Modulation_LORA,
+								ModulationConfig: &gw.ChannelConfiguration_LoraModulationConfig{
+									LoraModulationConfig: &gw.LoRaModulationConfig{
+										Bandwidth:        125,
+										SpreadingFactors: []uint32{7, 8, 9, 10, 11, 12},
+									},
+								},
 							},
 							{
-								Modulation:       band.LoRaModulation,
-								Frequency:        867100000,
-								Bandwidth:        125,
-								SpreadingFactors: []int{7, 8, 9, 10, 11, 12},
+								Frequency:  867100000,
+								Modulation: commonPB.Modulation_LORA,
+								ModulationConfig: &gw.ChannelConfiguration_LoraModulationConfig{
+									LoraModulationConfig: &gw.LoRaModulationConfig{
+										Bandwidth:        125,
+										SpreadingFactors: []uint32{7, 8, 9, 10, 11, 12},
+									},
+								},
 							},
 							{
-								Modulation: band.FSKModulation,
 								Frequency:  868800000,
-								Bandwidth:  125,
-								Bitrate:    50000,
+								Modulation: commonPB.Modulation_FSK,
+								ModulationConfig: &gw.ChannelConfiguration_FskModulationConfig{
+									FskModulationConfig: &gw.FSKModulationConfig{
+										Bandwidth: 125,
+										Bitrate:   50000,
+									},
+								},
 							},
 						},
 					})

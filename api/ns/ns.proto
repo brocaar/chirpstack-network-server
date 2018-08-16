@@ -388,7 +388,7 @@ message Gateway {
     bytes id = 1;
 
     // Gateway location.
-    gw.Location location = 2;
+    common.Location location = 2;
 
     // ID of the gateway-profile (optional).
     bytes gateway_profile_id = 3;

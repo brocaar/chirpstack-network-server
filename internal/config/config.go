@@ -3,7 +3,7 @@ package config
 import (
 	"time"
 
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/api/client/asclient"

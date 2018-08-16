@@ -5,15 +5,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/brocaar/lorawan/band"
-
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/lorawan"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
+	commonPB "github.com/brocaar/loraserver/api/common"
+	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 )
 
 // statsAggregationIntervals contains a slice of aggregation intervals.
@@ -132,30 +135,28 @@ func GetGatewayStats(db *common.DBLogger, mac lorawan.EUI64, interval string, st
 }
 
 // HandleGatewayStatsPacket handles a received stats packet by the gateway.
-func HandleGatewayStatsPacket(db *common.DBLogger, stats gw.GatewayStatsPacket) error {
+func HandleGatewayStatsPacket(db *common.DBLogger, stats gw.GatewayStats) error {
 	var location GPSPoint
 	var altitude float64
+	gatewayID := helpers.GetGatewayID(&stats)
 
-	if stats.Latitude != nil && stats.Longitude != nil {
+	if stats.Location != nil {
 		location = GPSPoint{
-			Latitude:  *stats.Latitude,
-			Longitude: *stats.Longitude,
+			Latitude:  stats.Location.Latitude,
+			Longitude: stats.Location.Longitude,
 		}
-	}
-
-	if stats.Altitude != nil {
-		altitude = *stats.Altitude
+		altitude = stats.Location.Altitude
 	}
 
 	// create or update the gateway
-	gw, err := GetGateway(db, stats.MAC)
+	gw, err := GetGateway(db, gatewayID)
 	if err != nil {
 		if err == ErrDoesNotExist && config.C.NetworkServer.Gateway.Stats.CreateGatewayOnStats {
 			// create the gateway
 			now := time.Now()
 
 			gw = Gateway{
-				MAC:         stats.MAC,
+				MAC:         gatewayID,
 				FirstSeenAt: &now,
 				LastSeenAt:  &now,
 				Location:    location,
@@ -175,10 +176,8 @@ func HandleGatewayStatsPacket(db *common.DBLogger, stats gw.GatewayStatsPacket) 
 		}
 		gw.LastSeenAt = &now
 
-		if stats.Latitude != nil && stats.Longitude != nil {
+		if stats.Location != nil {
 			gw.Location = location
-		}
-		if stats.Altitude != nil {
 			gw.Altitude = altitude
 		}
 
@@ -211,16 +210,21 @@ func HandleGatewayStatsPacket(db *common.DBLogger, stats gw.GatewayStatsPacket) 
 		}
 	}
 
+	ts, err := ptypes.Timestamp(stats.Time)
+	if err != nil {
+		return errors.Wrap(err, "timestamp error")
+	}
+
 	// store the stats
 	for _, aggr := range statsAggregationIntervals {
 		if err := aggregateGatewayStats(tx, Stats{
-			MAC:                 stats.MAC,
-			Timestamp:           stats.Time,
+			MAC:                 gatewayID,
+			Timestamp:           ts,
 			Interval:            aggr,
-			RXPacketsReceived:   stats.RXPacketsReceived,
-			RXPacketsReceivedOK: stats.RXPacketsReceivedOK,
-			TXPacketsReceived:   stats.TXPacketsReceived,
-			TXPacketsEmitted:    stats.TXPacketsEmitted,
+			RXPacketsReceived:   int(stats.RxPacketsReceived),
+			RXPacketsReceivedOK: int(stats.RxPacketsReceivedOk),
+			TXPacketsReceived:   int(stats.TxPacketsReceived),
+			TXPacketsEmitted:    int(stats.TxPacketsEmitted),
 		}); err != nil {
 			return errors.Wrap(err, "aggregate gateway stats error")
 		}
@@ -291,9 +295,9 @@ func handleConfigurationUpdate(db sqlx.Queryer, g Gateway, currentVersion string
 		return nil
 	}
 
-	configPacket := gw.GatewayConfigPacket{
-		MAC:     g.MAC,
-		Version: gwProfile.GetVersion(),
+	configPacket := gw.GatewayConfiguration{
+		GatewayId: g.MAC[:],
+		Version:   gwProfile.GetVersion(),
 	}
 
 	for _, i := range gwProfile.Channels {
@@ -302,10 +306,12 @@ func handleConfigurationUpdate(db sqlx.Queryer, g Gateway, currentVersion string
 			return errors.Wrap(err, "get channel error")
 		}
 
-		gwC := gw.Channel{
-			Modulation: band.LoRaModulation,
-			Frequency:  c.Frequency,
+		gwC := gw.ChannelConfiguration{
+			Frequency:  uint32(c.Frequency),
+			Modulation: commonPB.Modulation_LORA,
 		}
+
+		modConfig := gw.LoRaModulationConfig{}
 
 		for drI := c.MaxDR; drI >= c.MinDR; drI-- {
 			dr, err := config.C.NetworkServer.Band.Band.GetDataRate(drI)
@@ -313,27 +319,49 @@ func handleConfigurationUpdate(db sqlx.Queryer, g Gateway, currentVersion string
 				return errors.Wrap(err, "get data-rate error")
 			}
 
-			gwC.SpreadingFactors = append(gwC.SpreadingFactors, dr.SpreadFactor)
-			gwC.Bandwidth = dr.Bandwidth
-			gwC.Bitrate = dr.BitRate
+			modConfig.SpreadingFactors = append(modConfig.SpreadingFactors, uint32(dr.SpreadFactor))
+			modConfig.Bandwidth = uint32(dr.Bandwidth)
 		}
 
-		configPacket.Channels = append(configPacket.Channels, gwC)
+		gwC.ModulationConfig = &gw.ChannelConfiguration_LoraModulationConfig{
+			LoraModulationConfig: &modConfig,
+		}
+
+		configPacket.Channels = append(configPacket.Channels, &gwC)
 	}
 
 	for _, c := range gwProfile.ExtraChannels {
-		gwC := gw.Channel{
-			Modulation: band.Modulation(c.Modulation),
-			Frequency:  c.Frequency,
-			Bandwidth:  c.Bandwidth,
-			Bitrate:    c.Bitrate,
+		gwC := gw.ChannelConfiguration{
+			Frequency: uint32(c.Frequency),
 		}
 
-		for _, sf := range c.SpreadingFactors {
-			gwC.SpreadingFactors = append(gwC.SpreadingFactors, int(sf))
+		switch band.Modulation(c.Modulation) {
+		case band.LoRaModulation:
+			gwC.Modulation = commonPB.Modulation_LORA
+			modConfig := gw.LoRaModulationConfig{
+				Bandwidth: uint32(c.Bandwidth),
+			}
+
+			for _, sf := range c.SpreadingFactors {
+				modConfig.SpreadingFactors = append(modConfig.SpreadingFactors, uint32(sf))
+			}
+
+			gwC.ModulationConfig = &gw.ChannelConfiguration_LoraModulationConfig{
+				LoraModulationConfig: &modConfig,
+			}
+		case band.FSKModulation:
+			gwC.Modulation = commonPB.Modulation_FSK
+			modConfig := gw.FSKModulationConfig{
+				Bandwidth: uint32(c.Bandwidth),
+				Bitrate:   uint32(c.Bitrate),
+			}
+
+			gwC.ModulationConfig = &gw.ChannelConfiguration_FskModulationConfig{
+				FskModulationConfig: &modConfig,
+			}
 		}
 
-		configPacket.Channels = append(configPacket.Channels, gwC)
+		configPacket.Channels = append(configPacket.Channels, &gwC)
 	}
 
 	if err := config.C.NetworkServer.Gateway.Backend.Backend.SendGatewayConfigPacket(configPacket); err != nil {

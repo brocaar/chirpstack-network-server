@@ -4,8 +4,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/garyburd/redigo/redis"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	migrate "github.com/rubenv/sql-migrate"
 	log "github.com/sirupsen/logrus"
@@ -119,40 +119,40 @@ func MustResetDB(db *common.DBLogger) {
 
 // GatewayBackend is a test gateway backend.
 type GatewayBackend struct {
-	rxPacketChan            chan gw.RXPacket
-	TXPacketChan            chan gw.TXPacket
-	GatewayConfigPacketChan chan gw.GatewayConfigPacket
-	statsPacketChan         chan gw.GatewayStatsPacket
+	rxPacketChan            chan gw.UplinkFrame
+	TXPacketChan            chan gw.DownlinkFrame
+	GatewayConfigPacketChan chan gw.GatewayConfiguration
+	statsPacketChan         chan gw.GatewayStats
 }
 
 // NewGatewayBackend returns a new GatewayBackend.
 func NewGatewayBackend() *GatewayBackend {
 	return &GatewayBackend{
-		rxPacketChan:            make(chan gw.RXPacket, 100),
-		TXPacketChan:            make(chan gw.TXPacket, 100),
-		GatewayConfigPacketChan: make(chan gw.GatewayConfigPacket, 100),
+		rxPacketChan:            make(chan gw.UplinkFrame, 100),
+		TXPacketChan:            make(chan gw.DownlinkFrame, 100),
+		GatewayConfigPacketChan: make(chan gw.GatewayConfiguration, 100),
 	}
 }
 
 // SendTXPacket method.
-func (b *GatewayBackend) SendTXPacket(txPacket gw.TXPacket) error {
+func (b *GatewayBackend) SendTXPacket(txPacket gw.DownlinkFrame) error {
 	b.TXPacketChan <- txPacket
 	return nil
 }
 
 // SendGatewayConfigPacket method.
-func (b *GatewayBackend) SendGatewayConfigPacket(config gw.GatewayConfigPacket) error {
+func (b *GatewayBackend) SendGatewayConfigPacket(config gw.GatewayConfiguration) error {
 	b.GatewayConfigPacketChan <- config
 	return nil
 }
 
 // RXPacketChan method.
-func (b *GatewayBackend) RXPacketChan() chan gw.RXPacket {
+func (b *GatewayBackend) RXPacketChan() chan gw.UplinkFrame {
 	return b.rxPacketChan
 }
 
 // StatsPacketChan method.
-func (b *GatewayBackend) StatsPacketChan() chan gw.GatewayStatsPacket {
+func (b *GatewayBackend) StatsPacketChan() chan gw.GatewayStats {
 	return b.statsPacketChan
 }
 
@@ -377,7 +377,7 @@ func (b *DatabaseTestSuiteBase) Tx() sqlx.Ext {
 	return b.tx
 }
 
-// DB returns the database.
+// DB returns the database object.
 func (b *DatabaseTestSuiteBase) DB() *common.DBLogger {
 	return b.db
 }
