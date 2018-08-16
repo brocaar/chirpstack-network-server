@@ -49,17 +49,6 @@
   version = "v1.4.7"
 
 [[projects]]
-  digest = "1:f26133af0db0007ccbd4830a033f7124c38cbab8afecd06452f17c6b7fd4c3a9"
-  name = "github.com/garyburd/redigo"
-  packages = [
-    "internal",
-    "redis",
-  ]
-  pruneopts = "NUT"
-  revision = "a69d19351219b6dd56f274f96d85a7014a2ec34e"
-  version = "v1.6.0"
-
-[[projects]]
   digest = "1:c85dc5b247d8d2646a3061054820e20195530690c8dfbca620db3e0ec58ba236"
   name = "github.com/gofrs/uuid"
   packages = ["."]
@@ -461,7 +450,6 @@
     "github.com/brocaar/lorawan/backend",
     "github.com/brocaar/lorawan/band",
     "github.com/eclipse/paho.mqtt.golang",
-    "github.com/garyburd/redigo/redis",
     "github.com/gofrs/uuid",
     "github.com/golang/protobuf/jsonpb",
     "github.com/golang/protobuf/proto",
