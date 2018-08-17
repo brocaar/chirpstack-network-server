@@ -263,7 +263,7 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 			return DeviceQueueItem{}, errors.Wrap(err, "get next device-queue item error")
 		}
 
-		if qi.FCnt < fCnt || len(qi.FRMPayload) > maxPayloadSize || (qi.TimeoutAfter != nil && qi.TimeoutAfter.Before(time.Now())) {
+		if qi.FCnt > fCnt || len(qi.FRMPayload) > maxPayloadSize || (qi.TimeoutAfter != nil && qi.TimeoutAfter.Before(time.Now())) {
 			rp, err := GetRoutingProfile(db, routingProfileID)
 			if err != nil {
 				return DeviceQueueItem{}, errors.Wrap(err, "get routing-profile error")
@@ -292,7 +292,7 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 				if err != nil {
 					return DeviceQueueItem{}, errors.Wrap(err, "application-server client error")
 				}
-			} else if qi.FCnt < fCnt {
+			} else if qi.FCnt > fCnt {
 				// handle frame-counter error
 				log.WithFields(log.Fields{
 					"dev_eui":                devEUI,
