@@ -115,7 +115,7 @@ func TestUplinkProprietaryPHYPayload(t *testing.T) {
 		t.Fatal(err)
 	}
 	config.C.PostgreSQL.DB = db
-	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
 
 	Convey("Given a clean state with a gateway and routing profile", t, func() {
 		test.MustResetDB(config.C.PostgreSQL.DB)

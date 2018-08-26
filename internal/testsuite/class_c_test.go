@@ -36,7 +36,7 @@ func TestClassCScenarios(t *testing.T) {
 		t.Fatal(err)
 	}
 	config.C.PostgreSQL.DB = db
-	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
 
 	Convey("Given a clean state", t, func() {
 		test.MustResetDB(config.C.PostgreSQL.DB)
@@ -84,8 +84,8 @@ func TestClassCScenarios(t *testing.T) {
 				lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}: storage.UplinkGatewayHistory{},
 			},
 			EnabledUplinkChannels: []int{0, 1, 2},
-			RX2DR:        5,
-			RX2Frequency: 869525000,
+			RX2DR:                 5,
+			RX2Frequency:          869525000,
 		}
 
 		defaults := config.C.NetworkServer.Band.Band.GetDefaults()

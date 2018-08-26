@@ -19,7 +19,7 @@ import (
 
 func TestCollectAndCallOnce(t *testing.T) {
 	conf := test.GetConfig()
-	p := common.NewRedisPool(conf.RedisURL)
+	p := common.NewRedisPool(conf.RedisURL, 10, 0)
 	config.C.Redis.Pool = p
 	config.C.NetworkServer.DeduplicationDelay = time.Millisecond * 500
 

@@ -45,7 +45,7 @@ func TestRejoinScenarios(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	redisPool := common.NewRedisPool(conf.RedisURL)
+	redisPool := common.NewRedisPool(conf.RedisURL, 10, 0)
 
 	config.C.PostgreSQL.DB = db
 	config.C.Redis.Pool = redisPool

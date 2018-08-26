@@ -53,6 +53,8 @@ func init() {
 	viper.SetDefault("network_server.band.name", "EU_863_870")
 	viper.SetDefault("network_server.api.bind", "0.0.0.0:8000")
 	viper.SetDefault("redis.url", "redis://localhost:6379")
+	viper.SetDefault("redis.max_idle", 10)
+	viper.SetDefault("redis.idle_timeout", 5*time.Minute)
 	viper.SetDefault("postgresql.dsn", "postgres://localhost/loraserver_ns?sslmode=disable")
 	viper.SetDefault("postgresql.automigrate", true)
 	viper.SetDefault("network_server.gateway.backend.mqtt.server", "tcp://localhost:1883")

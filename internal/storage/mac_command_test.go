@@ -35,7 +35,7 @@ func TestMACCommand(t *testing.T) {
 	}
 
 	Convey("Given a clean Redis database", t, func() {
-		p := common.NewRedisPool(conf.RedisURL)
+		p := common.NewRedisPool(conf.RedisURL, 10, 0)
 		test.MustFlushRedis(p)
 
 		Convey("When adding two items to the queue", func() {

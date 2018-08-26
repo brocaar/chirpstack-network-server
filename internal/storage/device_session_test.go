@@ -17,7 +17,7 @@ func TestGetRandomDevAddr(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a Redis database and NetID 010203", t, func() {
-		p := common.NewRedisPool(conf.RedisURL)
+		p := common.NewRedisPool(conf.RedisURL, 10, 0)
 		test.MustFlushRedis(p)
 		netID := lorawan.NetID{1, 2, 3}
 
@@ -92,7 +92,7 @@ func TestDeviceSession(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {
-		p := common.NewRedisPool(conf.RedisURL)
+		p := common.NewRedisPool(conf.RedisURL, 10, 0)
 		test.MustFlushRedis(p)
 
 		Convey("Given a device-session", func() {
@@ -144,10 +144,10 @@ func TestDeviceSession(t *testing.T) {
 					FullFCnt   uint32
 					Valid      bool
 				}{
-					{0, 1, 1, true},                                                         // one packet was lost
-					{1, 1, 1, true},                                                         // ideal case, the FCnt has the expected value
-					{2, 1, 0, false},                                                        // old packet received or re-transmission
-					{0, defaults.MaxFCntGap, 0, false},                                      // gap should be less than MaxFCntGap
+					{0, 1, 1, true},                    // one packet was lost
+					{1, 1, 1, true},                    // ideal case, the FCnt has the expected value
+					{2, 1, 0, false},                   // old packet received or re-transmission
+					{0, defaults.MaxFCntGap, 0, false}, // gap should be less than MaxFCntGap
 					{0, defaults.MaxFCntGap - 1, defaults.MaxFCntGap - 1, true},             // gap is exactly within the allowed MaxFCntGap
 					{65536, defaults.MaxFCntGap - 1, defaults.MaxFCntGap - 1 + 65536, true}, // roll-over happened, gap ix exactly within allowed MaxFCntGap
 					{65535, defaults.MaxFCntGap, 0, false},                                  // roll-over happened, but too many lost frames
@@ -174,7 +174,7 @@ func TestGetDeviceSessionForPHYPayload(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database with a set of device-sessions for the same DevAddr", t, func() {
-		p := common.NewRedisPool(conf.RedisURL)
+		p := common.NewRedisPool(conf.RedisURL, 10, 0)
 		test.MustFlushRedis(p)
 
 		devAddr := lorawan.DevAddr{1, 2, 3, 4}

@@ -33,7 +33,7 @@ func TestNetworkServerAPI(t *testing.T) {
 		t.Fatal(err)
 	}
 	config.C.PostgreSQL.DB = db
-	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
 	config.C.NetworkServer.NetID = [3]byte{1, 2, 3}
 
 	storage.MustSetStatsAggregationIntervals([]string{"MINUTE"})
@@ -176,15 +176,15 @@ func TestNetworkServerAPI(t *testing.T) {
 					DevStatusReqFreq:       4,
 					ReportDevStatusBattery: true,
 					ReportDevStatusMargin:  true,
-					DrMin:          5,
-					DrMax:          6,
-					ChannelMask:    []byte{1, 2, 3},
-					PrAllowed:      true,
-					HrAllowed:      true,
-					RaAllowed:      true,
-					NwkGeoLoc:      true,
-					TargetPer:      1,
-					MinGwDiversity: 7,
+					DrMin:                  5,
+					DrMax:                  6,
+					ChannelMask:            []byte{1, 2, 3},
+					PrAllowed:              true,
+					HrAllowed:              true,
+					RaAllowed:              true,
+					NwkGeoLoc:              true,
+					TargetPer:              1,
+					MinGwDiversity:         7,
 				},
 			})
 			So(err, ShouldBeNil)
@@ -208,15 +208,15 @@ func TestNetworkServerAPI(t *testing.T) {
 					DevStatusReqFreq:       4,
 					ReportDevStatusBattery: true,
 					ReportDevStatusMargin:  true,
-					DrMin:          5,
-					DrMax:          6,
-					ChannelMask:    []byte{1, 2, 3},
-					PrAllowed:      true,
-					HrAllowed:      true,
-					RaAllowed:      true,
-					NwkGeoLoc:      true,
-					TargetPer:      1,
-					MinGwDiversity: 7,
+					DrMin:                  5,
+					DrMax:                  6,
+					ChannelMask:            []byte{1, 2, 3},
+					PrAllowed:              true,
+					HrAllowed:              true,
+					RaAllowed:              true,
+					NwkGeoLoc:              true,
+					TargetPer:              1,
+					MinGwDiversity:         7,
 				})
 			})
 
@@ -234,15 +234,15 @@ func TestNetworkServerAPI(t *testing.T) {
 						DevStatusReqFreq:       6,
 						ReportDevStatusBattery: false,
 						ReportDevStatusMargin:  false,
-						DrMin:          7,
-						DrMax:          8,
-						ChannelMask:    []byte{3, 2, 1},
-						PrAllowed:      false,
-						HrAllowed:      false,
-						RaAllowed:      false,
-						NwkGeoLoc:      false,
-						TargetPer:      2,
-						MinGwDiversity: 8,
+						DrMin:                  7,
+						DrMax:                  8,
+						ChannelMask:            []byte{3, 2, 1},
+						PrAllowed:              false,
+						HrAllowed:              false,
+						RaAllowed:              false,
+						NwkGeoLoc:              false,
+						TargetPer:              2,
+						MinGwDiversity:         8,
 					},
 				})
 				So(err, ShouldBeNil)
@@ -263,15 +263,15 @@ func TestNetworkServerAPI(t *testing.T) {
 					DevStatusReqFreq:       6,
 					ReportDevStatusBattery: false,
 					ReportDevStatusMargin:  false,
-					DrMin:          7,
-					DrMax:          8,
-					ChannelMask:    []byte{3, 2, 1},
-					PrAllowed:      false,
-					HrAllowed:      false,
-					RaAllowed:      false,
-					NwkGeoLoc:      false,
-					TargetPer:      2,
-					MinGwDiversity: 8,
+					DrMin:                  7,
+					DrMax:                  8,
+					ChannelMask:            []byte{3, 2, 1},
+					PrAllowed:              false,
+					HrAllowed:              false,
+					RaAllowed:              false,
+					NwkGeoLoc:              false,
+					TargetPer:              2,
+					MinGwDiversity:         8,
 				})
 			})
 

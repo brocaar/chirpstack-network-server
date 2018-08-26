@@ -23,7 +23,11 @@ var printDSCmd = &cobra.Command{
 			log.Fatalf("hex encoded DevEUI must be given as an argument")
 		}
 
-		config.C.Redis.Pool = common.NewRedisPool(config.C.Redis.URL)
+		config.C.Redis.Pool = common.NewRedisPool(
+			config.C.Redis.URL,
+			config.C.Redis.MaxIdle,
+			config.C.Redis.IdleTimeout,
+		)
 
 		var devEUI lorawan.EUI64
 		if err := devEUI.UnmarshalText([]byte(args[0])); err != nil {

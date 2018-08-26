@@ -31,8 +31,10 @@ type Config struct {
 	} `mapstructure:"postgresql"`
 
 	Redis struct {
-		URL  string `mapstructure:"url"`
-		Pool *redis.Pool
+		URL         string        `mapstructure:"url"`
+		MaxIdle     int           `mapstructure:"max_idle"`
+		IdleTimeout time.Duration `mapstructure:"idle_timeout"`
+		Pool        *redis.Pool
 	}
 
 	NetworkServer struct {

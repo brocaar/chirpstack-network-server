@@ -72,7 +72,7 @@ func TestUplinkScenarios(t *testing.T) {
 		t.Fatal(err)
 	}
 	config.C.PostgreSQL.DB = db
-	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
 	config.C.NetworkServer.NetworkSettings.InstallationMargin = 5
 	config.C.NetworkServer.Band.Band, _ = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)
 	config.C.NetworkServer.NetworkSettings.RX2DR = 0

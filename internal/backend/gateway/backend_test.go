@@ -35,7 +35,7 @@ func (ts *MQTTBackendTestSuite) SetupSuite() {
 		redisURL = v
 	}
 
-	ts.redisPool = common.NewRedisPool(redisURL)
+	ts.redisPool = common.NewRedisPool(redisURL, 10, 0)
 
 	mqttServer := "tcp://127.0.0.1:1883/1"
 	var mqttUsername string

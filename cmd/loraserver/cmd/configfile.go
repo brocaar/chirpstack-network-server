@@ -70,6 +70,16 @@ automigrate={{ .PostgreSQL.Automigrate }}
 # https://www.iana.org/assignments/uri-schemes/prov/redis
 url="{{ .Redis.URL }}"
 
+# Max idle connections in the pool.
+max_idle={{ .Redis.MaxIdle }}
+
+# Idle timeout.
+#
+# Close connections after remaining idle for this duration. If the value
+# is zero, then idle connections are not closed. You should set
+# the timeout to a value less than the server's timeout.
+idle_timeout="{{ .Redis.IdleTimeout }}"
+
 
 # Network-server settings.
 [network_server]

@@ -18,7 +18,7 @@ func TestHandleDownlink(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {
-		config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+		config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
 		test.MustFlushRedis(config.C.Redis.Pool)
 
 		Convey("Given a device-session", func() {

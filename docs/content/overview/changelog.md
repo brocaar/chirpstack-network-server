@@ -29,6 +29,10 @@ The new JSON structure re-uses the messages defined for
 [Protocol Buffers](https://developers.google.com/protocol-buffers/docs/proto3#json)
 based serialization.
 
+### Improvements
+
+* Make Redis pool size and idle timeout configurable.
+
 ## v2.0.2
 
 ### Bugfixes

@@ -347,7 +347,7 @@ func (b *DatabaseTestSuiteBase) SetupSuite() {
 	b.db = db
 	MustResetDB(db)
 
-	b.p = common.NewRedisPool(conf.RedisURL)
+	b.p = common.NewRedisPool(conf.RedisURL, 10, 0)
 
 	config.C.PostgreSQL.DB = db
 	config.C.Redis.Pool = b.p

@@ -123,6 +123,16 @@ automigrate=true
 # https://www.iana.org/assignments/uri-schemes/prov/redis
 url="redis://localhost:6379"
 
+# Max idle connections in the pool.
+max_idle=10
+
+# Idle timeout.
+#
+# Close connections after remaining idle for this duration. If the value
+# is zero, then idle connections are not closed. You should set
+# the timeout to a value less than the server's timeout.
+idle_timeout="5m0s"
+
 
 # Network-server settings.
 [network_server]

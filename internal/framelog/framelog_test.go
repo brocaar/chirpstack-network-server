@@ -18,7 +18,7 @@ import (
 
 func TestFrameLog(t *testing.T) {
 	conf := test.GetConfig()
-	p := common.NewRedisPool(conf.RedisURL)
+	p := common.NewRedisPool(conf.RedisURL, 10, 0)
 	config.C.Redis.Pool = p
 
 	mac := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}

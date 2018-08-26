@@ -47,7 +47,7 @@ func TestOTAAScenarios(t *testing.T) {
 		t.Fatal(err)
 	}
 	config.C.PostgreSQL.DB = db
-	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
 	config.C.NetworkServer.NetID = [3]byte{3, 2, 1}
 
 	Convey("Given a clean database with a device", t, func() {

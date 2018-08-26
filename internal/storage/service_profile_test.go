@@ -18,7 +18,7 @@ func TestServiceProfile(t *testing.T) {
 		t.Fatal(err)
 	}
 	config.C.PostgreSQL.DB = db
-	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
 
 	Convey("Given a clean database", t, func() {
 		test.MustResetDB(config.C.PostgreSQL.DB)
@@ -36,15 +36,15 @@ func TestServiceProfile(t *testing.T) {
 				DevStatusReqFreq:       5,
 				ReportDevStatusBattery: true,
 				ReportDevStatusMargin:  true,
-				DRMin:          6,
-				DRMax:          7,
-				ChannelMask:    []byte{1, 2, 3},
-				PRAllowed:      true,
-				HRAllowed:      true,
-				RAAllowed:      true,
-				NwkGeoLoc:      true,
-				TargetPER:      1,
-				MinGWDiversity: 8,
+				DRMin:                  6,
+				DRMax:                  7,
+				ChannelMask:            []byte{1, 2, 3},
+				PRAllowed:              true,
+				HRAllowed:              true,
+				RAAllowed:              true,
+				NwkGeoLoc:              true,
+				TargetPER:              1,
+				MinGWDiversity:         8,
 			}
 
 			So(CreateServiceProfile(db, &sp), ShouldBeNil)

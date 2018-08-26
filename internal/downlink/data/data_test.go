@@ -172,7 +172,7 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 
 func TestSetMACCommandsSet(t *testing.T) {
 	conf := test.GetConfig()
-	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
 	test.MustFlushRedis(config.C.Redis.Pool)
 
 	Convey("Given a set of tests", t, func() {

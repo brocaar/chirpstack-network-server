@@ -100,9 +100,9 @@ func TestADR(t *testing.T) {
 					TXPowerIndex:             1,
 					MaxSupportedDR:           getMaxAllowedDR(),          // 5
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
-					DR:                   3,
-					ExpectedDR:           3,
-					ExpectedTXPowerIndex: 1,
+					DR:                       3,
+					ExpectedDR:               3,
+					ExpectedTXPowerIndex:     1,
 				},
 				{
 					Name:                     "one step: one step data-rate increase",
@@ -110,9 +110,9 @@ func TestADR(t *testing.T) {
 					TXPowerIndex:             1,
 					MaxSupportedDR:           getMaxAllowedDR(),
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
-					DR:                   4,
-					ExpectedDR:           5,
-					ExpectedTXPowerIndex: 1,
+					DR:                       4,
+					ExpectedDR:               5,
+					ExpectedTXPowerIndex:     1,
 				},
 				{
 					Name:                     "one step: one step tx-power decrease",
@@ -120,9 +120,9 @@ func TestADR(t *testing.T) {
 					TXPowerIndex:             1,
 					MaxSupportedDR:           getMaxAllowedDR(),
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
-					DR:                   5,
-					ExpectedDR:           5,
-					ExpectedTXPowerIndex: 2,
+					DR:                       5,
+					ExpectedDR:               5,
+					ExpectedTXPowerIndex:     2,
 				},
 				{
 					Name:                     "two steps: two steps data-rate increase",
@@ -130,9 +130,9 @@ func TestADR(t *testing.T) {
 					TXPowerIndex:             1,
 					MaxSupportedDR:           getMaxAllowedDR(),
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
-					DR:                   3,
-					ExpectedDR:           5,
-					ExpectedTXPowerIndex: 1,
+					DR:                       3,
+					ExpectedDR:               5,
+					ExpectedTXPowerIndex:     1,
 				},
 				{
 					Name:                     "two steps: one step data-rate increase (due to max supported dr), one step tx-power decrease",
@@ -140,9 +140,9 @@ func TestADR(t *testing.T) {
 					TXPowerIndex:             1,
 					MaxSupportedDR:           4,
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
-					DR:                   3,
-					ExpectedDR:           4,
-					ExpectedTXPowerIndex: 2,
+					DR:                       3,
+					ExpectedDR:               4,
+					ExpectedTXPowerIndex:     2,
 				},
 				{
 					Name:                     "two steps: one step data-rate increase, one step tx-power decrease",
@@ -150,9 +150,9 @@ func TestADR(t *testing.T) {
 					TXPowerIndex:             1,
 					MaxSupportedDR:           getMaxAllowedDR(),
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
-					DR:                   4,
-					ExpectedDR:           5,
-					ExpectedTXPowerIndex: 2,
+					DR:                       4,
+					ExpectedDR:               5,
+					ExpectedTXPowerIndex:     2,
 				},
 				{
 					Name:                     "two steps: two steps tx-power decrease",
@@ -160,9 +160,9 @@ func TestADR(t *testing.T) {
 					TXPowerIndex:             1,
 					MaxSupportedDR:           getMaxAllowedDR(),
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
-					DR:                   5,
-					ExpectedDR:           5,
-					ExpectedTXPowerIndex: 3,
+					DR:                       5,
+					ExpectedDR:               5,
+					ExpectedTXPowerIndex:     3,
 				},
 				{
 					Name:                     "two steps: one step tx-power decrease due to max supported tx power index",
@@ -170,9 +170,9 @@ func TestADR(t *testing.T) {
 					TXPowerIndex:             1,
 					MaxSupportedDR:           getMaxAllowedDR(),
 					MaxSupportedTXPowerIndex: 2,
-					DR:                   5,
-					ExpectedDR:           5,
-					ExpectedTXPowerIndex: 2,
+					DR:                       5,
+					ExpectedDR:               5,
+					ExpectedTXPowerIndex:     2,
 				},
 				{
 					Name:                     "one negative step: one step power increase",
@@ -180,9 +180,9 @@ func TestADR(t *testing.T) {
 					TXPowerIndex:             1,
 					MaxSupportedDR:           getMaxAllowedDR(),
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
-					DR:                   4,
-					ExpectedDR:           4,
-					ExpectedTXPowerIndex: 0,
+					DR:                       4,
+					ExpectedDR:               4,
+					ExpectedTXPowerIndex:     0,
 				},
 				{
 					Name:                     "one negative step, nothing to do (adr engine will never decrease data-rate)",
@@ -190,18 +190,18 @@ func TestADR(t *testing.T) {
 					TXPowerIndex:             0,
 					MaxSupportedDR:           getMaxAllowedDR(),
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
-					DR:                   4,
-					ExpectedDR:           4,
-					ExpectedTXPowerIndex: 0,
+					DR:                       4,
+					ExpectedDR:               4,
+					ExpectedTXPowerIndex:     0,
 				},
 				{
 					Name:                     "10 negative steps, should not adjust anything (as we already reached the min tx-power index)",
 					NStep:                    -10,
 					TXPowerIndex:             1,
 					MinSupportedTXPowerIndex: 1,
-					DR:                   4,
-					ExpectedDR:           4,
-					ExpectedTXPowerIndex: 1,
+					DR:                       4,
+					ExpectedDR:               4,
+					ExpectedTXPowerIndex:     1,
 				},
 			}
 
@@ -217,7 +217,7 @@ func TestADR(t *testing.T) {
 		})
 
 		Convey("Given a clean Redis database", func() {
-			config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL)
+			config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
 			test.MustFlushRedis(config.C.Redis.Pool)
 
 			Convey("Given a testtable for HandleADR", func() {
@@ -270,8 +270,8 @@ func TestADR(t *testing.T) {
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							EnabledUplinkChannels: []int{0, 1, 2},
-							DR:  2,
-							ADR: true,
+							DR:                    2,
+							ADR:                   true,
 							UplinkHistory: []storage.UplinkHistory{
 								{MaxSNR: -7},
 							},
@@ -285,9 +285,9 @@ func TestADR(t *testing.T) {
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							EnabledUplinkChannels: []int{0, 1, 2},
-							DR:           5,
-							TXPowerIndex: 3,
-							ADR:          true,
+							DR:                    5,
+							TXPowerIndex:          3,
+							ADR:                   true,
 							UplinkHistory: []storage.UplinkHistory{
 								{MaxSNR: 1, TXPowerIndex: 3},
 							},
@@ -320,10 +320,10 @@ func TestADR(t *testing.T) {
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							EnabledUplinkChannels: []int{0, 1, 2},
-							DR:           5,
-							TXPowerIndex: 4,
-							NbTrans:      3,
-							ADR:          true,
+							DR:                    5,
+							TXPowerIndex:          4,
+							NbTrans:               3,
+							ADR:                   true,
 							UplinkHistory: []storage.UplinkHistory{
 								{MaxSNR: -5, TXPowerIndex: 4},
 							},
@@ -354,8 +354,8 @@ func TestADR(t *testing.T) {
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							EnabledUplinkChannels: []int{0, 1, 2},
-							DR:  2,
-							ADR: true,
+							DR:                    2,
+							ADR:                   true,
 							UplinkHistory: []storage.UplinkHistory{
 								{MaxSNR: -7, TXPowerIndex: 0},
 							},
@@ -397,8 +397,8 @@ func TestADR(t *testing.T) {
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							EnabledUplinkChannels: []int{0, 1, 2, 3, 4, 6},
-							DR:  2,
-							ADR: true,
+							DR:                    2,
+							ADR:                   true,
 							UplinkHistory: []storage.UplinkHistory{
 								{MaxSNR: -7, TXPowerIndex: 0},
 							},
@@ -443,9 +443,9 @@ func TestADR(t *testing.T) {
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							EnabledUplinkChannels: []int{0, 1, 2},
-							DR:           5,
-							TXPowerIndex: 3,
-							NbTrans:      1,
+							DR:                    5,
+							TXPowerIndex:          3,
+							NbTrans:               1,
 							UplinkHistory: []storage.UplinkHistory{
 								{MaxSNR: 7, TXPowerIndex: 0},
 								{MaxSNR: -5, TXPowerIndex: 3},
@@ -460,9 +460,9 @@ func TestADR(t *testing.T) {
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							EnabledUplinkChannels: []int{0, 1, 2},
-							DR:           5,
-							TXPowerIndex: 3,
-							NbTrans:      1,
+							DR:                    5,
+							TXPowerIndex:          3,
+							NbTrans:               1,
 							UplinkHistory: []storage.UplinkHistory{
 								{MaxSNR: -20, TXPowerIndex: 0},
 								{MaxSNR: -20, TXPowerIndex: 3},
@@ -495,9 +495,9 @@ func TestADR(t *testing.T) {
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 							EnabledUplinkChannels: []int{0, 1, 2},
-							DR:           5,
-							TXPowerIndex: 3,
-							NbTrans:      1,
+							DR:                    5,
+							TXPowerIndex:          3,
+							NbTrans:               1,
 							UplinkHistory: []storage.UplinkHistory{
 								{FCnt: 0, MaxSNR: -20, TXPowerIndex: 3},
 								{FCnt: 1, MaxSNR: -20, TXPowerIndex: 3},
@@ -585,9 +585,9 @@ func TestADR(t *testing.T) {
 					DevAddr:               [4]byte{1, 2, 3, 4},
 					DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 					EnabledUplinkChannels: []int{0, 1, 2},
-					DR:           5,
-					TXPowerIndex: 3,
-					ADR:          true,
+					DR:                    5,
+					TXPowerIndex:          3,
+					ADR:                   true,
 					UplinkHistory: []storage.UplinkHistory{
 						{MaxSNR: 1, TXPowerIndex: 3},
 					},
