@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	redisDialReadTimeout  = time.Second
+	redisDialReadTimeout  = 60 * time.Second
 	redisDialWriteTimeout = time.Second
 )
 
