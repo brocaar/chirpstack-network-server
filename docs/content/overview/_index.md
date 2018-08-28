@@ -23,7 +23,7 @@ feature.
 |     |     |
 | --- | --- |
 | **LoRaWAN** | 1.0.x, 1.1.x |
-| **Device classes** | Class-A, Class-B & Class-C |
+| **Device classes** | Class-A (unicast), Class-B (unicast & multicast) & Class-C (unicast & multicast) |
 | **Message types** | (Un)confirmed uplink and downlink, Proprietary uplink and downlink |
 | **Device activation** | Over-the-air (OTAA) and activation by personalization              |
 | **Adaptive data-rate** | Supported for all regions |

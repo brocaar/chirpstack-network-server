@@ -331,6 +331,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:47bcbdf2a60a0bdd142f07f60771078857310fd1ededeb03956add7c7f6bef33"
+  name = "golang.org/x/exp"
+  packages = ["rand"]
+  pruneopts = "NUT"
+  revision = "3d87b88a115fa4e65fadcbf34e6a60e8040cec41"
+
+[[projects]]
+  branch = "master"
   digest = "1:8919c6fc70e61c099dfd1ed0cd962752d7576c4233d99c7f6a403bbafedde60c"
   name = "golang.org/x/net"
   packages = [
@@ -381,6 +389,35 @@
   pruneopts = "NUT"
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:03137dd59ea91bca9ba50d9bc0cfc61a9e6e829314d45a5436c1779c9e3d6135"
+  name = "gonum.org/v1/gonum"
+  packages = [
+    "blas",
+    "blas/blas64",
+    "blas/gonum",
+    "floats",
+    "graph",
+    "graph/internal/linear",
+    "graph/internal/ordered",
+    "graph/internal/set",
+    "graph/internal/uid",
+    "graph/path",
+    "graph/simple",
+    "graph/traverse",
+    "internal/asm/c128",
+    "internal/asm/f32",
+    "internal/asm/f64",
+    "internal/math32",
+    "lapack",
+    "lapack/gonum",
+    "lapack/lapack64",
+    "mat",
+  ]
+  pruneopts = "NUT"
+  revision = "f4b55da7eefa5a4b5c8521a05c554392f71816f6"
 
 [[projects]]
   branch = "master"
@@ -472,6 +509,9 @@
     "github.com/stretchr/testify/require",
     "github.com/stretchr/testify/suite",
     "golang.org/x/net/context",
+    "gonum.org/v1/gonum/graph",
+    "gonum.org/v1/gonum/graph/path",
+    "gonum.org/v1/gonum/graph/simple",
     "google.golang.org/grpc",
     "google.golang.org/grpc/codes",
     "google.golang.org/grpc/credentials",

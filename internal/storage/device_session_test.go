@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/brocaar/loraserver/internal/common"
@@ -165,7 +167,6 @@ func TestDeviceSession(t *testing.T) {
 					})
 				}
 			})
-
 		})
 	})
 }
@@ -321,6 +322,60 @@ func TestGetDeviceSessionForPHYPayload(t *testing.T) {
 					So(s.FCntUp, ShouldEqual, test.ExpectedFCntUp)
 				})
 			}
+		})
+	})
+}
+
+func (ts *StorageTestSuite) TestDeviceGatewayRXInfoSet() {
+	devEUI := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
+
+	ts.T().Run("Does not exist", func(t *testing.T) {
+		assert := require.New(t)
+
+		_, err := GetDeviceGatewayRXInfoSet(ts.RedisPool(), devEUI)
+		assert.Equal(ErrDoesNotExist, err)
+
+		sets, err := GetDeviceGatewayRXInfoSetForDevEUIs(ts.RedisPool(), []lorawan.EUI64{devEUI})
+		assert.NoError(err)
+		assert.Len(sets, 0)
+	})
+
+	ts.T().Run("Create", func(t *testing.T) {
+		assert := require.New(t)
+
+		rxInfoSet := DeviceGatewayRXInfoSet{
+			DevEUI: devEUI,
+			DR:     3,
+			Items: []DeviceGatewayRXInfo{
+				{
+					GatewayID: lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
+					RSSI:      -60,
+					LoRaSNR:   5.5,
+				},
+			},
+		}
+		assert.NoError(SaveDeviceGatewayRXInfoSet(ts.RedisPool(), rxInfoSet))
+
+		t.Run("Get", func(t *testing.T) {
+			assert := require.New(t)
+
+			rxInfoSetGet, err := GetDeviceGatewayRXInfoSet(ts.RedisPool(), devEUI)
+			assert.NoError(err)
+			assert.Equal(rxInfoSet, rxInfoSetGet)
+
+			rxInfoSets, err := GetDeviceGatewayRXInfoSetForDevEUIs(ts.RedisPool(), []lorawan.EUI64{devEUI})
+			assert.NoError(err)
+			assert.Len(rxInfoSets, 1)
+			assert.Equal(rxInfoSet, rxInfoSets[0])
+		})
+
+		t.Run("Delete", func(t *testing.T) {
+			assert := require.New(t)
+
+			assert.NoError(DeleteDeviceGatewayRXInfoSet(ts.RedisPool(), devEUI))
+			_, err := GetDeviceGatewayRXInfoSet(ts.RedisPool(), devEUI)
+			assert.Equal(ErrDoesNotExist, err)
+			assert.Equal(ErrDoesNotExist, DeleteDeviceGatewayRXInfoSet(ts.RedisPool(), devEUI))
 		})
 	})
 }

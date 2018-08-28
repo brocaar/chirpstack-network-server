@@ -6,6 +6,7 @@ import (
 	"google.golang.org/grpc/codes"
 
 	"github.com/brocaar/loraserver/internal/downlink/data"
+	"github.com/brocaar/loraserver/internal/downlink/multicast"
 	"github.com/brocaar/loraserver/internal/downlink/proprietary"
 	"github.com/brocaar/loraserver/internal/storage"
 )
@@ -18,6 +19,8 @@ var errToCode = map[error]codes.Code{
 	data.ErrMaxPayloadSizeExceeded: codes.InvalidArgument,
 
 	proprietary.ErrInvalidDataRate: codes.Internal,
+
+	multicast.ErrInvalidFCnt: codes.InvalidArgument,
 
 	storage.ErrAlreadyExists:                  codes.AlreadyExists,
 	storage.ErrDoesNotExistOrFCntOrMICInvalid: codes.NotFound,

@@ -152,13 +152,21 @@ var SpreadFactorToRequiredSNRTable = map[int]float64{
 // C holds the global configuration.
 var C Config
 
-// ClassCScheduleInterval it the interval in which the Class-C scheduler
+// SchedulerInterval it the interval in which the a scheduler
 // must run.
-var ClassCScheduleInterval = time.Second
+var SchedulerInterval = time.Second
 
-// ClassCScheduleBatchSize contains the batch size of the Class-C scheduler
-var ClassCScheduleBatchSize = 100
+// SchedulerBatchSize contains the batch size of the Class-C scheduler
+var SchedulerBatchSize = 100
 
 // ClassCDownlinkLockDuration contains the duration to lock the downlink
 // Class-C transmissions after a preceeding downlink tx.
 var ClassCDownlinkLockDuration = time.Second * 2
+
+// ClassBEnqueueMargin contains the margin duration when scheduling Class-B
+// messages.
+var ClassBEnqueueMargin = time.Second * 5
+
+// MulticastClassCInterval defines the interval between the gateway scheduling
+// for Class-C multicast.
+var MulticastClassCInterval = time.Second

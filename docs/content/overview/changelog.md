@@ -11,6 +11,11 @@ menu:
 
 ### Features
 
+#### Multicast support
+
+This adds support for creating multicast-groups to which devices can be
+assigned (potentially covered by multiple gateways).
+
 #### Updated data-format between LoRa Server and LoRa Gateway Bridge
 
 Note that this is a backwards compatible change as LoRa Server is able to

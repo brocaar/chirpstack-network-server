@@ -16,6 +16,7 @@ import (
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink/data/classb"
+	"github.com/brocaar/loraserver/internal/downlink/multicast"
 	proprietarydown "github.com/brocaar/loraserver/internal/downlink/proprietary"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/gps"
@@ -1331,6 +1332,244 @@ func (n *NetworkServerAPI) GetNextDownlinkFCntForDevEUI(ctx context.Context, req
 	}
 
 	return &resp, nil
+}
+
+// CreateMulticastGroup creates the given multicast-group.
+func (n *NetworkServerAPI) CreateMulticastGroup(ctx context.Context, req *ns.CreateMulticastGroupRequest) (*ns.CreateMulticastGroupResponse, error) {
+	if req.MulticastGroup == nil {
+		return nil, grpc.Errorf(codes.InvalidArgument, "multicast_group must not be nil")
+	}
+
+	mg := storage.MulticastGroup{
+		FCnt:           req.MulticastGroup.FCnt,
+		DR:             int(req.MulticastGroup.Dr),
+		Frequency:      int(req.MulticastGroup.Frequency),
+		PingSlotPeriod: int(req.MulticastGroup.PingSlotPeriod),
+	}
+
+	switch req.MulticastGroup.GroupType {
+	case ns.MulticastGroupType_CLASS_B:
+		mg.GroupType = storage.MulticastGroupB
+	case ns.MulticastGroupType_CLASS_C:
+		mg.GroupType = storage.MulticastGroupC
+	default:
+		return nil, grpc.Errorf(codes.InvalidArgument, "invalid group_type")
+	}
+
+	copy(mg.ID[:], req.MulticastGroup.Id)
+	copy(mg.MCAddr[:], req.MulticastGroup.McAddr)
+	copy(mg.MCNwkSKey[:], req.MulticastGroup.McNwkSKey)
+	copy(mg.ServiceProfileID[:], req.MulticastGroup.ServiceProfileId)
+	copy(mg.RoutingProfileID[:], req.MulticastGroup.RoutingProfileId)
+
+	if err := storage.CreateMulticastGroup(config.C.PostgreSQL.DB, &mg); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.CreateMulticastGroupResponse{
+		Id: mg.ID.Bytes(),
+	}, nil
+}
+
+// GetMulticastGroup returns the multicast-group given an id.
+func (n *NetworkServerAPI) GetMulticastGroup(ctx context.Context, req *ns.GetMulticastGroupRequest) (*ns.GetMulticastGroupResponse, error) {
+	var mgID uuid.UUID
+	copy(mgID[:], req.Id)
+
+	mg, err := storage.GetMulticastGroup(config.C.PostgreSQL.DB, mgID, false)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	resp := ns.GetMulticastGroupResponse{
+		MulticastGroup: &ns.MulticastGroup{
+			Id:               mg.ID.Bytes(),
+			McAddr:           mg.MCAddr[:],
+			McNwkSKey:        mg.MCNwkSKey[:],
+			FCnt:             mg.FCnt,
+			Dr:               uint32(mg.DR),
+			Frequency:        uint32(mg.Frequency),
+			PingSlotPeriod:   uint32(mg.PingSlotPeriod),
+			ServiceProfileId: mg.ServiceProfileID.Bytes(),
+			RoutingProfileId: mg.RoutingProfileID.Bytes(),
+		},
+	}
+
+	switch mg.GroupType {
+	case storage.MulticastGroupB:
+		resp.MulticastGroup.GroupType = ns.MulticastGroupType_CLASS_B
+	case storage.MulticastGroupC:
+		resp.MulticastGroup.GroupType = ns.MulticastGroupType_CLASS_C
+	default:
+		return nil, grpc.Errorf(codes.Internal, "invalid group-type: %s", mg.GroupType)
+	}
+
+	resp.CreatedAt, err = ptypes.TimestampProto(mg.CreatedAt)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	resp.UpdatedAt, err = ptypes.TimestampProto(mg.UpdatedAt)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &resp, nil
+}
+
+// UpdateMulticastGroup updates the given multicast-group.
+func (n *NetworkServerAPI) UpdateMulticastGroup(ctx context.Context, req *ns.UpdateMulticastGroupRequest) (*empty.Empty, error) {
+	if req.MulticastGroup == nil {
+		return nil, grpc.Errorf(codes.InvalidArgument, "multicast_group must not be nil")
+	}
+
+	var mgID uuid.UUID
+	copy(mgID[:], req.MulticastGroup.Id)
+
+	err := storage.Transaction(config.C.PostgreSQL.DB, func(tx sqlx.Ext) error {
+		mg, err := storage.GetMulticastGroup(tx, mgID, true)
+		if err != nil {
+			return errToRPCError(err)
+		}
+
+		copy(mg.MCAddr[:], req.MulticastGroup.McAddr)
+		copy(mg.MCNwkSKey[:], req.MulticastGroup.McNwkSKey)
+		copy(mg.ServiceProfileID[:], req.MulticastGroup.ServiceProfileId)
+		copy(mg.RoutingProfileID[:], req.MulticastGroup.RoutingProfileId)
+		mg.FCnt = req.MulticastGroup.FCnt
+		mg.DR = int(req.MulticastGroup.Dr)
+		mg.Frequency = int(req.MulticastGroup.Frequency)
+		mg.PingSlotPeriod = int(req.MulticastGroup.PingSlotPeriod)
+
+		switch req.MulticastGroup.GroupType {
+		case ns.MulticastGroupType_CLASS_B:
+			mg.GroupType = storage.MulticastGroupB
+		case ns.MulticastGroupType_CLASS_C:
+			mg.GroupType = storage.MulticastGroupC
+		default:
+			return grpc.Errorf(codes.InvalidArgument, "invalid group_type")
+		}
+
+		if err := storage.UpdateMulticastGroup(tx, &mg); err != nil {
+			return errToRPCError(err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &empty.Empty{}, nil
+}
+
+// DeleteMulticastGroup deletes a multicast-group given an id.
+func (n *NetworkServerAPI) DeleteMulticastGroup(ctx context.Context, req *ns.DeleteMulticastGroupRequest) (*empty.Empty, error) {
+	var mgID uuid.UUID
+	copy(mgID[:], req.Id)
+
+	if err := storage.DeleteMulticastGroup(config.C.PostgreSQL.DB, mgID); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &empty.Empty{}, nil
+}
+
+// AddDeviceToMulticastGroup adds the given device to the given multicast-group.
+func (n *NetworkServerAPI) AddDeviceToMulticastGroup(ctx context.Context, req *ns.AddDeviceToMulticastGroupRequest) (*empty.Empty, error) {
+	var devEUI lorawan.EUI64
+	var mgID uuid.UUID
+	copy(devEUI[:], req.DevEui)
+	copy(mgID[:], req.MulticastGroupId)
+
+	if err := storage.AddDeviceToMulticastGroup(config.C.PostgreSQL.DB, devEUI, mgID); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &empty.Empty{}, nil
+}
+
+// RemoveDeviceFromMulticastGroup removes the given device from the given multicast-group.
+func (n *NetworkServerAPI) RemoveDeviceFromMulticastGroup(ctx context.Context, req *ns.RemoveDeviceFromMulticastGroupRequest) (*empty.Empty, error) {
+	var devEUI lorawan.EUI64
+	var mgID uuid.UUID
+	copy(devEUI[:], req.DevEui)
+	copy(mgID[:], req.MulticastGroupId)
+
+	if err := storage.RemoveDeviceFromMulticastGroup(config.C.PostgreSQL.DB, devEUI, mgID); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &empty.Empty{}, nil
+}
+
+// EnqueueMulticastQueueItem creates the given multicast queue-item.
+func (n *NetworkServerAPI) EnqueueMulticastQueueItem(ctx context.Context, req *ns.EnqueueMulticastQueueItemRequest) (*empty.Empty, error) {
+	if req.MulticastQueueItem == nil {
+		return nil, grpc.Errorf(codes.InvalidArgument, "multicast_queue_item must not be nil")
+	}
+
+	var mgID uuid.UUID
+	copy(mgID[:], req.MulticastQueueItem.MulticastGroupId)
+
+	qi := storage.MulticastQueueItem{
+		MulticastGroupID: mgID,
+		FCnt:             req.MulticastQueueItem.FCnt,
+		FPort:            uint8(req.MulticastQueueItem.FPort),
+		FRMPayload:       req.MulticastQueueItem.FrmPayload,
+	}
+
+	err := storage.Transaction(config.C.PostgreSQL.DB, func(tx sqlx.Ext) error {
+		return multicast.EnqueueQueueItem(config.C.Redis.Pool, tx, qi)
+	})
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &empty.Empty{}, nil
+}
+
+// FlushMulticastQueueForMulticastGroup flushes the multicast device-queue given a multicast-group id.
+func (n *NetworkServerAPI) FlushMulticastQueueForMulticastGroup(ctx context.Context, req *ns.FlushMulticastQueueForMulticastGroupRequest) (*empty.Empty, error) {
+	var mgID uuid.UUID
+	copy(mgID[:], req.MulticastGroupId)
+
+	if err := storage.FlushMulticastQueueForMulticastGroup(config.C.PostgreSQL.DB, mgID); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &empty.Empty{}, nil
+}
+
+// GetMulticastQueueItemsForMulticastGroup returns the queue-items given a multicast-group id.
+func (n *NetworkServerAPI) GetMulticastQueueItemsForMulticastGroup(ctx context.Context, req *ns.GetMulticastQueueItemsForMulticastGroupRequest) (*ns.GetMulticastQueueItemsForMulticastGroupResponse, error) {
+	var mgID uuid.UUID
+	copy(mgID[:], req.MulticastGroupId)
+
+	items, err := storage.GetMulticastQueueItemsForMulticastGroup(config.C.PostgreSQL.DB, mgID)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	counterSeen := make(map[uint32]struct{})
+	var out ns.GetMulticastQueueItemsForMulticastGroupResponse
+	for i := range items {
+		// we need to de-duplicate the queue-items as they are created per-gateway
+		if _, seen := counterSeen[items[i].FCnt]; seen {
+			continue
+		}
+
+		qi := ns.MulticastQueueItem{
+			MulticastGroupId: items[i].MulticastGroupID.Bytes(),
+			FrmPayload:       items[i].FRMPayload,
+			FCnt:             items[i].FCnt,
+			FPort:            uint32(items[i].FPort),
+		}
+		counterSeen[items[i].FCnt] = struct{}{}
+		out.MulticastQueueItems = append(out.MulticastQueueItems, &qi)
+	}
+
+	return &out, nil
 }
 
 // GetVersion returns the LoRa Server version.

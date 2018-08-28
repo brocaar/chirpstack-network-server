@@ -123,6 +123,34 @@ service NetworkServerService {
     // StreamFrameLogsForDevice returns a stream of frames seen by the given device.
     rpc StreamFrameLogsForDevice(StreamFrameLogsForDeviceRequest) returns (stream StreamFrameLogsForDeviceResponse) {}
 
+    // CreateMulticastGroup creates the given multicast-group.
+    rpc CreateMulticastGroup(CreateMulticastGroupRequest) returns (CreateMulticastGroupResponse) {}
+
+    // GetMulticastGroup returns the multicast-group given an id.
+    rpc GetMulticastGroup(GetMulticastGroupRequest) returns (GetMulticastGroupResponse) {}
+
+    // UpdateMulticastGroup updates the given multicast-group.
+    rpc UpdateMulticastGroup(UpdateMulticastGroupRequest) returns (google.protobuf.Empty) {}
+
+    // DeleteMulticastGroup deletes a multicast-group given an id.
+    rpc DeleteMulticastGroup(DeleteMulticastGroupRequest) returns (google.protobuf.Empty) {}
+
+    // AddDeviceToMulticastGroup adds the given device to the given multicast-group.
+    rpc AddDeviceToMulticastGroup(AddDeviceToMulticastGroupRequest) returns (google.protobuf.Empty) {}
+
+    // RemoveDeviceFromMulticastGroup removes the given device from the given multicast-group.
+    rpc RemoveDeviceFromMulticastGroup(RemoveDeviceFromMulticastGroupRequest) returns (google.protobuf.Empty) {}
+
+    // EnqueueMulticastQueueItem enqueues the given multicast queue-item and
+    // increments the frame-counter after enqueueing.
+    rpc EnqueueMulticastQueueItem(EnqueueMulticastQueueItemRequest) returns (google.protobuf.Empty) {}
+
+    // FlushMulticastQueueForMulticastGroup flushes the multicast device-queue given a multicast-group id.
+    rpc FlushMulticastQueueForMulticastGroup(FlushMulticastQueueForMulticastGroupRequest) returns (google.protobuf.Empty) {}
+
+    // GetMulticastQueueItemsForMulticastGroup returns the queue-items given a multicast-group id.
+    rpc GetMulticastQueueItemsForMulticastGroup(GetMulticastQueueItemsForMulticastGroupRequest) returns (GetMulticastQueueItemsForMulticastGroupResponse) {}
+
     // GetVersion returns the LoRa Server version.
     rpc GetVersion(google.protobuf.Empty) returns (GetVersionResponse) {}
 }
@@ -342,7 +370,6 @@ message GetDeviceActivationResponse {
     // Device-activation object.
     DeviceActivation device_activation = 1;
 }
-
 
 message GetRandomDevAddrResponse {
     // Random device address (DevAddr).
@@ -624,4 +651,133 @@ message UpdateGatewayProfileRequest {
 message DeleteGatewayProfileRequest {
     // Gateway-profile ID.
     bytes id = 1;
+}
+
+enum MulticastGroupType {
+    // Class-C.
+    CLASS_C = 0;
+
+    // Class-B.
+    CLASS_B = 1;
+}
+
+message MulticastGroup {
+    // Multicast-group ID.
+    // Note: this can be set on create. When left blank, a random ID will
+    // be generated.
+    bytes id = 1;
+
+    // Multicast Address for this group.
+    bytes mc_addr = 2;
+
+    // Multicast network session key.
+    bytes mc_nwk_s_key = 3;
+
+    // Frame-counter (downlink).
+    uint32 f_cnt = 4;
+
+    // Multicast-group type (Class-B or Class-C).
+    MulticastGroupType group_type = 5;
+
+    // Data-rate.
+    uint32 dr = 6;
+
+    // Frequency (Hz).
+    uint32 frequency = 7;
+
+    // Ping-slot period.
+    // Mandatory for Class-B multicast groups.
+    uint32 ping_slot_period = 8;
+
+    // Service-profile ID.
+    bytes service_profile_id = 9;
+
+    // Routing-profile ID.
+    bytes routing_profile_id = 10;
+}
+
+message CreateMulticastGroupRequest {
+    // Multicast-group to create.
+    MulticastGroup multicast_group = 1;
+}
+
+message CreateMulticastGroupResponse {
+    // Multicast-group ID.
+    bytes id = 1;
+}
+
+message GetMulticastGroupRequest {
+    // Multicast-group ID.
+    bytes id = 1;
+}
+
+message GetMulticastGroupResponse {
+    // Multicast-group.
+    MulticastGroup multicast_group = 1;
+
+    // Created at timestamp.
+    google.protobuf.Timestamp created_at = 2;
+
+    // Last update timestamp.
+    google.protobuf.Timestamp updated_at = 3;
+}
+
+message UpdateMulticastGroupRequest {
+    // Multicast-group to update.
+    MulticastGroup multicast_group = 1;
+}
+
+message DeleteMulticastGroupRequest {
+    // Multicast-group ID.
+    bytes id = 1;
+}
+
+
+message AddDeviceToMulticastGroupRequest {
+    // Device EUI.
+    bytes dev_eui = 1;
+
+    // Multicast-group ID.
+    bytes multicast_group_id = 2;
+}
+
+message RemoveDeviceFromMulticastGroupRequest {
+    // Device EUI.
+    bytes dev_eui = 1;
+
+    // Multicast-group ID.
+    bytes multicast_group_id = 2;
+}
+
+message MulticastQueueItem {
+    // Multicast-group id.
+    bytes multicast_group_id = 1;
+
+    // Frame-counter of payload.
+    uint32 f_cnt = 2;
+
+    // Frame-port of payload.
+    uint32 f_port = 3;
+
+    // Encrypted FRMPayload bytes.
+    bytes frm_payload = 4;
+
+}
+
+message EnqueueMulticastQueueItemRequest {
+    MulticastQueueItem multicast_queue_item = 1;
+}
+
+message FlushMulticastQueueForMulticastGroupRequest {
+    // Multicast-group id.
+    bytes multicast_group_id = 1;
+}
+
+message GetMulticastQueueItemsForMulticastGroupRequest {
+    // Multicast-group id.
+    bytes multicast_group_id = 1;
+}
+
+message GetMulticastQueueItemsForMulticastGroupResponse {
+    repeated MulticastQueueItem multicast_queue_items = 1;
 }

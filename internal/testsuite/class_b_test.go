@@ -412,7 +412,7 @@ func (ts *ClassBTestSuite) TestDownlink() {
 				assert.NoError(storage.CreateDeviceQueueItem(ts.DB(), &qi))
 			}
 
-			assert.NoError(downlink.ScheduleBatch(1))
+			assert.NoError(downlink.ScheduleDeviceQueueBatch(1))
 
 			ds, err := storage.GetDeviceSession(ts.RedisPool(), tst.DeviceSession.DevEUI)
 			assert.NoError(err)

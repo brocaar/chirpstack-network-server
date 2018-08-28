@@ -178,3 +178,26 @@ message DeviceSessionPB {
     // yet been activated by the device (by sending a first uplink).
     bytes pending_rejoin_device_session = 43;
 }
+
+
+message DeviceGatewayRXInfoSetPB {
+    // Device EUI.
+    bytes dev_eui = 1;
+
+    // Data-rate.
+    uint32 dr = 2;
+
+    // Items contains set items.
+    repeated DeviceGatewayRXInfoPB items = 3;
+}
+
+message DeviceGatewayRXInfoPB {
+    // Gateway ID.
+    bytes gateway_id = 1;
+
+    // RSSI.
+    int32 rssi = 2;
+
+    // LoRa SNR.
+    double lora_snr = 3;
+}

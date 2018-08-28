@@ -355,7 +355,7 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 // The device records will be locked for update so that multiple instances can
 // run this query in parallel without the risk of duplicate scheduling.
 func GetDevicesWithClassBOrClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Device, error) {
-	gpsEpochScheduleTime := gps.Time(time.Now().Add(config.ClassCScheduleInterval * 2)).TimeSinceGPSEpoch()
+	gpsEpochScheduleTime := gps.Time(time.Now().Add(config.SchedulerInterval * 2)).TimeSinceGPSEpoch()
 
 	var devices []Device
 	err := sqlx.Select(db, &devices, `

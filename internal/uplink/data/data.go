@@ -39,6 +39,7 @@ var tasks = []func(*dataContext) error{
 	sendRXInfoToNetworkController,
 	handleFOptsMACCommands,
 	handleFRMPayloadMACCommands,
+	storeDeviceGatewayRXInfoSet,
 	appendMetaDataToUplinkHistory,
 	sendFRMPayloadToApplicationServer,
 	setLastRXInfoSet,
@@ -195,6 +196,33 @@ func appendMetaDataToUplinkHistory(ctx *dataContext) error {
 		MaxSNR:       maxSNR,
 		TXPowerIndex: ctx.DeviceSession.TXPowerIndex,
 	})
+
+	return nil
+}
+
+func storeDeviceGatewayRXInfoSet(ctx *dataContext) error {
+	dr, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, config.C.NetworkServer.Band.Band)
+	if err != nil {
+		errors.Wrap(err, "get data-rate error")
+	}
+
+	rxInfoSet := storage.DeviceGatewayRXInfoSet{
+		DevEUI: ctx.DeviceSession.DevEUI,
+		DR:     dr,
+	}
+
+	for i := range ctx.RXPacket.RXInfoSet {
+		rxInfoSet.Items = append(rxInfoSet.Items, storage.DeviceGatewayRXInfo{
+			GatewayID: helpers.GetGatewayID(ctx.RXPacket.RXInfoSet[i]),
+			RSSI:      int(ctx.RXPacket.RXInfoSet[i].Rssi),
+			LoRaSNR:   ctx.RXPacket.RXInfoSet[i].LoraSnr,
+		})
+	}
+
+	err = storage.SaveDeviceGatewayRXInfoSet(config.C.Redis.Pool, rxInfoSet)
+	if err != nil {
+		return errors.Wrap(err, "save device gateway rx-info set error")
+	}
 
 	return nil
 }
