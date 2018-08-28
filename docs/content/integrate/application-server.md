@@ -22,15 +22,15 @@ for more information.
 [LoRa App Server](https://docs.loraserver.io/lora-app-server/) is a reference
 implementation of an application-server compatible with LoRa Server.
 
-## Your own application-server
+## Custom application-server
 
-It is also possible to implement your own application-server. The
+It is also possible to implement a custom application-server. The
 application-server API has been defined as a [gRPC](https://grpc.io) service
-so that it should be really easy to generate stubs for various programming
-languages. See the [gRPC](https://grpc.io) site for more information about
-the gRPC framework and how to transform `.proto` files into source-code.
-Please see [api/as/as.proto](https://github.com/brocaar/loraserver/blob/master/api/as/as.proto)
-for the application-server API specification.
+which allows you to easily generate stubs for various programming languages.
+See the [gRPC](https://grpc.io) site for more information about
+the gRPC framework and how to generate source-code using `.proto` files.
 
-See also the [api documentation]({{<ref "/integrate/api.md">}}) for the
-network-server API that your application-server can use.
+Please refer to [api/as/as.proto](https://github.com/brocaar/loraserver/blob/master/api/as/as.proto)
+for the application-server API specification. 
+For the network-server API, please refer to the [api documentation]({{<ref "/integrate/api.md">}}) for the
+for more information.
