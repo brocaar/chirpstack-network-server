@@ -14,7 +14,7 @@ application-server component. You can either use LoRa App Server
 your own application-server.
 
 LoRa Server supports sending data for different devices to different
-application-servers. See [routing-profile]({{<ref "features/routing-profile.md">}})
+application-servers. See [routing-profile]({{<ref "/features/routing-profile.md">}})
 for more information.
 
 ## LoRa App Server
@@ -32,5 +32,5 @@ the gRPC framework and how to transform `.proto` files into source-code.
 Please see [api/as/as.proto](https://github.com/brocaar/loraserver/blob/master/api/as/as.proto)
 for the application-server API specification.
 
-See also the [api documentation]({{<ref "integrate/api.md">}}) for the
+See also the [api documentation]({{<ref "/integrate/api.md">}}) for the
 network-server API that your application-server can use.

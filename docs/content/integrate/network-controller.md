@@ -16,7 +16,7 @@ For this to work, the external network-controller must implement the
 `NetworkController` gRPC service as specified in
 [`api/nc/nc.proto`](https://github.com/brocaar/loraserver/blob/master/api/nc/nc.proto).
 Also LoRa Server must be configured so that it connects to this network-controller
-(see [configuration]({{< ref "install/config.md" >}})).
+(see [configuration]({{< ref "/install/config.md" >}})).
 
 
 ## Code example in Go

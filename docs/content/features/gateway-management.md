@@ -9,8 +9,8 @@ menu:
 # Gateway management
 
 LoRa Server has support for managing gateways. Gateways can be created either
-by enabling *create on stats* (see [gateway configuration]({{<ref "install/config.md">}}))
-or by using the [api]({{<ref "integrate/api.md">}}).
+by enabling *create on stats* (see [gateway configuration]({{<ref "/install/config.md">}}))
+or by using the [api]({{<ref "/integrate/api.md">}}).
 
 ## Gateway location
 
@@ -22,7 +22,7 @@ updating the gateway.
 ## Gateway statistics
 
 LoRa Server exposes the gateway statistics on a pre-configured aggregation
-intervals (see [gateway configuration]({{<ref "install/config.md">}})).
+intervals (see [gateway configuration]({{<ref "/install/config.md">}})).
 By default these intervals are configured to: minute, hour and day.
 
 Note that LoRa Server does not implement any retention of the gateway stats.

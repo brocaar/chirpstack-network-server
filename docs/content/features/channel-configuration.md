@@ -12,7 +12,7 @@ LoRa Server supports the (re)configuration of the channels used by the device
 for uplink transmissions. This feature can be used to configure additional
 uplink channels (e.g. for the EU ISM band), or to enable only a sub-set of
 the uplink channels specified by the [LoRaWAN Regional Parameters](https://www.lora-alliance.org/lorawan-for-developers).
-See also [channel configuration]({{<ref "install/config.md">}}).
+See also [channel configuration]({{<ref "/install/config.md">}}).
 
 ## Additional channels
 

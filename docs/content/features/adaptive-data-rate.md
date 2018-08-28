@@ -26,4 +26,4 @@ adjust the data-rate and tx-power of the device if needed.
 
 To make sure there is enough link margin left after setting the ideal
 data-rate and tx-power, it is important to configure the installation margin
-correctly. See also [adaptive data-rate configuration]({{<ref "install/config.md">}}).
+correctly. See also [adaptive data-rate configuration]({{<ref "/install/config.md">}}).
