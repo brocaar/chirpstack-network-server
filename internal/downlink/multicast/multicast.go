@@ -20,17 +20,17 @@ import (
 var errAbort = errors.New("")
 
 type multicastContext struct {
-	Token          uint16
-	DB             sqlx.Ext
-	MulticastGroup storage.MulticastGroup
-	QueueItem      storage.MulticastQueueItem
-	TXInfo         gw.DownlinkTXInfo
-	PHYPayload     lorawan.PHYPayload
+	Token              uint16
+	DB                 sqlx.Ext
+	MulticastGroup     storage.MulticastGroup
+	MulticastQueueItem storage.MulticastQueueItem
+	TXInfo             gw.DownlinkTXInfo
+	PHYPayload         lorawan.PHYPayload
 }
 
 var multicastTasks = []func(*multicastContext) error{
+	getMulticastGroup,
 	setToken,
-	getNextQueueItem,
 	removeQueueItem,
 	validatePayloadSize,
 	setTXInfo,
@@ -58,6 +58,35 @@ func HandleScheduleNextQueueItem(db sqlx.Ext, mg storage.MulticastGroup) error {
 	return nil
 }
 
+// HandleScheduleQueueItem handles the scheduling of the given queue-item.
+func HandleScheduleQueueItem(db sqlx.Ext, qi storage.MulticastQueueItem) error {
+	ctx := multicastContext{
+		DB:                 db,
+		MulticastQueueItem: qi,
+	}
+
+	for _, t := range multicastTasks {
+		if err := t(&ctx); err != nil {
+			if err == errAbort {
+				return nil
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func getMulticastGroup(ctx *multicastContext) error {
+	var err error
+	ctx.MulticastGroup, err = storage.GetMulticastGroup(ctx.DB, ctx.MulticastQueueItem.MulticastGroupID, false)
+	if err != nil {
+		return errors.Wrap(err, "get multicast-group error")
+	}
+
+	return nil
+}
+
 func setToken(ctx *multicastContext) error {
 	b := make([]byte, 2)
 	_, err := rand.Read(b)
@@ -68,18 +97,8 @@ func setToken(ctx *multicastContext) error {
 	return nil
 }
 
-func getNextQueueItem(ctx *multicastContext) error {
-	var err error
-	ctx.QueueItem, err = storage.GetNextMulticastQueueItemForMulticastGroup(ctx.DB, ctx.MulticastGroup.ID)
-	if err != nil {
-		return errors.Wrap(err, "get next multicast queue-item error")
-	}
-
-	return nil
-}
-
 func removeQueueItem(ctx *multicastContext) error {
-	if err := storage.DeleteMulticastQueueItem(ctx.DB, ctx.QueueItem.ID); err != nil {
+	if err := storage.DeleteMulticastQueueItem(ctx.DB, ctx.MulticastQueueItem.ID); err != nil {
 		return errors.Wrap(err, "delete multicast queue-item error")
 	}
 
@@ -92,12 +111,12 @@ func validatePayloadSize(ctx *multicastContext) error {
 		return errors.Wrap(err, "get max payload-size for data-rate index error")
 	}
 
-	if len(ctx.QueueItem.FRMPayload) > maxSize.N {
+	if len(ctx.MulticastQueueItem.FRMPayload) > maxSize.N {
 		log.WithFields(log.Fields{
 			"multicast_group_id":   ctx.MulticastGroup.ID,
 			"dr":                   ctx.MulticastGroup.DR,
 			"max_frm_payload_size": maxSize.N,
-			"frm_payload_size":     len(ctx.QueueItem.FRMPayload),
+			"frm_payload_size":     len(ctx.MulticastQueueItem.FRMPayload),
 		}).Error("payload exceeds max size for data-rate")
 
 		return errAbort
@@ -108,13 +127,13 @@ func validatePayloadSize(ctx *multicastContext) error {
 
 func setTXInfo(ctx *multicastContext) error {
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId:   ctx.QueueItem.GatewayID[:],
-		Immediately: ctx.QueueItem.EmitAtTimeSinceGPSEpoch == nil,
+		GatewayId:   ctx.MulticastQueueItem.GatewayID[:],
+		Immediately: ctx.MulticastQueueItem.EmitAtTimeSinceGPSEpoch == nil,
 		Frequency:   uint32(ctx.MulticastGroup.Frequency),
 	}
 
-	if ctx.QueueItem.EmitAtTimeSinceGPSEpoch != nil {
-		txInfo.TimeSinceGpsEpoch = ptypes.DurationProto(*ctx.QueueItem.EmitAtTimeSinceGPSEpoch)
+	if ctx.MulticastQueueItem.EmitAtTimeSinceGPSEpoch != nil {
+		txInfo.TimeSinceGpsEpoch = ptypes.DurationProto(*ctx.MulticastQueueItem.EmitAtTimeSinceGPSEpoch)
 	}
 
 	if err := helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.MulticastGroup.DR, config.C.NetworkServer.Band.Band); err != nil {
@@ -141,10 +160,10 @@ func setPHYPayload(ctx *multicastContext) error {
 		MACPayload: &lorawan.MACPayload{
 			FHDR: lorawan.FHDR{
 				DevAddr: ctx.MulticastGroup.MCAddr,
-				FCnt:    ctx.QueueItem.FCnt,
+				FCnt:    ctx.MulticastQueueItem.FCnt,
 			},
-			FPort:      &ctx.QueueItem.FPort,
-			FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: ctx.QueueItem.FRMPayload}},
+			FPort:      &ctx.MulticastQueueItem.FPort,
+			FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: ctx.MulticastQueueItem.FRMPayload}},
 		},
 	}
 

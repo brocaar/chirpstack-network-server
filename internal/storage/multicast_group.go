@@ -325,55 +325,29 @@ func GetMulticastQueueItemsForMulticastGroup(db sqlx.Queryer, multicastGroupID u
 	return items, nil
 }
 
-// GetMulticastGroupsWithQueueItems returns a slice of multicast-groups that
-// contain queue items.
-// The multicast-group records will be locked for update so that multiple
-// instances can run this query in parallel without the risk of duplicate
-// scheduling.
-func GetMulticastGroupsWithQueueItems(db sqlx.Ext, count int) ([]MulticastGroup, error) {
-	var multicastGroups []MulticastGroup
-	err := sqlx.Select(db, &multicastGroups, `
-		select
-			mg.*
-		from multicast_group mg
-		where exists (
-			select
-				1
-			from
-				multicast_queue mq
-			where
-				mq.multicast_group_id = mg.id
-				and mq.schedule_at <= $2
-		)
-		limit $1
-		for update of mg skip locked
-	`, count, time.Now())
-	if err != nil {
-		return nil, handlePSQLError(err, "select error")
-	}
-	return multicastGroups, nil
-}
-
-// GetNextMulticastQueueItemForMulticastGroup returns the next multicast
-// queue-item given a multicast-group.
-func GetNextMulticastQueueItemForMulticastGroup(db sqlx.Queryer, multicastGroupID uuid.UUID) (MulticastQueueItem, error) {
-	var qi MulticastQueueItem
-	err := sqlx.Get(db, &qi, `
+// GetSchedulableMulticastQueueItems returns a slice of multicast-queue items
+// for scheduling.
+// The returned queue-items will be locked for update so that this query can
+// be executed in parallel.
+func GetSchedulableMulticastQueueItems(db sqlx.Ext, count int) ([]MulticastQueueItem, error) {
+	var items []MulticastQueueItem
+	err := sqlx.Select(db, &items, `
 		select
 			*
 		from
 			multicast_queue
 		where
-			multicast_group_id = $1
+			schedule_at <= $2
 		order by
 			id
-		limit 1
-	`, multicastGroupID)
+		limit $1
+		for update skip locked
+	`, count, time.Now())
 	if err != nil {
-		return qi, handlePSQLError(err, "select error")
+		return nil, handlePSQLError(err, "select error")
 	}
 
-	return qi, nil
+	return items, nil
 }
 
 // GetMaxEmitAtTimeSinceGPSEpochForMulticastGroup returns the maximum / last GPS

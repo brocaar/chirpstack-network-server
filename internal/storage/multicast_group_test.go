@@ -33,7 +33,6 @@ func (ts *StorageTestSuite) GetMulticastGroup() MulticastGroup {
 }
 
 func (ts *StorageTestSuite) TestMulticastGroup() {
-
 	ts.T().Run("Create", func(t *testing.T) {
 		assert := require.New(t)
 
@@ -139,13 +138,14 @@ func (ts *StorageTestSuite) TestMulticastQueue() {
 			assert.EqualValues(items[1].FCnt, 11)
 		})
 
-		t.Run("Next queue item", func(t *testing.T) {
+		t.Run("Schedulable multicast queue-items", func(t *testing.T) {
 			assert := require.New(t)
 
-			nqi, err := GetNextMulticastQueueItemForMulticastGroup(ts.Tx(), mg.ID)
+			items, err := GetSchedulableMulticastQueueItems(ts.Tx(), 1)
 			assert.NoError(err)
+			assert.Len(items, 1)
 
-			assert.Equal(qi1.FCnt, nqi.FCnt)
+			assert.Equal(qi1.FCnt, items[0].FCnt)
 		})
 
 		t.Run("Max emit at", func(t *testing.T) {
@@ -212,17 +212,17 @@ func (ts *StorageTestSuite) TestGetMulticastGroupsWithQueueItems() {
 	assert.NoError(CreateMulticastQueueItem(ts.DB(), &qi2))
 
 	Transaction(ts.DB(), func(tx sqlx.Ext) error {
-		groups, err := GetMulticastGroupsWithQueueItems(tx, 10)
+		items, err := GetSchedulableMulticastQueueItems(tx, 10)
 		assert.NoError(err)
-		assert.Len(groups, 1)
-		assert.Equal(mg1.ID, groups[0].ID)
+		assert.Len(items, 1)
+		assert.Equal(mg1.ID, items[0].MulticastGroupID)
 
 		// new transaction must return 0 items as the first one did lock
 		// the multicast-group
 		Transaction(ts.DB(), func(tx sqlx.Ext) error {
-			groups, err := GetMulticastGroupsWithQueueItems(tx, 10)
+			items, err := GetSchedulableMulticastQueueItems(tx, 10)
 			assert.NoError(err)
-			assert.Len(groups, 0)
+			assert.Len(items, 0)
 			return nil
 		})
 
