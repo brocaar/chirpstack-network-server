@@ -367,14 +367,17 @@ func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCer
 		}).Fatalf("load key-pair error: %s", err)
 	}
 
-	rawCaCert, err := ioutil.ReadFile(caCert)
-	if err != nil {
-		log.WithField("ca", caCert).Fatalf("load ca cert error: %s", err)
-	}
+	var caCertPool *x509.CertPool
+	if caCert != "" {
+		rawCaCert, err := ioutil.ReadFile(caCert)
+		if err != nil {
+			log.WithField("ca", caCert).Fatalf("load ca cert error: %s", err)
+		}
 
-	caCertPool := x509.NewCertPool()
-	if !caCertPool.AppendCertsFromPEM(rawCaCert) {
-		log.WithField("ca_cert", caCert).Fatal("append ca certificate error")
+		caCertPool = x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(rawCaCert) {
+			log.WithField("ca_cert", caCert).Fatal("append ca certificate error")
+		}
 	}
 
 	if verifyClientCert {

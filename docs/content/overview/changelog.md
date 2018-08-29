@@ -38,6 +38,10 @@ based serialization.
 
 * Make Redis pool size and idle timeout configurable.
 
+### Bugfixes
+
+* Fix panic on empty routing-profile CA cert ([#349](https://github.com/brocaar/loraserver/issues/349))
+
 ## v2.0.2
 
 ### Bugfixes

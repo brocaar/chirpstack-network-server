@@ -101,14 +101,17 @@ func NewClient(server, caCert, tlsCert, tlsKey string) (Client, error) {
 		return nil, errors.Wrap(err, "load x509 keypair error")
 	}
 
-	rawCACert, err := ioutil.ReadFile(caCert)
-	if err != nil {
-		return nil, errors.Wrap(err, "load ca cert error")
-	}
+	var caCertPool *x509.CertPool
+	if caCert != "" {
+		rawCACert, err := ioutil.ReadFile(caCert)
+		if err != nil {
+			return nil, errors.Wrap(err, "load ca cert error")
+		}
 
-	caCertPool := x509.NewCertPool()
-	if !caCertPool.AppendCertsFromPEM(rawCACert) {
-		return nil, errors.New("append ca cert to pool error")
+		caCertPool = x509.NewCertPool()
+		if !caCertPool.AppendCertsFromPEM(rawCACert) {
+			return nil, errors.New("append ca cert to pool error")
+		}
 	}
 
 	tlsConfig := &tls.Config{

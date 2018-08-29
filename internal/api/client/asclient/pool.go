@@ -105,9 +105,12 @@ func (p *pool) createClient(hostname string, caCert, tlsCert, tlsKey []byte) (*g
 			return nil, nil, errors.Wrap(err, "load x509 keypair error")
 		}
 
-		caCertPool := x509.NewCertPool()
-		if !caCertPool.AppendCertsFromPEM(caCert) {
-			return nil, nil, errors.Wrap(err, "append ca cert to pool error")
+		var caCertPool *x509.CertPool
+		if len(caCert) != 0 {
+			caCertPool = x509.NewCertPool()
+			if !caCertPool.AppendCertsFromPEM(caCert) {
+				return nil, nil, errors.Wrap(err, "append ca cert to pool error")
+			}
 		}
 
 		asOpts = append(asOpts, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
