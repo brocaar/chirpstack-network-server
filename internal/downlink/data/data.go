@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
-
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -26,7 +25,8 @@ import (
 type deviceClass int
 
 const (
-	classB deviceClass = iota
+	classA deviceClass = iota
+	classB
 	classC
 )
 
@@ -82,6 +82,9 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	forClass(classB,
 		checkBeaconLocked,
 		setTXInfoForClassB,
+	),
+	forClass(classA,
+		returnInvalidDeviceClassError,
 	),
 	setRemainingPayloadSize,
 	getNextDeviceQueueItem,
@@ -170,6 +173,10 @@ func (ctx dataContext) Validate() error {
 
 func forClass(class deviceClass, tasks ...func(*dataContext) error) func(*dataContext) error {
 	return func(ctx *dataContext) error {
+		if class == classA && (ctx.DeviceProfile.SupportsClassB || ctx.DeviceProfile.SupportsClassC) {
+			return nil
+		}
+
 		if class == classC && !ctx.DeviceProfile.SupportsClassC {
 			return nil
 		}
@@ -911,4 +918,10 @@ func logDownlinkFrameForGateway(ctx *dataContext) error {
 	}
 
 	return nil
+}
+
+// This should only happen when the cached device-session is not in sync
+// with the actual device-session.
+func returnInvalidDeviceClassError(ctx *dataContext) error {
+	return errors.New("the device is in an invalid device-class for this action")
 }
