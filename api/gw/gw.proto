@@ -78,6 +78,9 @@ message GatewayStats {
     // Gateway ID.
     bytes gateway_id = 1 [json_name = "gatewayID"];
 
+    // Gateway IP.
+    string ip = 9;
+
     // Gateway time.
     google.protobuf.Timestamp time = 2;
 
