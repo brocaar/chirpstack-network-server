@@ -29,7 +29,9 @@ func UnmarshalGatewayStats(b []byte, stats *gw.GatewayStats) (Type, error) {
 	case Protobuf:
 		return t, proto.Unmarshal(b, stats)
 	case JSON:
-		m := jsonpb.Unmarshaler{}
+		m := jsonpb.Unmarshaler{
+			AllowUnknownFields: true,
+		}
 		return t, m.Unmarshal(bytes.NewReader(b), stats)
 	case V2JSON:
 		var statsPacket gw.GatewayStatsPacket

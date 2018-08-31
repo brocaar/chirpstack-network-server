@@ -31,7 +31,9 @@ func UnmarshalUplinkFrame(b []byte, uf *gw.UplinkFrame) (Type, error) {
 	case Protobuf:
 		return t, proto.Unmarshal(b, uf)
 	case JSON:
-		m := jsonpb.Unmarshaler{}
+		m := jsonpb.Unmarshaler{
+			AllowUnknownFields: true,
+		}
 		return t, m.Unmarshal(bytes.NewReader(b), uf)
 	case V2JSON:
 		var rxPacket gw.RXPacketBytes
