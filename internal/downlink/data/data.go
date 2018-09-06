@@ -340,9 +340,14 @@ func getDataTXInfoForRX2(ctx *dataContext) error {
 		GatewayId:   gatewayID[:],
 		Immediately: true,
 		Frequency:   uint32(ctx.DeviceSession.RX2Frequency),
-		Power:       int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.DeviceSession.RX2Frequency)),
 		Board:       board,
 		Antenna:     antenna,
+	}
+
+	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
+		ctx.TXInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
+	} else {
+		ctx.TXInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(ctx.TXInfo.Frequency)))
 	}
 
 	err = helpers.SetDownlinkTXInfoDataRate(&ctx.TXInfo, int(ctx.DeviceSession.RX2DR), config.C.NetworkServer.Band.Band)
@@ -378,9 +383,14 @@ func setTXInfoForClassB(ctx *dataContext) error {
 	ctx.TXInfo = gw.DownlinkTXInfo{
 		GatewayId: gatewayID[:],
 		Frequency: uint32(ctx.DeviceSession.PingSlotFrequency),
-		Power:     int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(ctx.DeviceSession.PingSlotFrequency))),
 		Board:     board,
 		Antenna:   antenna,
+	}
+
+	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
+		ctx.TXInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
+	} else {
+		ctx.TXInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(ctx.TXInfo.Frequency)))
 	}
 
 	err = helpers.SetDownlinkTXInfoDataRate(&ctx.TXInfo, ctx.DeviceSession.PingSlotDR, config.C.NetworkServer.Band.Band)
