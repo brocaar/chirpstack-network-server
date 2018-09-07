@@ -4,6 +4,7 @@ menu:
     main:
         parent: overview
         weight: 3
+toc: false
 ---
 # Changelog
 

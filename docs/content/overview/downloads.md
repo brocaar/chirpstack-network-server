@@ -4,6 +4,7 @@ menu:
     main:
         parent: overview
         weight: 2
+toc: false
 ---
 
 # Downloads

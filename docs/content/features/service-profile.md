@@ -4,6 +4,7 @@ menu:
     main:
         parent: features
         weight: 1
+toc: false
 ---
 
 # Service-profile
