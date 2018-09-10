@@ -411,7 +411,7 @@ message SendProprietaryPayloadRequest {
 }
 
 message Gateway {
-    // Gateway ID.
+    // Gateway ID (8 bytes EUI64).
     bytes id = 1;
 
     // Gateway location.
@@ -419,6 +419,20 @@ message Gateway {
 
     // ID of the gateway-profile (optional).
     bytes gateway_profile_id = 3;
+
+    // Gateway boards configuration (optional).
+    // This is (currently) only needed when the gateway supports the fine-timestamp
+    // and you you would like to add the FPGA ID to the gateway meta-data or would
+    // like LoRa Server to decrypt the fine-timestamp.
+    repeated GatewayBoard boards = 4;
+}
+
+message GatewayBoard {
+    // FPGA ID of the gateway (8 bytes) (optional).
+    bytes fpga_id = 1;
+
+    // Fine-timestamp AES decryption key (16 bytes) (optional).
+    bytes fine_timestamp_key = 2;
 }
 
 message CreateGatewayRequest {

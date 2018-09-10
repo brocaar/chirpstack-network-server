@@ -47,10 +47,10 @@ func (ts *EnqueueQueueItemTestCase) SetupTest() {
 
 	ts.Gateways = []storage.Gateway{
 		{
-			MAC: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+			GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
 		},
 		{
-			MAC: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
+			GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
 		},
 	}
 	for i := range ts.Gateways {
@@ -83,7 +83,7 @@ func (ts *EnqueueQueueItemTestCase) SetupTest() {
 			DR:     3,
 			Items: []storage.DeviceGatewayRXInfo{
 				{
-					GatewayID: ts.Gateways[i].MAC,
+					GatewayID: ts.Gateways[i].GatewayID,
 					RSSI:      50,
 					LoRaSNR:   5,
 				},

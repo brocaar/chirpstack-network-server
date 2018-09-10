@@ -78,7 +78,7 @@ func TestGatewayStatsAggregation(t *testing.T) {
 
 		Convey("Given a gateway in the database", func() {
 			gw := Gateway{
-				MAC: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+				GatewayID: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 			}
 			So(CreateGateway(db, &gw), ShouldBeNil)
 
@@ -90,34 +90,34 @@ func TestGatewayStatsAggregation(t *testing.T) {
 				}
 
 				Convey("Then the stats can be retrieved on second level", func() {
-					stats, err := GetGatewayStats(db, gw.MAC, "SECOND", start, start.Add(3*time.Second))
+					stats, err := GetGatewayStats(db, gw.GatewayID, "SECOND", start, start.Add(3*time.Second))
 					So(err, ShouldBeNil)
 					So(stats, ShouldHaveLength, 4)
 					for i := range stats {
 						stats[i].Timestamp = stats[i].Timestamp.In(time.UTC)
 					}
 					So(stats, ShouldResemble, []Stats{
-						{MAC: gw.MAC, Timestamp: start, Interval: "SECOND", RXPacketsReceived: 11, RXPacketsReceivedOK: 9, TXPacketsReceived: 13, TXPacketsEmitted: 10},
-						{MAC: gw.MAC, Timestamp: start.Add(time.Second), Interval: "SECOND", RXPacketsReceived: 11, RXPacketsReceivedOK: 9, TXPacketsReceived: 13, TXPacketsEmitted: 10},
-						{MAC: gw.MAC, Timestamp: start.Add(2 * time.Second), Interval: "SECOND", RXPacketsReceived: 11, RXPacketsReceivedOK: 9, TXPacketsReceived: 13, TXPacketsEmitted: 10},
-						{MAC: gw.MAC, Timestamp: start.Add(3 * time.Second), Interval: "SECOND", RXPacketsReceived: 0, RXPacketsReceivedOK: 0, TXPacketsReceived: 0, TXPacketsEmitted: 0},
+						{GatewayID: gw.GatewayID, Timestamp: start, Interval: "SECOND", RXPacketsReceived: 11, RXPacketsReceivedOK: 9, TXPacketsReceived: 13, TXPacketsEmitted: 10},
+						{GatewayID: gw.GatewayID, Timestamp: start.Add(time.Second), Interval: "SECOND", RXPacketsReceived: 11, RXPacketsReceivedOK: 9, TXPacketsReceived: 13, TXPacketsEmitted: 10},
+						{GatewayID: gw.GatewayID, Timestamp: start.Add(2 * time.Second), Interval: "SECOND", RXPacketsReceived: 11, RXPacketsReceivedOK: 9, TXPacketsReceived: 13, TXPacketsEmitted: 10},
+						{GatewayID: gw.GatewayID, Timestamp: start.Add(3 * time.Second), Interval: "SECOND", RXPacketsReceived: 0, RXPacketsReceivedOK: 0, TXPacketsReceived: 0, TXPacketsEmitted: 0},
 					})
 				})
 
 				Convey("Then the stats can be retrieved on a minute level", func() {
-					stats, err := GetGatewayStats(db, gw.MAC, "MINUTE", start, start.Add(3*time.Second))
+					stats, err := GetGatewayStats(db, gw.GatewayID, "MINUTE", start, start.Add(3*time.Second))
 					So(err, ShouldBeNil)
 					So(stats, ShouldHaveLength, 1)
 					for i := range stats {
 						stats[i].Timestamp = stats[i].Timestamp.In(time.UTC)
 					}
 					So(stats, ShouldResemble, []Stats{
-						{MAC: gw.MAC, Timestamp: start, Interval: "MINUTE", RXPacketsReceived: 33, RXPacketsReceivedOK: 27, TXPacketsReceived: 39, TXPacketsEmitted: 30},
+						{GatewayID: gw.GatewayID, Timestamp: start, Interval: "MINUTE", RXPacketsReceived: 33, RXPacketsReceivedOK: 27, TXPacketsReceived: 39, TXPacketsEmitted: 30},
 					})
 
 					Convey("Then the start timestamp is truncated to minute precision", func() {
 						// so that when requestion 23:55:44, minute 55 is still included
-						stats, err := GetGatewayStats(db, gw.MAC, "MINUTE", start.Add(3*time.Second), start.Add((3 * time.Second)))
+						stats, err := GetGatewayStats(db, gw.GatewayID, "MINUTE", start.Add(3*time.Second), start.Add((3 * time.Second)))
 						So(err, ShouldBeNil)
 						So(stats, ShouldHaveLength, 1)
 					})
@@ -143,7 +143,7 @@ func TestHandleConfigurationUpdate(t *testing.T) {
 		test.MustResetDB(db)
 
 		g := Gateway{
-			MAC: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+			GatewayID: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 		}
 		So(CreateGateway(db, &g), ShouldBeNil)
 
@@ -188,7 +188,7 @@ func TestHandleConfigurationUpdate(t *testing.T) {
 					So(gwBackend.GatewayConfigPacketChan, ShouldHaveLength, 1)
 					So(<-gwBackend.GatewayConfigPacketChan, ShouldResemble, gw.GatewayConfiguration{
 						Version:   gp.GetVersion(),
-						GatewayId: g.MAC[:],
+						GatewayId: g.GatewayID[:],
 						Channels: []*gw.ChannelConfiguration{
 							{
 								Frequency:  868100000,

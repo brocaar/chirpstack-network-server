@@ -131,10 +131,10 @@ func (ts *NetworkServerAPITestSuite) TestMulticastQueue() {
 
 	gateways := []storage.Gateway{
 		{
-			MAC: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+			GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
 		},
 		{
-			MAC: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
+			GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
 		},
 	}
 	for i := range gateways {
@@ -170,7 +170,7 @@ func (ts *NetworkServerAPITestSuite) TestMulticastQueue() {
 			DR:     3,
 			Items: []storage.DeviceGatewayRXInfo{
 				{
-					GatewayID: gateways[i].MAC,
+					GatewayID: gateways[i].GatewayID,
 					RSSI:      50,
 					LoRaSNR:   5,
 				},

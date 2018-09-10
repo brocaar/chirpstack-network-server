@@ -804,12 +804,12 @@ func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
 		})
 	}
 
-	for macStr := range d.UplinkGatewayHistory {
-		var mac lorawan.EUI64
-		if err := mac.UnmarshalText([]byte(macStr)); err != nil {
+	for idStr := range d.UplinkGatewayHistory {
+		var id lorawan.EUI64
+		if err := id.UnmarshalText([]byte(idStr)); err != nil {
 			continue
 		}
-		out.UplinkGatewayHistory[mac] = UplinkGatewayHistory{}
+		out.UplinkGatewayHistory[id] = UplinkGatewayHistory{}
 	}
 
 	if len(d.PendingRejoinDeviceSession) != 0 {

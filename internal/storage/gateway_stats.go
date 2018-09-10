@@ -54,7 +54,7 @@ func MustSetStatsAggregationIntervals(levels []string) {
 
 // Stats represents a single gateway stats record.
 type Stats struct {
-	MAC                 lorawan.EUI64 `db:"mac"`
+	GatewayID           lorawan.EUI64 `db:"gateway_id"`
 	Timestamp           time.Time     `db:"timestamp"`
 	Interval            string        `db:"interval"`
 	RXPacketsReceived   int           `db:"rx_packets_received"`
@@ -65,7 +65,7 @@ type Stats struct {
 
 // GetGatewayStats returns the stats for the given gateway.
 // Note that the stats will return a record for each interval.
-func GetGatewayStats(db *common.DBLogger, mac lorawan.EUI64, interval string, start, end time.Time) ([]Stats, error) {
+func GetGatewayStats(db *common.DBLogger, gatewayID lorawan.EUI64, interval string, start, end time.Time) ([]Stats, error) {
 	var valid bool
 	interval = strings.ToUpper(interval)
 
@@ -97,7 +97,7 @@ func GetGatewayStats(db *common.DBLogger, mac lorawan.EUI64, interval string, st
 	var stats []Stats
 	err = tx.Select(&stats, `
 		select
-			$1::bytea as mac,
+			$1::bytea as gateway_id,
 			$2 as interval,
 			s.timestamp,
 			$2 as "interval",
@@ -110,7 +110,7 @@ func GetGatewayStats(db *common.DBLogger, mac lorawan.EUI64, interval string, st
 				*
 			from gateway_stats
 			where
-				mac = $1
+				gateway_id = $1
 				and interval = $2
 				and "timestamp" >= cast(date_trunc($2, $3::timestamptz) as timestamp with time zone)
 				and "timestamp" < $4) gs
@@ -122,7 +122,7 @@ func GetGatewayStats(db *common.DBLogger, mac lorawan.EUI64, interval string, st
 			) s
 			on gs.timestamp = s.timestamp
 		order by s.timestamp`,
-		mac[:],
+		gatewayID[:],
 		interval,
 		start,
 		end,
@@ -156,7 +156,7 @@ func HandleGatewayStatsPacket(db *common.DBLogger, stats gw.GatewayStats) error 
 			now := time.Now()
 
 			gw = Gateway{
-				MAC:         gatewayID,
+				GatewayID:   gatewayID,
 				FirstSeenAt: &now,
 				LastSeenAt:  &now,
 				Location:    location,
@@ -187,7 +187,7 @@ func HandleGatewayStatsPacket(db *common.DBLogger, stats gw.GatewayStats) error 
 	}
 
 	if err := handleConfigurationUpdate(db, gw, stats.ConfigVersion); err != nil {
-		log.WithError(err).WithField("mac", gw.MAC).Error("handle gateway-configuration update error")
+		log.WithError(err).WithField("gateway_id", gw.GatewayID).Error("handle gateway-configuration update error")
 	}
 
 	comitted := false
@@ -218,7 +218,7 @@ func HandleGatewayStatsPacket(db *common.DBLogger, stats gw.GatewayStats) error 
 	// store the stats
 	for _, aggr := range statsAggregationIntervals {
 		if err := aggregateGatewayStats(tx, Stats{
-			MAC:                 gatewayID,
+			GatewayID:           gatewayID,
 			Timestamp:           ts,
 			Interval:            aggr,
 			RXPacketsReceived:   int(stats.RxPacketsReceived),
@@ -240,7 +240,7 @@ func HandleGatewayStatsPacket(db *common.DBLogger, stats gw.GatewayStats) error 
 func aggregateGatewayStats(db sqlx.Execer, stats Stats) error {
 	_, err := db.Exec(`
 		insert into gateway_stats (
-			mac,
+			gateway_id,
 			"timestamp",
 			"interval",
 			rx_packets_received,
@@ -256,13 +256,13 @@ func aggregateGatewayStats(db sqlx.Execer, stats Stats) error {
 			$6,
 			$7
 		)
-		on conflict (mac, "timestamp", "interval")
+		on conflict (gateway_id, "timestamp", "interval")
 			do update set
 				rx_packets_received = gateway_stats.rx_packets_received + $4,
 				rx_packets_received_ok = gateway_stats.rx_packets_received_ok + $5,
 				tx_packets_received = gateway_stats.tx_packets_received + $6,
 				tx_packets_emitted = gateway_stats.tx_packets_emitted + $7`,
-		stats.MAC[:],
+		stats.GatewayID[:],
 		stats.Interval,
 		stats.Timestamp,
 		stats.RXPacketsReceived,
@@ -278,7 +278,7 @@ func aggregateGatewayStats(db sqlx.Execer, stats Stats) error {
 
 func handleConfigurationUpdate(db sqlx.Queryer, g Gateway, currentVersion string) error {
 	if g.GatewayProfileID == nil {
-		log.WithField("mac", g.MAC).Debug("gateway-profile is not set, skipping configuration update")
+		log.WithField("gateway_id", g.GatewayID).Debug("gateway-profile is not set, skipping configuration update")
 		return nil
 	}
 
@@ -289,14 +289,14 @@ func handleConfigurationUpdate(db sqlx.Queryer, g Gateway, currentVersion string
 
 	if gwProfile.GetVersion() == currentVersion {
 		log.WithFields(log.Fields{
-			"mac":     g.MAC,
-			"version": currentVersion,
+			"gateway_id": g.GatewayID,
+			"version":    currentVersion,
 		}).Debug("gateway configuration is up-to-date")
 		return nil
 	}
 
 	configPacket := gw.GatewayConfiguration{
-		GatewayId: g.MAC[:],
+		GatewayId: g.GatewayID[:],
 		Version:   gwProfile.GetVersion(),
 	}
 

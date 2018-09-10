@@ -72,15 +72,15 @@ func (n *NetworkServerAPI) CreateServiceProfile(ctx context.Context, req *ns.Cre
 		DevStatusReqFreq:       int(req.ServiceProfile.DevStatusReqFreq),
 		ReportDevStatusBattery: req.ServiceProfile.ReportDevStatusBattery,
 		ReportDevStatusMargin:  req.ServiceProfile.ReportDevStatusMargin,
-		DRMin:          int(req.ServiceProfile.DrMin),
-		DRMax:          int(req.ServiceProfile.DrMax),
-		ChannelMask:    req.ServiceProfile.ChannelMask,
-		PRAllowed:      req.ServiceProfile.PrAllowed,
-		HRAllowed:      req.ServiceProfile.HrAllowed,
-		RAAllowed:      req.ServiceProfile.RaAllowed,
-		NwkGeoLoc:      req.ServiceProfile.NwkGeoLoc,
-		TargetPER:      int(req.ServiceProfile.TargetPer),
-		MinGWDiversity: int(req.ServiceProfile.MinGwDiversity),
+		DRMin:                  int(req.ServiceProfile.DrMin),
+		DRMax:                  int(req.ServiceProfile.DrMax),
+		ChannelMask:            req.ServiceProfile.ChannelMask,
+		PRAllowed:              req.ServiceProfile.PrAllowed,
+		HRAllowed:              req.ServiceProfile.HrAllowed,
+		RAAllowed:              req.ServiceProfile.RaAllowed,
+		NwkGeoLoc:              req.ServiceProfile.NwkGeoLoc,
+		TargetPER:              int(req.ServiceProfile.TargetPer),
+		MinGWDiversity:         int(req.ServiceProfile.MinGwDiversity),
 	}
 
 	switch req.ServiceProfile.UlRatePolicy {
@@ -127,15 +127,15 @@ func (n *NetworkServerAPI) GetServiceProfile(ctx context.Context, req *ns.GetSer
 			DevStatusReqFreq:       uint32(sp.DevStatusReqFreq),
 			ReportDevStatusBattery: sp.ReportDevStatusBattery,
 			ReportDevStatusMargin:  sp.ReportDevStatusMargin,
-			DrMin:          uint32(sp.DRMin),
-			DrMax:          uint32(sp.DRMax),
-			ChannelMask:    sp.ChannelMask,
-			PrAllowed:      sp.PRAllowed,
-			HrAllowed:      sp.HRAllowed,
-			RaAllowed:      sp.RAAllowed,
-			NwkGeoLoc:      sp.NwkGeoLoc,
-			TargetPer:      uint32(sp.TargetPER),
-			MinGwDiversity: uint32(sp.MinGWDiversity),
+			DrMin:                  uint32(sp.DRMin),
+			DrMax:                  uint32(sp.DRMax),
+			ChannelMask:            sp.ChannelMask,
+			PrAllowed:              sp.PRAllowed,
+			HrAllowed:              sp.HRAllowed,
+			RaAllowed:              sp.RAAllowed,
+			NwkGeoLoc:              sp.NwkGeoLoc,
+			TargetPer:              uint32(sp.TargetPER),
+			MinGwDiversity:         uint32(sp.MinGWDiversity),
 		},
 	}
 
@@ -796,16 +796,16 @@ func (n *NetworkServerAPI) CreateMACCommandQueueItem(ctx context.Context, req *n
 // SendProprietaryPayload send a payload using the 'Proprietary' LoRaWAN message-type.
 func (n *NetworkServerAPI) SendProprietaryPayload(ctx context.Context, req *ns.SendProprietaryPayloadRequest) (*empty.Empty, error) {
 	var mic lorawan.MIC
-	var gwMACs []lorawan.EUI64
+	var gwIDs []lorawan.EUI64
 
 	copy(mic[:], req.Mic)
 	for i := range req.GatewayMacs {
-		var mac lorawan.EUI64
-		copy(mac[:], req.GatewayMacs[i])
-		gwMACs = append(gwMACs, mac)
+		var id lorawan.EUI64
+		copy(id[:], req.GatewayMacs[i])
+		gwIDs = append(gwIDs, id)
 	}
 
-	err := proprietarydown.Handle(req.MacPayload, mic, gwMACs, req.PolarizationInversion, int(req.Frequency), int(req.Dr))
+	err := proprietarydown.Handle(req.MacPayload, mic, gwIDs, req.PolarizationInversion, int(req.Frequency), int(req.Dr))
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -823,26 +823,50 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 		return nil, grpc.Errorf(codes.InvalidArgument, "gateway.location must not be nil")
 	}
 
-	var mac lorawan.EUI64
-	var gpID uuid.UUID
-	copy(mac[:], req.Gateway.Id)
-	copy(gpID[:], req.Gateway.GatewayProfileId)
-
 	gw := storage.Gateway{
-		MAC: mac,
 		Location: storage.GPSPoint{
 			Latitude:  req.Gateway.Location.Latitude,
 			Longitude: req.Gateway.Location.Longitude,
 		},
 		Altitude: req.Gateway.Location.Altitude,
 	}
-	if len(req.Gateway.GatewayProfileId) != 0 {
+
+	// Gateway ID
+	copy(gw.GatewayID[:], req.Gateway.Id)
+
+	// Gateway-profile ID.
+	if b := req.Gateway.GatewayProfileId; len(b) != 0 {
+		var gpID uuid.UUID
+		copy(gpID[:], b)
 		gw.GatewayProfileID = &gpID
 	}
 
-	err := storage.CreateGateway(config.C.PostgreSQL.DB, &gw)
+	for _, board := range req.Gateway.Boards {
+		var gwBoard storage.GatewayBoard
+
+		if b := board.FpgaId; len(b) != 0 {
+			var fpgaID lorawan.EUI64
+			copy(fpgaID[:], b)
+			gwBoard.FPGAID = &fpgaID
+		}
+
+		if b := board.FineTimestampKey; len(b) != 0 {
+			var key lorawan.AES128Key
+			copy(key[:], b)
+			gwBoard.FineTimestampKey = &key
+		}
+
+		gw.Boards = append(gw.Boards, gwBoard)
+	}
+
+	err := storage.Transaction(config.C.PostgreSQL.DB, func(tx sqlx.Ext) error {
+		if err := storage.CreateGateway(tx, &gw); err != nil {
+			return errToRPCError(err)
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, errToRPCError(err)
+		return nil, err
 	}
 
 	return &empty.Empty{}, nil
@@ -850,10 +874,10 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 
 // GetGateway returns data for a particular gateway.
 func (n *NetworkServerAPI) GetGateway(ctx context.Context, req *ns.GetGatewayRequest) (*ns.GetGatewayResponse, error) {
-	var mac lorawan.EUI64
-	copy(mac[:], req.Id)
+	var id lorawan.EUI64
+	copy(id[:], req.Id)
 
-	gw, err := storage.GetGateway(config.C.PostgreSQL.DB, mac)
+	gw, err := storage.GetGateway(config.C.PostgreSQL.DB, id)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -871,18 +895,18 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 		return nil, grpc.Errorf(codes.InvalidArgument, "gateway.location must not be nil")
 	}
 
-	var mac lorawan.EUI64
-	var gpID uuid.UUID
+	var id lorawan.EUI64
+	copy(id[:], req.Gateway.Id)
 
-	copy(mac[:], req.Gateway.Id)
-	copy(gpID[:], req.Gateway.GatewayProfileId)
-
-	gw, err := storage.GetGateway(config.C.PostgreSQL.DB, mac)
+	gw, err := storage.GetGateway(config.C.PostgreSQL.DB, id)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if len(req.Gateway.GatewayProfileId) != 0 {
+	// Gateway-profile ID.
+	if b := req.Gateway.GatewayProfileId; len(b) != 0 {
+		var gpID uuid.UUID
+		copy(gpID[:], b)
 		gw.GatewayProfileID = &gpID
 	} else {
 		gw.GatewayProfileID = nil
@@ -894,9 +918,37 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 	}
 	gw.Altitude = req.Gateway.Location.Altitude
 
-	err = storage.UpdateGateway(config.C.PostgreSQL.DB, &gw)
-	if err != nil {
+	gw.Boards = nil
+	for _, board := range req.Gateway.Boards {
+		var gwBoard storage.GatewayBoard
+
+		if b := board.FpgaId; len(b) != 0 {
+			var fpgaID lorawan.EUI64
+			copy(fpgaID[:], b)
+			gwBoard.FPGAID = &fpgaID
+		}
+
+		if b := board.FineTimestampKey; len(b) != 0 {
+			var key lorawan.AES128Key
+			copy(key[:], b)
+			gwBoard.FineTimestampKey = &key
+		}
+
+		gw.Boards = append(gw.Boards, gwBoard)
+	}
+
+	if err = storage.FlushGatewayCache(config.C.Redis.Pool, gw.GatewayID); err != nil {
 		return nil, errToRPCError(err)
+	}
+
+	err = storage.Transaction(config.C.PostgreSQL.DB, func(tx sqlx.Ext) error {
+		if err = storage.UpdateGateway(tx, &gw); err != nil {
+			return errToRPCError(err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return &empty.Empty{}, nil
@@ -904,11 +956,14 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 
 // DeleteGateway deletes a gateway.
 func (n *NetworkServerAPI) DeleteGateway(ctx context.Context, req *ns.DeleteGatewayRequest) (*empty.Empty, error) {
-	var mac lorawan.EUI64
-	copy(mac[:], req.Id)
+	var id lorawan.EUI64
+	copy(id[:], req.Id)
 
-	err := storage.DeleteGateway(config.C.PostgreSQL.DB, mac)
-	if err != nil {
+	if err := storage.FlushGatewayCache(config.C.Redis.Pool, id); err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	if err := storage.DeleteGateway(config.C.PostgreSQL.DB, id); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -917,8 +972,8 @@ func (n *NetworkServerAPI) DeleteGateway(ctx context.Context, req *ns.DeleteGate
 
 // GetGatewayStats returns stats of an existing gateway.
 func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatewayStatsRequest) (*ns.GetGatewayStatsResponse, error) {
-	var mac lorawan.EUI64
-	copy(mac[:], req.GatewayId)
+	var id lorawan.EUI64
+	copy(id[:], req.GatewayId)
 
 	start, err := ptypes.Timestamp(req.StartTimestamp)
 	if err != nil {
@@ -930,7 +985,7 @@ func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatew
 		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	stats, err := storage.GetGatewayStats(config.C.PostgreSQL.DB, mac, req.Interval.String(), start, end)
+	stats, err := storage.GetGatewayStats(config.C.PostgreSQL.DB, id, req.Interval.String(), start, end)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -959,11 +1014,11 @@ func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatew
 // StreamFrameLogsForGateway returns a stream of frames seen by the given gateway.
 func (n *NetworkServerAPI) StreamFrameLogsForGateway(req *ns.StreamFrameLogsForGatewayRequest, srv ns.NetworkServerService_StreamFrameLogsForGatewayServer) error {
 	frameLogChan := make(chan framelog.FrameLog)
-	var mac lorawan.EUI64
-	copy(mac[:], req.GatewayId)
+	var id lorawan.EUI64
+	copy(id[:], req.GatewayId)
 
 	go func() {
-		err := framelog.GetFrameLogForGateway(srv.Context(), mac, frameLogChan)
+		err := framelog.GetFrameLogForGateway(srv.Context(), id, frameLogChan)
 		if err != nil {
 			log.WithError(err).Error("get frame-log for gateway error")
 		}
@@ -1600,10 +1655,9 @@ func (n *NetworkServerAPI) GetVersion(ctx context.Context, req *empty.Empty) (*n
 }
 
 func gwToResp(gw storage.Gateway) *ns.GetGatewayResponse {
-
 	resp := ns.GetGatewayResponse{
 		Gateway: &ns.Gateway{
-			Id: gw.MAC[:],
+			Id: gw.GatewayID[:],
 			Location: &common.Location{
 				Latitude:  gw.Location.Latitude,
 				Longitude: gw.Location.Longitude,
@@ -1625,6 +1679,19 @@ func gwToResp(gw storage.Gateway) *ns.GetGatewayResponse {
 
 	if gw.GatewayProfileID != nil {
 		resp.Gateway.GatewayProfileId = gw.GatewayProfileID.Bytes()
+	}
+
+	for i := range gw.Boards {
+		var gwBoard ns.GatewayBoard
+		if gw.Boards[i].FPGAID != nil {
+			gwBoard.FpgaId = gw.Boards[i].FPGAID[:]
+		}
+
+		if gw.Boards[i].FineTimestampKey != nil {
+			gwBoard.FineTimestampKey = gw.Boards[i].FineTimestampKey[:]
+		}
+
+		resp.Gateway.Boards = append(resp.Gateway.Boards, &gwBoard)
 	}
 
 	return &resp

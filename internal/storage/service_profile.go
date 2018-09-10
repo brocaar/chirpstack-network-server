@@ -34,26 +34,26 @@ const (
 type ServiceProfile struct {
 	CreatedAt              time.Time  `db:"created_at"`
 	UpdatedAt              time.Time  `db:"updated_at"`
-	ID                     uuid.UUID  ` db:"service_profile_id"`
+	ID                     uuid.UUID  `db:"service_profile_id"`
 	ULRate                 int        `db:"ul_rate"`
-	ULBucketSize           int        ` db:"ul_bucket_size"`
-	ULRatePolicy           RatePolicy ` db:"ul_rate_policy"`
-	DLRate                 int        ` db:"dl_rate"`
+	ULBucketSize           int        `db:"ul_bucket_size"`
+	ULRatePolicy           RatePolicy `db:"ul_rate_policy"`
+	DLRate                 int        `db:"dl_rate"`
 	DLBucketSize           int        `db:"dl_bucket_size"`
-	DLRatePolicy           RatePolicy ` db:"dl_rate_policy"`
+	DLRatePolicy           RatePolicy `db:"dl_rate_policy"`
 	AddGWMetadata          bool       `db:"add_gw_metadata"`
-	DevStatusReqFreq       int        ` db:"dev_status_req_freq"` // Unit: requests-per-day
-	ReportDevStatusBattery bool       ` db:"report_dev_status_battery"`
-	ReportDevStatusMargin  bool       ` db:"report_dev_status_margin"`
-	DRMin                  int        ` db:"dr_min"`
-	DRMax                  int        ` db:"dr_max"`
-	ChannelMask            []byte     ` db:"channel_mask"`
-	PRAllowed              bool       ` db:"pr_allowed"`
+	DevStatusReqFreq       int        `db:"dev_status_req_freq"` // Unit: requests-per-day
+	ReportDevStatusBattery bool       `db:"report_dev_status_battery"`
+	ReportDevStatusMargin  bool       `db:"report_dev_status_margin"`
+	DRMin                  int        `db:"dr_min"`
+	DRMax                  int        `db:"dr_max"`
+	ChannelMask            []byte     `db:"channel_mask"`
+	PRAllowed              bool       `db:"pr_allowed"`
 	HRAllowed              bool       `db:"hr_allowed"`
-	RAAllowed              bool       ` db:"ra_allowed"`
-	NwkGeoLoc              bool       ` db:"nwk_geo_loc"`
-	TargetPER              int        ` db:"target_per"` // Example: 10 indicates 10%
-	MinGWDiversity         int        ` db:"min_gw_diversity"`
+	RAAllowed              bool       `db:"ra_allowed"`
+	NwkGeoLoc              bool       `db:"nwk_geo_loc"`
+	TargetPER              int        `db:"target_per"` // Example: 10 indicates 10%
+	MinGWDiversity         int        `db:"min_gw_diversity"`
 }
 
 // CreateServiceProfile creates the given service-profile.

@@ -124,11 +124,8 @@ func CreateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
 	return nil
 }
 
-// CreateDeviceProfileCache caches the given device-profile into Redis.
-// This is used for faster lookups, but also in case of roaming where we
-// only want to store the device-profile of a roaming device for a finite
-// duration.
-// the TTL of the device-profile is the same as that of the device-sessions.
+// CreateDeviceProfileCache caches the given device-profile in Redis.
+// The TTL of the device-profile is the same as that of the device-sessions.
 func CreateDeviceProfileCache(p *redis.Pool, dp DeviceProfile) error {
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(dp); err != nil {

@@ -96,7 +96,7 @@ func (ts *StorageTestSuite) TestMulticastQueue() {
 	assert.NoError(CreateMulticastGroup(ts.Tx(), &mg))
 
 	gw := Gateway{
-		MAC: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+		GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
 	}
 	assert.NoError(CreateGateway(ts.Tx(), &gw))
 
@@ -187,14 +187,14 @@ func (ts *StorageTestSuite) TestGetMulticastGroupsWithQueueItems() {
 	assert.NoError(CreateMulticastGroup(ts.DB(), &mg2))
 
 	gw := Gateway{
-		MAC: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
+		GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
 	}
 	assert.NoError(CreateGateway(ts.DB(), &gw))
 
 	qi1 := MulticastQueueItem{
 		ScheduleAt:       time.Now(),
 		MulticastGroupID: mg1.ID,
-		GatewayID:        gw.MAC,
+		GatewayID:        gw.GatewayID,
 		FCnt:             10,
 		FPort:            20,
 		FRMPayload:       []byte{1, 2, 3, 4},
@@ -204,7 +204,7 @@ func (ts *StorageTestSuite) TestGetMulticastGroupsWithQueueItems() {
 	qi2 := MulticastQueueItem{
 		ScheduleAt:       time.Now().Add(time.Second),
 		MulticastGroupID: mg2.ID,
-		GatewayID:        gw.MAC,
+		GatewayID:        gw.GatewayID,
 		FCnt:             10,
 		FPort:            20,
 		FRMPayload:       []byte{1, 2, 3, 4},

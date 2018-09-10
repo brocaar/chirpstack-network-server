@@ -4,79 +4,111 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/stretchr/testify/require"
 )
 
-func TestGateway(t *testing.T) {
-	conf := test.GetConfig()
+func (ts *StorageTestSuite) TestGateway() {
+	ts.T().Run("Create", func(t *testing.T) {
+		assert := require.New(t)
 
-	Convey("Given a clean database", t, func() {
-		db, err := common.OpenDatabase(conf.PostgresDSN)
-		So(err, ShouldBeNil)
-		test.MustResetDB(db)
+		fpgaID := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
+		aesKey := lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
 
-		Convey("When creating a gateway", func() {
-			gw := Gateway{
-				MAC: lorawan.EUI64{29, 238, 8, 208, 182, 145, 209, 73},
-				Location: GPSPoint{
-					Latitude:  1.23456789,
-					Longitude: 4.56789012,
+		gw := Gateway{
+			GatewayID: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+			Location: GPSPoint{
+				Latitude:  1.123,
+				Longitude: 2.123,
+			},
+			Boards: []GatewayBoard{
+				{
+					FPGAID: &fpgaID,
+				},
+				{
+					FineTimestampKey: &aesKey,
+				},
+			},
+		}
+		assert.NoError(CreateGateway(ts.Tx(), &gw))
+
+		gw.CreatedAt = gw.CreatedAt.Round(time.Millisecond).UTC()
+		gw.UpdatedAt = gw.UpdatedAt.Round(time.Millisecond).UTC()
+
+		t.Run("Get", func(t *testing.T) {
+			assert := require.New(t)
+
+			gwGet, err := GetGateway(ts.Tx(), gw.GatewayID)
+			assert.NoError(err)
+
+			gwGet.CreatedAt = gwGet.CreatedAt.Round(time.Millisecond).UTC()
+			gwGet.UpdatedAt = gwGet.UpdatedAt.Round(time.Millisecond).UTC()
+
+			assert.Equal(gw, gwGet)
+		})
+
+		t.Run("Test cache", func(t *testing.T) {
+			gwGet, err := GetAndCacheGateway(ts.Tx(), ts.RedisPool(), gw.GatewayID)
+			assert.NoError(err)
+			assert.Equal(gw.GatewayID, gwGet.GatewayID)
+
+			gwGet, err = GetGatewayCache(ts.RedisPool(), gw.GatewayID)
+			assert.NoError(err)
+			assert.Equal(gw.GatewayID, gwGet.GatewayID)
+
+			assert.NoError(FlushGatewayCache(ts.RedisPool(), gw.GatewayID))
+			_, err = GetGatewayCache(ts.RedisPool(), gw.GatewayID)
+			assert.Equal(ErrDoesNotExist, err)
+		})
+
+		t.Run("Update", func(t *testing.T) {
+			assert := require.New(t)
+			now := time.Now().Round(time.Millisecond).UTC()
+
+			gp := GatewayProfile{
+				Channels: []int64{0, 1, 2},
+			}
+			assert.NoError(CreateGatewayProfile(ts.Tx(), &gp))
+
+			gw.GatewayProfileID = &gp.ID
+			gw.FirstSeenAt = &now
+			gw.LastSeenAt = &now
+			gw.Location = GPSPoint{
+				Latitude:  2.123,
+				Longitude: 3.123,
+			}
+			gw.Altitude = 100.5
+			gw.Boards = []GatewayBoard{
+				{
+					FineTimestampKey: &aesKey,
+				},
+				{
+					FPGAID: &fpgaID,
 				},
 			}
-			So(CreateGateway(db, &gw), ShouldBeNil)
 
-			// some precicion will get lost when writing to the db
-			// truncate it to ms precision for comparison
-			gw.CreatedAt = gw.CreatedAt.UTC().Truncate(time.Millisecond)
-			gw.UpdatedAt = gw.UpdatedAt.UTC().Truncate(time.Millisecond)
+			assert.NoError(UpdateGateway(ts.Tx(), &gw))
+			gw.UpdatedAt = gw.UpdatedAt.Round(time.Millisecond).UTC()
 
-			Convey("Then it can be retrieved", func() {
-				gw2, err := GetGateway(db, gw.MAC)
-				So(err, ShouldBeNil)
+			gwGet, err := GetGateway(ts.Tx(), gw.GatewayID)
+			assert.NoError(err)
 
-				gw2.CreatedAt = gw2.CreatedAt.UTC().Truncate(time.Millisecond)
-				gw2.UpdatedAt = gw2.UpdatedAt.UTC().Truncate(time.Millisecond)
+			gwGet.CreatedAt = gwGet.CreatedAt.Round(time.Millisecond).UTC()
+			gwGet.UpdatedAt = gwGet.UpdatedAt.Round(time.Millisecond).UTC()
 
-				So(gw2, ShouldResemble, gw)
+			assert.True(gwGet.FirstSeenAt.Round(time.Microsecond).Equal(now))
+			assert.True(gwGet.LastSeenAt.Round(time.Microsecond).Equal(now))
+			gwGet.FirstSeenAt = &now
+			gwGet.LastSeenAt = &now
 
-				gws, err := GetGatewaysForMACs(db, []lorawan.EUI64{gw.MAC})
-				So(err, ShouldBeNil)
-				gw3, ok := gws[gw.MAC]
-				So(ok, ShouldBeTrue)
-				So(gw3.MAC, ShouldResemble, gw.MAC)
-			})
+			assert.Equal(gw, gwGet)
+		})
 
-			Convey("Then it can be updated", func() {
-				now := time.Now().UTC().Truncate(time.Millisecond)
-
-				gw.FirstSeenAt = &now
-				gw.LastSeenAt = &now
-				gw.Location.Latitude = 1.23456780
-				gw.Location.Longitude = 5.56789012
-				gw.Altitude = 100.5
-
-				So(UpdateGateway(db, &gw), ShouldBeNil)
-
-				gw2, err := GetGateway(db, gw.MAC)
-				So(err, ShouldBeNil)
-
-				So(gw2.MAC, ShouldEqual, gw.MAC)
-				So(gw2.CreatedAt.UTC().Truncate(time.Millisecond), ShouldResemble, gw.CreatedAt.UTC())
-				So(gw2.UpdatedAt.UTC().Truncate(time.Millisecond), ShouldResemble, gw.UpdatedAt.UTC().Truncate(time.Millisecond))
-				So(gw2.FirstSeenAt.UTC().Truncate(time.Millisecond), ShouldResemble, gw.FirstSeenAt.UTC().Truncate(time.Millisecond))
-				So(gw2.LastSeenAt.UTC().Truncate(time.Millisecond), ShouldResemble, gw.LastSeenAt.UTC().Truncate(time.Millisecond))
-				So(gw2.Location, ShouldResemble, gw.Location)
-				So(gw2.Altitude, ShouldResemble, gw.Altitude)
-			})
-
-			Convey("Then it can be deleted", func() {
-				So(DeleteGateway(db, gw.MAC), ShouldBeNil)
-				_, err := GetGateway(db, gw.MAC)
-				So(err, ShouldResemble, ErrDoesNotExist)
-			})
+		t.Run("Delete", func(t *testing.T) {
+			assert := require.New(t)
+			assert.NoError(DeleteGateway(ts.Tx(), gw.GatewayID))
+			_, err := GetGateway(ts.Tx(), gw.GatewayID)
+			assert.Equal(ErrDoesNotExist, err)
 		})
 	})
 }

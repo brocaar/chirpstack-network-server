@@ -42,7 +42,7 @@ func (ts *MulticastTestSuite) SetupSuite() {
 	assert.NoError(storage.CreateRoutingProfile(ts.DB(), &rp))
 
 	ts.Gateway = storage.Gateway{
-		MAC: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+		GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
 	}
 	assert.NoError(storage.CreateGateway(ts.DB(), &ts.Gateway))
 
@@ -71,7 +71,7 @@ func (ts *MulticastTestSuite) SetupSuite() {
 		DR:     3,
 		Items: []storage.DeviceGatewayRXInfo{
 			{
-				GatewayID: ts.Gateway.MAC,
+				GatewayID: ts.Gateway.GatewayID,
 				RSSI:      50,
 				LoRaSNR:   5,
 			},
@@ -104,7 +104,7 @@ func (ts *MulticastTestSuite) TestHandleScheduleNextQueueItem() {
 					ScheduleAt:              now,
 					EmitAtTimeSinceGPSEpoch: &nowGPS,
 					MulticastGroupID:        ts.MulticastGroup.ID,
-					GatewayID:               ts.Gateway.MAC,
+					GatewayID:               ts.Gateway.GatewayID,
 					FCnt:                    10,
 					FPort:                   2,
 					FRMPayload:              []byte{1, 2, 3, 4},
@@ -112,7 +112,7 @@ func (ts *MulticastTestSuite) TestHandleScheduleNextQueueItem() {
 			},
 			ExpectedQueueItems: []storage.MulticastQueueItem{},
 			ExpectedTXInfo: &gw.DownlinkTXInfo{
-				GatewayId:         ts.Gateway.MAC[:],
+				GatewayId:         ts.Gateway.GatewayID[:],
 				Immediately:       false,
 				TimeSinceGpsEpoch: ptypes.DurationProto(nowGPS),
 				Frequency:         uint32(ts.MulticastGroup.Frequency),
@@ -150,7 +150,7 @@ func (ts *MulticastTestSuite) TestHandleScheduleNextQueueItem() {
 					ScheduleAt:              now,
 					EmitAtTimeSinceGPSEpoch: &nowGPS,
 					MulticastGroupID:        ts.MulticastGroup.ID,
-					GatewayID:               ts.Gateway.MAC,
+					GatewayID:               ts.Gateway.GatewayID,
 					FCnt:                    10,
 					FPort:                   2,
 					FRMPayload:              []byte{1, 2, 3, 4},
@@ -159,7 +159,7 @@ func (ts *MulticastTestSuite) TestHandleScheduleNextQueueItem() {
 					ScheduleAt:              now,
 					EmitAtTimeSinceGPSEpoch: &nowGPS,
 					MulticastGroupID:        ts.MulticastGroup.ID,
-					GatewayID:               ts.Gateway.MAC,
+					GatewayID:               ts.Gateway.GatewayID,
 					FCnt:                    11,
 					FPort:                   2,
 					FRMPayload:              []byte{1, 2, 3, 4},
@@ -170,14 +170,14 @@ func (ts *MulticastTestSuite) TestHandleScheduleNextQueueItem() {
 					ScheduleAt:              now,
 					EmitAtTimeSinceGPSEpoch: &nowGPS,
 					MulticastGroupID:        ts.MulticastGroup.ID,
-					GatewayID:               ts.Gateway.MAC,
+					GatewayID:               ts.Gateway.GatewayID,
 					FCnt:                    11,
 					FPort:                   2,
 					FRMPayload:              []byte{1, 2, 3, 4},
 				},
 			},
 			ExpectedTXInfo: &gw.DownlinkTXInfo{
-				GatewayId:         ts.Gateway.MAC[:],
+				GatewayId:         ts.Gateway.GatewayID[:],
 				Immediately:       false,
 				TimeSinceGpsEpoch: ptypes.DurationProto(nowGPS),
 				Frequency:         uint32(ts.MulticastGroup.Frequency),
@@ -215,7 +215,7 @@ func (ts *MulticastTestSuite) TestHandleScheduleNextQueueItem() {
 					ScheduleAt:              now,
 					EmitAtTimeSinceGPSEpoch: &nowGPS,
 					MulticastGroupID:        ts.MulticastGroup.ID,
-					GatewayID:               ts.Gateway.MAC,
+					GatewayID:               ts.Gateway.GatewayID,
 					FCnt:                    10,
 					FPort:                   2,
 					FRMPayload:              make([]byte, 300),

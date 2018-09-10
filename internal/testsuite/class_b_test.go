@@ -40,7 +40,7 @@ func (ts *ClassBTestSuite) SetupSuite() {
 	config.C.NetworkServer.NetworkSettings.ClassB.PingSlotFrequency = 868300000
 
 	ts.Gateway = storage.Gateway{
-		MAC: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+		GatewayID: [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 		Location: storage.GPSPoint{
 			Latitude:  1.1234,
 			Longitude: 1.1235,
@@ -133,7 +133,7 @@ func (ts *ClassBTestSuite) TestUplink() {
 	assert.NoError(err)
 
 	rxInfo := gw.UplinkRXInfo{
-		GatewayId: ts.Gateway.MAC[:],
+		GatewayId: ts.Gateway.GatewayID[:],
 		LoraSnr:   7,
 	}
 	rxInfo.Time, _ = ptypes.TimestampProto(now)

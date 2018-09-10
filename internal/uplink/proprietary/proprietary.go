@@ -50,7 +50,7 @@ func setContextFromProprietaryPHYPayload(ctx *proprietaryContext) error {
 }
 
 func sendProprietaryPayloadToApplicationServer(ctx *proprietaryContext) error {
-	var macs []lorawan.EUI64
+	var ids []lorawan.EUI64
 
 	handleReq := as.HandleProprietaryUplinkRequest{
 		MacPayload: ctx.DataPayload.Bytes,
@@ -61,21 +61,21 @@ func sendProprietaryPayloadToApplicationServer(ctx *proprietaryContext) error {
 
 	// get gateway info
 	for i := range handleReq.RxInfo {
-		var mac lorawan.EUI64
-		copy(mac[:], handleReq.RxInfo[i].GatewayId)
-		macs = append(macs, mac)
+		var id lorawan.EUI64
+		copy(id[:], handleReq.RxInfo[i].GatewayId)
+		ids = append(ids, id)
 	}
-	gws, err := storage.GetGatewaysForMACs(config.C.PostgreSQL.DB, macs)
+	gws, err := storage.GetGatewaysForIDs(config.C.PostgreSQL.DB, ids)
 	if err != nil {
-		log.WithField("macs", macs).Warningf("get gateways for macs error: %s", err)
+		log.WithField("gateway_ids", ids).Warningf("get gateways for gateway ids error: %s", err)
 		gws = make(map[lorawan.EUI64]storage.Gateway)
 	}
 
 	for i := range handleReq.RxInfo {
-		var mac lorawan.EUI64
-		copy(mac[:], handleReq.RxInfo[i].GatewayId)
+		var id lorawan.EUI64
+		copy(id[:], handleReq.RxInfo[i].GatewayId)
 
-		if gw, ok := gws[mac]; ok {
+		if gw, ok := gws[id]; ok {
 			handleReq.RxInfo[i].Location = &common.Location{
 				Latitude:  gw.Location.Latitude,
 				Longitude: gw.Location.Longitude,

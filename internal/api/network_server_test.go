@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	. "github.com/smartystreets/goconvey/convey"
@@ -789,18 +790,26 @@ func TestNetworkServerAPI(t *testing.T) {
 						Longitude: 1.1235,
 						Altitude:  15.5,
 					},
+					Boards: []*ns.GatewayBoard{
+						{
+							FpgaId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+						},
+						{
+							FineTimestampKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+						},
+					},
 				},
 			}
 
 			_, err := api.CreateGateway(ctx, &req)
 			So(err, ShouldBeNil)
-			req.Gateway.Location.XXX_sizecache = 0
 
 			Convey("Then the gateway has been created", func() {
 				resp, err := api.GetGateway(ctx, &ns.GetGatewayRequest{Id: req.Gateway.Id})
 				So(err, ShouldBeNil)
-				req.Gateway.XXX_sizecache = 0
-				So(resp.Gateway, ShouldResemble, req.Gateway)
+				if !proto.Equal(resp.Gateway, req.Gateway) {
+					So(resp.Gateway, ShouldResemble, req.Gateway)
+				}
 				So(resp.CreatedAt.String(), ShouldNotEqual, "")
 				So(resp.UpdatedAt.String(), ShouldNotEqual, "")
 				So(resp.FirstSeenAt, ShouldBeNil)
@@ -816,16 +825,24 @@ func TestNetworkServerAPI(t *testing.T) {
 							Longitude: 1.1236,
 							Altitude:  15.7,
 						},
+						Boards: []*ns.GatewayBoard{
+							{
+								FineTimestampKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+							},
+							{
+								FpgaId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+							},
+						},
 					},
 				}
 				_, err := api.UpdateGateway(ctx, &req)
 				So(err, ShouldBeNil)
-				req.Gateway.Location.XXX_sizecache = 0
 
 				resp, err := api.GetGateway(ctx, &ns.GetGatewayRequest{Id: req.Gateway.Id})
 				So(err, ShouldBeNil)
-				req.Gateway.XXX_sizecache = 0
-				So(resp.Gateway, ShouldResemble, req.Gateway)
+				if !proto.Equal(resp.Gateway, req.Gateway) {
+					So(resp.Gateway, ShouldResemble, req.Gateway)
+				}
 				So(resp.CreatedAt.String(), ShouldNotEqual, "")
 				So(resp.UpdatedAt.String(), ShouldNotEqual, "")
 				So(resp.FirstSeenAt, ShouldBeNil)
@@ -848,7 +865,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				now := time.Now().UTC()
 				_, err := db.Exec(`
 		                   insert into gateway_stats (
-		                       mac,
+		                       gateway_id,
 		                       "timestamp",
 		                       "interval",
 		                       rx_packets_received,

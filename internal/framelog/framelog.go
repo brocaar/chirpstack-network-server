@@ -35,8 +35,8 @@ func LogUplinkFrameForGateways(uplinkFrameSet gw.UplinkFrameSet) error {
 
 	c.Send("MULTI")
 	for _, rx := range uplinkFrameSet.RxInfo {
-		var mac lorawan.EUI64
-		copy(mac[:], rx.GatewayId)
+		var id lorawan.EUI64
+		copy(id[:], rx.GatewayId)
 
 		frameLog := gw.UplinkFrameSet{
 			PhyPayload: uplinkFrameSet.PhyPayload,
@@ -49,7 +49,7 @@ func LogUplinkFrameForGateways(uplinkFrameSet gw.UplinkFrameSet) error {
 			return errors.Wrap(err, "marshal uplink frame-set error")
 		}
 
-		key := fmt.Sprintf(gatewayFrameLogUplinkPubSubKeyTempl, mac)
+		key := fmt.Sprintf(gatewayFrameLogUplinkPubSubKeyTempl, id)
 		c.Send("PUBLISH", key, b)
 	}
 	_, err := c.Do("EXEC")
@@ -62,13 +62,13 @@ func LogUplinkFrameForGateways(uplinkFrameSet gw.UplinkFrameSet) error {
 
 // LogDownlinkFrameForGateway logs the given frame to the gateway pub-sub key.
 func LogDownlinkFrameForGateway(frame gw.DownlinkFrame) error {
-	var mac lorawan.EUI64
-	copy(mac[:], frame.TxInfo.GatewayId)
+	var id lorawan.EUI64
+	copy(id[:], frame.TxInfo.GatewayId)
 
 	c := config.C.Redis.Pool.Get()
 	defer c.Close()
 
-	key := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, mac)
+	key := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, id)
 
 	b, err := proto.Marshal(&frame)
 	if err != nil {
@@ -121,9 +121,9 @@ func LogUplinkFrameForDevEUI(devEUI lorawan.EUI64, frame gw.UplinkFrameSet) erro
 
 // GetFrameLogForGateway subscribes to the uplink and downlink frame logs
 // for the given gateway and sends this to the given channel.
-func GetFrameLogForGateway(ctx context.Context, mac lorawan.EUI64, frameLogChan chan FrameLog) error {
-	uplinkKey := fmt.Sprintf(gatewayFrameLogUplinkPubSubKeyTempl, mac)
-	downlinkKey := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, mac)
+func GetFrameLogForGateway(ctx context.Context, gatewayID lorawan.EUI64, frameLogChan chan FrameLog) error {
+	uplinkKey := fmt.Sprintf(gatewayFrameLogUplinkPubSubKeyTempl, gatewayID)
+	downlinkKey := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, gatewayID)
 	return getFrameLogs(ctx, uplinkKey, downlinkKey, frameLogChan)
 }
 

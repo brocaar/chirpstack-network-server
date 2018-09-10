@@ -40,9 +40,7 @@ type UplinkIntegrationTestSuite struct {
 // SetupTest initializes the test-suite before running each test.
 func (t *UplinkIntegrationTestSuite) SetupTest() {
 	t.initConfig()
-	t.initASClient()
-	t.initGWBackend()
-	t.initNCClient()
+	t.FlushClients()
 }
 
 func (t *UplinkIntegrationTestSuite) initASClient() {
@@ -247,4 +245,12 @@ func (t *UplinkIntegrationTestSuite) GetUplinkFrameForFRMPayload(rxInfo gw.Uplin
 		TxInfo:     &txInfo,
 		PhyPayload: b,
 	}
+}
+
+// FlushClients flushes the GW, NC and AS clients to make sure all channels
+// are empty. This is automatically called on SetupTest.
+func (t *UplinkIntegrationTestSuite) FlushClients() {
+	t.initASClient()
+	t.initGWBackend()
+	t.initNCClient()
 }

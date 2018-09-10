@@ -7,6 +7,7 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
+	log "github.com/sirupsen/logrus"
 	. "github.com/smartystreets/goconvey/convey"
 
 	commonPB "github.com/brocaar/loraserver/api/common"
@@ -21,6 +22,10 @@ import (
 	"github.com/brocaar/lorawan/backend"
 	"github.com/brocaar/lorawan/band"
 )
+
+func init() {
+	log.SetLevel(log.FatalLevel)
+}
 
 type rejoinTestCase struct {
 	BeforeFunc                 func(*rejoinTestCase) error
