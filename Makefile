@@ -42,6 +42,7 @@ api:
 	go generate api/as/as.go
 	go generate api/nc/nc.go
 	go generate api/ns/ns.go
+	go generate api/geo/geo.go
 	go generate api/common/common.go
 	go generate internal/storage/device_session.go
 
