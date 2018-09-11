@@ -541,11 +541,12 @@ func (n *NetworkServerAPI) CreateDevice(ctx context.Context, req *ns.CreateDevic
 	copy(spID[:], req.Device.ServiceProfileId)
 
 	d := storage.Device{
-		DevEUI:           devEUI,
-		DeviceProfileID:  dpID,
-		ServiceProfileID: spID,
-		RoutingProfileID: rpID,
-		SkipFCntCheck:    req.Device.SkipFCntCheck,
+		DevEUI:            devEUI,
+		DeviceProfileID:   dpID,
+		ServiceProfileID:  spID,
+		RoutingProfileID:  rpID,
+		SkipFCntCheck:     req.Device.SkipFCntCheck,
+		ReferenceAltitude: req.Device.ReferenceAltitude,
 	}
 	if err := storage.CreateDevice(config.C.PostgreSQL.DB, &d); err != nil {
 		return nil, errToRPCError(err)
@@ -566,11 +567,12 @@ func (n *NetworkServerAPI) GetDevice(ctx context.Context, req *ns.GetDeviceReque
 
 	resp := ns.GetDeviceResponse{
 		Device: &ns.Device{
-			DevEui:           d.DevEUI[:],
-			SkipFCntCheck:    d.SkipFCntCheck,
-			DeviceProfileId:  d.DeviceProfileID[:],
-			ServiceProfileId: d.ServiceProfileID[:],
-			RoutingProfileId: d.RoutingProfileID[:],
+			DevEui:            d.DevEUI[:],
+			SkipFCntCheck:     d.SkipFCntCheck,
+			DeviceProfileId:   d.DeviceProfileID[:],
+			ServiceProfileId:  d.ServiceProfileID[:],
+			RoutingProfileId:  d.RoutingProfileID[:],
+			ReferenceAltitude: d.ReferenceAltitude,
 		},
 	}
 
@@ -610,6 +612,7 @@ func (n *NetworkServerAPI) UpdateDevice(ctx context.Context, req *ns.UpdateDevic
 	d.ServiceProfileID = spID
 	d.RoutingProfileID = rpID
 	d.SkipFCntCheck = req.Device.SkipFCntCheck
+	d.ReferenceAltitude = req.Device.ReferenceAltitude
 
 	if err := storage.UpdateDevice(config.C.PostgreSQL.DB, &d); err != nil {
 		return nil, errToRPCError(err)
