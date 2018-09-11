@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
+	"github.com/brocaar/loraserver/api/geo"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api"
@@ -222,6 +223,37 @@ func setGatewayBackend() error {
 
 func setApplicationServer() error {
 	config.C.ApplicationServer.Pool = asclient.NewPool()
+	return nil
+}
+
+func setGeolocationServer() error {
+	if config.C.GeolocationServer.Server == "" {
+		log.Info("no geolocation-server configured")
+		return nil
+	}
+
+	log.WithFields(log.Fields{
+		"server":   config.C.GeolocationServer.Server,
+		"ca_cert":  config.C.GeolocationServer.CACert,
+		"tls_cert": config.C.GeolocationServer.TLSCert,
+		"tls_key":  config.C.GeolocationServer.TLSKey,
+	}).Info("connecting to geolocation-server")
+
+	var dialOptions []grpc.DialOption
+	if config.C.GeolocationServer.TLSCert != "" && config.C.GeolocationServer.TLSKey != "" {
+		dialOptions = append(dialOptions, grpc.WithTransportCredentials(
+			mustGetTransportCredentials(config.C.GeolocationServer.TLSCert, config.C.GeolocationServer.TLSKey, config.C.GeolocationServer.CACert, false),
+		))
+	} else {
+		dialOptions = append(dialOptions, grpc.WithInsecure())
+	}
+
+	geoConn, err := grpc.Dial(config.C.GeolocationServer.Server, dialOptions...)
+	if err != nil {
+		return errors.Wrap(err, "geolocation-server dial error")
+	}
+	config.C.GeolocationServer.Client = geo.NewGeolocationServiceClient(geoConn)
+
 	return nil
 }
 

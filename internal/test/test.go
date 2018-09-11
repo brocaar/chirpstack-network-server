@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/brocaar/loraserver/api/as"
+	"github.com/brocaar/loraserver/api/geo"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/api/client/asclient"
@@ -53,7 +54,7 @@ type Config struct {
 // GetConfig returns the test configuration.
 func GetConfig() *Config {
 	var err error
-	log.SetLevel(log.ErrorLevel)
+	log.SetLevel(log.FatalLevel)
 
 	config.C.NetworkServer.Band.Band, err = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)
 	if err != nil {
@@ -235,22 +236,25 @@ func NewApplicationServerPool(client *ApplicationClient) asclient.Pool {
 
 // ApplicationClient is an application client for testing.
 type ApplicationClient struct {
-	HandleDataUpErr        error
-	HandleProprietaryUpErr error
-	HandleDownlinkACKErr   error
-	SetDeviceStatusError   error
+	HandleDataUpErr         error
+	HandleProprietaryUpErr  error
+	HandleDownlinkACKErr    error
+	SetDeviceStatusError    error
+	SetDeviceLocationErrror error
 
 	HandleDataUpChan        chan as.HandleUplinkDataRequest
 	HandleProprietaryUpChan chan as.HandleProprietaryUplinkRequest
 	HandleErrorChan         chan as.HandleErrorRequest
 	HandleDownlinkACKChan   chan as.HandleDownlinkACKRequest
 	SetDeviceStatusChan     chan as.SetDeviceStatusRequest
+	SetDeviceLocationChan   chan as.SetDeviceLocationRequest
 
 	HandleDataUpResponse        empty.Empty
 	HandleProprietaryUpResponse empty.Empty
 	HandleErrorResponse         empty.Empty
 	HandleDownlinkACKResponse   empty.Empty
 	SetDeviceStatusResponse     empty.Empty
+	SetDeviceLocationResponse   empty.Empty
 }
 
 // NewApplicationClient returns a new ApplicationClient.
@@ -261,6 +265,7 @@ func NewApplicationClient() *ApplicationClient {
 		HandleErrorChan:         make(chan as.HandleErrorRequest, 100),
 		HandleDownlinkACKChan:   make(chan as.HandleDownlinkACKRequest, 100),
 		SetDeviceStatusChan:     make(chan as.SetDeviceStatusRequest, 100),
+		SetDeviceLocationChan:   make(chan as.SetDeviceLocationRequest, 100),
 	}
 }
 
@@ -300,6 +305,12 @@ func (t *ApplicationClient) SetDeviceStatus(ctx context.Context, in *as.SetDevic
 	return &t.SetDeviceStatusResponse, t.SetDeviceStatusError
 }
 
+// SetDeviceLocation method.
+func (t *ApplicationClient) SetDeviceLocation(ctx context.Context, in *as.SetDeviceLocationRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	t.SetDeviceLocationChan <- *in
+	return &t.SetDeviceLocationResponse, t.SetDeviceLocationErrror
+}
+
 // NetworkControllerClient is a network-controller client for testing.
 type NetworkControllerClient struct {
 	HandleRXInfoChan           chan nc.HandleUplinkMetaDataRequest
@@ -327,6 +338,25 @@ func (t *NetworkControllerClient) HandleUplinkMetaData(ctx context.Context, in *
 func (t *NetworkControllerClient) HandleUplinkMACCommand(ctx context.Context, in *nc.HandleUplinkMACCommandRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	t.HandleDataUpMACCommandChan <- *in
 	return &empty.Empty{}, nil
+}
+
+// GeolocationClient is a geolocation client for testing.
+type GeolocationClient struct {
+	ResolveTDOAChan     chan geo.ResolveTDOARequest
+	ResolveTDOAResponse geo.ResolveTDOAResponse
+}
+
+// NewGeolocationClient creates a new GeolocationClient.
+func NewGeolocationClient() *GeolocationClient {
+	return &GeolocationClient{
+		ResolveTDOAChan: make(chan geo.ResolveTDOARequest, 100),
+	}
+}
+
+// ResolveTDOA method.
+func (g *GeolocationClient) ResolveTDOA(ctx context.Context, in *geo.ResolveTDOARequest, opts ...grpc.CallOption) (*geo.ResolveTDOAResponse, error) {
+	g.ResolveTDOAChan <- *in
+	return &g.ResolveTDOAResponse, nil
 }
 
 // DatabaseTestSuiteBase provides the setup and teardown of the database

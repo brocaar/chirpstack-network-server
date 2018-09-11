@@ -24,6 +24,7 @@ type UplinkIntegrationTestSuite struct {
 	// mocked interfaces
 	ASClient  *test.ApplicationClient
 	GWBackend *test.GatewayBackend
+	GeoClient *test.GeolocationClient
 
 	// keys
 	AppSKey lorawan.AES128Key
@@ -57,11 +58,16 @@ func (t *UplinkIntegrationTestSuite) initNCClient() {
 	config.C.NetworkController.Client = test.NewNetworkControllerClient()
 }
 
+func (t *UplinkIntegrationTestSuite) initGeoClient() {
+	t.GeoClient = test.NewGeolocationClient()
+	config.C.GeolocationServer.Client = t.GeoClient
+}
+
 func (t *UplinkIntegrationTestSuite) initConfig() {
 	config.C.NetworkServer.DeviceSessionTTL = time.Hour
 	config.C.NetworkServer.Band.Name = band.EU_863_870
 	config.C.NetworkServer.Band.Band, _ = band.GetConfig(config.C.NetworkServer.Band.Name, false, lorawan.DwellTimeNoLimit)
-	config.C.NetworkServer.DeduplicationDelay = 5 * time.Millisecond
+	config.C.NetworkServer.DeduplicationDelay = 100 * time.Millisecond
 	config.C.NetworkServer.GetDownlinkDataDelay = 5 * time.Millisecond
 	config.C.NetworkServer.NetworkSettings.DownlinkTXPower = -1
 	config.C.NetworkServer.NetworkSettings.RX2Frequency = config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency
@@ -174,10 +180,8 @@ func (t *UplinkIntegrationTestSuite) CreateGateway(gw storage.Gateway) {
 // GetUplinkFrameForFRMPayload returns the gateway uplink-frame for the given options.
 func (t *UplinkIntegrationTestSuite) GetUplinkFrameForFRMPayload(rxInfo gw.UplinkRXInfo, txInfo gw.UplinkTXInfo, mType lorawan.MType, fPort uint8, data []byte, fOpts ...lorawan.Payload) gw.UplinkFrame {
 	t.Require().NotNil(t.DeviceSession)
-	t.Require().NotNil(t.Gateway)
 
 	var err error
-	var fCnt uint32
 	var txChan int
 	var txDR int
 
@@ -205,12 +209,6 @@ func (t *UplinkIntegrationTestSuite) GetUplinkFrameForFRMPayload(rxInfo gw.Uplin
 		t.Require().Nil(err)
 	}
 
-	if t.DeviceSession.GetMACVersion() == lorawan.LoRaWAN1_0 {
-		fCnt = t.DeviceSession.NFCntDown
-	} else {
-		fCnt = t.DeviceSession.AFCntDown
-	}
-
 	phy := lorawan.PHYPayload{
 		MHDR: lorawan.MHDR{
 			MType: mType,
@@ -220,7 +218,7 @@ func (t *UplinkIntegrationTestSuite) GetUplinkFrameForFRMPayload(rxInfo gw.Uplin
 			FHDR: lorawan.FHDR{
 				DevAddr: t.DeviceSession.DevAddr,
 				FCtrl:   lorawan.FCtrl{},
-				FCnt:    fCnt,
+				FCnt:    t.DeviceSession.FCntUp,
 				FOpts:   fOpts,
 			},
 			FPort: &fPort,
@@ -253,4 +251,5 @@ func (t *UplinkIntegrationTestSuite) FlushClients() {
 	t.initASClient()
 	t.initGWBackend()
 	t.initNCClient()
+	t.initGeoClient()
 }

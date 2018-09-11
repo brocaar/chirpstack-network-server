@@ -144,6 +144,9 @@ message SetDeviceStatusRequest {
 }
 
 message SetDeviceLocationRequest {
+    // Device EUI (8 bytes).
+    bytes dev_eui = 1;
+
     // The location of the device.
-    common.Location location = 1;
+    common.Location location = 2;
 }
