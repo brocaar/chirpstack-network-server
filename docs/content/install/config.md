@@ -457,6 +457,26 @@ get_downlink_data_delay="100ms"
   tls_key=""
 
 
+  # Geolocation settings.
+  #
+  # When set, LoRa Server will use the configured geolocation service to
+  # resolve the location of the devices.
+  [geolocation_server]
+  # Server.
+  #
+  # The hostname:ip of the geolocation service (optional).
+  server=""
+
+  # CA certificate used by the API client (optional).
+  ca_cert=""
+
+  # TLS certificate used by the API client (optional).
+  tls_cert=""
+
+  # TLS key used by the API client (optional).
+  tls_key=""
+
+
 # Default join-server settings.
 [join_server.default]
 # hostname:port of the default join-server

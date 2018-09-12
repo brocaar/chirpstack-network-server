@@ -5,6 +5,7 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
+	"github.com/brocaar/loraserver/api/geo"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/api/client/asclient"
 	"github.com/brocaar/loraserver/internal/api/client/jsclient"
@@ -103,6 +104,14 @@ type Config struct {
 			}
 		}
 	} `mapstructure:"network_server"`
+
+	GeolocationServer struct {
+		Client  geo.GeolocationServerServiceClient `mapstructure:"-"`
+		Server  string                             `mapstructure:"server"`
+		CACert  string                             `mapstructure:"ca_cert"`
+		TLSCert string                             `mapstructure:"tls_cert"`
+		TLSKey  string                             `mapstructure:"tls_key"`
+	} `mapstructure:"geolocation"`
 
 	JoinServer struct {
 		Pool jsclient.Pool

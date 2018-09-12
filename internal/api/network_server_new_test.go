@@ -371,11 +371,12 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 		assert := require.New(t)
 
 		d := &ns.Device{
-			DevEui:           devEUI[:],
-			DeviceProfileId:  dp.ID.Bytes(),
-			ServiceProfileId: sp.ID.Bytes(),
-			RoutingProfileId: rp.ID.Bytes(),
-			SkipFCntCheck:    true,
+			DevEui:            devEUI[:],
+			DeviceProfileId:   dp.ID.Bytes(),
+			ServiceProfileId:  sp.ID.Bytes(),
+			RoutingProfileId:  rp.ID.Bytes(),
+			SkipFCntCheck:     true,
+			ReferenceAltitude: 5.6,
 		}
 
 		_, err := ts.api.CreateDevice(context.Background(), &ns.CreateDeviceRequest{

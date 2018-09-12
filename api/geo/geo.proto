@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package geo;
+
+import "github.com/brocaar/loraserver/api/gw/gw.proto";
+import "github.com/brocaar/loraserver/api/common/common.proto";
+
+
+// GeolocationServerService implements a geolocation-server service.
+service GeolocationServerService {
+    // ResolveTDOA resolves the location based on TDOA.
+    rpc ResolveTDOA(ResolveTDOARequest) returns (ResolveTDOAResponse) {}
+}
+
+message ResolveResult {
+    // Resolved location.
+    common.Location location = 1;
+}
+
+message FrameRXInfo {
+    // Uplink Gateway meta-data.
+    repeated gw.UplinkRXInfo rx_info = 1;
+}
+
+message ResolveTDOARequest {
+    // Device ID.
+    bytes dev_eui = 1 [json_name = "devEUI"];
+
+    // Frame meta-data.
+    FrameRXInfo frame_rx_info = 2 [json_name = "frameRXInfo"];
+
+    // Device reference altitude.
+    double device_reference_altitude = 3;
+}
+
+message ResolveTDOAResponse {
+    // Resolve result.
+    ResolveResult result = 1;
+}

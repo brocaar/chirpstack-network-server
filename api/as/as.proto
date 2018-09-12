@@ -6,6 +6,7 @@ import "google/protobuf/empty.proto";
 import "github.com/brocaar/loraserver/api/common/common.proto";
 import "github.com/brocaar/loraserver/api/gw/gw.proto";
 
+
 // ApplicationServerService is the service providing the application-server interface.
 service ApplicationServerService {
     // HandleUplinkData handles uplink data received from an end-device.
@@ -22,6 +23,9 @@ service ApplicationServerService {
 
     // SetDeviceStatus updates the device-status for a device.
     rpc SetDeviceStatus(SetDeviceStatusRequest) returns (google.protobuf.Empty) {}
+
+    // SetDeviceLocation updates the device-location for a device.
+    rpc SetDeviceLocation(SetDeviceLocationRequest) returns (google.protobuf.Empty) {}
 }
 
 enum RXWindow {
@@ -137,4 +141,12 @@ message SetDeviceStatusRequest {
     // -32..32: The demodulation SNR ration in dB
     // 256:     The device-status is not available.
     int32  margin = 3;
+}
+
+message SetDeviceLocationRequest {
+    // Device EUI (8 bytes).
+    bytes dev_eui = 1;
+
+    // The location of the device.
+    common.Location location = 2;
 }

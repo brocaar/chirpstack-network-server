@@ -10,6 +10,8 @@ import (
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/common"
+	"github.com/brocaar/loraserver/api/geo"
+	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/config"
 	datadown "github.com/brocaar/loraserver/internal/downlink/data"
@@ -32,9 +34,10 @@ var tasks = []func(*dataContext) error{
 	logUplinkFrame,
 	getDeviceProfile,
 	getServiceProfile,
+	getApplicationServerClientForDataUp,
+	resolveDeviceLocation,
 	setADR,
 	setUplinkDataRate,
-	getApplicationServerClientForDataUp,
 	setBeaconLocked,
 	sendRXInfoToNetworkController,
 	handleFOptsMACCommands,
@@ -239,6 +242,73 @@ func getApplicationServerClientForDataUp(ctx *dataContext) error {
 	}
 
 	ctx.ApplicationServerClient = asClient
+
+	return nil
+}
+
+func resolveDeviceLocation(ctx *dataContext) error {
+	if !ctx.ServiceProfile.NwkGeoLoc {
+		log.WithFields(log.Fields{
+			"dev_eui": ctx.DeviceSession.DevEUI,
+		}).Debug("skipping geolocation, it is disabled by the service-profile")
+		return nil
+	}
+
+	if config.C.GeolocationServer.Client == nil {
+		log.WithFields(log.Fields{
+			"dev_eui": ctx.DeviceSession.DevEUI,
+		}).Debug("skipping geolocation, no client configured")
+		return nil
+	}
+
+	var rxInfoWithFineTimestamp []*gw.UplinkRXInfo
+	for i := range ctx.RXPacket.RXInfoSet {
+		if ctx.RXPacket.RXInfoSet[i].FineTimestampType == gw.FineTimestampType_PLAIN {
+			rxInfoWithFineTimestamp = append(rxInfoWithFineTimestamp, ctx.RXPacket.RXInfoSet[i])
+		}
+	}
+
+	if len(rxInfoWithFineTimestamp) < 3 {
+		log.WithFields(log.Fields{
+			"dev_eui": ctx.DeviceSession.DevEUI,
+		}).Debug("skipping geolocation, not enough gateway meta-data")
+		return nil
+	}
+
+	// perform the actual geolocation in a separate goroutine
+	go func(devEUI lorawan.EUI64, referenceAlt float64, geoClient geo.GeolocationServerServiceClient, asClient as.ApplicationServerServiceClient, rxInfo []*gw.UplinkRXInfo) {
+		resp, err := geoClient.ResolveTDOA(context.Background(), &geo.ResolveTDOARequest{
+			DevEui: devEUI[:],
+			FrameRxInfo: &geo.FrameRXInfo{
+				RxInfo: rxInfo,
+			},
+			DeviceReferenceAltitude: referenceAlt,
+		})
+		if err != nil {
+			log.WithFields(log.Fields{
+				"dev_eui": devEUI,
+			}).WithError(err).Error("resolve tdoa error")
+			return
+		}
+
+		if resp.Result == nil || resp.Result.Location == nil {
+			log.WithFields(log.Fields{
+				"dev_eui": devEUI,
+			}).Error("geolocation-server result or result.location must not be nil")
+			return
+		}
+
+		_, err = asClient.SetDeviceLocation(context.Background(), &as.SetDeviceLocationRequest{
+			DevEui:   devEUI[:],
+			Location: resp.Result.Location,
+		})
+		if err != nil {
+			log.WithFields(log.Fields{
+				"dev_eui": devEUI,
+			}).WithError(err).Error("set device-location error")
+		}
+
+	}(ctx.DeviceSession.DevEUI, ctx.DeviceSession.ReferenceAltitude, config.C.GeolocationServer.Client, ctx.ApplicationServerClient, rxInfoWithFineTimestamp)
 
 	return nil
 }

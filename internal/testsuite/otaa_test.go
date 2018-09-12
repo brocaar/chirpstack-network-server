@@ -77,10 +77,11 @@ func TestOTAAScenarios(t *testing.T) {
 		So(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
 
 		d := storage.Device{
-			DevEUI:           lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
-			DeviceProfileID:  dp.ID,
-			RoutingProfileID: rp.ID,
-			ServiceProfileID: sp.ID,
+			DevEUI:            lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
+			DeviceProfileID:   dp.ID,
+			RoutingProfileID:  rp.ID,
+			ServiceProfileID:  sp.ID,
+			ReferenceAltitude: 5.6,
 		}
 		So(storage.CreateDevice(config.C.PostgreSQL.DB, &d), ShouldBeNil)
 
@@ -256,6 +257,7 @@ func TestOTAAScenarios(t *testing.T) {
 						UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
 						RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 						NbTrans:               1,
+						ReferenceAltitude:     5.6,
 					},
 				},
 				{
@@ -347,6 +349,7 @@ func TestOTAAScenarios(t *testing.T) {
 						UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
 						RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 						NbTrans:               1,
+						ReferenceAltitude:     5.6,
 					},
 				},
 				{
@@ -453,6 +456,7 @@ func TestOTAAScenarios(t *testing.T) {
 						UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
 						RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 						NbTrans:               1,
+						ReferenceAltitude:     5.6,
 					},
 				},
 				{
@@ -524,6 +528,7 @@ func TestOTAAScenarios(t *testing.T) {
 						RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 						SkipFCntValidation:    true,
 						NbTrans:               1,
+						ReferenceAltitude:     5.6,
 					},
 				},
 				{
@@ -623,6 +628,7 @@ func TestOTAAScenarios(t *testing.T) {
 						UplinkGatewayHistory: map[lorawan.EUI64]storage.UplinkGatewayHistory{},
 						RX2Frequency:         config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
 						NbTrans:              1,
+						ReferenceAltitude:    5.6,
 					},
 				},
 			}

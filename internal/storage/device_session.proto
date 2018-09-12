@@ -177,6 +177,9 @@ message DeviceSessionPB {
     // Pending rejoin device-session contains a device-session which has not
     // yet been activated by the device (by sending a first uplink).
     bytes pending_rejoin_device_session = 43;
+
+    // Device reference altitude for geolocation.
+    double reference_altitude = 46;
 }
 
 

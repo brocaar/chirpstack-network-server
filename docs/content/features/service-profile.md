@@ -35,6 +35,6 @@ Fields marked with an **X** are implemented by LoRa Server.
 - [ ] **PRAllowed** Passive Roaming allowed
 - [ ] **HRAllowed** Handover Roaming allowed
 - [ ] **RAAllowed** Roaming Activation allowed
-- [ ] **NwkGeoLoc** Enable network geolocation service
+- [X] **NwkGeoLoc** Enable network geolocation service
 - [ ] **TargetPER** Target Packet Error Rate
 - [ ] **MinGWDiversity** Minimum number of receiving GWs (informative)

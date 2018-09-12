@@ -170,6 +170,10 @@ type DeviceSession struct {
 
 	RejoinCount0               uint16
 	PendingRejoinDeviceSession *DeviceSession
+
+	// ReferenceAltitude holds the device reference altitude used for
+	// geolocation.
+	ReferenceAltitude float64
 }
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list
@@ -659,7 +663,8 @@ func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
 		RejoinRequestMaxCountN: uint32(d.RejoinRequestMaxCountN),
 		RejoinRequestMaxTimeN:  uint32(d.RejoinRequestMaxTimeN),
 
-		RejoinCount_0: uint32(d.RejoinCount0),
+		RejoinCount_0:     uint32(d.RejoinCount0),
+		ReferenceAltitude: d.ReferenceAltitude,
 	}
 
 	if d.AppSKeyEvelope != nil {
@@ -754,7 +759,8 @@ func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
 		RejoinRequestMaxCountN: int(d.RejoinRequestMaxCountN),
 		RejoinRequestMaxTimeN:  int(d.RejoinRequestMaxTimeN),
 
-		RejoinCount0: uint16(d.RejoinCount_0),
+		RejoinCount0:      uint16(d.RejoinCount_0),
+		ReferenceAltitude: d.ReferenceAltitude,
 	}
 
 	if d.LastDeviceStatusRequestTimeUnixNs > 0 {

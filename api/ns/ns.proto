@@ -289,6 +289,12 @@ message Device {
     // Skip frame-counter check.
     // Note that turning this on is insecure and is intended for debugging only.
     bool skip_f_cnt_check = 5;
+
+    // Reference altitude.
+    // When using geolocation, this altitude will be used as a reference
+    // (when supported by the geolocation-server) to increase geolocation
+    // accuracy.
+    double reference_altitude = 6;
 }
 
 message CreateDeviceRequest {

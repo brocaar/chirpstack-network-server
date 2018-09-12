@@ -12,13 +12,14 @@ import (
 
 // Device defines a LoRaWAN device.
 type Device struct {
-	DevEUI           lorawan.EUI64 `db:"dev_eui"`
-	CreatedAt        time.Time     `db:"created_at"`
-	UpdatedAt        time.Time     `db:"updated_at"`
-	DeviceProfileID  uuid.UUID     `db:"device_profile_id"`
-	ServiceProfileID uuid.UUID     `db:"service_profile_id"`
-	RoutingProfileID uuid.UUID     `db:"routing_profile_id"`
-	SkipFCntCheck    bool          `db:"skip_fcnt_check"`
+	DevEUI            lorawan.EUI64 `db:"dev_eui"`
+	CreatedAt         time.Time     `db:"created_at"`
+	UpdatedAt         time.Time     `db:"updated_at"`
+	DeviceProfileID   uuid.UUID     `db:"device_profile_id"`
+	ServiceProfileID  uuid.UUID     `db:"service_profile_id"`
+	RoutingProfileID  uuid.UUID     `db:"routing_profile_id"`
+	SkipFCntCheck     bool          `db:"skip_fcnt_check"`
+	ReferenceAltitude float64       `db:"reference_altitude"`
 }
 
 // DeviceActivation defines the device-activation for a LoRaWAN device.
@@ -49,8 +50,9 @@ func CreateDevice(db sqlx.Execer, d *Device) error {
 			device_profile_id,
 			service_profile_id,
 			routing_profile_id,
-			skip_fcnt_check
-		) values ($1, $2, $3, $4, $5, $6, $7)`,
+			skip_fcnt_check,
+			reference_altitude
+		) values ($1, $2, $3, $4, $5, $6, $7, $8)`,
 		d.DevEUI[:],
 		d.CreatedAt,
 		d.UpdatedAt,
@@ -58,6 +60,7 @@ func CreateDevice(db sqlx.Execer, d *Device) error {
 		d.ServiceProfileID,
 		d.RoutingProfileID,
 		d.SkipFCntCheck,
+		d.ReferenceAltitude,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -90,7 +93,8 @@ func UpdateDevice(db sqlx.Execer, d *Device) error {
 			device_profile_id = $3,
 			service_profile_id = $4,
 			routing_profile_id = $5,
-			skip_fcnt_check = $6
+			skip_fcnt_check = $6,
+			reference_altitude = $7
 		where
 			dev_eui = $1`,
 		d.DevEUI[:],
@@ -99,6 +103,7 @@ func UpdateDevice(db sqlx.Execer, d *Device) error {
 		d.ServiceProfileID,
 		d.RoutingProfileID,
 		d.SkipFCntCheck,
+		d.ReferenceAltitude,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")

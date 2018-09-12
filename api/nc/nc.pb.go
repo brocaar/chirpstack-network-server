@@ -41,7 +41,7 @@ func (m *HandleUplinkMetaDataRequest) Reset()         { *m = HandleUplinkMetaDat
 func (m *HandleUplinkMetaDataRequest) String() string { return proto.CompactTextString(m) }
 func (*HandleUplinkMetaDataRequest) ProtoMessage()    {}
 func (*HandleUplinkMetaDataRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nc_a74dd0bc39fa8bc9, []int{0}
+	return fileDescriptor_3fd7d898ee948e33, []int{0}
 }
 func (m *HandleUplinkMetaDataRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleUplinkMetaDataRequest.Unmarshal(m, b)
@@ -98,7 +98,7 @@ func (m *HandleUplinkMACCommandRequest) Reset()         { *m = HandleUplinkMACCo
 func (m *HandleUplinkMACCommandRequest) String() string { return proto.CompactTextString(m) }
 func (*HandleUplinkMACCommandRequest) ProtoMessage()    {}
 func (*HandleUplinkMACCommandRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_nc_a74dd0bc39fa8bc9, []int{1}
+	return fileDescriptor_3fd7d898ee948e33, []int{1}
 }
 func (m *HandleUplinkMACCommandRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_HandleUplinkMACCommandRequest.Unmarshal(m, b)
@@ -259,9 +259,9 @@ var _NetworkControllerService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "nc.proto",
 }
 
-func init() { proto.RegisterFile("nc.proto", fileDescriptor_nc_a74dd0bc39fa8bc9) }
+func init() { proto.RegisterFile("nc.proto", fileDescriptor_3fd7d898ee948e33) }
 
-var fileDescriptor_nc_a74dd0bc39fa8bc9 = []byte{
+var fileDescriptor_3fd7d898ee948e33 = []byte{
 	// 326 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x91, 0xd1, 0x4a, 0xeb, 0x30,
 	0x1c, 0xc6, 0x4f, 0x57, 0xe8, 0x46, 0xce, 0x0e, 0x8c, 0x70, 0x98, 0xa5, 0x43, 0xac, 0xbb, 0x9a,

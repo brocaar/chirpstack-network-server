@@ -37,6 +37,7 @@ var FineTimestampType_name = map[int32]string{
 	1: "ENCRYPTED",
 	2: "PLAIN",
 }
+
 var FineTimestampType_value = map[string]int32{
 	"NONE":      0,
 	"ENCRYPTED": 1,
@@ -46,8 +47,9 @@ var FineTimestampType_value = map[string]int32{
 func (x FineTimestampType) String() string {
 	return proto.EnumName(FineTimestampType_name, int32(x))
 }
+
 func (FineTimestampType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{0}
+	return fileDescriptor_9ee4117efac0d846, []int{0}
 }
 
 type UplinkTXInfo struct {
@@ -68,7 +70,7 @@ func (m *UplinkTXInfo) Reset()         { *m = UplinkTXInfo{} }
 func (m *UplinkTXInfo) String() string { return proto.CompactTextString(m) }
 func (*UplinkTXInfo) ProtoMessage()    {}
 func (*UplinkTXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{0}
+	return fileDescriptor_9ee4117efac0d846, []int{0}
 }
 func (m *UplinkTXInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UplinkTXInfo.Unmarshal(m, b)
@@ -88,27 +90,6 @@ func (m *UplinkTXInfo) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_UplinkTXInfo proto.InternalMessageInfo
 
-type isUplinkTXInfo_ModulationInfo interface {
-	isUplinkTXInfo_ModulationInfo()
-}
-
-type UplinkTXInfo_LoraModulationInfo struct {
-	LoraModulationInfo *LoRaModulationInfo `protobuf:"bytes,3,opt,name=lora_modulation_info,json=loRaModulationInfo,proto3,oneof"`
-}
-type UplinkTXInfo_FskModulationInfo struct {
-	FskModulationInfo *FSKModulationInfo `protobuf:"bytes,4,opt,name=fsk_modulation_info,json=fskModulationInfo,proto3,oneof"`
-}
-
-func (*UplinkTXInfo_LoraModulationInfo) isUplinkTXInfo_ModulationInfo() {}
-func (*UplinkTXInfo_FskModulationInfo) isUplinkTXInfo_ModulationInfo()  {}
-
-func (m *UplinkTXInfo) GetModulationInfo() isUplinkTXInfo_ModulationInfo {
-	if m != nil {
-		return m.ModulationInfo
-	}
-	return nil
-}
-
 func (m *UplinkTXInfo) GetFrequency() uint32 {
 	if m != nil {
 		return m.Frequency
@@ -121,6 +102,29 @@ func (m *UplinkTXInfo) GetModulation() common.Modulation {
 		return m.Modulation
 	}
 	return common.Modulation_LORA
+}
+
+type isUplinkTXInfo_ModulationInfo interface {
+	isUplinkTXInfo_ModulationInfo()
+}
+
+type UplinkTXInfo_LoraModulationInfo struct {
+	LoraModulationInfo *LoRaModulationInfo `protobuf:"bytes,3,opt,name=lora_modulation_info,json=loRaModulationInfo,proto3,oneof"`
+}
+
+type UplinkTXInfo_FskModulationInfo struct {
+	FskModulationInfo *FSKModulationInfo `protobuf:"bytes,4,opt,name=fsk_modulation_info,json=fskModulationInfo,proto3,oneof"`
+}
+
+func (*UplinkTXInfo_LoraModulationInfo) isUplinkTXInfo_ModulationInfo() {}
+
+func (*UplinkTXInfo_FskModulationInfo) isUplinkTXInfo_ModulationInfo() {}
+
+func (m *UplinkTXInfo) GetModulationInfo() isUplinkTXInfo_ModulationInfo {
+	if m != nil {
+		return m.ModulationInfo
+	}
+	return nil
 }
 
 func (m *UplinkTXInfo) GetLoraModulationInfo() *LoRaModulationInfo {
@@ -229,7 +233,7 @@ func (m *LoRaModulationInfo) Reset()         { *m = LoRaModulationInfo{} }
 func (m *LoRaModulationInfo) String() string { return proto.CompactTextString(m) }
 func (*LoRaModulationInfo) ProtoMessage()    {}
 func (*LoRaModulationInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{1}
+	return fileDescriptor_9ee4117efac0d846, []int{1}
 }
 func (m *LoRaModulationInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LoRaModulationInfo.Unmarshal(m, b)
@@ -291,7 +295,7 @@ func (m *FSKModulationInfo) Reset()         { *m = FSKModulationInfo{} }
 func (m *FSKModulationInfo) String() string { return proto.CompactTextString(m) }
 func (*FSKModulationInfo) ProtoMessage()    {}
 func (*FSKModulationInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{2}
+	return fileDescriptor_9ee4117efac0d846, []int{2}
 }
 func (m *FSKModulationInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FSKModulationInfo.Unmarshal(m, b)
@@ -341,7 +345,7 @@ func (m *EncryptedFineTimestamp) Reset()         { *m = EncryptedFineTimestamp{}
 func (m *EncryptedFineTimestamp) String() string { return proto.CompactTextString(m) }
 func (*EncryptedFineTimestamp) ProtoMessage()    {}
 func (*EncryptedFineTimestamp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{3}
+	return fileDescriptor_9ee4117efac0d846, []int{3}
 }
 func (m *EncryptedFineTimestamp) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_EncryptedFineTimestamp.Unmarshal(m, b)
@@ -394,7 +398,7 @@ func (m *PlainFineTimestamp) Reset()         { *m = PlainFineTimestamp{} }
 func (m *PlainFineTimestamp) String() string { return proto.CompactTextString(m) }
 func (*PlainFineTimestamp) ProtoMessage()    {}
 func (*PlainFineTimestamp) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{4}
+	return fileDescriptor_9ee4117efac0d846, []int{4}
 }
 func (m *PlainFineTimestamp) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_PlainFineTimestamp.Unmarshal(m, b)
@@ -450,7 +454,7 @@ func (m *GatewayStats) Reset()         { *m = GatewayStats{} }
 func (m *GatewayStats) String() string { return proto.CompactTextString(m) }
 func (*GatewayStats) ProtoMessage()    {}
 func (*GatewayStats) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{5}
+	return fileDescriptor_9ee4117efac0d846, []int{5}
 }
 func (m *GatewayStats) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GatewayStats.Unmarshal(m, b)
@@ -573,7 +577,7 @@ func (m *UplinkRXInfo) Reset()         { *m = UplinkRXInfo{} }
 func (m *UplinkRXInfo) String() string { return proto.CompactTextString(m) }
 func (*UplinkRXInfo) ProtoMessage()    {}
 func (*UplinkRXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{6}
+	return fileDescriptor_9ee4117efac0d846, []int{6}
 }
 func (m *UplinkRXInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UplinkRXInfo.Unmarshal(m, b)
@@ -592,27 +596,6 @@ func (m *UplinkRXInfo) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_UplinkRXInfo proto.InternalMessageInfo
-
-type isUplinkRXInfo_FineTimestamp interface {
-	isUplinkRXInfo_FineTimestamp()
-}
-
-type UplinkRXInfo_EncryptedFineTimestamp struct {
-	EncryptedFineTimestamp *EncryptedFineTimestamp `protobuf:"bytes,13,opt,name=encrypted_fine_timestamp,json=encryptedFineTimestamp,proto3,oneof"`
-}
-type UplinkRXInfo_PlainFineTimestamp struct {
-	PlainFineTimestamp *PlainFineTimestamp `protobuf:"bytes,14,opt,name=plain_fine_timestamp,json=plainFineTimestamp,proto3,oneof"`
-}
-
-func (*UplinkRXInfo_EncryptedFineTimestamp) isUplinkRXInfo_FineTimestamp() {}
-func (*UplinkRXInfo_PlainFineTimestamp) isUplinkRXInfo_FineTimestamp()     {}
-
-func (m *UplinkRXInfo) GetFineTimestamp() isUplinkRXInfo_FineTimestamp {
-	if m != nil {
-		return m.FineTimestamp
-	}
-	return nil
-}
 
 func (m *UplinkRXInfo) GetGatewayId() []byte {
 	if m != nil {
@@ -696,6 +679,29 @@ func (m *UplinkRXInfo) GetFineTimestampType() FineTimestampType {
 		return m.FineTimestampType
 	}
 	return FineTimestampType_NONE
+}
+
+type isUplinkRXInfo_FineTimestamp interface {
+	isUplinkRXInfo_FineTimestamp()
+}
+
+type UplinkRXInfo_EncryptedFineTimestamp struct {
+	EncryptedFineTimestamp *EncryptedFineTimestamp `protobuf:"bytes,13,opt,name=encrypted_fine_timestamp,json=encryptedFineTimestamp,proto3,oneof"`
+}
+
+type UplinkRXInfo_PlainFineTimestamp struct {
+	PlainFineTimestamp *PlainFineTimestamp `protobuf:"bytes,14,opt,name=plain_fine_timestamp,json=plainFineTimestamp,proto3,oneof"`
+}
+
+func (*UplinkRXInfo_EncryptedFineTimestamp) isUplinkRXInfo_FineTimestamp() {}
+
+func (*UplinkRXInfo_PlainFineTimestamp) isUplinkRXInfo_FineTimestamp() {}
+
+func (m *UplinkRXInfo) GetFineTimestamp() isUplinkRXInfo_FineTimestamp {
+	if m != nil {
+		return m.FineTimestamp
+	}
+	return nil
 }
 
 func (m *UplinkRXInfo) GetEncryptedFineTimestamp() *EncryptedFineTimestamp {
@@ -818,7 +824,7 @@ func (m *DownlinkTXInfo) Reset()         { *m = DownlinkTXInfo{} }
 func (m *DownlinkTXInfo) String() string { return proto.CompactTextString(m) }
 func (*DownlinkTXInfo) ProtoMessage()    {}
 func (*DownlinkTXInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{7}
+	return fileDescriptor_9ee4117efac0d846, []int{7}
 }
 func (m *DownlinkTXInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DownlinkTXInfo.Unmarshal(m, b)
@@ -837,27 +843,6 @@ func (m *DownlinkTXInfo) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_DownlinkTXInfo proto.InternalMessageInfo
-
-type isDownlinkTXInfo_ModulationInfo interface {
-	isDownlinkTXInfo_ModulationInfo()
-}
-
-type DownlinkTXInfo_LoraModulationInfo struct {
-	LoraModulationInfo *LoRaModulationInfo `protobuf:"bytes,8,opt,name=lora_modulation_info,json=loRaModulationInfo,proto3,oneof"`
-}
-type DownlinkTXInfo_FskModulationInfo struct {
-	FskModulationInfo *FSKModulationInfo `protobuf:"bytes,9,opt,name=fsk_modulation_info,json=fskModulationInfo,proto3,oneof"`
-}
-
-func (*DownlinkTXInfo_LoraModulationInfo) isDownlinkTXInfo_ModulationInfo() {}
-func (*DownlinkTXInfo_FskModulationInfo) isDownlinkTXInfo_ModulationInfo()  {}
-
-func (m *DownlinkTXInfo) GetModulationInfo() isDownlinkTXInfo_ModulationInfo {
-	if m != nil {
-		return m.ModulationInfo
-	}
-	return nil
-}
 
 func (m *DownlinkTXInfo) GetGatewayId() []byte {
 	if m != nil {
@@ -906,6 +891,29 @@ func (m *DownlinkTXInfo) GetModulation() common.Modulation {
 		return m.Modulation
 	}
 	return common.Modulation_LORA
+}
+
+type isDownlinkTXInfo_ModulationInfo interface {
+	isDownlinkTXInfo_ModulationInfo()
+}
+
+type DownlinkTXInfo_LoraModulationInfo struct {
+	LoraModulationInfo *LoRaModulationInfo `protobuf:"bytes,8,opt,name=lora_modulation_info,json=loRaModulationInfo,proto3,oneof"`
+}
+
+type DownlinkTXInfo_FskModulationInfo struct {
+	FskModulationInfo *FSKModulationInfo `protobuf:"bytes,9,opt,name=fsk_modulation_info,json=fskModulationInfo,proto3,oneof"`
+}
+
+func (*DownlinkTXInfo_LoraModulationInfo) isDownlinkTXInfo_ModulationInfo() {}
+
+func (*DownlinkTXInfo_FskModulationInfo) isDownlinkTXInfo_ModulationInfo() {}
+
+func (m *DownlinkTXInfo) GetModulationInfo() isDownlinkTXInfo_ModulationInfo {
+	if m != nil {
+		return m.ModulationInfo
+	}
+	return nil
 }
 
 func (m *DownlinkTXInfo) GetLoraModulationInfo() *LoRaModulationInfo {
@@ -1026,7 +1034,7 @@ func (m *UplinkFrame) Reset()         { *m = UplinkFrame{} }
 func (m *UplinkFrame) String() string { return proto.CompactTextString(m) }
 func (*UplinkFrame) ProtoMessage()    {}
 func (*UplinkFrame) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{8}
+	return fileDescriptor_9ee4117efac0d846, []int{8}
 }
 func (m *UplinkFrame) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UplinkFrame.Unmarshal(m, b)
@@ -1083,7 +1091,7 @@ func (m *UplinkFrameSet) Reset()         { *m = UplinkFrameSet{} }
 func (m *UplinkFrameSet) String() string { return proto.CompactTextString(m) }
 func (*UplinkFrameSet) ProtoMessage()    {}
 func (*UplinkFrameSet) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{9}
+	return fileDescriptor_9ee4117efac0d846, []int{9}
 }
 func (m *UplinkFrameSet) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UplinkFrameSet.Unmarshal(m, b)
@@ -1140,7 +1148,7 @@ func (m *DownlinkFrame) Reset()         { *m = DownlinkFrame{} }
 func (m *DownlinkFrame) String() string { return proto.CompactTextString(m) }
 func (*DownlinkFrame) ProtoMessage()    {}
 func (*DownlinkFrame) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{10}
+	return fileDescriptor_9ee4117efac0d846, []int{10}
 }
 func (m *DownlinkFrame) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DownlinkFrame.Unmarshal(m, b)
@@ -1197,7 +1205,7 @@ func (m *DownlinkTXAck) Reset()         { *m = DownlinkTXAck{} }
 func (m *DownlinkTXAck) String() string { return proto.CompactTextString(m) }
 func (*DownlinkTXAck) ProtoMessage()    {}
 func (*DownlinkTXAck) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{11}
+	return fileDescriptor_9ee4117efac0d846, []int{11}
 }
 func (m *DownlinkTXAck) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DownlinkTXAck.Unmarshal(m, b)
@@ -1254,7 +1262,7 @@ func (m *GatewayConfiguration) Reset()         { *m = GatewayConfiguration{} }
 func (m *GatewayConfiguration) String() string { return proto.CompactTextString(m) }
 func (*GatewayConfiguration) ProtoMessage()    {}
 func (*GatewayConfiguration) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{12}
+	return fileDescriptor_9ee4117efac0d846, []int{12}
 }
 func (m *GatewayConfiguration) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GatewayConfiguration.Unmarshal(m, b)
@@ -1313,7 +1321,7 @@ func (m *ChannelConfiguration) Reset()         { *m = ChannelConfiguration{} }
 func (m *ChannelConfiguration) String() string { return proto.CompactTextString(m) }
 func (*ChannelConfiguration) ProtoMessage()    {}
 func (*ChannelConfiguration) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{13}
+	return fileDescriptor_9ee4117efac0d846, []int{13}
 }
 func (m *ChannelConfiguration) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ChannelConfiguration.Unmarshal(m, b)
@@ -1333,27 +1341,6 @@ func (m *ChannelConfiguration) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ChannelConfiguration proto.InternalMessageInfo
 
-type isChannelConfiguration_ModulationConfig interface {
-	isChannelConfiguration_ModulationConfig()
-}
-
-type ChannelConfiguration_LoraModulationConfig struct {
-	LoraModulationConfig *LoRaModulationConfig `protobuf:"bytes,3,opt,name=lora_modulation_config,json=loRaModulationConfig,proto3,oneof"`
-}
-type ChannelConfiguration_FskModulationConfig struct {
-	FskModulationConfig *FSKModulationConfig `protobuf:"bytes,4,opt,name=fsk_modulation_config,json=fskModulationConfig,proto3,oneof"`
-}
-
-func (*ChannelConfiguration_LoraModulationConfig) isChannelConfiguration_ModulationConfig() {}
-func (*ChannelConfiguration_FskModulationConfig) isChannelConfiguration_ModulationConfig()  {}
-
-func (m *ChannelConfiguration) GetModulationConfig() isChannelConfiguration_ModulationConfig {
-	if m != nil {
-		return m.ModulationConfig
-	}
-	return nil
-}
-
 func (m *ChannelConfiguration) GetFrequency() uint32 {
 	if m != nil {
 		return m.Frequency
@@ -1366,6 +1353,29 @@ func (m *ChannelConfiguration) GetModulation() common.Modulation {
 		return m.Modulation
 	}
 	return common.Modulation_LORA
+}
+
+type isChannelConfiguration_ModulationConfig interface {
+	isChannelConfiguration_ModulationConfig()
+}
+
+type ChannelConfiguration_LoraModulationConfig struct {
+	LoraModulationConfig *LoRaModulationConfig `protobuf:"bytes,3,opt,name=lora_modulation_config,json=loRaModulationConfig,proto3,oneof"`
+}
+
+type ChannelConfiguration_FskModulationConfig struct {
+	FskModulationConfig *FSKModulationConfig `protobuf:"bytes,4,opt,name=fsk_modulation_config,json=fskModulationConfig,proto3,oneof"`
+}
+
+func (*ChannelConfiguration_LoraModulationConfig) isChannelConfiguration_ModulationConfig() {}
+
+func (*ChannelConfiguration_FskModulationConfig) isChannelConfiguration_ModulationConfig() {}
+
+func (m *ChannelConfiguration) GetModulationConfig() isChannelConfiguration_ModulationConfig {
+	if m != nil {
+		return m.ModulationConfig
+	}
+	return nil
 }
 
 func (m *ChannelConfiguration) GetLoraModulationConfig() *LoRaModulationConfig {
@@ -1470,7 +1480,7 @@ func (m *LoRaModulationConfig) Reset()         { *m = LoRaModulationConfig{} }
 func (m *LoRaModulationConfig) String() string { return proto.CompactTextString(m) }
 func (*LoRaModulationConfig) ProtoMessage()    {}
 func (*LoRaModulationConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{14}
+	return fileDescriptor_9ee4117efac0d846, []int{14}
 }
 func (m *LoRaModulationConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_LoRaModulationConfig.Unmarshal(m, b)
@@ -1518,7 +1528,7 @@ func (m *FSKModulationConfig) Reset()         { *m = FSKModulationConfig{} }
 func (m *FSKModulationConfig) String() string { return proto.CompactTextString(m) }
 func (*FSKModulationConfig) ProtoMessage()    {}
 func (*FSKModulationConfig) Descriptor() ([]byte, []int) {
-	return fileDescriptor_gw_a30f141b8b3eb2ac, []int{15}
+	return fileDescriptor_9ee4117efac0d846, []int{15}
 }
 func (m *FSKModulationConfig) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FSKModulationConfig.Unmarshal(m, b)
@@ -1572,9 +1582,9 @@ func init() {
 	proto.RegisterEnum("gw.FineTimestampType", FineTimestampType_name, FineTimestampType_value)
 }
 
-func init() { proto.RegisterFile("gw.proto", fileDescriptor_gw_a30f141b8b3eb2ac) }
+func init() { proto.RegisterFile("gw.proto", fileDescriptor_9ee4117efac0d846) }
 
-var fileDescriptor_gw_a30f141b8b3eb2ac = []byte{
+var fileDescriptor_9ee4117efac0d846 = []byte{
 	// 1250 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x57, 0x5f, 0x73, 0xda, 0x46,
 	0x10, 0x37, 0xd8, 0x18, 0x58, 0x0c, 0x81, 0x83, 0x38, 0x4a, 0xfa, 0x27, 0xae, 0xa6, 0xed, 0x24,

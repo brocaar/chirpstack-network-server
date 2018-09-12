@@ -231,6 +231,7 @@ func createDeviceSession(ctx *context) error {
 		PingSlotDR:            ctx.DeviceProfile.PingSlotDR,
 		PingSlotFrequency:     int(ctx.DeviceProfile.PingSlotFreq),
 		NbTrans:               1,
+		ReferenceAltitude:     ctx.Device.ReferenceAltitude,
 	}
 
 	if ctx.JoinAnsPayload.AppSKey != nil {

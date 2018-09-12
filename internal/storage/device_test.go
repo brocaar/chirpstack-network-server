@@ -23,11 +23,12 @@ func (ts *StorageTestSuite) TestDevice() {
 		assert := require.New(t)
 
 		d := Device{
-			DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-			ServiceProfileID: sp.ID,
-			DeviceProfileID:  dp.ID,
-			RoutingProfileID: rp.ID,
-			SkipFCntCheck:    true,
+			DevEUI:            lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+			ServiceProfileID:  sp.ID,
+			DeviceProfileID:   dp.ID,
+			RoutingProfileID:  rp.ID,
+			SkipFCntCheck:     true,
+			ReferenceAltitude: 5.6,
 		}
 
 		assert.Nil(CreateDevice(ts.Tx(), &d))
@@ -60,6 +61,7 @@ func (ts *StorageTestSuite) TestDevice() {
 			d.DeviceProfileID = dpNew.ID
 			d.RoutingProfileID = rpNew.ID
 			d.SkipFCntCheck = false
+			d.ReferenceAltitude = 6.7
 
 			assert.Nil(UpdateDevice(ts.Tx(), &d))
 			d.UpdatedAt = d.UpdatedAt.Round(time.Second).UTC()
