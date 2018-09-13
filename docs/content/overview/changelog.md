@@ -8,6 +8,27 @@ toc: false
 ---
 # Changelog
 
+## v2.2.0
+
+### Features
+
+#### Geolocation
+
+This adds support for geolocation through an external geolocation-server,
+for example [LoRa Geo Server](https://www.loraserver.io/lora-geo-server/overview/).
+See [Configuration](https://www.loraserver.io/loraserver/install/config/) for
+configuration options.
+
+#### Fine-timestamp decryption
+
+This adds support for configuring the fine-timestamp decryption key per
+gateway (board).
+
+### Bugfixes
+
+* Ignore unknown JSON fields when using the `json` marshaler.
+* Fix TX-power override for Class-B and Class-C. ([#352](https://github.com/brocaar/loraserver/issues/352))
+
 ## v2.1.0
 
 ### Features
