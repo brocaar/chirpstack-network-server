@@ -58,6 +58,7 @@ func run(cmd *cobra.Command, args []string) error {
 		setPostgreSQLConnection,
 		setGatewayBackend,
 		setApplicationServer,
+		setGeolocationServer,
 		setJoinServer,
 		setNetworkController,
 		runDatabaseMigrations,

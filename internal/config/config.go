@@ -111,7 +111,7 @@ type Config struct {
 		CACert  string                             `mapstructure:"ca_cert"`
 		TLSCert string                             `mapstructure:"tls_cert"`
 		TLSKey  string                             `mapstructure:"tls_key"`
-	} `mapstructure:"geolocation"`
+	} `mapstructure:"geolocation_server"`
 
 	JoinServer struct {
 		Pool jsclient.Pool
