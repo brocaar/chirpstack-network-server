@@ -4,15 +4,16 @@ menu:
     main:
         parent: install
         weight: 2
+description: Instructions how to install LoRa Server on a Debian or Ubuntu based Linux installation.
 ---
 
 # Debian / Ubuntu installation
 
-These steps have been tested using:
+These steps have been tested on:
 
-* Debian Jessie
-* Ubuntu Trusty (14.04)
-* Ubuntu Xenial (16.04)
+* Ubuntu 16.04 (LTS)
+* Ubuntu 18.04 (LTS)
+* Debian 9 (Stretch)
 
 ## Creating an user and database
 
@@ -142,18 +143,4 @@ INFO[0002] grpc: addrConn.resetTransport failed to create client transport: conn
 
 ## Configuration
 
-In the example above, we've just touched a few configuration variables.
-Run `loraserver --help` for an overview of all available variables. Note
-that configuration variables can be passed as cli arguments and / or environment
-variables (which we did in the above example).
-
 See [Configuration]({{< relref "config.md" >}}) for details on each config option.
-
-## Install other components
-
-A complete LoRa Server setup, requires the setup of the following components:
-
-
-* LoRa Server
-* [LoRa Gateway Bridge](/lora-gateway-bridge/)
-* [LoRa App Server](/lora-app-server/)

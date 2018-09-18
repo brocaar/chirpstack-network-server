@@ -3,7 +3,8 @@ title: Device-classes
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
+description: All device-classes (A/B/C) specified by the LoRaWAN specification are supported.
 ---
 
 # Device-classes

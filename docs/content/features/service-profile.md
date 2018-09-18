@@ -3,8 +3,9 @@ title: Service-profile
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
 toc: false
+description: Defines the network-server features that are enabled for associated devices.
 ---
 
 # Service-profile

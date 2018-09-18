@@ -3,7 +3,8 @@ title: Gateway management
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
+description: Gateway statistics aggregation, location and channel-plan (re)configuration.
 ---
 
 # Gateway management

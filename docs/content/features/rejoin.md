@@ -3,7 +3,8 @@ title: Rejoin configuration
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
+description: Request LoRaWAN 1.1 devices to periodically rejoin to refresh the security context.
 ---
 
 # Rejoin configuration

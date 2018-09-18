@@ -3,7 +3,8 @@ title: Channel (re)configuration
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
+description: Devices are automatically (re)configured to use the current configured channel-plan.
 ---
 
 # Channel (re)configuration

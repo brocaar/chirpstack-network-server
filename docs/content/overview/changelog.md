@@ -5,6 +5,7 @@ menu:
         parent: overview
         weight: 3
 toc: false
+description: Lists the changes per LoRa Server release, including steps how to upgrade.
 ---
 # Changelog
 

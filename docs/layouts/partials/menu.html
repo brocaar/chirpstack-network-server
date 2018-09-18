@@ -5,22 +5,21 @@
       {{ range .Site.Menus.main }}
         {{ if .HasChildren }}
           <li class="sub-menu{{if $currentPage.HasMenuCurrent "main" . }} active{{end}}">
-            <a>
+            <a href="{{ .URL }}">
               {{ .Pre }}
               <span>{{ .Name }}</span>
             </a>
             <ul class="sub">
               {{ range .Children }}
-                <li{{if $currentPage.IsMenuCurrent "main" . }} class="active"{{end}}><a href="{{.URL}}"> {{ .Name }} </a> </li>
+                {{ if ne .Page.Kind "section" }}
+                  <li{{if $currentPage.IsMenuCurrent "main" . }} class="active"{{end}}><a href="{{.URL}}"> {{ .Name }} </a> </li>
+                {{ else }}
+                  {{ if ne .Page.Params.Hidden true }}
+                    <li{{if $currentPage.IsMenuCurrent "main" . }} class="active"{{end}}><a href="{{.URL}}"> {{ .Name }} </a> </li>
+                  {{ end }}
+                {{ end }}
               {{ end }}
             </ul>
-          </li>
-        {{ else }}
-          <li>
-            <a href="{{.URL}}">
-              {{ .Pre }}
-              <span>{{ .Name }}</span>
-            </a>
           </li>
         {{ end }}
       {{ end }}

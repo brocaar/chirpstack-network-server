@@ -3,14 +3,15 @@ title: Geolocation
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
+description: Decrypts the fine-timestamp of geolocation capable LoRa gateways and resolves the device location using a Geolocation Server.
 ---
 
 # Geolocation
 
 LoRa Server supports geolocation by using an external geolocation-server service.
 You can either use the geolocation-server provided by the LoRa Server project,
-or implement your own (matching the expected [api]({{<ref "integrate/api.md" >}})).
+or implement your own (matching the expected [api]({{<ref "/integrate/api.md" >}})).
 
 ## Requirements
 

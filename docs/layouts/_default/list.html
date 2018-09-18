@@ -1,1 +1,17 @@
-{{ define "main" }}{{ .Content }}{{ end }}
+{{ define "main" }}
+
+
+{{ .Content }}
+
+{{ if ne .Params.ListPages false }}
+  <div class="row content-list">
+    {{ range .Data.Pages }}
+      <div class="col-md-4 item">
+        <h5><a href="{{ .URL }}">{{ .Name }}</a></h5>
+        <p>{{ .Params.Description }}</p>
+      </div>
+    {{ end }}
+  </div>
+{{ end }}
+
+{{ end }}

@@ -4,6 +4,7 @@ menu:
     main:
         parent: integrate
         weight: 2
+description: Information about the Application Server and how to implement a custom one.
 ---
 
 # Application-server

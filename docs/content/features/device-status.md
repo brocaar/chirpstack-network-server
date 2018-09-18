@@ -3,7 +3,8 @@ title: Device-status
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
+description: Periodic device battery-status and link-margin request and reporting.
 ---
 
 

@@ -3,7 +3,8 @@ title: Routing-profile
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
+description: Defines to which application-server device-data must be routed.
 ---
 
 # Routing-profile

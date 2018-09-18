@@ -3,7 +3,8 @@ title: Activation
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
+description: Both Activation By Personalization (ABP) and Over The Air Activation (OTAA) are supported.
 ---
 
 # Device activation

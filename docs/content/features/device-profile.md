@@ -3,16 +3,15 @@ title: Device-profile
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
 toc: false
+description: Defines the device capabilities and boot parameters needed by LoRa Server.
 ---
 
 # Device-profile
 
-The service-profile can be seen as the “contract” between an user and
-the network. It describes the features that are enabled for the user(s)
-of the service-profile and the rate of messages that can be sent over
-the network.
+The device-profile defines the device capabilities and boot parameters that
+are needed by LoRa Server to "connect" with a device.
 
 ## Fields / options
 

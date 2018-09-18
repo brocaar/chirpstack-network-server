@@ -3,8 +3,9 @@ title: RX parameter (re)configuration
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
 toc: false
+description: Automatically (re)configures devices to use the current RX parameter configuration.
 ---
 
 # RX parameter (re)configuration

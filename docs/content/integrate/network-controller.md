@@ -4,6 +4,7 @@ menu:
   main:
     parent: integrate
     weight: 3
+description: Information about the Network Controller and how to implement one.
 ---
 
 # Network-controller

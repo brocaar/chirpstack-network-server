@@ -3,7 +3,8 @@ title: Adaptive data-rate
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
+description: Adaptive data-rate (ADR) reduces airtime and the device energy consumption.
 ---
 
 # Adaptive data-rate

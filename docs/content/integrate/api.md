@@ -4,6 +4,7 @@ menu:
     main:
         parent: integrate
         weight: 1
+description: Instructions how to use the API provided by LoRa Server and integrate this with your services.
 ---
 
 # API

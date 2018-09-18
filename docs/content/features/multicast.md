@@ -3,8 +3,9 @@ title: Multicast
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
 toc: false
+description: Send downlink frames to a group of devices at once.
 ---
 
 # Multicast

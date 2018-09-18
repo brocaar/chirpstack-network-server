@@ -3,7 +3,8 @@ title: Gateway-profile
 menu:
     main:
         parent: features
-        weight: 1
+        weight: 2
+description: Configures the channel-plan of a gateway.
 ---
 
 # Gateway-profile
