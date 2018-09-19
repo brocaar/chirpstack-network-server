@@ -2,6 +2,7 @@ baseURL = "https://www.loraserver.io/loraserver/"
 languageCode = "en-us"
 title = "LoRa Server Server documentation"
 googleAnalytics = "UA-3512995-9"
+pygmentsUseClasses = true
 
 [[menu.main]]
     pre = "<i class='fas fa-hand-point-right'></i>"

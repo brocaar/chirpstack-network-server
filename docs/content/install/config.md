@@ -15,7 +15,7 @@ flag. This will display:
 
 The `loraserver` binary has the following command-line flags:
 
-```text
+{{<highlight text>}}
 LoRa Server is an open-source network-server, part of the LoRa Server project
         > documentation & support: https://docs.loraserver.io/loraserver/
         > source & copyright information: https://github.com/brocaar/loraserver/
@@ -35,7 +35,7 @@ Flags:
       --log-level int   debug=5, info=4, error=2, fatal=1, panic=0 (default 4)
 
 Use "loraserver [command] --help" for more information about a command.
-```
+{{< /highlight >}}
 
 ## Configuration file
 
@@ -50,22 +50,22 @@ To load configuration from a different location, use the `--config` flag.
 
 To generate a new configuration file `loraserver.toml`, execute the following command:
 
-```bash
+{{<highlight bash>}}
 loraserver configfile > loraserver.toml
-```
+{{< /highlight >}}
 
 Note that this configuration file will be pre-filled with the current configuration
 (either loaded from the paths mentioned above, or by using the `--config` flag).
 This makes it possible when new fields get added to upgrade your configuration file
 while preserving your old configuration. Example:
 
-```bash
+{{<highlight bash>}}
 loraserver configfile --config loraserver-old.toml > loraserver-new.toml
-```
+{{< /highlight >}}
 
 Example configuration file:
 
-```toml
+{{<highlight toml>}}
 [general]
 # Log level
 #
@@ -524,7 +524,7 @@ tls_cert=""
 
 # tls key used by the network-controller client (optional)
 tls_key=""
-```
+{{< /highlight >}}
 
 ## Securing the network-server API
 

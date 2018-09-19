@@ -37,16 +37,16 @@ description: Pre-compiled binaries for Windows, MacOS and Linux (tarball and Deb
 
 As all packages are signed using a PGP key, you first need to import this key:
 
-```bash
+{{<highlight bash>}}
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1CE2AFD36DBCCA00
-```
+{{< /highlight >}}
 
 To add the LoRa Server repository to your system:
 
-```bash
+{{<highlight bash>}}
 sudo echo "deb https://artifacts.loraserver.io/packages/2.x/deb stable main" | sudo tee /etc/apt/sources.list.d/loraserver.list
 sudo apt-get update
-```
+{{< /highlight >}}
 
 ## Docker images
 

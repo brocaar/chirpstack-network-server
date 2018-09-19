@@ -35,11 +35,11 @@ In case you would like to keep
 
 you could use the following queries (e.g. as a cron):
 
-```sql
+{{<highlight sql>}}
 delete from gateway_stats where "interval" = 'MINUTE' and "timestamp" < now() - interval '1 day';
 delete from gateway_stats where "interval" = 'HOUR' and "timestamp" < now() - interval '1 week';
 delete from gateway_stats where "interval" = 'DAY' and "timestamp" < now() - interval '1 year';
-```
+{{< /highlight >}}
 
 
 ## Gateway re-configuration

@@ -28,9 +28,9 @@ In case you install Mosquitto, make sure you install a **recent** version.
 
 In order to install Mosquitto, execute the following command:
 
-```bash
+{{<highlight bash>}}
 sudo apt-get install mosquitto
-```
+{{< /highlight >}}
 
 #### Other platforms
 
@@ -49,9 +49,9 @@ is required.
 
 To install PostgreSQL:
 
-```bash
+{{<highlight bash>}}
 sudo apt-get install postgresql
-```
+{{< /highlight >}}
 
 #### Other platforms
 
@@ -70,9 +70,9 @@ is required.
 
 To Install Redis:
 
-```bash
+{{<highlight bash>}}
 sudo apt-get install redis-server
-```
+{{< /highlight >}}
 
 #### Other platforms
 
