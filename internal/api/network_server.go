@@ -1021,7 +1021,7 @@ func (n *NetworkServerAPI) StreamFrameLogsForGateway(req *ns.StreamFrameLogsForG
 	copy(id[:], req.GatewayId)
 
 	go func() {
-		err := framelog.GetFrameLogForGateway(srv.Context(), id, frameLogChan)
+		err := framelog.GetFrameLogForGateway(srv.Context(), config.C.Redis.Pool, id, frameLogChan)
 		if err != nil {
 			log.WithError(err).Error("get frame-log for gateway error")
 		}
@@ -1058,7 +1058,7 @@ func (n *NetworkServerAPI) StreamFrameLogsForDevice(req *ns.StreamFrameLogsForDe
 	copy(devEUI[:], req.DevEui)
 
 	go func() {
-		err := framelog.GetFrameLogForDevice(srv.Context(), devEUI, frameLogChan)
+		err := framelog.GetFrameLogForDevice(srv.Context(), config.C.Redis.Pool, devEUI, frameLogChan)
 		if err != nil {
 			log.WithError(err).Error("get frame-log for device error")
 		}

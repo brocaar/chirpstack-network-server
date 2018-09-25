@@ -11,7 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/lorawan"
 )
 
@@ -29,8 +28,8 @@ type FrameLog struct {
 }
 
 // LogUplinkFrameForGateways logs the given frame to all the gateway pub-sub keys.
-func LogUplinkFrameForGateways(uplinkFrameSet gw.UplinkFrameSet) error {
-	c := config.C.Redis.Pool.Get()
+func LogUplinkFrameForGateways(p *redis.Pool, uplinkFrameSet gw.UplinkFrameSet) error {
+	c := p.Get()
 	defer c.Close()
 
 	c.Send("MULTI")
@@ -61,11 +60,11 @@ func LogUplinkFrameForGateways(uplinkFrameSet gw.UplinkFrameSet) error {
 }
 
 // LogDownlinkFrameForGateway logs the given frame to the gateway pub-sub key.
-func LogDownlinkFrameForGateway(frame gw.DownlinkFrame) error {
+func LogDownlinkFrameForGateway(p *redis.Pool, frame gw.DownlinkFrame) error {
 	var id lorawan.EUI64
 	copy(id[:], frame.TxInfo.GatewayId)
 
-	c := config.C.Redis.Pool.Get()
+	c := p.Get()
 	defer c.Close()
 
 	key := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, id)
@@ -83,8 +82,8 @@ func LogDownlinkFrameForGateway(frame gw.DownlinkFrame) error {
 }
 
 // LogDownlinkFrameForDevEUI logs the given frame to the device pub-sub key.
-func LogDownlinkFrameForDevEUI(devEUI lorawan.EUI64, frame gw.DownlinkFrame) error {
-	c := config.C.Redis.Pool.Get()
+func LogDownlinkFrameForDevEUI(p *redis.Pool, devEUI lorawan.EUI64, frame gw.DownlinkFrame) error {
+	c := p.Get()
 	defer c.Close()
 
 	key := fmt.Sprintf(deviceFrameLogDownlinkPubSubKeyTempl, devEUI)
@@ -102,8 +101,8 @@ func LogDownlinkFrameForDevEUI(devEUI lorawan.EUI64, frame gw.DownlinkFrame) err
 }
 
 // LogUplinkFrameForDevEUI logs the given frame to the pub-sub key of the given DevEUI.
-func LogUplinkFrameForDevEUI(devEUI lorawan.EUI64, frame gw.UplinkFrameSet) error {
-	c := config.C.Redis.Pool.Get()
+func LogUplinkFrameForDevEUI(p *redis.Pool, devEUI lorawan.EUI64, frame gw.UplinkFrameSet) error {
+	c := p.Get()
 	defer c.Close()
 
 	b, err := proto.Marshal(&frame)
@@ -121,22 +120,22 @@ func LogUplinkFrameForDevEUI(devEUI lorawan.EUI64, frame gw.UplinkFrameSet) erro
 
 // GetFrameLogForGateway subscribes to the uplink and downlink frame logs
 // for the given gateway and sends this to the given channel.
-func GetFrameLogForGateway(ctx context.Context, gatewayID lorawan.EUI64, frameLogChan chan FrameLog) error {
+func GetFrameLogForGateway(ctx context.Context, p *redis.Pool, gatewayID lorawan.EUI64, frameLogChan chan FrameLog) error {
 	uplinkKey := fmt.Sprintf(gatewayFrameLogUplinkPubSubKeyTempl, gatewayID)
 	downlinkKey := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, gatewayID)
-	return getFrameLogs(ctx, uplinkKey, downlinkKey, frameLogChan)
+	return getFrameLogs(ctx, p, uplinkKey, downlinkKey, frameLogChan)
 }
 
 // GetFrameLogForDevice subscribes to the uplink and downlink frame logs
 // for the given device and sends this to the given channel.
-func GetFrameLogForDevice(ctx context.Context, devEUI lorawan.EUI64, frameLogChan chan FrameLog) error {
+func GetFrameLogForDevice(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, frameLogChan chan FrameLog) error {
 	uplinkKey := fmt.Sprintf(deviceFrameLogUplinkPubSubKeyTempl, devEUI)
 	downlinkKey := fmt.Sprintf(deviceFrameLogDownlinkPubSubKeyTempl, devEUI)
-	return getFrameLogs(ctx, uplinkKey, downlinkKey, frameLogChan)
+	return getFrameLogs(ctx, p, uplinkKey, downlinkKey, frameLogChan)
 }
 
-func getFrameLogs(ctx context.Context, uplinkKey, downlinkKey string, frameLogChan chan FrameLog) error {
-	c := config.C.Redis.Pool.Get()
+func getFrameLogs(ctx context.Context, p *redis.Pool, uplinkKey, downlinkKey string, frameLogChan chan FrameLog) error {
+	c := p.Get()
 	defer c.Close()
 
 	psc := redis.PubSubConn{Conn: c}

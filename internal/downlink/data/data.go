@@ -901,7 +901,7 @@ func logDownlinkFrameForDevice(ctx *dataContext) error {
 		return errors.Wrap(err, "marshal phypayload error")
 	}
 
-	if err := framelog.LogDownlinkFrameForDevEUI(ctx.DeviceSession.DevEUI, gw.DownlinkFrame{
+	if err := framelog.LogDownlinkFrameForDevEUI(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, gw.DownlinkFrame{
 		Token:      uint32(ctx.Token),
 		TxInfo:     &ctx.TXInfo,
 		PhyPayload: phyB,
@@ -919,7 +919,7 @@ func logDownlinkFrameForGateway(ctx *dataContext) error {
 		return errors.Wrap(err, "marshal phypayload error")
 	}
 
-	if err := framelog.LogDownlinkFrameForGateway(gw.DownlinkFrame{
+	if err := framelog.LogDownlinkFrameForGateway(config.C.Redis.Pool, gw.DownlinkFrame{
 		Token:      uint32(ctx.Token),
 		TxInfo:     &ctx.TXInfo,
 		PhyPayload: phyB,

@@ -192,7 +192,7 @@ func sendDownlinkData(ctx *multicastContext) error {
 		return errors.Wrap(err, "send downlink frame to gateway error")
 	}
 
-	if err := framelog.LogDownlinkFrameForGateway(downlinkFrame); err != nil {
+	if err := framelog.LogDownlinkFrameForGateway(config.C.Redis.Pool, downlinkFrame); err != nil {
 		log.WithError(err).Error("log downlink frame for gateway error")
 	}
 

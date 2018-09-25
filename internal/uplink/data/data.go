@@ -128,7 +128,7 @@ func logUplinkFrame(ctx *dataContext) error {
 		return errors.Wrap(err, "create uplink frame-log error")
 	}
 
-	if err := framelog.LogUplinkFrameForDevEUI(ctx.DeviceSession.DevEUI, uplinkFrameSet); err != nil {
+	if err := framelog.LogUplinkFrameForDevEUI(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, uplinkFrameSet); err != nil {
 		log.WithError(err).Error("log uplink frame for device error")
 	}
 

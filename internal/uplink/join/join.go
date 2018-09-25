@@ -81,7 +81,7 @@ func logJoinRequestFramesCollected(ctx *context) error {
 		return errors.Wrap(err, "create uplink frame-set error")
 	}
 
-	if err := framelog.LogUplinkFrameForDevEUI(ctx.JoinRequestPayload.DevEUI, uplinkFrameSet); err != nil {
+	if err := framelog.LogUplinkFrameForDevEUI(config.C.Redis.Pool, ctx.JoinRequestPayload.DevEUI, uplinkFrameSet); err != nil {
 		log.WithError(err).Error("log uplink frame for device error")
 	}
 

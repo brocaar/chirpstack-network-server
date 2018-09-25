@@ -129,11 +129,11 @@ func sendJoinAcceptResponse(ctx *joinContext) error {
 }
 
 func logDownlinkFrame(ctx *joinContext) error {
-	if err := framelog.LogDownlinkFrameForGateway(ctx.DownlinkFrame); err != nil {
+	if err := framelog.LogDownlinkFrameForGateway(config.C.Redis.Pool, ctx.DownlinkFrame); err != nil {
 		log.WithError(err).Error("log downlink frame for gateway error")
 	}
 
-	if err := framelog.LogDownlinkFrameForDevEUI(ctx.DeviceSession.DevEUI, ctx.DownlinkFrame); err != nil {
+	if err := framelog.LogDownlinkFrameForDevEUI(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, ctx.DownlinkFrame); err != nil {
 		log.WithError(err).Error("log downlink frame for device error")
 	}
 

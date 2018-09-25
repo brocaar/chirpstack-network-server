@@ -92,7 +92,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			}()
 
 			Convey("When logging a downlink gateway frame", func() {
-				So(framelog.LogDownlinkFrameForGateway(gw.DownlinkFrame{
+				So(framelog.LogDownlinkFrameForGateway(config.C.Redis.Pool, gw.DownlinkFrame{
 					TxInfo: &gw.DownlinkTXInfo{
 						GatewayId: mac[:],
 					},
@@ -106,7 +106,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			})
 
 			Convey("When logging an uplink gateway frame", func() {
-				So(framelog.LogUplinkFrameForGateways(gw.UplinkFrameSet{
+				So(framelog.LogUplinkFrameForGateways(config.C.Redis.Pool, gw.UplinkFrameSet{
 					RxInfo: []*gw.UplinkRXInfo{
 						{
 							GatewayId: mac[:],
@@ -144,7 +144,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			}()
 
 			Convey("When logging a downlink device frame", func() {
-				So(framelog.LogDownlinkFrameForDevEUI(devEUI, gw.DownlinkFrame{}), ShouldBeNil)
+				So(framelog.LogDownlinkFrameForDevEUI(config.C.Redis.Pool, devEUI, gw.DownlinkFrame{}), ShouldBeNil)
 
 				Convey("Then the frame-log was received by the client", func() {
 					resp := <-respChan
@@ -154,7 +154,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			})
 
 			Convey("When logging an uplink device frame", func() {
-				So(framelog.LogUplinkFrameForDevEUI(devEUI, gw.UplinkFrameSet{}), ShouldBeNil)
+				So(framelog.LogUplinkFrameForDevEUI(config.C.Redis.Pool, devEUI, gw.UplinkFrameSet{}), ShouldBeNil)
 
 				Convey("Then the frame-log was received by the client", func() {
 					resp := <-respChan

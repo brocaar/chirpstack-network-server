@@ -78,7 +78,7 @@ func collectPackets(uplinkFrame gw.UplinkFrame) error {
 		}
 
 		// log the frame for each receiving gatewa
-		if err := framelog.LogUplinkFrameForGateways(gw.UplinkFrameSet{
+		if err := framelog.LogUplinkFrameForGateways(config.C.Redis.Pool, gw.UplinkFrameSet{
 			PhyPayload: uplinkFrame.PhyPayload,
 			TxInfo:     rxPacket.TXInfo,
 			RxInfo:     rxPacket.RXInfoSet,
