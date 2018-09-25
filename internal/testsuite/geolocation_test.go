@@ -26,11 +26,11 @@ import (
 )
 
 type GeolocationTestSuite struct {
-	UplinkIntegrationTestSuite
+	IntegrationTestSuite
 }
 
 func (ts *GeolocationTestSuite) SetupTest() {
-	ts.UplinkIntegrationTestSuite.SetupTest()
+	ts.IntegrationTestSuite.SetupTest()
 
 	ts.CreateGateway(storage.Gateway{GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1}, Location: storage.GPSPoint{Latitude: 1.1, Longitude: 1.1}, Altitude: 1.1})
 	ts.CreateGateway(storage.Gateway{GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2}, Location: storage.GPSPoint{Latitude: 2.1, Longitude: 2.1}, Altitude: 2.1})

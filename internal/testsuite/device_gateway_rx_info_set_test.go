@@ -15,11 +15,11 @@ import (
 )
 
 type DeviceGatewayRXInfoSetTestSuite struct {
-	UplinkIntegrationTestSuite
+	IntegrationTestSuite
 }
 
 func (ts *DeviceGatewayRXInfoSetTestSuite) SetupTest() {
-	ts.UplinkIntegrationTestSuite.SetupTest()
+	ts.IntegrationTestSuite.SetupTest()
 
 	ts.CreateGateway(storage.Gateway{GatewayID: lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1}})
 	ts.CreateDevice(storage.Device{DevEUI: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}})

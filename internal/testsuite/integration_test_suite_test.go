@@ -16,9 +16,9 @@ import (
 	"github.com/brocaar/lorawan/band"
 )
 
-// UplinkIntegrationTestSuite provides a test-suite for integration-testing
+// IntegrationTestSuite provides a test-suite for integration-testing
 // uplink scenarios.
-type UplinkIntegrationTestSuite struct {
+type IntegrationTestSuite struct {
 	suite.Suite
 
 	// mocked interfaces
@@ -39,31 +39,31 @@ type UplinkIntegrationTestSuite struct {
 }
 
 // SetupTest initializes the test-suite before running each test.
-func (t *UplinkIntegrationTestSuite) SetupTest() {
+func (t *IntegrationTestSuite) SetupTest() {
 	t.initConfig()
 	t.FlushClients()
 }
 
-func (t *UplinkIntegrationTestSuite) initASClient() {
+func (t *IntegrationTestSuite) initASClient() {
 	t.ASClient = test.NewApplicationClient()
 	config.C.ApplicationServer.Pool = test.NewApplicationServerPool(t.ASClient)
 }
 
-func (t *UplinkIntegrationTestSuite) initGWBackend() {
+func (t *IntegrationTestSuite) initGWBackend() {
 	t.GWBackend = test.NewGatewayBackend()
 	config.C.NetworkServer.Gateway.Backend.Backend = t.GWBackend
 }
 
-func (t *UplinkIntegrationTestSuite) initNCClient() {
+func (t *IntegrationTestSuite) initNCClient() {
 	config.C.NetworkController.Client = test.NewNetworkControllerClient()
 }
 
-func (t *UplinkIntegrationTestSuite) initGeoClient() {
+func (t *IntegrationTestSuite) initGeoClient() {
 	t.GeoClient = test.NewGeolocationClient()
 	config.C.GeolocationServer.Client = t.GeoClient
 }
 
-func (t *UplinkIntegrationTestSuite) initConfig() {
+func (t *IntegrationTestSuite) initConfig() {
 	config.C.NetworkServer.DeviceSessionTTL = time.Hour
 	config.C.NetworkServer.Band.Name = band.EU_863_870
 	config.C.NetworkServer.Band.Band, _ = band.GetConfig(config.C.NetworkServer.Band.Name, false, lorawan.DwellTimeNoLimit)
@@ -92,7 +92,7 @@ func (t *UplinkIntegrationTestSuite) initConfig() {
 }
 
 // CreateDeviceSession creates the given device-session.
-func (t *UplinkIntegrationTestSuite) CreateDeviceSession(ds storage.DeviceSession) {
+func (t *IntegrationTestSuite) CreateDeviceSession(ds storage.DeviceSession) {
 	var nilEUI lorawan.EUI64
 	if ds.DevEUI == nilEUI {
 		if t.Device == nil {
@@ -127,7 +127,7 @@ func (t *UplinkIntegrationTestSuite) CreateDeviceSession(ds storage.DeviceSessio
 }
 
 // CreateDevice creates the given device.
-func (t *UplinkIntegrationTestSuite) CreateDevice(d storage.Device) {
+func (t *IntegrationTestSuite) CreateDevice(d storage.Device) {
 	if d.DeviceProfileID == uuid.Nil {
 		if t.DeviceProfile == nil {
 			t.CreateDeviceProfile(storage.DeviceProfile{})
@@ -154,31 +154,31 @@ func (t *UplinkIntegrationTestSuite) CreateDevice(d storage.Device) {
 }
 
 // CreateDeviceProfile creates the given device-profile.
-func (t *UplinkIntegrationTestSuite) CreateDeviceProfile(dp storage.DeviceProfile) {
+func (t *IntegrationTestSuite) CreateDeviceProfile(dp storage.DeviceProfile) {
 	t.Require().Nil(storage.CreateDeviceProfile(config.C.PostgreSQL.DB, &dp))
 	t.DeviceProfile = &dp
 }
 
 // CreateServiceProfile creates the given service-profile.
-func (t *UplinkIntegrationTestSuite) CreateServiceProfile(sp storage.ServiceProfile) {
+func (t *IntegrationTestSuite) CreateServiceProfile(sp storage.ServiceProfile) {
 	t.Require().Nil(storage.CreateServiceProfile(config.C.PostgreSQL.DB, &sp))
 	t.ServiceProfile = &sp
 }
 
 // CreateRoutingProfile creates the given routing-profile.
-func (t *UplinkIntegrationTestSuite) CreateRoutingProfile(rp storage.RoutingProfile) {
+func (t *IntegrationTestSuite) CreateRoutingProfile(rp storage.RoutingProfile) {
 	t.Require().Nil(storage.CreateRoutingProfile(config.C.PostgreSQL.DB, &rp))
 	t.RoutingProfile = &rp
 }
 
 // CreateGateway creates the given gateway.
-func (t *UplinkIntegrationTestSuite) CreateGateway(gw storage.Gateway) {
+func (t *IntegrationTestSuite) CreateGateway(gw storage.Gateway) {
 	t.Require().Nil(storage.CreateGateway(config.C.PostgreSQL.DB, &gw))
 	t.Gateway = &gw
 }
 
 // GetUplinkFrameForFRMPayload returns the gateway uplink-frame for the given options.
-func (t *UplinkIntegrationTestSuite) GetUplinkFrameForFRMPayload(rxInfo gw.UplinkRXInfo, txInfo gw.UplinkTXInfo, mType lorawan.MType, fPort uint8, data []byte, fOpts ...lorawan.Payload) gw.UplinkFrame {
+func (t *IntegrationTestSuite) GetUplinkFrameForFRMPayload(rxInfo gw.UplinkRXInfo, txInfo gw.UplinkTXInfo, mType lorawan.MType, fPort uint8, data []byte, fOpts ...lorawan.Payload) gw.UplinkFrame {
 	t.Require().NotNil(t.DeviceSession)
 
 	var err error
@@ -247,7 +247,7 @@ func (t *UplinkIntegrationTestSuite) GetUplinkFrameForFRMPayload(rxInfo gw.Uplin
 
 // FlushClients flushes the GW, NC and AS clients to make sure all channels
 // are empty. This is automatically called on SetupTest.
-func (t *UplinkIntegrationTestSuite) FlushClients() {
+func (t *IntegrationTestSuite) FlushClients() {
 	t.initASClient()
 	t.initGWBackend()
 	t.initNCClient()

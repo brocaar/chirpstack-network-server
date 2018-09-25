@@ -17,11 +17,11 @@ import (
 )
 
 type AddGatewayMetaDataTestSuite struct {
-	UplinkIntegrationTestSuite
+	IntegrationTestSuite
 }
 
 func (ts *AddGatewayMetaDataTestSuite) SetupTest() {
-	ts.UplinkIntegrationTestSuite.SetupTest()
+	ts.IntegrationTestSuite.SetupTest()
 
 	ts.CreateServiceProfile(storage.ServiceProfile{AddGWMetadata: true})
 	ts.CreateGateway(storage.Gateway{GatewayID: lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1}})
