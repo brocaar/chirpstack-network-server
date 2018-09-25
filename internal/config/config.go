@@ -53,17 +53,15 @@ type Config struct {
 		}
 
 		NetworkSettings struct {
-			InstallationMargin          float64 `mapstructure:"installation_margin"`
-			RX1Delay                    int     `mapstructure:"rx1_delay"`
-			RX1DROffset                 int     `mapstructure:"rx1_dr_offset"`
-			RX2DR                       int     `mapstructure:"rx2_dr"`
-			RX2Frequency                int     `mapstructure:"rx2_frequency"`
-			DownlinkTXPower             int     `mapstructure:"downlink_tx_power"`
-			EnabledUplinkChannels       []int   `mapstructure:"enabled_uplink_channels"`
-			DisableMACCommands          bool    `mapstructure:"disable_mac_commands"`
-			EnabledUplinkChannelsLegacy string  `mapstructure:"enabled_uplink_channels_legacy"`
-			ExtraChannelsLegacy         []int   `mapstructure:"extra_channels_legacy"`
-			DisableADR                  bool    `mapstructure:"disable_adr"`
+			InstallationMargin    float64 `mapstructure:"installation_margin"`
+			RX1Delay              int     `mapstructure:"rx1_delay"`
+			RX1DROffset           int     `mapstructure:"rx1_dr_offset"`
+			RX2DR                 int     `mapstructure:"rx2_dr"`
+			RX2Frequency          int     `mapstructure:"rx2_frequency"`
+			DownlinkTXPower       int     `mapstructure:"downlink_tx_power"`
+			EnabledUplinkChannels []int   `mapstructure:"enabled_uplink_channels"`
+			DisableMACCommands    bool    `mapstructure:"disable_mac_commands"`
+			DisableADR            bool    `mapstructure:"disable_adr"`
 
 			ExtraChannels []struct {
 				Frequency int

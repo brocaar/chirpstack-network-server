@@ -2,9 +2,7 @@ package cmd
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
-	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -123,37 +121,5 @@ func initConfig() {
 
 	if err := config.C.NetworkServer.NetID.UnmarshalText([]byte(config.C.NetworkServer.NetIDString)); err != nil {
 		log.WithError(err).Fatal("decode net_id error")
-	}
-
-	if len(config.C.NetworkServer.NetworkSettings.ExtraChannels) == 0 && len(config.C.NetworkServer.NetworkSettings.ExtraChannelsLegacy) != 0 {
-		for _, freq := range config.C.NetworkServer.NetworkSettings.ExtraChannelsLegacy {
-			config.C.NetworkServer.NetworkSettings.ExtraChannels = append(config.C.NetworkServer.NetworkSettings.ExtraChannels, struct {
-				Frequency int
-				MinDR     int `mapstructure:"min_dr"`
-				MaxDR     int `mapstructure:"max_dr"`
-			}{
-				Frequency: freq,
-				MinDR:     0,
-				MaxDR:     5,
-			})
-		}
-	}
-
-	if config.C.NetworkServer.NetworkSettings.EnabledUplinkChannelsLegacy != "" && len(config.C.NetworkServer.NetworkSettings.EnabledUplinkChannels) == 0 {
-		blocks := strings.Split(config.C.NetworkServer.NetworkSettings.EnabledUplinkChannelsLegacy, ",")
-		for _, block := range blocks {
-			block = strings.Trim(block, " ")
-			var start, end int
-			if _, err := fmt.Sscanf(block, "%d-%d", &start, &end); err != nil {
-				if _, err := fmt.Sscanf(block, "%d", &start); err != nil {
-					log.WithError(err).Fatal("parse channel range error")
-				}
-				end = start
-			}
-
-			for ; start <= end; start++ {
-				config.C.NetworkServer.NetworkSettings.EnabledUplinkChannels = append(config.C.NetworkServer.NetworkSettings.EnabledUplinkChannels, start)
-			}
-		}
 	}
 }
