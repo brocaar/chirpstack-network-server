@@ -4,6 +4,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
+	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
@@ -127,5 +128,15 @@ func AssertDeviceActivation(da storage.DeviceActivation) Assertion {
 		act.DevAddr = lorawan.DevAddr{}
 
 		assert.Equal(da, act)
+	}
+}
+
+// AssertASHandleProprietaryUplinkRequest asserts the given proprietary uplink.
+func AssertASHandleProprietaryUplinkRequest(req as.HandleProprietaryUplinkRequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.ASClient.HandleProprietaryUpChan
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
 	}
 }

@@ -1,6 +1,7 @@
 package testsuite
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -10,6 +11,8 @@ import (
 
 	commonPB "github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/api/ns"
+	"github.com/brocaar/loraserver/internal/api"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -60,6 +63,24 @@ type OTAATest struct {
 	Assert        []Assertion
 }
 
+// DownlinkProprietaryTest is the structure for a downlink proprietary test.
+type DownlinkProprietaryTest struct {
+	Name                          string
+	SendProprietaryPayloadRequest ns.SendProprietaryPayloadRequest
+
+	Assert []Assertion
+}
+
+// UplinkProprietaryTest is the structure for an uplink proprietary test.
+type UplinkProprietaryTest struct {
+	Name       string
+	PHYPayload lorawan.PHYPayload
+	TXInfo     gw.UplinkTXInfo
+	RXInfo     gw.UplinkRXInfo
+
+	Assert []Assertion
+}
+
 // IntegrationTestSuite provides a test-suite for integration-testing
 // uplink scenarios.
 type IntegrationTestSuite struct {
@@ -71,6 +92,7 @@ type IntegrationTestSuite struct {
 	JSClient  *test.JoinServerClient
 	GWBackend *test.GatewayBackend
 	GeoClient *test.GeolocationClient
+	NSAPI     ns.NetworkServerServiceServer
 
 	// keys
 	AppKey  lorawan.AES128Key
@@ -109,6 +131,8 @@ func (ts *IntegrationTestSuite) FlushClients() {
 
 	ts.GeoClient = test.NewGeolocationClient()
 	config.C.GeolocationServer.Client = ts.GeoClient
+
+	ts.NSAPI = api.NewNetworkServerAPI()
 }
 
 // CreateDeviceSession creates the given device-session.
@@ -398,6 +422,41 @@ func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 		return
 	}
 	assert.NoError(tst.ExpectedError)
+
+	// run assertions
+	for _, a := range tst.Assert {
+		a(assert, ts)
+	}
+}
+
+// AssertDownlinkProprietaryTest asserts the given downlink proprietary test.
+func (ts *IntegrationTestSuite) AssertDownlinkProprietaryTest(t *testing.T, tst DownlinkProprietaryTest) {
+	assert := require.New(t)
+
+	_, err := ts.NSAPI.SendProprietaryPayload(context.Background(), &tst.SendProprietaryPayloadRequest)
+	assert.NoError(err)
+
+	// run assertions
+	for _, a := range tst.Assert {
+		a(assert, ts)
+	}
+}
+
+// AssertUplinkProprietaryTest assers the given uplink proprietary test.
+func (ts *IntegrationTestSuite) AssertUplinkProprietaryTest(t *testing.T, tst UplinkProprietaryTest) {
+	assert := require.New(t)
+
+	test.MustFlushRedis(ts.RedisPool())
+	ts.FlushClients()
+
+	phyB, err := tst.PHYPayload.MarshalBinary()
+	assert.NoError(err)
+
+	assert.NoError(uplink.HandleRXPacket(gw.UplinkFrame{
+		PhyPayload: phyB,
+		TxInfo:     &tst.TXInfo,
+		RxInfo:     &tst.RXInfo,
+	}))
 
 	// run assertions
 	for _, a := range tst.Assert {
