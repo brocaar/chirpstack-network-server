@@ -178,6 +178,24 @@ func CreateDeviceActivation(db sqlx.Queryer, da *DeviceActivation) error {
 	return nil
 }
 
+// DeleteDeviceActivationsForDevice removes the device-activation for the given
+// DevEUI.
+func DeleteDeviceActivationsForDevice(db sqlx.Execer, devEUI lorawan.EUI64) error {
+	_, err := db.Exec(`
+		delete
+		from
+			device_activation
+		where
+			dev_eui = $1
+	`, devEUI[:])
+	if err != nil {
+		return handlePSQLError(err, "delete error")
+	}
+
+	log.WithField("dev_eui", devEUI).Info("device-activations deleted")
+	return nil
+}
+
 // GetLastDeviceActivationForDevEUI returns the most recent activation
 // for the given DevEUI.
 func GetLastDeviceActivationForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (DeviceActivation, error) {

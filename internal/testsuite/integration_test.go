@@ -14,7 +14,9 @@ import (
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
 	"github.com/brocaar/lorawan/band"
 )
 
@@ -41,6 +43,23 @@ type MulticastTest struct {
 	Assert []Assertion
 }
 
+// OTAATest is the structure for an OTAA test.
+type OTAATest struct {
+	Name                          string
+	BeforeFunc                    func(*OTAATest) error
+	TXInfo                        gw.UplinkTXInfo
+	RXInfo                        gw.UplinkRXInfo
+	PHYPayload                    lorawan.PHYPayload
+	JoinServerJoinAnsPayload      backend.JoinAnsPayload
+	JoinServerJoinAnsPayloadError error
+	ExtraChannels                 []int
+	DeviceActivations             []storage.DeviceActivation
+	DeviceQueueItems              []storage.DeviceQueueItem
+
+	ExpectedError error
+	Assert        []Assertion
+}
+
 // IntegrationTestSuite provides a test-suite for integration-testing
 // uplink scenarios.
 type IntegrationTestSuite struct {
@@ -49,10 +68,12 @@ type IntegrationTestSuite struct {
 
 	// mocked interfaces
 	ASClient  *test.ApplicationClient
+	JSClient  *test.JoinServerClient
 	GWBackend *test.GatewayBackend
 	GeoClient *test.GeolocationClient
 
 	// keys
+	AppKey  lorawan.AES128Key
 	AppSKey lorawan.AES128Key
 
 	// data objects
@@ -77,6 +98,9 @@ func (ts *IntegrationTestSuite) SetupTest() {
 func (ts *IntegrationTestSuite) FlushClients() {
 	ts.ASClient = test.NewApplicationClient()
 	config.C.ApplicationServer.Pool = test.NewApplicationServerPool(ts.ASClient)
+
+	ts.JSClient = test.NewJoinServerClient()
+	config.C.JoinServer.Pool = test.NewJoinServerPool(ts.JSClient)
 
 	ts.GWBackend = test.NewGatewayBackend()
 	config.C.NetworkServer.Gateway.Backend.Backend = ts.GWBackend
@@ -323,12 +347,71 @@ func (ts *IntegrationTestSuite) AssertMulticastTest(t *testing.T, tst MulticastT
 	}
 }
 
+// AssertOTAATest asserts the given OTAA test.
+func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
+	assert := require.New(t)
+
+	test.MustFlushRedis(ts.RedisPool())
+
+	if tst.BeforeFunc != nil {
+		assert.NoError(tst.BeforeFunc(&tst))
+	}
+
+	ts.FlushClients()
+
+	// reset band add extra channels
+	ts.initConfig()
+	for _, f := range tst.ExtraChannels {
+		assert.NoError(config.C.NetworkServer.Band.Band.AddChannel(f, 0, 5))
+	}
+
+	// set mocks
+	ts.JSClient.JoinAnsPayload = tst.JoinServerJoinAnsPayload
+	ts.JSClient.JoinReqError = tst.JoinServerJoinAnsPayloadError
+
+	// create device-activations
+	assert.NoError(storage.DeleteDeviceActivationsForDevice(ts.DB(), ts.Device.DevEUI))
+	for _, da := range tst.DeviceActivations {
+		assert.NoError(storage.CreateDeviceActivation(ts.DB(), &da))
+	}
+
+	// create device-queue items
+	assert.NoError(storage.FlushDeviceQueueForDevEUI(ts.DB(), ts.Device.DevEUI))
+	for _, qi := range tst.DeviceQueueItems {
+		assert.NoError(storage.CreateDeviceQueueItem(ts.DB(), &qi))
+	}
+
+	phyB, err := tst.PHYPayload.MarshalBinary()
+	assert.NoError(err)
+
+	err = uplink.HandleRXPacket(gw.UplinkFrame{
+		RxInfo:     &tst.RXInfo,
+		TxInfo:     &tst.TXInfo,
+		PhyPayload: phyB,
+	})
+	if err != nil {
+		if tst.ExpectedError == nil {
+			assert.NoError(err)
+		} else {
+			assert.Equal(tst.ExpectedError.Error(), err.Error())
+		}
+		return
+	}
+	assert.NoError(tst.ExpectedError)
+
+	// run assertions
+	for _, a := range tst.Assert {
+		a(assert, ts)
+	}
+}
+
 func (ts *IntegrationTestSuite) initConfig() {
 	config.C.NetworkServer.DeviceSessionTTL = time.Hour
 	config.C.NetworkServer.Band.Name = band.EU_863_870
 	config.C.NetworkServer.Band.Band, _ = band.GetConfig(config.C.NetworkServer.Band.Name, false, lorawan.DwellTimeNoLimit)
 	config.C.NetworkServer.DeduplicationDelay = 100 * time.Millisecond
 	config.C.NetworkServer.GetDownlinkDataDelay = 5 * time.Millisecond
+	config.C.NetworkServer.NetID = lorawan.NetID{3, 2, 1}
 	config.C.NetworkServer.NetworkSettings.DownlinkTXPower = -1
 	config.C.NetworkServer.NetworkSettings.RX2Frequency = config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency
 	config.C.NetworkServer.NetworkSettings.RX2DR = config.C.NetworkServer.Band.Band.GetDefaults().RX2DataRate
