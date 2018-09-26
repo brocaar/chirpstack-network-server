@@ -5,6 +5,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -54,4 +56,16 @@ func AssertDownlinkFrame(txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Asser
 // AssertNoDownlinkFrame asserts there is no downlink frame.
 func AssertNoDownlinkFrame(assert *require.Assertions, ts *IntegrationTestSuite) {
 	assert.Equal(0, len(ts.GWBackend.TXPacketChan))
+}
+
+// AssertMulticastQueueItems asserts the given multicast-queue items.
+func AssertMulticastQueueItems(items []storage.MulticastQueueItem) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		mqi, err := storage.GetMulticastQueueItemsForMulticastGroup(config.C.PostgreSQL.DB, ts.MulticastGroup.ID)
+		assert.NoError(err)
+		// avoid comparing nil with empty slice
+		if len(items) != len(mqi) {
+			assert.Equal(items, mqi)
+		}
+	}
 }

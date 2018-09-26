@@ -31,6 +31,16 @@ type DownlinkTest struct {
 	Assert []Assertion
 }
 
+// MulticastTest is the structure for a multicast test.
+type MulticastTest struct {
+	Name                string
+	BeforeFunc          func(*MulticastTest) error
+	MulticastGroup      storage.MulticastGroup
+	MulticastQueueItems []storage.MulticastQueueItem
+
+	Assert []Assertion
+}
+
 // IntegrationTestSuite provides a test-suite for integration-testing
 // uplink scenarios.
 type IntegrationTestSuite struct {
@@ -52,6 +62,7 @@ type IntegrationTestSuite struct {
 	Device         *storage.Device
 	DeviceSession  *storage.DeviceSession
 	Gateway        *storage.Gateway
+	MulticastGroup *storage.MulticastGroup
 }
 
 // SetupTest initializes the test-suite before running each test.
@@ -136,6 +147,26 @@ func (ts *IntegrationTestSuite) CreateDevice(d storage.Device) {
 
 	ts.Nil(storage.CreateDevice(config.C.PostgreSQL.DB, &d))
 	ts.Device = &d
+}
+
+// CreateMulticastGroup creates the given multicast-group.
+func (ts *IntegrationTestSuite) CreateMulticastGroup(mg storage.MulticastGroup) {
+	if mg.RoutingProfileID == uuid.Nil {
+		if ts.RoutingProfile == nil {
+			ts.CreateRoutingProfile(storage.RoutingProfile{})
+		}
+		mg.RoutingProfileID = ts.RoutingProfile.ID
+	}
+
+	if mg.ServiceProfileID == uuid.Nil {
+		if ts.ServiceProfile == nil {
+			ts.CreateServiceProfile(storage.ServiceProfile{})
+		}
+		mg.ServiceProfileID = ts.ServiceProfile.ID
+	}
+
+	ts.Nil(storage.CreateMulticastGroup(config.C.PostgreSQL.DB, &mg))
+	ts.MulticastGroup = &mg
 }
 
 // CreateDeviceProfile creates the given device-profile.
@@ -257,6 +288,34 @@ func (ts *IntegrationTestSuite) AssertDownlinkTest(t *testing.T, tst DownlinkTes
 	ds, err := storage.GetDeviceSession(ts.RedisPool(), ts.DeviceSession.DevEUI)
 	assert.NoError(err)
 	ts.DeviceSession = &ds
+
+	// run assertions
+	for _, a := range tst.Assert {
+		a(assert, ts)
+	}
+}
+
+// AssertMulticastTest asserts the given multicast test.
+func (ts *IntegrationTestSuite) AssertMulticastTest(t *testing.T, tst MulticastTest) {
+	assert := require.New(t)
+
+	if tst.BeforeFunc != nil {
+		assert.NoError(tst.BeforeFunc(&tst))
+	}
+
+	ts.FlushClients()
+
+	// overwrite multicast-group to deal with frame-counter increments
+	assert.NoError(storage.UpdateMulticastGroup(ts.DB(), &tst.MulticastGroup))
+
+	// add multicast queue items
+	assert.NoError(storage.FlushMulticastQueueForMulticastGroup(ts.DB(), ts.MulticastGroup.ID))
+	for _, qi := range tst.MulticastQueueItems {
+		assert.NoError(storage.CreateMulticastQueueItem(ts.DB(), &qi))
+	}
+
+	// run multicast scheduler
+	assert.NoError(downlink.ScheduleMulticastQueueBatch(1))
 
 	// run assertions
 	for _, a := range tst.Assert {

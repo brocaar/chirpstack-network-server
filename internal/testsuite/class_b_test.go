@@ -13,7 +13,6 @@ import (
 	"github.com/brocaar/loraserver/internal/gps"
 	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
 )
@@ -25,10 +24,6 @@ type ClassBTestSuite struct {
 func (ts *ClassBTestSuite) SetupSuite() {
 	ts.DatabaseTestSuiteBase.SetupSuite()
 
-	asClient := test.NewApplicationClient()
-	config.C.ApplicationServer.Pool = test.NewApplicationServerPool(asClient)
-	config.C.NetworkController.Client = test.NewNetworkControllerClient()
-	config.C.NetworkServer.Gateway.Backend.Backend = test.NewGatewayBackend()
 	config.C.NetworkServer.NetworkSettings.ClassB.PingSlotDR = 2
 	config.C.NetworkServer.NetworkSettings.ClassB.PingSlotFrequency = 868300000
 
