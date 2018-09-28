@@ -69,6 +69,12 @@ type Config struct {
 				MaxDR     int `mapstructure:"max_dr"`
 			} `mapstructure:"extra_channels"`
 
+			Scheduler struct {
+				// SchedulerInterval is the interval in milliseconds in which the scheduler
+				// sleep between runs, default to 1000
+				SchedulerInterval int `mapstructure:"scheduler_interval"`
+			} `mapstructure:"scheduler"`
+
 			ClassB struct {
 				PingSlotDR        int `mapstructure:"ping_slot_dr"`
 				PingSlotFrequency int `mapstructure:"ping_slot_frequency"`
@@ -158,10 +164,6 @@ var SpreadFactorToRequiredSNRTable = map[int]float64{
 
 // C holds the global configuration.
 var C Config
-
-// SchedulerInterval it the interval in which the a scheduler
-// must run.
-var SchedulerInterval = time.Second
 
 // SchedulerBatchSize contains the batch size of the Class-C scheduler
 var SchedulerBatchSize = 100

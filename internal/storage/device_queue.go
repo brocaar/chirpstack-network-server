@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"time"
-
 	"github.com/brocaar/loraserver/internal/gps"
 	"github.com/gofrs/uuid"
 
@@ -355,7 +354,8 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 // The device records will be locked for update so that multiple instances can
 // run this query in parallel without the risk of duplicate scheduling.
 func GetDevicesWithClassBOrClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Device, error) {
-	gpsEpochScheduleTime := gps.Time(time.Now().Add(config.SchedulerInterval * 2)).TimeSinceGPSEpoch()
+	d:=config.C.NetworkServer.NetworkSettings.Scheduler.SchedulerInterval
+	gpsEpochScheduleTime := gps.Time(time.Now().Add(time.Duration(d) *2*time.Millisecond)).TimeSinceGPSEpoch()
 
 	var devices []Device
 	err := sqlx.Select(db, &devices, `

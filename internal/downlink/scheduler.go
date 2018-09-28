@@ -21,7 +21,8 @@ func DeviceQueueSchedulerLoop() {
 		if err := ScheduleDeviceQueueBatch(config.SchedulerBatchSize); err != nil {
 			log.WithError(err).Error("class-b / class-c scheduler error")
 		}
-		time.Sleep(config.SchedulerInterval)
+
+		time.Sleep(time.Duration(config.C.NetworkServer.NetworkSettings.Scheduler.SchedulerInterval) * time.Millisecond)
 	}
 }
 
@@ -33,7 +34,7 @@ func MulticastQueueSchedulerLoop() {
 		if err := ScheduleMulticastQueueBatch(config.SchedulerBatchSize); err != nil {
 			log.WithError(err).Error("multicast scheduler error")
 		}
-		time.Sleep(config.SchedulerInterval)
+		time.Sleep(time.Duration(config.C.NetworkServer.NetworkSettings.Scheduler.SchedulerInterval) * time.Millisecond)
 	}
 }
 

@@ -262,7 +262,7 @@ func (ts *NetworkServerAPITestSuite) TestMulticastQueue() {
 					assert.NoError(err)
 					assert.Equal(emitAt, *items[i].EmitAtTimeSinceGPSEpoch, "queue item %d", i)
 
-					scheduleAt := time.Time(gps.NewFromTimeSinceGPSEpoch(emitAt)).Add(-2 * config.SchedulerInterval)
+					scheduleAt := time.Time(gps.NewFromTimeSinceGPSEpoch(emitAt)).Add(time.Duration(-2 * config.C.NetworkServer.NetworkSettings.Scheduler.SchedulerInterval) * time.Millisecond)
 					assert.EqualValues(scheduleAt.UTC(), items[i].ScheduleAt.UTC())
 				}
 			})

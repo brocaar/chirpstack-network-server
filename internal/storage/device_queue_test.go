@@ -87,17 +87,17 @@ func TestDeviceQueue(t *testing.T) {
 						Confirmed:  true,
 					},
 					{
-						DevEUI:     d.DevEUI,
-						FRMPayload: []byte{4, 5, 6},
-						FCnt:       3,
-						FPort:      11,
+						DevEUI:                  d.DevEUI,
+						FRMPayload:              []byte{4, 5, 6},
+						FCnt:                    3,
+						FPort:                   11,
 						EmitAtTimeSinceGPSEpoch: &gpsEpochTS1,
 					},
 					{
-						DevEUI:     d.DevEUI,
-						FRMPayload: []byte{7, 8, 9},
-						FCnt:       2,
-						FPort:      12,
+						DevEUI:                  d.DevEUI,
+						FRMPayload:              []byte{7, 8, 9},
+						FCnt:                    2,
+						FPort:                   12,
 						EmitAtTimeSinceGPSEpoch: &gpsEpochTS2,
 					},
 				}
@@ -339,7 +339,8 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 	Convey("Given a clean database", t, func() {
 		test.MustResetDB(config.C.PostgreSQL.DB)
 
-		Convey("Given a service-, class-b device- and routing-profile and two devices", func() {
+		Convey("Given a service-, class-b device- and routing-profile and two, SchedulerInterval setting", func() {
+			config.C.NetworkServer.NetworkSettings.Scheduler.SchedulerInterval = 1000
 			sp := ServiceProfile{}
 			So(CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
