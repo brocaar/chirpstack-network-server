@@ -3,7 +3,6 @@ package multicast
 import (
 	"math"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -125,7 +124,7 @@ func (ts *EnqueueQueueItemTestCase) TestClassC() {
 	assert.NotEqual(items[0].GatewayID, items[1].GatewayID)
 	assert.Nil(items[1].EmitAtTimeSinceGPSEpoch)
 	assert.Nil(items[0].EmitAtTimeSinceGPSEpoch)
-	lockDuration := time.Duration(config.C.NetworkServer.NetworkSettings.ClassC.DownlinkLockDuration) * time.Millisecond
+	lockDuration := config.C.NetworkServer.NetworkSettings.ClassC.DownlinkLockDuration
 	assert.EqualValues(math.Abs(float64(items[0].ScheduleAt.Sub(items[1].ScheduleAt))), lockDuration)
 
 	mg, err := storage.GetMulticastGroup(ts.Tx(), ts.MulticastGroup.ID, false)

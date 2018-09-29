@@ -219,7 +219,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   #
   # Use this when ony a sub-set of the by default enabled channels are being
   # used. For example when only using the first 8 channels of the US band.
-  #
+
   # Example:
   # enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7]
   enabled_uplink_channels=[{{ range $index, $element := .NetworkServer.NetworkSettings.EnabledUplinkChannels }}{{ if $index }}, {{ end }}{{ $element }}{{ end }}]
@@ -267,11 +267,11 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 {{ end }}
 
   [network_server.network_settings.scheduler]
-	# Scheduler interval in milliseconds
+	# Scheduler interval
 	#
 	# The downlink and also the Multicast queue sleeps SchedulerInterval
 	# milliseconds between runs.
-	# Default is 1000
+	# Default is 1s
 	scheduler_interval={{ .NetworkServer.NetworkSettings.Scheduler.SchedulerInterval }}
 
   # Class B settings
@@ -282,11 +282,11 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 	# Class C settings
   [network_server.network_settings.class_c]
 
-  # Downlink lock duration (Ms)
+  # Downlink lock duration
   #
 	# DownlinkLockDuration contains the duration to lock the downlink
 	# Class-C transmissions after a preceeding downlink tx.
-	# Default is 2000
+	# Default is 2s
 	downlink_lock_duration={{ .NetworkServer.NetworkSettings.ClassC.DownlinkLockDuration }}
 
 

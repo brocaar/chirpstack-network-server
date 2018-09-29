@@ -835,7 +835,7 @@ func getServiceProfile(ctx *dataContext) error {
 func checkLastDownlinkTimestamp(ctx *dataContext) error {
 	// in case of Class-C validate that between now and the last downlink
 	// tx timestamp is at least the class-c lock duration
-	lockDuration := time.Duration(config.C.NetworkServer.NetworkSettings.ClassC.DownlinkLockDuration) * time.Millisecond
+	lockDuration := config.C.NetworkServer.NetworkSettings.ClassC.DownlinkLockDuration
 	if ctx.DeviceProfile.SupportsClassC && time.Now().Sub(ctx.DeviceSession.LastDownlinkTX) < lockDuration {
 		log.WithFields(log.Fields{
 			"time":                           time.Now(),

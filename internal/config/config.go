@@ -72,7 +72,7 @@ type Config struct {
 			Scheduler struct {
 				// SchedulerInterval is the interval in milliseconds in which the scheduler
 				// sleep between runs, default to 1000
-				SchedulerInterval int `mapstructure:"scheduler_interval"`
+				SchedulerInterval time.Duration `mapstructure:"scheduler_interval"`
 			} `mapstructure:"scheduler"`
 
 			ClassB struct {
@@ -83,7 +83,7 @@ type Config struct {
 			ClassC struct {
 				// DownlinkLockDuration contains the duration to lock the downlink
 				// Class-C transmissions after a preceeding downlink tx.
-				DownlinkLockDuration int `mapstructure:"downlink_lock_duration"`
+				DownlinkLockDuration time.Duration `mapstructure:"downlink_lock_duration"`
 			} `mapstructure:"class_c"`
 
 			RejoinRequest struct {

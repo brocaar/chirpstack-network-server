@@ -340,7 +340,7 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 		test.MustResetDB(config.C.PostgreSQL.DB)
 
 		Convey("Given a service-, class-b device- and routing-profile and two, SchedulerInterval setting", func() {
-			config.C.NetworkServer.NetworkSettings.Scheduler.SchedulerInterval = 1000
+			config.C.NetworkServer.NetworkSettings.Scheduler.SchedulerInterval = time.Second * 1
 			sp := ServiceProfile{}
 			So(CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
 
