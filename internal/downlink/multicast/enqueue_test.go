@@ -122,8 +122,9 @@ func (ts *EnqueueQueueItemTestCase) TestClassC() {
 	assert.Len(items, 2)
 
 	assert.NotEqual(items[0].GatewayID, items[1].GatewayID)
-	assert.Nil(items[1].EmitAtTimeSinceGPSEpoch)
 	assert.Nil(items[0].EmitAtTimeSinceGPSEpoch)
+	assert.Nil(items[1].EmitAtTimeSinceGPSEpoch)
+
 	lockDuration := config.C.NetworkServer.NetworkSettings.ClassC.DownlinkLockDuration
 	assert.EqualValues(math.Abs(float64(items[0].ScheduleAt.Sub(items[1].ScheduleAt))), lockDuration)
 
