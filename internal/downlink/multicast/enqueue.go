@@ -62,7 +62,7 @@ func EnqueueQueueItem(p *redis.Pool, db sqlx.Ext, qi storage.MulticastQueueItem)
 		}
 
 		for _, gatewayID := range gatewayIDs {
-			ts = ts.Add(config.ClassCDownlinkLockDuration)
+			ts = ts.Add(time.Duration(config.C.NetworkServer.NetworkSettings.ClassC.DownlinkLockDuration) * time.Millisecond)
 			qi.GatewayID = gatewayID
 			qi.ScheduleAt = ts
 			if err = storage.CreateMulticastQueueItem(db, &qi); err != nil {
@@ -94,7 +94,7 @@ func EnqueueQueueItem(p *redis.Pool, db sqlx.Ext, qi storage.MulticastQueueItem)
 			}
 
 			qi.EmitAtTimeSinceGPSEpoch = &scheduleTS
-			qi.ScheduleAt = time.Time(gps.NewFromTimeSinceGPSEpoch(scheduleTS)).Add( time.Duration(-2 *  config.C.NetworkServer.NetworkSettings.Scheduler.SchedulerInterval) * time.Millisecond)
+			qi.ScheduleAt = time.Time(gps.NewFromTimeSinceGPSEpoch(scheduleTS)).Add(time.Duration(-2*config.C.NetworkServer.NetworkSettings.Scheduler.SchedulerInterval) * time.Millisecond)
 			qi.GatewayID = gatewayID
 
 			if err = storage.CreateMulticastQueueItem(db, &qi); err != nil {

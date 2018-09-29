@@ -835,11 +835,12 @@ func getServiceProfile(ctx *dataContext) error {
 func checkLastDownlinkTimestamp(ctx *dataContext) error {
 	// in case of Class-C validate that between now and the last downlink
 	// tx timestamp is at least the class-c lock duration
-	if ctx.DeviceProfile.SupportsClassC && time.Now().Sub(ctx.DeviceSession.LastDownlinkTX) < config.ClassCDownlinkLockDuration {
+	lockDuration := time.Duration(config.C.NetworkServer.NetworkSettings.ClassC.DownlinkLockDuration) * time.Millisecond
+	if ctx.DeviceProfile.SupportsClassC && time.Now().Sub(ctx.DeviceSession.LastDownlinkTX) < lockDuration {
 		log.WithFields(log.Fields{
 			"time":                           time.Now(),
 			"last_downlink_tx_time":          ctx.DeviceSession.LastDownlinkTX,
-			"class_c_downlink_lock_duration": config.ClassCDownlinkLockDuration,
+			"class_c_downlink_lock_duration": lockDuration,
 		}).Debug("skip next downlink queue scheduling dueue to class-c downlink lock")
 		return ErrAbort
 	}

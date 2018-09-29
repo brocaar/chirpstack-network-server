@@ -215,13 +215,6 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # When set, this globally disables ADR.
   disable_adr={{ .NetworkServer.NetworkSettings.DisableADR }}
 
-	# Scheduler interval
-  #
-  # The downlink and also the Multicast queue sleeps SchedulerInterval
-	# milliseconds between runs.
-	# Default is 1000
-  # scheduler_interval={{ .NetworkServer.NetworkSettings.Scheduler.SchedulerInterval }}
-
   # Enable only a given sub-set of channels
   #
   # Use this when ony a sub-set of the by default enabled channels are being
@@ -273,16 +266,28 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   max_dr={{ $element.MaxDR }}
 {{ end }}
 
+  [network_server.network_settings.scheduler]
+	# Scheduler interval in milliseconds
+	#
+	# The downlink and also the Multicast queue sleeps SchedulerInterval
+	# milliseconds between runs.
+	# Default is 1000
+	scheduler_interval={{ .NetworkServer.NetworkSettings.Scheduler.SchedulerInterval }}
+
   # Class B settings
   [network_server.network_settings.class_b]
   # Ping-slot data-rate.
   ping_slot_dr={{ .NetworkServer.NetworkSettings.ClassB.PingSlotDR }}
 
-  # Ping-slot frequency (Hz)
+	# Class C settings
+  [network_server.network_settings.class_c]
+
+  # Downlink lock duration (Ms)
   #
-  # Set this to 0 to use the default frequency plan for the configured region
-  # (which could be frequency hopping).
-  ping_slot_frequency={{ .NetworkServer.NetworkSettings.ClassB.PingSlotFrequency }}
+	# DownlinkLockDuration contains the duration to lock the downlink
+	# Class-C transmissions after a preceeding downlink tx.
+	# Default is 2000
+	downlink_lock_duration={{ .NetworkServer.NetworkSettings.ClassC.DownlinkLockDuration }}
 
 
   # Rejoin-request settings

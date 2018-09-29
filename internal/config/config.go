@@ -80,6 +80,12 @@ type Config struct {
 				PingSlotFrequency int `mapstructure:"ping_slot_frequency"`
 			} `mapstructure:"class_b"`
 
+			ClassC struct {
+				// DownlinkLockDuration contains the duration to lock the downlink
+				// Class-C transmissions after a preceeding downlink tx.
+				DownlinkLockDuration int `mapstructure:"downlink_lock_duration"`
+			} `mapstructure:"class_c"`
+
 			RejoinRequest struct {
 				Enabled   bool `mapstructure:"enabled"`
 				MaxCountN int  `mapstructure:"max_count_n"`
@@ -167,10 +173,6 @@ var C Config
 
 // SchedulerBatchSize contains the batch size of the Class-C scheduler
 var SchedulerBatchSize = 100
-
-// ClassCDownlinkLockDuration contains the duration to lock the downlink
-// Class-C transmissions after a preceeding downlink tx.
-var ClassCDownlinkLockDuration = time.Second * 2
 
 // ClassBEnqueueMargin contains the margin duration when scheduling Class-B
 // messages.
