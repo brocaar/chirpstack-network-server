@@ -63,6 +63,21 @@ type OTAATest struct {
 	Assert        []Assertion
 }
 
+// RejoinTest is the structure for a rejoin test.
+type RejoinTest struct {
+	Name                            string
+	BeforeFunc                      func(*RejoinTest) error
+	TXInfo                          gw.UplinkTXInfo
+	RXInfo                          gw.UplinkRXInfo
+	PHYPayload                      lorawan.PHYPayload
+	DeviceSession                   storage.DeviceSession
+	JoinServerRejoinAnsPayload      backend.RejoinAnsPayload
+	JoinServerRejoinAnsPayloadError error
+
+	ExpectedError error
+	Assert        []Assertion
+}
+
 // DownlinkProprietaryTest is the structure for a downlink proprietary test.
 type DownlinkProprietaryTest struct {
 	Name                          string
@@ -95,8 +110,8 @@ type IntegrationTestSuite struct {
 	NSAPI     ns.NetworkServerServiceServer
 
 	// keys
-	AppKey  lorawan.AES128Key
-	AppSKey lorawan.AES128Key
+	JoinAcceptKey lorawan.AES128Key
+	AppSKey       lorawan.AES128Key
 
 	// data objects
 	RoutingProfile *storage.RoutingProfile
@@ -404,6 +419,47 @@ func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 	for _, qi := range tst.DeviceQueueItems {
 		assert.NoError(storage.CreateDeviceQueueItem(ts.DB(), &qi))
 	}
+
+	phyB, err := tst.PHYPayload.MarshalBinary()
+	assert.NoError(err)
+
+	err = uplink.HandleRXPacket(gw.UplinkFrame{
+		RxInfo:     &tst.RXInfo,
+		TxInfo:     &tst.TXInfo,
+		PhyPayload: phyB,
+	})
+	if err != nil {
+		if tst.ExpectedError == nil {
+			assert.NoError(err)
+		} else {
+			assert.Equal(tst.ExpectedError.Error(), err.Error())
+		}
+		return
+	}
+	assert.NoError(tst.ExpectedError)
+
+	// run assertions
+	for _, a := range tst.Assert {
+		a(assert, ts)
+	}
+}
+
+// AssertRejoinTest asserts the given rejoin test.
+func (ts *IntegrationTestSuite) AssertRejoinTest(t *testing.T, tst RejoinTest) {
+	assert := require.New(t)
+
+	test.MustFlushRedis(ts.RedisPool())
+
+	if tst.BeforeFunc != nil {
+		assert.NoError(tst.BeforeFunc(&tst))
+	}
+
+	// overwrite device-session
+	ts.CreateDeviceSession(tst.DeviceSession)
+
+	// set mocks
+	ts.JSClient.RejoinAnsPayload = tst.JoinServerRejoinAnsPayload
+	ts.JSClient.RejoinReqError = tst.JoinServerRejoinAnsPayloadError
 
 	phyB, err := tst.PHYPayload.MarshalBinary()
 	assert.NoError(err)

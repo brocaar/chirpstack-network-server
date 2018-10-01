@@ -25,7 +25,7 @@ type OTAATestSuite struct {
 func (ts *OTAATestSuite) SetupSuite() {
 	ts.DatabaseTestSuiteBase.SetupSuite()
 
-	ts.AppKey = lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
+	ts.JoinAcceptKey = lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
 	ts.CreateDeviceProfile(storage.DeviceProfile{
 		MACVersion:   "1.0.2",
@@ -71,7 +71,7 @@ func (ts *OTAATestSuite) TestLW10() {
 			DevNonce: 258,
 		},
 	}
-	assert.NoError(jrPayload.SetUplinkJoinMIC(ts.AppKey))
+	assert.NoError(jrPayload.SetUplinkJoinMIC(ts.JoinAcceptKey))
 	jrBytes, err := jrPayload.MarshalBinary()
 	assert.NoError(err)
 
@@ -104,11 +104,11 @@ func (ts *OTAATestSuite) TestLW10() {
 		},
 		MACPayload: &jaPayload,
 	}
-	assert.NoError(jaPHY.SetDownlinkJoinMIC(lorawan.JoinRequestType, lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}, lorawan.DevNonce(258), ts.AppKey))
-	assert.NoError(jaPHY.EncryptJoinAcceptPayload(ts.AppKey))
+	assert.NoError(jaPHY.SetDownlinkJoinMIC(lorawan.JoinRequestType, lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}, lorawan.DevNonce(258), ts.JoinAcceptKey))
+	assert.NoError(jaPHY.EncryptJoinAcceptPayload(ts.JoinAcceptKey))
 	jaBytes, err := jaPHY.MarshalBinary()
 	assert.NoError(err)
-	assert.NoError(jaPHY.DecryptJoinAcceptPayload(ts.AppKey))
+	assert.NoError(jaPHY.DecryptJoinAcceptPayload(ts.JoinAcceptKey))
 
 	cFList := lorawan.CFList{
 		CFListType: lorawan.CFListChannel,
@@ -388,7 +388,7 @@ func (ts *OTAATestSuite) TestLW11() {
 			DevNonce: 258,
 		},
 	}
-	assert.NoError(jrPayload.SetUplinkJoinMIC(ts.AppKey))
+	assert.NoError(jrPayload.SetUplinkJoinMIC(ts.JoinAcceptKey))
 	jrBytes, err := jrPayload.MarshalBinary()
 	assert.NoError(err)
 
@@ -421,11 +421,11 @@ func (ts *OTAATestSuite) TestLW11() {
 		},
 		MACPayload: &jaPayload,
 	}
-	assert.NoError(jaPHY.SetDownlinkJoinMIC(lorawan.JoinRequestType, lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}, lorawan.DevNonce(258), ts.AppKey))
-	assert.NoError(jaPHY.EncryptJoinAcceptPayload(ts.AppKey))
+	assert.NoError(jaPHY.SetDownlinkJoinMIC(lorawan.JoinRequestType, lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}, lorawan.DevNonce(258), ts.JoinAcceptKey))
+	assert.NoError(jaPHY.EncryptJoinAcceptPayload(ts.JoinAcceptKey))
 	jaBytes, err := jaPHY.MarshalBinary()
 	assert.NoError(err)
-	assert.NoError(jaPHY.DecryptJoinAcceptPayload(ts.AppKey))
+	assert.NoError(jaPHY.DecryptJoinAcceptPayload(ts.JoinAcceptKey))
 
 	tests := []OTAATest{
 		{

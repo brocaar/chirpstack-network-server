@@ -56,7 +56,7 @@ func AssertDownlinkFrame(txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Asser
 		case lorawan.UnconfirmedDataDown, lorawan.ConfirmedDataDown:
 			assert.NoError(downPHY.DecodeFOptsToMACCommands())
 		case lorawan.JoinAccept:
-			assert.NoError(downPHY.DecryptJoinAcceptPayload(ts.AppKey))
+			assert.NoError(downPHY.DecryptJoinAcceptPayload(ts.JoinAcceptKey))
 		}
 
 		assert.Equal(phy, downPHY)
@@ -106,6 +106,20 @@ func AssertJSJoinReqPayload(pl backend.JoinReqPayload) Assertion {
 	}
 }
 
+// AsssertJSRejoinReq asserts the given join-server RejoinReq.
+func AssertJSRejoinReqPayload(pl backend.RejoinReqPayload) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		req := <-ts.JSClient.RejoinReqPayloadChan
+		assert.NotEqual("", req.TransactionID)
+		req.BasePayload.TransactionID = 0
+
+		assert.NotEqual(lorawan.DevAddr{}, req.DevAddr)
+		req.DevAddr = lorawan.DevAddr{}
+
+		assert.Equal(pl, req)
+	}
+}
+
 // AssertDeviceSession asserts the given device-session.
 func AssertDeviceSession(ds storage.DeviceSession) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
@@ -114,6 +128,12 @@ func AssertDeviceSession(ds storage.DeviceSession) Assertion {
 
 		assert.NotEqual(lorawan.DevAddr{}, sess.DevAddr)
 		sess.DevAddr = lorawan.DevAddr{}
+
+		if sess.PendingRejoinDeviceSession != nil {
+			assert.NotEqual(lorawan.DevAddr{}, sess.PendingRejoinDeviceSession.DevAddr)
+			sess.PendingRejoinDeviceSession.DevAddr = lorawan.DevAddr{}
+		}
+
 		assert.Equal(ds, sess)
 	}
 }
