@@ -315,6 +315,13 @@ get_downlink_data_delay="100ms"
   # min_dr=0
   # max_dr=5
 
+  [network_server.network_settings.scheduler]
+	# Scheduler interval in milliseconds
+	#
+	# The downlink and also the Multicast queue sleeps SchedulerInterval
+	# milliseconds between runs.
+	# Default is 1s for most of case a good queue size query
+	scheduler_interval=1s
 
   # Class B settings
   [network_server.network_settings.class_b]
@@ -327,6 +334,16 @@ get_downlink_data_delay="100ms"
   # (which could be frequency hopping).
   ping_slot_frequency=0
 
+
+  # Class C settings
+  [network_server.network_settings.class_c]
+
+  # Downlink lock duration
+  #
+	# DownlinkLockDuration contains the duration to lock the downlink
+	# Class-C transmissions after a preceeding downlink tx.
+	# Default is 2s
+	downlink_lock_duration={{ .NetworkServer.NetworkSettings.ClassC.DownlinkLockDuration }}
 
   # Rejoin-request settings
   #

@@ -69,10 +69,22 @@ type Config struct {
 				MaxDR     int `mapstructure:"max_dr"`
 			} `mapstructure:"extra_channels"`
 
+			Scheduler struct {
+				// SchedulerInterval is the interval in milliseconds in which the scheduler
+				// sleep between runs, default to 1000
+				SchedulerInterval time.Duration `mapstructure:"scheduler_interval"`
+			} `mapstructure:"scheduler"`
+
 			ClassB struct {
 				PingSlotDR        int `mapstructure:"ping_slot_dr"`
 				PingSlotFrequency int `mapstructure:"ping_slot_frequency"`
 			} `mapstructure:"class_b"`
+
+			ClassC struct {
+				// DownlinkLockDuration contains the duration to lock the downlink
+				// Class-C transmissions after a preceeding downlink tx.
+				DownlinkLockDuration time.Duration `mapstructure:"downlink_lock_duration"`
+			} `mapstructure:"class_c"`
 
 			RejoinRequest struct {
 				Enabled   bool `mapstructure:"enabled"`
@@ -159,16 +171,8 @@ var SpreadFactorToRequiredSNRTable = map[int]float64{
 // C holds the global configuration.
 var C Config
 
-// SchedulerInterval it the interval in which the a scheduler
-// must run.
-var SchedulerInterval = time.Second
-
 // SchedulerBatchSize contains the batch size of the Class-C scheduler
 var SchedulerBatchSize = 100
-
-// ClassCDownlinkLockDuration contains the duration to lock the downlink
-// Class-C transmissions after a preceeding downlink tx.
-var ClassCDownlinkLockDuration = time.Second * 2
 
 // ClassBEnqueueMargin contains the margin duration when scheduling Class-B
 // messages.

@@ -219,7 +219,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   #
   # Use this when ony a sub-set of the by default enabled channels are being
   # used. For example when only using the first 8 channels of the US band.
-  # 
+  #
   # Example:
   # enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7]
   enabled_uplink_channels=[{{ range $index, $element := .NetworkServer.NetworkSettings.EnabledUplinkChannels }}{{ if $index }}, {{ end }}{{ $element }}{{ end }}]
@@ -266,16 +266,28 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   max_dr={{ $element.MaxDR }}
 {{ end }}
 
+  [network_server.network_settings.scheduler]
+	# Scheduler interval
+	#
+	# The downlink and also the Multicast queue sleeps SchedulerInterval
+	# milliseconds between runs.
+	# Default is 1s
+	scheduler_interval={{ .NetworkServer.NetworkSettings.Scheduler.SchedulerInterval }}
+
   # Class B settings
   [network_server.network_settings.class_b]
   # Ping-slot data-rate.
   ping_slot_dr={{ .NetworkServer.NetworkSettings.ClassB.PingSlotDR }}
 
-  # Ping-slot frequency (Hz)
+	# Class C settings
+  [network_server.network_settings.class_c]
+
+  # Downlink lock duration
   #
-  # Set this to 0 to use the default frequency plan for the configured region
-  # (which could be frequency hopping).
-  ping_slot_frequency={{ .NetworkServer.NetworkSettings.ClassB.PingSlotFrequency }}
+	# DownlinkLockDuration contains the duration to lock the downlink
+	# Class-C transmissions after a preceeding downlink tx.
+	# Default is 2s
+	downlink_lock_duration={{ .NetworkServer.NetworkSettings.ClassC.DownlinkLockDuration }}
 
 
   # Rejoin-request settings
@@ -354,7 +366,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # The default values match the default expected configuration of the
   # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
   # absolutely needed.
-  # Use "{{ "{{ .MAC }}" }}" as an substitution for the LoRa gateway MAC. 
+  # Use "{{ "{{ .MAC }}" }}" as an substitution for the LoRa gateway MAC.
   uplink_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.UplinkTopicTemplate }}"
   downlink_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.DownlinkTopicTemplate }}"
   stats_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.StatsTopicTemplate }}"
