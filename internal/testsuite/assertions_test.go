@@ -1,6 +1,7 @@
 package testsuite
 
 import (
+	"github.com/brocaar/loraserver/api/nc"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
@@ -155,6 +156,76 @@ func AssertDeviceActivation(da storage.DeviceActivation) Assertion {
 func AssertASHandleProprietaryUplinkRequest(req as.HandleProprietaryUplinkRequest) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
 		r := <-ts.ASClient.HandleProprietaryUpChan
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
+// AssertASHandleUplinkDataRequest asserts the given uplink request.
+func AssertASHandleUplinkDataRequest(req as.HandleUplinkDataRequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.ASClient.HandleDataUpChan
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
+// AssertASHandleDownlinkACKRequest asserts the given ack request.
+func AssertASHandleDownlinkACKRequest(req as.HandleDownlinkACKRequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.ASClient.HandleDownlinkACKChan
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
+// AssertASHandleErrorRequest asserts the given error request.
+func AssertASHandleErrorRequest(req as.HandleErrorRequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.ASClient.HandleErrorChan
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
+// AssertNCHandleUplinkMACCommandRequest asserts the given mac-command request.
+func AssertNCHandleUplinkMACCommandRequest(req nc.HandleUplinkMACCommandRequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.NCClient.HandleDataUpMACCommandChan
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
+// AssertTXPowerIndex asserts the given tx-power index.
+func AssertTXPowerIndex(txPower int) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		assert.Equal(txPower, ts.DeviceSession.TXPowerIndex)
+	}
+}
+
+// AssertNbTrans asserts the given NbTrans.
+func AssertNbTrans(nbTrans int) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		assert.EqualValues(nbTrans, ts.DeviceSession.NbTrans)
+	}
+}
+
+// AssertEnabledUplinkChannels asserts the enabled channels.
+func AssertEnabledUplinkChannels(channels []int) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		assert.Equal(channels, ts.DeviceSession.EnabledUplinkChannels)
+	}
+}
+
+func AssertASSetDeviceStatusRequest(req as.SetDeviceStatusRequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.ASClient.SetDeviceStatusChan
 		if !proto.Equal(&r, &req) {
 			assert.Equal(req, r)
 		}

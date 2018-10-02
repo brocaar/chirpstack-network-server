@@ -484,7 +484,7 @@ func GetDeviceSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload, txDR, 
 
 		// the FCnt is valid, validate the MIC
 		macPL.FHDR.FCnt = fullFCnt
-		micOK, err := phy.ValidateUplinkDataMIC(s.GetMACVersion(), s.AFCntDown, uint8(txDR), uint8(txCh), s.FNwkSIntKey, s.SNwkSIntKey)
+		micOK, err := phy.ValidateUplinkDataMIC(s.GetMACVersion(), s.ConfFCnt, uint8(txDR), uint8(txCh), s.FNwkSIntKey, s.SNwkSIntKey)
 		if err != nil {
 			return DeviceSession{}, errors.Wrap(err, "validate mic error")
 		}

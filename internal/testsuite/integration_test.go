@@ -96,6 +96,23 @@ type UplinkProprietaryTest struct {
 	Assert []Assertion
 }
 
+// ClassATest is the structure for a Class-A test.
+type ClassATest struct {
+	Name                    string
+	PHYPayload              lorawan.PHYPayload
+	TXInfo                  gw.UplinkTXInfo
+	RXInfo                  gw.UplinkRXInfo
+	BeforeFunc              func(*ClassATest) error
+	AfterFunc               func(*ClassATest) error
+	DeviceSession           storage.DeviceSession
+	DeviceQueueItems        []storage.DeviceQueueItem
+	PendingMACCommands      []storage.MACCommandBlock
+	ASHandleUplinkDataError error
+
+	Assert        []Assertion
+	ExpectedError error
+}
+
 // IntegrationTestSuite provides a test-suite for integration-testing
 // uplink scenarios.
 type IntegrationTestSuite struct {
@@ -107,6 +124,7 @@ type IntegrationTestSuite struct {
 	JSClient  *test.JoinServerClient
 	GWBackend *test.GatewayBackend
 	GeoClient *test.GeolocationClient
+	NCClient  *test.NetworkControllerClient
 	NSAPI     ns.NetworkServerServiceServer
 
 	// keys
@@ -142,7 +160,8 @@ func (ts *IntegrationTestSuite) FlushClients() {
 	ts.GWBackend = test.NewGatewayBackend()
 	config.C.NetworkServer.Gateway.Backend.Backend = ts.GWBackend
 
-	config.C.NetworkController.Client = test.NewNetworkControllerClient()
+	ts.NCClient = test.NewNetworkControllerClient()
+	config.C.NetworkController.Client = ts.NCClient
 
 	ts.GeoClient = test.NewGeolocationClient()
 	config.C.GeolocationServer.Client = ts.GeoClient
@@ -482,6 +501,66 @@ func (ts *IntegrationTestSuite) AssertRejoinTest(t *testing.T, tst RejoinTest) {
 	// run assertions
 	for _, a := range tst.Assert {
 		a(assert, ts)
+	}
+}
+
+// AssertClassATest asserts the given class-a test.
+func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
+	assert := require.New(t)
+
+	test.MustFlushRedis(ts.RedisPool())
+
+	if tst.BeforeFunc != nil {
+		assert.NoError(tst.BeforeFunc(&tst))
+	}
+
+	// overwrite device-session
+	ts.CreateDeviceSession(tst.DeviceSession)
+
+	// add device-queue items
+	assert.NoError(storage.FlushDeviceQueueForDevEUI(ts.DB(), tst.DeviceSession.DevEUI))
+	for _, qi := range tst.DeviceQueueItems {
+		assert.NoError(storage.CreateDeviceQueueItem(ts.DB(), &qi))
+	}
+
+	// set pending mac-commands
+	for _, pending := range tst.PendingMACCommands {
+		assert.NoError(storage.SetPendingMACCommand(ts.RedisPool(), ts.Device.DevEUI, pending))
+	}
+
+	// set mocks
+	ts.ASClient.HandleDataUpErr = tst.ASHandleUplinkDataError
+
+	phyB, err := tst.PHYPayload.MarshalBinary()
+	assert.NoError(err)
+
+	err = uplink.HandleRXPacket(gw.UplinkFrame{
+		RxInfo:     &tst.RXInfo,
+		TxInfo:     &tst.TXInfo,
+		PhyPayload: phyB,
+	})
+	if err != nil {
+		if tst.ExpectedError == nil {
+			assert.NoError(err)
+		} else {
+			assert.Equal(tst.ExpectedError.Error(), err.Error())
+		}
+		return
+	}
+	assert.NoError(tst.ExpectedError)
+
+	// refresh device-session
+	ds, err := storage.GetDeviceSession(ts.RedisPool(), ts.DeviceSession.DevEUI)
+	assert.NoError(err)
+	ts.DeviceSession = &ds
+
+	// run assertions
+	for _, a := range tst.Assert {
+		a(assert, ts)
+	}
+
+	if tst.AfterFunc != nil {
+		assert.NoError(tst.AfterFunc(&tst))
 	}
 }
 
