@@ -1,4 +1,4 @@
-FROM golang:1.10-alpine AS development
+FROM golang:1.11-alpine AS development
 
 ENV PROJECT_PATH=/go/src/github.com/brocaar/loraserver
 ENV PATH=$PATH:$PROJECT_PATH/build
@@ -11,7 +11,7 @@ RUN mkdir -p $PROJECT_PATH
 COPY . $PROJECT_PATH
 WORKDIR $PROJECT_PATH
 
-RUN make requirements
+RUN make dev-requirements requirements
 RUN make
 
 FROM alpine:latest AS production
