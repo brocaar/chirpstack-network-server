@@ -68,6 +68,8 @@ func init() {
 	viper.SetDefault("network_server.network_settings.rx2_dr", -1)
 	viper.SetDefault("network_server.network_settings.downlink_tx_power", -1)
 	viper.SetDefault("network_server.network_settings.disable_adr", false)
+	viper.SetDefault("network_server.scheduler.scheduler_interval", 1*time.Second)
+	viper.SetDefault("network_server.scheduler.class_c.downlink_lock_duration", 2*time.Second)
 	viper.SetDefault("network_server.gateway.backend.mqtt.uplink_topic_template", "gateway/+/rx")
 	viper.SetDefault("network_server.gateway.backend.mqtt.downlink_topic_template", "gateway/{{ .MAC }}/tx")
 	viper.SetDefault("network_server.gateway.backend.mqtt.stats_topic_template", "gateway/+/stats")

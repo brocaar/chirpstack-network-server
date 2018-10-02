@@ -219,7 +219,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   #
   # Use this when ony a sub-set of the by default enabled channels are being
   # used. For example when only using the first 8 channels of the US band.
-  # 
+  #
   # Example:
   # enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7]
   enabled_uplink_channels=[{{ range $index, $element := .NetworkServer.NetworkSettings.EnabledUplinkChannels }}{{ if $index }}, {{ end }}{{ $element }}{{ end }}]
@@ -298,6 +298,26 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   max_time_n={{ .NetworkServer.NetworkSettings.RejoinRequest.MaxTimeN }}
 
 
+  # Scheduler settings
+  #
+  # These settings affect the multicast, Class-B and Class-C downlink queue
+  # scheduler.
+  [network_server.scheduler]
+  # Scheduler interval
+  #
+  # The interval in which the downlink scheduler for multicast, Class-B and
+  # Class-C runs.
+  scheduler_interval="{{ .NetworkServer.Scheduler.SchedulerInterval }}"
+
+    # Class-C settings.
+    [network_server.scheduler.class_c]
+    # Downlink lock duration
+    #
+    # Contains the duration to lock the downlink Class-C transmissions
+    # after a preceeding downlink tx (per device).
+    downlink_lock_duration="{{ .NetworkServer.Scheduler.ClassC.DownlinkLockDuration }}"
+
+
   # Network-server API
   #
   # This is the network-server API that is used by LoRa App Server or other
@@ -354,7 +374,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # The default values match the default expected configuration of the
   # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
   # absolutely needed.
-  # Use "{{ "{{ .MAC }}" }}" as an substitution for the LoRa gateway MAC. 
+  # Use "{{ "{{ .MAC }}" }}" as an substitution for the LoRa gateway MAC.
   uplink_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.UplinkTopicTemplate }}"
   downlink_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.DownlinkTopicTemplate }}"
   stats_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.StatsTopicTemplate }}"

@@ -348,6 +348,26 @@ get_downlink_data_delay="100ms"
   max_time_n=0
 
 
+  # Scheduler settings
+  #
+  # These settings affect the multicast, Class-B and Class-C downlink queue
+  # scheduler.
+  [network_server.scheduler]
+  # Scheduler interval
+  #
+  # The interval in which the downlink scheduler for multicast, Class-B and
+  # Class-C runs.
+  scheduler_interval="1s"
+
+    # Class-C settings.
+    [network_server.scheduler.class_c]
+    # Downlink lock duration
+    #
+    # Contains the duration to lock the downlink Class-C transmissions
+    # after a preceeding downlink tx (per device).
+    downlink_lock_duration="2s"
+
+
   # Network-server API
   #
   # This is the network-server API that is used by LoRa App Server or other
@@ -460,7 +480,7 @@ get_downlink_data_delay="100ms"
 
   # Geolocation settings.
   #
-  # When set, LoRa Server will use the configured geolocation service to
+  # When set, LoRa Server will use the configured geolocation server to
   # resolve the location of the devices.
   [geolocation_server]
   # Server.

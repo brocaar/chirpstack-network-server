@@ -81,6 +81,14 @@ type Config struct {
 			} `mapstructure:"rejoin_request"`
 		} `mapstructure:"network_settings"`
 
+		Scheduler struct {
+			SchedulerInterval time.Duration `mapstructure:"scheduler_interval"`
+
+			ClassC struct {
+				DownlinkLockDuration time.Duration `mapstructure:"downlink_lock_duration"`
+			} `mapstructure:"class_c"`
+		} `mapstructure:"scheduler"`
+
 		API struct {
 			Bind    string
 			CACert  string `mapstructure:"ca_cert"`
@@ -159,16 +167,8 @@ var SpreadFactorToRequiredSNRTable = map[int]float64{
 // C holds the global configuration.
 var C Config
 
-// SchedulerInterval it the interval in which the a scheduler
-// must run.
-var SchedulerInterval = time.Second
-
 // SchedulerBatchSize contains the batch size of the Class-C scheduler
 var SchedulerBatchSize = 100
-
-// ClassCDownlinkLockDuration contains the duration to lock the downlink
-// Class-C transmissions after a preceeding downlink tx.
-var ClassCDownlinkLockDuration = time.Second * 2
 
 // ClassBEnqueueMargin contains the margin duration when scheduling Class-B
 // messages.

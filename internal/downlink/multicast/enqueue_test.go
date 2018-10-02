@@ -124,7 +124,9 @@ func (ts *EnqueueQueueItemTestCase) TestClassC() {
 	assert.NotEqual(items[0].GatewayID, items[1].GatewayID)
 	assert.Nil(items[0].EmitAtTimeSinceGPSEpoch)
 	assert.Nil(items[1].EmitAtTimeSinceGPSEpoch)
-	assert.EqualValues(math.Abs(float64(items[0].ScheduleAt.Sub(items[1].ScheduleAt))), config.ClassCDownlinkLockDuration)
+
+	lockDuration := config.C.NetworkServer.Scheduler.ClassC.DownlinkLockDuration
+	assert.EqualValues(math.Abs(float64(items[0].ScheduleAt.Sub(items[1].ScheduleAt))), lockDuration)
 
 	mg, err := storage.GetMulticastGroup(ts.Tx(), ts.MulticastGroup.ID, false)
 	assert.NoError(err)
