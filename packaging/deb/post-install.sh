@@ -33,7 +33,7 @@ function restart_loraserver {
 # create loraserver user
 id loraserver &>/dev/null
 if [[ $? -ne 0 ]]; then
-	useradd --system -U -M loraserver -d /bin/false
+	useradd --system -U -M loraserver -s /bin/false -d /etc/loraserver
 fi
 
 mkdir -p "$LOG_DIR"
