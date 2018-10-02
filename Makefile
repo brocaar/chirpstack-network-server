@@ -21,12 +21,6 @@ test: statics
 	@go vet $(PKGS)
 	@go test -p 1 -v $(PKGS)
 
-documentation:
-	@echo "Building documentation"
-	@mkdir -p dist/docs
-	@cd docs && hugo
-	@cd docs/public/ && tar -pczf ../../dist/loraserver-documentation.tar.gz .
-
 dist:
 	@goreleaser
 
@@ -50,19 +44,21 @@ statics:
 	@echo "Generating static files"
 	@go generate cmd/loraserver/main.go
 
+dev-requirements:
+	go get -u github.com/kisielk/errcheck
+	go get -u github.com/golang/lint/golint
+	go get -u github.com/smartystreets/goconvey
+	go get -u golang.org/x/tools/cmd/stringer
+	go get -u github.com/golang/protobuf/protoc-gen-go
+	go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+	go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+	go get -u github.com/elazarl/go-bindata-assetfs/...
+	go get -u github.com/jteeuwen/go-bindata/...
+	go get -u github.com/golang/dep/cmd/dep
+	go get -u github.com/goreleaser/goreleaser
+
 requirements:
-	@go get -u github.com/kisielk/errcheck
-	@go get -u github.com/golang/lint/golint
-	@go get -u github.com/smartystreets/goconvey
-	@go get -u golang.org/x/tools/cmd/stringer
-	@go get -u github.com/golang/protobuf/protoc-gen-go
-	@go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
-	@go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
-	@go get -u github.com/elazarl/go-bindata-assetfs/...
-	@go get -u github.com/jteeuwen/go-bindata/...
-	@go get -u github.com/golang/dep/cmd/dep
-	@go get -u github.com/goreleaser/goreleaser
-	@dep ensure -v
+	dep ensure -v
 
 # shortcuts for development
 

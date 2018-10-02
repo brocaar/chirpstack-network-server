@@ -46,6 +46,9 @@ the GO support for Protocol Buffers [installation instructions](https://github.c
 A few example commands that you can run:
 
 {{<highlight bash>}}
+# install development requirements
+make dev-requirements
+
 # install requirements
 make requirements
 
