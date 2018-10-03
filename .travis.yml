@@ -14,15 +14,10 @@ before_deploy:
 
       docker-compose run --rm loraserver make dist;
 
-      docker-compose run --rm -e PACKAGE_ARCH=x86_64 loraserver make package-deb;
-      docker-compose run --rm -e PACKAGE_ARCH=i386 loraserver make package-deb;
-      docker-compose run --rm -e PACKAGE_ARCH=armhf loraserver make package-deb;
-      docker-compose run --rm -e PACKAGE_ARCH=arm64 loraserver make package-deb;
-
       mkdir -p dist/upload/tar;
       mkdir -p dist/upload/deb;
       mv dist/*.tar.gz dist/upload/tar;
-      mv dist/deb/*.deb dist/upload/deb;
+      mv dist/*.deb dist/upload/deb;
     fi
 
 deploy:

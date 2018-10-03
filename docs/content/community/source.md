@@ -59,5 +59,5 @@ make test
 make build
 
 # compile snapshot builds for supported architectures
-make build-snapshot
+make snapshot
 {{< /highlight >}}

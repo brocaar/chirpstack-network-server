@@ -24,11 +24,8 @@ test: statics
 dist:
 	@goreleaser
 
-build-snapshot:
+snapshot:
 	@goreleaser --snapshot
-
-package-deb:
-	@cd packaging && TARGET=deb ./package.sh
 
 api:
 	@echo "Generating API code from .proto files"
@@ -56,6 +53,7 @@ dev-requirements:
 	go get -u github.com/jteeuwen/go-bindata/...
 	go get -u github.com/golang/dep/cmd/dep
 	go get -u github.com/goreleaser/goreleaser
+	go get -u github.com/goreleaser/nfpm
 
 requirements:
 	dep ensure -v
