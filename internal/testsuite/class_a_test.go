@@ -2460,9 +2460,10 @@ func (ts *ClassATestSuite) TestLW10DeviceStatusRequest() {
 					Data:    []byte{1, 2, 3, 4},
 				}),
 				AssertASSetDeviceStatusRequest(as.SetDeviceStatusRequest{
-					DevEui:  ts.Device.DevEUI[:],
-					Battery: 128,
-					Margin:  10,
+					DevEui:       ts.Device.DevEUI[:],
+					Battery:      128,
+					Margin:       10,
+					BatteryLevel: float32(128) / float32(254) * float32(100),
 				}),
 			},
 		},

@@ -130,17 +130,24 @@ message SetDeviceStatusRequest {
     // Device EUI (8 bytes).
     bytes dev_eui = 1;
 
-    // Battery level.
+    // Battery level (deprecated, use battery_level).
     // 0:      The end-device is connected to an external power source
     // 1..254: The battery level, 1 being at minimum and 254 being at maximum
     // 255:    The end-device was not able to measure the battery level
-    // 256:    The device-status is not available.
     uint32 battery = 2;
 
     // The device margin status
     // -32..32: The demodulation SNR ration in dB
-    // 256:     The device-status is not available.
     int32  margin = 3;
+
+    // Device is connected to an external power source.
+    bool external_power_source = 4;
+
+    // Device battery status is not available.
+    bool battery_level_unavailable = 5;
+
+    // Battery level as a percentage.
+    float battery_level = 6;
 }
 
 message SetDeviceLocationRequest {

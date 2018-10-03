@@ -54,9 +54,26 @@ func handleDevStatusAns(ds *storage.DeviceSession, sp storage.ServiceProfile, as
 		req := as.SetDeviceStatusRequest{
 			DevEui: ds.DevEUI[:],
 		}
+
 		if sp.ReportDevStatusBattery {
 			req.Battery = uint32(pl.Battery)
+
+			switch pl.Battery {
+			case 255:
+				req.BatteryLevelUnavailable = true
+			case 0:
+				req.ExternalPowerSource = true
+			default:
+				req.BatteryLevel = float32(pl.Battery) / 254 * 100
+			}
+
+			if pl.Battery == 255 {
+				req.BatteryLevelUnavailable = true
+			}
+		} else {
+			req.BatteryLevelUnavailable = true
 		}
+
 		if sp.ReportDevStatusMargin {
 			req.Margin = int32(pl.Margin)
 		}
