@@ -223,7 +223,7 @@ message DownlinkFrame {
 
 message DownlinkTXAck {
     // Gateway ID.
-    bytes gateway_id = 1;
+    bytes gateway_id = 1 [json_name = "gatewayID"];
 
     // Token (uint16 value).
     uint32 token = 2;

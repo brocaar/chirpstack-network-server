@@ -130,6 +130,25 @@ func (ts *MQTTBackendTestSuite) TestGatewayStats() {
 	assert.EqualValues(gatewayStats, receivedStats)
 }
 
+func (ts *MQTTBackendTestSuite) TestDownlinkTXAck() {
+	assert := require.New(ts.T())
+
+	downlinkTXAck := gw.DownlinkTXAck{
+		GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+	}
+	b, err := proto.Marshal(&downlinkTXAck)
+	assert.NoError(err)
+
+	token := ts.mqttClient.Publish("gateway/0102030405060708/ack", 0, false, b)
+	token.Wait()
+	assert.NoError(token.Error())
+
+	receivedAck := <-ts.backend.DownlinkTXAckChan()
+	if !proto.Equal(&downlinkTXAck, &receivedAck) {
+		assert.Equal(downlinkTXAck, receivedAck)
+	}
+}
+
 func (ts *MQTTBackendTestSuite) TestSendDownlinkFrame() {
 	assert := require.New(ts.T())
 

@@ -152,7 +152,7 @@ func (ts *OTAATestSuite) TestLW10() {
 			ExpectedError: errors.New("validate dev-nonce error: object already exists"),
 		},
 		{
-			Name:       "join-request accepted",
+			Name:       "join-request accepted (rx1 + rx2)",
 			RXInfo:     rxInfo,
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
@@ -209,6 +209,21 @@ func (ts *OTAATestSuite) TestLW10() {
 						},
 					},
 				}, jaPHY),
+				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
+					GatewayId:  rxInfo.GatewayId,
+					Timestamp:  rxInfo.Timestamp + 6000000,
+					Frequency:  869525000,
+					Power:      14,
+					Modulation: commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+				}, jaPHY),
 				AssertDeviceSession(storage.DeviceSession{
 					MACVersion:       "1.0.2",
 					RoutingProfileID: ts.RoutingProfile.ID,
@@ -234,7 +249,7 @@ func (ts *OTAATestSuite) TestLW10() {
 			},
 		},
 		{
-			Name: "join-request accepted + skip fcnt check set",
+			Name: "join-request accepted + skip fcnt check set (rx1 + rx2)",
 			BeforeFunc: func(*OTAATest) error {
 				ts.Device.SkipFCntCheck = true
 				return storage.UpdateDevice(ts.DB(), ts.Device)
@@ -273,6 +288,21 @@ func (ts *OTAATestSuite) TestLW10() {
 					GatewayId:  rxInfo.GatewayId,
 					Timestamp:  rxInfo.Timestamp + 5000000,
 					Frequency:  txInfo.Frequency,
+					Power:      14,
+					Modulation: commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+				}, jaPHY),
+				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
+					GatewayId:  rxInfo.GatewayId,
+					Timestamp:  rxInfo.Timestamp + 6000000,
+					Frequency:  869525000,
 					Power:      14,
 					Modulation: commonPB.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
@@ -429,7 +459,7 @@ func (ts *OTAATestSuite) TestLW11() {
 
 	tests := []OTAATest{
 		{
-			Name:       "join-request accepted",
+			Name:       "join-request accepted (rx1 + rx2)",
 			RXInfo:     rxInfo,
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
@@ -493,6 +523,21 @@ func (ts *OTAATestSuite) TestLW11() {
 						},
 					},
 				}, jaPHY),
+				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
+					GatewayId:  rxInfo.GatewayId,
+					Timestamp:  rxInfo.Timestamp + 6000000,
+					Frequency:  869525000,
+					Power:      14,
+					Modulation: commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+				}, jaPHY),
 				AssertDeviceSession(storage.DeviceSession{
 					MACVersion:       "1.1.0",
 					RoutingProfileID: ts.RoutingProfile.ID,
@@ -518,7 +563,7 @@ func (ts *OTAATestSuite) TestLW11() {
 			},
 		},
 		{
-			Name: "join-request accepted (session-keys encrypted with KEK",
+			Name: "join-request accepted (session-keys encrypted with KEK) (rx1 + rx2)",
 			BeforeFunc: func(*OTAATest) error {
 				config.C.JoinServer.KEK.Set = []struct {
 					Label string
@@ -587,6 +632,21 @@ func (ts *OTAATestSuite) TestLW11() {
 					GatewayId:  rxInfo.GatewayId,
 					Timestamp:  rxInfo.Timestamp + 5000000,
 					Frequency:  txInfo.Frequency,
+					Power:      14,
+					Modulation: commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+				}, jaPHY),
+				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
+					GatewayId:  rxInfo.GatewayId,
+					Timestamp:  rxInfo.Timestamp + 6000000,
+					Frequency:  869525000,
 					Power:      14,
 					Modulation: commonPB.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{

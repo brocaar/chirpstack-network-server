@@ -18,20 +18,24 @@ import (
 )
 
 var tasks = []func(*joinContext) error{
+	setTXInfo,
 	setToken,
-	getJoinAcceptTXInfo,
 	setDownlinkFrame,
 	sendJoinAcceptResponse,
-	logDownlinkFrame,
+	saveRemainingFrames,
 }
 
 type joinContext struct {
 	Token         uint16
 	DeviceSession storage.DeviceSession
 	RXPacket      models.RXPacket
-	TXInfo        gw.DownlinkTXInfo
-	DownlinkFrame gw.DownlinkFrame
 	PHYPayload    lorawan.PHYPayload
+
+	// Downlink frames to be emitted (this can be a slice e.g. to first try
+	// using RX1 parameters, failing that RX2 parameters).
+	// Only the first item will be emitted, the other(s) will be enqueued
+	// and emitted on a scheduling error.
+	DownlinkFrames []gw.DownlinkFrame
 }
 
 // Handle handles a downlink join-response.
@@ -51,56 +55,116 @@ func Handle(ds storage.DeviceSession, rxPacket models.RXPacket, phy lorawan.PHYP
 	return nil
 }
 
-func setToken(ctx *joinContext) error {
-	b := make([]byte, 2)
-	_, err := rand.Read(b)
-	if err != nil {
-		return errors.Wrap(err, "read random error")
+func setTXInfo(ctx *joinContext) error {
+	if rxWindow := config.C.NetworkServer.NetworkSettings.RXWindow; rxWindow == 0 || rxWindow == 1 {
+		if err := setTXInfoForRX1(ctx); err != nil {
+			return err
+		}
 	}
-	ctx.Token = binary.BigEndian.Uint16(b)
+
+	if rxWindow := config.C.NetworkServer.NetworkSettings.RXWindow; rxWindow == 0 || rxWindow == 2 {
+		if err := setTXInfoForRX2(ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
-func getJoinAcceptTXInfo(ctx *joinContext) error {
+func setTXInfoForRX1(ctx *joinContext) error {
 	if len(ctx.RXPacket.RXInfoSet) == 0 {
 		return errors.New("empty RXInfoSet")
 	}
-	rxInfo := ctx.RXPacket.RXInfoSet[0]
 
-	ctx.TXInfo = gw.DownlinkTXInfo{
+	rxInfo := ctx.RXPacket.RXInfoSet[0]
+	txInfo := gw.DownlinkTXInfo{
 		GatewayId: rxInfo.GatewayId,
 		Board:     rxInfo.Board,
 		Antenna:   rxInfo.Antenna,
 	}
 
-	timestamp := rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().JoinAcceptDelay1/time.Microsecond)
-
-	// get RX1 DR
+	// get RX1 data-rate
 	rx1DR, err := config.C.NetworkServer.Band.Band.GetRX1DataRateIndex(ctx.RXPacket.DR, 0)
 	if err != nil {
 		return errors.Wrap(err, "get rx1 data-rate index error")
 	}
 
 	// set data-rate
-	err = helpers.SetDownlinkTXInfoDataRate(&ctx.TXInfo, rx1DR, config.C.NetworkServer.Band.Band)
+	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, rx1DR, config.C.NetworkServer.Band.Band)
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
 
-	// get RX1 frequency
+	// set frequency
 	freq, err := config.C.NetworkServer.Band.Band.GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
 	if err != nil {
 		return errors.Wrap(err, "get rx1 frequency error")
 	}
-	ctx.TXInfo.Frequency = uint32(freq)
+	txInfo.Frequency = uint32(freq)
 
-	ctx.TXInfo.Timestamp = timestamp
+	// set tx power
 	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
-		ctx.TXInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
+		txInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
 	} else {
-		ctx.TXInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(freq))
+		txInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(txInfo.Frequency)))
 	}
 
+	// set timestamp
+	txInfo.Timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().JoinAcceptDelay1/time.Microsecond)
+
+	ctx.DownlinkFrames = append(ctx.DownlinkFrames, gw.DownlinkFrame{
+		TxInfo: &txInfo,
+	})
+
+	return nil
+}
+
+func setTXInfoForRX2(ctx *joinContext) error {
+	if len(ctx.RXPacket.RXInfoSet) == 0 {
+		return errors.New("empty RXInfoSet")
+	}
+
+	rxInfo := ctx.RXPacket.RXInfoSet[0]
+	txInfo := gw.DownlinkTXInfo{
+		GatewayId: rxInfo.GatewayId,
+		Board:     rxInfo.Board,
+		Antenna:   rxInfo.Antenna,
+		Frequency: uint32(config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency),
+	}
+
+	// set data-rate
+	err := helpers.SetDownlinkTXInfoDataRate(&txInfo, config.C.NetworkServer.Band.Band.GetDefaults().RX2DataRate, config.C.NetworkServer.Band.Band)
+	if err != nil {
+		return errors.Wrap(err, "set downlink tx-info data-rate error")
+	}
+
+	// set tx power
+	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
+		txInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
+	} else {
+		txInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(txInfo.Frequency)))
+	}
+
+	// set timestamp
+	txInfo.Timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().JoinAcceptDelay2/time.Microsecond)
+
+	ctx.DownlinkFrames = append(ctx.DownlinkFrames, gw.DownlinkFrame{
+		TxInfo: &txInfo,
+	})
+
+	return nil
+}
+
+func setToken(ctx *joinContext) error {
+	b := make([]byte, 2)
+	_, err := rand.Read(b)
+	if err != nil {
+		return errors.Wrap(err, "read random error")
+	}
+
+	for i := range ctx.DownlinkFrames {
+		ctx.DownlinkFrames[i].Token = uint32(binary.BigEndian.Uint16(b))
+	}
 	return nil
 }
 
@@ -110,31 +174,42 @@ func setDownlinkFrame(ctx *joinContext) error {
 		return errors.Wrap(err, "marshal phypayload error")
 	}
 
-	ctx.DownlinkFrame = gw.DownlinkFrame{
-		Token:      uint32(ctx.Token),
-		TxInfo:     &ctx.TXInfo,
-		PhyPayload: phyB,
+	for i := range ctx.DownlinkFrames {
+		ctx.DownlinkFrames[i].PhyPayload = phyB
 	}
 
 	return nil
 }
 
 func sendJoinAcceptResponse(ctx *joinContext) error {
-	err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(ctx.DownlinkFrame)
+	if len(ctx.DownlinkFrames) == 0 {
+		return nil
+	}
+
+	err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(ctx.DownlinkFrames[0])
 	if err != nil {
 		return errors.Wrap(err, "send downlink frame error")
+	}
+
+	// log frame
+	if err := framelog.LogDownlinkFrameForGateway(config.C.Redis.Pool, ctx.DownlinkFrames[0]); err != nil {
+		log.WithError(err).Error("log downlink frame for gateway error")
+	}
+
+	if err := framelog.LogDownlinkFrameForDevEUI(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[0]); err != nil {
+		log.WithError(err).Error("log downlink frame for device error")
 	}
 
 	return nil
 }
 
-func logDownlinkFrame(ctx *joinContext) error {
-	if err := framelog.LogDownlinkFrameForGateway(config.C.Redis.Pool, ctx.DownlinkFrame); err != nil {
-		log.WithError(err).Error("log downlink frame for gateway error")
+func saveRemainingFrames(ctx *joinContext) error {
+	if len(ctx.DownlinkFrames) < 2 {
+		return nil
 	}
 
-	if err := framelog.LogDownlinkFrameForDevEUI(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, ctx.DownlinkFrame); err != nil {
-		log.WithError(err).Error("log downlink frame for device error")
+	if err := storage.SaveDownlinkFrames(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[1:]); err != nil {
+		return errors.Wrap(err, "save downlink-frames error")
 	}
 
 	return nil

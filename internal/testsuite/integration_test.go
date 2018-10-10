@@ -15,6 +15,7 @@ import (
 	"github.com/brocaar/loraserver/internal/api"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink"
+	"github.com/brocaar/loraserver/internal/downlink/ack"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
@@ -108,6 +109,17 @@ type ClassATest struct {
 	DeviceQueueItems        []storage.DeviceQueueItem
 	PendingMACCommands      []storage.MACCommandBlock
 	ASHandleUplinkDataError error
+
+	Assert        []Assertion
+	ExpectedError error
+}
+
+// DownlinkTXAckTest is the structure for a downlink tx ack test.
+type DownlinkTXAckTest struct {
+	Name           string
+	DevEUI         lorawan.EUI64
+	DownlinkTXAck  gw.DownlinkTXAck
+	DownlinkFrames []gw.DownlinkFrame
 
 	Assert        []Assertion
 	ExpectedError error
@@ -592,6 +604,31 @@ func (ts *IntegrationTestSuite) AssertUplinkProprietaryTest(t *testing.T, tst Up
 		TxInfo:     &tst.TXInfo,
 		RxInfo:     &tst.RXInfo,
 	}))
+
+	// run assertions
+	for _, a := range tst.Assert {
+		a(assert, ts)
+	}
+}
+
+// AssertDownlinkTXAckTest asserts the given downlink tx ack test.
+func (ts *IntegrationTestSuite) AssertDownlinkTXAckTest(t *testing.T, tst DownlinkTXAckTest) {
+	assert := require.New(t)
+
+	test.MustFlushRedis(ts.RedisPool())
+
+	assert.NoError(storage.SaveDownlinkFrames(ts.RedisPool(), tst.DevEUI, tst.DownlinkFrames))
+
+	err := ack.HandleDownlinkTXAck(tst.DownlinkTXAck)
+	if err != nil {
+		if tst.ExpectedError == nil {
+			assert.NoError(err)
+		} else {
+			assert.Equal(tst.ExpectedError.Error(), err.Error())
+		}
+		return
+	}
+	assert.NoError(tst.ExpectedError)
 
 	// run assertions
 	for _, a := range tst.Assert {

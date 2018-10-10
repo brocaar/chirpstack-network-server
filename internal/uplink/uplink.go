@@ -2,6 +2,7 @@ package uplink
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"sync"
 
@@ -9,6 +10,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/downlink/ack"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/models"
@@ -35,6 +37,12 @@ func (s *Server) Start() error {
 		s.wg.Add(1)
 		defer s.wg.Done()
 		HandleRXPackets(&s.wg)
+	}()
+
+	go func() {
+		s.wg.Add(1)
+		defer s.wg.Done()
+		HandleDownlinkTXAcks(&s.wg)
 	}()
 	return nil
 }
@@ -68,6 +76,24 @@ func HandleRXPackets(wg *sync.WaitGroup) {
 // HandleRXPacket handles a single rxpacket.
 func HandleRXPacket(uplinkFrame gw.UplinkFrame) error {
 	return collectPackets(uplinkFrame)
+}
+
+// HandleDownlinkTXAcks consumes received downlink tx acknowledgements from
+// the gateway.
+func HandleDownlinkTXAcks(wg *sync.WaitGroup) {
+	for downlinkTXAck := range config.C.NetworkServer.Gateway.Backend.Backend.DownlinkTXAckChan() {
+		go func(downlinkTXAck gw.DownlinkTXAck) {
+			wg.Add(1)
+			defer wg.Done()
+			if err := ack.HandleDownlinkTXAck(downlinkTXAck); err != nil {
+				log.WithFields(log.Fields{
+					"gateway_id": hex.EncodeToString(downlinkTXAck.GatewayId),
+					"token":      downlinkTXAck.Token,
+				}).WithError(err).Error("handle downlink tx ack error")
+			}
+
+		}(downlinkTXAck)
+	}
 }
 
 func collectPackets(uplinkFrame gw.UplinkFrame) error {

@@ -220,6 +220,6 @@ func (ts *ClassCTestSuite) TestClassC() {
 	}
 }
 
-func TestClassCNew(t *testing.T) {
+func TestClassC(t *testing.T) {
 	suite.Run(t, new(ClassCTestSuite))
 }

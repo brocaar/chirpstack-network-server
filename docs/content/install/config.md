@@ -219,6 +219,14 @@ get_downlink_data_delay="100ms"
   # surrounded gateways.
   installation_margin=10
 
+  # RX window (Class-A).
+  #
+  # Set this to:
+  # 0: RX1, fallback to RX2 (on RX1 scheduling error)
+  # 1: RX1 only
+  # 2: RX2 only
+  rx_window=0
+
   # Class A RX1 delay
   #
   # 0=1sec, 1=1sec, ... 15=15sec. A higher value means LoRa Server has more

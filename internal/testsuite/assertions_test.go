@@ -12,6 +12,8 @@ import (
 	"github.com/brocaar/lorawan/backend"
 )
 
+var lastToken uint32
+
 // AssertFCntUp asserts the FCntUp.
 func AssertFCntUp(fCnt uint32) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
@@ -38,6 +40,39 @@ func AssertDownlinkFrame(txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Asser
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
 		downlinkFrame := <-ts.GWBackend.TXPacketChan
 		assert.NotEqual(0, downlinkFrame.Token)
+		lastToken = downlinkFrame.Token
+
+		if !proto.Equal(&txInfo, downlinkFrame.TxInfo) {
+			assert.Equal(txInfo, downlinkFrame.TxInfo)
+		}
+
+		switch phy.MHDR.MType {
+		case lorawan.UnconfirmedDataDown, lorawan.ConfirmedDataDown:
+			b, err := phy.MarshalBinary()
+			assert.NoError(err)
+			assert.NoError(phy.UnmarshalBinary(b))
+			assert.NoError(phy.DecodeFOptsToMACCommands())
+		}
+
+		var downPHY lorawan.PHYPayload
+		assert.NoError(downPHY.UnmarshalBinary(downlinkFrame.PhyPayload))
+		switch downPHY.MHDR.MType {
+		case lorawan.UnconfirmedDataDown, lorawan.ConfirmedDataDown:
+			assert.NoError(downPHY.DecodeFOptsToMACCommands())
+		case lorawan.JoinAccept:
+			assert.NoError(downPHY.DecryptJoinAcceptPayload(ts.JoinAcceptKey))
+		}
+
+		assert.Equal(phy, downPHY)
+	}
+}
+
+func AssertDownlinkFrameSaved(devEUI lorawan.EUI64, txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		eui, downlinkFrame, err := storage.PopDownlinkFrame(ts.RedisPool(), lastToken)
+		assert.NoError(err)
+
+		assert.Equal(devEUI, eui)
 
 		if !proto.Equal(&txInfo, downlinkFrame.TxInfo) {
 			assert.Equal(txInfo, downlinkFrame.TxInfo)
@@ -67,6 +102,11 @@ func AssertDownlinkFrame(txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Asser
 // AssertNoDownlinkFrame asserts there is no downlink frame.
 func AssertNoDownlinkFrame(assert *require.Assertions, ts *IntegrationTestSuite) {
 	assert.Equal(0, len(ts.GWBackend.TXPacketChan))
+}
+
+func AssertNoDownlinkFrameSaved(assert *require.Assertions, ts *IntegrationTestSuite) {
+	_, _, err := storage.PopDownlinkFrame(ts.RedisPool(), lastToken)
+	assert.Equal(storage.ErrDoesNotExist, err)
 }
 
 // AssertMulticastQueueItems asserts the given multicast-queue items.

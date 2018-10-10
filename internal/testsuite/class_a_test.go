@@ -2481,12 +2481,440 @@ func (ts *ClassATestSuite) TestLW10DeviceStatusRequest() {
 	assert.NoError(storage.UpdateServiceProfile(ts.DB(), ts.ServiceProfile))
 }
 
+func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
+	ts.CreateDeviceSession(storage.DeviceSession{
+		MACVersion:            "1.1.0",
+		JoinEUI:               lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
+		DevAddr:               lorawan.DevAddr{1, 2, 3, 4},
+		FNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		SNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		NwkSEncKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		FCntUp:                8,
+		NFCntDown:             5,
+		AFCntDown:             4,
+		EnabledUplinkChannels: []int{0, 1, 2},
+		RX2Frequency:          869525000,
+	})
+
+	var fPortOne uint8 = 1
+
+	tests := []ClassATest{
+		{
+			Name: "unconfirmed uplink with payload (rx1)",
+			BeforeFunc: func(tst *ClassATest) error {
+				config.C.NetworkServer.NetworkSettings.RXWindow = 1
+				return nil
+			},
+			DeviceQueueItems: []storage.DeviceQueueItem{
+				{DevEUI: ts.Device.DevEUI, FRMPayload: []byte{1}, FPort: 1, FCnt: 4},
+			},
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort:      &fPortOne,
+					FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+				},
+				MIC: lorawan.MIC{104, 147, 104, 147},
+			},
+			Assert: []Assertion{
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+				AssertDownlinkFrame(gw.DownlinkTXInfo{
+					GatewayId:  ts.Gateway.GatewayID[:],
+					Frequency:  868100000,
+					Power:      14,
+					Timestamp:  ts.RXInfo.Timestamp + 1000000,
+					Modulation: commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							PolarizationInversion: true,
+							CodeRate:              "4/5",
+						},
+					},
+				}, lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.UnconfirmedDataDown,
+						Major: lorawan.LoRaWANR1,
+					},
+					MACPayload: &lorawan.MACPayload{
+						FHDR: lorawan.FHDR{
+							DevAddr: ts.DeviceSession.DevAddr,
+							FCnt:    4,
+							FCtrl: lorawan.FCtrl{
+								ADR: true,
+							},
+						},
+						FPort:      &fPortOne,
+						FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1}}},
+					},
+					MIC: lorawan.MIC{0xc3, 0xe2, 0xfc, 0x50},
+				}),
+			},
+		},
+		{
+			Name: "unconfirmed uplink with payload (rx2)",
+			BeforeFunc: func(tst *ClassATest) error {
+				config.C.NetworkServer.NetworkSettings.RXWindow = 2
+				return nil
+			},
+			DeviceQueueItems: []storage.DeviceQueueItem{
+				{DevEUI: ts.Device.DevEUI, FRMPayload: []byte{1}, FPort: 1, FCnt: 4},
+			},
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort:      &fPortOne,
+					FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+				},
+				MIC: lorawan.MIC{104, 147, 104, 147},
+			},
+			Assert: []Assertion{
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+				AssertDownlinkFrame(gw.DownlinkTXInfo{
+					GatewayId:  ts.Gateway.GatewayID[:],
+					Frequency:  869525000,
+					Power:      14,
+					Timestamp:  ts.RXInfo.Timestamp + 2000000,
+					Modulation: commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							PolarizationInversion: true,
+							CodeRate:              "4/5",
+						},
+					},
+				}, lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.UnconfirmedDataDown,
+						Major: lorawan.LoRaWANR1,
+					},
+					MACPayload: &lorawan.MACPayload{
+						FHDR: lorawan.FHDR{
+							DevAddr: ts.DeviceSession.DevAddr,
+							FCnt:    4,
+							FCtrl: lorawan.FCtrl{
+								ADR: true,
+							},
+						},
+						FPort:      &fPortOne,
+						FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1}}},
+					},
+					MIC: lorawan.MIC{0xc3, 0xe2, 0xfc, 0x50},
+				}),
+			},
+		},
+		{
+			Name: "unconfirmed uplink with payload (rx1 + rx2)",
+			BeforeFunc: func(tst *ClassATest) error {
+				config.C.NetworkServer.NetworkSettings.RXWindow = 0
+				return nil
+			},
+			DeviceQueueItems: []storage.DeviceQueueItem{
+				{DevEUI: ts.Device.DevEUI, FRMPayload: []byte{1}, FPort: 1, FCnt: 4},
+			},
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort:      &fPortOne,
+					FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+				},
+				MIC: lorawan.MIC{104, 147, 104, 147},
+			},
+			Assert: []Assertion{
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+				AssertDownlinkFrame(gw.DownlinkTXInfo{
+					GatewayId:  ts.Gateway.GatewayID[:],
+					Frequency:  868100000,
+					Power:      14,
+					Timestamp:  ts.RXInfo.Timestamp + 1000000,
+					Modulation: commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							PolarizationInversion: true,
+							CodeRate:              "4/5",
+						},
+					},
+				}, lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.UnconfirmedDataDown,
+						Major: lorawan.LoRaWANR1,
+					},
+					MACPayload: &lorawan.MACPayload{
+						FHDR: lorawan.FHDR{
+							DevAddr: ts.DeviceSession.DevAddr,
+							FCnt:    4,
+							FCtrl: lorawan.FCtrl{
+								ADR: true,
+							},
+						},
+						FPort:      &fPortOne,
+						FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1}}},
+					},
+					MIC: lorawan.MIC{0xc3, 0xe2, 0xfc, 0x50},
+				}),
+				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
+					GatewayId:  ts.Gateway.GatewayID[:],
+					Frequency:  869525000,
+					Power:      14,
+					Timestamp:  ts.RXInfo.Timestamp + 2000000,
+					Modulation: commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							PolarizationInversion: true,
+							CodeRate:              "4/5",
+						},
+					},
+				}, lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.UnconfirmedDataDown,
+						Major: lorawan.LoRaWANR1,
+					},
+					MACPayload: &lorawan.MACPayload{
+						FHDR: lorawan.FHDR{
+							DevAddr: ts.DeviceSession.DevAddr,
+							FCnt:    4,
+							FCtrl: lorawan.FCtrl{
+								ADR: true,
+							},
+						},
+						FPort:      &fPortOne,
+						FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1}}},
+					},
+					MIC: lorawan.MIC{0xc3, 0xe2, 0xfc, 0x50},
+				}),
+			},
+		},
+		{
+			Name: "unconfirmed uplink with payload (rx1, payload exceeds rx2 limit)",
+			BeforeFunc: func(tst *ClassATest) error {
+				config.C.NetworkServer.NetworkSettings.RXWindow = 0
+				return helpers.SetUplinkTXInfoDataRate(&tst.TXInfo, 5, config.C.NetworkServer.Band.Band)
+			},
+			DeviceQueueItems: []storage.DeviceQueueItem{
+				{DevEUI: ts.Device.DevEUI, FRMPayload: make([]byte, 100), FPort: 1, FCnt: 4},
+			},
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort:      &fPortOne,
+					FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+				},
+				MIC: lorawan.MIC{0xd4, 0x59, 0x68, 0x93},
+			},
+			Assert: []Assertion{
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+				AssertDownlinkFrame(gw.DownlinkTXInfo{
+					GatewayId:  ts.Gateway.GatewayID[:],
+					Frequency:  868100000,
+					Power:      14,
+					Timestamp:  ts.RXInfo.Timestamp + 1000000,
+					Modulation: commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       7,
+							PolarizationInversion: true,
+							CodeRate:              "4/5",
+						},
+					},
+				}, lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.UnconfirmedDataDown,
+						Major: lorawan.LoRaWANR1,
+					},
+					MACPayload: &lorawan.MACPayload{
+						FHDR: lorawan.FHDR{
+							DevAddr: ts.DeviceSession.DevAddr,
+							FCnt:    4,
+							FCtrl: lorawan.FCtrl{
+								ADR: true,
+							},
+						},
+						FPort:      &fPortOne,
+						FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: make([]byte, 100)}},
+					},
+					MIC: lorawan.MIC{0x6e, 0xc6, 0xc2, 0x7c},
+				}),
+				AssertNoDownlinkFrameSaved,
+			},
+		},
+		{
+			Name: "unconfirmed uplink with payload (rx1, mac-command stripped as it exceeds rx2 limit)",
+			BeforeFunc: func(tst *ClassATest) error {
+				config.C.NetworkServer.NetworkSettings.RXWindow = 0
+
+				ts.ServiceProfile.DevStatusReqFreq = 1
+				if err := storage.UpdateServiceProfile(ts.DB(), ts.ServiceProfile); err != nil {
+					return err
+				}
+
+				return helpers.SetUplinkTXInfoDataRate(&tst.TXInfo, 5, config.C.NetworkServer.Band.Band)
+			},
+			AfterFunc: func(tst *ClassATest) error {
+				ts.ServiceProfile.DevStatusReqFreq = 0
+				return storage.UpdateServiceProfile(ts.DB(), ts.ServiceProfile)
+			},
+			DeviceQueueItems: []storage.DeviceQueueItem{
+				{DevEUI: ts.Device.DevEUI, FRMPayload: make([]byte, 51), FPort: 1, FCnt: 4},
+			},
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort:      &fPortOne,
+					FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+				},
+				MIC: lorawan.MIC{0xd4, 0x59, 0x68, 0x93},
+			},
+			Assert: []Assertion{
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+				AssertDownlinkFrame(gw.DownlinkTXInfo{
+					GatewayId:  ts.Gateway.GatewayID[:],
+					Frequency:  868100000,
+					Power:      14,
+					Timestamp:  ts.RXInfo.Timestamp + 1000000,
+					Modulation: commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       7,
+							PolarizationInversion: true,
+							CodeRate:              "4/5",
+						},
+					},
+				}, lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.UnconfirmedDataDown,
+						Major: lorawan.LoRaWANR1,
+					},
+					MACPayload: &lorawan.MACPayload{
+						FHDR: lorawan.FHDR{
+							DevAddr: ts.DeviceSession.DevAddr,
+							FCnt:    4,
+							FCtrl: lorawan.FCtrl{
+								ADR: true,
+							},
+							FOpts: []lorawan.Payload{
+								&lorawan.MACCommand{
+									CID: 181, // encrypted
+								},
+							},
+						},
+						FPort:      &fPortOne,
+						FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: make([]byte, 51)}},
+					},
+					MIC: lorawan.MIC{0x17, 0x4e, 0xc6, 0x6e},
+				}),
+				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
+					GatewayId:  ts.Gateway.GatewayID[:],
+					Frequency:  869525000,
+					Power:      14,
+					Timestamp:  ts.RXInfo.Timestamp + 2000000,
+					Modulation: commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							PolarizationInversion: true,
+							CodeRate:              "4/5",
+						},
+					},
+				}, lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.UnconfirmedDataDown,
+						Major: lorawan.LoRaWANR1,
+					},
+					MACPayload: &lorawan.MACPayload{
+						FHDR: lorawan.FHDR{
+							DevAddr: ts.DeviceSession.DevAddr,
+							FCnt:    4,
+							FCtrl: lorawan.FCtrl{
+								ADR: true,
+							},
+						},
+						FPort:      &fPortOne,
+						FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: make([]byte, 51)}},
+					},
+					MIC: lorawan.MIC{0x3c, 0xab, 0x49, 0xe9},
+				}),
+			},
+		},
+	}
+
+	for _, tst := range tests {
+		ts.T().Run(tst.Name, func(t *testing.T) {
+			ts.AssertClassATest(t, tst)
+		})
+	}
+}
+
 func (ts *ClassATestSuite) resetBand() {
 	config.C.NetworkServer.NetworkSettings.InstallationMargin = 5
 	config.C.NetworkServer.Band.Band, _ = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)
 	config.C.NetworkServer.NetworkSettings.RX2DR = 0
 	config.C.NetworkServer.NetworkSettings.RX1DROffset = 0
 	config.C.NetworkServer.NetworkSettings.RX1Delay = 0
+	config.C.NetworkServer.NetworkSettings.RXWindow = 0
 }
 
 func TestClassA(t *testing.T) {

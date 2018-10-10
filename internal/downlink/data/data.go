@@ -54,30 +54,25 @@ var setMACCommandsSet = setMACCommands(
 )
 
 var responseTasks = []func(*dataContext) error{
-	setToken,
 	getDeviceProfile,
-	getDataTXInfo,
-	setRemainingPayloadSize,
+	setDataTXInfo,
+	setToken,
 	getNextDeviceQueueItem,
 	setMACCommandsSet,
 	stopOnNothingToSend,
-	setPHYPayload,
-	encryptMACCommands,
-	setMIC,
-	sendDataDown,
+	setPHYPayloads,
+	sendDownlinkFrame,
 	saveDeviceSession,
-	logDownlinkFrameForGateway,
-	decryptMACCommands,
-	logDownlinkFrameForDevice,
+	saveRemainingFrames,
 }
 
 var scheduleNextQueueItemTasks = []func(*dataContext) error{
-	setToken,
 	getDeviceProfile,
 	getServiceProfile,
 	checkLastDownlinkTimestamp,
 	forClass(classC,
-		getDataTXInfoForRX2,
+		setImmediately,
+		setTXInfoForRX2,
 	),
 	forClass(classB,
 		checkBeaconLocked,
@@ -86,24 +81,16 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	forClass(classA,
 		returnInvalidDeviceClassError,
 	),
-	setRemainingPayloadSize,
+	setToken,
 	getNextDeviceQueueItem,
 	setMACCommandsSet,
 	stopOnNothingToSend,
-	setPHYPayload,
-	encryptMACCommands,
-	setMIC,
-	sendDataDown,
+	setPHYPayloads,
+	sendDownlinkFrame,
 	saveDeviceSession,
-	logDownlinkFrameForGateway,
-	decryptMACCommands,
-	logDownlinkFrameForDevice,
 }
 
 type dataContext struct {
-	// Token defines a random token.
-	Token uint16
-
 	// ServiceProfile of the device.
 	ServiceProfile storage.ServiceProfile
 
@@ -114,20 +101,10 @@ type dataContext struct {
 	// the downlink data.
 	DeviceSession storage.DeviceSession
 
-	// TXInfo holds the data needed for transmission.
-	TXInfo gw.DownlinkTXInfo
-
-	// DataRate holds the data-rate for transmission.
-	DataRate int
-
 	// MustSend defines if a frame must be send. In some cases (e.g. ADRACKReq)
 	// the network-server must respond, even when there are no mac-commands or
 	// FRMPayload.
 	MustSend bool
-
-	// The remaining payload size which can be used for mac-commands and / or
-	// FRMPayload.
-	RemainingPayloadSize int
 
 	// ACK defines if ACK must be set to true (e.g. the frame acknowledges
 	// an uplink frame).
@@ -136,11 +113,6 @@ type dataContext struct {
 	// FPort to use for transmission. This must be set to a value != 0 in case
 	// Data is not empty.
 	FPort uint8
-
-	// MACCommands contains the mac-commands to send (if any). Make sure the
-	// total size fits within the FRMPayload or FPort (depending on if
-	// EncryptMACCommands is set to true).
-	MACCommands []storage.MACCommandBlock
 
 	// Confirmed defines if the frame must be send as confirmed-data.
 	Confirmed bool
@@ -152,11 +124,30 @@ type dataContext struct {
 	// value other than 0.
 	Data []byte
 
-	// PHYPayload holds the LoRaWAN PHYPayload.
-	PHYPayload lorawan.PHYPayload
-
 	// RXPacket holds the received uplink packet (in case of Class-A downlink).
 	RXPacket *models.RXPacket
+
+	// Immediately indicates that the response must be sent immediately.
+	Immediately bool
+
+	// MACCommands contains the mac-commands to send (if any). Make sure the
+	// total size fits within the FRMPayload or FOpts.
+	MACCommands []storage.MACCommandBlock
+
+	// Downlink frames to be emitted (this can be a slice e.g. to first try
+	// using RX1 parameters, failing that RX2 parameters).
+	// Only the first item will be emitted, the other(s) will be enqueued
+	// and emitted on a scheduling error.
+	DownlinkFrames []downlinkFrame
+}
+
+type downlinkFrame struct {
+	// Downlink frame
+	DownlinkFrame gw.DownlinkFrame
+
+	// The remaining payload size which can be used for mac-commands and / or
+	// FRMPayload.
+	RemainingPayloadSize int
 }
 
 func (ctx dataContext) Validate() error {
@@ -243,7 +234,10 @@ func setToken(ctx *dataContext) error {
 	if err != nil {
 		return errors.Wrap(err, "read random error")
 	}
-	ctx.Token = binary.BigEndian.Uint16(b)
+
+	for i := range ctx.DownlinkFrames {
+		ctx.DownlinkFrames[i].DownlinkFrame.Token = uint32(binary.BigEndian.Uint16(b))
+	}
 	return nil
 }
 
@@ -309,53 +303,145 @@ func setRXParameters(ctx *dataContext) error {
 	return nil
 }
 
-func getDataTXInfo(ctx *dataContext) error {
-	if len(ctx.RXPacket.RXInfoSet) == 0 {
-		return ErrNoLastRXInfoSet
+func setDataTXInfo(ctx *dataContext) error {
+	if rxWindow := config.C.NetworkServer.NetworkSettings.RXWindow; rxWindow == 0 || rxWindow == 1 {
+		if err := setTXInfoForRX1(ctx); err != nil {
+			return err
+		}
 	}
-	rxInfo := ctx.RXPacket.RXInfoSet[0]
-	var err error
-	ctx.TXInfo, ctx.DataRate, err = getDataDownTXInfoAndDR(ctx.DeviceSession, ctx.RXPacket.TXInfo, rxInfo)
-	if err != nil {
-		return errors.Wrap(err, "get data down tx-info error")
+
+	if rxWindow := config.C.NetworkServer.NetworkSettings.RXWindow; rxWindow == 0 || rxWindow == 2 {
+		if err := setTXInfoForRX2(ctx); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func getDataTXInfoForRX2(ctx *dataContext) error {
+func setTXInfoForRX1(ctx *dataContext) error {
+	if len(ctx.RXPacket.RXInfoSet) == 0 {
+		return ErrNoLastRXInfoSet
+	}
+	rxInfo := ctx.RXPacket.RXInfoSet[0]
+
+	txInfo := gw.DownlinkTXInfo{
+		GatewayId: rxInfo.GatewayId,
+		Board:     rxInfo.Board,
+		Antenna:   rxInfo.Antenna,
+	}
+
+	// get rx1 data-rate
+	uplinkDR, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, config.C.NetworkServer.Band.Band)
+	if err != nil {
+		return errors.Wrap(err, "get data-rate index error")
+	}
+
+	rx1DR, err := config.C.NetworkServer.Band.Band.GetRX1DataRateIndex(uplinkDR, int(ctx.DeviceSession.RX1DROffset))
+	if err != nil {
+		return errors.Wrap(err, "get rx1 data-rate index error")
+	}
+
+	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, rx1DR, config.C.NetworkServer.Band.Band)
+	if err != nil {
+		return errors.Wrap(err, "set downlink tx-info data-rate error")
+	}
+
+	// get rx1 frequency
+	freq, err := config.C.NetworkServer.Band.Band.GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
+	if err != nil {
+		return errors.Wrap(err, "get rx1 frequency error")
+	}
+	txInfo.Frequency = uint32(freq)
+
+	// get timestamp
+	txInfo.Timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().ReceiveDelay1/time.Microsecond)
+	if ctx.DeviceSession.RXDelay > 0 {
+		txInfo.Timestamp = rxInfo.Timestamp + uint32(time.Duration(ctx.DeviceSession.RXDelay)*time.Second/time.Microsecond)
+	}
+
+	// get tx power
+	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
+		txInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
+	} else {
+		txInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(txInfo.Frequency)))
+	}
+
+	// get remaining payload size
+	plSize, err := config.C.NetworkServer.Band.Band.GetMaxPayloadSizeForDataRateIndex(ctx.DeviceProfile.MACVersion, ctx.DeviceProfile.RegParamsRevision, rx1DR)
+	if err != nil {
+		return errors.Wrap(err, "get max-payload size error")
+	}
+
+	ctx.DownlinkFrames = append(ctx.DownlinkFrames, downlinkFrame{
+		DownlinkFrame: gw.DownlinkFrame{
+			TxInfo: &txInfo,
+		},
+		RemainingPayloadSize: plSize.N,
+	})
+
+	return nil
+}
+
+func setImmediately(ctx *dataContext) error {
+	ctx.Immediately = true
+	return nil
+}
+
+func setTXInfoForRX2(ctx *dataContext) error {
 	gatewayID, err := ctx.DeviceSession.GetDownlinkGatewayMAC()
 	if err != nil {
 		return err
 	}
 
-	var board, antenna uint32 = 0, 0
-
+	var board, antenna, timestamp uint32
 	if ctx.RXPacket != nil && len(ctx.RXPacket.RXInfoSet) != 0 {
 		board = ctx.RXPacket.RXInfoSet[0].Board
 		antenna = ctx.RXPacket.RXInfoSet[0].Antenna
+		timestamp = ctx.RXPacket.RXInfoSet[0].Timestamp
 	}
 
-	ctx.TXInfo = gw.DownlinkTXInfo{
+	txInfo := gw.DownlinkTXInfo{
 		GatewayId:   gatewayID[:],
-		Immediately: true,
-		Frequency:   uint32(ctx.DeviceSession.RX2Frequency),
 		Board:       board,
 		Antenna:     antenna,
+		Frequency:   uint32(ctx.DeviceSession.RX2Frequency),
+		Immediately: ctx.Immediately,
 	}
 
-	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
-		ctx.TXInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
-	} else {
-		ctx.TXInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(ctx.TXInfo.Frequency)))
-	}
-
-	err = helpers.SetDownlinkTXInfoDataRate(&ctx.TXInfo, int(ctx.DeviceSession.RX2DR), config.C.NetworkServer.Band.Band)
+	// get data-rate
+	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, int(ctx.DeviceSession.RX2DR), config.C.NetworkServer.Band.Band)
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
 
-	ctx.DataRate = int(ctx.DeviceSession.RX2DR)
+	// get tx power
+	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
+		txInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
+	} else {
+		txInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(txInfo.Frequency)))
+	}
+
+	// get timestamp (when not tx immediately)
+	if !ctx.Immediately {
+		txInfo.Timestamp = timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().ReceiveDelay2/time.Microsecond)
+		if ctx.DeviceSession.RXDelay > 0 {
+			txInfo.Timestamp = timestamp + uint32(time.Second*time.Duration(ctx.DeviceSession.RXDelay+1)/time.Microsecond)
+		}
+	}
+
+	// get remaining payload size
+	plSize, err := config.C.NetworkServer.Band.Band.GetMaxPayloadSizeForDataRateIndex(ctx.DeviceProfile.MACVersion, ctx.DeviceProfile.RegParamsRevision, int(ctx.DeviceSession.RX2DR))
+	if err != nil {
+		return errors.Wrap(err, "get max-payload size error")
+	}
+
+	ctx.DownlinkFrames = append(ctx.DownlinkFrames, downlinkFrame{
+		DownlinkFrame: gw.DownlinkFrame{
+			TxInfo: &txInfo,
+		},
+		RemainingPayloadSize: plSize.N,
+	})
 
 	return nil
 }
@@ -373,47 +459,44 @@ func setTXInfoForClassB(ctx *dataContext) error {
 		return err
 	}
 
-	var board, antenna uint32 = 0, 0
-
+	var board, antenna uint32
 	if ctx.RXPacket != nil && len(ctx.RXPacket.RXInfoSet) != 0 {
 		board = ctx.RXPacket.RXInfoSet[0].Board
 		antenna = ctx.RXPacket.RXInfoSet[0].Antenna
 	}
 
-	ctx.TXInfo = gw.DownlinkTXInfo{
+	txInfo := gw.DownlinkTXInfo{
 		GatewayId: gatewayID[:],
-		Frequency: uint32(ctx.DeviceSession.PingSlotFrequency),
 		Board:     board,
 		Antenna:   antenna,
+		Frequency: uint32(ctx.DeviceSession.PingSlotFrequency),
 	}
 
-	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
-		ctx.TXInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
-	} else {
-		ctx.TXInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(ctx.TXInfo.Frequency)))
-	}
-
-	err = helpers.SetDownlinkTXInfoDataRate(&ctx.TXInfo, ctx.DeviceSession.PingSlotDR, config.C.NetworkServer.Band.Band)
+	// get data-rate
+	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.DeviceSession.PingSlotDR, config.C.NetworkServer.Band.Band)
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
 
-	ctx.DataRate = ctx.DeviceSession.PingSlotDR
+	// get tx power
+	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
+		txInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
+	} else {
+		txInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(txInfo.Frequency)))
+	}
 
-	return nil
-}
-
-func setRemainingPayloadSize(ctx *dataContext) error {
-	plSize, err := config.C.NetworkServer.Band.Band.GetMaxPayloadSizeForDataRateIndex(ctx.DeviceProfile.MACVersion, ctx.DeviceProfile.RegParamsRevision, ctx.DataRate)
+	// get remaining payload size
+	plSize, err := config.C.NetworkServer.Band.Band.GetMaxPayloadSizeForDataRateIndex(ctx.DeviceProfile.MACVersion, ctx.DeviceProfile.RegParamsRevision, int(ctx.DeviceSession.PingSlotDR))
 	if err != nil {
 		return errors.Wrap(err, "get max-payload size error")
 	}
 
-	ctx.RemainingPayloadSize = plSize.N - len(ctx.Data)
-
-	if ctx.RemainingPayloadSize < 0 {
-		return ErrMaxPayloadSizeExceeded
-	}
+	ctx.DownlinkFrames = append(ctx.DownlinkFrames, downlinkFrame{
+		DownlinkFrame: gw.DownlinkFrame{
+			TxInfo: &txInfo,
+		},
+		RemainingPayloadSize: plSize.N,
+	})
 
 	return nil
 }
@@ -426,7 +509,14 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 		fCnt = ctx.DeviceSession.AFCntDown
 	}
 
-	qi, err := storage.GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(config.C.PostgreSQL.DB, ctx.DeviceSession.DevEUI, ctx.RemainingPayloadSize, fCnt, ctx.DeviceSession.RoutingProfileID)
+	// the first downlink opportunity will be used to decide the
+	// max payload size
+	var remainingPayloadSize int
+	if len(ctx.DownlinkFrames) > 0 {
+		remainingPayloadSize = ctx.DownlinkFrames[0].RemainingPayloadSize
+	}
+
+	qi, err := storage.GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(config.C.PostgreSQL.DB, ctx.DeviceSession.DevEUI, remainingPayloadSize, fCnt, ctx.DeviceSession.RoutingProfileID)
 	if err != nil {
 		if errors.Cause(err) == storage.ErrDoesNotExist {
 			return nil
@@ -437,7 +527,10 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 	ctx.Confirmed = qi.Confirmed
 	ctx.Data = qi.FRMPayload
 	ctx.FPort = qi.FPort
-	ctx.RemainingPayloadSize = ctx.RemainingPayloadSize - len(ctx.Data)
+
+	for i := range ctx.DownlinkFrames {
+		ctx.DownlinkFrames[i].RemainingPayloadSize = ctx.DownlinkFrames[i].RemainingPayloadSize - len(ctx.Data)
+	}
 
 	items, err := storage.GetDeviceQueueItemsForDevEUI(config.C.PostgreSQL.DB, ctx.DeviceSession.DevEUI)
 	if err != nil {
@@ -456,8 +549,8 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 	}
 
 	// Update TXInfo with Class-B scheduling info
-	if ctx.RXPacket == nil && qi.EmitAtTimeSinceGPSEpoch != nil {
-		ctx.TXInfo.TimeSinceGpsEpoch = ptypes.DurationProto(*qi.EmitAtTimeSinceGPSEpoch)
+	if ctx.RXPacket == nil && qi.EmitAtTimeSinceGPSEpoch != nil && len(ctx.DownlinkFrames) == 1 {
+		ctx.DownlinkFrames[0].DownlinkFrame.TxInfo.TimeSinceGpsEpoch = ptypes.DurationProto(*qi.EmitAtTimeSinceGPSEpoch)
 
 		if ctx.DeviceSession.PingSlotFrequency == 0 {
 			beaconTime := *qi.EmitAtTimeSinceGPSEpoch - (*qi.EmitAtTimeSinceGPSEpoch % (128 * time.Second))
@@ -465,12 +558,12 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 			if err != nil {
 				return errors.Wrap(err, "get ping-slot frequency error")
 			}
-			ctx.TXInfo.Frequency = uint32(freq)
+			ctx.DownlinkFrames[0].DownlinkFrame.TxInfo.Frequency = uint32(freq)
 		}
 	}
 
-	// delete when not confirmed
 	if !qi.Confirmed {
+		// delete when not confirmed
 		if err := storage.DeleteDeviceQueueItem(config.C.PostgreSQL.DB, qi.ID); err != nil {
 			return errors.Wrap(err, "delete device-queue item error")
 		}
@@ -537,16 +630,19 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 
 		ctx.MACCommands = filterIncompatibleMACCommands(ctx.MACCommands)
 
-		var remainingMACCommandSize int
+		var remainingPayloadSize, remainingMACCommandSize int
+		if len(ctx.DownlinkFrames) > 0 {
+			remainingPayloadSize = ctx.DownlinkFrames[0].RemainingPayloadSize
+		}
 
 		if ctx.FPort > 0 {
-			if ctx.RemainingPayloadSize < 15 {
-				remainingMACCommandSize = ctx.RemainingPayloadSize
+			if remainingPayloadSize < 15 {
+				remainingMACCommandSize = remainingPayloadSize
 			} else {
 				remainingMACCommandSize = 15
 			}
 		} else {
-			remainingMACCommandSize = ctx.RemainingPayloadSize
+			remainingMACCommandSize = remainingPayloadSize
 		}
 
 		for i, block := range ctx.MACCommands {
@@ -555,8 +651,10 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 				return errors.Wrap(err, "get mac-command block size error")
 			}
 
+			remainingMACCommandSize = remainingMACCommandSize - macSize
+
 			// truncate mac-commands when we exceed the max-size
-			if remainingMACCommandSize-macSize < 0 {
+			if remainingMACCommandSize < 0 {
 				ctx.MACCommands = ctx.MACCommands[0:i]
 				ctx.MoreData = true
 				break
@@ -666,7 +764,7 @@ func stopOnNothingToSend(ctx *dataContext) error {
 	return nil
 }
 
-func setPHYPayload(ctx *dataContext) error {
+func setPHYPayloads(ctx *dataContext) error {
 	if err := ctx.Validate(); err != nil {
 		return errors.Wrap(err, "validation error")
 	}
@@ -680,129 +778,160 @@ func setPHYPayload(ctx *dataContext) error {
 		ctx.DeviceSession.AFCntDown++
 	}
 
-	macPL := &lorawan.MACPayload{
-		FHDR: lorawan.FHDR{
-			DevAddr: ctx.DeviceSession.DevAddr,
-			FCtrl: lorawan.FCtrl{
-				ADR:      !config.C.NetworkServer.NetworkSettings.DisableADR,
-				ACK:      ctx.ACK,
-				FPending: ctx.MoreData,
+	for i := range ctx.DownlinkFrames {
+		// LoRaWAN MAC payload
+		macPL := &lorawan.MACPayload{
+			FHDR: lorawan.FHDR{
+				DevAddr: ctx.DeviceSession.DevAddr,
+				FCtrl: lorawan.FCtrl{
+					ADR:      !config.C.NetworkServer.NetworkSettings.DisableADR,
+					ACK:      ctx.ACK,
+					FPending: ctx.MoreData,
+				},
+				FCnt: fCnt,
 			},
-			FCnt: fCnt,
-		},
-	}
-
-	if ctx.FPort > 0 {
-		macPL.FPort = &ctx.FPort
-		macPL.FRMPayload = []lorawan.Payload{
-			&lorawan.DataPayload{Bytes: ctx.Data},
 		}
-	}
 
-	var macCommandSize int
-	var maccommands []lorawan.Payload
+		// set application payload
+		if ctx.FPort > 0 {
+			macPL.FPort = &ctx.FPort
+			macPL.FRMPayload = []lorawan.Payload{
+				&lorawan.DataPayload{Bytes: ctx.Data},
+			}
+		}
 
-	for i := range ctx.MACCommands {
-		s, err := ctx.MACCommands[i].Size()
+		// add mac-commands
+		var macCommandSize int
+		var maccommands []lorawan.Payload
+
+		for j := range ctx.MACCommands {
+			s, err := ctx.MACCommands[j].Size()
+			if err != nil {
+				return errors.Wrap(err, "get mac-command block size")
+			}
+
+			if ctx.DownlinkFrames[i].RemainingPayloadSize-s < 0 {
+				break
+			}
+
+			ctx.DownlinkFrames[i].RemainingPayloadSize = ctx.DownlinkFrames[i].RemainingPayloadSize - s
+			macCommandSize += s
+
+			for k := range ctx.MACCommands[j].MACCommands {
+				maccommands = append(maccommands, &ctx.MACCommands[j].MACCommands[k])
+			}
+		}
+
+		if macCommandSize > 15 && ctx.FPort == 0 {
+			macPL.FPort = &ctx.FPort
+			macPL.FRMPayload = maccommands
+		} else if macCommandSize <= 15 {
+			macPL.FHDR.FOpts = maccommands
+		} else {
+			// this should not happen, but log it in case it would
+			log.WithFields(log.Fields{
+				"dev_eui": ctx.DeviceSession.DevEUI,
+			}).Error("mac-commands exceeded size!")
+		}
+
+		phy := lorawan.PHYPayload{
+			MHDR: lorawan.MHDR{
+				MType: lorawan.UnconfirmedDataDown,
+				Major: lorawan.LoRaWANR1,
+			},
+			MACPayload: macPL,
+		}
+		if ctx.Confirmed {
+			phy.MHDR.MType = lorawan.ConfirmedDataDown
+		}
+
+		// encrypt FRMPayload mac-commands
+		if ctx.FPort == 0 {
+			if err := phy.EncryptFRMPayload(ctx.DeviceSession.NwkSEncKey); err != nil {
+				return errors.Wrap(err, "encrypt frmpayload error")
+			}
+		}
+
+		// encrypt FOpts mac-commands (LoRaWAN 1.1)
+		if ctx.DeviceSession.GetMACVersion() != lorawan.LoRaWAN1_0 {
+			if err := phy.EncryptFOpts(ctx.DeviceSession.NwkSEncKey); err != nil {
+				return errors.Wrap(err, "encrypt FOpts error")
+			}
+		}
+
+		// set MIC
+		if err := phy.SetDownlinkDataMIC(ctx.DeviceSession.GetMACVersion(), ctx.DeviceSession.FCntUp-1, ctx.DeviceSession.SNwkSIntKey); err != nil {
+			return errors.Wrap(err, "set MIC error")
+		}
+
+		b, err := phy.MarshalBinary()
 		if err != nil {
-			return errors.Wrap(err, "get mac-command block size")
+			return errors.Wrap(err, "marshal binary error")
 		}
-		macCommandSize += s
 
-		for j := range ctx.MACCommands[i].MACCommands {
-			maccommands = append(maccommands, &ctx.MACCommands[i].MACCommands[j])
-		}
-	}
-
-	if macCommandSize > 15 && ctx.FPort == 0 {
-		macPL.FPort = &ctx.FPort
-		macPL.FRMPayload = maccommands
-	} else if macCommandSize <= 15 {
-		macPL.FHDR.FOpts = maccommands
-	} else {
-		// this should not happen, but log it in case it would
-		log.WithFields(log.Fields{
-			"dev_eui": ctx.DeviceSession.DevEUI,
-		}).Error("mac-commands exceeded size!")
-	}
-
-	phy := lorawan.PHYPayload{
-		MHDR: lorawan.MHDR{
-			MType: lorawan.UnconfirmedDataDown,
-			Major: lorawan.LoRaWANR1,
-		},
-		MACPayload: macPL,
-	}
-	if ctx.Confirmed {
-		phy.MHDR.MType = lorawan.ConfirmedDataDown
-	}
-
-	ctx.PHYPayload = phy
-
-	return nil
-}
-
-func encryptMACCommands(ctx *dataContext) error {
-	// encrypt FRMPayload mac-commands
-	if ctx.FPort == 0 {
-		if err := ctx.PHYPayload.EncryptFRMPayload(ctx.DeviceSession.NwkSEncKey); err != nil {
-			return errors.Wrap(err, "encrypt frmpayload error")
-		}
-	}
-
-	// encrypt FOpts mac-commands (LoRaWAN 1.1)
-	if ctx.DeviceSession.GetMACVersion() != lorawan.LoRaWAN1_0 {
-		if err := ctx.PHYPayload.EncryptFOpts(ctx.DeviceSession.NwkSEncKey); err != nil {
-			return errors.Wrap(err, "encrypt FOpts error")
-		}
+		ctx.DownlinkFrames[i].DownlinkFrame.PhyPayload = b
 	}
 
 	return nil
 }
 
-func decryptMACCommands(ctx *dataContext) error {
-	// decrypt FRMPayload mac-commands
-	if ctx.FPort == 0 {
-		if err := ctx.PHYPayload.DecryptFRMPayload(ctx.DeviceSession.NwkSEncKey); err != nil {
-			return errors.Wrap(err, "decrypt frmpayload error")
-		}
-	}
-
-	// decrypt FOpts mac-commands (LoRaWAN 1.1)
-	if ctx.DeviceSession.GetMACVersion() != lorawan.LoRaWAN1_0 {
-		if err := ctx.PHYPayload.DecryptFOpts(ctx.DeviceSession.NwkSEncKey); err != nil {
-			return errors.Wrap(err, "encrypt FOpts error")
-		}
-	}
-
-	return nil
-}
-
-func setMIC(ctx *dataContext) error {
-	if err := ctx.PHYPayload.SetDownlinkDataMIC(ctx.DeviceSession.GetMACVersion(), ctx.DeviceSession.FCntUp-1, ctx.DeviceSession.SNwkSIntKey); err != nil {
-		return errors.Wrap(err, "set MIC error")
-	}
-
-	return nil
-}
-
-func sendDataDown(ctx *dataContext) error {
-	phyB, err := ctx.PHYPayload.MarshalBinary()
-	if err != nil {
-		return errors.Wrap(err, "marshal phypayload error")
+func sendDownlinkFrame(ctx *dataContext) error {
+	if len(ctx.DownlinkFrames) == 0 {
+		return nil
 	}
 
 	// send the packet to the gateway
-	if err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(gw.DownlinkFrame{
-		Token:      uint32(ctx.Token),
-		TxInfo:     &ctx.TXInfo,
-		PhyPayload: phyB,
-	}); err != nil {
-		return errors.Wrap(err, "send tx packet to gateway error")
+	if err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(ctx.DownlinkFrames[0].DownlinkFrame); err != nil {
+		return errors.Wrap(err, "send downlink-frame to gateway error")
 	}
 
 	// set last downlink tx timestamp
 	ctx.DeviceSession.LastDownlinkTX = time.Now()
+
+	// log for gateway (with encrypted mac-commands)
+	if err := framelog.LogDownlinkFrameForGateway(config.C.Redis.Pool, ctx.DownlinkFrames[0].DownlinkFrame); err != nil {
+		log.WithError(err).Error("log downlink frame for gateway error")
+	}
+
+	// log for device (with decrypted mac-commands)
+	if err := func() error {
+		var phy lorawan.PHYPayload
+		if err := phy.UnmarshalBinary(ctx.DownlinkFrames[0].DownlinkFrame.PhyPayload); err != nil {
+			return err
+		}
+
+		// decrypt FRMPayload mac-commands
+		if ctx.FPort == 0 {
+			if err := phy.DecryptFRMPayload(ctx.DeviceSession.NwkSEncKey); err != nil {
+				return errors.Wrap(err, "decrypt frmpayload error")
+			}
+		}
+
+		// decrypt FOpts mac-commands (LoRaWAN 1.1)
+		if ctx.DeviceSession.GetMACVersion() != lorawan.LoRaWAN1_0 {
+			if err := phy.DecryptFOpts(ctx.DeviceSession.NwkSEncKey); err != nil {
+				return errors.Wrap(err, "encrypt FOpts error")
+			}
+		}
+
+		phyB, err := phy.MarshalBinary()
+		if err != nil {
+			return err
+		}
+
+		// log frame
+		if err := framelog.LogDownlinkFrameForDevEUI(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, gw.DownlinkFrame{
+			Token:      uint32(ctx.DownlinkFrames[0].DownlinkFrame.Token),
+			TxInfo:     ctx.DownlinkFrames[0].DownlinkFrame.TxInfo,
+			PhyPayload: phyB,
+		}); err != nil {
+			return err
+		}
+
+		return nil
+	}(); err != nil {
+		log.WithError(err).Error("log downlink frame for device error")
+	}
 
 	return nil
 }
@@ -848,84 +977,21 @@ func checkLastDownlinkTimestamp(ctx *dataContext) error {
 	return nil
 }
 
-func getDataDownTXInfoAndDR(ds storage.DeviceSession, lastTXInfo *gw.UplinkTXInfo, rxInfo *gw.UplinkRXInfo) (gw.DownlinkTXInfo, int, error) {
-	txInfo := gw.DownlinkTXInfo{
-		GatewayId: rxInfo.GatewayId,
-		Board:     rxInfo.Board,
-		Antenna:   rxInfo.Antenna,
+func saveRemainingFrames(ctx *dataContext) error {
+	if len(ctx.DownlinkFrames) < 2 {
+		return nil
 	}
 
-	uplinkDR, err := helpers.GetDataRateIndex(true, lastTXInfo, config.C.NetworkServer.Band.Band)
-	if err != nil {
-		return txInfo, 0, errors.Wrap(err, "get data-rate index error")
+	var downlinkFrames []gw.DownlinkFrame
+	for i := range ctx.DownlinkFrames {
+		if i == 0 || ctx.DownlinkFrames[i].RemainingPayloadSize < 0 {
+			continue
+		}
+		downlinkFrames = append(downlinkFrames, ctx.DownlinkFrames[i].DownlinkFrame)
 	}
 
-	// get rx1 dr
-	dr, err := config.C.NetworkServer.Band.Band.GetRX1DataRateIndex(uplinkDR, int(ds.RX1DROffset))
-	if err != nil {
-		return txInfo, dr, errors.Wrap(err, "get rx1 data-rate index error")
-	}
-
-	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, dr, config.C.NetworkServer.Band.Band)
-	if err != nil {
-		return txInfo, dr, errors.Wrap(err, "set dowlink tx-info data-rate error")
-	}
-
-	// get rx1 frequency
-	freq, err := config.C.NetworkServer.Band.Band.GetRX1FrequencyForUplinkFrequency(int(lastTXInfo.Frequency))
-	if err != nil {
-		return txInfo, dr, errors.Wrap(err, "get rx1 frequency for uplink frequency error")
-	}
-	txInfo.Frequency = uint32(freq)
-
-	// get timestamp
-	timestamp := rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().ReceiveDelay1/time.Microsecond)
-	if ds.RXDelay > 0 {
-		timestamp = rxInfo.Timestamp + uint32(time.Duration(ds.RXDelay)*time.Second/time.Microsecond)
-	}
-
-	txInfo.Timestamp = timestamp
-
-	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
-		txInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
-	} else {
-		txInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(txInfo.Frequency)))
-	}
-
-	return txInfo, dr, nil
-}
-
-// this is called after decrypting the mac-command in case of LoRaWAN 1.1
-func logDownlinkFrameForDevice(ctx *dataContext) error {
-	phyB, err := ctx.PHYPayload.MarshalBinary()
-	if err != nil {
-		return errors.Wrap(err, "marshal phypayload error")
-	}
-
-	if err := framelog.LogDownlinkFrameForDevEUI(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, gw.DownlinkFrame{
-		Token:      uint32(ctx.Token),
-		TxInfo:     &ctx.TXInfo,
-		PhyPayload: phyB,
-	}); err != nil {
-		log.WithError(err).Error("log downlink frame for device error")
-	}
-
-	return nil
-}
-
-// this is called before decrypting the mac-commands (as the key is unknown within the context of a gateway)
-func logDownlinkFrameForGateway(ctx *dataContext) error {
-	phyB, err := ctx.PHYPayload.MarshalBinary()
-	if err != nil {
-		return errors.Wrap(err, "marshal phypayload error")
-	}
-
-	if err := framelog.LogDownlinkFrameForGateway(config.C.Redis.Pool, gw.DownlinkFrame{
-		Token:      uint32(ctx.Token),
-		TxInfo:     &ctx.TXInfo,
-		PhyPayload: phyB,
-	}); err != nil {
-		log.WithError(err).Error("log downlink frame for gateway error")
+	if err := storage.SaveDownlinkFrames(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, downlinkFrames); err != nil {
+		return errors.Wrap(err, "save downlink-frames error")
 	}
 
 	return nil

@@ -26,6 +26,7 @@ import (
 
 const uplinkLockTTL = time.Millisecond * 500
 const statsLockTTL = time.Millisecond * 500
+const ackLockTTL = time.Millisecond * 500
 const (
 	marshalerV2JSON = iota
 	marshalerProtobuf
@@ -57,8 +58,9 @@ type MQTTBackend struct {
 	wg     sync.WaitGroup
 	config MQTTBackendConfig
 
-	rxPacketChan    chan gw.UplinkFrame
-	statsPacketChan chan gw.GatewayStats
+	rxPacketChan      chan gw.UplinkFrame
+	statsPacketChan   chan gw.GatewayStats
+	downlinkTXAckChan chan gw.DownlinkTXAck
 
 	conn             mqtt.Client
 	redisPool        *redis.Pool
@@ -72,11 +74,12 @@ type MQTTBackend struct {
 func NewMQTTBackend(redisPool *redis.Pool, c MQTTBackendConfig) (backend.Gateway, error) {
 	var err error
 	b := MQTTBackend{
-		rxPacketChan:     make(chan gw.UplinkFrame),
-		statsPacketChan:  make(chan gw.GatewayStats),
-		gatewayMarshaler: make(map[lorawan.EUI64]marshaler.Type),
-		redisPool:        redisPool,
-		config:           c,
+		rxPacketChan:      make(chan gw.UplinkFrame),
+		statsPacketChan:   make(chan gw.GatewayStats),
+		downlinkTXAckChan: make(chan gw.DownlinkTXAck),
+		gatewayMarshaler:  make(map[lorawan.EUI64]marshaler.Type),
+		redisPool:         redisPool,
+		config:            c,
 	}
 
 	b.downlinkTemplate, err = template.New("downlink").Parse(b.config.DownlinkTopicTemplate)
@@ -139,10 +142,16 @@ func (b *MQTTBackend) Close() error {
 	if token := b.conn.Unsubscribe(b.config.StatsTopicTemplate); token.Wait() && token.Error() != nil {
 		return fmt.Errorf("backend/gateway: unsubscribe from %s error: %s", b.config.StatsTopicTemplate, token.Error())
 	}
+	log.WithField("topic", b.config.AckTopicTemplate).Info("backend/gateway: unsubscribing from ack topic")
+	if token := b.conn.Unsubscribe(b.config.AckTopicTemplate); token.Wait() && token.Error() != nil {
+		return fmt.Errorf("backend/gateway: unsubscribe from %s error: %s", b.config.AckTopicTemplate, token.Error())
+	}
+
 	log.Info("backend/gateway: handling last messages")
 	b.wg.Wait()
 	close(b.rxPacketChan)
 	close(b.statsPacketChan)
+	close(b.downlinkTXAckChan)
 	return nil
 }
 
@@ -154,6 +163,11 @@ func (b *MQTTBackend) RXPacketChan() chan gw.UplinkFrame {
 // StatsPacketChan returns the gateway stats channel.
 func (b *MQTTBackend) StatsPacketChan() chan gw.GatewayStats {
 	return b.statsPacketChan
+}
+
+// DownlinkTXAckChan returns the downlink tx ack channel.
+func (b *MQTTBackend) DownlinkTXAckChan() chan gw.DownlinkTXAck {
+	return b.downlinkTXAckChan
 }
 
 // SendTXPacket sends the given downlink-frame to the gateway.
@@ -281,8 +295,8 @@ func (b *MQTTBackend) statsPacketHandler(c mqtt.Client, msg mqtt.Message) {
 	gatewayID := helpers.GetGatewayID(&gatewayStats)
 	b.setGatewayMarshaler(gatewayID, t)
 
-	// Since with MQTT all subscribers will receive the uplink messages sent
-	// by all the gatewyas, the first instance receiving the message must lock it,
+	// Since with MQTT all subscribers will receive the stats messages sent
+	// by all the gateways, the first instance receiving the message must lock it,
 	// so that other instances can ignore the same message (from the same gw).
 	// As an unique id, the gw mac is used.
 	key := fmt.Sprintf("lora:ns:stats:lock:%s", gatewayID)
@@ -301,6 +315,43 @@ func (b *MQTTBackend) statsPacketHandler(c mqtt.Client, msg mqtt.Message) {
 
 	log.WithField("gateway_id", gatewayID).Info("backend/gateway: gateway stats packet received")
 	b.statsPacketChan <- gatewayStats
+}
+
+func (b *MQTTBackend) ackPacketHandler(c mqtt.Client, msg mqtt.Message) {
+	b.wg.Add(1)
+	defer b.wg.Done()
+
+	var ack gw.DownlinkTXAck
+	t, err := marshaler.UnmarshalDownlinkTXAck(msg.Payload(), &ack)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"data_base64": base64.StdEncoding.EncodeToString(msg.Payload()),
+		}).WithError(err).Error("backend/gateway: unmarshal downlink tx ack error")
+	}
+
+	gatewayID := helpers.GetGatewayID(&ack)
+	b.setGatewayMarshaler(gatewayID, t)
+
+	// Since with MQTT all subscribers will receive the ack messages sent
+	// by all the gateways, the first instance receiving the message must lock it,
+	// so that other instances can ignore the same message (from the same gw).
+	// As an unique id, the gw mac is used.
+	key := fmt.Sprintf("lora:ns:ack:lock:%s", gatewayID)
+	redisConn := b.redisPool.Get()
+	defer redisConn.Close()
+
+	_, err = redis.String(redisConn.Do("SET", key, "lock", "PX", int64(ackLockTTL/time.Millisecond), "NX"))
+	if err != nil {
+		if err == redis.ErrNil {
+			// the payload is already being processed by an other instance
+			return
+		}
+		log.Errorf("backend/gateway: acquire ack lock error: %s", err)
+		return
+	}
+
+	log.WithField("gateway_id", gatewayID).Info("backend/gateway: downlink tx acknowledgement received")
+	b.downlinkTXAckChan <- ack
 }
 
 func (b *MQTTBackend) onConnected(c mqtt.Client) {
@@ -330,6 +381,22 @@ func (b *MQTTBackend) onConnected(c mqtt.Client) {
 		if token := b.conn.Subscribe(b.config.StatsTopicTemplate, b.config.QOS, b.statsPacketHandler); token.Wait() && token.Error() != nil {
 			log.WithFields(log.Fields{
 				"topic": b.config.StatsTopicTemplate,
+				"qos":   b.config.QOS,
+			}).Errorf("backend/gateway: subscribe error: %s", token.Error())
+			time.Sleep(time.Second)
+			continue
+		}
+		break
+	}
+
+	for {
+		log.WithFields(log.Fields{
+			"topic": b.config.AckTopicTemplate,
+			"qos":   b.config.QOS,
+		}).Info("backend/gateway: subscribing to ack topic")
+		if token := b.conn.Subscribe(b.config.AckTopicTemplate, b.config.QOS, b.ackPacketHandler); token.Wait() && token.Error() != nil {
+			log.WithFields(log.Fields{
+				"topic": b.config.AckTopicTemplate,
 				"qos":   b.config.QOS,
 			}).Errorf("backend/gateway: subscribe error: %s", token.Error())
 			time.Sleep(time.Second)
