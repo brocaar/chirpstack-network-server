@@ -8,17 +8,7 @@ script:
   - docker-compose run --rm loraserver make test
 
 before_deploy:
-  - >
-    if ! [ "$BEFORE_DEPLOY_RUN" ]; then
-      export BEFORE_DEPLOY_RUN=1;
-
-      docker-compose run --rm loraserver make dist;
-
-      mkdir -p dist/upload/tar;
-      mkdir -p dist/upload/deb;
-      mv dist/*.tar.gz dist/upload/tar;
-      mv dist/*.deb dist/upload/deb;
-    fi
+  - docker-compose run --rm loraserver make dist
 
 deploy:
   - provider: s3

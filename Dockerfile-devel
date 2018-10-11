@@ -2,6 +2,8 @@ FROM golang:1.11-alpine
 
 ENV PROJECT_PATH=/go/src/github.com/brocaar/loraserver
 ENV PATH=$PATH:$PROJECT_PATH/build
+ENV CGO_ENABLED=0
+ENV GO_EXTRA_BUILD_ARGS="-a -installsuffix cgo"
 
 RUN apk add --no-cache ca-certificates tzdata make git bash protobuf alpine-sdk
 
