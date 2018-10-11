@@ -41,13 +41,13 @@ func (ts *BackendTestSuite) SetupSuite() {
 	var mqttUsername string
 	var mqttPassword string
 
-	if v := os.Getenv("TEST__SERVER"); v != "" {
+	if v := os.Getenv("TEST_MQTT_SERVER"); v != "" {
 		mqttServer = v
 	}
-	if v := os.Getenv("TEST__USERNAME"); v != "" {
+	if v := os.Getenv("TEST_MQTT_USERNAME"); v != "" {
 		mqttUsername = v
 	}
-	if v := os.Getenv("TEST__PASSWORD"); v != "" {
+	if v := os.Getenv("TEST_MQTT_PASSWORD"); v != "" {
 		mqttPassword = v
 	}
 
