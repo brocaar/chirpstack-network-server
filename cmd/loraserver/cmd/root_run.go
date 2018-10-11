@@ -28,8 +28,10 @@ import (
 	"github.com/brocaar/loraserver/internal/api"
 	"github.com/brocaar/loraserver/internal/api/client/asclient"
 	"github.com/brocaar/loraserver/internal/api/client/jsclient"
+	"github.com/brocaar/loraserver/internal/backend"
 	"github.com/brocaar/loraserver/internal/backend/controller"
-	gwBackend "github.com/brocaar/loraserver/internal/backend/gateway"
+	"github.com/brocaar/loraserver/internal/backend/gateway/gcppubsub"
+	"github.com/brocaar/loraserver/internal/backend/gateway/mqtt"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink"
@@ -211,10 +213,21 @@ func setPostgreSQLConnection() error {
 }
 
 func setGatewayBackend() error {
-	gw, err := gwBackend.NewMQTTBackend(
-		config.C.Redis.Pool,
-		config.C.NetworkServer.Gateway.Backend.MQTT,
-	)
+	var err error
+	var gw backend.Gateway
+
+	switch config.C.NetworkServer.Gateway.Backend.Type {
+	case "mqtt":
+		gw, err = mqtt.NewBackend(
+			config.C.Redis.Pool,
+			config.C.NetworkServer.Gateway.Backend.MQTT,
+		)
+	case "gcp_pub_sub":
+		gw, err = gcppubsub.NewBackend(config.C.NetworkServer.Gateway.Backend.GCPPubSub)
+	default:
+		return fmt.Errorf("unexpected gateway backend type: %s", config.C.NetworkServer.Gateway.Backend.Type)
+	}
+
 	if err != nil {
 		return errors.Wrap(err, "gateway-backend setup failed")
 	}

@@ -1,4 +1,4 @@
-package gateway
+package mqtt
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"text/template"
 	"time"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -33,8 +33,8 @@ const (
 	marshalerJSON
 )
 
-// MQTTBackendConfig holds the MQTT backend configuration.
-type MQTTBackendConfig struct {
+// Config holds the MQTT backend configuration.
+type Config struct {
 	Server                string
 	Username              string
 	Password              string
@@ -51,18 +51,18 @@ type MQTTBackendConfig struct {
 	ConfigTopicTemplate   string `mapstructure:"config_topic_template"`
 }
 
-// MQTTBackend implements a MQTT pub-sub backend.
-type MQTTBackend struct {
+// Backend implements a MQTT pub-sub backend.
+type Backend struct {
 	sync.RWMutex
 
 	wg     sync.WaitGroup
-	config MQTTBackendConfig
+	config Config
 
 	rxPacketChan      chan gw.UplinkFrame
 	statsPacketChan   chan gw.GatewayStats
 	downlinkTXAckChan chan gw.DownlinkTXAck
 
-	conn             mqtt.Client
+	conn             paho.Client
 	redisPool        *redis.Pool
 	downlinkTemplate *template.Template
 	configTemplate   *template.Template
@@ -70,10 +70,10 @@ type MQTTBackend struct {
 	gatewayMarshaler map[lorawan.EUI64]marshaler.Type
 }
 
-// NewMQTTBackend creates a new Backend.
-func NewMQTTBackend(redisPool *redis.Pool, c MQTTBackendConfig) (backend.Gateway, error) {
+// NewBackend creates a new Backend.
+func NewBackend(redisPool *redis.Pool, c Config) (backend.Gateway, error) {
 	var err error
-	b := MQTTBackend{
+	b := Backend{
 		rxPacketChan:      make(chan gw.UplinkFrame),
 		statsPacketChan:   make(chan gw.GatewayStats),
 		downlinkTXAckChan: make(chan gw.DownlinkTXAck),
@@ -84,15 +84,15 @@ func NewMQTTBackend(redisPool *redis.Pool, c MQTTBackendConfig) (backend.Gateway
 
 	b.downlinkTemplate, err = template.New("downlink").Parse(b.config.DownlinkTopicTemplate)
 	if err != nil {
-		return nil, errors.Wrap(err, "parse downlink template error")
+		return nil, errors.Wrap(err, "gateway/mqtt: parse downlink template error")
 	}
 
 	b.configTemplate, err = template.New("config").Parse(b.config.ConfigTopicTemplate)
 	if err != nil {
-		return nil, errors.Wrap(err, "parse config template error")
+		return nil, errors.Wrap(err, "gateway/mqtt: parse config template error")
 	}
 
-	opts := mqtt.NewClientOptions()
+	opts := paho.NewClientOptions()
 	opts.AddBroker(b.config.Server)
 	opts.SetUsername(b.config.Username)
 	opts.SetPassword(b.config.Password)
@@ -107,17 +107,17 @@ func NewMQTTBackend(redisPool *redis.Pool, c MQTTBackendConfig) (backend.Gateway
 			"ca_cert":  b.config.CACert,
 			"tls_cert": b.config.TLSCert,
 			"tls_key":  b.config.TLSKey,
-		}).Fatal("backend/gateway: error loading mqtt certificate files")
+		}).Fatal("gateway/mqtt: error loading mqtt certificate files")
 	}
 	if tlsconfig != nil {
 		opts.SetTLSConfig(tlsconfig)
 	}
 
-	log.WithField("server", b.config.Server).Info("backend/gateway: connecting to mqtt broker")
-	b.conn = mqtt.NewClient(opts)
+	log.WithField("server", b.config.Server).Info("gateway/mqtt: connecting to mqtt broker")
+	b.conn = paho.NewClient(opts)
 	for {
 		if token := b.conn.Connect(); token.Wait() && token.Error() != nil {
-			log.Errorf("backend/gateway: connecting to mqtt broker failed, will retry in 2s: %s", token.Error())
+			log.Errorf("gateway/mqtt: connecting to mqtt broker failed, will retry in 2s: %s", token.Error())
 			time.Sleep(2 * time.Second)
 		} else {
 			break
@@ -131,16 +131,16 @@ func NewMQTTBackend(redisPool *redis.Pool, c MQTTBackendConfig) (backend.Gateway
 // Note that this closes the backend one-way (gateway to backend).
 // This makes it possible to perform a graceful shutdown (e.g. when there are
 // still packets to send back to the gateway).
-func (b *MQTTBackend) Close() error {
-	log.Info("backend/gateway: closing backend")
+func (b *Backend) Close() error {
+	log.Info("gateway/mqtt: closing backend")
 
-	log.WithField("topic", b.config.UplinkTopicTemplate).Info("backend/gateway: unsubscribing from rx topic")
+	log.WithField("topic", b.config.UplinkTopicTemplate).Info("gateway/mqtt: unsubscribing from rx topic")
 	if token := b.conn.Unsubscribe(b.config.UplinkTopicTemplate); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("backend/gateway: unsubscribe from %s error: %s", b.config.UplinkTopicTemplate, token.Error())
+		return fmt.Errorf("gateway/mqtt: unsubscribe from %s error: %s", b.config.UplinkTopicTemplate, token.Error())
 	}
-	log.WithField("topic", b.config.StatsTopicTemplate).Info("backend/gateway: unsubscribing from stats topic")
+	log.WithField("topic", b.config.StatsTopicTemplate).Info("gateway/mqtt: unsubscribing from stats topic")
 	if token := b.conn.Unsubscribe(b.config.StatsTopicTemplate); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("backend/gateway: unsubscribe from %s error: %s", b.config.StatsTopicTemplate, token.Error())
+		return fmt.Errorf("gateway/mqtt: unsubscribe from %s error: %s", b.config.StatsTopicTemplate, token.Error())
 	}
 	log.WithField("topic", b.config.AckTopicTemplate).Info("backend/gateway: unsubscribing from ack topic")
 	if token := b.conn.Unsubscribe(b.config.AckTopicTemplate); token.Wait() && token.Error() != nil {
@@ -156,22 +156,22 @@ func (b *MQTTBackend) Close() error {
 }
 
 // RXPacketChan returns the uplink-frame channel.
-func (b *MQTTBackend) RXPacketChan() chan gw.UplinkFrame {
+func (b *Backend) RXPacketChan() chan gw.UplinkFrame {
 	return b.rxPacketChan
 }
 
 // StatsPacketChan returns the gateway stats channel.
-func (b *MQTTBackend) StatsPacketChan() chan gw.GatewayStats {
+func (b *Backend) StatsPacketChan() chan gw.GatewayStats {
 	return b.statsPacketChan
 }
 
 // DownlinkTXAckChan returns the downlink tx ack channel.
-func (b *MQTTBackend) DownlinkTXAckChan() chan gw.DownlinkTXAck {
+func (b *Backend) DownlinkTXAckChan() chan gw.DownlinkTXAck {
 	return b.downlinkTXAckChan
 }
 
 // SendTXPacket sends the given downlink-frame to the gateway.
-func (b *MQTTBackend) SendTXPacket(txPacket gw.DownlinkFrame) error {
+func (b *Backend) SendTXPacket(txPacket gw.DownlinkFrame) error {
 	if txPacket.TxInfo == nil {
 		return errors.New("tx_info must not be nil")
 	}
@@ -181,7 +181,7 @@ func (b *MQTTBackend) SendTXPacket(txPacket gw.DownlinkFrame) error {
 
 	bb, err := marshaler.MarshalDownlinkFrame(t, txPacket)
 	if err != nil {
-		return errors.Wrap(err, "backend/gateway: marshal downlink frame error")
+		return errors.Wrap(err, "gateway/mqtt: marshal downlink frame error")
 	}
 
 	topic := bytes.NewBuffer(nil)
@@ -191,66 +191,66 @@ func (b *MQTTBackend) SendTXPacket(txPacket gw.DownlinkFrame) error {
 	log.WithFields(log.Fields{
 		"topic": topic.String(),
 		"qos":   b.config.QOS,
-	}).Info("backend/gateway: publishing downlink frame")
+	}).Info("gateway/mqtt: publishing downlink frame")
 
 	if token := b.conn.Publish(topic.String(), b.config.QOS, false, bb); token.Wait() && token.Error() != nil {
-		return errors.Wrap(err, "backend/gateway: publish downlink frame error")
+		return errors.Wrap(err, "gateway/mqtt: publish downlink frame error")
 	}
 	return nil
 }
 
 // SendGatewayConfigPacket sends the given GatewayConfigPacket to the gateway.
-func (b *MQTTBackend) SendGatewayConfigPacket(configPacket gw.GatewayConfiguration) error {
+func (b *Backend) SendGatewayConfigPacket(configPacket gw.GatewayConfiguration) error {
 	gatewayID := helpers.GetGatewayID(&configPacket)
 	t := b.getGatewayMarshaler(gatewayID)
 
 	bb, err := marshaler.MarshalGatewayConfiguration(t, configPacket)
 	if err != nil {
-		return errors.Wrap(err, "backend/gateway: marshal gateway configuration error")
+		return errors.Wrap(err, "gateway/mqtt: marshal gateway configuration error")
 	}
 
 	topic := bytes.NewBuffer(nil)
 	if err := b.configTemplate.Execute(topic, struct{ MAC lorawan.EUI64 }{gatewayID}); err != nil {
-		return errors.Wrap(err, "backend/gateway: execute config template error")
+		return errors.Wrap(err, "gateway/mqtt: execute config template error")
 	}
 	log.WithFields(log.Fields{
 		"topic": topic.String(),
 		"qos":   b.config.QOS,
-	}).Info("backend/gateway: publishing gateway configuration")
+	}).Info("gateway/mqtt: publishing gateway configuration")
 
 	if token := b.conn.Publish(topic.String(), b.config.QOS, false, bb); token.Wait() && token.Error() != nil {
-		return errors.Wrap(err, "backend/gateway: publish gateway configuration error")
+		return errors.Wrap(err, "gateway/mqtt: publish gateway configuration error")
 	}
 
 	return nil
 }
 
-func (b *MQTTBackend) rxPacketHandler(c mqtt.Client, msg mqtt.Message) {
+func (b *Backend) rxPacketHandler(c paho.Client, msg paho.Message) {
 	b.wg.Add(1)
 	defer b.wg.Done()
 
-	log.Info("backend/gateway: uplink frame received")
+	log.Info("gateway/mqtt: uplink frame received")
 
 	var uplinkFrame gw.UplinkFrame
 	t, err := marshaler.UnmarshalUplinkFrame(msg.Payload(), &uplinkFrame)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"data_base64": base64.StdEncoding.EncodeToString(msg.Payload()),
-		}).WithError(err).Error("backend/gateway: unmarshal uplink frame error")
+		}).WithError(err).Error("gateway/mqtt: unmarshal uplink frame error")
 		return
 	}
 
 	if uplinkFrame.TxInfo == nil {
 		log.WithFields(log.Fields{
 			"data_base64": base64.StdEncoding.EncodeToString(msg.Payload()),
-		}).Error("backend/gateway: tx_info must not be nil")
+		}).Error("gateway/mqtt: tx_info must not be nil")
 		return
 	}
 
 	if uplinkFrame.RxInfo == nil {
 		log.WithFields(log.Fields{
 			"data_base64": base64.StdEncoding.EncodeToString(msg.Payload()),
-		}).Error("backend/gateway: rx_info must not be nil")
+		}).Error("gateway/mqtt: rx_info must not be nil")
 		return
 	}
 
@@ -272,14 +272,14 @@ func (b *MQTTBackend) rxPacketHandler(c mqtt.Client, msg mqtt.Message) {
 			// the payload is already being processed by an other instance
 			return
 		}
-		log.WithError(err).Error("backend/gateway: acquire uplink payload lock error")
+		log.WithError(err).Error("gateway/mqtt: acquire uplink payload lock error")
 		return
 	}
 
 	b.rxPacketChan <- uplinkFrame
 }
 
-func (b *MQTTBackend) statsPacketHandler(c mqtt.Client, msg mqtt.Message) {
+func (b *Backend) statsPacketHandler(c paho.Client, msg paho.Message) {
 	b.wg.Add(1)
 	defer b.wg.Done()
 
@@ -288,7 +288,7 @@ func (b *MQTTBackend) statsPacketHandler(c mqtt.Client, msg mqtt.Message) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"data_base64": base64.StdEncoding.EncodeToString(msg.Payload()),
-		}).WithError(err).Error("backend/gateway: unmarshal gateway stats error")
+		}).WithError(err).Error("gateway/mqtt: unmarshal gateway stats error")
 		return
 	}
 
@@ -309,15 +309,15 @@ func (b *MQTTBackend) statsPacketHandler(c mqtt.Client, msg mqtt.Message) {
 			// the payload is already being processed by an other instance
 			return
 		}
-		log.Errorf("backend/gateway: acquire stats lock error: %s", err)
+		log.Errorf("gateway/mqtt: acquire stats lock error: %s", err)
 		return
 	}
 
-	log.WithField("gateway_id", gatewayID).Info("backend/gateway: gateway stats packet received")
+	log.WithField("gateway_id", gatewayID).Info("gateway/mqtt: gateway stats packet received")
 	b.statsPacketChan <- gatewayStats
 }
 
-func (b *MQTTBackend) ackPacketHandler(c mqtt.Client, msg mqtt.Message) {
+func (b *Backend) ackPacketHandler(c paho.Client, msg paho.Message) {
 	b.wg.Add(1)
 	defer b.wg.Done()
 
@@ -354,19 +354,19 @@ func (b *MQTTBackend) ackPacketHandler(c mqtt.Client, msg mqtt.Message) {
 	b.downlinkTXAckChan <- ack
 }
 
-func (b *MQTTBackend) onConnected(c mqtt.Client) {
+func (b *Backend) onConnected(c paho.Client) {
 	log.Info("backend/gateway: connected to mqtt server")
 
 	for {
 		log.WithFields(log.Fields{
 			"topic": b.config.UplinkTopicTemplate,
 			"qos":   b.config.QOS,
-		}).Info("backend/gateway: subscribing to rx topic")
+		}).Info("gateway/mqtt: subscribing to rx topic")
 		if token := b.conn.Subscribe(b.config.UplinkTopicTemplate, b.config.QOS, b.rxPacketHandler); token.Wait() && token.Error() != nil {
 			log.WithFields(log.Fields{
 				"topic": b.config.UplinkTopicTemplate,
 				"qos":   b.config.QOS,
-			}).Errorf("backend/gateway: subscribe error: %s", token.Error())
+			}).Errorf("gateway/mqtt: subscribe error: %s", token.Error())
 			time.Sleep(time.Second)
 			continue
 		}
@@ -377,12 +377,12 @@ func (b *MQTTBackend) onConnected(c mqtt.Client) {
 		log.WithFields(log.Fields{
 			"topic": b.config.StatsTopicTemplate,
 			"qos":   b.config.QOS,
-		}).Info("backend/gateway: subscribing to stats topic")
+		}).Info("gateway/mqtt: subscribing to stats topic")
 		if token := b.conn.Subscribe(b.config.StatsTopicTemplate, b.config.QOS, b.statsPacketHandler); token.Wait() && token.Error() != nil {
 			log.WithFields(log.Fields{
 				"topic": b.config.StatsTopicTemplate,
 				"qos":   b.config.QOS,
-			}).Errorf("backend/gateway: subscribe error: %s", token.Error())
+			}).Errorf("gateway/mqtt: subscribe error: %s", token.Error())
 			time.Sleep(time.Second)
 			continue
 		}
@@ -406,18 +406,18 @@ func (b *MQTTBackend) onConnected(c mqtt.Client) {
 	}
 }
 
-func (b *MQTTBackend) onConnectionLost(c mqtt.Client, reason error) {
-	log.Errorf("backend/gateway: mqtt connection error: %s", reason)
+func (b *Backend) onConnectionLost(c paho.Client, reason error) {
+	log.Errorf("gateway/mqtt: mqtt connection error: %s", reason)
 }
 
-func (b *MQTTBackend) setGatewayMarshaler(gatewayID lorawan.EUI64, t marshaler.Type) {
+func (b *Backend) setGatewayMarshaler(gatewayID lorawan.EUI64, t marshaler.Type) {
 	b.Lock()
 	defer b.Unlock()
 
 	b.gatewayMarshaler[gatewayID] = t
 }
 
-func (b *MQTTBackend) getGatewayMarshaler(gatewayID lorawan.EUI64) marshaler.Type {
+func (b *Backend) getGatewayMarshaler(gatewayID lorawan.EUI64) marshaler.Type {
 	b.RLock()
 	defer b.RUnlock()
 
@@ -435,7 +435,7 @@ func newTLSConfig(cafile, certFile, certKeyFile string) (*tls.Config, error) {
 	if cafile != "" {
 		cacert, err := ioutil.ReadFile(cafile)
 		if err != nil {
-			log.WithError(err).Error("backend/gateway: could not load ca certificate")
+			log.WithError(err).Error("gateway/mqtt: could not load ca certificate")
 			return nil, err
 		}
 		certpool := x509.NewCertPool()
@@ -448,7 +448,7 @@ func newTLSConfig(cafile, certFile, certKeyFile string) (*tls.Config, error) {
 	if certFile != "" && certKeyFile != "" {
 		kp, err := tls.LoadX509KeyPair(certFile, certKeyFile)
 		if err != nil {
-			log.WithError(err).Error("backend/gateway: could not load mqtt tls key-pair")
+			log.WithError(err).Error("gateway/mqtt: could not load mqtt tls key-pair")
 			return nil, err
 		}
 		tlsConfig.Certificates = []tls.Certificate{kp}

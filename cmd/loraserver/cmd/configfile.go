@@ -227,7 +227,8 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   #
   # Use this when ony a sub-set of the by default enabled channels are being
   # used. For example when only using the first 8 channels of the US band.
-  #
+  # Note: when left blank, all channels will be enabled.
+  # 
   # Example:
   # enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7]
   enabled_uplink_channels=[{{ range $index, $element := .NetworkServer.NetworkSettings.EnabledUplinkChannels }}{{ if $index }}, {{ end }}{{ $element }}{{ end }}]
@@ -370,70 +371,109 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   aggregation_intervals=[{{ if .NetworkServer.Gateway.Stats.AggregationIntervals|len }}"{{ end }}{{ range $index, $element := .NetworkServer.Gateway.Stats.AggregationIntervals }}{{ if $index }}", "{{ end }}{{ $element }}{{ end }}{{ if .NetworkServer.Gateway.Stats.AggregationIntervals|len }}"{{ end }}]
 
 
-  # MQTT gateway backend settings.
+  # Backend defines the gateway backend settings.
   #
-  # This is the backend communicating with the LoRa gateways over a MQTT broker.
-  [network_server.gateway.backend.mqtt]
-  # MQTT topic templates for the different MQTT topics.
-  #
-  # The meaning of these topics are documented at:
-  # https://docs.loraserver.io/lora-gateway-bridge/use/data/
-  #
-  # The default values match the default expected configuration of the
-  # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
-  # absolutely needed.
-  # Use "{{ "{{ .MAC }}" }}" as an substitution for the LoRa gateway MAC.
-  uplink_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.UplinkTopicTemplate }}"
-  downlink_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.DownlinkTopicTemplate }}"
-  stats_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.StatsTopicTemplate }}"
-  ack_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.AckTopicTemplate }}"
-  config_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.ConfigTopicTemplate }}"
+  # The gateway backend handles the communication with the gateway(s) part of
+  # the LoRaWAN network.
+  [network_server.gateway.backend]
+    # Backend
+    #
+    # This defines the backend to use for the communication with the gateways.
+    # Use the section name of one of the following gateway backends.
+    # E.g. "mqtt" or "gcp_pub_sub".
+    type="{{ .NetworkServer.Gateway.Backend.Type }}"
 
-  # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
-  server="{{ .NetworkServer.Gateway.Backend.MQTT.Server }}"
 
-  # Connect with the given username (optional)
-  username="{{ .NetworkServer.Gateway.Backend.MQTT.Username }}"
+    # MQTT gateway backend settings.
+    #
+    # This is the backend communicating with the LoRa gateways over a MQTT broker.
+    [network_server.gateway.backend.mqtt]
+    # MQTT topic templates for the different MQTT topics.
+    #
+    # The meaning of these topics are documented at:
+    # https://www.loraserver.io/lora-gateway-bridge/use/data/
+    #
+    # The default values match the default expected configuration of the
+    # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
+    # absolutely needed.
+    # Use "{{ "{{ .MAC }}" }}" as an substitution for the LoRa gateway MAC. 
+    uplink_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.UplinkTopicTemplate }}"
+    downlink_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.DownlinkTopicTemplate }}"
+    stats_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.StatsTopicTemplate }}"
+    ack_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.AckTopicTemplate }}"
+    config_topic_template="{{ .NetworkServer.Gateway.Backend.MQTT.ConfigTopicTemplate }}"
 
-  # Connect with the given password (optional)
-  password="{{ .NetworkServer.Gateway.Backend.MQTT.Password }}"
+    # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
+    server="{{ .NetworkServer.Gateway.Backend.MQTT.Server }}"
 
-  # Quality of service level
-  #
-  # 0: at most once
-  # 1: at least once
-  # 2: exactly once
-  #
-  # Note: an increase of this value will decrease the performance.
-  # For more information: https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels
-  qos={{ .NetworkServer.Gateway.Backend.MQTT.QOS }}
+    # Connect with the given username (optional)
+    username="{{ .NetworkServer.Gateway.Backend.MQTT.Username }}"
 
-  # Clean session
-  #
-  # Set the "clean session" flag in the connect message when this client
-  # connects to an MQTT broker. By setting this flag you are indicating
-  # that no messages saved by the broker for this client should be delivered.
-  clean_session={{ .NetworkServer.Gateway.Backend.MQTT.CleanSession }}
+    # Connect with the given password (optional)
+    password="{{ .NetworkServer.Gateway.Backend.MQTT.Password }}"
 
-  # Client ID
-  #
-  # Set the client id to be used by this client when connecting to the MQTT
-  # broker. A client id must be no longer than 23 characters. When left blank,
-  # a random id will be generated. This requires clean_session=true.
-  client_id="{{ .NetworkServer.Gateway.Backend.MQTT.ClientID }}"
+    # Quality of service level
+    #
+    # 0: at most once
+    # 1: at least once
+    # 2: exactly once
+    #
+    # Note: an increase of this value will decrease the performance.
+    # For more information: https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels
+    qos={{ .NetworkServer.Gateway.Backend.MQTT.QOS }}
 
-  # CA certificate file (optional)
-  #
-  # Use this when setting up a secure connection (when server uses ssl://...)
-  # but the certificate used by the server is not trusted by any CA certificate
-  # on the server (e.g. when self generated).
-  ca_cert="{{ .NetworkServer.Gateway.Backend.MQTT.CACert }}"
+    # Clean session
+    #
+    # Set the "clean session" flag in the connect message when this client
+    # connects to an MQTT broker. By setting this flag you are indicating
+    # that no messages saved by the broker for this client should be delivered.
+    clean_session={{ .NetworkServer.Gateway.Backend.MQTT.CleanSession }}
 
-  # TLS certificate file (optional)
-  tls_cert="{{ .NetworkServer.Gateway.Backend.MQTT.TLSCert }}"
+    # Client ID
+    #
+    # Set the client id to be used by this client when connecting to the MQTT
+    # broker. A client id must be no longer than 23 characters. When left blank,
+    # a random id will be generated. This requires clean_session=true.
+    client_id="{{ .NetworkServer.Gateway.Backend.MQTT.ClientID }}"
 
-  # TLS key file (optional)
-  tls_key="{{ .NetworkServer.Gateway.Backend.MQTT.TLSKey }}"
+    # CA certificate file (optional)
+    #
+    # Use this when setting up a secure connection (when server uses ssl://...)
+    # but the certificate used by the server is not trusted by any CA certificate
+    # on the server (e.g. when self generated).
+    ca_cert="{{ .NetworkServer.Gateway.Backend.MQTT.CACert }}"
+
+    # TLS certificate file (optional)
+    tls_cert="{{ .NetworkServer.Gateway.Backend.MQTT.TLSCert }}"
+
+    # TLS key file (optional)
+    tls_key="{{ .NetworkServer.Gateway.Backend.MQTT.TLSKey }}"
+
+
+    # Google Cloud Pub/Sub backend.
+    #
+    # Use this backend when the LoRa Gateway Bridge is configured to connect
+    # to the Google Cloud IoT Core MQTT broker (which integrates with Pub/Sub).
+    [network_server.gateway.backend.gcp_pub_sub]
+    # Path to the IAM service-account credentials file.
+    #
+    # Note: this service-account must have the following Pub/Sub roles:
+    #  * Pub/Sub Editor
+    credentials_file="{{ .NetworkServer.Gateway.Backend.GCPPubSub.CredentialsFile }}"
+
+    # Google Cloud project id.
+    project_id="{{ .NetworkServer.Gateway.Backend.GCPPubSub.ProjectID }}"
+
+    # Uplink Pub/Sub topic name (to which Cloud IoT Core publishes).
+    uplink_topic_name="{{ .NetworkServer.Gateway.Backend.GCPPubSub.UplinkTopicName }}"
+
+    # Downlink Pub/Sub topic name (for publishing downlink frames).
+    downlink_topic_name="{{ .NetworkServer.Gateway.Backend.GCPPubSub.DownlinkTopicName }}"
+
+    # Uplink retention duration.
+    #
+    # The retention duration that LoRa Server will set on the uplink subscription.
+    uplink_retention_duration="{{ .NetworkServer.Gateway.Backend.GCPPubSub.UplinkRetentionDuration }}"
 
 
   # Geolocation settings.

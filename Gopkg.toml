@@ -62,11 +62,6 @@
   version = "v1.1.0"
   name = "github.com/spf13/viper"
 
-[prune]
-  non-go = true
-  go-tests = true
-  unused-packages = true
-
 [[constraint]]
   branch = "master"
   name = "github.com/NickBall/go-aes-key-wrap"
@@ -82,3 +77,12 @@
 [[constraint]]
   name = 'gonum.org/v1/gonum'
   branch = "master"
+
+[[constraint]]
+  name = "cloud.google.com/go"
+  version = "v0.25.0"
+
+[prune]
+  non-go = true
+  go-tests = true
+  unused-packages = true

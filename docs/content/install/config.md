@@ -282,6 +282,7 @@ get_downlink_data_delay="100ms"
   #
   # Use this when ony a sub-set of the by default enabled channels are being
   # used. For example when only using the first 8 channels of the US band.
+  # Note: when left blank, all channels will be enabled.
   #
   # Example:
   # enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7]
@@ -420,70 +421,109 @@ get_downlink_data_delay="100ms"
   aggregation_intervals=["minute", "hour", "day"]
 
 
-  # MQTT gateway backend settings.
+  # Backend defines the gateway backend settings.
   #
-  # This is the backend communicating with the LoRa gateways over a MQTT broker.
-  [network_server.gateway.backend.mqtt]
-  # MQTT topic templates for the different MQTT topics.
-  #
-  # The meaning of these topics are documented at:
-  # https://docs.loraserver.io/lora-gateway-bridge/use/data/
-  #
-  # The default values match the default expected configuration of the
-  # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
-  # absolutely needed.
-  # Use "{{ .MAC }}" as an substitution for the LoRa gateway MAC.
-  uplink_topic_template="gateway/+/rx"
-  downlink_topic_template="gateway/{{ .MAC }}/tx"
-  stats_topic_template="gateway/+/stats"
-  ack_topic_template="gateway/+/ack"
-  config_topic_template="gateway/{{ .MAC }}/config"
+  # The gateway backend handles the communication with the gateway(s) part of
+  # the LoRaWAN network.
+  [network_server.gateway.backend]
+    # Backend
+    #
+    # This defines the backend to use for the communication with the gateways.
+    # Use the section name of one of the following gateway backends.
+    # E.g. "mqtt" or "gcp_pub_sub".
+    type="mqtt"
 
-  # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
-  server="tcp://localhost:1883"
 
-  # Connect with the given username (optional)
-  username=""
+    # MQTT gateway backend settings.
+    #
+    # This is the backend communicating with the LoRa gateways over a MQTT broker.
+    [network_server.gateway.backend.mqtt]
+    # MQTT topic templates for the different MQTT topics.
+    #
+    # The meaning of these topics are documented at:
+    # https://www.loraserver.io/lora-gateway-bridge/use/data/
+    #
+    # The default values match the default expected configuration of the
+    # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
+    # absolutely needed.
+    # Use "{{ .MAC }}" as an substitution for the LoRa gateway MAC.
+    uplink_topic_template="gateway/+/rx"
+    downlink_topic_template="gateway/{{ .MAC }}/tx"
+    stats_topic_template="gateway/+/stats"
+    ack_topic_template="gateway/+/ack"
+    config_topic_template="gateway/{{ .MAC }}/config"
 
-  # Connect with the given password (optional)
-  password=""
+    # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
+    server="tcp://localhost:1883"
 
-  # Quality of service level
-  #
-  # 0: at most once
-  # 1: at least once
-  # 2: exactly once
-  #
-  # Note: an increase of this value will decrease the performance.
-  # For more information: https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels
-  qos=0
+    # Connect with the given username (optional)
+    username=""
 
-  # Clean session
-  #
-  # Set the "clean session" flag in the connect message when this client
-  # connects to an MQTT broker. By setting this flag you are indicating
-  # that no messages saved by the broker for this client should be delivered.
-  clean_session=true
+    # Connect with the given password (optional)
+    password=""
 
-  # Client ID
-  #
-  # Set the client id to be used by this client when connecting to the MQTT
-  # broker. A client id must be no longer than 23 characters. When left blank,
-  # a random id will be generated. This requires clean_session=true.
-  client_id=""
+    # Quality of service level
+    #
+    # 0: at most once
+    # 1: at least once
+    # 2: exactly once
+    #
+    # Note: an increase of this value will decrease the performance.
+    # For more information: https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels
+    qos=0
 
-  # CA certificate file (optional)
-  #
-  # Use this when setting up a secure connection (when server uses ssl://...)
-  # but the certificate used by the server is not trusted by any CA certificate
-  # on the server (e.g. when self generated).
-  ca_cert=""
+    # Clean session
+    #
+    # Set the "clean session" flag in the connect message when this client
+    # connects to an MQTT broker. By setting this flag you are indicating
+    # that no messages saved by the broker for this client should be delivered.
+    clean_session=true
 
-  # TLS certificate file (optional)
-  tls_cert=""
+    # Client ID
+    #
+    # Set the client id to be used by this client when connecting to the MQTT
+    # broker. A client id must be no longer than 23 characters. When left blank,
+    # a random id will be generated. This requires clean_session=true.
+    client_id=""
 
-  # TLS key file (optional)
-  tls_key=""
+    # CA certificate file (optional)
+    #
+    # Use this when setting up a secure connection (when server uses ssl://...)
+    # but the certificate used by the server is not trusted by any CA certificate
+    # on the server (e.g. when self generated).
+    ca_cert=""
+
+    # TLS certificate file (optional)
+    tls_cert=""
+
+    # TLS key file (optional)
+    tls_key=""
+
+
+    # Google Cloud Pub/Sub backend.
+    #
+    # Use this backend when the LoRa Gateway Bridge is configured to connect
+    # to the Google Cloud IoT Core MQTT broker (which integrates with Pub/Sub).
+    [network_server.gateway.backend.gcp_pub_sub]
+    # Path to the IAM service-account credentials file.
+    #
+    # Note: this service-account must have the following Pub/Sub roles:
+    #  * Pub/Sub Editor
+    credentials_file=""
+
+    # Google Cloud project id.
+    project_id=""
+
+    # Uplink Pub/Sub topic name (to which Cloud IoT Core publishes).
+    uplink_topic_name=""
+
+    # Downlink Pub/Sub topic name (for publishing downlink frames).
+    downlink_topic_name=""
+
+    # Uplink retention duration.
+    #
+    # The retention duration that LoRa Server will set on the uplink subscription.
+    uplink_retention_duration="24h0m0s"
 
 
   # Geolocation settings.

@@ -10,7 +10,8 @@ import (
 	"github.com/brocaar/loraserver/internal/api/client/asclient"
 	"github.com/brocaar/loraserver/internal/api/client/jsclient"
 	"github.com/brocaar/loraserver/internal/backend"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
+	"github.com/brocaar/loraserver/internal/backend/gateway/gcppubsub"
+	"github.com/brocaar/loraserver/internal/backend/gateway/mqtt"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -106,8 +107,10 @@ type Config struct {
 			}
 
 			Backend struct {
-				Backend backend.Gateway
-				MQTT    gateway.MQTTBackendConfig
+				Type      string           `mapstructure:"type"`
+				Backend   backend.Gateway  `mapstructure:"-"`
+				MQTT      mqtt.Config      `mapstructure:"mqtt"`
+				GCPPubSub gcppubsub.Config `mapstructure:"gcp_pub_sub"`
 			}
 		}
 	} `mapstructure:"network_server"`

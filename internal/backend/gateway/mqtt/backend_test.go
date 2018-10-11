@@ -1,10 +1,10 @@
-package gateway
+package mqtt
 
 import (
 	"os"
 	"testing"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/golang/protobuf/proto"
 	"github.com/gomodule/redigo/redis"
 	log "github.com/sirupsen/logrus"
@@ -18,15 +18,15 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-type MQTTBackendTestSuite struct {
+type BackendTestSuite struct {
 	suite.Suite
 
 	backend    backend.Gateway
 	redisPool  *redis.Pool
-	mqttClient mqtt.Client
+	mqttClient paho.Client
 }
 
-func (ts *MQTTBackendTestSuite) SetupSuite() {
+func (ts *BackendTestSuite) SetupSuite() {
 	assert := require.New(ts.T())
 	log.SetLevel(log.ErrorLevel)
 
@@ -41,24 +41,24 @@ func (ts *MQTTBackendTestSuite) SetupSuite() {
 	var mqttUsername string
 	var mqttPassword string
 
-	if v := os.Getenv("TEST_MQTT_SERVER"); v != "" {
+	if v := os.Getenv("TEST__SERVER"); v != "" {
 		mqttServer = v
 	}
-	if v := os.Getenv("TEST_MQTT_USERNAME"); v != "" {
+	if v := os.Getenv("TEST__USERNAME"); v != "" {
 		mqttUsername = v
 	}
-	if v := os.Getenv("TEST_MQTT_PASSWORD"); v != "" {
+	if v := os.Getenv("TEST__PASSWORD"); v != "" {
 		mqttPassword = v
 	}
 
-	opts := mqtt.NewClientOptions().AddBroker(mqttServer).SetUsername(mqttUsername).SetPassword(mqttPassword)
-	ts.mqttClient = mqtt.NewClient(opts)
+	opts := paho.NewClientOptions().AddBroker(mqttServer).SetUsername(mqttUsername).SetPassword(mqttPassword)
+	ts.mqttClient = paho.NewClient(opts)
 	token := ts.mqttClient.Connect()
 	token.Wait()
 	assert.NoError(token.Error())
 
 	var err error
-	ts.backend, err = NewMQTTBackend(ts.redisPool, MQTTBackendConfig{
+	ts.backend, err = NewBackend(ts.redisPool, Config{
 		Server:                mqttServer,
 		Username:              mqttUsername,
 		Password:              mqttPassword,
@@ -71,20 +71,20 @@ func (ts *MQTTBackendTestSuite) SetupSuite() {
 	})
 	assert.NoError(err)
 
-	ts.backend.(*MQTTBackend).setGatewayMarshaler(lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}, marshaler.Protobuf)
+	ts.backend.(*Backend).setGatewayMarshaler(lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}, marshaler.Protobuf)
 }
 
-func (ts *MQTTBackendTestSuite) TearDownSuite() {
+func (ts *BackendTestSuite) TearDownSuite() {
 	assert := require.New(ts.T())
 
 	assert.NoError(ts.backend.Close())
 }
 
-func (ts *MQTTBackendTestSuite) SetupTest() {
+func (ts *BackendTestSuite) SetupTest() {
 	MustFlushRedis(ts.redisPool)
 }
 
-func (ts *MQTTBackendTestSuite) TestUplinkFrame() {
+func (ts *BackendTestSuite) TestUplinkFrame() {
 	assert := require.New(ts.T())
 
 	uplinkFrame := gw.UplinkFrame{
@@ -111,7 +111,7 @@ func (ts *MQTTBackendTestSuite) TestUplinkFrame() {
 	assert.EqualValues(uplinkFrame, receivedUplink)
 }
 
-func (ts *MQTTBackendTestSuite) TestGatewayStats() {
+func (ts *BackendTestSuite) TestGatewayStats() {
 	assert := require.New(ts.T())
 
 	gatewayStats := gw.GatewayStats{
@@ -130,7 +130,7 @@ func (ts *MQTTBackendTestSuite) TestGatewayStats() {
 	assert.EqualValues(gatewayStats, receivedStats)
 }
 
-func (ts *MQTTBackendTestSuite) TestDownlinkTXAck() {
+func (ts *BackendTestSuite) TestDownlinkTXAck() {
 	assert := require.New(ts.T())
 
 	downlinkTXAck := gw.DownlinkTXAck{
@@ -149,11 +149,11 @@ func (ts *MQTTBackendTestSuite) TestDownlinkTXAck() {
 	}
 }
 
-func (ts *MQTTBackendTestSuite) TestSendDownlinkFrame() {
+func (ts *BackendTestSuite) TestSendDownlinkFrame() {
 	assert := require.New(ts.T())
 
 	downlinkFrameChan := make(chan gw.DownlinkFrame)
-	token := ts.mqttClient.Subscribe("gateway/+/tx", 0, func(c mqtt.Client, msg mqtt.Message) {
+	token := ts.mqttClient.Subscribe("gateway/+/tx", 0, func(c paho.Client, msg paho.Message) {
 		var pl gw.DownlinkFrame
 		if err := proto.Unmarshal(msg.Payload(), &pl); err != nil {
 			panic(err)
@@ -178,11 +178,11 @@ func (ts *MQTTBackendTestSuite) TestSendDownlinkFrame() {
 	assert.EqualValues(downlinkFrame, downlinkReceived)
 }
 
-func (ts *MQTTBackendTestSuite) TestSendGatewayConfiguration() {
+func (ts *BackendTestSuite) TestSendGatewayConfiguration() {
 	assert := require.New(ts.T())
 
 	gatewayConfigChan := make(chan gw.GatewayConfiguration)
-	token := ts.mqttClient.Subscribe("gateway/+/config", 0, func(c mqtt.Client, msg mqtt.Message) {
+	token := ts.mqttClient.Subscribe("gateway/+/config", 0, func(c paho.Client, msg paho.Message) {
 		var pl gw.GatewayConfiguration
 		if err := proto.Unmarshal(msg.Payload(), &pl); err != nil {
 			panic(err)
@@ -203,6 +203,6 @@ func (ts *MQTTBackendTestSuite) TestSendGatewayConfiguration() {
 	assert.Equal(gatewayConfig, configReceived)
 }
 
-func TestMQTTBackend(t *testing.T) {
-	suite.Run(t, new(MQTTBackendTestSuite))
+func TestBackend(t *testing.T) {
+	suite.Run(t, new(BackendTestSuite))
 }

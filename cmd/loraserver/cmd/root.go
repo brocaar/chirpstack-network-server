@@ -47,27 +47,36 @@ func init() {
 	viper.BindPFlag("general.log_level", rootCmd.PersistentFlags().Lookup("log-level"))
 
 	// default values
-	viper.SetDefault("network_server.net_id", "000000")
-	viper.SetDefault("network_server.band.name", "EU_863_870")
-	viper.SetDefault("network_server.api.bind", "0.0.0.0:8000")
 	viper.SetDefault("redis.url", "redis://localhost:6379")
 	viper.SetDefault("redis.max_idle", 10)
 	viper.SetDefault("redis.idle_timeout", 5*time.Minute)
+
 	viper.SetDefault("postgresql.dsn", "postgres://localhost/loraserver_ns?sslmode=disable")
 	viper.SetDefault("postgresql.automigrate", true)
-	viper.SetDefault("network_server.gateway.backend.mqtt.server", "tcp://localhost:1883")
+
+	viper.SetDefault("network_server.net_id", "000000")
+	viper.SetDefault("network_server.band.name", "EU_863_870")
+	viper.SetDefault("network_server.api.bind", "0.0.0.0:8000")
+
 	viper.SetDefault("network_server.deduplication_delay", 200*time.Millisecond)
 	viper.SetDefault("network_server.get_downlink_data_delay", 100*time.Millisecond)
+	viper.SetDefault("network_server.device_session_ttl", time.Hour*24*31)
+
 	viper.SetDefault("network_server.gateway.stats.aggregation_intervals", []string{"minute", "hour", "day"})
 	viper.SetDefault("network_server.gateway.stats.create_gateway_on_stats", true)
-	viper.SetDefault("network_server.device_session_ttl", time.Hour*24*31)
+	viper.SetDefault("network_server.gateway.backend.mqtt.server", "tcp://localhost:1883")
+
 	viper.SetDefault("join_server.default.server", "http://localhost:8003")
+
 	viper.SetDefault("network_server.network_settings.installation_margin", 10)
 	viper.SetDefault("network_server.network_settings.rx1_delay", 1)
 	viper.SetDefault("network_server.network_settings.rx2_frequency", -1)
 	viper.SetDefault("network_server.network_settings.rx2_dr", -1)
 	viper.SetDefault("network_server.network_settings.downlink_tx_power", -1)
 	viper.SetDefault("network_server.network_settings.disable_adr", false)
+
+	viper.SetDefault("network_server.gateway.backend.type", "mqtt")
+
 	viper.SetDefault("network_server.scheduler.scheduler_interval", 1*time.Second)
 	viper.SetDefault("network_server.scheduler.class_c.downlink_lock_duration", 2*time.Second)
 	viper.SetDefault("network_server.gateway.backend.mqtt.uplink_topic_template", "gateway/+/rx")
@@ -76,6 +85,8 @@ func init() {
 	viper.SetDefault("network_server.gateway.backend.mqtt.ack_topic_template", "gateway/+/ack")
 	viper.SetDefault("network_server.gateway.backend.mqtt.config_topic_template", "gateway/{{ .MAC }}/config")
 	viper.SetDefault("network_server.gateway.backend.mqtt.clean_session", true)
+
+	viper.SetDefault("network_server.gateway.backend.gcp_pub_sub.uplink_retention_duration", time.Hour*24)
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(configCmd)
