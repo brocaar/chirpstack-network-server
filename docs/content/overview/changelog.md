@@ -9,6 +9,39 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v2.3.0
+
+### Features
+
+#### Google Cloud Platform integration
+
+LoRa Server is now able to integrate with [Cloud Pub/Sub](https://cloud.google.com/pubsub/)
+for gateway communication (as an alternative to MQTT). Together with the latest
+[LoRa Gateway Bridge](https://www.loraserver.io/lora-gateway-bridge/) version (v2.6.0),
+this makes it possible to let LoRa gateways connect with the
+[Cloud IoT Core](https://cloud.google.com/iot-core/)
+service and let LoRa Server communicate with Cloud IoT Core using Cloud Pub/Sub. 
+
+#### RX window selection
+
+It is now possible to select which RX window to use for downlink. The default
+option is RX1, falling back on RX2 in case of a scheduling error. Refer to
+[Configuration](https://www.loraserver.io/loraserver/install/config/)
+documentation for more information.
+
+### Improvements
+
+#### Battery status
+
+LoRa Server now sends the battery-level as a percentage to the application-server.
+The `battery` field (`0...255`) will be removed in the next major release.
+
+#### Downlink scheduler configuration
+
+The downlink scheduler parameters are now configurable. Refer to
+[Configuration](https://www.loraserver.io/loraserver/install/config/)
+documentation for more information. [#355](https://github.com/brocaar/loraserver/pull/355).
+
 ## v2.2.0
 
 ### Features
