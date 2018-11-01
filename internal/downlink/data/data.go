@@ -155,10 +155,6 @@ func (ctx dataContext) Validate() error {
 		return ErrFPortMustNotBeZero
 	}
 
-	if ctx.FPort > 224 {
-		return ErrInvalidAppFPort
-	}
-
 	return nil
 }
 
