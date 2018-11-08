@@ -1,4 +1,4 @@
-package jsclient
+package joinserver
 
 import (
 	"bytes"
@@ -81,6 +81,9 @@ func (c *client) RejoinReq(pl backend.RejoinReqPayload) (backend.RejoinAnsPayloa
 }
 
 // NewClient creates a new join-server client.
+// If the caCert is set, it will configure the CA certificate to validate the
+// join-server server certificate. When the tlsCert and tlsKey are set, then
+// these will be configured as client-certificates for authentication.
 func NewClient(server, caCert, tlsCert, tlsKey string) (Client, error) {
 	log.WithFields(log.Fields{
 		"server":   server,
@@ -96,27 +99,28 @@ func NewClient(server, caCert, tlsCert, tlsKey string) (Client, error) {
 		}, nil
 	}
 
-	cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "load x509 keypair error")
-	}
+	tlsConfig := &tls.Config{}
 
-	var caCertPool *x509.CertPool
 	if caCert != "" {
 		rawCACert, err := ioutil.ReadFile(caCert)
 		if err != nil {
 			return nil, errors.Wrap(err, "load ca cert error")
 		}
 
-		caCertPool = x509.NewCertPool()
+		caCertPool := x509.NewCertPool()
 		if !caCertPool.AppendCertsFromPEM(rawCACert) {
 			return nil, errors.New("append ca cert to pool error")
 		}
+
+		tlsConfig.RootCAs = caCertPool
 	}
 
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		RootCAs:      caCertPool,
+	if tlsCert != "" || tlsKey != "" {
+		cert, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
+		if err != nil {
+			return nil, errors.Wrap(err, "load x509 keypair error")
+		}
+		tlsConfig.Certificates = []tls.Certificate{cert}
 	}
 
 	return &client{

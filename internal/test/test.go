@@ -17,9 +17,9 @@ import (
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/api/client/asclient"
-	"github.com/brocaar/loraserver/internal/api/client/jsclient"
 	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/joinserver"
 	"github.com/brocaar/loraserver/internal/migrations"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
@@ -174,19 +174,19 @@ func (b *GatewayBackend) Close() error {
 
 // JoinServerPool is a join-server pool for testing.
 type JoinServerPool struct {
-	Client     jsclient.Client
+	Client     joinserver.Client
 	GetJoinEUI lorawan.EUI64
 }
 
 // NewJoinServerPool create a join-server pool for testing.
-func NewJoinServerPool(client jsclient.Client) jsclient.Pool {
+func NewJoinServerPool(client joinserver.Client) joinserver.Pool {
 	return &JoinServerPool{
 		Client: client,
 	}
 }
 
 // Get method.
-func (p *JoinServerPool) Get(joinEUI lorawan.EUI64) (jsclient.Client, error) {
+func (p *JoinServerPool) Get(joinEUI lorawan.EUI64) (joinserver.Client, error) {
 	p.GetJoinEUI = joinEUI
 	return p.Client, nil
 }

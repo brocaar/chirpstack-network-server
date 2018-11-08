@@ -8,11 +8,11 @@ import (
 	"github.com/brocaar/loraserver/api/geo"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/api/client/asclient"
-	"github.com/brocaar/loraserver/internal/api/client/jsclient"
 	"github.com/brocaar/loraserver/internal/backend"
 	"github.com/brocaar/loraserver/internal/backend/gateway/gcppubsub"
 	"github.com/brocaar/loraserver/internal/backend/gateway/mqtt"
 	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/joinserver"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 )
@@ -123,23 +123,7 @@ type Config struct {
 		TLSKey  string                             `mapstructure:"tls_key"`
 	} `mapstructure:"geolocation_server"`
 
-	JoinServer struct {
-		Pool jsclient.Pool
-
-		Default struct {
-			Server  string
-			CACert  string `mapstructure:"ca_cert"`
-			TLSCert string `mapstructure:"tls_cert"`
-			TLSKey  string `mapstructure:"tls_key"`
-		}
-
-		KEK struct {
-			Set []struct {
-				Label string
-				KEK   string `mapstructure:"kek"`
-			}
-		} `mapstructure:"kek"`
-	} `mapstructure:"join_server"`
+	JoinServer joinserver.Config `mapstructure:"join_server"`
 
 	ApplicationServer struct {
 		Pool asclient.Pool

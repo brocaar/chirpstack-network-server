@@ -85,6 +85,8 @@ func init() {
 	viper.SetDefault("network_server.gateway.backend.mqtt.ack_topic_template", "gateway/+/ack")
 	viper.SetDefault("network_server.gateway.backend.mqtt.config_topic_template", "gateway/{{ .MAC }}/config")
 	viper.SetDefault("network_server.gateway.backend.mqtt.clean_session", true)
+	viper.SetDefault("join_server.resolve_domain_suffix", ".joineuis.lora-alliance.org")
+	viper.SetDefault("join_server.default.server", "http://localhost:8003")
 
 	viper.SetDefault("network_server.gateway.backend.gcp_pub_sub.uplink_retention_duration", time.Hour*24)
 

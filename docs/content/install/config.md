@@ -546,52 +546,96 @@ get_downlink_data_delay="100ms"
   tls_key=""
 
 
-# Default join-server settings.
-[join_server.default]
-# hostname:port of the default join-server
+# Join-server settings.
+[join_server]
+# Resolve JoinEUI (experimental).
 #
-# This API is provided by LoRa App Server.
-server="http://localhost:8003"
+# When set to true, LoRa Server will use the JoinEUI to resolve the join-server
+# for the given JoinEUI. LoRa Server will fallback on the default join-server
+# when resolving the JoinEUI fails.
+resolve_join_eui=false
 
-# ca certificate used by the default join-server client (optional)
-ca_cert=""
-
-# tls certificate used by the default join-server client (optional)
-tls_cert=""
-
-# tls key used by the default join-server client (optional)
-tls_key=""
-
-
-# Join-server KEK set.
+# Resolve domain suffix.
 #
-# These KEKs (Key Encryption Keys) are used to decrypt the network related
-# session-keys received from the join-server on a (re)join-accept.
-# Please refer to the LoRaWAN Backend Interface specification
-# 'Key Transport Security' section for more information.
-#
-# Example (the [[join_server.kek.set]] can be repeated):
-# [[join_server.kek.set]]
-# # KEK label.
-# label="000000"
-
-# # Key Encryption Key.
-# kek="01020304050607080102030405060708"
+# This configures the domain suffix used for resolving the join-server.
+resolve_domain_suffix=".joineuis.lora-alliance.org"
 
 
-# Network-controller configuration.
-[network_controller]
-# hostname:port of the network-controller api server (optional)
-server=""
+  # Join-server certificates.
+  #
+  # Example:
+  # [[join_server.certificates]]
+  # # JoinEUI.
+  # #
+  # # The JoinEUI of the joinserver to to use the certificates for.
+  # join_eui="0102030405060708"
 
-# ca certificate used by the network-controller client (optional)
-ca_cert=""
+  # # CA certificate (optional).
+  # #
+  # # Set this to validate the join-server server certificate (e.g. when the
+  # # certificate was self-signed).
+  # ca_cert="/path/to/ca.pem"
 
-# tls certificate used by the network-controller client (optional)
-tls_cert=""
+  # # TLS client-certificate (optional).
+  # #
+  # # Set this to enable client-certificate authentication with the join-server.
+  # tls_cert="/path/to/tls_cert.pem"
 
-# tls key used by the network-controller client (optional)
-tls_key=""
+  # # TLS client-certificate key (optional).
+  # #
+  # # Set this to enable client-certificate authentication with the join-server.
+  # tls_key="/path/to/tls_key.pem"
+
+
+  # Default join-server settings.
+  #
+  # This join-server will be used when resolving the JoinEUI is set to false
+  # or as a fallback when resolving the JoinEUI fails.
+  [join_server.default]
+  # hostname:port of the default join-server
+  #
+  # This API is provided by LoRa App Server.
+  server="http://localhost:8003"
+
+  # ca certificate used by the default join-server client (optional)
+  ca_cert=""
+
+  # tls certificate used by the default join-server client (optional)
+  tls_cert=""
+
+  # tls key used by the default join-server client (optional)
+  tls_key=""
+
+
+  # Join-server KEK set.
+  #
+  # These KEKs (Key Encryption Keys) are used to decrypt the network related
+  # session-keys received from the join-server on a (re)join-accept.
+  # Please refer to the LoRaWAN Backend Interface specification
+  # 'Key Transport Security' section for more information.
+  #
+  # Example (the [[join_server.kek.set]] can be repeated):
+  # [[join_server.kek.set]]
+  # # KEK label.
+  # label="000000"
+
+  # # Key Encryption Key.
+  # kek="01020304050607080102030405060708"
+
+
+  # Network-controller configuration.
+  [network_controller]
+  # hostname:port of the network-controller api server (optional)
+  server=""
+
+  # ca certificate used by the network-controller client (optional)
+  ca_cert=""
+
+  # tls certificate used by the network-controller client (optional)
+  tls_cert=""
+
+  # tls key used by the network-controller client (optional)
+  tls_key=""
 {{< /highlight >}}
 
 ## Securing the network-server API
