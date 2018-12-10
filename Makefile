@@ -40,6 +40,7 @@ api:
 	go generate api/geo/geo.go
 	go generate api/common/common.go
 	go generate internal/storage/device_session.go
+	go generate internal/storage/gateway_state.go
 
 statics:
 	@echo "Generating static files"

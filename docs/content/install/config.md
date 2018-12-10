@@ -395,32 +395,6 @@ get_downlink_data_delay="100ms"
   tls_key=""
 
 
-  # Gateway statistics settings.
-  [network_server.gateway.stats]
-  # Create non-existing gateways on receiving of stats
-  #
-  # When set to true, LoRa Server will create the gateway when it receives
-  # statistics for a gateway that does not yet exist.
-  create_gateway_on_stats=true
-
-  # Aggregation timezone
-  #
-  # This timezone is used for correctly aggregating the statistics (for example
-  # 'Europe/Amsterdam').
-  # To get the list of supported timezones by your PostgreSQL database,
-  # execute the following SQL query:
-  #   select * from pg_timezone_names;
-  # When left blank, the default timezone of your database will be used.
-  timezone=""
-
-  # Aggregation intervals to use for aggregating the gateway stats
-  #
-  # Valid options: second, minute, hour, day, week, month, quarter, year.
-  # When left empty, no statistics will be stored in the database.
-  # Note, LoRa App Server expects at least "minute", "day", "hour"!
-  aggregation_intervals=["minute", "hour", "day"]
-
-
   # Backend defines the gateway backend settings.
   #
   # The gateway backend handles the communication with the gateway(s) part of
@@ -546,9 +520,31 @@ get_downlink_data_delay="100ms"
   tls_key=""
 
 
+# Metrics collection settings.
+[metrics]
+# Timezone
+#
+# The timezone is used for correctly aggregating the metrics (e.g. per hour,
+# day or month).
+# Example: "Europe/Amsterdam" or "Local" for the the system's local time zone.
+timezone="Local"
+
+  # Metrics stored in Redis.
+  #
+  # The following metrics are stored in Redis:
+  # * gateway statistics
+  [metrics.redis]
+  # Aggregation intervals
+  #
+  # The intervals on which to aggregate. Available options are:
+  # 'MINUTE', 'HOUR', 'DAY', 'MONTH'.
+  aggregation_intervals=["MINUTE", "HOUR", "DAY", "MONTH"]
+
+
 # Join-server settings.
 [join_server]
 # Resolve JoinEUI (experimental).
+# Default join-server settings.
 #
 # When set to true, LoRa Server will use the JoinEUI to resolve the join-server
 # for the given JoinEUI. LoRa Server will fallback on the default join-server

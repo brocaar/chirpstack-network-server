@@ -36,13 +36,6 @@ func init() {
 	config.C.NetworkServer.DeduplicationDelay = 5 * time.Millisecond
 	config.C.NetworkServer.GetDownlinkDataDelay = 5 * time.Millisecond
 	config.C.NetworkServer.NetworkSettings.DownlinkTXPower = -1
-
-	config.C.NetworkServer.Gateway.Stats.Timezone = "Europe/Amsterdam"
-	loc, err := time.LoadLocation(config.C.NetworkServer.Gateway.Stats.Timezone)
-	if err != nil {
-		panic(err)
-	}
-	config.C.NetworkServer.Gateway.Stats.TimezoneLocation = loc
 }
 
 // Config contains the test configuration.

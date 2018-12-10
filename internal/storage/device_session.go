@@ -566,6 +566,7 @@ func GetDeviceGatewayRXInfoSet(p *redis.Pool, devEUI lorawan.EUI64) (DeviceGatew
 		if err == redis.ErrNil {
 			return DeviceGatewayRXInfoSet{}, ErrDoesNotExist
 		}
+		return DeviceGatewayRXInfoSet{}, errors.Wrap(err, "get error")
 	}
 
 	err = proto.Unmarshal(val, &rxInfoSetPB)

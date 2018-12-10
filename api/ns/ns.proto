@@ -461,9 +461,6 @@ message GetGatewayResponse {
     // Last update timestamp.
     google.protobuf.Timestamp updated_at = 3;
 
-    // First seen timestamp.
-    google.protobuf.Timestamp first_seen_at = 4;
-
     // Last seen timestamp.
     google.protobuf.Timestamp last_seen_at = 5;
 }

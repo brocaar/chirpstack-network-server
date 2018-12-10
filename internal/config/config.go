@@ -99,11 +99,9 @@ type Config struct {
 		} `mapstructure:"api"`
 
 		Gateway struct {
+			// Deprecated
 			Stats struct {
-				TimezoneLocation     *time.Location
-				CreateGatewayOnStats bool `mapstructure:"create_gateway_on_stats"`
-				Timezone             string
-				AggregationIntervals []string `mapstructure:"aggregation_intervals"`
+				Timezone string
 			}
 
 			Backend struct {
@@ -137,6 +135,13 @@ type Config struct {
 		TLSCert string `mapstructure:"tls_cert"`
 		TLSKey  string `mapstructure:"tls_key"`
 	} `mapstructure:"network_controller"`
+
+	Metrics struct {
+		Timezone string `mapstructure:"timezone"`
+		Redis    struct {
+			AggregationIntervals []string `mapstructure:"aggregation_intervals"`
+		} `mapstructure:"redis"`
+	} `mapstructure:"metrics"`
 }
 
 // SpreadFactorToRequiredSNRTable contains the required SNR to demodulate a

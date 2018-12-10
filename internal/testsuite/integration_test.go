@@ -648,8 +648,5 @@ func (ts *IntegrationTestSuite) initConfig() {
 	config.C.NetworkServer.NetworkSettings.RX2DR = config.C.NetworkServer.Band.Band.GetDefaults().RX2DataRate
 	config.C.NetworkServer.NetworkSettings.RX1Delay = 0
 
-	config.C.NetworkServer.Gateway.Stats.Timezone = "Europe/Amsterdam"
-	loc, err := time.LoadLocation(config.C.NetworkServer.Gateway.Stats.Timezone)
-	ts.Nil(err)
-	config.C.NetworkServer.Gateway.Stats.TimezoneLocation = loc
+	storage.SetTimeLocation("Europe/Amsterdam")
 }

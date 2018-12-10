@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+message GatewayState {
+    // Gateway ID.
+    bytes gateway_id = 1;
+
+    // Last seen at timestamp.
+    google.protobuf.Timestamp last_seen_at = 2;
+}

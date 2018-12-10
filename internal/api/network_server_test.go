@@ -37,7 +37,7 @@ func TestNetworkServerAPI(t *testing.T) {
 	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
 	config.C.NetworkServer.NetID = [3]byte{1, 2, 3}
 
-	storage.MustSetStatsAggregationIntervals([]string{"MINUTE"})
+	storage.SetAggregationIntervals([]storage.AggregationInterval{storage.AggregationMinute})
 
 	Convey("Given a clean PostgreSQL and Redis database + api instance", t, func() {
 		test.MustResetDB(db)
@@ -812,7 +812,6 @@ func TestNetworkServerAPI(t *testing.T) {
 				}
 				So(resp.CreatedAt.String(), ShouldNotEqual, "")
 				So(resp.UpdatedAt.String(), ShouldNotEqual, "")
-				So(resp.FirstSeenAt, ShouldBeNil)
 				So(resp.LastSeenAt, ShouldBeNil)
 			})
 
@@ -845,7 +844,6 @@ func TestNetworkServerAPI(t *testing.T) {
 				}
 				So(resp.CreatedAt.String(), ShouldNotEqual, "")
 				So(resp.UpdatedAt.String(), ShouldNotEqual, "")
-				So(resp.FirstSeenAt, ShouldBeNil)
 				So(resp.LastSeenAt, ShouldBeNil)
 			})
 
@@ -863,25 +861,16 @@ func TestNetworkServerAPI(t *testing.T) {
 
 			Convey("Given some stats for this gateway", func() {
 				now := time.Now().UTC()
-				_, err := db.Exec(`
-		                   insert into gateway_stats (
-		                       gateway_id,
-		                       "timestamp",
-		                       "interval",
-		                       rx_packets_received,
-		                       rx_packets_received_ok,
-		                       tx_packets_received,
-		                       tx_packets_emitted
-		                   ) values ($1, $2, $3, $4, $5, $6, $7)`,
-					[]byte{1, 2, 3, 4, 5, 6, 7, 8},
-					now.Truncate(time.Minute),
-					"MINUTE",
-					10,
-					5,
-					11,
-					10,
-				)
-				So(err, ShouldBeNil)
+				metrics := storage.MetricsRecord{
+					Time: now,
+					Metrics: map[string]float64{
+						"rx_count":    10,
+						"rx_ok_count": 5,
+						"tx_count":    11,
+						"tx_ok_count": 10,
+					},
+				}
+				So(storage.SaveMetricsForInterval(config.C.Redis.Pool, storage.AggregationMinute, "gw:0102030405060708", metrics), ShouldBeNil)
 
 				Convey("Then GetGatewayStats returns these stats", func() {
 					start, _ := ptypes.TimestampProto(now.Truncate(time.Minute))

@@ -19,6 +19,7 @@ import (
 	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/band"
 )
 
 // StatsHandler represents a stat handler for incoming gateway stats.
@@ -36,7 +37,21 @@ func (s *StatsHandler) Start() error {
 	go func() {
 		s.wg.Add(1)
 		defer s.wg.Done()
-		handleStatsPackets(&s.wg)
+
+		for stats := range config.C.NetworkServer.Gateway.Backend.Backend.StatsPacketChan() {
+			go func(stats gw.GatewayStats) {
+				s.wg.Add(1)
+				defer s.wg.Done()
+
+				if err := updateGatewayState(config.C.PostgreSQL.DB, config.C.Redis.Pool, stats); err != nil {
+					log.WithError(err).Error("update gateway state error")
+				}
+
+				if err := handleGatewayStats(config.C.Redis.Pool, stats); err != nil {
+					log.WithError(err).Error("handle gateway stats error")
+				}
+			}(stats)
+		}
 	}()
 	return nil
 }
@@ -48,24 +63,66 @@ func (s *StatsHandler) Stop() error {
 	return nil
 }
 
-// handleStatsPackets consumes received stats packets by the gateway.
-func handleStatsPackets(wg *sync.WaitGroup) {
-	for statsPacket := range config.C.NetworkServer.Gateway.Backend.Backend.StatsPacketChan() {
-		go func(stats gw.GatewayStats) {
-			wg.Add(1)
-			defer wg.Done()
+func handleGatewayStats(p *redis.Pool, stats gw.GatewayStats) error {
+	gatewayID := helpers.GetGatewayID(&stats)
 
-			if err := storage.HandleGatewayStatsPacket(config.C.PostgreSQL.DB, stats); err != nil {
-				log.WithError(err).Error("handle stats packet error")
-			}
-
-			var gatewayID lorawan.EUI64
-			copy(gatewayID[:], stats.GatewayId)
-			if err := storage.FlushGatewayCache(config.C.Redis.Pool, gatewayID); err != nil {
-				log.WithError(err).Error("flush gateway cache error")
-			}
-		}(statsPacket)
+	ts, err := ptypes.Timestamp(stats.Time)
+	if err != nil {
+		return errors.Wrap(err, "timestamp error")
 	}
+
+	metrics := storage.MetricsRecord{
+		Time: ts,
+		Metrics: map[string]float64{
+			"rx_count":    float64(stats.RxPacketsReceived),
+			"rx_ok_count": float64(stats.RxPacketsReceivedOk),
+			"tx_count":    float64(stats.TxPacketsReceived),
+			"tx_ok_count": float64(stats.TxPacketsEmitted),
+		},
+	}
+
+	err = storage.SaveMetrics(p, "gw:"+gatewayID.String(), metrics)
+	if err != nil {
+		return errors.Wrap(err, "save metrics error")
+	}
+
+	return nil
+}
+
+func updateGatewayState(db sqlx.Ext, p *redis.Pool, stats gw.GatewayStats) error {
+	// update the gateway location if it has changed
+	if stats.Location != nil {
+		gatewayID := helpers.GetGatewayID(&stats)
+		gw, err := storage.GetAndCacheGateway(db, p, gatewayID)
+		if err != nil {
+			return errors.Wrap(err, "get gateway error")
+		}
+
+		if gw.Altitude != stats.Location.Altitude || gw.Location.Latitude != stats.Location.Latitude || gw.Location.Longitude != stats.Location.Longitude {
+			gw.Altitude = stats.Location.Altitude
+			gw.Location.Latitude = stats.Location.Latitude
+			gw.Location.Longitude = stats.Location.Longitude
+
+			if err := storage.UpdateGateway(db, &gw); err != nil {
+				return errors.Wrap(err, "update gateway error")
+			}
+
+			if err := storage.FlushGatewayCache(p, gatewayID); err != nil {
+				return errors.Wrap(err, "flush gateway cache error")
+			}
+		}
+	}
+
+	state := storage.GatewayState{
+		GatewayId:  stats.GatewayId,
+		LastSeenAt: stats.Time,
+	}
+
+	if err := storage.SaveGatewayState(p, state); err != nil {
+		return errors.Wrap(err, "save gateway state error")
+	}
+
+	return nil
 }
 
 // UpdateMetaDataInRxInfoSet updates the gateway meta-data in the
@@ -185,4 +242,99 @@ func decryptFineTimestamp(key lorawan.AES128Key, rxTime time.Time, ts gw.Encrypt
 	}
 
 	return plainTS, nil
+}
+
+func handleConfigurationUpdate(db sqlx.Queryer, g storage.Gateway, currentVersion string) error {
+	if g.GatewayProfileID == nil {
+		log.WithField("gateway_id", g.GatewayID).Debug("gateway-profile is not set, skipping configuration update")
+		return nil
+	}
+
+	gwProfile, err := storage.GetGatewayProfile(db, *g.GatewayProfileID)
+	if err != nil {
+		return errors.Wrap(err, "get gateway-profile error")
+	}
+
+	if gwProfile.GetVersion() == currentVersion {
+		log.WithFields(log.Fields{
+			"gateway_id": g.GatewayID,
+			"version":    currentVersion,
+		}).Debug("gateway configuration is up-to-date")
+		return nil
+	}
+
+	configPacket := gw.GatewayConfiguration{
+		GatewayId: g.GatewayID[:],
+		Version:   gwProfile.GetVersion(),
+	}
+
+	for _, i := range gwProfile.Channels {
+		c, err := config.C.NetworkServer.Band.Band.GetUplinkChannel(int(i))
+		if err != nil {
+			return errors.Wrap(err, "get channel error")
+		}
+
+		gwC := gw.ChannelConfiguration{
+			Frequency:  uint32(c.Frequency),
+			Modulation: common.Modulation_LORA,
+		}
+
+		modConfig := gw.LoRaModulationConfig{}
+
+		for drI := c.MaxDR; drI >= c.MinDR; drI-- {
+			dr, err := config.C.NetworkServer.Band.Band.GetDataRate(drI)
+			if err != nil {
+				return errors.Wrap(err, "get data-rate error")
+			}
+
+			modConfig.SpreadingFactors = append(modConfig.SpreadingFactors, uint32(dr.SpreadFactor))
+			modConfig.Bandwidth = uint32(dr.Bandwidth)
+		}
+
+		gwC.ModulationConfig = &gw.ChannelConfiguration_LoraModulationConfig{
+			LoraModulationConfig: &modConfig,
+		}
+
+		configPacket.Channels = append(configPacket.Channels, &gwC)
+	}
+
+	for _, c := range gwProfile.ExtraChannels {
+		gwC := gw.ChannelConfiguration{
+			Frequency: uint32(c.Frequency),
+		}
+
+		switch band.Modulation(c.Modulation) {
+		case band.LoRaModulation:
+			gwC.Modulation = common.Modulation_LORA
+			modConfig := gw.LoRaModulationConfig{
+				Bandwidth: uint32(c.Bandwidth),
+			}
+
+			for _, sf := range c.SpreadingFactors {
+				modConfig.SpreadingFactors = append(modConfig.SpreadingFactors, uint32(sf))
+			}
+
+			gwC.ModulationConfig = &gw.ChannelConfiguration_LoraModulationConfig{
+				LoraModulationConfig: &modConfig,
+			}
+		case band.FSKModulation:
+			gwC.Modulation = common.Modulation_FSK
+			modConfig := gw.FSKModulationConfig{
+				Bandwidth: uint32(c.Bandwidth),
+				Bitrate:   uint32(c.Bitrate),
+			}
+
+			gwC.ModulationConfig = &gw.ChannelConfiguration_FskModulationConfig{
+				FskModulationConfig: &modConfig,
+			}
+		}
+
+		configPacket.Channels = append(configPacket.Channels, &gwC)
+	}
+
+	if err := config.C.NetworkServer.Gateway.Backend.Backend.SendGatewayConfigPacket(configPacket); err != nil {
+		return errors.Wrap(err, "send gateway-configuration packet error")
+	}
+
+	return nil
 }

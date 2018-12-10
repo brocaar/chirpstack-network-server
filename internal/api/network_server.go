@@ -20,6 +20,7 @@ import (
 	proprietarydown "github.com/brocaar/loraserver/internal/downlink/proprietary"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/gps"
+	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
@@ -885,7 +886,45 @@ func (n *NetworkServerAPI) GetGateway(ctx context.Context, req *ns.GetGatewayReq
 		return nil, errToRPCError(err)
 	}
 
-	return gwToResp(gw), nil
+	resp := ns.GetGatewayResponse{
+		Gateway: &ns.Gateway{
+			Id: gw.GatewayID[:],
+			Location: &common.Location{
+				Latitude:  gw.Location.Latitude,
+				Longitude: gw.Location.Longitude,
+				Altitude:  gw.Altitude,
+			},
+		},
+	}
+
+	resp.CreatedAt, _ = ptypes.TimestampProto(gw.CreatedAt)
+	resp.UpdatedAt, _ = ptypes.TimestampProto(gw.UpdatedAt)
+
+	if gw.GatewayProfileID != nil {
+		resp.Gateway.GatewayProfileId = gw.GatewayProfileID.Bytes()
+	}
+
+	for i := range gw.Boards {
+		var gwBoard ns.GatewayBoard
+		if gw.Boards[i].FPGAID != nil {
+			gwBoard.FpgaId = gw.Boards[i].FPGAID[:]
+		}
+
+		if gw.Boards[i].FineTimestampKey != nil {
+			gwBoard.FineTimestampKey = gw.Boards[i].FineTimestampKey[:]
+		}
+
+		resp.Gateway.Boards = append(resp.Gateway.Boards, &gwBoard)
+	}
+
+	gwState, err := storage.GetGatewayState(config.C.Redis.Pool, id)
+	if err != nil && err != storage.ErrDoesNotExist {
+		return nil, errToRPCError(err)
+	} else if err == nil {
+		resp.LastSeenAt = gwState.LastSeenAt
+	}
+
+	return &resp, nil
 }
 
 // UpdateGateway updates an existing gateway.
@@ -975,8 +1014,7 @@ func (n *NetworkServerAPI) DeleteGateway(ctx context.Context, req *ns.DeleteGate
 
 // GetGatewayStats returns stats of an existing gateway.
 func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatewayStatsRequest) (*ns.GetGatewayStatsResponse, error) {
-	var id lorawan.EUI64
-	copy(id[:], req.GatewayId)
+	gatewayID := helpers.GetGatewayID(req)
 
 	start, err := ptypes.Timestamp(req.StartTimestamp)
 	if err != nil {
@@ -988,22 +1026,22 @@ func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatew
 		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	stats, err := storage.GetGatewayStats(config.C.PostgreSQL.DB, id, req.Interval.String(), start, end)
+	metrics, err := storage.GetMetrics(config.C.Redis.Pool, storage.AggregationInterval(req.Interval.String()), "gw:"+gatewayID.String(), start, end)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
 	var resp ns.GetGatewayStatsResponse
 
-	for _, stat := range stats {
+	for _, m := range metrics {
 		row := ns.GatewayStats{
-			RxPacketsReceived:   int32(stat.RXPacketsReceived),
-			RxPacketsReceivedOk: int32(stat.RXPacketsReceivedOK),
-			TxPacketsReceived:   int32(stat.TXPacketsReceived),
-			TxPacketsEmitted:    int32(stat.TXPacketsEmitted),
+			RxPacketsReceived:   int32(m.Metrics["rx_count"]),
+			RxPacketsReceivedOk: int32(m.Metrics["rx_ok_count"]),
+			TxPacketsReceived:   int32(m.Metrics["tx_count"]),
+			TxPacketsEmitted:    int32(m.Metrics["tx_ok_count"]),
 		}
 
-		row.Timestamp, err = ptypes.TimestampProto(stat.Timestamp)
+		row.Timestamp, err = ptypes.TimestampProto(m.Time)
 		if err != nil {
 			return nil, errToRPCError(err)
 		}
@@ -1655,47 +1693,4 @@ func (n *NetworkServerAPI) GetVersion(ctx context.Context, req *empty.Empty) (*n
 		Region:  region,
 		Version: config.Version,
 	}, nil
-}
-
-func gwToResp(gw storage.Gateway) *ns.GetGatewayResponse {
-	resp := ns.GetGatewayResponse{
-		Gateway: &ns.Gateway{
-			Id: gw.GatewayID[:],
-			Location: &common.Location{
-				Latitude:  gw.Location.Latitude,
-				Longitude: gw.Location.Longitude,
-				Altitude:  gw.Altitude,
-			},
-		},
-	}
-
-	resp.CreatedAt, _ = ptypes.TimestampProto(gw.CreatedAt)
-	resp.UpdatedAt, _ = ptypes.TimestampProto(gw.UpdatedAt)
-
-	if gw.FirstSeenAt != nil {
-		resp.FirstSeenAt, _ = ptypes.TimestampProto(*gw.FirstSeenAt)
-	}
-
-	if gw.LastSeenAt != nil {
-		resp.LastSeenAt, _ = ptypes.TimestampProto(*gw.LastSeenAt)
-	}
-
-	if gw.GatewayProfileID != nil {
-		resp.Gateway.GatewayProfileId = gw.GatewayProfileID.Bytes()
-	}
-
-	for i := range gw.Boards {
-		var gwBoard ns.GatewayBoard
-		if gw.Boards[i].FPGAID != nil {
-			gwBoard.FpgaId = gw.Boards[i].FPGAID[:]
-		}
-
-		if gw.Boards[i].FineTimestampKey != nil {
-			gwBoard.FineTimestampKey = gw.Boards[i].FineTimestampKey[:]
-		}
-
-		resp.Gateway.Boards = append(resp.Gateway.Boards, &gwBoard)
-	}
-
-	return &resp
 }
