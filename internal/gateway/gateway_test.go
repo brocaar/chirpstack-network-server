@@ -68,6 +68,11 @@ func (ts *GatewayConfigurationTestSuite) TestUpdate() {
 
 		assert.NoError(storage.CreateGatewayProfile(ts.DB(), &gp))
 
+		// to work around timestamp truncation
+		var err error
+		gp, err = storage.GetGatewayProfile(ts.DB(), gp.ID)
+		assert.NoError(err)
+
 		ts.gateway.GatewayProfileID = &gp.ID
 		assert.NoError(storage.UpdateGateway(ts.DB(), &ts.gateway))
 
