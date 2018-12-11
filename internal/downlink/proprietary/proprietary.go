@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/helpers"
@@ -91,6 +92,14 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 		err = helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.DR, config.C.NetworkServer.Band.Band)
 		if err != nil {
 			return errors.Wrap(err, "set downlink tx-info data-rate error")
+		}
+
+		// for LoRa, set the iPol value
+		if txInfo.Modulation == common.Modulation_LORA {
+			modInfo := txInfo.GetLoraModulationInfo()
+			if modInfo != nil {
+				modInfo.PolarizationInversion = ctx.IPol
+			}
 		}
 
 		if err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(gw.DownlinkFrame{
