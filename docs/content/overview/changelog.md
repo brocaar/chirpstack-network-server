@@ -9,6 +9,12 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v2.3.1
+
+### Bugfixes
+
+* Fix polarization inversion regression for "Proprietary" LoRa frames.
+
 ## v2.3.0
 
 ### Features
