@@ -51,6 +51,8 @@ type Gateway struct {
 	GatewayID        lorawan.EUI64  `db:"gateway_id"`
 	CreatedAt        time.Time      `db:"created_at"`
 	UpdatedAt        time.Time      `db:"updated_at"`
+	FirstSeenAt      *time.Time     `db:"first_seen_at"`
+	LastSeenAt       *time.Time     `db:"last_seen_at"`
 	Location         GPSPoint       `db:"location"`
 	Altitude         float64        `db:"altitude"`
 	GatewayProfileID *uuid.UUID     `db:"gateway_profile_id"`
@@ -74,13 +76,17 @@ func CreateGateway(db sqlx.Execer, gw *Gateway) error {
 			gateway_id,
 			created_at,
 			updated_at,
+			first_seen_at,
+			last_seen_at,
 			location,
 			altitude,
 			gateway_profile_id
-		) values ($1, $2, $3, $4, $5, $6)`,
+		) values ($1, $2, $3, $4, $5, $6, $7, $8)`,
 		gw.GatewayID[:],
 		gw.CreatedAt,
 		gw.UpdatedAt,
+		gw.FirstSeenAt,
+		gw.LastSeenAt,
 		gw.Location,
 		gw.Altitude,
 		gw.GatewayProfileID,
@@ -238,12 +244,16 @@ func UpdateGateway(db sqlx.Execer, gw *Gateway) error {
 	res, err := db.Exec(`
 		update gateway set
 			updated_at = $2,
-			location = $3,
-			altitude = $4,
-			gateway_profile_id = $5
+			first_seen_at = $3,
+			last_seen_at = $4,
+			location = $5,
+			altitude = $6,
+			gateway_profile_id = $7
 		where gateway_id = $1`,
 		gw.GatewayID[:],
 		gw.UpdatedAt,
+		gw.FirstSeenAt,
+		gw.LastSeenAt,
 		gw.Location,
 		gw.Altitude,
 		gw.GatewayProfileID,

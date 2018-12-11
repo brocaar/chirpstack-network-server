@@ -90,36 +90,31 @@ func handleGatewayStats(p *redis.Pool, stats gw.GatewayStats) error {
 }
 
 func updateGatewayState(db sqlx.Ext, p *redis.Pool, stats gw.GatewayStats) error {
-	// update the gateway location if it has changed
+	gatewayID := helpers.GetGatewayID(&stats)
+	gw, err := storage.GetAndCacheGateway(db, p, gatewayID)
+	if err != nil {
+		return errors.Wrap(err, "get gateway error")
+	}
+
+	now := time.Now()
+
+	if gw.FirstSeenAt == nil {
+		gw.FirstSeenAt = &now
+	}
+	gw.LastSeenAt = &now
+
 	if stats.Location != nil {
-		gatewayID := helpers.GetGatewayID(&stats)
-		gw, err := storage.GetAndCacheGateway(db, p, gatewayID)
-		if err != nil {
-			return errors.Wrap(err, "get gateway error")
-		}
-
-		if gw.Altitude != stats.Location.Altitude || gw.Location.Latitude != stats.Location.Latitude || gw.Location.Longitude != stats.Location.Longitude {
-			gw.Altitude = stats.Location.Altitude
-			gw.Location.Latitude = stats.Location.Latitude
-			gw.Location.Longitude = stats.Location.Longitude
-
-			if err := storage.UpdateGateway(db, &gw); err != nil {
-				return errors.Wrap(err, "update gateway error")
-			}
-
-			if err := storage.FlushGatewayCache(p, gatewayID); err != nil {
-				return errors.Wrap(err, "flush gateway cache error")
-			}
-		}
+		gw.Location.Latitude = stats.Location.Latitude
+		gw.Location.Longitude = stats.Location.Longitude
+		gw.Altitude = stats.Location.Altitude
 	}
 
-	state := storage.GatewayState{
-		GatewayId:  stats.GatewayId,
-		LastSeenAt: stats.Time,
+	if err := storage.UpdateGateway(db, &gw); err != nil {
+		return errors.Wrap(err, "update gateway error")
 	}
 
-	if err := storage.SaveGatewayState(p, state); err != nil {
-		return errors.Wrap(err, "save gateway state error")
+	if err := storage.FlushGatewayCache(p, gatewayID); err != nil {
+		return errors.Wrap(err, "flush gateway cache error")
 	}
 
 	return nil

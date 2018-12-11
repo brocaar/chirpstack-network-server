@@ -904,6 +904,14 @@ func (n *NetworkServerAPI) GetGateway(ctx context.Context, req *ns.GetGatewayReq
 		resp.Gateway.GatewayProfileId = gw.GatewayProfileID.Bytes()
 	}
 
+	if gw.FirstSeenAt != nil {
+		resp.FirstSeenAt, _ = ptypes.TimestampProto(*gw.FirstSeenAt)
+	}
+
+	if gw.LastSeenAt != nil {
+		resp.LastSeenAt, _ = ptypes.TimestampProto(*gw.LastSeenAt)
+	}
+
 	for i := range gw.Boards {
 		var gwBoard ns.GatewayBoard
 		if gw.Boards[i].FPGAID != nil {
@@ -915,13 +923,6 @@ func (n *NetworkServerAPI) GetGateway(ctx context.Context, req *ns.GetGatewayReq
 		}
 
 		resp.Gateway.Boards = append(resp.Gateway.Boards, &gwBoard)
-	}
-
-	gwState, err := storage.GetGatewayState(config.C.Redis.Pool, id)
-	if err != nil && err != storage.ErrDoesNotExist {
-		return nil, errToRPCError(err)
-	} else if err == nil {
-		resp.LastSeenAt = gwState.LastSeenAt
 	}
 
 	return &resp, nil

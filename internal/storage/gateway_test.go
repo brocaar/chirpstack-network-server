@@ -64,6 +64,7 @@ func (ts *StorageTestSuite) TestGateway() {
 
 		t.Run("Update", func(t *testing.T) {
 			assert := require.New(t)
+			now := time.Now().Round(time.Millisecond).UTC()
 
 			gp := GatewayProfile{
 				Channels: []int64{0, 1, 2},
@@ -71,6 +72,8 @@ func (ts *StorageTestSuite) TestGateway() {
 			assert.NoError(CreateGatewayProfile(ts.Tx(), &gp))
 
 			gw.GatewayProfileID = &gp.ID
+			gw.FirstSeenAt = &now
+			gw.LastSeenAt = &now
 			gw.Location = GPSPoint{
 				Latitude:  2.123,
 				Longitude: 3.123,
@@ -93,6 +96,11 @@ func (ts *StorageTestSuite) TestGateway() {
 
 			gwGet.CreatedAt = gwGet.CreatedAt.Round(time.Millisecond).UTC()
 			gwGet.UpdatedAt = gwGet.UpdatedAt.Round(time.Millisecond).UTC()
+
+			assert.True(gwGet.FirstSeenAt.Round(time.Microsecond).Equal(now))
+			assert.True(gwGet.LastSeenAt.Round(time.Microsecond).Equal(now))
+			gwGet.FirstSeenAt = &now
+			gwGet.LastSeenAt = &now
 
 			assert.Equal(gw, gwGet)
 		})
