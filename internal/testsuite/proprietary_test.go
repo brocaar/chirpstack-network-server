@@ -20,7 +20,7 @@ type ProprietaryTestCase struct {
 func (ts *ProprietaryTestCase) TestDownlink() {
 	tests := []DownlinkProprietaryTest{
 		{
-			Name: "send proprietary payload",
+			Name: "send proprietary payload (iPol true)",
 			SendProprietaryPayloadRequest: ns.SendProprietaryPayloadRequest{
 				MacPayload:            []byte{1, 2, 3, 4},
 				Mic:                   []byte{5, 6, 7, 8},
@@ -43,6 +43,42 @@ func (ts *ProprietaryTestCase) TestDownlink() {
 							SpreadingFactor:       7,
 							CodeRate:              "4/5",
 							PolarizationInversion: true,
+						},
+					},
+				}, lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						Major: lorawan.LoRaWANR1,
+						MType: lorawan.Proprietary,
+					},
+					MACPayload: &lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}},
+					MIC:        lorawan.MIC{5, 6, 7, 8},
+				}),
+			},
+		},
+		{
+			Name: "send proprietary payload (iPol false)",
+			SendProprietaryPayloadRequest: ns.SendProprietaryPayloadRequest{
+				MacPayload:            []byte{1, 2, 3, 4},
+				Mic:                   []byte{5, 6, 7, 8},
+				GatewayMacs:           [][]byte{{8, 7, 6, 5, 4, 3, 2, 1}},
+				PolarizationInversion: false,
+				Frequency:             868100000,
+				Dr:                    5,
+			},
+
+			Assert: []Assertion{
+				AssertDownlinkFrame(gw.DownlinkTXInfo{
+					GatewayId:   []byte{8, 7, 6, 5, 4, 3, 2, 1},
+					Immediately: true,
+					Frequency:   868100000,
+					Power:       14,
+					Modulation:  commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       7,
+							CodeRate:              "4/5",
+							PolarizationInversion: false,
 						},
 					},
 				}, lorawan.PHYPayload{
