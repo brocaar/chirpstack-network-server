@@ -26,13 +26,6 @@ LoRa Server exposes the gateway statistics on a pre-configured aggregation
 intervals (see [Configuration]({{<ref "/install/config.md">}})).
 By default these intervals are configured to: minute, hour, day and month.
 
-The following data retention is being used:
-
-* `MINUTE` - one hour
-* `HOUR` - one day
-* `DAY` - one month
-* `MONTH` - one year
-
 ## Gateway re-configuration
 
 If a [gateway-profile]({{<relref "gateway-profile.md">}}) is assigned

@@ -14,6 +14,8 @@ func (ts *StorageTestSuite) TestMetrics() {
 	loc, err := time.LoadLocation("Europe/Amsterdam")
 	assert.NoError(err)
 
+	SetMetricsTTL(time.Minute, time.Minute, time.Minute, time.Minute)
+
 	tests := []struct {
 		Name         string
 		MetricsName  string

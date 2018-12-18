@@ -22,17 +22,17 @@ const (
 )
 
 const (
-	metricsKeyTempl  = "lora:ns:metrics:%s:%s:%d" // metrics key (identifier | aggregation | timestamp)
-	metricsMinuteTTL = time.Minute * 65           // last hour + margin
-	metricsHourTTL   = time.Hour * 25             // last day + margin
-	metricsDayTTL    = time.Hour * 24 * 32        // last month + margin
-	metricsMonthTTL  = time.Hour * 24 * 366       // last year + margin
+	metricsKeyTempl = "lora:ns:metrics:%s:%s:%d" // metrics key (identifier | aggregation | timestamp)
 
 )
 
 var (
 	timeLocation         = time.Local
 	aggregationIntervals []AggregationInterval
+	metricsMinuteTTL     time.Duration
+	metricsHourTTL       time.Duration
+	metricsDayTTL        time.Duration
+	metricsMonthTTL      time.Duration
 )
 
 // MetricsRecord holds a single metrics record.
@@ -55,6 +55,14 @@ func SetTimeLocation(name string) error {
 func SetAggregationIntervals(intervals []AggregationInterval) error {
 	aggregationIntervals = intervals
 	return nil
+}
+
+// SetMetricsTTL sets the storage TTL.
+func SetMetricsTTL(minute, hour, day, month time.Duration) {
+	metricsMinuteTTL = minute
+	metricsHourTTL = hour
+	metricsDayTTL = day
+	metricsMonthTTL = month
 }
 
 // SaveMetrics stores the given metrics into Redis.

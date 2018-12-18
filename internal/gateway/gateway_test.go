@@ -163,6 +163,8 @@ func (ts *GatewayStatsTestSuite) SetupSuite() {
 	}))
 
 	assert.NoError(storage.SetTimeLocation("Europe/Amsterdam"))
+
+	storage.SetMetricsTTL(time.Minute, time.Minute, time.Minute, time.Minute)
 }
 
 func (ts *GatewayStatsTestSuite) TestStats() {

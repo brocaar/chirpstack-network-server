@@ -11,9 +11,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
-	"github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/pkg/errors"
 	migrate "github.com/rubenv/sql-migrate"
 	log "github.com/sirupsen/logrus"
@@ -51,8 +51,7 @@ func run(cmd *cobra.Command, args []string) error {
 		setLogLevel,
 		setBandConfig,
 		setRXParameters,
-		setStatsAggregationIntervals,
-		setTimezone,
+		setupMetrics,
 		printStartMessage,
 		enableUplinkChannels,
 		setRedisPool,
@@ -137,7 +136,8 @@ func setRXParameters() error {
 	return nil
 }
 
-func setStatsAggregationIntervals() error {
+func setupMetrics() error {
+	// setup aggregation intervals
 	var intervals []storage.AggregationInterval
 	for _, agg := range config.C.Metrics.Redis.AggregationIntervals {
 		intervals = append(intervals, storage.AggregationInterval(strings.ToUpper(agg)))
@@ -145,10 +145,8 @@ func setStatsAggregationIntervals() error {
 	if err := storage.SetAggregationIntervals(intervals); err != nil {
 		return errors.Wrap(err, "set aggregation intervals error")
 	}
-	return nil
-}
 
-func setTimezone() error {
+	// setup timezone
 	var err error
 	if config.C.Metrics.Timezone == "" {
 		err = storage.SetTimeLocation(config.C.NetworkServer.Gateway.Stats.Timezone)
@@ -158,6 +156,15 @@ func setTimezone() error {
 	if err != nil {
 		return errors.Wrap(err, "set time location error")
 	}
+
+	// setup storage TTL
+	storage.SetMetricsTTL(
+		config.C.Metrics.Redis.MinuteAggregationTTL,
+		config.C.Metrics.Redis.HourAggregationTTL,
+		config.C.Metrics.Redis.DayAggregationTTL,
+		config.C.Metrics.Redis.MonthAggregationTTL,
+	)
+
 	return nil
 }
 

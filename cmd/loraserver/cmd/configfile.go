@@ -490,6 +490,12 @@ timezone="{{ .Metrics.Timezone }}"
   # 'MINUTE', 'HOUR', 'DAY', 'MONTH'.
   aggregation_intervals=[{{ if .Metrics.Redis.AggregationIntervals|len }}"{{ end }}{{ range $index, $elm := .Metrics.Redis.AggregationIntervals }}{{ if $index }}", "{{ end }}{{ $elm }}{{ end }}{{ if .Metrics.Redis.AggregationIntervals|len }}"{{ end }}]
 
+  # Aggregated statistics storage duration.
+  minute_aggregation_ttl="{{ .Metrics.Redis.MinuteAggregationTTL }}"
+  hour_aggregation_ttl="{{ .Metrics.Redis.HourAggregationTTL }}"
+  day_aggregation_ttl="{{ .Metrics.Redis.DayAggregationTTL }}"
+  month_aggregation_ttl="{{ .Metrics.Redis.MonthAggregationTTL }}"
+
 
 # Join-server settings.
 [join_server]

@@ -92,6 +92,10 @@ func init() {
 
 	viper.SetDefault("metrics.timezone", "Local")
 	viper.SetDefault("metrics.redis.aggregation_intervals", []string{"MINUTE", "HOUR", "DAY", "MONTH"})
+	viper.SetDefault("metrics.redis.minute_aggregation_ttl", time.Hour*2)
+	viper.SetDefault("metrics.redis.hour_aggregation_ttl", time.Hour*48)
+	viper.SetDefault("metrics.redis.day_aggregation_ttl", time.Hour*24*90)
+	viper.SetDefault("metrics.reids.month_aggregation_ttl", time.Hour*24*730)
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(configCmd)

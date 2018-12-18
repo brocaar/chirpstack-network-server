@@ -38,6 +38,7 @@ func TestNetworkServerAPI(t *testing.T) {
 	config.C.NetworkServer.NetID = [3]byte{1, 2, 3}
 
 	storage.SetAggregationIntervals([]storage.AggregationInterval{storage.AggregationMinute})
+	storage.SetMetricsTTL(time.Minute, time.Minute, time.Minute, time.Minute)
 
 	Convey("Given a clean PostgreSQL and Redis database + api instance", t, func() {
 		test.MustResetDB(db)
