@@ -37,7 +37,7 @@ if [ -r /etc/default/rcS ]; then
 fi
 
 function do_start {
-	start-stop-daemon --start --background --chuid "$DAEMON_USER:$DAEMON_GROUP" --make-pidfile --pidfile "$PID_FILE" --startas /bin/bash -- -c "exec $DAEMON > /var/log/$NAME/$NAME.log 2>&1"
+	start-stop-daemon --start --background --chuid "$DAEMON_USER:$DAEMON_GROUP" --make-pidfile --pidfile "$PID_FILE" --startas /bin/bash -- -c "exec $DAEMON >> /var/log/$NAME/$NAME.log 2>&1"
 }
 
 function do_stop {
