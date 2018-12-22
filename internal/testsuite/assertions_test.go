@@ -271,3 +271,9 @@ func AssertASSetDeviceStatusRequest(req as.SetDeviceStatusRequest) Assertion {
 		}
 	}
 }
+
+func AssertLastDownlinkResponsePHYPayload(b []byte) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		assert.Equal(b, ts.DeviceSession.LastDownlinkResponsePHYPayload)
+	}
+}

@@ -61,6 +61,7 @@ var responseTasks = []func(*dataContext) error{
 	setMACCommandsSet,
 	stopOnNothingToSend,
 	setPHYPayloads,
+	setLastDownlinkResponsePHYPayload,
 	sendDownlinkFrame,
 	saveDeviceSession,
 	saveRemainingFrames,
@@ -868,6 +869,16 @@ func setPHYPayloads(ctx *dataContext) error {
 		ctx.DownlinkFrames[i].DownlinkFrame.PhyPayload = b
 	}
 
+	return nil
+}
+
+func setLastDownlinkResponsePHYPayload(ctx *dataContext) error {
+	// use the first downlink-frame from the list
+	if len(ctx.DownlinkFrames) != 0 {
+		ctx.DeviceSession.LastDownlinkResponsePHYPayload = ctx.DownlinkFrames[0].DownlinkFrame.PhyPayload
+	} else {
+		ctx.DeviceSession.LastDownlinkResponsePHYPayload = []byte{}
+	}
 	return nil
 }
 

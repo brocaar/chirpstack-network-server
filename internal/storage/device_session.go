@@ -174,6 +174,10 @@ type DeviceSession struct {
 	// ReferenceAltitude holds the device reference altitude used for
 	// geolocation.
 	ReferenceAltitude float64
+
+	// LastDownlinkPHYPayload holds the last transmitted PHYPayload
+	// (Class-A response) which can be used for re-transmission.
+	LastDownlinkResponsePHYPayload []byte
 }
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list
@@ -664,8 +668,9 @@ func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
 		RejoinRequestMaxCountN: uint32(d.RejoinRequestMaxCountN),
 		RejoinRequestMaxTimeN:  uint32(d.RejoinRequestMaxTimeN),
 
-		RejoinCount_0:     uint32(d.RejoinCount0),
-		ReferenceAltitude: d.ReferenceAltitude,
+		RejoinCount_0:                  uint32(d.RejoinCount0),
+		ReferenceAltitude:              d.ReferenceAltitude,
+		LastDownlinkResponsePhyPayload: d.LastDownlinkResponsePHYPayload,
 	}
 
 	if d.AppSKeyEvelope != nil {
@@ -760,8 +765,9 @@ func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
 		RejoinRequestMaxCountN: int(d.RejoinRequestMaxCountN),
 		RejoinRequestMaxTimeN:  int(d.RejoinRequestMaxTimeN),
 
-		RejoinCount0:      uint16(d.RejoinCount_0),
-		ReferenceAltitude: d.ReferenceAltitude,
+		RejoinCount0:                   uint16(d.RejoinCount_0),
+		ReferenceAltitude:              d.ReferenceAltitude,
+		LastDownlinkResponsePHYPayload: d.LastDownlinkResponsePhyPayload,
 	}
 
 	if d.LastDeviceStatusRequestTimeUnixNs > 0 {

@@ -180,6 +180,9 @@ message DeviceSessionPB {
 
     // Device reference altitude for geolocation.
     double reference_altitude = 46;
+
+    // Last downlink response (Class-A) PHYPayload.
+    bytes last_downlink_response_phy_payload = 47;
 }
 
 
