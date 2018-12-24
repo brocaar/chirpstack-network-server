@@ -94,7 +94,7 @@ func (ts *ClassATestSuite) TestLW10Errors() {
 
 	tests := []ClassATest{
 		{
-			Name:          "invalid frame-counter",
+			Name:          "invalid frame-counter (did not increment)",
 			DeviceSession: *ts.DeviceSession,
 			TXInfo:        ts.TXInfo,
 			RXInfo:        ts.RXInfo,
@@ -107,6 +107,31 @@ func (ts *ClassATestSuite) TestLW10Errors() {
 					FHDR: lorawan.FHDR{
 						DevAddr: ts.DeviceSession.DevAddr,
 						FCnt:    7,
+					},
+					FPort: &fPortOne,
+				},
+				MIC: lorawan.MIC{48, 94, 26, 239},
+			},
+			ExpectedError: errors.New("get device-session error: re-transmission / replay-attack detected (frame-counter did not increment)"),
+			Assert: []Assertion{
+				AssertFCntUp(8),
+				AssertNFCntDown(5),
+			},
+		},
+		{
+			Name:          "invalid frame-counter / device-session not found error",
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    6,
 					},
 					FPort: &fPortOne,
 				},

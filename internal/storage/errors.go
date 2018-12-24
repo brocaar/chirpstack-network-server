@@ -15,6 +15,8 @@ var (
 	ErrInvalidAggregationInterval     = errors.New("invalid aggregation interval")
 	ErrInvalidName                    = errors.New("invalid gateway name")
 	ErrInvalidFPort                   = errors.New("invalid fPort (must be > 0)")
+	ErrFrameCounterRetransmission     = errors.New("re-transmission / replay-attack detected (frame-counter did not increment)")
+	ErrFrameCounterRollover           = errors.New("frame-counter roll-over detected")
 )
 
 func handlePSQLError(err error, description string) error {
