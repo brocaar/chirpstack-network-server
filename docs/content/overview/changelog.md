@@ -9,7 +9,13 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
-## v.2.4.0
+## v2.4.1
+
+### Bugfixes
+
+* Fix typo in `month_aggregation_ttl` default value.
+
+## v2.4.0
 
 ### Upgrade notes
 

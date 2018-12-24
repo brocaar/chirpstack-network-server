@@ -544,7 +544,7 @@ timezone="Local"
   minute_aggregation_ttl="2h0m0s"
   hour_aggregation_ttl="48h0m0s"
   day_aggregation_ttl="2160h0m0s"
-  month_aggregation_ttl="0s"
+  month_aggregation_ttl="17520h0m0s"
 
 
 # Join-server settings.
