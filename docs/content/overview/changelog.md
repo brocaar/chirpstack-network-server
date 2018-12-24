@@ -9,6 +9,43 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v.2.4.0
+
+### Upgrade notes
+
+This update will migrate the gateway statistics to Redis, using the default
+`*_aggregation_ttl` settings. In case you would like to use different durations,
+please update your configuration before upgrading.
+
+### Improvements
+
+#### Gateway statistics
+
+Gateway statistics are now stored in Redis. This makes the storage of statistics
+more lightweight and also allows for automatic expiration of statistics. Please refer
+to the `[metrics.redis]` configuration section and the `*_aggregation_ttl` configuration
+options.
+
+#### Join-server DNS resolver (A record)
+
+When enabled (`resolve_join_eui`), LoRa Server will try to resolve the join-server
+using DNS. Note that currently only the A record has been implemented and that it
+is assumed that the join-server uses TLS. **Experimental.**
+
+#### FPort > 224
+
+LoRa Server no longer returns an error when a `fPort` greater than `224` is used.
+
+### Bugfixes
+
+* Fix init.d logrotate processing. ([#364](https://github.com/brocaar/loraserver/pull/364))
+
+## v2.3.1
+
+### Bugfixes
+
+* Fix polarization inversion regression for "Proprietary" LoRa frames.
+
 ## v2.3.0
 
 ### Features
