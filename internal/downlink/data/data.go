@@ -67,6 +67,16 @@ var responseTasks = []func(*dataContext) error{
 	saveRemainingFrames,
 }
 
+var retransmissionResponseTasks = []func(*dataContext) error{
+	getDeviceProfile,
+	setDataTXInfo,
+	setToken,
+	setPHYPayloadFromLastDownlinkResponsePHYPayload,
+	sendDownlinkFrame,
+	saveDeviceSession,
+	saveRemainingFrames,
+}
+
 var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	getDeviceProfile,
 	getServiceProfile,
@@ -195,6 +205,26 @@ func HandleResponse(rxPacket models.RXPacket, sp storage.ServiceProfile, ds stor
 	}
 
 	for _, t := range responseTasks {
+		if err := t(&ctx); err != nil {
+			if err == ErrAbort {
+				return nil
+			}
+
+			return err
+		}
+	}
+
+	return nil
+}
+
+// HandleRetransmissionResponse handles a re-transmission response.
+func HandleRetransmissionResponse(rxPacket models.RXPacket, ds storage.DeviceSession) error {
+	ctx := dataContext{
+		DeviceSession: ds,
+		RXPacket:      &rxPacket,
+	}
+
+	for _, t := range retransmissionResponseTasks {
 		if err := t(&ctx); err != nil {
 			if err == ErrAbort {
 				return nil
@@ -879,6 +909,42 @@ func setLastDownlinkResponsePHYPayload(ctx *dataContext) error {
 	} else {
 		ctx.DeviceSession.LastDownlinkResponsePHYPayload = []byte{}
 	}
+	return nil
+}
+
+func setPHYPayloadFromLastDownlinkResponsePHYPayload(ctx *dataContext) error {
+	if len(ctx.DeviceSession.LastDownlinkResponsePHYPayload) == 0 {
+		return ErrAbort
+	}
+
+	for i := range ctx.DownlinkFrames {
+		dr, err := helpers.GetDataRateIndex(false, ctx.DownlinkFrames[i].DownlinkFrame.TxInfo, config.C.NetworkServer.Band.Band)
+		if err != nil {
+			return errors.Wrap(err, "get data-rate index error")
+		}
+
+		plSize, err := config.C.NetworkServer.Band.Band.GetMaxPayloadSizeForDataRateIndex(ctx.DeviceProfile.MACVersion, ctx.DeviceProfile.RegParamsRevision, dr)
+		if err != nil {
+			return errors.Wrap(err, "get max-payload size for data-rate error")
+		}
+
+		// Test is we can re-transmit the PHYPayload within the limits of the available
+		// data-rate.
+		// (plSize.M is the MACPayload, we need to add MHDR (1) + MIC (4) for full comparison)
+		if len(ctx.DeviceSession.LastDownlinkResponsePHYPayload) <= plSize.M+5 {
+			ctx.DownlinkFrames[i].DownlinkFrame.PhyPayload = ctx.DeviceSession.LastDownlinkResponsePHYPayload
+		}
+	}
+
+	// filter on empty PHYPayload frames (e.g. which exceeded the max-payload size)
+	var out []downlinkFrame
+	for i := range ctx.DownlinkFrames {
+		if len(ctx.DownlinkFrames[i].DownlinkFrame.PhyPayload) != 0 {
+			out = append(out, ctx.DownlinkFrames[i])
+		}
+	}
+	ctx.DownlinkFrames = out
+
 	return nil
 }
 

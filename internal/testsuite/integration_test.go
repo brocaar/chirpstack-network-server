@@ -543,6 +543,9 @@ func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
 	// set mocks
 	ts.ASClient.HandleDataUpErr = tst.ASHandleUplinkDataError
 
+	// tst.PHYPayload.SetUplinkDataMIC(lorawan.LoRaWAN1_0, 0, 0, 0, tst.DeviceSession.FNwkSIntKey, tst.DeviceSession.SNwkSIntKey)
+	// fmt.Printf("\n\n%+v\n\n", tst.PHYPayload.MIC)
+
 	phyB, err := tst.PHYPayload.MarshalBinary()
 	assert.NoError(err)
 

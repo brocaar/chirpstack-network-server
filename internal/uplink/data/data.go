@@ -52,6 +52,14 @@ var tasks = []func(*dataContext) error{
 	handleDownlink,
 }
 
+var retransmitTasks = []func(*dataContext) error{
+	decryptFOptsMACCommands,
+	decryptFRMPayloadMACCommands,
+	logUplinkFrame,
+	setLastRXInfoSet,
+	handleRetransmission,
+}
+
 type dataContext struct {
 	RXPacket                models.RXPacket
 	MACPayload              *lorawan.MACPayload
@@ -70,6 +78,17 @@ func Handle(rxPacket models.RXPacket) error {
 
 	for _, t := range tasks {
 		if err := t(&ctx); err != nil {
+			// in case of a re-transmission error, run the retransmit tasks
+			if errors.Cause(err) == storage.ErrFrameCounterRetransmission && ctx.RXPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp {
+				for _, t := range retransmitTasks {
+					if err := t(&ctx); err != nil {
+						return err
+					}
+				}
+
+				// return as we don't wan't to continue with the other tasks!
+				return nil
+			}
 			return err
 		}
 	}
@@ -113,11 +132,10 @@ func getDeviceSessionForPHYPayload(ctx *dataContext) error {
 		}
 	}
 
-	ds, err := storage.GetDeviceSessionForPHYPayload(config.C.Redis.Pool, ctx.RXPacket.PHYPayload, txDR, txCh)
+	ctx.DeviceSession, err = storage.GetDeviceSessionForPHYPayload(config.C.Redis.Pool, ctx.RXPacket.PHYPayload, txDR, txCh)
 	if err != nil {
 		return errors.Wrap(err, "get device-session error")
 	}
-	ctx.DeviceSession = ds
 
 	return nil
 }
@@ -663,4 +681,15 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, dp storage.DeviceProfile
 	}
 
 	return out, nil
+}
+
+func handleRetransmission(ctx *dataContext) error {
+	err := datadown.HandleRetransmissionResponse(
+		ctx.RXPacket,
+		ctx.DeviceSession,
+	)
+	if err != nil {
+		return errors.Wrap(err, "run uplink re-transmission response error")
+	}
+	return nil
 }

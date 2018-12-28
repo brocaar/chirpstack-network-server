@@ -94,31 +94,6 @@ func (ts *ClassATestSuite) TestLW10Errors() {
 
 	tests := []ClassATest{
 		{
-			Name:          "invalid frame-counter (did not increment)",
-			DeviceSession: *ts.DeviceSession,
-			TXInfo:        ts.TXInfo,
-			RXInfo:        ts.RXInfo,
-			PHYPayload: lorawan.PHYPayload{
-				MHDR: lorawan.MHDR{
-					MType: lorawan.UnconfirmedDataUp,
-					Major: lorawan.LoRaWANR1,
-				},
-				MACPayload: &lorawan.MACPayload{
-					FHDR: lorawan.FHDR{
-						DevAddr: ts.DeviceSession.DevAddr,
-						FCnt:    7,
-					},
-					FPort: &fPortOne,
-				},
-				MIC: lorawan.MIC{48, 94, 26, 239},
-			},
-			ExpectedError: errors.New("get device-session error: re-transmission / replay-attack detected (frame-counter did not increment)"),
-			Assert: []Assertion{
-				AssertFCntUp(8),
-				AssertNFCntDown(5),
-			},
-		},
-		{
 			Name:          "invalid frame-counter / device-session not found error",
 			DeviceSession: *ts.DeviceSession,
 			TXInfo:        ts.TXInfo,
@@ -372,6 +347,51 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
 					Data:    []byte{1, 2, 3, 4},
 				}),
+			},
+		},
+		{
+			BeforeFunc: func(tst *ClassATest) error {
+				tst.DeviceSession.FCntUp = 11
+				tst.DeviceSession.LastDownlinkResponsePHYPayload = []byte{1, 2, 3, 4}
+				return nil
+			},
+			Name:          "confirmed uplink with payload (re-transmission)",
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.ConfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort:      &fPortOne,
+					FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+				},
+				MIC: lorawan.MIC{0x45, 0x5a, 0xc8, 0x5f},
+			},
+			Assert: []Assertion{
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+				AssertDownlinkFrameBytes(gw.DownlinkTXInfo{
+					GatewayId:  ts.Gateway.GatewayID[:],
+					Frequency:  868100000,
+					Power:      14,
+					Timestamp:  ts.RXInfo.Timestamp + 1000000,
+					Modulation: commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							PolarizationInversion: true,
+							CodeRate:              "4/5",
+						},
+					},
+				}, []byte{1, 2, 3, 4}),
 			},
 		},
 		{

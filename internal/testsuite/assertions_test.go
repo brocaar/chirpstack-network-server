@@ -67,6 +67,21 @@ func AssertDownlinkFrame(txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Asser
 	}
 }
 
+// AssertDownlinkFrameBytes asserts the downlink frame.
+func AssertDownlinkFrameBytes(txInfo gw.DownlinkTXInfo, phy []byte) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		downlinkFrame := <-ts.GWBackend.TXPacketChan
+		assert.NotEqual(0, downlinkFrame.Token)
+		lastToken = downlinkFrame.Token
+
+		if !proto.Equal(&txInfo, downlinkFrame.TxInfo) {
+			assert.Equal(txInfo, downlinkFrame.TxInfo)
+		}
+
+		assert.Equal(phy, downlinkFrame.PhyPayload)
+	}
+}
+
 func AssertDownlinkFrameSaved(devEUI lorawan.EUI64, txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
 		eui, downlinkFrame, err := storage.PopDownlinkFrame(ts.RedisPool(), lastToken)
