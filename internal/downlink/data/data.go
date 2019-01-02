@@ -613,15 +613,25 @@ func filterIncompatibleMACCommands(macCommands []storage.MACCommandBlock) []stor
 
 func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error {
 	return func(ctx *dataContext) error {
-		if config.C.NetworkServer.NetworkSettings.DisableMACCommands {
-			return nil
-		}
-
 		// this will set the mac-commands to MACCommands, potentially exceeding the max size
 		for _, f := range funcs {
 			if err := f(ctx); err != nil {
 				return err
 			}
+		}
+
+		// In case mac-commands are disabled in the LoRa Server configuration,
+		// only allow external mac-commands (e.g. scheduled by an external
+		// controller).
+		if config.C.NetworkServer.NetworkSettings.DisableMACCommands {
+			var externalMACCommands []storage.MACCommandBlock
+
+			for i := range ctx.MACCommands {
+				if ctx.MACCommands[i].External {
+					externalMACCommands = append(externalMACCommands, ctx.MACCommands[i])
+				}
+			}
+			ctx.MACCommands = externalMACCommands
 		}
 
 		ctx.MACCommands = filterIncompatibleMACCommands(ctx.MACCommands)

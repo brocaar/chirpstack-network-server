@@ -374,10 +374,6 @@ func sendRXInfoToNetworkController(ctx *dataContext) error {
 }
 
 func handleFOptsMACCommands(ctx *dataContext) error {
-	if config.C.NetworkServer.NetworkSettings.DisableMACCommands {
-		return nil
-	}
-
 	if len(ctx.MACPayload.FHDR.FOpts) > 0 {
 		blocks, err := handleUplinkMACCommands(&ctx.DeviceSession, ctx.DeviceProfile, ctx.ServiceProfile, ctx.ApplicationServerClient, ctx.MACPayload.FHDR.FOpts, ctx.RXPacket)
 		if err != nil {
@@ -394,10 +390,6 @@ func handleFOptsMACCommands(ctx *dataContext) error {
 }
 
 func handleFRMPayloadMACCommands(ctx *dataContext) error {
-	if config.C.NetworkServer.NetworkSettings.DisableMACCommands {
-		return nil
-	}
-
 	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0 {
 		if len(ctx.MACPayload.FRMPayload) == 0 {
 			return errors.New("expected mac commands, but FRMPayload is empty (FPort=0)")
@@ -606,40 +598,45 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, dp storage.DeviceProfile
 			"cid":     block.CID,
 		}
 
-		// read pending mac-command block for CID. e.g. on case of an ack, the
-		// pending mac-command block contains the request.
-		// we need this pending mac-command block to find out if the command
-		// was scheduled through the API (external).
-		pending, err := storage.GetPendingMACCommand(config.C.Redis.Pool, ds.DevEUI, block.CID)
-		if err != nil {
-			log.WithFields(logFields).Errorf("read pending mac-command error: %s", err)
-			continue
-		}
 		var external bool
-		if pending != nil {
-			external = pending.External
-		}
 
-		// in case the node is requesting a mac-command, there is nothing pending
-		if pending != nil {
-			if err = storage.DeletePendingMACCommand(config.C.Redis.Pool, ds.DevEUI, block.CID); err != nil {
-				log.WithFields(logFields).Errorf("delete pending mac-command error: %s", err)
-			}
-		}
-
-		// CID >= 0x80 are proprietary mac-commands and are not handled by LoRa Server
-		if block.CID < 0x80 {
-			responseBlocks, err := maccommand.Handle(ds, dp, sp, asClient, block, pending, rxPacket)
+		if !config.C.NetworkServer.NetworkSettings.DisableMACCommands {
+			// read pending mac-command block for CID. e.g. on case of an ack, the
+			// pending mac-command block contains the request.
+			// we need this pending mac-command block to find out if the command
+			// was scheduled through the API (external).
+			pending, err := storage.GetPendingMACCommand(config.C.Redis.Pool, ds.DevEUI, block.CID)
 			if err != nil {
-				log.WithFields(logFields).Errorf("handle mac-command block error: %s", err)
-			} else {
-				out = append(out, responseBlocks...)
+				log.WithFields(logFields).Errorf("read pending mac-command error: %s", err)
+				continue
+			}
+			if pending != nil {
+				external = pending.External
+			}
+
+			// in case the node is requesting a mac-command, there is nothing pending
+			if pending != nil {
+				if err = storage.DeletePendingMACCommand(config.C.Redis.Pool, ds.DevEUI, block.CID); err != nil {
+					log.WithFields(logFields).Errorf("delete pending mac-command error: %s", err)
+				}
+			}
+
+			// CID >= 0x80 are proprietary mac-commands and are not handled by LoRa Server
+			if block.CID < 0x80 {
+				responseBlocks, err := maccommand.Handle(ds, dp, sp, asClient, block, pending, rxPacket)
+				if err != nil {
+					log.WithFields(logFields).Errorf("handle mac-command block error: %s", err)
+				} else {
+					out = append(out, responseBlocks...)
+				}
 			}
 		}
 
-		// report to external controller in case of proprietary mac-commands or
-		// in case when the request has been scheduled through the API.
-		if block.CID >= 0x80 || external {
+		// Report to external controller:
+		//  * in case of proprietary mac-commands
+		//  * in case when the request has been scheduled through the API
+		//  * in case mac-commands are disabled in the LoRa Server configuration
+		if config.C.NetworkServer.NetworkSettings.DisableMACCommands || block.CID >= 0x80 || external {
 			var data [][]byte
 			for _, cmd := range block.MACCommands {
 				b, err := cmd.MarshalBinary()
@@ -649,7 +646,7 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, dp storage.DeviceProfile
 				}
 				data = append(data, b)
 			}
-			_, err = config.C.NetworkController.Client.HandleUplinkMACCommand(context.Background(), &nc.HandleUplinkMACCommandRequest{
+			_, err := config.C.NetworkController.Client.HandleUplinkMACCommand(context.Background(), &nc.HandleUplinkMACCommandRequest{
 				DevEui:   ds.DevEUI[:],
 				Cid:      uint32(block.CID),
 				Commands: data,

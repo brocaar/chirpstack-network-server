@@ -214,8 +214,10 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 
   # Disable mac-commands
   #
-  # When set, uplink mac-commands are ignored and the network-server will not
-  # send mac-commands to the devices. This is intended for testing only.
+  # When set to true, LoRa Server will not handle and / or schedule any
+  # mac-commands. However, it is still possible for an external controller
+  # to handle and / or schedule mac-commands. This is intended for testing
+  # only.
   disable_mac_commands={{ .NetworkServer.NetworkSettings.DisableMACCommands }}
 
   # Disable ADR

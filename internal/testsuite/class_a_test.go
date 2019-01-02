@@ -1072,6 +1072,222 @@ func (ts *ClassATestSuite) TestLW10MACCommands() {
 	}
 }
 
+func (ts *ClassATestSuite) TestLW10MACCommandsDisabled() {
+	ts.CreateDeviceSession(storage.DeviceSession{
+		MACVersion:            "1.0.2",
+		JoinEUI:               lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
+		DevAddr:               lorawan.DevAddr{1, 2, 3, 4},
+		FNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		SNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		NwkSEncKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		FCntUp:                8,
+		NFCntDown:             5,
+		EnabledUplinkChannels: []int{0, 1, 2},
+		RX2Frequency:          869525000,
+	})
+
+	fPortZero := uint8(0)
+
+	config.C.NetworkServer.NetworkSettings.DisableMACCommands = true
+
+	tests := []ClassATest{
+		{
+			Name:          "uplink with link-check request (FOpts)",
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+						FOpts: []lorawan.Payload{
+							&lorawan.MACCommand{CID: lorawan.LinkCheckReq},
+						},
+					},
+				},
+				MIC: lorawan.MIC{0x6a, 0x0e, 0x7c, 0xd4},
+			},
+			Assert: []Assertion{
+				AssertNCHandleUplinkMACCommandRequest(nc.HandleUplinkMACCommandRequest{
+					DevEui:   ts.Device.DevEUI[:],
+					Cid:      uint32(lorawan.LinkCheckReq),
+					Commands: [][]byte{{byte(lorawan.LinkCheckReq)}},
+				}),
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+			},
+		},
+		{
+			Name: "uplink with link-check request (FRMPayload)",
+			BeforeFunc: func(ts *ClassATest) error {
+				if err := ts.PHYPayload.EncryptFRMPayload(ts.DeviceSession.NwkSEncKey); err != nil {
+					return err
+				}
+				if err := ts.PHYPayload.SetUplinkDataMIC(lorawan.LoRaWAN1_0, 0, 0, 0, ts.DeviceSession.FNwkSIntKey, ts.DeviceSession.SNwkSIntKey); err != nil {
+					return err
+				}
+				return nil
+			},
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort: &fPortZero,
+					FRMPayload: []lorawan.Payload{
+						&lorawan.MACCommand{CID: lorawan.LinkCheckReq},
+					},
+				},
+			},
+			Assert: []Assertion{
+				AssertNCHandleUplinkMACCommandRequest(nc.HandleUplinkMACCommandRequest{
+					DevEui:   ts.Device.DevEUI[:],
+					Cid:      uint32(lorawan.LinkCheckReq),
+					Commands: [][]byte{{byte(lorawan.LinkCheckReq)}},
+				}),
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+			},
+		},
+		{
+			Name:          "uplink with downlink mac-command response (external)",
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			MACCommandQueueItems: []storage.MACCommandBlock{
+				{
+					CID:      lorawan.LinkCheckAns,
+					External: true,
+					MACCommands: []lorawan.MACCommand{
+						{
+							CID: lorawan.LinkCheckAns,
+							Payload: &lorawan.LinkCheckAnsPayload{
+								Margin: 10,
+								GwCnt:  2,
+							},
+						},
+					},
+				},
+			},
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+				},
+				MIC: lorawan.MIC{0x7a, 0x98, 0x98, 0xdc},
+			},
+			Assert: []Assertion{
+				AssertDownlinkFrame(gw.DownlinkTXInfo{
+					GatewayId:  ts.RXInfo.GatewayId,
+					Frequency:  ts.TXInfo.Frequency,
+					Power:      14,
+					Timestamp:  ts.RXInfo.Timestamp + 1000000,
+					Modulation: commonPB.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							PolarizationInversion: true,
+							CodeRate:              "4/5",
+						},
+					},
+				}, lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.UnconfirmedDataDown,
+						Major: lorawan.LoRaWANR1,
+					},
+					MACPayload: &lorawan.MACPayload{
+						FHDR: lorawan.FHDR{
+							DevAddr: ts.DeviceSession.DevAddr,
+							FCnt:    5,
+							FCtrl: lorawan.FCtrl{
+								ADR: true,
+							},
+							FOpts: []lorawan.Payload{
+								&lorawan.MACCommand{
+									CID: lorawan.LinkCheckAns,
+									Payload: &lorawan.LinkCheckAnsPayload{
+										Margin: 10,
+										GwCnt:  2,
+									},
+								},
+							},
+						},
+					},
+					MIC: lorawan.MIC{0xde, 0xb, 0x5d, 0x4e},
+				}),
+				AssertFCntUp(11),
+				AssertNFCntDown(6),
+			},
+		},
+		{
+			Name:          "uplink with discarded downlink mac-command response (internal)",
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			MACCommandQueueItems: []storage.MACCommandBlock{
+				{
+					CID:      lorawan.LinkCheckAns,
+					External: false,
+					MACCommands: []lorawan.MACCommand{
+						{
+							CID: lorawan.LinkCheckAns,
+							Payload: &lorawan.LinkCheckAnsPayload{
+								Margin: 10,
+								GwCnt:  2,
+							},
+						},
+					},
+				},
+			},
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+				},
+				MIC: lorawan.MIC{0x7a, 0x98, 0x98, 0xdc},
+			},
+			Assert: []Assertion{
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+			},
+		},
+	}
+
+	for _, tst := range tests {
+		ts.T().Run(tst.Name, func(t *testing.T) {
+			ts.AssertClassATest(t, tst)
+		})
+	}
+
+	config.C.NetworkServer.NetworkSettings.DisableMACCommands = false
+}
+
 func (ts *ClassATestSuite) TestLW11MACCommands() {
 	ts.CreateDeviceSession(storage.DeviceSession{
 		MACVersion:            "1.1.0",
