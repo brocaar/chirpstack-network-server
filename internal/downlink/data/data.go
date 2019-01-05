@@ -224,6 +224,10 @@ func HandleRetransmissionResponse(rxPacket models.RXPacket, ds storage.DeviceSes
 		RXPacket:      &rxPacket,
 	}
 
+	log.WithFields(log.Fields{
+		"dev_eui": ctx.DeviceSession.DevEUI,
+	}).Warning("re-transmitting last downlink to device")
+
 	for _, t := range retransmissionResponseTasks {
 		if err := t(&ctx); err != nil {
 			if err == ErrAbort {
