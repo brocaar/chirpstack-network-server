@@ -485,10 +485,6 @@ func GetDeviceSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload, txDR, 
 				return ds, nil
 
 			} else if fullFCnt == (ds.FCntUp - 1) {
-				// this is a re-transmission or frame-counter reset
-				if ds.SkipFCntValidation {
-					return ds, nil
-				}
 				return ds, ErrFrameCounterRetransmission
 
 			} else {
