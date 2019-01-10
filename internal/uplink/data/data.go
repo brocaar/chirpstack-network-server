@@ -56,6 +56,13 @@ var retransmitTasks = []func(*dataContext) error{
 	decryptFOptsMACCommands,
 	decryptFRMPayloadMACCommands,
 	logUplinkFrame,
+
+	// start send payload to application-server
+	getServiceProfile,
+	getApplicationServerClientForDataUp,
+	sendFRMPayloadToApplicationServer,
+	// end send payload to application-server
+
 	setLastRXInfoSet,
 	handleRetransmission,
 }

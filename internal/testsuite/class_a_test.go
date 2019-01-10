@@ -413,6 +413,16 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 						},
 					},
 				}, []byte{1, 2, 3, 4}),
+				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
+					DevEui:  ts.Device.DevEUI[:],
+					JoinEui: ts.DeviceSession.JoinEUI[:],
+					FCnt:    10,
+					FPort:   1,
+					Dr:      0,
+					TxInfo:  &ts.TXInfo,
+					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
+					Data:    []byte{1, 2, 3, 4},
+				}),
 			},
 		},
 		{
