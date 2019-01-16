@@ -45,7 +45,10 @@ func GetMinimumGatewaySet(rxInfoSets []storage.DeviceGatewayRXInfoSet) ([]lorawa
 
 	outMap := make(map[lorawan.EUI64]struct{})
 
-	for _, e := range dst.Edges() {
+	edges := dst.Edges()
+	for edges.Next() {
+		e := edges.Edge()
+
 		fromEUI := int64ToEUI64(e.From().ID())
 		toEUI := int64ToEUI64(e.To().ID())
 
@@ -170,8 +173,9 @@ func (e deviceGatewayEdge) Weight() float64 {
 	weight := float64(1)
 
 	gwNodes := e.graph.From(eui64Int64(e.gatewayID))
-	if len(gwNodes) != 0 {
-		weight = weight / float64(len(gwNodes))
+
+	if gwNodes.Len() != 0 {
+		weight = weight / float64(gwNodes.Len())
 	}
 
 	return weight
