@@ -34,6 +34,9 @@ var tasks = []func(*context) error{
 	forRejoinType([]lorawan.JoinType{lorawan.RejoinRequestType0},
 		setRejoin0PendingDeviceSession,
 	),
+	forRejoinType([]lorawan.JoinType{lorawan.RejoinRequestType1},
+		errNotSupported,
+	),
 	forRejoinType([]lorawan.JoinType{lorawan.RejoinRequestType2},
 		setRejoin2PendingDeviceSession,
 	),
@@ -457,6 +460,10 @@ func setRejoin2PendingDeviceSession(ctx *context) error {
 }
 
 func createDeviceActivation(ctx *context) error {
+	if ctx.DeviceSession.PendingRejoinDeviceSession == nil {
+		return errors.New("pending rejoin device-session must not be nil")
+	}
+
 	da := storage.DeviceActivation{
 		DevEUI:      ctx.DeviceSession.PendingRejoinDeviceSession.DevEUI,
 		JoinEUI:     ctx.DeviceSession.PendingRejoinDeviceSession.JoinEUI,
@@ -486,4 +493,8 @@ func sendJoinAcceptDownlink(ctx *context) error {
 	}
 
 	return nil
+}
+
+func errNotSupported(ctx *context) error {
+	return fmt.Errorf("rejoin not implemented for type: %s", ctx.RejoinType)
 }
