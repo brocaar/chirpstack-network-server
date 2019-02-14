@@ -1,6 +1,3 @@
-git:
-  short_hash: true
-
 project_name: loraserver
 
 builds:
