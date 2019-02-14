@@ -6,7 +6,9 @@
   name = "github.com/brocaar/lorawan"
 
 [[constraint]]
-  version = "v1.1.1"
+  # we need the master branch as 1.1.1 contains a bug which could cause a deadlock:
+  # https://github.com/eclipse/paho.mqtt.golang/commit/20fd5cb1c3bb6bf5419a5fc2627b210d0d4ca2ce#diff-ac704b2e102a5731d9d1b1707d3bc7a1
+  branch = "master"
   name = "github.com/eclipse/paho.mqtt.golang"
 
 # override is needed because of grpc-middleware having constraint on master branch

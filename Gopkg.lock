@@ -46,15 +46,15 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:aba48b6c6600a43db48da14ae43338220b2cfc262a0e064b29085fbf75ed5b68"
+  branch = "master"
+  digest = "1:e73781db994648a8067b70522ccfc9f4f5abd4af05557fb78872aed0ad85eafc"
   name = "github.com/eclipse/paho.mqtt.golang"
   packages = [
     ".",
     "packets",
   ]
   pruneopts = "NUT"
-  revision = "36d01c2b4cbeb3d2a12063e4880ce30800af9560"
-  version = "v1.1.1"
+  revision = "cb7eb9363b4469c601b1a714447653b720e4e43a"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
