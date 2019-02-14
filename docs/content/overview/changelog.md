@@ -9,6 +9,22 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v2.5.0
+
+### Features
+
+* Environment variable based [configuration](https://www.loraserver.io/lora-app-server/install/config/) has been re-implemented.
+
+### Improvements
+
+* When mac-commands are disabled, an external controller can still receive all mac-commands and is able to schedule mac-commands.
+* When no accurate timestamp is available, the server time will be used as `DeviceTimeAns` timestamp.
+
+### Bugfixes
+
+* Fix potential deadlock on MQTT re-connect ([#103](https://github.com/brocaar/lora-gateway-bridge/issues/103))
+* Fix crash on (not yet) support rejoin-request type 1 ([#367](https://github.com/brocaar/loraserver/issues/367))
+
 ## v2.4.1
 
 ### Bugfixes
