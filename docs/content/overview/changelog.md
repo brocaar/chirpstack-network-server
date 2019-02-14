@@ -13,7 +13,7 @@ description: Lists the changes per LoRa Server release, including steps how to u
 
 ### Features
 
-* Environment variable based [configuration](https://www.loraserver.io/lora-app-server/install/config/) has been re-implemented.
+* Environment variable based [configuration](https://www.loraserver.io/loraserver/install/config/) has been re-implemented.
 
 ### Improvements
 
