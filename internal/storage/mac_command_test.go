@@ -3,10 +3,10 @@ package storage
 import (
 	"testing"
 
-	"github.com/brocaar/loraserver/internal/common"
+	. "github.com/smartystreets/goconvey/convey"
+
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestMACCommand(t *testing.T) {
@@ -35,35 +35,37 @@ func TestMACCommand(t *testing.T) {
 	}
 
 	Convey("Given a clean Redis database", t, func() {
-		p := common.NewRedisPool(conf.RedisURL, 10, 0)
-		test.MustFlushRedis(p)
+		if err := Setup(conf); err != nil {
+			t.Fatal(err)
+		}
+		test.MustFlushRedis(RedisPool())
 
 		Convey("When adding two items to the queue", func() {
 			for _, m := range macCommands {
-				So(CreateMACCommandQueueItem(p, devEUI, m), ShouldBeNil)
+				So(CreateMACCommandQueueItem(RedisPool(), devEUI, m), ShouldBeNil)
 			}
 
 			Convey("Then reading the queue returns both mac-commands in the correct order", func() {
-				blocks, err := GetMACCommandQueueItems(p, devEUI)
+				blocks, err := GetMACCommandQueueItems(RedisPool(), devEUI)
 				So(err, ShouldBeNil)
 				So(blocks, ShouldResemble, macCommands)
 			})
 
 			Convey("When deleting a mac-command", func() {
-				So(DeleteMACCommandQueueItem(p, devEUI, macCommands[0]), ShouldBeNil)
+				So(DeleteMACCommandQueueItem(RedisPool(), devEUI, macCommands[0]), ShouldBeNil)
 
 				Convey("Then the item has been removed from the queue", func() {
-					blocks, err := GetMACCommandQueueItems(p, devEUI)
+					blocks, err := GetMACCommandQueueItems(RedisPool(), devEUI)
 					So(err, ShouldBeNil)
 					So(blocks, ShouldResemble, macCommands[1:])
 				})
 			})
 
 			Convey("When flushing the mac-command queue", func() {
-				So(FlushMACCommandQueue(p, devEUI), ShouldBeNil)
+				So(FlushMACCommandQueue(RedisPool(), devEUI), ShouldBeNil)
 
 				Convey("Then the queue is empty", func() {
-					blocks, err := GetMACCommandQueueItems(p, devEUI)
+					blocks, err := GetMACCommandQueueItems(RedisPool(), devEUI)
 					So(err, ShouldBeNil)
 					So(blocks, ShouldHaveLength, 0)
 				})
@@ -71,19 +73,19 @@ func TestMACCommand(t *testing.T) {
 		})
 
 		Convey("When setting a pending mac-command", func() {
-			So(SetPendingMACCommand(p, devEUI, macCommands[0]), ShouldBeNil)
+			So(SetPendingMACCommand(RedisPool(), devEUI, macCommands[0]), ShouldBeNil)
 
 			Convey("Then the pending mac-command can be retrieved", func() {
-				block, err := GetPendingMACCommand(p, devEUI, macCommands[0].CID)
+				block, err := GetPendingMACCommand(RedisPool(), devEUI, macCommands[0].CID)
 				So(err, ShouldBeNil)
 				So(*block, ShouldResemble, macCommands[0])
 			})
 
 			Convey("When deleting a pending mac-command", func() {
-				So(DeletePendingMACCommand(p, devEUI, macCommands[0].CID), ShouldBeNil)
+				So(DeletePendingMACCommand(RedisPool(), devEUI, macCommands[0].CID), ShouldBeNil)
 
 				Convey("Then it has been removed", func() {
-					block, err := GetPendingMACCommand(p, devEUI, macCommands[0].CID)
+					block, err := GetPendingMACCommand(RedisPool(), devEUI, macCommands[0].CID)
 					So(err, ShouldBeNil)
 					So(block, ShouldBeNil)
 				})

@@ -3,17 +3,22 @@ package testsuite
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	commonPB "github.com/brocaar/loraserver/api/common"
+	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api"
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/backend/applicationserver"
+	"github.com/brocaar/loraserver/internal/backend/controller"
+	"github.com/brocaar/loraserver/internal/backend/gateway"
+	"github.com/brocaar/loraserver/internal/backend/geolocationserver"
+	"github.com/brocaar/loraserver/internal/backend/joinserver"
+	jstest "github.com/brocaar/loraserver/internal/backend/joinserver/testclient"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/downlink/ack"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -21,7 +26,7 @@ import (
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
-	"github.com/brocaar/lorawan/band"
+	loraband "github.com/brocaar/lorawan/band"
 )
 
 // Assertion provides the interface for test assertions.
@@ -130,11 +135,10 @@ type DownlinkTXAckTest struct {
 // uplink scenarios.
 type IntegrationTestSuite struct {
 	suite.Suite
-	test.DatabaseTestSuiteBase
 
 	// mocked interfaces
 	ASClient  *test.ApplicationClient
-	JSClient  *test.JoinServerClient
+	JSClient  *jstest.JoinServerClient
 	GWBackend *test.GatewayBackend
 	GeoClient *test.GeolocationClient
 	NCClient  *test.NetworkControllerClient
@@ -154,9 +158,16 @@ type IntegrationTestSuite struct {
 	MulticastGroup *storage.MulticastGroup
 }
 
+func (ts *IntegrationTestSuite) SetupSuite() {
+	assert := require.New(ts.T())
+	conf := test.GetConfig()
+	assert.NoError(storage.Setup(conf))
+	test.MustResetDB(storage.DB().DB)
+}
+
 // SetupTest initializes the test-suite before running each test.
 func (ts *IntegrationTestSuite) SetupTest() {
-	ts.DatabaseTestSuiteBase.SetupTest()
+	test.MustFlushRedis(storage.RedisPool())
 	ts.initConfig()
 	ts.FlushClients()
 }
@@ -165,19 +176,19 @@ func (ts *IntegrationTestSuite) SetupTest() {
 // are empty. This is automatically called on SetupTest.
 func (ts *IntegrationTestSuite) FlushClients() {
 	ts.ASClient = test.NewApplicationClient()
-	config.C.ApplicationServer.Pool = test.NewApplicationServerPool(ts.ASClient)
+	applicationserver.SetPool(test.NewApplicationServerPool(ts.ASClient))
 
-	ts.JSClient = test.NewJoinServerClient()
-	config.C.JoinServer.Pool = test.NewJoinServerPool(ts.JSClient)
+	ts.JSClient = jstest.NewJoinServerClient()
+	joinserver.SetPool(jstest.NewJoinServerPool(ts.JSClient))
 
 	ts.GWBackend = test.NewGatewayBackend()
-	config.C.NetworkServer.Gateway.Backend.Backend = ts.GWBackend
+	gateway.SetBackend(ts.GWBackend)
 
 	ts.NCClient = test.NewNetworkControllerClient()
-	config.C.NetworkController.Client = ts.NCClient
+	controller.SetClient(ts.NCClient)
 
 	ts.GeoClient = test.NewGeolocationClient()
-	config.C.GeolocationServer.Client = ts.GeoClient
+	geolocationserver.SetClient(ts.GeoClient)
 
 	ts.NSAPI = api.NewNetworkServerAPI()
 }
@@ -213,7 +224,7 @@ func (ts *IntegrationTestSuite) CreateDeviceSession(ds storage.DeviceSession) {
 		ds.DeviceProfileID = ts.DeviceProfile.ID
 	}
 
-	ts.Nil(storage.SaveDeviceSession(ts.RedisPool(), ds))
+	ts.Nil(storage.SaveDeviceSession(storage.RedisPool(), ds))
 	ts.DeviceSession = &ds
 }
 
@@ -240,7 +251,7 @@ func (ts *IntegrationTestSuite) CreateDevice(d storage.Device) {
 		d.RoutingProfileID = ts.RoutingProfile.ID
 	}
 
-	ts.Nil(storage.CreateDevice(config.C.PostgreSQL.DB, &d))
+	ts.Nil(storage.CreateDevice(storage.DB(), &d))
 	ts.Device = &d
 }
 
@@ -260,31 +271,31 @@ func (ts *IntegrationTestSuite) CreateMulticastGroup(mg storage.MulticastGroup) 
 		mg.ServiceProfileID = ts.ServiceProfile.ID
 	}
 
-	ts.Nil(storage.CreateMulticastGroup(config.C.PostgreSQL.DB, &mg))
+	ts.Nil(storage.CreateMulticastGroup(storage.DB(), &mg))
 	ts.MulticastGroup = &mg
 }
 
 // CreateDeviceProfile creates the given device-profile.
 func (ts *IntegrationTestSuite) CreateDeviceProfile(dp storage.DeviceProfile) {
-	ts.Require().Nil(storage.CreateDeviceProfile(ts.DB(), &dp))
+	ts.Require().Nil(storage.CreateDeviceProfile(storage.DB(), &dp))
 	ts.DeviceProfile = &dp
 }
 
 // CreateServiceProfile creates the given service-profile.
 func (ts *IntegrationTestSuite) CreateServiceProfile(sp storage.ServiceProfile) {
-	ts.Require().Nil(storage.CreateServiceProfile(ts.DB(), &sp))
+	ts.Require().Nil(storage.CreateServiceProfile(storage.DB(), &sp))
 	ts.ServiceProfile = &sp
 }
 
 // CreateRoutingProfile creates the given routing-profile.
 func (ts *IntegrationTestSuite) CreateRoutingProfile(rp storage.RoutingProfile) {
-	ts.Require().Nil(storage.CreateRoutingProfile(ts.DB(), &rp))
+	ts.Require().Nil(storage.CreateRoutingProfile(storage.DB(), &rp))
 	ts.RoutingProfile = &rp
 }
 
 // CreateGateway creates the given gateway.
 func (ts *IntegrationTestSuite) CreateGateway(gw storage.Gateway) {
-	ts.Require().Nil(storage.CreateGateway(ts.DB(), &gw))
+	ts.Require().Nil(storage.CreateGateway(storage.DB(), &gw))
 	ts.Gateway = &gw
 }
 
@@ -296,15 +307,15 @@ func (ts *IntegrationTestSuite) GetUplinkFrameForFRMPayload(rxInfo gw.UplinkRXIn
 	var txChan int
 	var txDR int
 
-	txChan, err = config.C.NetworkServer.Band.Band.GetUplinkChannelIndex(int(txInfo.Frequency), true)
+	txChan, err = band.Band().GetUplinkChannelIndex(int(txInfo.Frequency), true)
 	ts.Require().Nil(err)
 
-	if txInfo.Modulation == commonPB.Modulation_LORA {
+	if txInfo.Modulation == common.Modulation_LORA {
 		modInfo := txInfo.GetLoraModulationInfo()
 		ts.Require().NotNil(modInfo)
 
-		txDR, err = config.C.NetworkServer.Band.Band.GetDataRateIndex(true, band.DataRate{
-			Modulation:   band.LoRaModulation,
+		txDR, err = band.Band().GetDataRateIndex(true, loraband.DataRate{
+			Modulation:   loraband.LoRaModulation,
 			SpreadFactor: int(modInfo.SpreadingFactor),
 			Bandwidth:    int(modInfo.Bandwidth),
 		})
@@ -313,8 +324,8 @@ func (ts *IntegrationTestSuite) GetUplinkFrameForFRMPayload(rxInfo gw.UplinkRXIn
 		modInfo := txInfo.GetFskModulationInfo()
 		ts.Require().NotNil(modInfo)
 
-		txDR, err = config.C.NetworkServer.Band.Band.GetDataRateIndex(true, band.DataRate{
-			Modulation: band.FSKModulation,
+		txDR, err = band.Band().GetDataRateIndex(true, loraband.DataRate{
+			Modulation: loraband.FSKModulation,
 			BitRate:    int(modInfo.Bitrate),
 		})
 		ts.Require().Nil(err)
@@ -370,9 +381,9 @@ func (ts *IntegrationTestSuite) AssertDownlinkTest(t *testing.T, tst DownlinkTes
 	ts.CreateDeviceSession(tst.DeviceSession)
 
 	// add device-queue items
-	assert.NoError(storage.FlushDeviceQueueForDevEUI(ts.DB(), tst.DeviceSession.DevEUI))
+	assert.NoError(storage.FlushDeviceQueueForDevEUI(storage.DB(), tst.DeviceSession.DevEUI))
 	for _, qi := range tst.DeviceQueueItems {
-		assert.NoError(storage.CreateDeviceQueueItem(ts.DB(), &qi))
+		assert.NoError(storage.CreateDeviceQueueItem(storage.DB(), &qi))
 	}
 
 	// run queue scheduler
@@ -380,7 +391,7 @@ func (ts *IntegrationTestSuite) AssertDownlinkTest(t *testing.T, tst DownlinkTes
 
 	// refresh device-session
 	var err error
-	ds, err := storage.GetDeviceSession(ts.RedisPool(), ts.DeviceSession.DevEUI)
+	ds, err := storage.GetDeviceSession(storage.RedisPool(), ts.DeviceSession.DevEUI)
 	assert.NoError(err)
 	ts.DeviceSession = &ds
 
@@ -401,12 +412,12 @@ func (ts *IntegrationTestSuite) AssertMulticastTest(t *testing.T, tst MulticastT
 	ts.FlushClients()
 
 	// overwrite multicast-group to deal with frame-counter increments
-	assert.NoError(storage.UpdateMulticastGroup(ts.DB(), &tst.MulticastGroup))
+	assert.NoError(storage.UpdateMulticastGroup(storage.DB(), &tst.MulticastGroup))
 
 	// add multicast queue items
-	assert.NoError(storage.FlushMulticastQueueForMulticastGroup(ts.DB(), ts.MulticastGroup.ID))
+	assert.NoError(storage.FlushMulticastQueueForMulticastGroup(storage.DB(), ts.MulticastGroup.ID))
 	for _, qi := range tst.MulticastQueueItems {
-		assert.NoError(storage.CreateMulticastQueueItem(ts.DB(), &qi))
+		assert.NoError(storage.CreateMulticastQueueItem(storage.DB(), &qi))
 	}
 
 	// run multicast scheduler
@@ -422,18 +433,17 @@ func (ts *IntegrationTestSuite) AssertMulticastTest(t *testing.T, tst MulticastT
 func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 	assert := require.New(t)
 
-	test.MustFlushRedis(ts.RedisPool())
+	test.MustFlushRedis(storage.RedisPool())
+
+	ts.FlushClients()
+	ts.initConfig()
 
 	if tst.BeforeFunc != nil {
 		assert.NoError(tst.BeforeFunc(&tst))
 	}
 
-	ts.FlushClients()
-
-	// reset band add extra channels
-	ts.initConfig()
 	for _, f := range tst.ExtraChannels {
-		assert.NoError(config.C.NetworkServer.Band.Band.AddChannel(f, 0, 5))
+		assert.NoError(band.Band().AddChannel(f, 0, 5))
 	}
 
 	// set mocks
@@ -441,15 +451,15 @@ func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 	ts.JSClient.JoinReqError = tst.JoinServerJoinAnsPayloadError
 
 	// create device-activations
-	assert.NoError(storage.DeleteDeviceActivationsForDevice(ts.DB(), ts.Device.DevEUI))
+	assert.NoError(storage.DeleteDeviceActivationsForDevice(storage.DB(), ts.Device.DevEUI))
 	for _, da := range tst.DeviceActivations {
-		assert.NoError(storage.CreateDeviceActivation(ts.DB(), &da))
+		assert.NoError(storage.CreateDeviceActivation(storage.DB(), &da))
 	}
 
 	// create device-queue items
-	assert.NoError(storage.FlushDeviceQueueForDevEUI(ts.DB(), ts.Device.DevEUI))
+	assert.NoError(storage.FlushDeviceQueueForDevEUI(storage.DB(), ts.Device.DevEUI))
 	for _, qi := range tst.DeviceQueueItems {
-		assert.NoError(storage.CreateDeviceQueueItem(ts.DB(), &qi))
+		assert.NoError(storage.CreateDeviceQueueItem(storage.DB(), &qi))
 	}
 
 	phyB, err := tst.PHYPayload.MarshalBinary()
@@ -480,7 +490,7 @@ func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 func (ts *IntegrationTestSuite) AssertRejoinTest(t *testing.T, tst RejoinTest) {
 	assert := require.New(t)
 
-	test.MustFlushRedis(ts.RedisPool())
+	test.MustFlushRedis(storage.RedisPool())
 
 	if tst.BeforeFunc != nil {
 		assert.NoError(tst.BeforeFunc(&tst))
@@ -521,7 +531,7 @@ func (ts *IntegrationTestSuite) AssertRejoinTest(t *testing.T, tst RejoinTest) {
 func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
 	assert := require.New(t)
 
-	test.MustFlushRedis(ts.RedisPool())
+	test.MustFlushRedis(storage.RedisPool())
 
 	if tst.BeforeFunc != nil {
 		assert.NoError(tst.BeforeFunc(&tst))
@@ -531,19 +541,19 @@ func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
 	ts.CreateDeviceSession(tst.DeviceSession)
 
 	// add device-queue items
-	assert.NoError(storage.FlushDeviceQueueForDevEUI(ts.DB(), tst.DeviceSession.DevEUI))
+	assert.NoError(storage.FlushDeviceQueueForDevEUI(storage.DB(), tst.DeviceSession.DevEUI))
 	for _, qi := range tst.DeviceQueueItems {
-		assert.NoError(storage.CreateDeviceQueueItem(ts.DB(), &qi))
+		assert.NoError(storage.CreateDeviceQueueItem(storage.DB(), &qi))
 	}
 
 	// set mac-command queue
 	for _, qi := range tst.MACCommandQueueItems {
-		assert.NoError(storage.CreateMACCommandQueueItem(ts.RedisPool(), ts.Device.DevEUI, qi))
+		assert.NoError(storage.CreateMACCommandQueueItem(storage.RedisPool(), ts.Device.DevEUI, qi))
 	}
 
 	// set pending mac-commands
 	for _, pending := range tst.PendingMACCommands {
-		assert.NoError(storage.SetPendingMACCommand(ts.RedisPool(), ts.Device.DevEUI, pending))
+		assert.NoError(storage.SetPendingMACCommand(storage.RedisPool(), ts.Device.DevEUI, pending))
 	}
 
 	// set mocks
@@ -571,7 +581,7 @@ func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
 	assert.NoError(tst.ExpectedError)
 
 	// refresh device-session
-	ds, err := storage.GetDeviceSession(ts.RedisPool(), ts.DeviceSession.DevEUI)
+	ds, err := storage.GetDeviceSession(storage.RedisPool(), ts.DeviceSession.DevEUI)
 	assert.NoError(err)
 	ts.DeviceSession = &ds
 
@@ -602,7 +612,7 @@ func (ts *IntegrationTestSuite) AssertDownlinkProprietaryTest(t *testing.T, tst 
 func (ts *IntegrationTestSuite) AssertUplinkProprietaryTest(t *testing.T, tst UplinkProprietaryTest) {
 	assert := require.New(t)
 
-	test.MustFlushRedis(ts.RedisPool())
+	test.MustFlushRedis(storage.RedisPool())
 	ts.FlushClients()
 
 	phyB, err := tst.PHYPayload.MarshalBinary()
@@ -624,9 +634,9 @@ func (ts *IntegrationTestSuite) AssertUplinkProprietaryTest(t *testing.T, tst Up
 func (ts *IntegrationTestSuite) AssertDownlinkTXAckTest(t *testing.T, tst DownlinkTXAckTest) {
 	assert := require.New(t)
 
-	test.MustFlushRedis(ts.RedisPool())
+	test.MustFlushRedis(storage.RedisPool())
 
-	assert.NoError(storage.SaveDownlinkFrames(ts.RedisPool(), tst.DevEUI, tst.DownlinkFrames))
+	assert.NoError(storage.SaveDownlinkFrames(storage.RedisPool(), tst.DevEUI, tst.DownlinkFrames))
 
 	err := ack.HandleDownlinkTXAck(tst.DownlinkTXAck)
 	if err != nil {
@@ -646,16 +656,11 @@ func (ts *IntegrationTestSuite) AssertDownlinkTXAckTest(t *testing.T, tst Downli
 }
 
 func (ts *IntegrationTestSuite) initConfig() {
-	config.C.NetworkServer.DeviceSessionTTL = time.Hour
-	config.C.NetworkServer.Band.Name = band.EU_863_870
-	config.C.NetworkServer.Band.Band, _ = band.GetConfig(config.C.NetworkServer.Band.Name, false, lorawan.DwellTimeNoLimit)
-	config.C.NetworkServer.DeduplicationDelay = 100 * time.Millisecond
-	config.C.NetworkServer.GetDownlinkDataDelay = 5 * time.Millisecond
-	config.C.NetworkServer.NetID = lorawan.NetID{3, 2, 1}
-	config.C.NetworkServer.NetworkSettings.DownlinkTXPower = -1
-	config.C.NetworkServer.NetworkSettings.RX2Frequency = config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency
-	config.C.NetworkServer.NetworkSettings.RX2DR = config.C.NetworkServer.Band.Band.GetDefaults().RX2DataRate
-	config.C.NetworkServer.NetworkSettings.RX1Delay = 0
+	conf := test.GetConfig()
+
+	band.Setup(conf)
+	uplink.Setup(conf)
+	downlink.Setup(conf)
 
 	storage.SetTimeLocation("Europe/Amsterdam")
 }

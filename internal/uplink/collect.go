@@ -12,7 +12,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/lorawan"
@@ -51,7 +51,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.UplinkFrame, callback func(pa
 
 	// this way we can set a really low DeduplicationDelay for testing, without
 	// the risk that the set already expired in redis on read
-	deduplicationTTL := config.C.NetworkServer.DeduplicationDelay * 2
+	deduplicationTTL := deduplicationDelay * 2
 	if deduplicationTTL < time.Millisecond*200 {
 		deduplicationTTL = time.Millisecond * 200
 	}
@@ -77,7 +77,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.UplinkFrame, callback func(pa
 
 	// wait the configured amount of time, more packets might be received
 	// from other gateways
-	time.Sleep(config.C.NetworkServer.DeduplicationDelay)
+	time.Sleep(deduplicationDelay)
 
 	// collect all packets from the set
 	payloads, err := redis.ByteSlices(c.Do("SMEMBERS", key))
@@ -113,7 +113,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.UplinkFrame, callback func(pa
 
 			out.PHYPayload = phy
 
-			dr, err := helpers.GetDataRateIndex(true, uplinkFrame.TxInfo, config.C.NetworkServer.Band.Band)
+			dr, err := helpers.GetDataRateIndex(true, uplinkFrame.TxInfo, band.Band())
 			if err != nil {
 				return errors.Wrap(err, "get data-rate index error")
 			}

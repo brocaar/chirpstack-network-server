@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/lorawan"
 )
 
@@ -105,7 +104,7 @@ func CreateMACCommandQueueItem(p *redis.Pool, devEUI lorawan.EUI64, block MACCom
 	c := p.Get()
 	defer c.Close()
 
-	exp := int64(config.C.NetworkServer.DeviceSessionTTL) / int64(time.Millisecond)
+	exp := int64(deviceSessionTTL) / int64(time.Millisecond)
 	key := fmt.Sprintf(macCommandQueueTempl, devEUI)
 
 	c.Send("MULTI")
@@ -199,7 +198,7 @@ func SetPendingMACCommand(p *redis.Pool, devEUI lorawan.EUI64, block MACCommandB
 	defer c.Close()
 
 	key := fmt.Sprintf(macCommandPendingTempl, devEUI, block.CID)
-	exp := int64(config.C.NetworkServer.DeviceSessionTTL) / int64(time.Millisecond)
+	exp := int64(deviceSessionTTL) / int64(time.Millisecond)
 
 	_, err = c.Do("PSETEX", key, exp, buf.Bytes())
 	if err != nil {

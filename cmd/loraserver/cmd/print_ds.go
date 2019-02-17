@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
@@ -23,18 +22,16 @@ var printDSCmd = &cobra.Command{
 			log.Fatalf("hex encoded DevEUI must be given as an argument")
 		}
 
-		config.C.Redis.Pool = common.NewRedisPool(
-			config.C.Redis.URL,
-			config.C.Redis.MaxIdle,
-			config.C.Redis.IdleTimeout,
-		)
+		if err := storage.Setup(config.C); err != nil {
+			log.Fatal(err)
+		}
 
 		var devEUI lorawan.EUI64
 		if err := devEUI.UnmarshalText([]byte(args[0])); err != nil {
 			log.WithError(err).Fatal("decode DevEUI error")
 		}
 
-		ds, err := storage.GetDeviceSession(config.C.Redis.Pool, devEUI)
+		ds, err := storage.GetDeviceSession(storage.RedisPool(), devEUI)
 		if err != nil {
 			log.WithError(err).Fatal("get device-session error")
 		}

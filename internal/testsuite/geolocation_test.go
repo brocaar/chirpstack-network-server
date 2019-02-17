@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/test"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/geo"
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
@@ -304,18 +304,18 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 			assert := require.New(t)
 
 			ts.FlushClients()
-			test.MustFlushRedis(config.C.Redis.Pool)
+			test.MustFlushRedis(storage.RedisPool())
 			ts.GeoClient.ResolveTDOAResponse = tst.ResolveTDOAResponse
 
 			ts.ServiceProfile.NwkGeoLoc = tst.NwkGeoLoc
-			assert.NoError(storage.UpdateServiceProfile(config.C.PostgreSQL.DB, ts.ServiceProfile))
+			assert.NoError(storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile))
 			ts.DeviceSession.FCntUp = uint32(i)
-			assert.NoError(storage.SaveDeviceSession(config.C.Redis.Pool, *ts.DeviceSession))
+			assert.NoError(storage.SaveDeviceSession(storage.RedisPool(), *ts.DeviceSession))
 
 			txInfo := gw.UplinkTXInfo{
 				Frequency: 868100000,
 			}
-			assert.NoError(helpers.SetUplinkTXInfoDataRate(&txInfo, 3, config.C.NetworkServer.Band.Band))
+			assert.NoError(helpers.SetUplinkTXInfoDataRate(&txInfo, 3, band.Band()))
 
 			for j := range tst.RXInfo {
 				uf := ts.GetUplinkFrameForFRMPayload(*tst.RXInfo[j], txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})

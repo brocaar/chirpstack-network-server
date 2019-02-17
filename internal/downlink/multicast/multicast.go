@@ -3,6 +3,7 @@ package multicast
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/jmoiron/sqlx"
@@ -10,6 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/internal/backend/gateway"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/helpers"
@@ -36,6 +39,26 @@ var multicastTasks = []func(*multicastContext) error{
 	setTXInfo,
 	setPHYPayload,
 	sendDownlinkData,
+}
+
+var (
+	downlinkLockDuration time.Duration
+	schedulerInterval    time.Duration
+	installationMargin   float64
+	downlinkTXPower      int
+
+	// TODO: make configurable
+	classBEnqueueMargin = time.Second * 5
+)
+
+// Setup sets up the multicast package.
+func Setup(conf config.Config) error {
+	downlinkLockDuration = conf.NetworkServer.Scheduler.ClassC.DownlinkLockDuration
+	schedulerInterval = conf.NetworkServer.Scheduler.SchedulerInterval
+	installationMargin = conf.NetworkServer.NetworkSettings.InstallationMargin
+	downlinkTXPower = conf.NetworkServer.NetworkSettings.DownlinkTXPower
+
+	return nil
 }
 
 // HandleScheduleNextQueueItem handles the scheduling of the next queue-item
@@ -106,7 +129,7 @@ func removeQueueItem(ctx *multicastContext) error {
 }
 
 func validatePayloadSize(ctx *multicastContext) error {
-	maxSize, err := config.C.NetworkServer.Band.Band.GetMaxPayloadSizeForDataRateIndex("", "", ctx.MulticastGroup.DR)
+	maxSize, err := band.Band().GetMaxPayloadSizeForDataRateIndex("", "", ctx.MulticastGroup.DR)
 	if err != nil {
 		return errors.Wrap(err, "get max payload-size for data-rate index error")
 	}
@@ -136,14 +159,14 @@ func setTXInfo(ctx *multicastContext) error {
 		txInfo.TimeSinceGpsEpoch = ptypes.DurationProto(*ctx.MulticastQueueItem.EmitAtTimeSinceGPSEpoch)
 	}
 
-	if err := helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.MulticastGroup.DR, config.C.NetworkServer.Band.Band); err != nil {
+	if err := helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.MulticastGroup.DR, band.Band()); err != nil {
 		return errors.Wrap(err, "set data-rate error")
 	}
 
-	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
-		txInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
+	if downlinkTXPower != -1 {
+		txInfo.Power = int32(downlinkTXPower)
 	} else {
-		txInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(ctx.MulticastGroup.Frequency))
+		txInfo.Power = int32(band.Band().GetDownlinkTXPower(ctx.MulticastGroup.Frequency))
 	}
 
 	ctx.TXInfo = txInfo
@@ -188,11 +211,11 @@ func sendDownlinkData(ctx *multicastContext) error {
 		PhyPayload: phyB,
 	}
 
-	if err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(downlinkFrame); err != nil {
+	if err := gateway.Backend().SendTXPacket(downlinkFrame); err != nil {
 		return errors.Wrap(err, "send downlink frame to gateway error")
 	}
 
-	if err := framelog.LogDownlinkFrameForGateway(config.C.Redis.Pool, downlinkFrame); err != nil {
+	if err := framelog.LogDownlinkFrameForGateway(storage.RedisPool(), downlinkFrame); err != nil {
 		log.WithError(err).Error("log downlink frame for gateway error")
 	}
 

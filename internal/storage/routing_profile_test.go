@@ -4,23 +4,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/test"
 	"github.com/gofrs/uuid"
 	. "github.com/smartystreets/goconvey/convey"
+
+	"github.com/brocaar/loraserver/internal/test"
 )
 
 func TestRoutingProfile(t *testing.T) {
 	conf := test.GetConfig()
-	db, err := common.OpenDatabase(conf.PostgresDSN)
-	if err != nil {
+	if err := Setup(conf); err != nil {
 		t.Fatal(err)
 	}
-	config.C.PostgreSQL.DB = db
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(config.C.PostgreSQL.DB)
+		test.MustResetDB(DB().DB)
 
 		Convey("When creating a routing-profile", func() {
 			rp := RoutingProfile{
@@ -29,12 +26,12 @@ func TestRoutingProfile(t *testing.T) {
 				TLSCert: "TLSCERT",
 				TLSKey:  "TLSKEY",
 			}
-			So(CreateRoutingProfile(db, &rp), ShouldBeNil)
+			So(CreateRoutingProfile(DB(), &rp), ShouldBeNil)
 			rp.CreatedAt = rp.CreatedAt.UTC().Truncate(time.Millisecond)
 			rp.UpdatedAt = rp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
 			Convey("Then GetRoutingProfile returns the expected routing-profile", func() {
-				rpGet, err := GetRoutingProfile(db, rp.ID)
+				rpGet, err := GetRoutingProfile(DB(), rp.ID)
 				So(err, ShouldBeNil)
 
 				rpGet.CreatedAt = rpGet.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -44,7 +41,7 @@ func TestRoutingProfile(t *testing.T) {
 			})
 
 			Convey("Then GetAllRoutingProfiles includes the created routing-profile", func() {
-				rpGetAll, err := GetAllRoutingProfiles(db)
+				rpGetAll, err := GetAllRoutingProfiles(DB())
 				So(err, ShouldBeNil)
 				So(rpGetAll, ShouldHaveLength, 1)
 
@@ -58,10 +55,10 @@ func TestRoutingProfile(t *testing.T) {
 				rp.CACert = "CACERT2"
 				rp.TLSCert = "TLSCERT2"
 				rp.TLSKey = "TLSKEY2"
-				So(UpdateRoutingProfile(db, &rp), ShouldBeNil)
+				So(UpdateRoutingProfile(DB(), &rp), ShouldBeNil)
 				rp.UpdatedAt = rp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
-				rpGet, err := GetRoutingProfile(db, rp.ID)
+				rpGet, err := GetRoutingProfile(DB(), rp.ID)
 				So(err, ShouldBeNil)
 
 				rpGet.CreatedAt = rpGet.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -70,8 +67,8 @@ func TestRoutingProfile(t *testing.T) {
 			})
 
 			Convey("Then DeleteRoutingProfile deletes the routing-profile", func() {
-				So(DeleteRoutingProfile(db, rp.ID), ShouldBeNil)
-				So(DeleteRoutingProfile(db, rp.ID), ShouldEqual, ErrDoesNotExist)
+				So(DeleteRoutingProfile(DB(), rp.ID), ShouldBeNil)
+				So(DeleteRoutingProfile(DB(), rp.ID), ShouldEqual, ErrDoesNotExist)
 			})
 		})
 	})

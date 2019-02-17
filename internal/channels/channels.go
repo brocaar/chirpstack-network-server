@@ -1,7 +1,7 @@
 package channels
 
 import (
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
@@ -11,7 +11,7 @@ import (
 // (e.g. for the US band) or when a reconfiguration of active channels
 // happens.
 func HandleChannelReconfigure(ds storage.DeviceSession) ([]storage.MACCommandBlock, error) {
-	payloads := config.C.NetworkServer.Band.Band.GetLinkADRReqPayloadsForEnabledUplinkChannelIndices(ds.EnabledUplinkChannels)
+	payloads := band.Band().GetLinkADRReqPayloadsForEnabledUplinkChannelIndices(ds.EnabledUplinkChannels)
 	if len(payloads) == 0 {
 		return nil, nil
 	}

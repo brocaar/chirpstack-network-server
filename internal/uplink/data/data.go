@@ -13,6 +13,10 @@ import (
 	"github.com/brocaar/loraserver/api/geo"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
+	"github.com/brocaar/loraserver/internal/backend/applicationserver"
+	"github.com/brocaar/loraserver/internal/backend/controller"
+	"github.com/brocaar/loraserver/internal/backend/geolocationserver"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/config"
 	datadown "github.com/brocaar/loraserver/internal/downlink/data"
 	"github.com/brocaar/loraserver/internal/downlink/data/classb"
@@ -52,6 +56,19 @@ var tasks = []func(*dataContext) error{
 	handleDownlink,
 }
 
+var (
+	getDownlinkDataDelay time.Duration
+	disableMACCommands   bool
+)
+
+// Setup configures the package.
+func Setup(conf config.Config) error {
+	getDownlinkDataDelay = conf.NetworkServer.GetDownlinkDataDelay
+	disableMACCommands = conf.NetworkServer.NetworkSettings.DisableMACCommands
+
+	return nil
+}
+
 type dataContext struct {
 	RXPacket                models.RXPacket
 	MACPayload              *lorawan.MACPayload
@@ -87,19 +104,19 @@ func setContextFromDataPHYPayload(ctx *dataContext) error {
 }
 
 func getDeviceSessionForPHYPayload(ctx *dataContext) error {
-	txDR, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, config.C.NetworkServer.Band.Band)
+	txDR, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
 	if err != nil {
 		return errors.Wrap(err, "get data-rate index error")
 	}
 
 	var txCh int
 	for _, defaultChannel := range []bool{true, false} {
-		i, err := config.C.NetworkServer.Band.Band.GetUplinkChannelIndex(int(ctx.RXPacket.TXInfo.Frequency), defaultChannel)
+		i, err := band.Band().GetUplinkChannelIndex(int(ctx.RXPacket.TXInfo.Frequency), defaultChannel)
 		if err != nil {
 			continue
 		}
 
-		c, err := config.C.NetworkServer.Band.Band.GetUplinkChannel(i)
+		c, err := band.Band().GetUplinkChannel(i)
 		if err != nil {
 			return errors.Wrap(err, "get channel error")
 		}
@@ -113,7 +130,7 @@ func getDeviceSessionForPHYPayload(ctx *dataContext) error {
 		}
 	}
 
-	ds, err := storage.GetDeviceSessionForPHYPayload(config.C.Redis.Pool, ctx.RXPacket.PHYPayload, txDR, txCh)
+	ds, err := storage.GetDeviceSessionForPHYPayload(storage.RedisPool(), ctx.RXPacket.PHYPayload, txDR, txCh)
 	if err != nil {
 		return errors.Wrap(err, "get device-session error")
 	}
@@ -128,7 +145,7 @@ func logUplinkFrame(ctx *dataContext) error {
 		return errors.Wrap(err, "create uplink frame-log error")
 	}
 
-	if err := framelog.LogUplinkFrameForDevEUI(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, uplinkFrameSet); err != nil {
+	if err := framelog.LogUplinkFrameForDevEUI(storage.RedisPool(), ctx.DeviceSession.DevEUI, uplinkFrameSet); err != nil {
 		log.WithError(err).Error("log uplink frame for device error")
 	}
 
@@ -136,7 +153,7 @@ func logUplinkFrame(ctx *dataContext) error {
 }
 
 func getDeviceProfile(ctx *dataContext) error {
-	dp, err := storage.GetAndCacheDeviceProfile(config.C.PostgreSQL.DB, config.C.Redis.Pool, ctx.DeviceSession.DeviceProfileID)
+	dp, err := storage.GetAndCacheDeviceProfile(storage.DB(), storage.RedisPool(), ctx.DeviceSession.DeviceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get device-profile error")
 	}
@@ -146,7 +163,7 @@ func getDeviceProfile(ctx *dataContext) error {
 }
 
 func getServiceProfile(ctx *dataContext) error {
-	sp, err := storage.GetAndCacheServiceProfile(config.C.PostgreSQL.DB, config.C.Redis.Pool, ctx.DeviceSession.ServiceProfileID)
+	sp, err := storage.GetAndCacheServiceProfile(storage.DB(), storage.RedisPool(), ctx.DeviceSession.ServiceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
@@ -161,7 +178,7 @@ func setADR(ctx *dataContext) error {
 }
 
 func setUplinkDataRate(ctx *dataContext) error {
-	currentDR, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, config.C.NetworkServer.Band.Band)
+	currentDR, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
 	if err != nil {
 		return errors.Wrap(err, "get data-rate error")
 	}
@@ -204,7 +221,7 @@ func appendMetaDataToUplinkHistory(ctx *dataContext) error {
 }
 
 func storeDeviceGatewayRXInfoSet(ctx *dataContext) error {
-	dr, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, config.C.NetworkServer.Band.Band)
+	dr, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
 	if err != nil {
 		errors.Wrap(err, "get data-rate error")
 	}
@@ -222,7 +239,7 @@ func storeDeviceGatewayRXInfoSet(ctx *dataContext) error {
 		})
 	}
 
-	err = storage.SaveDeviceGatewayRXInfoSet(config.C.Redis.Pool, rxInfoSet)
+	err = storage.SaveDeviceGatewayRXInfoSet(storage.RedisPool(), rxInfoSet)
 	if err != nil {
 		return errors.Wrap(err, "save device gateway rx-info set error")
 	}
@@ -231,12 +248,12 @@ func storeDeviceGatewayRXInfoSet(ctx *dataContext) error {
 }
 
 func getApplicationServerClientForDataUp(ctx *dataContext) error {
-	rp, err := storage.GetRoutingProfile(config.C.PostgreSQL.DB, ctx.DeviceSession.RoutingProfileID)
+	rp, err := storage.GetRoutingProfile(storage.DB(), ctx.DeviceSession.RoutingProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get routing-profile error")
 	}
 
-	asClient, err := config.C.ApplicationServer.Pool.Get(rp.ASID, []byte(rp.CACert), []byte(rp.TLSCert), []byte(rp.TLSKey))
+	asClient, err := applicationserver.Pool().Get(rp.ASID, []byte(rp.CACert), []byte(rp.TLSCert), []byte(rp.TLSKey))
 	if err != nil {
 		return errors.Wrap(err, "get application-server client error")
 	}
@@ -254,7 +271,7 @@ func resolveDeviceLocation(ctx *dataContext) error {
 		return nil
 	}
 
-	if config.C.GeolocationServer.Client == nil {
+	if geolocationserver.Client() == nil {
 		log.WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,
 		}).Debug("skipping geolocation, no client configured")
@@ -308,7 +325,7 @@ func resolveDeviceLocation(ctx *dataContext) error {
 			}).WithError(err).Error("set device-location error")
 		}
 
-	}(ctx.DeviceSession.DevEUI, ctx.DeviceSession.ReferenceAltitude, config.C.GeolocationServer.Client, ctx.ApplicationServerClient, rxInfoWithFineTimestamp)
+	}(ctx.DeviceSession.DevEUI, ctx.DeviceSession.ReferenceAltitude, geolocationserver.Client(), ctx.ApplicationServerClient, rxInfoWithFineTimestamp)
 
 	return nil
 }
@@ -346,7 +363,7 @@ func setBeaconLocked(ctx *dataContext) error {
 
 	ctx.DeviceSession.BeaconLocked = ctx.MACPayload.FHDR.FCtrl.ClassB
 	if ctx.DeviceSession.BeaconLocked {
-		if err := classb.ScheduleDeviceQueueToPingSlotsForDevEUI(config.C.PostgreSQL.DB, ctx.DeviceProfile, ctx.DeviceSession); err != nil {
+		if err := classb.ScheduleDeviceQueueToPingSlotsForDevEUI(storage.DB(), ctx.DeviceProfile, ctx.DeviceSession); err != nil {
 			return errors.Wrap(err, "schedule device-queue to ping-slots error")
 		}
 
@@ -422,7 +439,7 @@ func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 		TxInfo:  ctx.RXPacket.TXInfo,
 	}
 
-	dr, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, config.C.NetworkServer.Band.Band)
+	dr, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
 	if err != nil {
 		errors.Wrap(err, "get data-rate error")
 	}
@@ -488,7 +505,7 @@ func syncUplinkFCnt(ctx *dataContext) error {
 
 func saveDeviceSession(ctx *dataContext) error {
 	// save node-session
-	return storage.SaveDeviceSession(config.C.Redis.Pool, ctx.DeviceSession)
+	return storage.SaveDeviceSession(storage.RedisPool(), ctx.DeviceSession)
 }
 
 func handleUplinkACK(ctx *dataContext) error {
@@ -496,7 +513,7 @@ func handleUplinkACK(ctx *dataContext) error {
 		return nil
 	}
 
-	qi, err := storage.GetPendingDeviceQueueItemForDevEUI(config.C.PostgreSQL.DB, ctx.DeviceSession.DevEUI)
+	qi, err := storage.GetPendingDeviceQueueItemForDevEUI(storage.DB(), ctx.DeviceSession.DevEUI)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,
@@ -512,7 +529,7 @@ func handleUplinkACK(ctx *dataContext) error {
 		return nil
 	}
 
-	if err := storage.DeleteDeviceQueueItem(config.C.PostgreSQL.DB, qi.ID); err != nil {
+	if err := storage.DeleteDeviceQueueItem(storage.DB(), qi.ID); err != nil {
 		return errors.Wrap(err, "delete device-queue item error")
 	}
 
@@ -530,7 +547,7 @@ func handleUplinkACK(ctx *dataContext) error {
 
 func handleDownlink(ctx *dataContext) error {
 	// handle downlink (ACK)
-	time.Sleep(config.C.NetworkServer.GetDownlinkDataDelay)
+	time.Sleep(getDownlinkDataDelay)
 	if err := datadown.HandleResponse(
 		ctx.RXPacket,
 		ctx.ServiceProfile,
@@ -554,7 +571,7 @@ func sendRXInfoPayload(ds storage.DeviceSession, rxPacket models.RXPacket) error
 		RxInfo: rxPacket.RXInfoSet,
 	}
 
-	_, err := config.C.NetworkController.Client.HandleUplinkMetaData(context.Background(), &rxInfoReq)
+	_, err := controller.Client().HandleUplinkMetaData(context.Background(), &rxInfoReq)
 	if err != nil {
 		return fmt.Errorf("publish rxinfo to network-controller error: %s", err)
 	}
@@ -600,12 +617,12 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, dp storage.DeviceProfile
 
 		var external bool
 
-		if !config.C.NetworkServer.NetworkSettings.DisableMACCommands {
+		if !disableMACCommands {
 			// read pending mac-command block for CID. e.g. on case of an ack, the
 			// pending mac-command block contains the request.
 			// we need this pending mac-command block to find out if the command
 			// was scheduled through the API (external).
-			pending, err := storage.GetPendingMACCommand(config.C.Redis.Pool, ds.DevEUI, block.CID)
+			pending, err := storage.GetPendingMACCommand(storage.RedisPool(), ds.DevEUI, block.CID)
 			if err != nil {
 				log.WithFields(logFields).Errorf("read pending mac-command error: %s", err)
 				continue
@@ -616,7 +633,7 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, dp storage.DeviceProfile
 
 			// in case the node is requesting a mac-command, there is nothing pending
 			if pending != nil {
-				if err = storage.DeletePendingMACCommand(config.C.Redis.Pool, ds.DevEUI, block.CID); err != nil {
+				if err = storage.DeletePendingMACCommand(storage.RedisPool(), ds.DevEUI, block.CID); err != nil {
 					log.WithFields(logFields).Errorf("delete pending mac-command error: %s", err)
 				}
 			}
@@ -636,7 +653,7 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, dp storage.DeviceProfile
 		//  * in case of proprietary mac-commands
 		//  * in case when the request has been scheduled through the API
 		//  * in case mac-commands are disabled in the LoRa Server configuration
-		if config.C.NetworkServer.NetworkSettings.DisableMACCommands || block.CID >= 0x80 || external {
+		if disableMACCommands || block.CID >= 0x80 || external {
 			var data [][]byte
 			for _, cmd := range block.MACCommands {
 				b, err := cmd.MarshalBinary()
@@ -646,7 +663,7 @@ func handleUplinkMACCommands(ds *storage.DeviceSession, dp storage.DeviceProfile
 				}
 				data = append(data, b)
 			}
-			_, err := config.C.NetworkController.Client.HandleUplinkMACCommand(context.Background(), &nc.HandleUplinkMACCommandRequest{
+			_, err := controller.Client().HandleUplinkMACCommand(context.Background(), &nc.HandleUplinkMACCommandRequest{
 				DevEui:   ds.DevEUI[:],
 				Cid:      uint32(block.CID),
 				Commands: data,

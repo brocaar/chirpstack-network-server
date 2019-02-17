@@ -6,37 +6,40 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/backend/applicationserver"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
+	loraband "github.com/brocaar/lorawan/band"
 )
 
 type GetNextDeviceQueueItemTestSuite struct {
 	suite.Suite
-	test.DatabaseTestSuiteBase
+
+	tx *storage.TxLogger
 
 	ASClient *test.ApplicationClient
 	Device   storage.Device
 }
 
 func (ts *GetNextDeviceQueueItemTestSuite) SetupSuite() {
-	ts.DatabaseTestSuiteBase.SetupSuite()
-
 	assert := require.New(ts.T())
+	conf := test.GetConfig()
+	assert.NoError(storage.Setup(conf))
+	test.MustResetDB(storage.DB().DB)
 
 	ts.ASClient = test.NewApplicationClient()
-	config.C.ApplicationServer.Pool = test.NewApplicationServerPool(ts.ASClient)
+	applicationserver.SetPool(test.NewApplicationServerPool(ts.ASClient))
 
 	sp := storage.ServiceProfile{}
-	assert.NoError(storage.CreateServiceProfile(ts.DB(), &sp))
+	assert.NoError(storage.CreateServiceProfile(storage.DB(), &sp))
 
 	dp := storage.DeviceProfile{}
-	assert.NoError(storage.CreateDeviceProfile(ts.DB(), &dp))
+	assert.NoError(storage.CreateDeviceProfile(storage.DB(), &dp))
 
 	rp := storage.RoutingProfile{}
-	assert.NoError(storage.CreateRoutingProfile(ts.DB(), &rp))
+	assert.NoError(storage.CreateRoutingProfile(storage.DB(), &rp))
 
 	ts.Device = storage.Device{
 		DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
@@ -44,7 +47,14 @@ func (ts *GetNextDeviceQueueItemTestSuite) SetupSuite() {
 		DeviceProfileID:  dp.ID,
 		RoutingProfileID: rp.ID,
 	}
-	assert.NoError(storage.CreateDevice(ts.DB(), &ts.Device))
+	assert.NoError(storage.CreateDevice(storage.DB(), &ts.Device))
+}
+
+func (ts *GetNextDeviceQueueItemTestSuite) SetupTest() {
+	assert := require.New(ts.T())
+	var err error
+	ts.tx, err = storage.DB().Beginx()
+	assert.NoError(err)
 }
 
 func (ts *GetNextDeviceQueueItemTestSuite) TestGetNextDeviceQueueItem() {
@@ -213,16 +223,16 @@ func (ts *GetNextDeviceQueueItemTestSuite) TestGetNextDeviceQueueItem() {
 		ts.T().Run(tst.Name, func(t *testing.T) {
 			assert := require.New(t)
 
-			assert.NoError(storage.FlushDeviceQueueForDevEUI(ts.DB(), ts.Device.DevEUI))
+			assert.NoError(storage.FlushDeviceQueueForDevEUI(storage.DB(), ts.Device.DevEUI))
 			for i := range tst.DeviceQueueItems {
-				assert.NoError(storage.CreateDeviceQueueItem(ts.DB(), &tst.DeviceQueueItems[i]))
+				assert.NoError(storage.CreateDeviceQueueItem(storage.DB(), &tst.DeviceQueueItems[i]))
 			}
 
 			assert.NoError(getNextDeviceQueueItem(&tst.DataContext))
 			assert.Equal(tst.ExpectedDataContext, tst.DataContext)
 
 			if tst.ExpectedNextDeviceQueueItem != nil {
-				qi, err := storage.GetNextDeviceQueueItemForDevEUI(ts.DB(), ts.Device.DevEUI)
+				qi, err := storage.GetNextDeviceQueueItemForDevEUI(storage.DB(), ts.Device.DevEUI)
 				assert.NoError(err)
 				assert.Equal(tst.ExpectedNextDeviceQueueItem.FRMPayload, qi.FRMPayload)
 				assert.Equal(tst.ExpectedNextDeviceQueueItem.FPort, qi.FPort)
@@ -243,7 +253,12 @@ func TestGetNextDeviceQueueItem(t *testing.T) {
 
 type SetMACCommandsSetTestSuite struct {
 	suite.Suite
-	test.DatabaseTestSuiteBase
+}
+
+func (ts *SetMACCommandsSetTestSuite) SetupSuite() {
+	assert := require.New(ts.T())
+	conf := test.GetConfig()
+	assert.NoError(storage.Setup(conf))
 }
 
 func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
@@ -353,9 +368,10 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 		},
 		{
 			BeforeFunc: func() error {
-				config.C.NetworkServer.NetworkSettings.ClassB.PingSlotDR = 3
-				config.C.NetworkServer.NetworkSettings.ClassB.PingSlotFrequency = 868100000
-				return nil
+				conf := test.GetConfig()
+				conf.NetworkServer.NetworkSettings.ClassB.PingSlotDR = 3
+				conf.NetworkServer.NetworkSettings.ClassB.PingSlotFrequency = 868100000
+				return Setup(conf)
 			},
 			Name: "trigger ping-slot parameters",
 			DataContext: dataContext{
@@ -394,10 +410,10 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			DataContext: dataContext{
 				DeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels: []int{0, 1, 2, 3, 4, 5},
-					ExtraUplinkChannels: map[int]band.Channel{
-						3: band.Channel{},
-						4: band.Channel{},
-						6: band.Channel{},
+					ExtraUplinkChannels: map[int]loraband.Channel{
+						3: loraband.Channel{},
+						4: loraband.Channel{},
+						6: loraband.Channel{},
 					},
 					DR:           5,
 					TXPowerIndex: 3,
@@ -427,9 +443,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 		},
 		{
 			BeforeFunc: func() error {
-				config.C.NetworkServer.Band.Band.AddChannel(868600000, 3, 5)
-				config.C.NetworkServer.Band.Band.AddChannel(868700000, 4, 5)
-				config.C.NetworkServer.Band.Band.AddChannel(868800000, 5, 5)
+				band.Band().AddChannel(868600000, 3, 5)
+				band.Band().AddChannel(868700000, 4, 5)
+				band.Band().AddChannel(868800000, 5, 5)
 				return nil
 			},
 			Name: "trigger adding new channel",
@@ -481,19 +497,19 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 		},
 		{
 			BeforeFunc: func() error {
-				config.C.NetworkServer.Band.Band.AddChannel(868600000, 3, 5)
-				config.C.NetworkServer.Band.Band.AddChannel(868700000, 4, 5)
-				config.C.NetworkServer.Band.Band.AddChannel(868800000, 5, 5)
+				band.Band().AddChannel(868600000, 3, 5)
+				band.Band().AddChannel(868700000, 4, 5)
+				band.Band().AddChannel(868800000, 5, 5)
 				return nil
 			},
 			Name: "trigger updating existing channels",
 			DataContext: dataContext{
 				DeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels: []int{0, 1, 2},
-					ExtraUplinkChannels: map[int]band.Channel{
-						3: band.Channel{Frequency: 868550000, MinDR: 3, MaxDR: 5},
-						4: band.Channel{Frequency: 868700000, MinDR: 4, MaxDR: 5},
-						5: band.Channel{Frequency: 868800000, MinDR: 4, MaxDR: 5},
+					ExtraUplinkChannels: map[int]loraband.Channel{
+						3: loraband.Channel{Frequency: 868550000, MinDR: 3, MaxDR: 5},
+						4: loraband.Channel{Frequency: 868700000, MinDR: 4, MaxDR: 5},
+						5: loraband.Channel{Frequency: 868800000, MinDR: 4, MaxDR: 5},
 					},
 					RX2Frequency: 869525000,
 				},
@@ -531,10 +547,11 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 		},
 		{
 			BeforeFunc: func() error {
-				config.C.NetworkServer.NetworkSettings.RX2Frequency = 868700000
-				config.C.NetworkServer.NetworkSettings.RX2DR = 5
-				config.C.NetworkServer.NetworkSettings.RX1DROffset = 3
-				return nil
+				conf := test.GetConfig()
+				conf.NetworkServer.NetworkSettings.RX2Frequency = 868700000
+				conf.NetworkServer.NetworkSettings.RX2DR = 5
+				conf.NetworkServer.NetworkSettings.RX1DROffset = 3
+				return Setup(conf)
 			},
 			Name: "trigger rx param setup",
 			DataContext: dataContext{
@@ -570,8 +587,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 		},
 		{
 			BeforeFunc: func() error {
-				config.C.NetworkServer.NetworkSettings.RX1Delay = 14
-				return nil
+				conf := test.GetConfig()
+				conf.NetworkServer.NetworkSettings.RX1Delay = 14
+				return Setup(conf)
 			},
 			Name: "trigger rx timing setup",
 			DataContext: dataContext{
@@ -610,7 +628,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			// LinkADRReq only enables A, B and disables C (as it does not
 			// know about the new channel C yet).
 			BeforeFunc: func() error {
-				return config.C.NetworkServer.Band.Band.AddChannel(868300000, 6, 6)
+				return band.Band().AddChannel(868300000, 6, 6)
 			},
 			Name: "LinkADRReq and NewChannelReq requested at the same time (will drop LinkADRReq)",
 			DataContext: dataContext{
@@ -647,10 +665,11 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 		},
 		{
 			BeforeFunc: func() error {
-				config.C.NetworkServer.NetworkSettings.RejoinRequest.Enabled = true
-				config.C.NetworkServer.NetworkSettings.RejoinRequest.MaxCountN = 1
-				config.C.NetworkServer.NetworkSettings.RejoinRequest.MaxTimeN = 2
-				return nil
+				conf := test.GetConfig()
+				conf.NetworkServer.NetworkSettings.RejoinRequest.Enabled = true
+				conf.NetworkServer.NetworkSettings.RejoinRequest.MaxCountN = 1
+				conf.NetworkServer.NetworkSettings.RejoinRequest.MaxTimeN = 2
+				return Setup(conf)
 			},
 			Name: "trigger rejoin param setup request",
 			DataContext: dataContext{
@@ -685,10 +704,11 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 		},
 		{
 			BeforeFunc: func() error {
-				config.C.NetworkServer.NetworkSettings.RejoinRequest.Enabled = true
-				config.C.NetworkServer.NetworkSettings.RejoinRequest.MaxCountN = 1
-				config.C.NetworkServer.NetworkSettings.RejoinRequest.MaxTimeN = 2
-				return nil
+				conf := test.GetConfig()
+				conf.NetworkServer.NetworkSettings.RejoinRequest.Enabled = true
+				conf.NetworkServer.NetworkSettings.RejoinRequest.MaxCountN = 1
+				conf.NetworkServer.NetworkSettings.RejoinRequest.MaxTimeN = 2
+				return Setup(conf)
 			},
 			Name: "trigger rejoin param setup request (ignored because of LoRaWAN 1.0)",
 			DataContext: dataContext{
@@ -709,10 +729,11 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 		},
 		{
 			BeforeFunc: func() error {
-				config.C.NetworkServer.NetworkSettings.RejoinRequest.Enabled = true
-				config.C.NetworkServer.NetworkSettings.RejoinRequest.MaxCountN = 1
-				config.C.NetworkServer.NetworkSettings.RejoinRequest.MaxTimeN = 2
-				return nil
+				conf := test.GetConfig()
+				conf.NetworkServer.NetworkSettings.RejoinRequest.Enabled = true
+				conf.NetworkServer.NetworkSettings.RejoinRequest.MaxCountN = 1
+				conf.NetworkServer.NetworkSettings.RejoinRequest.MaxTimeN = 2
+				return Setup(conf)
 			},
 			Name: "trigger rejoin param setup request are in sync",
 			DataContext: dataContext{
@@ -738,16 +759,11 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 	for _, tst := range tests {
 		ts.T().Run(tst.Name, func(t *testing.T) {
 			assert := require.New(t)
+			conf := test.GetConfig()
+			assert.NoError(Setup(conf))
+			assert.NoError(band.Setup(conf))
 
-			test.MustFlushRedis(ts.RedisPool())
-
-			config.C.NetworkServer.Band.Name = band.EU_863_870
-			config.C.NetworkServer.Band.Band, _ = band.GetConfig(config.C.NetworkServer.Band.Name, false, lorawan.DwellTimeNoLimit)
-			config.C.NetworkServer.NetworkSettings.RX1Delay = 0
-			config.C.NetworkServer.NetworkSettings.RX2Frequency = 869525000
-			config.C.NetworkServer.NetworkSettings.RX2DR = 0
-			config.C.NetworkServer.NetworkSettings.RX1DROffset = 0
-			config.C.NetworkServer.NetworkSettings.RejoinRequest.Enabled = false
+			test.MustFlushRedis(storage.RedisPool())
 
 			if tst.BeforeFunc != nil {
 				assert.NoError(tst.BeforeFunc())

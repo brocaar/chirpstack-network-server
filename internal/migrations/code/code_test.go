@@ -4,15 +4,23 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/loraserver/internal/test"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-
-	"github.com/brocaar/loraserver/internal/test"
 )
 
 type MigrateTestSuite struct {
 	suite.Suite
-	test.DatabaseTestSuiteBase
+}
+
+func (b *MigrateTestSuite) SetupSuite() {
+	conf := test.GetConfig()
+	if err := storage.Setup(conf); err != nil {
+		panic(err)
+	}
+	test.MustResetDB(storage.DB().DB)
 }
 
 func (ts *MigrateTestSuite) TestMigrate() {
@@ -20,7 +28,7 @@ func (ts *MigrateTestSuite) TestMigrate() {
 	count := 0
 
 	// returning an error does not mark the migration as completed
-	assert.Error(Migrate(ts.DB(), "test_1", func() error {
+	assert.Error(Migrate("test_1", func(db sqlx.Ext) error {
 		count++
 		return fmt.Errorf("BOOM")
 	}))
@@ -28,7 +36,7 @@ func (ts *MigrateTestSuite) TestMigrate() {
 	assert.Equal(1, count)
 
 	// re-run the migration
-	assert.NoError(Migrate(ts.DB(), "test_1", func() error {
+	assert.NoError(Migrate("test_1", func(db sqlx.Ext) error {
 		count++
 		return nil
 	}))
@@ -36,7 +44,7 @@ func (ts *MigrateTestSuite) TestMigrate() {
 	assert.Equal(2, count)
 
 	// the migration has already been completed
-	assert.NoError(Migrate(ts.DB(), "test_1", func() error {
+	assert.NoError(Migrate("test_1", func(db sqlx.Ext) error {
 		count++
 		return nil
 	}))
@@ -44,7 +52,7 @@ func (ts *MigrateTestSuite) TestMigrate() {
 	assert.Equal(2, count)
 
 	// new migration should run
-	assert.NoError(Migrate(ts.DB(), "test_2", func() error {
+	assert.NoError(Migrate("test_2", func(db sqlx.Ext) error {
 		count++
 		return nil
 	}))
@@ -52,7 +60,7 @@ func (ts *MigrateTestSuite) TestMigrate() {
 	assert.Equal(3, count)
 
 	// migration has already been applied
-	assert.NoError(Migrate(ts.DB(), "test_2", func() error {
+	assert.NoError(Migrate("test_2", func(db sqlx.Ext) error {
 		count++
 		return nil
 	}))

@@ -27,7 +27,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b7ac1c86012fb9b5d9bb4be6f75b06881a2e8a98edc035ad32211d3c3f94083f"
+  digest = "1:0169405b2b2243f7d25356c1c73d799523b1412cd8d9f00a9bb7e206bf1ed68d"
   name = "github.com/brocaar/lorawan"
   packages = [
     ".",
@@ -35,7 +35,7 @@
     "band",
   ]
   pruneopts = "NUT"
-  revision = "5f417c8cb7a79a37ffcd8afd4fc44d9b65fbb883"
+  revision = "4ae744db6289399c30bc2795d99f68b8d51df4df"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"

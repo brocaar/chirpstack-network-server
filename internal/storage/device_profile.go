@@ -6,16 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
-	"github.com/pkg/errors"
-
-	"github.com/lib/pq"
-
 	"github.com/gofrs/uuid"
+	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/brocaar/loraserver/internal/config"
 )
 
 // Templates used for generating Redis keys
@@ -136,7 +132,7 @@ func CreateDeviceProfileCache(p *redis.Pool, dp DeviceProfile) error {
 	defer c.Close()
 
 	key := fmt.Sprintf(DeviceProfileKeyTempl, dp.ID)
-	exp := int64(config.C.NetworkServer.DeviceSessionTTL) / int64(time.Millisecond)
+	exp := int64(deviceSessionTTL) / int64(time.Millisecond)
 
 	_, err := c.Do("PSETEX", key, exp, buf.Bytes())
 	if err != nil {

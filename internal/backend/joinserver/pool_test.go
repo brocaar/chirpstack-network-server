@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 )
 
@@ -16,24 +17,22 @@ func init() {
 
 type PoolTestSuite struct {
 	suite.Suite
-	pool Pool
 }
 
 func (ts *PoolTestSuite) SetupSuite() {
-	var err error
 	assert := require.New(ts.T())
 
-	ts.pool, err = NewPool(Config{
-		ResolveJoinEUI:      true,
-		ResolveDomainSuffix: ".example.com",
-	})
-	assert.NoError(err)
+	conf := test.GetConfig()
+	conf.JoinServer.ResolveJoinEUI = true
+	conf.JoinServer.ResolveDomainSuffix = ".example.com"
+
+	assert.NoError(Setup(conf))
 }
 
 func (ts *PoolTestSuite) TestJoinEUIToServer() {
 	assert := require.New(ts.T())
 
-	assert.Equal("8.0.7.0.6.0.5.0.4.0.3.0.2.0.1.0.example.com", ts.pool.(*pool).joinEUIToServer(lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}))
+	assert.Equal("8.0.7.0.6.0.5.0.4.0.3.0.2.0.1.0.example.com", GetPool().(*pool).joinEUIToServer(lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}))
 }
 
 func (ts *PoolTestSuite) TestAToServer() {
@@ -60,7 +59,7 @@ func (ts *PoolTestSuite) TestAToServer() {
 	}
 
 	for _, tst := range tests {
-		url, err := ts.pool.(*pool).aToURL(tst.Server, tst.Secure, tst.Port)
+		url, err := GetPool().(*pool).aToURL(tst.Server, tst.Secure, tst.Port)
 		assert.NoError(err)
 		assert.Equal(tst.Expected, url)
 	}

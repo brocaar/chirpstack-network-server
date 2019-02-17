@@ -1,6 +1,18 @@
-package backend
+package gateway
 
 import "github.com/brocaar/loraserver/api/gw"
+
+var backend Gateway
+
+// Backend returns the gateway backend.
+func Backend() Gateway {
+	return backend
+}
+
+// SetBackend sets the given gateway backend.
+func SetBackend(b Gateway) {
+	backend = b
+}
 
 // Gateway is the interface of a gateway backend.
 // A gateway backend is responsible for the communication with the gateway.

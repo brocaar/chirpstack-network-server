@@ -6,14 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
-	"github.com/pkg/errors"
-
 	"github.com/gofrs/uuid"
+	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/brocaar/loraserver/internal/config"
 )
 
 // Templates used for generating Redis keys
@@ -146,7 +143,7 @@ func CreateServiceProfileCache(p *redis.Pool, sp ServiceProfile) error {
 	defer c.Close()
 
 	key := fmt.Sprintf(ServiceProfileKeyTempl, sp.ID)
-	exp := int64(config.C.NetworkServer.DeviceSessionTTL) / int64(time.Millisecond)
+	exp := int64(deviceSessionTTL) / int64(time.Millisecond)
 
 	_, err := c.Do("PSETEX", key, exp, buf.Bytes())
 	if err != nil {

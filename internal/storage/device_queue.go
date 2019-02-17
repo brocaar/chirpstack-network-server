@@ -4,16 +4,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/brocaar/loraserver/internal/gps"
 	"github.com/gofrs/uuid"
-
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/internal/config"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/loraserver/api/as"
+	"github.com/brocaar/loraserver/internal/backend/applicationserver"
+	"github.com/brocaar/loraserver/internal/gps"
 	"github.com/brocaar/lorawan"
 )
 
@@ -281,7 +279,7 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 			if err != nil {
 				return DeviceQueueItem{}, errors.Wrap(err, "get routing-profile error")
 			}
-			asClient, err := config.C.ApplicationServer.Pool.Get(rp.ASID, []byte(rp.CACert), []byte(rp.TLSCert), []byte(rp.TLSKey))
+			asClient, err := applicationserver.Pool().Get(rp.ASID, []byte(rp.CACert), []byte(rp.TLSCert), []byte(rp.TLSKey))
 			if err != nil {
 				return DeviceQueueItem{}, errors.Wrap(err, "get application-server client error")
 			}
@@ -355,7 +353,6 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 // The device records will be locked for update so that multiple instances can
 // run this query in parallel without the risk of duplicate scheduling.
 func GetDevicesWithClassBOrClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Device, error) {
-	schedulerInterval := config.C.NetworkServer.Scheduler.SchedulerInterval
 	gpsEpochScheduleTime := gps.Time(time.Now().Add(schedulerInterval * 2)).TimeSinceGPSEpoch()
 
 	var devices []Device

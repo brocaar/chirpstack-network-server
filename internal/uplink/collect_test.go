@@ -9,24 +9,25 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/models"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 )
 
 type CollectTestSuite struct {
 	suite.Suite
-	test.DatabaseTestSuiteBase
 }
 
 func (ts *CollectTestSuite) SetupSuite() {
-	ts.DatabaseTestSuiteBase.SetupSuite()
+	assert := require.New(ts.T())
+	conf := test.GetConfig()
+	conf.NetworkServer.DeduplicationDelay = time.Millisecond * 500
 
-	config.C.Redis.Pool = ts.RedisPool()
-	config.C.PostgreSQL.DB = ts.DB()
-	config.C.NetworkServer.DeduplicationDelay = time.Millisecond * 500
+	assert.NoError(storage.Setup(conf))
+	assert.NoError(Setup(conf))
 }
 
 func (ts *CollectTestSuite) TestDeduplication() {
@@ -87,7 +88,7 @@ func (ts *CollectTestSuite) TestDeduplication() {
 	for _, tst := range testTable {
 		ts.T().Run(tst.Name, func(t *testing.T) {
 			assert := require.New(t)
-			test.MustFlushRedis(ts.RedisPool())
+			test.MustFlushRedis(storage.RedisPool())
 
 			var received int
 			var called int
@@ -112,10 +113,10 @@ func (ts *CollectTestSuite) TestDeduplication() {
 					TxInfo:     &gw.UplinkTXInfo{},
 					PhyPayload: phyB,
 				}
-				assert.NoError(helpers.SetUplinkTXInfoDataRate(packet.TxInfo, 0, config.C.NetworkServer.Band.Band))
+				assert.NoError(helpers.SetUplinkTXInfoDataRate(packet.TxInfo, 0, band.Band()))
 
 				go func(packet gw.UplinkFrame) {
-					assert.NoError(collectAndCallOnce(ts.RedisPool(), packet, cb))
+					assert.NoError(collectAndCallOnce(storage.RedisPool(), packet, cb))
 					wg.Done()
 				}(packet)
 			}

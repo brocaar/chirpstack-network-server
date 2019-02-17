@@ -18,8 +18,9 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend"
+	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/backend/gateway/marshaler"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/lorawan"
 )
@@ -33,87 +34,77 @@ const (
 	marshalerJSON
 )
 
-// Config holds the MQTT backend configuration.
-type Config struct {
-	Server                string
-	Username              string
-	Password              string
-	QOS                   uint8  `mapstructure:"qos"`
-	CleanSession          bool   `mapstructure:"clean_session"`
-	ClientID              string `mapstructure:"client_id"`
-	CACert                string `mapstructure:"ca_cert"`
-	TLSCert               string `mapstructure:"tls_cert"`
-	TLSKey                string `mapstructure:"tls_key"`
-	UplinkTopicTemplate   string `mapstructure:"uplink_topic_template"`
-	DownlinkTopicTemplate string `mapstructure:"downlink_topic_template"`
-	StatsTopicTemplate    string `mapstructure:"stats_topic_template"`
-	AckTopicTemplate      string `mapstructure:"ack_topic_template"`
-	ConfigTopicTemplate   string `mapstructure:"config_topic_template"`
-}
-
 // Backend implements a MQTT pub-sub backend.
 type Backend struct {
 	sync.RWMutex
 
-	wg     sync.WaitGroup
-	config Config
+	wg sync.WaitGroup
 
 	rxPacketChan      chan gw.UplinkFrame
 	statsPacketChan   chan gw.GatewayStats
 	downlinkTXAckChan chan gw.DownlinkTXAck
 
-	conn             paho.Client
-	redisPool        *redis.Pool
-	downlinkTemplate *template.Template
-	configTemplate   *template.Template
+	conn                paho.Client
+	redisPool           *redis.Pool
+	downlinkTemplate    *template.Template
+	configTemplate      *template.Template
+	uplinkTopicTemplate string
+	statsTopicTemplate  string
+	ackTopicTemplate    string
+	qos                 uint8
 
 	gatewayMarshaler map[lorawan.EUI64]marshaler.Type
 }
 
 // NewBackend creates a new Backend.
-func NewBackend(redisPool *redis.Pool, c Config) (backend.Gateway, error) {
+func NewBackend(redisPool *redis.Pool, c config.Config) (gateway.Gateway, error) {
+	conf := c.NetworkServer.Gateway.Backend.MQTT
 	var err error
+
 	b := Backend{
-		rxPacketChan:      make(chan gw.UplinkFrame),
-		statsPacketChan:   make(chan gw.GatewayStats),
-		downlinkTXAckChan: make(chan gw.DownlinkTXAck),
-		gatewayMarshaler:  make(map[lorawan.EUI64]marshaler.Type),
-		redisPool:         redisPool,
-		config:            c,
+		rxPacketChan:        make(chan gw.UplinkFrame),
+		statsPacketChan:     make(chan gw.GatewayStats),
+		downlinkTXAckChan:   make(chan gw.DownlinkTXAck),
+		gatewayMarshaler:    make(map[lorawan.EUI64]marshaler.Type),
+		redisPool:           redisPool,
+		uplinkTopicTemplate: conf.UplinkTopicTemplate,
+		statsTopicTemplate:  conf.StatsTopicTemplate,
+		ackTopicTemplate:    conf.AckTopicTemplate,
+		qos:                 conf.QOS,
 	}
 
-	b.downlinkTemplate, err = template.New("downlink").Parse(b.config.DownlinkTopicTemplate)
+	b.downlinkTemplate, err = template.New("downlink").Parse(conf.DownlinkTopicTemplate)
 	if err != nil {
 		return nil, errors.Wrap(err, "gateway/mqtt: parse downlink template error")
 	}
 
-	b.configTemplate, err = template.New("config").Parse(b.config.ConfigTopicTemplate)
+	b.configTemplate, err = template.New("config").Parse(conf.ConfigTopicTemplate)
 	if err != nil {
 		return nil, errors.Wrap(err, "gateway/mqtt: parse config template error")
 	}
 
 	opts := paho.NewClientOptions()
-	opts.AddBroker(b.config.Server)
-	opts.SetUsername(b.config.Username)
-	opts.SetPassword(b.config.Password)
-	opts.SetCleanSession(b.config.CleanSession)
-	opts.SetClientID(b.config.ClientID)
+	opts.AddBroker(conf.Server)
+	opts.SetUsername(conf.Username)
+	opts.SetPassword(conf.Password)
+	opts.SetCleanSession(conf.CleanSession)
+	opts.SetClientID(conf.ClientID)
 	opts.SetOnConnectHandler(b.onConnected)
 	opts.SetConnectionLostHandler(b.onConnectionLost)
 
-	tlsconfig, err := newTLSConfig(b.config.CACert, b.config.TLSCert, b.config.TLSKey)
+	tlsconfig, err := newTLSConfig(conf.CACert, conf.TLSCert, conf.TLSKey)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{
-			"ca_cert":  b.config.CACert,
-			"tls_cert": b.config.TLSCert,
-			"tls_key":  b.config.TLSKey,
+			"ca_cert":  conf.CACert,
+			"tls_cert": conf.TLSCert,
+			"tls_key":  conf.TLSKey,
 		}).Fatal("gateway/mqtt: error loading mqtt certificate files")
 	}
 	if tlsconfig != nil {
 		opts.SetTLSConfig(tlsconfig)
 	}
 
-	log.WithField("server", b.config.Server).Info("gateway/mqtt: connecting to mqtt broker")
+	log.WithField("server", conf.Server).Info("gateway/mqtt: connecting to mqtt broker")
 	b.conn = paho.NewClient(opts)
 	for {
 		if token := b.conn.Connect(); token.Wait() && token.Error() != nil {
@@ -134,17 +125,17 @@ func NewBackend(redisPool *redis.Pool, c Config) (backend.Gateway, error) {
 func (b *Backend) Close() error {
 	log.Info("gateway/mqtt: closing backend")
 
-	log.WithField("topic", b.config.UplinkTopicTemplate).Info("gateway/mqtt: unsubscribing from rx topic")
-	if token := b.conn.Unsubscribe(b.config.UplinkTopicTemplate); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("gateway/mqtt: unsubscribe from %s error: %s", b.config.UplinkTopicTemplate, token.Error())
+	log.WithField("topic", b.uplinkTopicTemplate).Info("gateway/mqtt: unsubscribing from rx topic")
+	if token := b.conn.Unsubscribe(b.uplinkTopicTemplate); token.Wait() && token.Error() != nil {
+		return fmt.Errorf("gateway/mqtt: unsubscribe from %s error: %s", b.uplinkTopicTemplate, token.Error())
 	}
-	log.WithField("topic", b.config.StatsTopicTemplate).Info("gateway/mqtt: unsubscribing from stats topic")
-	if token := b.conn.Unsubscribe(b.config.StatsTopicTemplate); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("gateway/mqtt: unsubscribe from %s error: %s", b.config.StatsTopicTemplate, token.Error())
+	log.WithField("topic", b.statsTopicTemplate).Info("gateway/mqtt: unsubscribing from stats topic")
+	if token := b.conn.Unsubscribe(b.statsTopicTemplate); token.Wait() && token.Error() != nil {
+		return fmt.Errorf("gateway/mqtt: unsubscribe from %s error: %s", b.statsTopicTemplate, token.Error())
 	}
-	log.WithField("topic", b.config.AckTopicTemplate).Info("backend/gateway: unsubscribing from ack topic")
-	if token := b.conn.Unsubscribe(b.config.AckTopicTemplate); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("backend/gateway: unsubscribe from %s error: %s", b.config.AckTopicTemplate, token.Error())
+	log.WithField("topic", b.ackTopicTemplate).Info("backend/gateway: unsubscribing from ack topic")
+	if token := b.conn.Unsubscribe(b.ackTopicTemplate); token.Wait() && token.Error() != nil {
+		return fmt.Errorf("backend/gateway: unsubscribe from %s error: %s", b.ackTopicTemplate, token.Error())
 	}
 
 	log.Info("backend/gateway: handling last messages")
@@ -190,10 +181,10 @@ func (b *Backend) SendTXPacket(txPacket gw.DownlinkFrame) error {
 	}
 	log.WithFields(log.Fields{
 		"topic": topic.String(),
-		"qos":   b.config.QOS,
+		"qos":   b.qos,
 	}).Info("gateway/mqtt: publishing downlink frame")
 
-	if token := b.conn.Publish(topic.String(), b.config.QOS, false, bb); token.Wait() && token.Error() != nil {
+	if token := b.conn.Publish(topic.String(), b.qos, false, bb); token.Wait() && token.Error() != nil {
 		return errors.Wrap(err, "gateway/mqtt: publish downlink frame error")
 	}
 	return nil
@@ -215,10 +206,10 @@ func (b *Backend) SendGatewayConfigPacket(configPacket gw.GatewayConfiguration) 
 	}
 	log.WithFields(log.Fields{
 		"topic": topic.String(),
-		"qos":   b.config.QOS,
+		"qos":   b.qos,
 	}).Info("gateway/mqtt: publishing gateway configuration")
 
-	if token := b.conn.Publish(topic.String(), b.config.QOS, false, bb); token.Wait() && token.Error() != nil {
+	if token := b.conn.Publish(topic.String(), b.qos, false, bb); token.Wait() && token.Error() != nil {
 		return errors.Wrap(err, "gateway/mqtt: publish gateway configuration error")
 	}
 
@@ -359,13 +350,13 @@ func (b *Backend) onConnected(c paho.Client) {
 
 	for {
 		log.WithFields(log.Fields{
-			"topic": b.config.UplinkTopicTemplate,
-			"qos":   b.config.QOS,
+			"topic": b.uplinkTopicTemplate,
+			"qos":   b.qos,
 		}).Info("gateway/mqtt: subscribing to rx topic")
-		if token := b.conn.Subscribe(b.config.UplinkTopicTemplate, b.config.QOS, b.rxPacketHandler); token.Wait() && token.Error() != nil {
+		if token := b.conn.Subscribe(b.uplinkTopicTemplate, b.qos, b.rxPacketHandler); token.Wait() && token.Error() != nil {
 			log.WithFields(log.Fields{
-				"topic": b.config.UplinkTopicTemplate,
-				"qos":   b.config.QOS,
+				"topic": b.uplinkTopicTemplate,
+				"qos":   b.qos,
 			}).Errorf("gateway/mqtt: subscribe error: %s", token.Error())
 			time.Sleep(time.Second)
 			continue
@@ -375,13 +366,13 @@ func (b *Backend) onConnected(c paho.Client) {
 
 	for {
 		log.WithFields(log.Fields{
-			"topic": b.config.StatsTopicTemplate,
-			"qos":   b.config.QOS,
+			"topic": b.statsTopicTemplate,
+			"qos":   b.qos,
 		}).Info("gateway/mqtt: subscribing to stats topic")
-		if token := b.conn.Subscribe(b.config.StatsTopicTemplate, b.config.QOS, b.statsPacketHandler); token.Wait() && token.Error() != nil {
+		if token := b.conn.Subscribe(b.statsTopicTemplate, b.qos, b.statsPacketHandler); token.Wait() && token.Error() != nil {
 			log.WithFields(log.Fields{
-				"topic": b.config.StatsTopicTemplate,
-				"qos":   b.config.QOS,
+				"topic": b.statsTopicTemplate,
+				"qos":   b.qos,
 			}).Errorf("gateway/mqtt: subscribe error: %s", token.Error())
 			time.Sleep(time.Second)
 			continue
@@ -391,13 +382,13 @@ func (b *Backend) onConnected(c paho.Client) {
 
 	for {
 		log.WithFields(log.Fields{
-			"topic": b.config.AckTopicTemplate,
-			"qos":   b.config.QOS,
+			"topic": b.ackTopicTemplate,
+			"qos":   b.qos,
 		}).Info("backend/gateway: subscribing to ack topic")
-		if token := b.conn.Subscribe(b.config.AckTopicTemplate, b.config.QOS, b.ackPacketHandler); token.Wait() && token.Error() != nil {
+		if token := b.conn.Subscribe(b.ackTopicTemplate, b.qos, b.ackPacketHandler); token.Wait() && token.Error() != nil {
 			log.WithFields(log.Fields{
-				"topic": b.config.AckTopicTemplate,
-				"qos":   b.config.QOS,
+				"topic": b.ackTopicTemplate,
+				"qos":   b.qos,
 			}).Errorf("backend/gateway: subscribe error: %s", token.Error())
 			time.Sleep(time.Second)
 			continue

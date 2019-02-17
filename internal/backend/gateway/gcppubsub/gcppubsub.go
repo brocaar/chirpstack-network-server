@@ -15,8 +15,9 @@ import (
 	"google.golang.org/api/option"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend"
+	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/backend/gateway/marshaler"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/lorawan"
 )
@@ -27,15 +28,6 @@ const (
 	marshalerProtobuf
 	marshalerJSON
 )
-
-// Config holds the configuration for the GCP Pub/Sub backend.
-type Config struct {
-	CredentialsFile         string        `mapstructure:"credentials_file"`
-	ProjectID               string        `mapstructure:"project_id"`
-	UplinkTopicName         string        `mapstructure:"uplink_topic_name"`
-	DownlinkTopicName       string        `mapstructure:"downlink_topic_name"`
-	UplinkRetentionDuration time.Duration `mapstructure:"uplink_retention_duration"`
-}
 
 // Backend implements a Google Cloud Pub/Sub backend.
 type Backend struct {
@@ -55,7 +47,9 @@ type Backend struct {
 }
 
 // NewBackend creates a new Backend.
-func NewBackend(conf Config) (backend.Gateway, error) {
+func NewBackend(c config.Config) (gateway.Gateway, error) {
+	conf := c.NetworkServer.Gateway.Backend.GCPPubSub
+
 	b := Backend{
 		gatewayMarshaler:  make(map[lorawan.EUI64]marshaler.Type),
 		uplinkFrameChan:   make(chan gw.UplinkFrame),

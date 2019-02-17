@@ -1,26 +1,22 @@
 package controller
 
 import (
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-
 	"github.com/brocaar/loraserver/api/nc"
-	"github.com/golang/protobuf/ptypes/empty"
 )
 
-// NopNetworkControllerClient is a dummy network-controller client which is
-// used when no network-controller is present / configured.
-type NopNetworkControllerClient struct{}
+var client nc.NetworkControllerServiceClient
 
-// HandleUplinkMetaData handles uplink meta-rata.
-func (n *NopNetworkControllerClient) HandleUplinkMetaData(ctx context.Context, in *nc.HandleUplinkMetaDataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	return &empty.Empty{}, nil
+// init sets the NopNetworkControllerClient by default, as the client is optional.
+func init() {
+	client = &NopNetworkControllerClient{}
 }
 
-// HandleUplinkMACCommand handles an uplink mac-command.
-// This method will only be called in case the mac-command request was
-// enqueued throught the API or when the CID is >= 0x80 (proprietary
-// mac-command range).
-func (n *NopNetworkControllerClient) HandleUplinkMACCommand(ctx context.Context, in *nc.HandleUplinkMACCommandRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	return &empty.Empty{}, nil
+// SetClient sets up the given controller client.
+func SetClient(c nc.NetworkControllerServiceClient) {
+	client = c
+}
+
+// Client returns the controller cient.
+func Client() nc.NetworkControllerServiceClient {
+	return client
 }

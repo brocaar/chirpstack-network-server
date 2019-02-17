@@ -5,7 +5,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/storage"
 )
 
@@ -53,7 +53,7 @@ func abortOnNoError(ctx *ackContext) error {
 
 func getDownlinkFrame(ctx *ackContext) error {
 	var err error
-	ctx.DevEUI, ctx.DownlinkFrame, err = storage.PopDownlinkFrame(config.C.Redis.Pool, ctx.DownlinkTXAck.Token)
+	ctx.DevEUI, ctx.DownlinkFrame, err = storage.PopDownlinkFrame(storage.RedisPool(), ctx.DownlinkTXAck.Token)
 	if err != nil {
 		if err == storage.ErrDoesNotExist {
 			// no retry is possible, abort
@@ -65,7 +65,7 @@ func getDownlinkFrame(ctx *ackContext) error {
 }
 
 func sendDownlinkFrame(ctx *ackContext) error {
-	if err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(ctx.DownlinkFrame); err != nil {
+	if err := gateway.Backend().SendTXPacket(ctx.DownlinkFrame); err != nil {
 		return errors.Wrap(err, "send downlink-frame to gateway error")
 	}
 	return nil

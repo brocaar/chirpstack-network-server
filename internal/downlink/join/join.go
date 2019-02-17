@@ -9,12 +9,19 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/internal/backend/gateway"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
+)
+
+var (
+	rxWindow        int
+	downlinkTXPower int
 )
 
 var tasks = []func(*joinContext) error{
@@ -38,6 +45,15 @@ type joinContext struct {
 	DownlinkFrames []gw.DownlinkFrame
 }
 
+// Setup sets up the join handler.
+func Setup(conf config.Config) error {
+	nsConfig := conf.NetworkServer.NetworkSettings
+	rxWindow = nsConfig.RXWindow
+	downlinkTXPower = nsConfig.DownlinkTXPower
+
+	return nil
+}
+
 // Handle handles a downlink join-response.
 func Handle(ds storage.DeviceSession, rxPacket models.RXPacket, phy lorawan.PHYPayload) error {
 	ctx := joinContext{
@@ -56,13 +72,13 @@ func Handle(ds storage.DeviceSession, rxPacket models.RXPacket, phy lorawan.PHYP
 }
 
 func setTXInfo(ctx *joinContext) error {
-	if rxWindow := config.C.NetworkServer.NetworkSettings.RXWindow; rxWindow == 0 || rxWindow == 1 {
+	if rxWindow == 0 || rxWindow == 1 {
 		if err := setTXInfoForRX1(ctx); err != nil {
 			return err
 		}
 	}
 
-	if rxWindow := config.C.NetworkServer.NetworkSettings.RXWindow; rxWindow == 0 || rxWindow == 2 {
+	if rxWindow == 0 || rxWindow == 2 {
 		if err := setTXInfoForRX2(ctx); err != nil {
 			return err
 		}
@@ -84,33 +100,33 @@ func setTXInfoForRX1(ctx *joinContext) error {
 	}
 
 	// get RX1 data-rate
-	rx1DR, err := config.C.NetworkServer.Band.Band.GetRX1DataRateIndex(ctx.RXPacket.DR, 0)
+	rx1DR, err := band.Band().GetRX1DataRateIndex(ctx.RXPacket.DR, 0)
 	if err != nil {
 		return errors.Wrap(err, "get rx1 data-rate index error")
 	}
 
 	// set data-rate
-	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, rx1DR, config.C.NetworkServer.Band.Band)
+	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, rx1DR, band.Band())
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
 
 	// set frequency
-	freq, err := config.C.NetworkServer.Band.Band.GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
+	freq, err := band.Band().GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
 	if err != nil {
 		return errors.Wrap(err, "get rx1 frequency error")
 	}
 	txInfo.Frequency = uint32(freq)
 
 	// set tx power
-	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
-		txInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
+	if downlinkTXPower != -1 {
+		txInfo.Power = int32(downlinkTXPower)
 	} else {
-		txInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(txInfo.Frequency)))
+		txInfo.Power = int32(band.Band().GetDownlinkTXPower(int(txInfo.Frequency)))
 	}
 
 	// set timestamp
-	txInfo.Timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().JoinAcceptDelay1/time.Microsecond)
+	txInfo.Timestamp = rxInfo.Timestamp + uint32(band.Band().GetDefaults().JoinAcceptDelay1/time.Microsecond)
 
 	ctx.DownlinkFrames = append(ctx.DownlinkFrames, gw.DownlinkFrame{
 		TxInfo: &txInfo,
@@ -129,24 +145,24 @@ func setTXInfoForRX2(ctx *joinContext) error {
 		GatewayId: rxInfo.GatewayId,
 		Board:     rxInfo.Board,
 		Antenna:   rxInfo.Antenna,
-		Frequency: uint32(config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency),
+		Frequency: uint32(band.Band().GetDefaults().RX2Frequency),
 	}
 
 	// set data-rate
-	err := helpers.SetDownlinkTXInfoDataRate(&txInfo, config.C.NetworkServer.Band.Band.GetDefaults().RX2DataRate, config.C.NetworkServer.Band.Band)
+	err := helpers.SetDownlinkTXInfoDataRate(&txInfo, band.Band().GetDefaults().RX2DataRate, band.Band())
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
 
 	// set tx power
-	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
-		txInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
+	if downlinkTXPower != -1 {
+		txInfo.Power = int32(downlinkTXPower)
 	} else {
-		txInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(txInfo.Frequency)))
+		txInfo.Power = int32(band.Band().GetDownlinkTXPower(int(txInfo.Frequency)))
 	}
 
 	// set timestamp
-	txInfo.Timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().JoinAcceptDelay2/time.Microsecond)
+	txInfo.Timestamp = rxInfo.Timestamp + uint32(band.Band().GetDefaults().JoinAcceptDelay2/time.Microsecond)
 
 	ctx.DownlinkFrames = append(ctx.DownlinkFrames, gw.DownlinkFrame{
 		TxInfo: &txInfo,
@@ -186,17 +202,17 @@ func sendJoinAcceptResponse(ctx *joinContext) error {
 		return nil
 	}
 
-	err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(ctx.DownlinkFrames[0])
+	err := gateway.Backend().SendTXPacket(ctx.DownlinkFrames[0])
 	if err != nil {
 		return errors.Wrap(err, "send downlink frame error")
 	}
 
 	// log frame
-	if err := framelog.LogDownlinkFrameForGateway(config.C.Redis.Pool, ctx.DownlinkFrames[0]); err != nil {
+	if err := framelog.LogDownlinkFrameForGateway(storage.RedisPool(), ctx.DownlinkFrames[0]); err != nil {
 		log.WithError(err).Error("log downlink frame for gateway error")
 	}
 
-	if err := framelog.LogDownlinkFrameForDevEUI(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[0]); err != nil {
+	if err := framelog.LogDownlinkFrameForDevEUI(storage.RedisPool(), ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[0]); err != nil {
 		log.WithError(err).Error("log downlink frame for device error")
 	}
 
@@ -208,7 +224,7 @@ func saveRemainingFrames(ctx *joinContext) error {
 		return nil
 	}
 
-	if err := storage.SaveDownlinkFrames(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[1:]); err != nil {
+	if err := storage.SaveDownlinkFrames(storage.RedisPool(), ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[1:]); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
 	}
 

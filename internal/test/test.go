@@ -4,9 +4,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/jmoiron/sqlx"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/gomodule/redigo/redis"
-	"github.com/jmoiron/sqlx"
 	migrate "github.com/rubenv/sql-migrate"
 	log "github.com/sirupsen/logrus"
 	context "golang.org/x/net/context"
@@ -17,58 +18,75 @@ import (
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/api/client/asclient"
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/joinserver"
 	"github.com/brocaar/loraserver/internal/migrations"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
-	"github.com/brocaar/lorawan/band"
+	loraband "github.com/brocaar/lorawan/band"
 )
 
 func init() {
 	log.SetLevel(log.ErrorLevel)
 
-	config.C.NetworkServer.DeviceSessionTTL = time.Hour
-	config.C.NetworkServer.Band.Name = band.EU_863_870
-	config.C.NetworkServer.Band.Band, _ = band.GetConfig(config.C.NetworkServer.Band.Name, false, lorawan.DwellTimeNoLimit)
-
-	config.C.NetworkServer.DeduplicationDelay = 5 * time.Millisecond
-	config.C.NetworkServer.GetDownlinkDataDelay = 5 * time.Millisecond
-	config.C.NetworkServer.NetworkSettings.DownlinkTXPower = -1
 }
 
 // Config contains the test configuration.
 type Config struct {
-	RedisURL    string
-	PostgresDSN string
+	RedisURL     string
+	PostgresDSN  string
+	MQTTServer   string
+	MQTTUsername string
+	MQTTPassword string
 }
 
 // GetConfig returns the test configuration.
-func GetConfig() *Config {
-	var err error
+func GetConfig() config.Config {
 	log.SetLevel(log.FatalLevel)
 
-	config.C.NetworkServer.Band.Band, err = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)
-	if err != nil {
+	var c config.Config
+	c.NetworkServer.Band.Name = loraband.EU_863_870
+
+	if err := band.Setup(c); err != nil {
 		panic(err)
 	}
 
-	config.C.NetworkServer.NetworkSettings.RX2Frequency = config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency
-	config.C.NetworkServer.NetworkSettings.RX2DR = config.C.NetworkServer.Band.Band.GetDefaults().RX2DataRate
-	config.C.NetworkServer.NetworkSettings.RX1Delay = 0
+	c.Redis.URL = "redis://localhost:6379/1"
+	c.PostgreSQL.DSN = "postgres://localhost/loraserver_ns_test?sslmode=disable"
 
-	c := &Config{
-		RedisURL:    "redis://localhost:6379",
-		PostgresDSN: "postgres://localhost/loraserver_ns_test?sslmode=disable",
-	}
+	c.NetworkServer.NetID = lorawan.NetID{3, 2, 1}
+	c.NetworkServer.DeviceSessionTTL = time.Hour
+	c.NetworkServer.DeduplicationDelay = 5 * time.Millisecond
+	c.NetworkServer.GetDownlinkDataDelay = 5 * time.Millisecond
+
+	c.NetworkServer.NetworkSettings.RX2Frequency = band.Band().GetDefaults().RX2Frequency
+	c.NetworkServer.NetworkSettings.RX2DR = band.Band().GetDefaults().RX2DataRate
+	c.NetworkServer.NetworkSettings.RX1Delay = 0
+	c.NetworkServer.NetworkSettings.DownlinkTXPower = -1
+
+	c.NetworkServer.Scheduler.SchedulerInterval = time.Second
+
+	c.NetworkServer.Gateway.Backend.MQTT.Server = "tcp://127.0.0.1:1883"
+	c.NetworkServer.Gateway.Backend.MQTT.CleanSession = true
+	c.NetworkServer.Gateway.Backend.MQTT.UplinkTopicTemplate = "gateway/+/rx"
+	c.NetworkServer.Gateway.Backend.MQTT.DownlinkTopicTemplate = "gateway/{{ .MAC }}/tx"
+	c.NetworkServer.Gateway.Backend.MQTT.StatsTopicTemplate = "gateway/+/stats"
+	c.NetworkServer.Gateway.Backend.MQTT.AckTopicTemplate = "gateway/+/ack"
+	c.NetworkServer.Gateway.Backend.MQTT.ConfigTopicTemplate = "gateway/{{ .MAC }}/config"
 
 	if v := os.Getenv("TEST_REDIS_URL"); v != "" {
-		c.RedisURL = v
+		c.Redis.URL = v
 	}
-
 	if v := os.Getenv("TEST_POSTGRES_DSN"); v != "" {
-		c.PostgresDSN = v
+		c.PostgreSQL.DSN = v
+	}
+	if v := os.Getenv("TEST_MQTT_SERVER"); v != "" {
+		c.NetworkServer.Gateway.Backend.MQTT.Server = v
+	}
+	if v := os.Getenv("TEST_MQTT_USERNAME"); v != "" {
+		c.NetworkServer.Gateway.Backend.MQTT.Username = v
+	}
+	if v := os.Getenv("TEST_MQTT_PASSWORD"); v != "" {
+		c.NetworkServer.Gateway.Backend.MQTT.Password = v
 	}
 
 	return c
@@ -97,16 +115,16 @@ func MustPrefillRedisPool(p *redis.Pool, count int) {
 }
 
 // MustResetDB re-applies all database migrations.
-func MustResetDB(db *common.DBLogger) {
+func MustResetDB(db *sqlx.DB) {
 	m := &migrate.AssetMigrationSource{
 		Asset:    migrations.Asset,
 		AssetDir: migrations.AssetDir,
 		Dir:      "",
 	}
-	if _, err := migrate.Exec(db.DB.DB, "postgres", m, migrate.Down); err != nil {
+	if _, err := migrate.Exec(db.DB, "postgres", m, migrate.Down); err != nil {
 		log.Fatal(err)
 	}
-	if _, err := migrate.Exec(db.DB.DB, "postgres", m, migrate.Up); err != nil {
+	if _, err := migrate.Exec(db.DB, "postgres", m, migrate.Up); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -163,55 +181,6 @@ func (b *GatewayBackend) Close() error {
 		close(b.rxPacketChan)
 	}
 	return nil
-}
-
-// JoinServerPool is a join-server pool for testing.
-type JoinServerPool struct {
-	Client     joinserver.Client
-	GetJoinEUI lorawan.EUI64
-}
-
-// NewJoinServerPool create a join-server pool for testing.
-func NewJoinServerPool(client joinserver.Client) joinserver.Pool {
-	return &JoinServerPool{
-		Client: client,
-	}
-}
-
-// Get method.
-func (p *JoinServerPool) Get(joinEUI lorawan.EUI64) (joinserver.Client, error) {
-	p.GetJoinEUI = joinEUI
-	return p.Client, nil
-}
-
-// JoinServerClient is a join-server client for testing.
-type JoinServerClient struct {
-	JoinReqPayloadChan   chan backend.JoinReqPayload
-	RejoinReqPayloadChan chan backend.RejoinReqPayload
-	JoinReqError         error
-	RejoinReqError       error
-	JoinAnsPayload       backend.JoinAnsPayload
-	RejoinAnsPayload     backend.RejoinAnsPayload
-}
-
-// NewJoinServerClient creates a new join-server client.
-func NewJoinServerClient() *JoinServerClient {
-	return &JoinServerClient{
-		JoinReqPayloadChan:   make(chan backend.JoinReqPayload, 100),
-		RejoinReqPayloadChan: make(chan backend.RejoinReqPayload, 100),
-	}
-}
-
-// JoinReq method.
-func (c *JoinServerClient) JoinReq(pl backend.JoinReqPayload) (backend.JoinAnsPayload, error) {
-	c.JoinReqPayloadChan <- pl
-	return c.JoinAnsPayload, c.JoinReqError
-}
-
-// RejoinReq method.
-func (c *JoinServerClient) RejoinReq(pl backend.RejoinReqPayload) (backend.RejoinAnsPayload, error) {
-	c.RejoinReqPayloadChan <- pl
-	return c.RejoinAnsPayload, c.RejoinReqError
 }
 
 // ApplicationServerPool is an application-server pool for testing.
@@ -357,62 +326,4 @@ func NewGeolocationClient() *GeolocationClient {
 func (g *GeolocationClient) ResolveTDOA(ctx context.Context, in *geo.ResolveTDOARequest, opts ...grpc.CallOption) (*geo.ResolveTDOAResponse, error) {
 	g.ResolveTDOAChan <- *in
 	return &g.ResolveTDOAResponse, nil
-}
-
-// DatabaseTestSuiteBase provides the setup and teardown of the database
-// for every test-run.
-type DatabaseTestSuiteBase struct {
-	db *common.DBLogger
-	tx *common.TxLogger
-	p  *redis.Pool
-}
-
-// SetupSuite is called once before starting the test-suite.
-func (b *DatabaseTestSuiteBase) SetupSuite() {
-	conf := GetConfig()
-	db, err := common.OpenDatabase(conf.PostgresDSN)
-	if err != nil {
-		panic(err)
-	}
-	b.db = db
-	MustResetDB(db)
-
-	b.p = common.NewRedisPool(conf.RedisURL, 10, 0)
-
-	config.C.PostgreSQL.DB = db
-	config.C.Redis.Pool = b.p
-}
-
-// SetupTest is called before every test.
-func (b *DatabaseTestSuiteBase) SetupTest() {
-	tx, err := b.db.Beginx()
-	if err != nil {
-		panic(err)
-	}
-	b.tx = tx
-
-	MustFlushRedis(b.p)
-}
-
-// TearDownTest is called after every test.
-func (b *DatabaseTestSuiteBase) TearDownTest() {
-	if err := b.tx.Rollback(); err != nil {
-		panic(err)
-	}
-}
-
-// Tx returns a database transaction (which is rolled back after every
-// test).
-func (b *DatabaseTestSuiteBase) Tx() sqlx.Ext {
-	return b.tx
-}
-
-// DB returns the database object.
-func (b *DatabaseTestSuiteBase) DB() *common.DBLogger {
-	return b.db
-}
-
-// RedisPool returns the redis.Pool object.
-func (b *DatabaseTestSuiteBase) RedisPool() *redis.Pool {
-	return b.p
 }

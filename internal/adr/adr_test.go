@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
@@ -14,12 +13,15 @@ import (
 
 func TestADR(t *testing.T) {
 	conf := test.GetConfig()
-	config.C.NetworkServer.NetworkSettings.InstallationMargin = 5
+	conf.NetworkServer.NetworkSettings.InstallationMargin = 5
+	if err := Setup(conf); err != nil {
+		t.Fatal(err)
+	}
 
 	Convey("Testing the ADR functions", t, func() {
 		Convey("Testing getMaxAllowedDR", func() {
 			Convey("Given an extra channel up to data-rate 7", func() {
-				So(config.C.NetworkServer.Band.Band.AddChannel(868800000, 0, 7), ShouldBeNil)
+				So(band.Band().AddChannel(868800000, 0, 7), ShouldBeNil)
 
 				Convey("Then getMaxAllowedDR still returns 5", func() {
 					So(getMaxAllowedDR(), ShouldEqual, 5)
@@ -217,8 +219,10 @@ func TestADR(t *testing.T) {
 		})
 
 		Convey("Given a clean Redis database", func() {
-			config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
-			test.MustFlushRedis(config.C.Redis.Pool)
+			if err := storage.Setup(conf); err != nil {
+				panic(err)
+			}
+			test.MustFlushRedis(storage.RedisPool())
 
 			Convey("Given a testtable for HandleADR", func() {
 				macBlock := storage.MACCommandBlock{
@@ -560,8 +564,10 @@ func TestADR(t *testing.T) {
 			})
 
 			Convey("Given an ADR request when ADR is disabled", func() {
-
-				config.C.NetworkServer.NetworkSettings.DisableADR = true
+				conf.NetworkServer.NetworkSettings.DisableADR = true
+				if err := Setup(conf); err != nil {
+					t.Fatal(err)
+				}
 
 				macBlock := storage.MACCommandBlock{
 					CID: lorawan.LinkADRReq,

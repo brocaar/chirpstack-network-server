@@ -4,25 +4,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/test"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
+
+	"github.com/brocaar/loraserver/internal/test"
 )
 
 func TestDeviceProfile(t *testing.T) {
 	conf := test.GetConfig()
-	db, err := common.OpenDatabase(conf.PostgresDSN)
-	if err != nil {
+	if err := Setup(conf); err != nil {
 		t.Fatal(err)
 	}
-	config.C.PostgreSQL.DB = db
-	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(config.C.PostgreSQL.DB)
-		test.MustFlushRedis(config.C.Redis.Pool)
+		test.MustResetDB(DB().DB)
+		test.MustFlushRedis(RedisPool())
 
 		Convey("When creating a device-profile", func() {
 			dp := DeviceProfile{
@@ -47,12 +43,12 @@ func TestDeviceProfile(t *testing.T) {
 				Supports32bitFCnt:  true,
 			}
 
-			So(CreateDeviceProfile(db, &dp), ShouldBeNil)
+			So(CreateDeviceProfile(DB(), &dp), ShouldBeNil)
 			dp.CreatedAt = dp.CreatedAt.UTC().Truncate(time.Millisecond)
 			dp.UpdatedAt = dp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
 			Convey("Then GetDeviceProfile returns the expected device-profile", func() {
-				dpGet, err := GetDeviceProfile(db, dp.ID)
+				dpGet, err := GetDeviceProfile(DB(), dp.ID)
 				So(err, ShouldBeNil)
 
 				dpGet.CreatedAt = dpGet.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -61,26 +57,26 @@ func TestDeviceProfile(t *testing.T) {
 			})
 
 			Convey("Then DeleteDeviceProfile deletes the device-profile", func() {
-				So(DeleteDeviceProfile(db, dp.ID), ShouldBeNil)
-				So(DeleteDeviceProfile(db, dp.ID), ShouldEqual, ErrDoesNotExist)
+				So(DeleteDeviceProfile(DB(), dp.ID), ShouldBeNil)
+				So(DeleteDeviceProfile(DB(), dp.ID), ShouldEqual, ErrDoesNotExist)
 			})
 
 			Convey("Then GetAndCacheDeviceProfile reads the device-profile from db and puts it in cache", func() {
-				dpGet, err := GetAndCacheDeviceProfile(config.C.PostgreSQL.DB, config.C.Redis.Pool, dp.ID)
+				dpGet, err := GetAndCacheDeviceProfile(DB(), RedisPool(), dp.ID)
 				So(err, ShouldBeNil)
 				So(dpGet.ID, ShouldEqual, dp.ID)
 
 				Convey("Then GetDeviceProfileCache returns the device-profile", func() {
-					dpGet, err := GetDeviceProfileCache(config.C.Redis.Pool, dp.ID)
+					dpGet, err := GetDeviceProfileCache(RedisPool(), dp.ID)
 					So(err, ShouldBeNil)
 					So(dpGet.ID, ShouldEqual, dp.ID)
 				})
 
 				Convey("Then FlushDeviceProfileCache removes the device-profile from cache", func() {
-					err := FlushDeviceProfileCache(config.C.Redis.Pool, dp.ID)
+					err := FlushDeviceProfileCache(RedisPool(), dp.ID)
 					So(err, ShouldBeNil)
 
-					_, err = GetDeviceProfileCache(config.C.Redis.Pool, dp.ID)
+					_, err = GetDeviceProfileCache(RedisPool(), dp.ID)
 					So(err, ShouldNotBeNil)
 					So(errors.Cause(err), ShouldEqual, ErrDoesNotExist)
 				})
@@ -106,10 +102,10 @@ func TestDeviceProfile(t *testing.T) {
 				dp.SupportsJoin = false
 				dp.RFRegion = "US902"
 				dp.Supports32bitFCnt = false
-				So(UpdateDeviceProfile(db, &dp), ShouldBeNil)
+				So(UpdateDeviceProfile(DB(), &dp), ShouldBeNil)
 				dp.UpdatedAt = dp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
-				dpGet, err := GetDeviceProfile(db, dp.ID)
+				dpGet, err := GetDeviceProfile(DB(), dp.ID)
 				So(err, ShouldBeNil)
 
 				dpGet.CreatedAt = dpGet.CreatedAt.UTC().Truncate(time.Millisecond)

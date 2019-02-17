@@ -8,7 +8,6 @@ import (
 
 	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
@@ -49,7 +48,7 @@ func (ts *DeviceGatewayRXInfoSetTestSuite) TestDeviceGatewayRXInfoSetHasBeenStor
 
 	assert.Nil(uplink.HandleRXPacket(ts.GetUplinkFrameForFRMPayload(rxInfo, txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})))
 
-	rxInfoSet, err := storage.GetDeviceGatewayRXInfoSet(config.C.Redis.Pool, ts.Device.DevEUI)
+	rxInfoSet, err := storage.GetDeviceGatewayRXInfoSet(storage.RedisPool(), ts.Device.DevEUI)
 	assert.Nil(err)
 
 	assert.Equal(storage.DeviceGatewayRXInfoSet{

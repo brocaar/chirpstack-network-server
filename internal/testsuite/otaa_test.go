@@ -4,18 +4,20 @@ import (
 	"errors"
 	"testing"
 
-	commonPB "github.com/brocaar/loraserver/api/common"
+	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/loraserver/internal/uplink"
+	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
-	"github.com/brocaar/lorawan/band"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/lorawan"
+	loraband "github.com/brocaar/lorawan/band"
 )
 
 type OTAATestSuite struct {
@@ -23,7 +25,7 @@ type OTAATestSuite struct {
 }
 
 func (ts *OTAATestSuite) SetupSuite() {
-	ts.DatabaseTestSuiteBase.SetupSuite()
+	ts.IntegrationTestSuite.SetupSuite()
 
 	ts.JoinAcceptKey = lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
@@ -48,8 +50,10 @@ func (ts *OTAATestSuite) SetupSuite() {
 func (ts *OTAATestSuite) TestLW10() {
 	assert := require.New(ts.T())
 
+	conf := test.GetConfig()
+
 	ts.DeviceProfile.MACVersion = "1.0.2"
-	assert.NoError(storage.UpdateDeviceProfile(ts.DB(), ts.DeviceProfile))
+	assert.NoError(storage.UpdateDeviceProfile(storage.DB(), ts.DeviceProfile))
 
 	rxInfo := gw.UplinkRXInfo{
 		GatewayId: ts.Gateway.GatewayID[:],
@@ -58,7 +62,7 @@ func (ts *OTAATestSuite) TestLW10() {
 	txInfo := gw.UplinkTXInfo{
 		Frequency: 868100000,
 	}
-	assert.NoError(helpers.SetUplinkTXInfoDataRate(&txInfo, 0, config.C.NetworkServer.Band.Band))
+	assert.NoError(helpers.SetUplinkTXInfoDataRate(&txInfo, 0, band.Band()))
 
 	jrPayload := lorawan.PHYPayload{
 		MHDR: lorawan.MHDR{
@@ -77,7 +81,7 @@ func (ts *OTAATestSuite) TestLW10() {
 
 	jaPayload := lorawan.JoinAcceptPayload{
 		JoinNonce: 197121,
-		HomeNetID: config.C.NetworkServer.NetID,
+		HomeNetID: conf.NetworkServer.NetID,
 		DLSettings: lorawan.DLSettings{
 			RX2DataRate: 2,
 			RX1DROffset: 1,
@@ -189,17 +193,17 @@ func (ts *OTAATestSuite) TestLW10() {
 					PHYPayload: backend.HEXBytes(jrBytes),
 					DevEUI:     ts.Device.DevEUI,
 					DLSettings: lorawan.DLSettings{
-						RX2DataRate: uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
-						RX1DROffset: uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
+						RX2DataRate: uint8(conf.NetworkServer.NetworkSettings.RX2DR),
+						RX1DROffset: uint8(conf.NetworkServer.NetworkSettings.RX1DROffset),
 					},
-					RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
+					RxDelay: conf.NetworkServer.NetworkSettings.RX1Delay,
 				}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
 					Timestamp:  rxInfo.Timestamp + 5000000,
 					Frequency:  txInfo.Frequency,
 					Power:      14,
-					Modulation: commonPB.Modulation_LORA,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -214,7 +218,7 @@ func (ts *OTAATestSuite) TestLW10() {
 					Timestamp:  rxInfo.Timestamp + 6000000,
 					Frequency:  869525000,
 					Power:      14,
-					Modulation: commonPB.Modulation_LORA,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -239,9 +243,9 @@ func (ts *OTAATestSuite) TestLW10() {
 					},
 					RXWindow:              storage.RX1,
 					EnabledUplinkChannels: []int{0, 1, 2},
-					ExtraUplinkChannels:   map[int]band.Channel{},
+					ExtraUplinkChannels:   map[int]loraband.Channel{},
 					UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
-					RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
+					RX2Frequency:          band.Band().GetDefaults().RX2Frequency,
 					NbTrans:               1,
 					ReferenceAltitude:     5.6,
 				}),
@@ -252,7 +256,7 @@ func (ts *OTAATestSuite) TestLW10() {
 			Name: "join-request accepted + skip fcnt check set (rx1 + rx2)",
 			BeforeFunc: func(*OTAATest) error {
 				ts.Device.SkipFCntCheck = true
-				return storage.UpdateDevice(ts.DB(), ts.Device)
+				return storage.UpdateDevice(storage.DB(), ts.Device)
 			},
 			RXInfo:     rxInfo,
 			TXInfo:     txInfo,
@@ -279,17 +283,17 @@ func (ts *OTAATestSuite) TestLW10() {
 					PHYPayload: jrBytes,
 					DevEUI:     ts.Device.DevEUI,
 					DLSettings: lorawan.DLSettings{
-						RX2DataRate: uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
-						RX1DROffset: uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
+						RX2DataRate: uint8(conf.NetworkServer.NetworkSettings.RX2DR),
+						RX1DROffset: uint8(conf.NetworkServer.NetworkSettings.RX1DROffset),
 					},
-					RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
+					RxDelay: conf.NetworkServer.NetworkSettings.RX1Delay,
 				}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
 					Timestamp:  rxInfo.Timestamp + 5000000,
 					Frequency:  txInfo.Frequency,
 					Power:      14,
-					Modulation: commonPB.Modulation_LORA,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -304,7 +308,7 @@ func (ts *OTAATestSuite) TestLW10() {
 					Timestamp:  rxInfo.Timestamp + 6000000,
 					Frequency:  869525000,
 					Power:      14,
-					Modulation: commonPB.Modulation_LORA,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -326,9 +330,9 @@ func (ts *OTAATestSuite) TestLW10() {
 					NwkSEncKey:            lorawan.AES128Key{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 					RXWindow:              storage.RX1,
 					EnabledUplinkChannels: []int{0, 1, 2},
-					ExtraUplinkChannels:   map[int]band.Channel{},
+					ExtraUplinkChannels:   map[int]loraband.Channel{},
 					UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
-					RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
+					RX2Frequency:          band.Band().GetDefaults().RX2Frequency,
 					SkipFCntValidation:    true,
 					NbTrans:               1,
 					ReferenceAltitude:     5.6,
@@ -339,7 +343,7 @@ func (ts *OTAATestSuite) TestLW10() {
 			Name: "join-request accepted + cflist channels",
 			BeforeFunc: func(*OTAATest) error {
 				ts.Device.SkipFCntCheck = false
-				return storage.UpdateDevice(ts.DB(), ts.Device)
+				return storage.UpdateDevice(storage.DB(), ts.Device)
 			},
 			RXInfo:        rxInfo,
 			TXInfo:        txInfo,
@@ -375,10 +379,10 @@ func (ts *OTAATestSuite) TestLW10() {
 					PHYPayload: backend.HEXBytes(jrBytes),
 					DevEUI:     ts.Device.DevEUI,
 					DLSettings: lorawan.DLSettings{
-						RX2DataRate: uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
-						RX1DROffset: uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
+						RX2DataRate: uint8(conf.NetworkServer.NetworkSettings.RX2DR),
+						RX1DROffset: uint8(conf.NetworkServer.NetworkSettings.RX1DROffset),
 					},
-					RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
+					RxDelay: conf.NetworkServer.NetworkSettings.RX1Delay,
 					CFList:  backend.HEXBytes(cFListB),
 				}),
 			},
@@ -395,8 +399,10 @@ func (ts *OTAATestSuite) TestLW10() {
 func (ts *OTAATestSuite) TestLW11() {
 	assert := require.New(ts.T())
 
+	conf := test.GetConfig()
+
 	ts.DeviceProfile.MACVersion = "1.1.0"
-	assert.NoError(storage.UpdateDeviceProfile(ts.DB(), ts.DeviceProfile))
+	assert.NoError(storage.UpdateDeviceProfile(storage.DB(), ts.DeviceProfile))
 
 	rxInfo := gw.UplinkRXInfo{
 		GatewayId: ts.Gateway.GatewayID[:],
@@ -405,7 +411,7 @@ func (ts *OTAATestSuite) TestLW11() {
 	txInfo := gw.UplinkTXInfo{
 		Frequency: 868100000,
 	}
-	assert.NoError(helpers.SetUplinkTXInfoDataRate(&txInfo, 0, config.C.NetworkServer.Band.Band))
+	assert.NoError(helpers.SetUplinkTXInfoDataRate(&txInfo, 0, band.Band()))
 
 	jrPayload := lorawan.PHYPayload{
 		MHDR: lorawan.MHDR{
@@ -424,7 +430,7 @@ func (ts *OTAATestSuite) TestLW11() {
 
 	jaPayload := lorawan.JoinAcceptPayload{
 		JoinNonce: 197121,
-		HomeNetID: config.C.NetworkServer.NetID,
+		HomeNetID: conf.NetworkServer.NetID,
 		DLSettings: lorawan.DLSettings{
 			RX2DataRate: 2,
 			RX1DROffset: 1,
@@ -503,17 +509,17 @@ func (ts *OTAATestSuite) TestLW11() {
 					DevEUI:     ts.Device.DevEUI,
 					DLSettings: lorawan.DLSettings{
 						OptNeg:      true,
-						RX2DataRate: uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
-						RX1DROffset: uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
+						RX2DataRate: uint8(conf.NetworkServer.NetworkSettings.RX2DR),
+						RX1DROffset: uint8(conf.NetworkServer.NetworkSettings.RX1DROffset),
 					},
-					RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
+					RxDelay: conf.NetworkServer.NetworkSettings.RX1Delay,
 				}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
 					Timestamp:  rxInfo.Timestamp + 5000000,
 					Frequency:  txInfo.Frequency,
 					Power:      14,
-					Modulation: commonPB.Modulation_LORA,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -528,7 +534,7 @@ func (ts *OTAATestSuite) TestLW11() {
 					Timestamp:  rxInfo.Timestamp + 6000000,
 					Frequency:  869525000,
 					Power:      14,
-					Modulation: commonPB.Modulation_LORA,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -553,9 +559,9 @@ func (ts *OTAATestSuite) TestLW11() {
 					},
 					RXWindow:              storage.RX1,
 					EnabledUplinkChannels: []int{0, 1, 2},
-					ExtraUplinkChannels:   map[int]band.Channel{},
+					ExtraUplinkChannels:   map[int]loraband.Channel{},
 					UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
-					RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
+					RX2Frequency:          band.Band().GetDefaults().RX2Frequency,
 					NbTrans:               1,
 					ReferenceAltitude:     5.6,
 				}),
@@ -565,7 +571,8 @@ func (ts *OTAATestSuite) TestLW11() {
 		{
 			Name: "join-request accepted (session-keys encrypted with KEK) (rx1 + rx2)",
 			BeforeFunc: func(*OTAATest) error {
-				config.C.JoinServer.KEK.Set = []struct {
+				conf := test.GetConfig()
+				conf.JoinServer.KEK.Set = []struct {
 					Label string
 					KEK   string `mapstructure:"kek"`
 				}{
@@ -574,7 +581,7 @@ func (ts *OTAATestSuite) TestLW11() {
 						KEK:   "00000000000000000000000000000000",
 					},
 				}
-				return nil
+				return uplink.Setup(conf)
 			},
 			TXInfo:     txInfo,
 			RXInfo:     rxInfo,
@@ -623,17 +630,17 @@ func (ts *OTAATestSuite) TestLW11() {
 					DevEUI:     ts.Device.DevEUI,
 					DLSettings: lorawan.DLSettings{
 						OptNeg:      true,
-						RX2DataRate: uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
-						RX1DROffset: uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
+						RX2DataRate: uint8(conf.NetworkServer.NetworkSettings.RX2DR),
+						RX1DROffset: uint8(conf.NetworkServer.NetworkSettings.RX1DROffset),
 					},
-					RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
+					RxDelay: conf.NetworkServer.NetworkSettings.RX1Delay,
 				}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
 					Timestamp:  rxInfo.Timestamp + 5000000,
 					Frequency:  txInfo.Frequency,
 					Power:      14,
-					Modulation: commonPB.Modulation_LORA,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -648,7 +655,7 @@ func (ts *OTAATestSuite) TestLW11() {
 					Timestamp:  rxInfo.Timestamp + 6000000,
 					Frequency:  869525000,
 					Power:      14,
-					Modulation: commonPB.Modulation_LORA,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -674,9 +681,9 @@ func (ts *OTAATestSuite) TestLW11() {
 					},
 					RXWindow:              storage.RX1,
 					EnabledUplinkChannels: []int{0, 1, 2},
-					ExtraUplinkChannels:   map[int]band.Channel{},
+					ExtraUplinkChannels:   map[int]loraband.Channel{},
 					UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
-					RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
+					RX2Frequency:          band.Band().GetDefaults().RX2Frequency,
 					NbTrans:               1,
 					ReferenceAltitude:     5.6,
 				}),
@@ -688,8 +695,6 @@ func (ts *OTAATestSuite) TestLW11() {
 	for _, tst := range tests {
 		ts.T().Run(tst.Name, func(t *testing.T) {
 			ts.AssertOTAATest(t, tst)
-
-			config.C.JoinServer.KEK.Set = nil
 		})
 	}
 }

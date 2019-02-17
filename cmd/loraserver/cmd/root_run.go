@@ -14,8 +14,8 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
-	migrate "github.com/rubenv/sql-migrate"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -25,22 +25,20 @@ import (
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api"
-	"github.com/brocaar/loraserver/internal/api/client/asclient"
-	"github.com/brocaar/loraserver/internal/backend"
+	"github.com/brocaar/loraserver/internal/backend/applicationserver"
 	"github.com/brocaar/loraserver/internal/backend/controller"
+	gwbackend "github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/backend/gateway/gcppubsub"
 	"github.com/brocaar/loraserver/internal/backend/gateway/mqtt"
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/backend/geolocationserver"
+	"github.com/brocaar/loraserver/internal/backend/joinserver"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/loraserver/internal/joinserver"
-	"github.com/brocaar/loraserver/internal/migrations"
 	"github.com/brocaar/loraserver/internal/migrations/code"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/uplink"
-	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
 )
 
 func run(cmd *cobra.Command, args []string) error {
@@ -49,19 +47,18 @@ func run(cmd *cobra.Command, args []string) error {
 
 	tasks := []func() error{
 		setLogLevel,
-		setBandConfig,
+		setupBand,
 		setRXParameters,
 		setupMetrics,
 		printStartMessage,
 		enableUplinkChannels,
-		setRedisPool,
-		setPostgreSQLConnection,
+		setupStorage,
 		setGatewayBackend,
-		setApplicationServer,
-		setGeolocationServer,
-		setJoinServer,
-		setNetworkController,
-		runDatabaseMigrations,
+		setupApplicationServer,
+		setupGeolocationServer,
+		setupJoinServer,
+		setupNetworkController,
+		setupDownlink,
 		fixV2RedisCache,
 		migrateGatewayStats,
 		startAPIServer,
@@ -99,31 +96,16 @@ func run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func setBandConfig() error {
-	if config.C.NetworkServer.Band.Name == "" {
-		return fmt.Errorf("band is undefined, valid options are: %s", strings.Join(bands, ", "))
+func setupBand() error {
+	if err := band.Setup(config.C); err != nil {
+		return errors.Wrap(err, "setup band error")
 	}
-	dwellTime := lorawan.DwellTimeNoLimit
-	if config.C.NetworkServer.Band.DwellTime400ms {
-		dwellTime = lorawan.DwellTime400ms
-	}
-	bandConfig, err := band.GetConfig(config.C.NetworkServer.Band.Name, config.C.NetworkServer.Band.RepeaterCompatible, dwellTime)
-	if err != nil {
-		return errors.Wrap(err, "get band config error")
-	}
-	for _, c := range config.C.NetworkServer.NetworkSettings.ExtraChannels {
-		if err := bandConfig.AddChannel(c.Frequency, c.MinDR, c.MaxDR); err != nil {
-			return errors.Wrap(err, "add channel error")
-		}
-	}
-
-	config.C.NetworkServer.Band.Band = bandConfig
 
 	return nil
 }
 
 func setRXParameters() error {
-	defaults := config.C.NetworkServer.Band.Band.GetDefaults()
+	defaults := band.Band().GetDefaults()
 
 	if config.C.NetworkServer.NetworkSettings.RX2DR == -1 {
 		config.C.NetworkServer.NetworkSettings.RX2DR = defaults.RX2DataRate
@@ -189,15 +171,15 @@ func enableUplinkChannels() error {
 	}
 
 	log.Info("disabling all channels")
-	for _, c := range config.C.NetworkServer.Band.Band.GetEnabledUplinkChannelIndices() {
-		if err := config.C.NetworkServer.Band.Band.DisableUplinkChannelIndex(c); err != nil {
+	for _, c := range band.Band().GetEnabledUplinkChannelIndices() {
+		if err := band.Band().DisableUplinkChannelIndex(c); err != nil {
 			return errors.Wrap(err, "disable uplink channel error")
 		}
 	}
 
 	log.WithField("channels", config.C.NetworkServer.NetworkSettings.EnabledUplinkChannels).Info("enabling channels")
 	for _, c := range config.C.NetworkServer.NetworkSettings.EnabledUplinkChannels {
-		if err := config.C.NetworkServer.Band.Band.EnableUplinkChannelIndex(c); err != nil {
+		if err := band.Band().EnableUplinkChannelIndex(c); err != nil {
 			errors.Wrap(err, "enable uplink channel error")
 		}
 	}
@@ -205,38 +187,25 @@ func enableUplinkChannels() error {
 	return nil
 }
 
-func setRedisPool() error {
-	log.WithField("url", config.C.Redis.URL).Info("setup redis connection pool")
-	config.C.Redis.Pool = common.NewRedisPool(
-		config.C.Redis.URL,
-		config.C.Redis.MaxIdle,
-		config.C.Redis.IdleTimeout,
-	)
-	return nil
-}
-
-func setPostgreSQLConnection() error {
-	log.Info("connecting to postgresql")
-	db, err := common.OpenDatabase(config.C.PostgreSQL.DSN)
-	if err != nil {
-		return errors.Wrap(err, "database connection error")
+func setupStorage() error {
+	if err := storage.Setup(config.C); err != nil {
+		return errors.Wrap(err, "setup storage error")
 	}
-	config.C.PostgreSQL.DB = db
 	return nil
 }
 
 func setGatewayBackend() error {
 	var err error
-	var gw backend.Gateway
+	var gw gwbackend.Gateway
 
 	switch config.C.NetworkServer.Gateway.Backend.Type {
 	case "mqtt":
 		gw, err = mqtt.NewBackend(
-			config.C.Redis.Pool,
-			config.C.NetworkServer.Gateway.Backend.MQTT,
+			storage.RedisPool(),
+			config.C,
 		)
 	case "gcp_pub_sub":
-		gw, err = gcppubsub.NewBackend(config.C.NetworkServer.Gateway.Backend.GCPPubSub)
+		gw, err = gcppubsub.NewBackend(config.C)
 	default:
 		return fmt.Errorf("unexpected gateway backend type: %s", config.C.NetworkServer.Gateway.Backend.Type)
 	}
@@ -244,16 +213,20 @@ func setGatewayBackend() error {
 	if err != nil {
 		return errors.Wrap(err, "gateway-backend setup failed")
 	}
-	config.C.NetworkServer.Gateway.Backend.Backend = gw
+
+	gwbackend.SetBackend(gw)
 	return nil
 }
 
-func setApplicationServer() error {
-	config.C.ApplicationServer.Pool = asclient.NewPool()
+func setupApplicationServer() error {
+	if err := applicationserver.Setup(); err != nil {
+		return errors.Wrap(err, "application-server setup error")
+	}
 	return nil
 }
 
-func setGeolocationServer() error {
+func setupGeolocationServer() error {
+	// TODO: move setup to gelolocation.Setup
 	if config.C.GeolocationServer.Server == "" {
 		log.Info("no geolocation-server configured")
 		return nil
@@ -279,21 +252,21 @@ func setGeolocationServer() error {
 	if err != nil {
 		return errors.Wrap(err, "geolocation-server dial error")
 	}
-	config.C.GeolocationServer.Client = geo.NewGeolocationServerServiceClient(geoConn)
+
+	geolocationserver.SetClient(geo.NewGeolocationServerServiceClient(geoConn))
 
 	return nil
 }
 
-func setJoinServer() error {
-	var err error
-	config.C.JoinServer.Pool, err = joinserver.NewPool(config.C.JoinServer)
-	if err != nil {
-		return errors.Wrap(err, "new join-server pool error")
+func setupJoinServer() error {
+	if err := joinserver.Setup(config.C); err != nil {
+		return errors.Wrap(err, "setup join-server backend error")
 	}
 	return nil
 }
 
-func setNetworkController() error {
+func setupNetworkController() error {
+	// TODO: move this logic to controller.Setup function
 	var ncClient nc.NetworkControllerServiceClient
 	if config.C.NetworkController.Server != "" {
 		// setup network-controller client
@@ -316,27 +289,16 @@ func setNetworkController() error {
 			return errors.Wrap(err, "network-controller dial error")
 		}
 		ncClient = nc.NewNetworkControllerServiceClient(ncConn)
-	} else {
-		log.Info("no network-controller configured")
-		ncClient = &controller.NopNetworkControllerClient{}
 	}
-	config.C.NetworkController.Client = ncClient
+
+	controller.SetClient(ncClient)
+
 	return nil
 }
 
-func runDatabaseMigrations() error {
-	if config.C.PostgreSQL.Automigrate {
-		log.Info("applying database migrations")
-		m := &migrate.AssetMigrationSource{
-			Asset:    migrations.Asset,
-			AssetDir: migrations.AssetDir,
-			Dir:      "",
-		}
-		n, err := migrate.Exec(config.C.PostgreSQL.DB.DB.DB, "postgres", m, migrate.Up)
-		if err != nil {
-			return errors.Wrap(err, "applying migrations failed")
-		}
-		log.WithField("count", n).Info("migrations applied")
+func setupDownlink() error {
+	if err := downlink.Setup(config.C); err != nil {
+		return errors.Wrap(err, "setup downlink error")
 	}
 	return nil
 }
@@ -448,13 +410,13 @@ func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCer
 }
 
 func fixV2RedisCache() error {
-	return code.Migrate(config.C.PostgreSQL.DB, "v1_to_v2_flush_profiles_cache", func() error {
-		return code.FlushProfilesCache(config.C.Redis.Pool, config.C.PostgreSQL.DB)
+	return code.Migrate("v1_to_v2_flush_profiles_cache", func(db sqlx.Ext) error {
+		return code.FlushProfilesCache(storage.RedisPool(), db)
 	})
 }
 
 func migrateGatewayStats() error {
-	return code.Migrate(config.C.PostgreSQL.DB, "migrate_gateway_stats_to_redis", func() error {
-		return code.MigrateGatewayStats(config.C.Redis.Pool, config.C.PostgreSQL.DB)
+	return code.Migrate("migrate_gateway_stats_to_redis", func(db sqlx.Ext) error {
+		return code.MigrateGatewayStats(storage.RedisPool(), db)
 	})
 }

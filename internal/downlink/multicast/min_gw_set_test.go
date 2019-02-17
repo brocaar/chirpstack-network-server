@@ -5,14 +5,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
 )
 
 func TestGetMinimumGatewaySet(t *testing.T) {
-	config.C.NetworkServer.Band.Band, _ = band.GetConfig(band.EU_863_870, false, lorawan.DwellTimeNoLimit)
+	assert := require.New(t)
+	conf := test.GetConfig()
+	assert.NoError(band.Setup(conf))
 
 	testTable := []struct {
 		Name             string

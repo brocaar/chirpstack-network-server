@@ -15,11 +15,12 @@ import (
 
 	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/backend/gateway"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
+	loraband "github.com/brocaar/lorawan/band"
 )
 
 // StatsHandler represents a stat handler for incoming gateway stats.
@@ -38,16 +39,16 @@ func (s *StatsHandler) Start() error {
 		s.wg.Add(1)
 		defer s.wg.Done()
 
-		for stats := range config.C.NetworkServer.Gateway.Backend.Backend.StatsPacketChan() {
+		for stats := range gateway.Backend().StatsPacketChan() {
 			go func(stats gw.GatewayStats) {
 				s.wg.Add(1)
 				defer s.wg.Done()
 
-				if err := updateGatewayState(config.C.PostgreSQL.DB, config.C.Redis.Pool, stats); err != nil {
+				if err := updateGatewayState(storage.DB(), storage.RedisPool(), stats); err != nil {
 					log.WithError(err).Error("update gateway state error")
 				}
 
-				if err := handleGatewayStats(config.C.Redis.Pool, stats); err != nil {
+				if err := handleGatewayStats(storage.RedisPool(), stats); err != nil {
 					log.WithError(err).Error("handle gateway stats error")
 				}
 			}(stats)
@@ -264,7 +265,7 @@ func handleConfigurationUpdate(db sqlx.Queryer, g storage.Gateway, currentVersio
 	}
 
 	for _, i := range gwProfile.Channels {
-		c, err := config.C.NetworkServer.Band.Band.GetUplinkChannel(int(i))
+		c, err := band.Band().GetUplinkChannel(int(i))
 		if err != nil {
 			return errors.Wrap(err, "get channel error")
 		}
@@ -277,7 +278,7 @@ func handleConfigurationUpdate(db sqlx.Queryer, g storage.Gateway, currentVersio
 		modConfig := gw.LoRaModulationConfig{}
 
 		for drI := c.MaxDR; drI >= c.MinDR; drI-- {
-			dr, err := config.C.NetworkServer.Band.Band.GetDataRate(drI)
+			dr, err := band.Band().GetDataRate(drI)
 			if err != nil {
 				return errors.Wrap(err, "get data-rate error")
 			}
@@ -298,8 +299,8 @@ func handleConfigurationUpdate(db sqlx.Queryer, g storage.Gateway, currentVersio
 			Frequency: uint32(c.Frequency),
 		}
 
-		switch band.Modulation(c.Modulation) {
-		case band.LoRaModulation:
+		switch loraband.Modulation(c.Modulation) {
+		case loraband.LoRaModulation:
 			gwC.Modulation = common.Modulation_LORA
 			modConfig := gw.LoRaModulationConfig{
 				Bandwidth: uint32(c.Bandwidth),
@@ -312,7 +313,7 @@ func handleConfigurationUpdate(db sqlx.Queryer, g storage.Gateway, currentVersio
 			gwC.ModulationConfig = &gw.ChannelConfiguration_LoraModulationConfig{
 				LoraModulationConfig: &modConfig,
 			}
-		case band.FSKModulation:
+		case loraband.FSKModulation:
 			gwC.Modulation = common.Modulation_FSK
 			modConfig := gw.FSKModulationConfig{
 				Bandwidth: uint32(c.Bandwidth),
@@ -327,7 +328,7 @@ func handleConfigurationUpdate(db sqlx.Queryer, g storage.Gateway, currentVersio
 		configPacket.Channels = append(configPacket.Channels, &gwC)
 	}
 
-	if err := config.C.NetworkServer.Gateway.Backend.Backend.SendGatewayConfigPacket(configPacket); err != nil {
+	if err := gateway.Backend().SendGatewayConfigPacket(configPacket); err != nil {
 		return errors.Wrap(err, "send gateway-configuration packet error")
 	}
 

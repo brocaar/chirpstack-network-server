@@ -4,25 +4,21 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/test"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
+
+	"github.com/brocaar/loraserver/internal/test"
 )
 
 func TestServiceProfile(t *testing.T) {
 	conf := test.GetConfig()
-	db, err := common.OpenDatabase(conf.PostgresDSN)
-	if err != nil {
+	if err := Setup(conf); err != nil {
 		t.Fatal(err)
 	}
-	config.C.PostgreSQL.DB = db
-	config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(config.C.PostgreSQL.DB)
-		test.MustFlushRedis(config.C.Redis.Pool)
+		test.MustResetDB(DB().DB)
+		test.MustFlushRedis(RedisPool())
 
 		Convey("When creating a service-profile", func() {
 			sp := ServiceProfile{
@@ -47,12 +43,12 @@ func TestServiceProfile(t *testing.T) {
 				MinGWDiversity:         8,
 			}
 
-			So(CreateServiceProfile(db, &sp), ShouldBeNil)
+			So(CreateServiceProfile(DB(), &sp), ShouldBeNil)
 			sp.CreatedAt = sp.CreatedAt.UTC().Truncate(time.Millisecond)
 			sp.UpdatedAt = sp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
 			Convey("Then GetServiceProfile returns the expected service-profile", func() {
-				spGet, err := GetServiceProfile(db, sp.ID)
+				spGet, err := GetServiceProfile(DB(), sp.ID)
 				So(err, ShouldBeNil)
 
 				spGet.CreatedAt = spGet.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -81,10 +77,10 @@ func TestServiceProfile(t *testing.T) {
 				sp.TargetPER = 2
 				sp.MinGWDiversity = 9
 
-				So(UpdateServiceProfile(db, &sp), ShouldBeNil)
+				So(UpdateServiceProfile(DB(), &sp), ShouldBeNil)
 				sp.UpdatedAt = sp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
-				spGet, err := GetServiceProfile(db, sp.ID)
+				spGet, err := GetServiceProfile(DB(), sp.ID)
 				So(err, ShouldBeNil)
 
 				spGet.CreatedAt = spGet.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -93,26 +89,26 @@ func TestServiceProfile(t *testing.T) {
 			})
 
 			Convey("Then DeleteServiceProfile deletes the service-profile", func() {
-				So(DeleteServiceProfile(db, sp.ID), ShouldBeNil)
-				So(DeleteServiceProfile(db, sp.ID), ShouldEqual, ErrDoesNotExist)
+				So(DeleteServiceProfile(DB(), sp.ID), ShouldBeNil)
+				So(DeleteServiceProfile(DB(), sp.ID), ShouldEqual, ErrDoesNotExist)
 			})
 
 			Convey("Then GetAndCacheServiceProfile reads the service-profile from db and puts it in cache", func() {
-				spGet, err := GetAndCacheServiceProfile(config.C.PostgreSQL.DB, config.C.Redis.Pool, sp.ID)
+				spGet, err := GetAndCacheServiceProfile(DB(), RedisPool(), sp.ID)
 				So(err, ShouldBeNil)
 				So(spGet.ID, ShouldEqual, sp.ID)
 
 				Convey("Then GetServiceProfileCache returns the service-profile", func() {
-					spGet, err := GetServiceProfileCache(config.C.Redis.Pool, sp.ID)
+					spGet, err := GetServiceProfileCache(RedisPool(), sp.ID)
 					So(err, ShouldBeNil)
 					So(spGet.ID, ShouldEqual, sp.ID)
 				})
 
 				Convey("Then FlushServiceProfileCache removes the service-profile from cache", func() {
-					err := FlushServiceProfileCache(config.C.Redis.Pool, sp.ID)
+					err := FlushServiceProfileCache(RedisPool(), sp.ID)
 					So(err, ShouldBeNil)
 
-					_, err = GetServiceProfileCache(config.C.Redis.Pool, sp.ID)
+					_, err = GetServiceProfileCache(RedisPool(), sp.ID)
 					So(err, ShouldNotBeNil)
 					So(errors.Cause(err), ShouldEqual, ErrDoesNotExist)
 				})

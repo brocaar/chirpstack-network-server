@@ -3,12 +3,15 @@ package join
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/loraserver/internal/backend/joinserver"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/config"
 	joindown "github.com/brocaar/loraserver/internal/downlink/join"
 	"github.com/brocaar/loraserver/internal/framelog"
@@ -17,7 +20,7 @@ import (
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
-	"github.com/brocaar/lorawan/band"
+	loraband "github.com/brocaar/lorawan/band"
 )
 
 var tasks = []func(*context) error{
@@ -43,6 +46,35 @@ type context struct {
 	CFList             []uint32
 	JoinAnsPayload     backend.JoinAnsPayload
 	DeviceSession      storage.DeviceSession
+}
+
+var (
+	netID       lorawan.NetID
+	rx2DR       int
+	rx1DROffset int
+	rx1Delay    int
+	keks        map[string][]byte
+)
+
+// Setup configures the package.
+func Setup(conf config.Config) error {
+	keks = make(map[string][]byte)
+
+	netID = conf.NetworkServer.NetID
+	rx2DR = conf.NetworkServer.NetworkSettings.RX2DR
+	rx1DROffset = conf.NetworkServer.NetworkSettings.RX1DROffset
+	rx1Delay = conf.NetworkServer.NetworkSettings.RX1Delay
+
+	for _, k := range conf.JoinServer.KEK.Set {
+		kek, err := hex.DecodeString(k.KEK)
+		if err != nil {
+			return errors.Wrap(err, "decode kek error")
+		}
+
+		keks[k.Label] = kek
+	}
+
+	return nil
 }
 
 // Handle handles a join-request
@@ -81,7 +113,7 @@ func logJoinRequestFramesCollected(ctx *context) error {
 		return errors.Wrap(err, "create uplink frame-set error")
 	}
 
-	if err := framelog.LogUplinkFrameForDevEUI(config.C.Redis.Pool, ctx.JoinRequestPayload.DevEUI, uplinkFrameSet); err != nil {
+	if err := framelog.LogUplinkFrameForDevEUI(storage.RedisPool(), ctx.JoinRequestPayload.DevEUI, uplinkFrameSet); err != nil {
 		log.WithError(err).Error("log uplink frame for device error")
 	}
 
@@ -98,17 +130,17 @@ func logJoinRequestFramesCollected(ctx *context) error {
 func getDeviceAndDeviceProfile(ctx *context) error {
 	var err error
 
-	ctx.Device, err = storage.GetDevice(config.C.PostgreSQL.DB, ctx.JoinRequestPayload.DevEUI)
+	ctx.Device, err = storage.GetDevice(storage.DB(), ctx.JoinRequestPayload.DevEUI)
 	if err != nil {
 		return errors.Wrap(err, "get device error")
 	}
 
-	ctx.DeviceProfile, err = storage.GetDeviceProfile(config.C.PostgreSQL.DB, ctx.Device.DeviceProfileID)
+	ctx.DeviceProfile, err = storage.GetDeviceProfile(storage.DB(), ctx.Device.DeviceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get device-profile error")
 	}
 
-	ctx.ServiceProfile, err = storage.GetServiceProfile(config.C.PostgreSQL.DB, ctx.Device.ServiceProfileID)
+	ctx.ServiceProfile, err = storage.GetServiceProfile(storage.DB(), ctx.Device.ServiceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
@@ -122,7 +154,7 @@ func getDeviceAndDeviceProfile(ctx *context) error {
 
 func validateNonce(ctx *context) error {
 	// validate that the nonce has not been used yet
-	err := storage.ValidateDevNonce(config.C.PostgreSQL.DB, ctx.JoinRequestPayload.JoinEUI, ctx.JoinRequestPayload.DevEUI, ctx.JoinRequestPayload.DevNonce, lorawan.JoinRequestType)
+	err := storage.ValidateDevNonce(storage.DB(), ctx.JoinRequestPayload.JoinEUI, ctx.JoinRequestPayload.DevEUI, ctx.JoinRequestPayload.DevNonce, lorawan.JoinRequestType)
 	if err != nil {
 		return errors.Wrap(err, "validate dev-nonce error")
 	}
@@ -131,7 +163,7 @@ func validateNonce(ctx *context) error {
 }
 
 func getRandomDevAddr(ctx *context) error {
-	devAddr, err := storage.GetRandomDevAddr(config.C.Redis.Pool, config.C.NetworkServer.NetID)
+	devAddr, err := storage.GetRandomDevAddr(storage.RedisPool(), netID)
 	if err != nil {
 		return errors.Wrap(err, "get random DevAddr error")
 	}
@@ -154,7 +186,7 @@ func getJoinAcceptFromAS(ctx *context) error {
 	transactionID := binary.LittleEndian.Uint32(randomBytes)
 
 	var cFListB []byte
-	cFList := config.C.NetworkServer.Band.Band.GetCFList(ctx.DeviceProfile.MACVersion)
+	cFList := band.Band().GetCFList(ctx.DeviceProfile.MACVersion)
 	if cFList != nil {
 		cFListB, err = cFList.MarshalBinary()
 		if err != nil {
@@ -170,7 +202,7 @@ func getJoinAcceptFromAS(ctx *context) error {
 	joinReqPL := backend.JoinReqPayload{
 		BasePayload: backend.BasePayload{
 			ProtocolVersion: backend.ProtocolVersion1_0,
-			SenderID:        config.C.NetworkServer.NetID.String(),
+			SenderID:        netID.String(),
 			ReceiverID:      ctx.JoinRequestPayload.JoinEUI.String(),
 			TransactionID:   transactionID,
 			MessageType:     backend.JoinReq,
@@ -181,14 +213,14 @@ func getJoinAcceptFromAS(ctx *context) error {
 		DevAddr:    ctx.DevAddr,
 		DLSettings: lorawan.DLSettings{
 			OptNeg:      !strings.HasPrefix(ctx.DeviceProfile.MACVersion, "1.0"), // must be set to true for != "1.0" devices
-			RX2DataRate: uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
-			RX1DROffset: uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
+			RX2DataRate: uint8(rx2DR),
+			RX1DROffset: uint8(rx1DROffset),
 		},
-		RxDelay: config.C.NetworkServer.NetworkSettings.RX1Delay,
+		RxDelay: rx1Delay,
 		CFList:  backend.HEXBytes(cFListB),
 	}
 
-	jsClient, err := config.C.JoinServer.Pool.Get(ctx.JoinRequestPayload.JoinEUI)
+	jsClient, err := joinserver.GetPool().Get(ctx.JoinRequestPayload.JoinEUI)
 	if err != nil {
 		return errors.Wrap(err, "get join-server client error")
 	}
@@ -202,7 +234,7 @@ func getJoinAcceptFromAS(ctx *context) error {
 }
 
 func flushDeviceQueue(ctx *context) error {
-	if err := storage.FlushDeviceQueueForDevEUI(config.C.PostgreSQL.DB, ctx.Device.DevEUI); err != nil {
+	if err := storage.FlushDeviceQueueForDevEUI(storage.DB(), ctx.Device.DevEUI); err != nil {
 		return errors.Wrap(err, "flush device-queue error")
 	}
 	return nil
@@ -219,12 +251,12 @@ func createDeviceSession(ctx *context) error {
 		JoinEUI:               ctx.JoinRequestPayload.JoinEUI,
 		DevEUI:                ctx.JoinRequestPayload.DevEUI,
 		RXWindow:              storage.RX1,
-		RXDelay:               uint8(config.C.NetworkServer.NetworkSettings.RX1Delay),
-		RX1DROffset:           uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset),
-		RX2DR:                 uint8(config.C.NetworkServer.NetworkSettings.RX2DR),
-		RX2Frequency:          config.C.NetworkServer.Band.Band.GetDefaults().RX2Frequency,
-		EnabledUplinkChannels: config.C.NetworkServer.Band.Band.GetStandardUplinkChannelIndices(),
-		ExtraUplinkChannels:   make(map[int]band.Channel),
+		RXDelay:               uint8(rx1Delay),
+		RX1DROffset:           uint8(rx1DROffset),
+		RX2DR:                 uint8(rx2DR),
+		RX2Frequency:          band.Band().GetDefaults().RX2Frequency,
+		EnabledUplinkChannels: band.Band().GetStandardUplinkChannelIndices(),
+		ExtraUplinkChannels:   make(map[int]loraband.Channel),
 		UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
 		MaxSupportedDR:        ctx.ServiceProfile.DRMax,
 		SkipFCntValidation:    ctx.Device.SkipFCntCheck,
@@ -279,7 +311,7 @@ func createDeviceSession(ctx *context) error {
 		ds.NwkSEncKey = key
 	}
 
-	if cfList := config.C.NetworkServer.Band.Band.GetCFList(ctx.DeviceProfile.MACVersion); cfList != nil && cfList.CFListType == lorawan.CFListChannel {
+	if cfList := band.Band().GetCFList(ctx.DeviceProfile.MACVersion); cfList != nil && cfList.CFListType == lorawan.CFListChannel {
 		channelPL, ok := cfList.Payload.(*lorawan.CFListChannelPayload)
 		if !ok {
 			return fmt.Errorf("expected *lorawan.CFListChannelPayload, got %T", cfList.Payload)
@@ -290,7 +322,7 @@ func createDeviceSession(ctx *context) error {
 				continue
 			}
 
-			i, err := config.C.NetworkServer.Band.Band.GetUplinkChannelIndex(int(f), false)
+			i, err := band.Band().GetUplinkChannelIndex(int(f), false)
 			if err != nil {
 				// if this happens, something is really wrong
 				log.WithError(err).WithFields(log.Fields{
@@ -304,7 +336,7 @@ func createDeviceSession(ctx *context) error {
 
 			// add extra channel to extra uplink channels, so that we can
 			// keep track on frequency and data-rate changes
-			c, err := config.C.NetworkServer.Band.Band.GetUplinkChannel(i)
+			c, err := band.Band().GetUplinkChannel(i)
 			if err != nil {
 				return errors.Wrap(err, "get uplink channel error")
 			}
@@ -318,11 +350,11 @@ func createDeviceSession(ctx *context) error {
 
 	ctx.DeviceSession = ds
 
-	if err := storage.SaveDeviceSession(config.C.Redis.Pool, ctx.DeviceSession); err != nil {
+	if err := storage.SaveDeviceSession(storage.RedisPool(), ctx.DeviceSession); err != nil {
 		return errors.Wrap(err, "save node-session error")
 	}
 
-	if err := storage.FlushMACCommandQueue(config.C.Redis.Pool, ctx.DeviceSession.DevEUI); err != nil {
+	if err := storage.FlushMACCommandQueue(storage.RedisPool(), ctx.DeviceSession.DevEUI); err != nil {
 		return fmt.Errorf("flush mac-command queue error: %s", err)
 	}
 
@@ -341,7 +373,7 @@ func createDeviceActivation(ctx *context) error {
 		JoinReqType: lorawan.JoinRequestType,
 	}
 
-	if err := storage.CreateDeviceActivation(config.C.PostgreSQL.DB, &da); err != nil {
+	if err := storage.CreateDeviceActivation(storage.DB(), &da); err != nil {
 		return errors.Wrap(err, "create device-activation error")
 	}
 

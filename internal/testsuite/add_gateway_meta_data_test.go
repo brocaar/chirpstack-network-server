@@ -10,7 +10,6 @@ import (
 
 	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
@@ -119,7 +118,7 @@ func (ts *AddGatewayMetaDataTestSuite) TestAddGatewayMetaData() {
 		// flush clients and reload device-session as the frame-counter
 		// increments on every test
 		ts.FlushClients()
-		ds, err := storage.GetDeviceSession(config.C.Redis.Pool, ts.DeviceSession.DevEUI)
+		ds, err := storage.GetDeviceSession(storage.RedisPool(), ts.DeviceSession.DevEUI)
 		assert.NoError(err)
 		ts.DeviceSession = &ds
 
@@ -158,8 +157,8 @@ func (ts *AddGatewayMetaDataTestSuite) TestAddGatewayMetaData() {
 
 			ts.Gateway.Location = test.Location
 			ts.Gateway.Altitude = test.Altitude
-			assert.NoError(storage.UpdateGateway(config.C.PostgreSQL.DB, ts.Gateway))
-			assert.NoError(storage.FlushGatewayCache(config.C.Redis.Pool, ts.Gateway.GatewayID))
+			assert.NoError(storage.UpdateGateway(storage.DB(), ts.Gateway))
+			assert.NoError(storage.FlushGatewayCache(storage.RedisPool(), ts.Gateway.GatewayID))
 
 			assert.Nil(uplink.HandleRXPacket(ts.GetUplinkFrameForFRMPayload(rxInfo, txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})))
 

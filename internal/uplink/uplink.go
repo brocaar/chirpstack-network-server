@@ -5,21 +5,48 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sync"
+	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
+	gwbackend "github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink/ack"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/gateway"
 	"github.com/brocaar/loraserver/internal/models"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/uplink/data"
 	"github.com/brocaar/loraserver/internal/uplink/join"
 	"github.com/brocaar/loraserver/internal/uplink/proprietary"
 	"github.com/brocaar/loraserver/internal/uplink/rejoin"
 	"github.com/brocaar/lorawan"
 )
+
+var (
+	deduplicationDelay time.Duration
+)
+
+// Setup configures the package.
+func Setup(conf config.Config) error {
+	if err := data.Setup(conf); err != nil {
+		return errors.Wrap(err, "configure uplink/data error")
+	}
+
+	if err := join.Setup(conf); err != nil {
+		return errors.Wrap(err, "configure uplink/join error")
+	}
+
+	if err := rejoin.Setup(conf); err != nil {
+		return errors.Wrap(err, "configure uplink/rejoin error")
+	}
+
+	deduplicationDelay = conf.NetworkServer.DeduplicationDelay
+
+	return nil
+}
 
 // Server represents a server listening for uplink packets.
 type Server struct {
@@ -50,7 +77,7 @@ func (s *Server) Start() error {
 // Stop closes the gateway backend and waits for the server to complete the
 // pending packets.
 func (s *Server) Stop() error {
-	if err := config.C.NetworkServer.Gateway.Backend.Backend.Close(); err != nil {
+	if err := gwbackend.Backend().Close(); err != nil {
 		return fmt.Errorf("close gateway backend error: %s", err)
 	}
 	log.Info("waiting for pending actions to complete")
@@ -61,7 +88,7 @@ func (s *Server) Stop() error {
 // HandleRXPackets consumes received packets by the gateway and handles them
 // in a separate go-routine. Errors are logged.
 func HandleRXPackets(wg *sync.WaitGroup) {
-	for uplinkFrame := range config.C.NetworkServer.Gateway.Backend.Backend.RXPacketChan() {
+	for uplinkFrame := range gwbackend.Backend().RXPacketChan() {
 		go func(uplinkFrame gw.UplinkFrame) {
 			wg.Add(1)
 			defer wg.Done()
@@ -81,7 +108,7 @@ func HandleRXPacket(uplinkFrame gw.UplinkFrame) error {
 // HandleDownlinkTXAcks consumes received downlink tx acknowledgements from
 // the gateway.
 func HandleDownlinkTXAcks(wg *sync.WaitGroup) {
-	for downlinkTXAck := range config.C.NetworkServer.Gateway.Backend.Backend.DownlinkTXAckChan() {
+	for downlinkTXAck := range gwbackend.Backend().DownlinkTXAckChan() {
 		go func(downlinkTXAck gw.DownlinkTXAck) {
 			wg.Add(1)
 			defer wg.Done()
@@ -97,14 +124,14 @@ func HandleDownlinkTXAcks(wg *sync.WaitGroup) {
 }
 
 func collectPackets(uplinkFrame gw.UplinkFrame) error {
-	return collectAndCallOnce(config.C.Redis.Pool, uplinkFrame, func(rxPacket models.RXPacket) error {
+	return collectAndCallOnce(storage.RedisPool(), uplinkFrame, func(rxPacket models.RXPacket) error {
 		// update the gateway meta-data
-		if err := gateway.UpdateMetaDataInRxInfoSet(config.C.PostgreSQL.DB, config.C.Redis.Pool, rxPacket.RXInfoSet); err != nil {
+		if err := gateway.UpdateMetaDataInRxInfoSet(storage.DB(), storage.RedisPool(), rxPacket.RXInfoSet); err != nil {
 			log.WithError(err).Error("update gateway meta-data in rx-info set error")
 		}
 
 		// log the frame for each receiving gatewa
-		if err := framelog.LogUplinkFrameForGateways(config.C.Redis.Pool, gw.UplinkFrameSet{
+		if err := framelog.LogUplinkFrameForGateways(storage.RedisPool(), gw.UplinkFrameSet{
 			PhyPayload: uplinkFrame.PhyPayload,
 			TxInfo:     rxPacket.TXInfo,
 			RxInfo:     rxPacket.RXInfoSet,

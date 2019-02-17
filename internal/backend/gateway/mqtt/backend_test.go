@@ -1,74 +1,45 @@
 package mqtt
 
 import (
-	"os"
 	"testing"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/golang/protobuf/proto"
-	"github.com/gomodule/redigo/redis"
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend"
+	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/backend/gateway/marshaler"
-	"github.com/brocaar/loraserver/internal/common"
+	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 )
 
 type BackendTestSuite struct {
 	suite.Suite
 
-	backend    backend.Gateway
-	redisPool  *redis.Pool
+	backend    gateway.Gateway
 	mqttClient paho.Client
 }
 
 func (ts *BackendTestSuite) SetupSuite() {
 	assert := require.New(ts.T())
-	log.SetLevel(log.ErrorLevel)
 
-	redisURL := "redis://localhost:6379/1"
-	if v := os.Getenv("TEST_REDIS_URL"); v != "" {
-		redisURL = v
-	}
+	conf := test.GetConfig()
+	assert.NoError(storage.Setup(conf))
 
-	ts.redisPool = common.NewRedisPool(redisURL, 10, 0)
-
-	mqttServer := "tcp://127.0.0.1:1883/1"
-	var mqttUsername string
-	var mqttPassword string
-
-	if v := os.Getenv("TEST_MQTT_SERVER"); v != "" {
-		mqttServer = v
-	}
-	if v := os.Getenv("TEST_MQTT_USERNAME"); v != "" {
-		mqttUsername = v
-	}
-	if v := os.Getenv("TEST_MQTT_PASSWORD"); v != "" {
-		mqttPassword = v
-	}
-
-	opts := paho.NewClientOptions().AddBroker(mqttServer).SetUsername(mqttUsername).SetPassword(mqttPassword)
+	opts := paho.NewClientOptions().
+		AddBroker(conf.NetworkServer.Gateway.Backend.MQTT.Server).
+		SetUsername(conf.NetworkServer.Gateway.Backend.MQTT.Username).
+		SetPassword(conf.NetworkServer.Gateway.Backend.MQTT.Password)
 	ts.mqttClient = paho.NewClient(opts)
 	token := ts.mqttClient.Connect()
 	token.Wait()
 	assert.NoError(token.Error())
 
 	var err error
-	ts.backend, err = NewBackend(ts.redisPool, Config{
-		Server:                mqttServer,
-		Username:              mqttUsername,
-		Password:              mqttPassword,
-		CleanSession:          true,
-		UplinkTopicTemplate:   "gateway/+/rx",
-		DownlinkTopicTemplate: "gateway/{{ .MAC }}/tx",
-		StatsTopicTemplate:    "gateway/+/stats",
-		AckTopicTemplate:      "gateway/+/ack",
-		ConfigTopicTemplate:   "gateway/{{ .MAC }}/config",
-	})
+	ts.backend, err = NewBackend(storage.RedisPool(), conf)
 	assert.NoError(err)
 
 	ts.backend.(*Backend).setGatewayMarshaler(lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}, marshaler.Protobuf)
@@ -81,7 +52,7 @@ func (ts *BackendTestSuite) TearDownSuite() {
 }
 
 func (ts *BackendTestSuite) SetupTest() {
-	MustFlushRedis(ts.redisPool)
+	test.MustFlushRedis(storage.RedisPool())
 }
 
 func (ts *BackendTestSuite) TestUplinkFrame() {

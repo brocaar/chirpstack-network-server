@@ -23,32 +23,23 @@ type poolClient struct {
 
 type pool struct {
 	sync.RWMutex
-	config        Config
-	defaultClient Client
-	clients       map[lorawan.EUI64]poolClient
+	defaultClient       Client
+	resolveJoinEUI      bool
+	clients             map[lorawan.EUI64]poolClient
+	certificates        []certificate
+	resolveDomainSuffix string
 }
 
-// NewPool creates a new Pool.
-func NewPool(config Config) (Pool, error) {
-	defaultClient, err := NewClient(
-		config.Default.Server,
-		config.Default.CACert,
-		config.Default.TLSCert,
-		config.Default.TLSKey,
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "create default join-server client error")
-	}
-	return &pool{
-		defaultClient: defaultClient,
-		config:        config,
-		clients:       make(map[lorawan.EUI64]poolClient),
-	}, nil
+type certificate struct {
+	joinEUI lorawan.EUI64
+	caCert  string
+	tlsCert string
+	tlsKey  string
 }
 
 // Get returns the join-server client for the given joinEUI.
 func (p *pool) Get(joinEUI lorawan.EUI64) (Client, error) {
-	if !p.config.ResolveJoinEUI {
+	if !p.resolveJoinEUI {
 		return p.defaultClient, nil
 	}
 
@@ -85,16 +76,11 @@ func (p *pool) resolveJoinServer(joinEUI lorawan.EUI64) (Client, error) {
 	}).Debug("resolved joineui to join-server")
 
 	var caCert, tlsCert, tlsKey string
-	for _, cert := range p.config.Certificates {
-		var certJoinEUI lorawan.EUI64
-		if err := certJoinEUI.UnmarshalText([]byte(cert.JoinEUI)); err != nil {
-			return nil, errors.Wrapf(err, "unmarshal joineui '%s' error", cert.JoinEUI)
-		}
-
-		if certJoinEUI == joinEUI {
-			caCert = cert.CaCert
-			tlsCert = cert.TLSCert
-			tlsKey = cert.TLSKey
+	for _, cert := range p.certificates {
+		if cert.joinEUI == joinEUI {
+			caCert = cert.caCert
+			tlsCert = cert.tlsCert
+			tlsKey = cert.tlsKey
 		}
 	}
 
@@ -130,5 +116,5 @@ func (p *pool) joinEUIToServer(joinEUI lorawan.EUI64) string {
 		nibbles[i], nibbles[j] = nibbles[j], nibbles[i]
 	}
 
-	return strings.Join(nibbles, ".") + p.config.ResolveDomainSuffix
+	return strings.Join(nibbles, ".") + p.resolveDomainSuffix
 }

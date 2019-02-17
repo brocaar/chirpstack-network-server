@@ -6,14 +6,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/backend/applicationserver"
 	"github.com/brocaar/loraserver/internal/gps"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestDeviceQueueItemValidate(t *testing.T) {
@@ -44,16 +43,14 @@ func TestDeviceQueueItemValidate(t *testing.T) {
 
 func TestDeviceQueue(t *testing.T) {
 	conf := test.GetConfig()
-	db, err := common.OpenDatabase(conf.PostgresDSN)
-	if err != nil {
+	if err := Setup(conf); err != nil {
 		t.Fatal(err)
 	}
-	config.C.PostgreSQL.DB = db
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(config.C.PostgreSQL.DB)
+		test.MustResetDB(DB().DB)
 		asClient := test.NewApplicationClient()
-		config.C.ApplicationServer.Pool = test.NewApplicationServerPool(asClient)
+		applicationserver.SetPool(test.NewApplicationServerPool(asClient))
 
 		Convey("Given a service, device and routing profile and device", func() {
 			sp := ServiceProfile{}
@@ -108,7 +105,7 @@ func TestDeviceQueue(t *testing.T) {
 				}
 
 				Convey("Then GetMaxEmlitAtTimeSinceGPSEpochForDevEUI returns the expected value", func() {
-					d, err := GetMaxEmitAtTimeSinceGPSEpochForDevEUI(config.C.PostgreSQL.DB, d.DevEUI)
+					d, err := GetMaxEmitAtTimeSinceGPSEpochForDevEUI(DB(), d.DevEUI)
 					So(err, ShouldBeNil)
 					So(d, ShouldEqual, gpsEpochTS2)
 				})
@@ -155,10 +152,10 @@ func TestDeviceQueue(t *testing.T) {
 					ts := time.Now().Add(time.Minute)
 					items[0].IsPending = true
 					items[0].TimeoutAfter = &ts
-					So(UpdateDeviceQueueItem(config.C.PostgreSQL.DB, &items[0]), ShouldBeNil)
+					So(UpdateDeviceQueueItem(DB(), &items[0]), ShouldBeNil)
 
 					Convey("Then GetNextDeviceQueueItemForDevEUI returns does not exist error", func() {
-						_, err := GetNextDeviceQueueItemForDevEUI(config.C.PostgreSQL.DB, d.DevEUI)
+						_, err := GetNextDeviceQueueItemForDevEUI(DB(), d.DevEUI)
 						So(err, ShouldEqual, ErrDoesNotExist)
 					})
 				})
@@ -216,7 +213,7 @@ func TestDeviceQueue(t *testing.T) {
 					},
 				}
 				for i := range items {
-					So(CreateDeviceQueueItem(config.C.PostgreSQL.DB, &items[i]), ShouldBeNil)
+					So(CreateDeviceQueueItem(DB(), &items[i]), ShouldBeNil)
 				}
 
 				tests := []struct {
@@ -294,7 +291,7 @@ func TestDeviceQueue(t *testing.T) {
 
 				for i, test := range tests {
 					Convey(fmt.Sprintf("Testing: %s [%d]", test.Name, i), func() {
-						qi, err := GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(config.C.PostgreSQL.DB, d.DevEUI, test.MaxFRMPayload, test.FCnt, rp.ID)
+						qi, err := GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(DB(), d.DevEUI, test.MaxFRMPayload, test.FCnt, rp.ID)
 						if test.ExpectedHandleError == nil {
 							So(*test.ExpectedDeviceQueueItemID, ShouldEqual, qi.ID)
 							So(err, ShouldBeNil)
@@ -330,27 +327,24 @@ type getDeviceQueueItemsTestCase struct {
 
 func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 	conf := test.GetConfig()
-	db, err := common.OpenDatabase(conf.PostgresDSN)
-	if err != nil {
+	if err := Setup(conf); err != nil {
 		t.Fatal(err)
 	}
-	config.C.PostgreSQL.DB = db
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(config.C.PostgreSQL.DB)
+		test.MustResetDB(DB().DB)
 
 		Convey("Given a service-, class-b device- and routing-profile and two, SchedulerInterval setting", func() {
-			config.C.NetworkServer.Scheduler.SchedulerInterval = time.Second * 1
 			sp := ServiceProfile{}
-			So(CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
+			So(CreateServiceProfile(DB(), &sp), ShouldBeNil)
 
 			rp := RoutingProfile{}
-			So(CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
+			So(CreateRoutingProfile(DB(), &rp), ShouldBeNil)
 
 			dp := DeviceProfile{
 				SupportsClassB: true,
 			}
-			So(CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
+			So(CreateDeviceProfile(DB(), &dp), ShouldBeNil)
 
 			devices := []Device{
 				{
@@ -367,7 +361,7 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 				},
 			}
 			for i := range devices {
-				So(CreateDevice(config.C.PostgreSQL.DB, &devices[i]), ShouldBeNil)
+				So(CreateDevice(DB(), &devices[i]), ShouldBeNil)
 			}
 
 			inTwoSeconds := gps.Time(time.Now().Add(time.Second)).TimeSinceGPSEpoch()
@@ -431,15 +425,15 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 
 		Convey("Given a service-, class-c device- and routing-profile and two devices", func() {
 			sp := ServiceProfile{}
-			So(CreateServiceProfile(config.C.PostgreSQL.DB, &sp), ShouldBeNil)
+			So(CreateServiceProfile(DB(), &sp), ShouldBeNil)
 
 			rp := RoutingProfile{}
-			So(CreateRoutingProfile(config.C.PostgreSQL.DB, &rp), ShouldBeNil)
+			So(CreateRoutingProfile(DB(), &rp), ShouldBeNil)
 
 			dp := DeviceProfile{
 				SupportsClassC: true,
 			}
-			So(CreateDeviceProfile(config.C.PostgreSQL.DB, &dp), ShouldBeNil)
+			So(CreateDeviceProfile(DB(), &dp), ShouldBeNil)
 
 			devices := []Device{
 				{
@@ -456,7 +450,7 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 				},
 			}
 			for i := range devices {
-				So(CreateDevice(config.C.PostgreSQL.DB, &devices[i]), ShouldBeNil)
+				So(CreateDevice(DB(), &devices[i]), ShouldBeNil)
 			}
 
 			inOneMinute := time.Now().Add(time.Minute)
@@ -535,7 +529,7 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 func runGetDeviceQueueItemsTests(tests []getDeviceQueueItemsTestCase) {
 	for i, test := range tests {
 		Convey(fmt.Sprintf("testing: %s [%d]", test.Name, i), func() {
-			var transactions []*common.TxLogger
+			var transactions []*TxLogger
 			var out [][]lorawan.EUI64
 
 			defer func() {
@@ -545,11 +539,11 @@ func runGetDeviceQueueItemsTests(tests []getDeviceQueueItemsTestCase) {
 			}()
 
 			for i := range test.QueueItems {
-				So(CreateDeviceQueueItem(config.C.PostgreSQL.DB, &test.QueueItems[i]), ShouldBeNil)
+				So(CreateDeviceQueueItem(DB(), &test.QueueItems[i]), ShouldBeNil)
 			}
 
 			for i := 0; i < test.GetCallCount; i++ {
-				tx, err := config.C.PostgreSQL.DB.Beginx()
+				tx, err := DB().Beginx()
 				So(err, ShouldBeNil)
 				transactions = append(transactions, tx)
 

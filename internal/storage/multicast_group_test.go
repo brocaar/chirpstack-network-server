@@ -211,7 +211,7 @@ func (ts *StorageTestSuite) TestGetMulticastGroupsWithQueueItems() {
 	}
 	assert.NoError(CreateMulticastQueueItem(ts.DB(), &qi2))
 
-	Transaction(ts.DB(), func(tx sqlx.Ext) error {
+	Transaction(func(tx sqlx.Ext) error {
 		items, err := GetSchedulableMulticastQueueItems(tx, 10)
 		assert.NoError(err)
 		assert.Len(items, 1)
@@ -219,7 +219,7 @@ func (ts *StorageTestSuite) TestGetMulticastGroupsWithQueueItems() {
 
 		// new transaction must return 0 items as the first one did lock
 		// the multicast-group
-		Transaction(ts.DB(), func(tx sqlx.Ext) error {
+		Transaction(func(tx sqlx.Ext) error {
 			items, err := GetSchedulableMulticastQueueItems(tx, 10)
 			assert.NoError(err)
 			assert.Len(items, 0)

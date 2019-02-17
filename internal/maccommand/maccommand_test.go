@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
@@ -18,15 +16,18 @@ func TestHandleDownlink(t *testing.T) {
 	conf := test.GetConfig()
 
 	Convey("Given a clean Redis database", t, func() {
-		config.C.Redis.Pool = common.NewRedisPool(conf.RedisURL, 10, 0)
-		test.MustFlushRedis(config.C.Redis.Pool)
+		if err := storage.Setup(conf); err != nil {
+			t.Fatal(err)
+		}
+
+		test.MustFlushRedis(storage.RedisPool())
 
 		Convey("Given a device-session", func() {
 			ds := storage.DeviceSession{
 				DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				EnabledUplinkChannels: []int{0, 1},
 			}
-			So(storage.SaveDeviceSession(config.C.Redis.Pool, ds), ShouldBeNil)
+			So(storage.SaveDeviceSession(storage.RedisPool(), ds), ShouldBeNil)
 
 			Convey("Testing LinkADRAns", func() {
 				testTable := []struct {

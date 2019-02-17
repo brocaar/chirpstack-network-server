@@ -7,14 +7,13 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
-	"github.com/brocaar/loraserver/internal/common"
 	"github.com/brocaar/loraserver/internal/storage"
 )
 
 // Migrate checks if the given function code has been applied and if not
 // it will execute the given function.
-func Migrate(db *common.DBLogger, name string, f func() error) error {
-	return storage.Transaction(db, func(tx sqlx.Ext) error {
+func Migrate(name string, f func(db sqlx.Ext) error) error {
+	return storage.Transaction(func(tx sqlx.Ext) error {
 		_, err := tx.Exec(`lock table code_migration`)
 		if err != nil {
 			return errors.Wrap(err, "lock code migration table error")
@@ -49,6 +48,6 @@ func Migrate(db *common.DBLogger, name string, f func() error) error {
 			return nil
 		}
 
-		return f()
+		return f(tx)
 	})
 }

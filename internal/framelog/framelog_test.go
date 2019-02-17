@@ -9,25 +9,31 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	commonPB "github.com/brocaar/loraserver/api/common"
+	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
 )
 
 type FrameLogTestSuite struct {
 	suite.Suite
-	test.DatabaseTestSuiteBase
 
 	GatewayID lorawan.EUI64
 	DevEUI    lorawan.EUI64
 }
 
 func (ts *FrameLogTestSuite) SetupSuite() {
-	ts.DatabaseTestSuiteBase.SetupSuite()
+	assert := require.New(ts.T())
+	conf := test.GetConfig()
+	assert.NoError(storage.Setup(conf))
 
 	ts.GatewayID = lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
 	ts.DevEUI = lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1}
+}
+
+func (ts *FrameLogTestSuite) SetupTest() {
+	test.MustFlushRedis(storage.RedisPool())
 }
 
 func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
@@ -39,7 +45,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 	defer cancel()
 
 	go func() {
-		err := GetFrameLogForGateway(cctx, ts.RedisPool(), ts.GatewayID, logChannel)
+		err := GetFrameLogForGateway(cctx, storage.RedisPool(), ts.GatewayID, logChannel)
 		assert.NoError(err)
 	}()
 
@@ -52,7 +58,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 			PhyPayload: []byte{1, 2, 3, 4},
 			TxInfo: &gw.UplinkTXInfo{
 				Frequency:  868100000,
-				Modulation: commonPB.Modulation_LORA,
+				Modulation: common.Modulation_LORA,
 				ModulationInfo: &gw.UplinkTXInfo_LoraModulationInfo{
 					LoraModulationInfo: &gw.LoRaModulationInfo{
 						SpreadingFactor: 7,
@@ -66,7 +72,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 				},
 			},
 		}
-		assert.NoError(LogUplinkFrameForGateways(ts.RedisPool(), uplinkFrameSet))
+		assert.NoError(LogUplinkFrameForGateways(storage.RedisPool(), uplinkFrameSet))
 		frameLog := <-logChannel
 		assert.True(proto.Equal(&uplinkFrameSet, frameLog.UplinkFrame))
 	})
@@ -80,7 +86,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 			},
 		}
 
-		assert.NoError(LogDownlinkFrameForGateway(ts.RedisPool(), downlinkFrame))
+		assert.NoError(LogDownlinkFrameForGateway(storage.RedisPool(), downlinkFrame))
 		downlinkFrame.TxInfo.XXX_sizecache = 0
 
 		assert.Equal(FrameLog{
@@ -98,7 +104,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 	defer cancel()
 
 	go func() {
-		err := GetFrameLogForDevice(cctx, ts.RedisPool(), ts.DevEUI, logChannel)
+		err := GetFrameLogForDevice(cctx, storage.RedisPool(), ts.DevEUI, logChannel)
 		assert.NoError(err)
 	}()
 
@@ -111,7 +117,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 			PhyPayload: []byte{1, 2, 3, 4},
 			TxInfo: &gw.UplinkTXInfo{
 				Frequency:  868100000,
-				Modulation: commonPB.Modulation_LORA,
+				Modulation: common.Modulation_LORA,
 				ModulationInfo: &gw.UplinkTXInfo_LoraModulationInfo{
 					LoraModulationInfo: &gw.LoRaModulationInfo{
 						SpreadingFactor: 7,
@@ -126,7 +132,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 			},
 		}
 
-		assert.NoError(LogUplinkFrameForDevEUI(ts.RedisPool(), ts.DevEUI, uplinkFrameSet))
+		assert.NoError(LogUplinkFrameForDevEUI(storage.RedisPool(), ts.DevEUI, uplinkFrameSet))
 		frameLog := <-logChannel
 		assert.True(proto.Equal(frameLog.UplinkFrame, &uplinkFrameSet))
 	})
@@ -141,7 +147,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 			},
 		}
 
-		assert.NoError(LogDownlinkFrameForDevEUI(ts.RedisPool(), ts.DevEUI, downlinkFrame))
+		assert.NoError(LogDownlinkFrameForDevEUI(storage.RedisPool(), ts.DevEUI, downlinkFrame))
 		downlinkFrame.TxInfo.XXX_sizecache = 0
 
 		assert.Equal(FrameLog{

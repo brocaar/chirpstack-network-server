@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink/data"
 	"github.com/brocaar/loraserver/internal/downlink/multicast"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -18,10 +17,10 @@ import (
 func DeviceQueueSchedulerLoop() {
 	for {
 		log.Debug("running class-b / class-c scheduler batch")
-		if err := ScheduleDeviceQueueBatch(config.SchedulerBatchSize); err != nil {
+		if err := ScheduleDeviceQueueBatch(schedulerBatchSize); err != nil {
 			log.WithError(err).Error("class-b / class-c scheduler error")
 		}
-		time.Sleep(config.C.NetworkServer.Scheduler.SchedulerInterval)
+		time.Sleep(schedulerInterval)
 	}
 }
 
@@ -30,23 +29,23 @@ func DeviceQueueSchedulerLoop() {
 func MulticastQueueSchedulerLoop() {
 	for {
 		log.Debug("running multicast scheduler batch")
-		if err := ScheduleMulticastQueueBatch(config.SchedulerBatchSize); err != nil {
+		if err := ScheduleMulticastQueueBatch(schedulerBatchSize); err != nil {
 			log.WithError(err).Error("multicast scheduler error")
 		}
-		time.Sleep(config.C.NetworkServer.Scheduler.SchedulerInterval)
+		time.Sleep(schedulerInterval)
 	}
 }
 
 // ScheduleDeviceQueueBatch schedules a downlink batch (Class-B or Class-C).
 func ScheduleDeviceQueueBatch(size int) error {
-	return storage.Transaction(config.C.PostgreSQL.DB, func(tx sqlx.Ext) error {
+	return storage.Transaction(func(tx sqlx.Ext) error {
 		devices, err := storage.GetDevicesWithClassBOrClassCDeviceQueueItems(tx, size)
 		if err != nil {
 			return errors.Wrap(err, "get deveuis with class-c device-queue items error")
 		}
 
 		for _, d := range devices {
-			ds, err := storage.GetDeviceSession(config.C.Redis.Pool, d.DevEUI)
+			ds, err := storage.GetDeviceSession(storage.RedisPool(), d.DevEUI)
 			if err != nil {
 				log.WithError(err).WithField("dev_eui", d.DevEUI).Error("get device-session error")
 				continue
@@ -64,7 +63,7 @@ func ScheduleDeviceQueueBatch(size int) error {
 
 // ScheduleMulticastQueueBatch schedules a donwlink multicast batch (Class-B & -C).
 func ScheduleMulticastQueueBatch(size int) error {
-	return storage.Transaction(config.C.PostgreSQL.DB, func(tx sqlx.Ext) error {
+	return storage.Transaction(func(tx sqlx.Ext) error {
 		// this locks the selected queue-items so that this query can be
 		// executed by other instances in parallel.
 		multicastQueueItems, err := storage.GetSchedulableMulticastQueueItems(tx, size)

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	commonPB "github.com/brocaar/loraserver/api/common"
+	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/gps"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -20,7 +20,7 @@ type MulticastTestSuite struct {
 }
 
 func (ts *MulticastTestSuite) SetupSuite() {
-	ts.DatabaseTestSuiteBase.SetupSuite()
+	ts.IntegrationTestSuite.SetupSuite()
 
 	ts.CreateGateway(storage.Gateway{
 		GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
@@ -41,7 +41,7 @@ func (ts *MulticastTestSuite) SetupSuite() {
 	})
 
 	assert := require.New(ts.T())
-	assert.NoError(storage.SaveDeviceGatewayRXInfoSet(ts.RedisPool(), storage.DeviceGatewayRXInfoSet{
+	assert.NoError(storage.SaveDeviceGatewayRXInfoSet(storage.RedisPool(), storage.DeviceGatewayRXInfoSet{
 		DevEUI: ts.Device.DevEUI,
 		DR:     3,
 		Items: []storage.DeviceGatewayRXInfo{
@@ -53,7 +53,7 @@ func (ts *MulticastTestSuite) SetupSuite() {
 		},
 	}))
 
-	assert.NoError(storage.AddDeviceToMulticastGroup(ts.DB(), ts.Device.DevEUI, ts.MulticastGroup.ID))
+	assert.NoError(storage.AddDeviceToMulticastGroup(storage.DB(), ts.Device.DevEUI, ts.MulticastGroup.ID))
 }
 
 func (ts *MulticastTestSuite) TestMulticast() {
@@ -91,7 +91,7 @@ func (ts *MulticastTestSuite) TestMulticast() {
 					TimeSinceGpsEpoch: ptypes.DurationProto(nowGPS),
 					Frequency:         uint32(ts.MulticastGroup.Frequency),
 					Power:             14,
-					Modulation:        commonPB.Modulation_LORA,
+					Modulation:        common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							SpreadingFactor:       9,
@@ -158,7 +158,7 @@ func (ts *MulticastTestSuite) TestMulticast() {
 					TimeSinceGpsEpoch: ptypes.DurationProto(nowGPS),
 					Frequency:         uint32(ts.MulticastGroup.Frequency),
 					Power:             14,
-					Modulation:        commonPB.Modulation_LORA,
+					Modulation:        common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							SpreadingFactor:       9,

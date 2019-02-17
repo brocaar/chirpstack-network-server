@@ -4,16 +4,20 @@ import (
 	"errors"
 	"testing"
 
-	commonPB "github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
-	"github.com/brocaar/lorawan/band"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/brocaar/loraserver/api/common"
+	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/internal/band"
+	"github.com/brocaar/loraserver/internal/downlink"
+	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/loraserver/internal/uplink"
+	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
+	loraband "github.com/brocaar/lorawan/band"
 )
 
 type RejoinTestSuite struct {
@@ -24,7 +28,7 @@ type RejoinTestSuite struct {
 }
 
 func (ts *RejoinTestSuite) SetupSuite() {
-	ts.DatabaseTestSuiteBase.SetupSuite()
+	ts.IntegrationTestSuite.SetupSuite()
 	assert := require.New(ts.T())
 
 	ts.JoinAcceptKey = lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
@@ -48,7 +52,7 @@ func (ts *RejoinTestSuite) SetupSuite() {
 		FNwkSIntKey:           lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2},
 		NwkSEncKey:            lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3},
 		MACVersion:            "1.1.0",
-		ExtraUplinkChannels:   make(map[int]band.Channel),
+		ExtraUplinkChannels:   make(map[int]loraband.Channel),
 		RX2Frequency:          869525000,
 		NbTrans:               1,
 		EnabledUplinkChannels: []int{0, 1, 2},
@@ -66,18 +70,34 @@ func (ts *RejoinTestSuite) SetupSuite() {
 	ts.TXInfo = gw.UplinkTXInfo{
 		Frequency: 868100000,
 	}
-	assert.NoError(helpers.SetUplinkTXInfoDataRate(&ts.TXInfo, 0, config.C.NetworkServer.Band.Band))
+	assert.NoError(helpers.SetUplinkTXInfoDataRate(&ts.TXInfo, 0, band.Band()))
 }
 
 func (ts *RejoinTestSuite) SetupTest() {
 	ts.IntegrationTestSuite.SetupTest()
+	assert := require.New(ts.T())
 
-	config.C.NetworkServer.Band.Band.AddChannel(867100000, 0, 5)
-	config.C.NetworkServer.Band.Band.AddChannel(867300000, 0, 5)
-	config.C.NetworkServer.Band.Band.AddChannel(867500000, 0, 5)
-	config.C.NetworkServer.NetworkSettings.RX2DR = 3
-	config.C.NetworkServer.NetworkSettings.RX1DROffset = 2
-	config.C.NetworkServer.NetworkSettings.RX1Delay = 1
+	conf := test.GetConfig()
+	conf.NetworkServer.NetworkSettings.RX2DR = 3
+	conf.NetworkServer.NetworkSettings.RX1DROffset = 2
+	conf.NetworkServer.NetworkSettings.RX1Delay = 1
+	conf.JoinServer.KEK.Set = []struct {
+		Label string
+		KEK   string `mapstructure:"kek"`
+	}{
+		{
+			Label: "010203",
+			KEK:   "00000000000000000000000000000000",
+		},
+	}
+
+	assert.NoError(uplink.Setup(conf))
+	assert.NoError(downlink.Setup(conf))
+
+	band.Band().AddChannel(867100000, 0, 5)
+	band.Band().AddChannel(867300000, 0, 5)
+	band.Band().AddChannel(867500000, 0, 5)
+
 }
 
 func (ts *RejoinTestSuite) TestRejoinType0() {
@@ -173,7 +193,7 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 					Timestamp:  5000000,
 					Frequency:  868100000,
 					Power:      14,
-					Modulation: commonPB.Modulation_LORA,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -193,7 +213,7 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 					FNwkSIntKey:           lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2},
 					NwkSEncKey:            lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3},
 					MACVersion:            "1.1.0",
-					ExtraUplinkChannels:   make(map[int]band.Channel),
+					ExtraUplinkChannels:   make(map[int]loraband.Channel),
 					RX2Frequency:          869525000,
 					NbTrans:               1,
 					EnabledUplinkChannels: []int{0, 1, 2},
@@ -212,7 +232,7 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 							AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4},
 						},
 						MACVersion: "1.1.0",
-						ExtraUplinkChannels: map[int]band.Channel{
+						ExtraUplinkChannels: map[int]loraband.Channel{
 							3: {Frequency: 867100000, MaxDR: 5},
 							4: {Frequency: 867300000, MaxDR: 5},
 							5: {Frequency: 867500000, MaxDR: 5},
@@ -229,18 +249,6 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 			},
 		},
 		{
-			BeforeFunc: func(tst *RejoinTest) error {
-				config.C.JoinServer.KEK.Set = []struct {
-					Label string
-					KEK   string `mapstructure:"kek"`
-				}{
-					{
-						Label: "010203",
-						KEK:   "00000000000000000000000000000000",
-					},
-				}
-				return nil
-			},
 			Name:          "valid rejoin-request with KEK",
 			DeviceSession: *ts.DeviceSession,
 			TXInfo:        ts.TXInfo,
@@ -292,7 +300,7 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 					Timestamp:  5000000,
 					Frequency:  868100000,
 					Power:      14,
-					Modulation: commonPB.Modulation_LORA,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -312,7 +320,7 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 					FNwkSIntKey:           lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2},
 					NwkSEncKey:            lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3},
 					MACVersion:            "1.1.0",
-					ExtraUplinkChannels:   make(map[int]band.Channel),
+					ExtraUplinkChannels:   make(map[int]loraband.Channel),
 					RX2Frequency:          869525000,
 					NbTrans:               1,
 					EnabledUplinkChannels: []int{0, 1, 2},
@@ -332,7 +340,7 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 							AESKey:   []byte{248, 215, 201, 250, 55, 176, 209, 198, 53, 78, 109, 184, 225, 157, 157, 122, 180, 229, 199, 88, 30, 159, 30, 32},
 						},
 						MACVersion: "1.1.0",
-						ExtraUplinkChannels: map[int]band.Channel{
+						ExtraUplinkChannels: map[int]loraband.Channel{
 							3: {Frequency: 867100000, MaxDR: 5},
 							4: {Frequency: 867300000, MaxDR: 5},
 							5: {Frequency: 867500000, MaxDR: 5},
@@ -380,6 +388,7 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 
 func (ts *RejoinTestSuite) TestRejoinType2() {
 	assert := require.New(ts.T())
+	conf := test.GetConfig()
 
 	jrPHY := lorawan.PHYPayload{
 		MHDR: lorawan.MHDR{
@@ -405,7 +414,7 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 		},
 		MACPayload: &lorawan.JoinAcceptPayload{
 			JoinNonce: 12345,
-			HomeNetID: config.C.NetworkServer.NetID,
+			HomeNetID: conf.NetworkServer.NetID,
 			DLSettings: lorawan.DLSettings{
 				RX2DataRate: 2,
 				RX1DROffset: 1,
@@ -468,7 +477,7 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 					Timestamp:  5000000,
 					Frequency:  868100000,
 					Power:      14,
-					Modulation: commonPB.Modulation_LORA,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -488,7 +497,7 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 					FNwkSIntKey:           lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2},
 					NwkSEncKey:            lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3},
 					MACVersion:            "1.1.0",
-					ExtraUplinkChannels:   make(map[int]band.Channel),
+					ExtraUplinkChannels:   make(map[int]loraband.Channel),
 					RX2Frequency:          869525000,
 					NbTrans:               1,
 					EnabledUplinkChannels: []int{0, 1, 2},
@@ -507,7 +516,7 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 							AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4},
 						},
 						MACVersion:            "1.1.0",
-						ExtraUplinkChannels:   make(map[int]band.Channel),
+						ExtraUplinkChannels:   make(map[int]loraband.Channel),
 						RX2Frequency:          869525000,
 						NbTrans:               1,
 						EnabledUplinkChannels: []int{0, 1, 2},
@@ -517,19 +526,7 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 			},
 		},
 		{
-			Name: "valid rejoin-request with KEK",
-			BeforeFunc: func(tst *RejoinTest) error {
-				config.C.JoinServer.KEK.Set = []struct {
-					Label string
-					KEK   string `mapstructure:"kek"`
-				}{
-					{
-						Label: "010203",
-						KEK:   "00000000000000000000000000000000",
-					},
-				}
-				return nil
-			},
+			Name:          "valid rejoin-request with KEK",
 			DeviceSession: *ts.DeviceSession,
 			TXInfo:        ts.TXInfo,
 			RXInfo:        ts.RXInfo,
@@ -579,7 +576,7 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 					Timestamp:  5000000,
 					Frequency:  868100000,
 					Power:      14,
-					Modulation: commonPB.Modulation_LORA,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -599,7 +596,7 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 					FNwkSIntKey:           lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2},
 					NwkSEncKey:            lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3},
 					MACVersion:            "1.1.0",
-					ExtraUplinkChannels:   make(map[int]band.Channel),
+					ExtraUplinkChannels:   make(map[int]loraband.Channel),
 					RX2Frequency:          869525000,
 					NbTrans:               1,
 					EnabledUplinkChannels: []int{0, 1, 2},
@@ -622,7 +619,7 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 						RX2Frequency:          869525000,
 						NbTrans:               1,
 						EnabledUplinkChannels: []int{0, 1, 2},
-						ExtraUplinkChannels:   make(map[int]band.Channel),
+						ExtraUplinkChannels:   make(map[int]loraband.Channel),
 						UplinkGatewayHistory:  make(map[lorawan.EUI64]storage.UplinkGatewayHistory),
 					},
 				}),

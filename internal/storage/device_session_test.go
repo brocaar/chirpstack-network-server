@@ -4,29 +4,29 @@ import (
 	"fmt"
 	"testing"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/require"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
+	loraband "github.com/brocaar/lorawan/band"
 )
 
 func TestGetRandomDevAddr(t *testing.T) {
 	conf := test.GetConfig()
+	if err := Setup(conf); err != nil {
+		t.Fatal(err)
+	}
 
 	Convey("Given a Redis database and NetID 010203", t, func() {
-		p := common.NewRedisPool(conf.RedisURL, 10, 0)
-		test.MustFlushRedis(p)
+		test.MustFlushRedis(RedisPool())
 		netID := lorawan.NetID{1, 2, 3}
 
 		Convey("When calling getRandomDevAddr many times, it should always return an unique DevAddr", func() {
 			log := make(map[lorawan.DevAddr]struct{})
 			for i := 0; i < 1000; i++ {
-				devAddr, err := GetRandomDevAddr(p, netID)
+				devAddr, err := GetRandomDevAddr(RedisPool(), netID)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -92,22 +92,24 @@ func TestUplinkHistory(t *testing.T) {
 
 func TestDeviceSession(t *testing.T) {
 	conf := test.GetConfig()
+	if err := Setup(conf); err != nil {
+		t.Fatal(err)
+	}
 
 	Convey("Given a clean Redis database", t, func() {
-		p := common.NewRedisPool(conf.RedisURL, 10, 0)
-		test.MustFlushRedis(p)
+		test.MustFlushRedis(RedisPool())
 
 		Convey("Given a device-session", func() {
 			s := DeviceSession{
 				DevAddr:              lorawan.DevAddr{1, 2, 3, 4},
 				DevEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-				ExtraUplinkChannels:  map[int]band.Channel{},
+				ExtraUplinkChannels:  map[int]loraband.Channel{},
 				UplinkGatewayHistory: map[lorawan.EUI64]UplinkGatewayHistory{},
 				RX2Frequency:         869525000,
 			}
 
 			Convey("When getting a non-existing device-session", func() {
-				_, err := GetDeviceSession(p, s.DevEUI)
+				_, err := GetDeviceSession(RedisPool(), s.DevEUI)
 
 				Convey("Then the expected error is returned", func() {
 					So(err, ShouldResemble, ErrDoesNotExist)
@@ -115,30 +117,30 @@ func TestDeviceSession(t *testing.T) {
 			})
 
 			Convey("When saving the device-session", func() {
-				So(SaveDeviceSession(p, s), ShouldBeNil)
+				So(SaveDeviceSession(RedisPool(), s), ShouldBeNil)
 
 				Convey("Then GetDeviceSessionsForDevAddr includes the device-session", func() {
-					sessions, err := GetDeviceSessionsForDevAddr(p, s.DevAddr)
+					sessions, err := GetDeviceSessionsForDevAddr(RedisPool(), s.DevAddr)
 					So(err, ShouldBeNil)
 					So(sessions, ShouldHaveLength, 1)
 					So(sessions[0], ShouldResemble, s)
 				})
 
 				Convey("Then the session can be retrieved by it's DevEUI", func() {
-					s2, err := GetDeviceSession(p, s.DevEUI)
+					s2, err := GetDeviceSession(RedisPool(), s.DevEUI)
 					So(err, ShouldBeNil)
 					So(s2, ShouldResemble, s)
 				})
 
 				Convey("Then DeleteDeviceSession deletes the device-session", func() {
-					So(DeleteDeviceSession(p, s.DevEUI), ShouldBeNil)
-					So(DeleteDeviceSession(p, s.DevEUI), ShouldEqual, ErrDoesNotExist)
+					So(DeleteDeviceSession(RedisPool(), s.DevEUI), ShouldBeNil)
+					So(DeleteDeviceSession(RedisPool(), s.DevEUI), ShouldEqual, ErrDoesNotExist)
 
 				})
 			})
 
 			Convey("When calling validateAndGetFullFCntUp", func() {
-				defaults := config.C.NetworkServer.Band.Band.GetDefaults()
+				defaults := band.Band().GetDefaults()
 
 				testTable := []struct {
 					ServerFCnt uint32
@@ -173,10 +175,12 @@ func TestDeviceSession(t *testing.T) {
 
 func TestGetDeviceSessionForPHYPayload(t *testing.T) {
 	conf := test.GetConfig()
+	if err := Setup(conf); err != nil {
+		t.Fatal(err)
+	}
 
 	Convey("Given a clean Redis database with a set of device-sessions for the same DevAddr", t, func() {
-		p := common.NewRedisPool(conf.RedisURL, 10, 0)
-		test.MustFlushRedis(p)
+		test.MustFlushRedis(RedisPool())
 
 		devAddr := lorawan.DevAddr{1, 2, 3, 4}
 
@@ -218,7 +222,7 @@ func TestGetDeviceSessionForPHYPayload(t *testing.T) {
 			},
 		}
 		for _, s := range deviceSessions {
-			So(SaveDeviceSession(p, s), ShouldBeNil)
+			So(SaveDeviceSession(RedisPool(), s), ShouldBeNil)
 		}
 
 		Convey("Given a set of tests", func() {
@@ -311,7 +315,7 @@ func TestGetDeviceSessionForPHYPayload(t *testing.T) {
 					}
 					So(phy.SetUplinkDataMIC(lorawan.LoRaWAN1_0, 0, 0, 0, test.FNwkSIntKey, test.SNwkSIntKey), ShouldBeNil)
 
-					s, err := GetDeviceSessionForPHYPayload(p, phy, 0, 0)
+					s, err := GetDeviceSessionForPHYPayload(RedisPool(), phy, 0, 0)
 					if test.ExpectedError != nil {
 						So(err, ShouldNotBeNil)
 						So(err.Error(), ShouldEqual, test.ExpectedError.Error())

@@ -10,7 +10,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
@@ -19,29 +19,30 @@ import (
 
 type GatewayConfigurationTestSuite struct {
 	suite.Suite
-	test.DatabaseTestSuiteBase
 
 	backend *test.GatewayBackend
 	gateway storage.Gateway
 }
 
 func (ts *GatewayConfigurationTestSuite) SetupSuite() {
-	ts.DatabaseTestSuiteBase.SetupSuite()
-
 	assert := require.New(ts.T())
+	conf := test.GetConfig()
+	assert.NoError(storage.Setup(conf))
+	test.MustResetDB(storage.DB().DB)
+
 	ts.backend = test.NewGatewayBackend()
-	config.C.NetworkServer.Gateway.Backend.Backend = ts.backend
+	gateway.SetBackend(ts.backend)
 	ts.gateway = storage.Gateway{
 		GatewayID: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 	}
-	assert.NoError(storage.CreateGateway(ts.DB(), &ts.gateway))
+	assert.NoError(storage.CreateGateway(storage.DB(), &ts.gateway))
 }
 
 func (ts *GatewayConfigurationTestSuite) TestUpdate() {
 	ts.T().Run("No gateway-profile", func(t *testing.T) {
 		assert := require.New(t)
 
-		assert.NoError(handleConfigurationUpdate(ts.DB(), ts.gateway, ""))
+		assert.NoError(handleConfigurationUpdate(storage.DB(), ts.gateway, ""))
 		assert.Equal(0, len(ts.backend.GatewayConfigPacketChan))
 	})
 
@@ -66,17 +67,17 @@ func (ts *GatewayConfigurationTestSuite) TestUpdate() {
 			},
 		}
 
-		assert.NoError(storage.CreateGatewayProfile(ts.DB(), &gp))
+		assert.NoError(storage.CreateGatewayProfile(storage.DB(), &gp))
 
 		// to work around timestamp truncation
 		var err error
-		gp, err = storage.GetGatewayProfile(ts.DB(), gp.ID)
+		gp, err = storage.GetGatewayProfile(storage.DB(), gp.ID)
 		assert.NoError(err)
 
 		ts.gateway.GatewayProfileID = &gp.ID
-		assert.NoError(storage.UpdateGateway(ts.DB(), &ts.gateway))
+		assert.NoError(storage.UpdateGateway(storage.DB(), &ts.gateway))
 
-		assert.NoError(handleConfigurationUpdate(ts.DB(), ts.gateway, ""))
+		assert.NoError(handleConfigurationUpdate(storage.DB(), ts.gateway, ""))
 
 		gwConfig := <-ts.backend.GatewayConfigPacketChan
 		assert.Equal(gw.GatewayConfiguration{
@@ -144,19 +145,20 @@ func TestGatewayConfigurationUpdate(t *testing.T) {
 
 type GatewayStatsTestSuite struct {
 	suite.Suite
-	test.DatabaseTestSuiteBase
 
 	gateway storage.Gateway
 }
 
 func (ts *GatewayStatsTestSuite) SetupSuite() {
 	assert := require.New(ts.T())
-	ts.DatabaseTestSuiteBase.SetupSuite()
+	conf := test.GetConfig()
+	assert.NoError(storage.Setup(conf))
+	test.MustResetDB(storage.DB().DB)
 
 	ts.gateway = storage.Gateway{
 		GatewayID: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 	}
-	assert.NoError(storage.CreateGateway(ts.DB(), &ts.gateway))
+	assert.NoError(storage.CreateGateway(storage.DB(), &ts.gateway))
 
 	assert.NoError(storage.SetAggregationIntervals([]storage.AggregationInterval{
 		storage.AggregationMinute,
@@ -188,9 +190,9 @@ func (ts *GatewayStatsTestSuite) TestStats() {
 	}
 	stats.Time, _ = ptypes.TimestampProto(now)
 
-	assert.NoError(handleGatewayStats(ts.RedisPool(), stats))
+	assert.NoError(handleGatewayStats(storage.RedisPool(), stats))
 
-	metrics, err := storage.GetMetrics(ts.RedisPool(), storage.AggregationMinute, "gw:0102030405060708", now, now)
+	metrics, err := storage.GetMetrics(storage.RedisPool(), storage.AggregationMinute, "gw:0102030405060708", now, now)
 	assert.NoError(err)
 	assert.Equal([]storage.MetricsRecord{
 		{

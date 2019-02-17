@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
@@ -18,12 +19,26 @@ var pktLossRateTable = [][3]uint8{
 	{3, 3, 3},
 }
 
+// disableADR disables the ADR engine when set to true.
+var disableADR bool
+
+// installationMargin defines the ADR installation-margin.
+var installationMargin float64
+
+// Setup configures the adr engine.
+func Setup(c config.Config) error {
+	disableADR = c.NetworkServer.NetworkSettings.DisableADR
+	installationMargin = c.NetworkServer.NetworkSettings.InstallationMargin
+
+	return nil
+}
+
 // HandleADR handles ADR in case requested by the node and configured
 // in the device-session.
 func HandleADR(ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 
 	// if the node has ADR disabled or it's disabled gloablly
-	if !ds.ADR || config.C.NetworkServer.NetworkSettings.DisableADR {
+	if !ds.ADR || disableADR {
 		if linkADRReqBlock == nil {
 			return nil, nil
 		}
@@ -51,7 +66,7 @@ func HandleADR(ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBloc
 		return nil, nil
 	}
 
-	dr, err := config.C.NetworkServer.Band.Band.GetDataRate(ds.DR)
+	dr, err := band.Band().GetDataRate(ds.DR)
 	if err != nil {
 		return nil, errors.Wrap(err, "get data-rate error")
 	}
@@ -61,7 +76,7 @@ func HandleADR(ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBloc
 		return nil, err
 	}
 
-	snrMargin := snrM - requiredSNR - config.C.NetworkServer.NetworkSettings.InstallationMargin
+	snrMargin := snrM - requiredSNR - installationMargin
 	nStep := int(snrMargin / 3)
 
 	// In case of negative steps the ADR algorithm will increase the TXPower
@@ -165,7 +180,7 @@ func getNbRep(currentNbRep uint8, pktLossRate float64) uint8 {
 func getMaxTXPowerOffsetIndex() int {
 	var idx int
 	for i := 0; ; i++ {
-		offset, err := config.C.NetworkServer.Band.Band.GetTXPowerOffset(i)
+		offset, err := band.Band().GetTXPowerOffset(i)
 		if err != nil {
 			break
 		}
@@ -232,13 +247,13 @@ func getRequiredSNRForSF(sf int) (float64, error) {
 
 func getMaxAllowedDR() int {
 	var maxDR int
-	stdChannels := config.C.NetworkServer.Band.Band.GetStandardUplinkChannelIndices()
+	stdChannels := band.Band().GetStandardUplinkChannelIndices()
 
 	// we take the highest data-rate from the enabled standard uplink channels
-	for _, i := range config.C.NetworkServer.Band.Band.GetEnabledUplinkChannelIndices() {
+	for _, i := range band.Band().GetEnabledUplinkChannelIndices() {
 		for _, stdI := range stdChannels {
 			if i == stdI {
-				c, _ := config.C.NetworkServer.Band.Band.GetUplinkChannel(i)
+				c, _ := band.Band().GetUplinkChannel(i)
 				if c.MaxDR > maxDR {
 					maxDR = c.MaxDR
 				}

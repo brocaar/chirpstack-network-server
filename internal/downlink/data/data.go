@@ -11,6 +11,8 @@ import (
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/adr"
+	"github.com/brocaar/loraserver/internal/backend/gateway"
+	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/channels"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
@@ -19,7 +21,7 @@ import (
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/band"
+	loraband "github.com/brocaar/lorawan/band"
 )
 
 type deviceClass int
@@ -41,6 +43,40 @@ var incompatibleMACCommands = []incompatibleCIDMapping{
 	{CID: lorawan.NewChannelReq, IncompatibleCIDs: []lorawan.CID{lorawan.LinkADRReq}},
 	{CID: lorawan.LinkADRReq, IncompatibleCIDs: []lorawan.CID{lorawan.NewChannelReq}},
 }
+
+var (
+	// rejoin-request variabled
+	rejoinRequestEnabled   bool
+	rejoinRequestMaxCountN int
+	rejoinRequestMaxTimeN  int
+
+	// Class-B
+	classBPingSlotDR        int
+	classBPingSlotFrequency int
+
+	// RX window
+	rxWindow int
+
+	// RX2 params
+	rx2Frequency int
+	rx2DR        int
+
+	// RX1 params
+	rx1DROffset int
+	rx1Delay    int
+
+	// Downlink TX power
+	downlinkTXPower int
+
+	// MAC Commands
+	disableMACCommands bool
+
+	// ADR
+	disableADR bool
+
+	// ClassC
+	classCDownlinkLockDuration time.Duration
+)
 
 var setMACCommandsSet = setMACCommands(
 	requestCustomChannelReconfiguration,
@@ -88,6 +124,32 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	setPHYPayloads,
 	sendDownlinkFrame,
 	saveDeviceSession,
+}
+
+// Setup configures the package.
+func Setup(conf config.Config) error {
+	nsConf := conf.NetworkServer.NetworkSettings
+	rejoinRequestEnabled = nsConf.RejoinRequest.Enabled
+	rejoinRequestMaxCountN = nsConf.RejoinRequest.MaxCountN
+	rejoinRequestMaxTimeN = nsConf.RejoinRequest.MaxTimeN
+
+	classBPingSlotDR = nsConf.ClassB.PingSlotDR
+	classBPingSlotFrequency = nsConf.ClassB.PingSlotFrequency
+
+	rx2Frequency = nsConf.RX2Frequency
+	rx2DR = nsConf.RX2DR
+	rx1DROffset = nsConf.RX1DROffset
+	rx1Delay = nsConf.RX1Delay
+	rxWindow = nsConf.RXWindow
+
+	downlinkTXPower = nsConf.DownlinkTXPower
+
+	disableMACCommands = nsConf.DisableMACCommands
+	disableADR = nsConf.DisableADR
+
+	classCDownlinkLockDuration = conf.NetworkServer.Scheduler.ClassC.DownlinkLockDuration
+
+	return nil
 }
 
 type dataContext struct {
@@ -253,16 +315,16 @@ func requestDevStatus(ctx *dataContext) error {
 }
 
 func requestRejoinParamSetup(ctx *dataContext) error {
-	if !config.C.NetworkServer.NetworkSettings.RejoinRequest.Enabled || ctx.DeviceSession.GetMACVersion() == lorawan.LoRaWAN1_0 {
+	if !rejoinRequestEnabled || ctx.DeviceSession.GetMACVersion() == lorawan.LoRaWAN1_0 {
 		return nil
 	}
 
 	if !ctx.DeviceSession.RejoinRequestEnabled ||
-		ctx.DeviceSession.RejoinRequestMaxCountN != config.C.NetworkServer.NetworkSettings.RejoinRequest.MaxCountN ||
-		ctx.DeviceSession.RejoinRequestMaxTimeN != config.C.NetworkServer.NetworkSettings.RejoinRequest.MaxTimeN {
+		ctx.DeviceSession.RejoinRequestMaxCountN != rejoinRequestMaxCountN ||
+		ctx.DeviceSession.RejoinRequestMaxTimeN != rejoinRequestMaxTimeN {
 		ctx.MACCommands = append(ctx.MACCommands, maccommand.RequestRejoinParamSetup(
-			config.C.NetworkServer.NetworkSettings.RejoinRequest.MaxTimeN,
-			config.C.NetworkServer.NetworkSettings.RejoinRequest.MaxCountN,
+			rejoinRequestMaxTimeN,
+			rejoinRequestMaxCountN,
 		))
 	}
 
@@ -274,11 +336,8 @@ func setPingSlotParameters(ctx *dataContext) error {
 		return nil
 	}
 
-	dr := config.C.NetworkServer.NetworkSettings.ClassB.PingSlotDR
-	freq := config.C.NetworkServer.NetworkSettings.ClassB.PingSlotFrequency
-
-	if dr != ctx.DeviceSession.PingSlotDR || freq != ctx.DeviceSession.PingSlotFrequency {
-		block := maccommand.RequestPingSlotChannel(ctx.DeviceSession.DevEUI, dr, freq)
+	if classBPingSlotDR != ctx.DeviceSession.PingSlotDR || classBPingSlotFrequency != ctx.DeviceSession.PingSlotFrequency {
+		block := maccommand.RequestPingSlotChannel(ctx.DeviceSession.DevEUI, classBPingSlotDR, classBPingSlotFrequency)
 		ctx.MACCommands = append(ctx.MACCommands, block)
 	}
 
@@ -286,13 +345,13 @@ func setPingSlotParameters(ctx *dataContext) error {
 }
 
 func setRXParameters(ctx *dataContext) error {
-	if ctx.DeviceSession.RX2Frequency != config.C.NetworkServer.NetworkSettings.RX2Frequency || ctx.DeviceSession.RX2DR != uint8(config.C.NetworkServer.NetworkSettings.RX2DR) || ctx.DeviceSession.RX1DROffset != uint8(config.C.NetworkServer.NetworkSettings.RX1DROffset) {
-		block := maccommand.RequestRXParamSetup(config.C.NetworkServer.NetworkSettings.RX1DROffset, config.C.NetworkServer.NetworkSettings.RX2Frequency, config.C.NetworkServer.NetworkSettings.RX2DR)
+	if ctx.DeviceSession.RX2Frequency != rx2Frequency || ctx.DeviceSession.RX2DR != uint8(rx2DR) || ctx.DeviceSession.RX1DROffset != uint8(rx1DROffset) {
+		block := maccommand.RequestRXParamSetup(rx1DROffset, rx2Frequency, rx2DR)
 		ctx.MACCommands = append(ctx.MACCommands, block)
 	}
 
-	if ctx.DeviceSession.RXDelay != uint8(config.C.NetworkServer.NetworkSettings.RX1Delay) {
-		block := maccommand.RequestRXTimingSetup(config.C.NetworkServer.NetworkSettings.RX1Delay)
+	if ctx.DeviceSession.RXDelay != uint8(rx1Delay) {
+		block := maccommand.RequestRXTimingSetup(rx1Delay)
 		ctx.MACCommands = append(ctx.MACCommands, block)
 	}
 
@@ -300,13 +359,13 @@ func setRXParameters(ctx *dataContext) error {
 }
 
 func setDataTXInfo(ctx *dataContext) error {
-	if rxWindow := config.C.NetworkServer.NetworkSettings.RXWindow; rxWindow == 0 || rxWindow == 1 {
+	if rxWindow == 0 || rxWindow == 1 {
 		if err := setTXInfoForRX1(ctx); err != nil {
 			return err
 		}
 	}
 
-	if rxWindow := config.C.NetworkServer.NetworkSettings.RXWindow; rxWindow == 0 || rxWindow == 2 {
+	if rxWindow == 0 || rxWindow == 2 {
 		if err := setTXInfoForRX2(ctx); err != nil {
 			return err
 		}
@@ -328,43 +387,43 @@ func setTXInfoForRX1(ctx *dataContext) error {
 	}
 
 	// get rx1 data-rate
-	uplinkDR, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, config.C.NetworkServer.Band.Band)
+	uplinkDR, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
 	if err != nil {
 		return errors.Wrap(err, "get data-rate index error")
 	}
 
-	rx1DR, err := config.C.NetworkServer.Band.Band.GetRX1DataRateIndex(uplinkDR, int(ctx.DeviceSession.RX1DROffset))
+	rx1DR, err := band.Band().GetRX1DataRateIndex(uplinkDR, int(ctx.DeviceSession.RX1DROffset))
 	if err != nil {
 		return errors.Wrap(err, "get rx1 data-rate index error")
 	}
 
-	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, rx1DR, config.C.NetworkServer.Band.Band)
+	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, rx1DR, band.Band())
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
 
 	// get rx1 frequency
-	freq, err := config.C.NetworkServer.Band.Band.GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
+	freq, err := band.Band().GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
 	if err != nil {
 		return errors.Wrap(err, "get rx1 frequency error")
 	}
 	txInfo.Frequency = uint32(freq)
 
 	// get timestamp
-	txInfo.Timestamp = rxInfo.Timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().ReceiveDelay1/time.Microsecond)
+	txInfo.Timestamp = rxInfo.Timestamp + uint32(band.Band().GetDefaults().ReceiveDelay1/time.Microsecond)
 	if ctx.DeviceSession.RXDelay > 0 {
 		txInfo.Timestamp = rxInfo.Timestamp + uint32(time.Duration(ctx.DeviceSession.RXDelay)*time.Second/time.Microsecond)
 	}
 
 	// get tx power
-	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
-		txInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
+	if downlinkTXPower != -1 {
+		txInfo.Power = int32(downlinkTXPower)
 	} else {
-		txInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(txInfo.Frequency)))
+		txInfo.Power = int32(band.Band().GetDownlinkTXPower(int(txInfo.Frequency)))
 	}
 
 	// get remaining payload size
-	plSize, err := config.C.NetworkServer.Band.Band.GetMaxPayloadSizeForDataRateIndex(ctx.DeviceProfile.MACVersion, ctx.DeviceProfile.RegParamsRevision, rx1DR)
+	plSize, err := band.Band().GetMaxPayloadSizeForDataRateIndex(ctx.DeviceProfile.MACVersion, ctx.DeviceProfile.RegParamsRevision, rx1DR)
 	if err != nil {
 		return errors.Wrap(err, "get max-payload size error")
 	}
@@ -406,28 +465,28 @@ func setTXInfoForRX2(ctx *dataContext) error {
 	}
 
 	// get data-rate
-	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, int(ctx.DeviceSession.RX2DR), config.C.NetworkServer.Band.Band)
+	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, int(ctx.DeviceSession.RX2DR), band.Band())
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
 
 	// get tx power
-	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
-		txInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
+	if downlinkTXPower != -1 {
+		txInfo.Power = int32(downlinkTXPower)
 	} else {
-		txInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(txInfo.Frequency)))
+		txInfo.Power = int32(band.Band().GetDownlinkTXPower(int(txInfo.Frequency)))
 	}
 
 	// get timestamp (when not tx immediately)
 	if !ctx.Immediately {
-		txInfo.Timestamp = timestamp + uint32(config.C.NetworkServer.Band.Band.GetDefaults().ReceiveDelay2/time.Microsecond)
+		txInfo.Timestamp = timestamp + uint32(band.Band().GetDefaults().ReceiveDelay2/time.Microsecond)
 		if ctx.DeviceSession.RXDelay > 0 {
 			txInfo.Timestamp = timestamp + uint32(time.Second*time.Duration(ctx.DeviceSession.RXDelay+1)/time.Microsecond)
 		}
 	}
 
 	// get remaining payload size
-	plSize, err := config.C.NetworkServer.Band.Band.GetMaxPayloadSizeForDataRateIndex(ctx.DeviceProfile.MACVersion, ctx.DeviceProfile.RegParamsRevision, int(ctx.DeviceSession.RX2DR))
+	plSize, err := band.Band().GetMaxPayloadSizeForDataRateIndex(ctx.DeviceProfile.MACVersion, ctx.DeviceProfile.RegParamsRevision, int(ctx.DeviceSession.RX2DR))
 	if err != nil {
 		return errors.Wrap(err, "get max-payload size error")
 	}
@@ -469,20 +528,20 @@ func setTXInfoForClassB(ctx *dataContext) error {
 	}
 
 	// get data-rate
-	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.DeviceSession.PingSlotDR, config.C.NetworkServer.Band.Band)
+	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.DeviceSession.PingSlotDR, band.Band())
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
 
 	// get tx power
-	if config.C.NetworkServer.NetworkSettings.DownlinkTXPower != -1 {
-		txInfo.Power = int32(config.C.NetworkServer.NetworkSettings.DownlinkTXPower)
+	if downlinkTXPower != -1 {
+		txInfo.Power = int32(downlinkTXPower)
 	} else {
-		txInfo.Power = int32(config.C.NetworkServer.Band.Band.GetDownlinkTXPower(int(txInfo.Frequency)))
+		txInfo.Power = int32(band.Band().GetDownlinkTXPower(int(txInfo.Frequency)))
 	}
 
 	// get remaining payload size
-	plSize, err := config.C.NetworkServer.Band.Band.GetMaxPayloadSizeForDataRateIndex(ctx.DeviceProfile.MACVersion, ctx.DeviceProfile.RegParamsRevision, int(ctx.DeviceSession.PingSlotDR))
+	plSize, err := band.Band().GetMaxPayloadSizeForDataRateIndex(ctx.DeviceProfile.MACVersion, ctx.DeviceProfile.RegParamsRevision, int(ctx.DeviceSession.PingSlotDR))
 	if err != nil {
 		return errors.Wrap(err, "get max-payload size error")
 	}
@@ -512,7 +571,7 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 		remainingPayloadSize = ctx.DownlinkFrames[0].RemainingPayloadSize
 	}
 
-	qi, err := storage.GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(config.C.PostgreSQL.DB, ctx.DeviceSession.DevEUI, remainingPayloadSize, fCnt, ctx.DeviceSession.RoutingProfileID)
+	qi, err := storage.GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(storage.DB(), ctx.DeviceSession.DevEUI, remainingPayloadSize, fCnt, ctx.DeviceSession.RoutingProfileID)
 	if err != nil {
 		if errors.Cause(err) == storage.ErrDoesNotExist {
 			return nil
@@ -528,7 +587,7 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 		ctx.DownlinkFrames[i].RemainingPayloadSize = ctx.DownlinkFrames[i].RemainingPayloadSize - len(ctx.Data)
 	}
 
-	items, err := storage.GetDeviceQueueItemsForDevEUI(config.C.PostgreSQL.DB, ctx.DeviceSession.DevEUI)
+	items, err := storage.GetDeviceQueueItemsForDevEUI(storage.DB(), ctx.DeviceSession.DevEUI)
 	if err != nil {
 		return errors.Wrap(err, "get device-queue items error")
 	}
@@ -550,7 +609,7 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 
 		if ctx.DeviceSession.PingSlotFrequency == 0 {
 			beaconTime := *qi.EmitAtTimeSinceGPSEpoch - (*qi.EmitAtTimeSinceGPSEpoch % (128 * time.Second))
-			freq, err := config.C.NetworkServer.Band.Band.GetPingSlotFrequency(ctx.DeviceSession.DevAddr, beaconTime)
+			freq, err := band.Band().GetPingSlotFrequency(ctx.DeviceSession.DevAddr, beaconTime)
 			if err != nil {
 				return errors.Wrap(err, "get ping-slot frequency error")
 			}
@@ -560,7 +619,7 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 
 	if !qi.Confirmed {
 		// delete when not confirmed
-		if err := storage.DeleteDeviceQueueItem(config.C.PostgreSQL.DB, qi.ID); err != nil {
+		if err := storage.DeleteDeviceQueueItem(storage.DB(), qi.ID); err != nil {
 			return errors.Wrap(err, "delete device-queue item error")
 		}
 	} else {
@@ -580,7 +639,7 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 			qi.TimeoutAfter = &timeout
 		}
 
-		if err := storage.UpdateDeviceQueueItem(config.C.PostgreSQL.DB, &qi); err != nil {
+		if err := storage.UpdateDeviceQueueItem(storage.DB(), &qi); err != nil {
 			return errors.Wrap(err, "update device-queue item error")
 		}
 	}
@@ -623,7 +682,7 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 		// In case mac-commands are disabled in the LoRa Server configuration,
 		// only allow external mac-commands (e.g. scheduled by an external
 		// controller).
-		if config.C.NetworkServer.NetworkSettings.DisableMACCommands {
+		if disableMACCommands {
 			var externalMACCommands []storage.MACCommandBlock
 
 			for i := range ctx.MACCommands {
@@ -669,13 +728,13 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 
 		for _, block := range ctx.MACCommands {
 			// set mac-command pending
-			if err := storage.SetPendingMACCommand(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, block); err != nil {
+			if err := storage.SetPendingMACCommand(storage.RedisPool(), ctx.DeviceSession.DevEUI, block); err != nil {
 				return errors.Wrap(err, "set mac-command pending error")
 			}
 
 			// delete from queue, if external
 			if block.External {
-				if err := storage.DeleteMACCommandQueueItem(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, block); err != nil {
+				if err := storage.DeleteMACCommandQueueItem(storage.RedisPool(), ctx.DeviceSession.DevEUI, block); err != nil {
 					return errors.Wrap(err, "delete mac-command block from queue error")
 				}
 			}
@@ -686,9 +745,9 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 }
 
 func requestCustomChannelReconfiguration(ctx *dataContext) error {
-	wantedChannels := make(map[int]band.Channel)
-	for _, i := range config.C.NetworkServer.Band.Band.GetCustomUplinkChannelIndices() {
-		c, err := config.C.NetworkServer.Band.Band.GetUplinkChannel(i)
+	wantedChannels := make(map[int]loraband.Channel)
+	for _, i := range band.Band().GetCustomUplinkChannelIndices() {
+		c, err := band.Band().GetUplinkChannel(i)
 		if err != nil {
 			return errors.Wrap(err, "get uplink channel error")
 		}
@@ -749,7 +808,7 @@ func requestADRChange(ctx *dataContext) error {
 }
 
 func getMACCommandsFromQueue(ctx *dataContext) error {
-	blocks, err := storage.GetMACCommandQueueItems(config.C.Redis.Pool, ctx.DeviceSession.DevEUI)
+	blocks, err := storage.GetMACCommandQueueItems(storage.RedisPool(), ctx.DeviceSession.DevEUI)
 	if err != nil {
 		return errors.Wrap(err, "get mac-command queue items error")
 	}
@@ -790,7 +849,7 @@ func setPHYPayloads(ctx *dataContext) error {
 			FHDR: lorawan.FHDR{
 				DevAddr: ctx.DeviceSession.DevAddr,
 				FCtrl: lorawan.FCtrl{
-					ADR:      !config.C.NetworkServer.NetworkSettings.DisableADR,
+					ADR:      !disableADR,
 					ACK:      ctx.ACK,
 					FPending: ctx.MoreData,
 				},
@@ -887,7 +946,7 @@ func sendDownlinkFrame(ctx *dataContext) error {
 	}
 
 	// send the packet to the gateway
-	if err := config.C.NetworkServer.Gateway.Backend.Backend.SendTXPacket(ctx.DownlinkFrames[0].DownlinkFrame); err != nil {
+	if err := gateway.Backend().SendTXPacket(ctx.DownlinkFrames[0].DownlinkFrame); err != nil {
 		return errors.Wrap(err, "send downlink-frame to gateway error")
 	}
 
@@ -895,7 +954,7 @@ func sendDownlinkFrame(ctx *dataContext) error {
 	ctx.DeviceSession.LastDownlinkTX = time.Now()
 
 	// log for gateway (with encrypted mac-commands)
-	if err := framelog.LogDownlinkFrameForGateway(config.C.Redis.Pool, ctx.DownlinkFrames[0].DownlinkFrame); err != nil {
+	if err := framelog.LogDownlinkFrameForGateway(storage.RedisPool(), ctx.DownlinkFrames[0].DownlinkFrame); err != nil {
 		log.WithError(err).Error("log downlink frame for gateway error")
 	}
 
@@ -926,7 +985,7 @@ func sendDownlinkFrame(ctx *dataContext) error {
 		}
 
 		// log frame
-		if err := framelog.LogDownlinkFrameForDevEUI(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, gw.DownlinkFrame{
+		if err := framelog.LogDownlinkFrameForDevEUI(storage.RedisPool(), ctx.DeviceSession.DevEUI, gw.DownlinkFrame{
 			Token:      uint32(ctx.DownlinkFrames[0].DownlinkFrame.Token),
 			TxInfo:     ctx.DownlinkFrames[0].DownlinkFrame.TxInfo,
 			PhyPayload: phyB,
@@ -943,7 +1002,7 @@ func sendDownlinkFrame(ctx *dataContext) error {
 }
 
 func saveDeviceSession(ctx *dataContext) error {
-	if err := storage.SaveDeviceSession(config.C.Redis.Pool, ctx.DeviceSession); err != nil {
+	if err := storage.SaveDeviceSession(storage.RedisPool(), ctx.DeviceSession); err != nil {
 		return errors.Wrap(err, "save device-session error")
 	}
 	return nil
@@ -951,7 +1010,7 @@ func saveDeviceSession(ctx *dataContext) error {
 
 func getDeviceProfile(ctx *dataContext) error {
 	var err error
-	ctx.DeviceProfile, err = storage.GetAndCacheDeviceProfile(config.C.PostgreSQL.DB, config.C.Redis.Pool, ctx.DeviceSession.DeviceProfileID)
+	ctx.DeviceProfile, err = storage.GetAndCacheDeviceProfile(storage.DB(), storage.RedisPool(), ctx.DeviceSession.DeviceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get device-profile error")
 	}
@@ -960,7 +1019,7 @@ func getDeviceProfile(ctx *dataContext) error {
 
 func getServiceProfile(ctx *dataContext) error {
 	var err error
-	ctx.ServiceProfile, err = storage.GetAndCacheServiceProfile(config.C.PostgreSQL.DB, config.C.Redis.Pool, ctx.DeviceSession.ServiceProfileID)
+	ctx.ServiceProfile, err = storage.GetAndCacheServiceProfile(storage.DB(), storage.RedisPool(), ctx.DeviceSession.ServiceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
@@ -970,12 +1029,11 @@ func getServiceProfile(ctx *dataContext) error {
 func checkLastDownlinkTimestamp(ctx *dataContext) error {
 	// in case of Class-C validate that between now and the last downlink
 	// tx timestamp is at least the class-c lock duration
-	lockDuration := config.C.NetworkServer.Scheduler.ClassC.DownlinkLockDuration
-	if ctx.DeviceProfile.SupportsClassC && time.Now().Sub(ctx.DeviceSession.LastDownlinkTX) < lockDuration {
+	if ctx.DeviceProfile.SupportsClassC && time.Now().Sub(ctx.DeviceSession.LastDownlinkTX) < classCDownlinkLockDuration {
 		log.WithFields(log.Fields{
 			"time":                           time.Now(),
 			"last_downlink_tx_time":          ctx.DeviceSession.LastDownlinkTX,
-			"class_c_downlink_lock_duration": lockDuration,
+			"class_c_downlink_lock_duration": classCDownlinkLockDuration,
 		}).Debug("skip next downlink queue scheduling dueue to class-c downlink lock")
 		return ErrAbort
 	}
@@ -996,7 +1054,7 @@ func saveRemainingFrames(ctx *dataContext) error {
 		downlinkFrames = append(downlinkFrames, ctx.DownlinkFrames[i].DownlinkFrame)
 	}
 
-	if err := storage.SaveDownlinkFrames(config.C.Redis.Pool, ctx.DeviceSession.DevEUI, downlinkFrames); err != nil {
+	if err := storage.SaveDownlinkFrames(storage.RedisPool(), ctx.DeviceSession.DevEUI, downlinkFrames); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
 	}
 

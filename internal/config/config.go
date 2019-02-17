@@ -3,16 +3,7 @@ package config
 import (
 	"time"
 
-	"github.com/gomodule/redigo/redis"
-
-	"github.com/brocaar/loraserver/api/geo"
 	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/internal/api/client/asclient"
-	"github.com/brocaar/loraserver/internal/backend"
-	"github.com/brocaar/loraserver/internal/backend/gateway/gcppubsub"
-	"github.com/brocaar/loraserver/internal/backend/gateway/mqtt"
-	"github.com/brocaar/loraserver/internal/common"
-	"github.com/brocaar/loraserver/internal/joinserver"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 )
@@ -29,14 +20,12 @@ type Config struct {
 	PostgreSQL struct {
 		DSN         string `mapstructure:"dsn"`
 		Automigrate bool
-		DB          *common.DBLogger
 	} `mapstructure:"postgresql"`
 
 	Redis struct {
 		URL         string        `mapstructure:"url"`
 		MaxIdle     int           `mapstructure:"max_idle"`
 		IdleTimeout time.Duration `mapstructure:"idle_timeout"`
-		Pool        *redis.Pool
 	}
 
 	NetworkServer struct {
@@ -47,7 +36,6 @@ type Config struct {
 		GetDownlinkDataDelay time.Duration `mapstructure:"get_downlink_data_delay"`
 
 		Band struct {
-			Band               band.Band
 			Name               band.Name
 			DwellTime400ms     bool `mapstructure:"dwell_time_400ms"`
 			RepeaterCompatible bool `mapstructure:"repeater_compatible"`
@@ -105,27 +93,68 @@ type Config struct {
 			}
 
 			Backend struct {
-				Type      string           `mapstructure:"type"`
-				Backend   backend.Gateway  `mapstructure:"-"`
-				MQTT      mqtt.Config      `mapstructure:"mqtt"`
-				GCPPubSub gcppubsub.Config `mapstructure:"gcp_pub_sub"`
+				Type string `mapstructure:"type"`
+
+				MQTT struct {
+					Server                string
+					Username              string
+					Password              string
+					QOS                   uint8  `mapstructure:"qos"`
+					CleanSession          bool   `mapstructure:"clean_session"`
+					ClientID              string `mapstructure:"client_id"`
+					CACert                string `mapstructure:"ca_cert"`
+					TLSCert               string `mapstructure:"tls_cert"`
+					TLSKey                string `mapstructure:"tls_key"`
+					UplinkTopicTemplate   string `mapstructure:"uplink_topic_template"`
+					DownlinkTopicTemplate string `mapstructure:"downlink_topic_template"`
+					StatsTopicTemplate    string `mapstructure:"stats_topic_template"`
+					AckTopicTemplate      string `mapstructure:"ack_topic_template"`
+					ConfigTopicTemplate   string `mapstructure:"config_topic_template"`
+				} `mapstructure:"mqtt"`
+
+				GCPPubSub struct {
+					CredentialsFile         string        `mapstructure:"credentials_file"`
+					ProjectID               string        `mapstructure:"project_id"`
+					UplinkTopicName         string        `mapstructure:"uplink_topic_name"`
+					DownlinkTopicName       string        `mapstructure:"downlink_topic_name"`
+					UplinkRetentionDuration time.Duration `mapstructure:"uplink_retention_duration"`
+				} `mapstructure:"gcp_pub_sub"`
 			}
 		}
 	} `mapstructure:"network_server"`
 
 	GeolocationServer struct {
-		Client  geo.GeolocationServerServiceClient `mapstructure:"-"`
-		Server  string                             `mapstructure:"server"`
-		CACert  string                             `mapstructure:"ca_cert"`
-		TLSCert string                             `mapstructure:"tls_cert"`
-		TLSKey  string                             `mapstructure:"tls_key"`
+		Server  string `mapstructure:"server"`
+		CACert  string `mapstructure:"ca_cert"`
+		TLSCert string `mapstructure:"tls_cert"`
+		TLSKey  string `mapstructure:"tls_key"`
 	} `mapstructure:"geolocation_server"`
 
-	JoinServer joinserver.Config `mapstructure:"join_server"`
+	JoinServer struct {
+		ResolveJoinEUI      bool   `mapstructure:"resolve_join_eui"`
+		ResolveDomainSuffix string `mapstructure:"resolve_domain_suffix"`
 
-	ApplicationServer struct {
-		Pool asclient.Pool
-	}
+		Certificates []struct {
+			JoinEUI string `mapstructure:"join_eui"`
+			CaCert  string `mapstructure:"ca_cert"`
+			TLSCert string `mapstructure:"tls_cert"`
+			TLSKey  string `mapstructure:"tls_key"`
+		} `mapstructure:"certificates"`
+
+		Default struct {
+			Server  string
+			CACert  string `mapstructure:"ca_cert"`
+			TLSCert string `mapstructure:"tls_cert"`
+			TLSKey  string `mapstructure:"tls_key"`
+		}
+
+		KEK struct {
+			Set []struct {
+				Label string
+				KEK   string `mapstructure:"kek"`
+			}
+		} `mapstructure:"kek"`
+	} `mapstructure:"join_server"`
 
 	NetworkController struct {
 		Client nc.NetworkControllerServiceClient
@@ -163,9 +192,6 @@ var SpreadFactorToRequiredSNRTable = map[int]float64{
 
 // C holds the global configuration.
 var C Config
-
-// SchedulerBatchSize contains the batch size of the Class-C scheduler
-var SchedulerBatchSize = 100
 
 // ClassBEnqueueMargin contains the margin duration when scheduling Class-B
 // messages.

@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/lorawan"
 	"github.com/stretchr/testify/require"
+
+	"github.com/brocaar/lorawan"
 )
 
 func (ts *StorageTestSuite) TestDevice() {

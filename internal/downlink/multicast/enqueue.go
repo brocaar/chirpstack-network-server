@@ -7,7 +7,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 
-	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/downlink/data/classb"
 	"github.com/brocaar/loraserver/internal/gps"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -62,7 +61,7 @@ func EnqueueQueueItem(p *redis.Pool, db sqlx.Ext, qi storage.MulticastQueueItem)
 		}
 
 		for _, gatewayID := range gatewayIDs {
-			ts = ts.Add(config.C.NetworkServer.Scheduler.ClassC.DownlinkLockDuration)
+			ts = ts.Add(downlinkLockDuration)
 			qi.GatewayID = gatewayID
 			qi.ScheduleAt = ts
 			if err = storage.CreateMulticastQueueItem(db, &qi); err != nil {
@@ -84,7 +83,7 @@ func EnqueueQueueItem(p *redis.Pool, db sqlx.Ext, qi storage.MulticastQueueItem)
 		}
 
 		if scheduleTS == 0 {
-			scheduleTS = gps.Time(time.Now().Add(config.ClassBEnqueueMargin)).TimeSinceGPSEpoch()
+			scheduleTS = gps.Time(time.Now().Add(classBEnqueueMargin)).TimeSinceGPSEpoch()
 		}
 
 		for _, gatewayID := range gatewayIDs {
@@ -94,7 +93,7 @@ func EnqueueQueueItem(p *redis.Pool, db sqlx.Ext, qi storage.MulticastQueueItem)
 			}
 
 			qi.EmitAtTimeSinceGPSEpoch = &scheduleTS
-			qi.ScheduleAt = time.Time(gps.NewFromTimeSinceGPSEpoch(scheduleTS)).Add(-2 * config.C.NetworkServer.Scheduler.SchedulerInterval)
+			qi.ScheduleAt = time.Time(gps.NewFromTimeSinceGPSEpoch(scheduleTS)).Add(-2 * schedulerInterval)
 			qi.GatewayID = gatewayID
 
 			if err = storage.CreateMulticastQueueItem(db, &qi); err != nil {

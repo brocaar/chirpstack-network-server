@@ -22,14 +22,19 @@ import (
 
 type NetworkServerAPITestSuite struct {
 	suite.Suite
-	test.DatabaseTestSuiteBase
-
 	api ns.NetworkServerServiceServer
 }
 
 func (ts *NetworkServerAPITestSuite) SetupSuite() {
-	ts.DatabaseTestSuiteBase.SetupSuite()
+	assert := require.New(ts.T())
+	conf := test.GetConfig()
+	assert.NoError(storage.Setup(conf))
+	test.MustResetDB(storage.DB().DB)
 	ts.api = NewNetworkServerAPI()
+}
+
+func (ts *NetworkServerAPITestSuite) SetupTest() {
+	test.MustFlushRedis(storage.RedisPool())
 }
 
 func (ts *NetworkServerAPITestSuite) TestMulticastGroup() {
@@ -38,8 +43,8 @@ func (ts *NetworkServerAPITestSuite) TestMulticastGroup() {
 	var rp storage.RoutingProfile
 	var sp storage.ServiceProfile
 
-	assert.NoError(storage.CreateRoutingProfile(ts.DB(), &rp))
-	assert.NoError(storage.CreateServiceProfile(ts.DB(), &sp))
+	assert.NoError(storage.CreateRoutingProfile(storage.DB(), &rp))
+	assert.NoError(storage.CreateServiceProfile(storage.DB(), &sp))
 
 	mg := ns.MulticastGroup{
 		McAddr:           []byte{1, 2, 3, 4},
@@ -138,16 +143,16 @@ func (ts *NetworkServerAPITestSuite) TestMulticastQueue() {
 		},
 	}
 	for i := range gateways {
-		assert.NoError(storage.CreateGateway(ts.DB(), &gateways[i]))
+		assert.NoError(storage.CreateGateway(storage.DB(), &gateways[i]))
 	}
 
 	var rp storage.RoutingProfile
 	var sp storage.ServiceProfile
 	var dp storage.DeviceProfile
 
-	assert.NoError(storage.CreateRoutingProfile(ts.DB(), &rp))
-	assert.NoError(storage.CreateServiceProfile(ts.DB(), &sp))
-	assert.NoError(storage.CreateDeviceProfile(ts.DB(), &dp))
+	assert.NoError(storage.CreateRoutingProfile(storage.DB(), &rp))
+	assert.NoError(storage.CreateServiceProfile(storage.DB(), &sp))
+	assert.NoError(storage.CreateDeviceProfile(storage.DB(), &dp))
 
 	devices := []storage.Device{
 		{
@@ -164,8 +169,8 @@ func (ts *NetworkServerAPITestSuite) TestMulticastQueue() {
 		},
 	}
 	for i := range devices {
-		assert.NoError(storage.CreateDevice(ts.DB(), &devices[i]))
-		assert.NoError(storage.SaveDeviceGatewayRXInfoSet(ts.RedisPool(), storage.DeviceGatewayRXInfoSet{
+		assert.NoError(storage.CreateDevice(storage.DB(), &devices[i]))
+		assert.NoError(storage.SaveDeviceGatewayRXInfoSet(storage.RedisPool(), storage.DeviceGatewayRXInfoSet{
 			DevEUI: devices[i].DevEUI,
 			DR:     3,
 			Items: []storage.DeviceGatewayRXInfo{
@@ -188,10 +193,10 @@ func (ts *NetworkServerAPITestSuite) TestMulticastQueue() {
 			ServiceProfileID: sp.ID,
 			RoutingProfileID: rp.ID,
 		}
-		assert.NoError(storage.CreateMulticastGroup(ts.DB(), &mg))
+		assert.NoError(storage.CreateMulticastGroup(storage.DB(), &mg))
 
 		for _, d := range devices {
-			assert.NoError(storage.AddDeviceToMulticastGroup(ts.DB(), d.DevEUI, mg.ID))
+			assert.NoError(storage.AddDeviceToMulticastGroup(storage.DB(), d.DevEUI, mg.ID))
 		}
 
 		ts.T().Run("Create", func(t *testing.T) {
@@ -240,7 +245,7 @@ func (ts *NetworkServerAPITestSuite) TestMulticastQueue() {
 			t.Run("Test emit and schedule at", func(t *testing.T) {
 				assert := require.New(t)
 
-				items, err := storage.GetMulticastQueueItemsForMulticastGroup(ts.DB(), mg.ID)
+				items, err := storage.GetMulticastQueueItemsForMulticastGroup(storage.DB(), mg.ID)
 				assert.NoError(err)
 				assert.Len(items, 4)
 
@@ -277,10 +282,10 @@ func (ts *NetworkServerAPITestSuite) TestMulticastQueue() {
 			ServiceProfileID: sp.ID,
 			RoutingProfileID: rp.ID,
 		}
-		assert.NoError(storage.CreateMulticastGroup(ts.DB(), &mg))
+		assert.NoError(storage.CreateMulticastGroup(storage.DB(), &mg))
 
 		for _, d := range devices {
-			assert.NoError(storage.AddDeviceToMulticastGroup(ts.DB(), d.DevEUI, mg.ID))
+			assert.NoError(storage.AddDeviceToMulticastGroup(storage.DB(), d.DevEUI, mg.ID))
 		}
 
 		ts.T().Run("Create", func(t *testing.T) {
@@ -329,7 +334,7 @@ func (ts *NetworkServerAPITestSuite) TestMulticastQueue() {
 			t.Run("Test emit and schedule at", func(t *testing.T) {
 				assert := require.New(t)
 
-				items, err := storage.GetMulticastQueueItemsForMulticastGroup(ts.DB(), mg.ID)
+				items, err := storage.GetMulticastQueueItemsForMulticastGroup(storage.DB(), mg.ID)
 				assert.NoError(err)
 				assert.Len(items, 4)
 
@@ -357,13 +362,13 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 	assert := require.New(ts.T())
 
 	rp := storage.RoutingProfile{}
-	assert.NoError(storage.CreateRoutingProfile(ts.DB(), &rp))
+	assert.NoError(storage.CreateRoutingProfile(storage.DB(), &rp))
 
 	sp := storage.ServiceProfile{}
-	assert.NoError(storage.CreateServiceProfile(ts.DB(), &sp))
+	assert.NoError(storage.CreateServiceProfile(storage.DB(), &sp))
 
 	dp := storage.DeviceProfile{}
-	assert.NoError(storage.CreateDeviceProfile(ts.DB(), &dp))
+	assert.NoError(storage.CreateDeviceProfile(storage.DB(), &dp))
 
 	devEUI := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
 
@@ -398,7 +403,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 			assert := require.New(t)
 
 			rp2 := storage.RoutingProfile{}
-			assert.NoError(storage.CreateRoutingProfile(ts.DB(), &rp2))
+			assert.NoError(storage.CreateRoutingProfile(storage.DB(), &rp2))
 
 			d.RoutingProfileId = rp2.ID.Bytes()
 			_, err := ts.api.UpdateDevice(context.Background(), &ns.UpdateDeviceRequest{
@@ -420,7 +425,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 				RoutingProfileID: rp.ID,
 				ServiceProfileID: sp.ID,
 			}
-			assert.NoError(storage.CreateMulticastGroup(ts.DB(), &mg1))
+			assert.NoError(storage.CreateMulticastGroup(storage.DB(), &mg1))
 
 			t.Run("Add", func(t *testing.T) {
 				_, err := ts.api.AddDeviceToMulticastGroup(context.Background(), &ns.AddDeviceToMulticastGroupRequest{
