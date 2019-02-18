@@ -267,7 +267,6 @@ func setupJoinServer() error {
 
 func setupNetworkController() error {
 	// TODO: move this logic to controller.Setup function
-	var ncClient nc.NetworkControllerServiceClient
 	if config.C.NetworkController.Server != "" {
 		// setup network-controller client
 		log.WithFields(log.Fields{
@@ -288,10 +287,9 @@ func setupNetworkController() error {
 		if err != nil {
 			return errors.Wrap(err, "network-controller dial error")
 		}
-		ncClient = nc.NewNetworkControllerServiceClient(ncConn)
+		ncClient := nc.NewNetworkControllerServiceClient(ncConn)
+		controller.SetClient(ncClient)
 	}
-
-	controller.SetClient(ncClient)
 
 	return nil
 }
