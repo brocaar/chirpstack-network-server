@@ -4,19 +4,18 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
-
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
-
-	"github.com/brocaar/loraserver/internal/storage"
 	loraband "github.com/brocaar/lorawan/band"
 )
 
@@ -40,6 +39,7 @@ func (ts *OTAATestSuite) SetupSuite() {
 	ts.CreateDevice(storage.Device{
 		DevEUI:            lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
 		ReferenceAltitude: 5.6,
+		Mode:              storage.DeviceModeB,
 	})
 
 	ts.CreateGateway(storage.Gateway{
@@ -250,6 +250,7 @@ func (ts *OTAATestSuite) TestLW10() {
 					ReferenceAltitude:     5.6,
 				}),
 				AssertDeviceQueueItems([]storage.DeviceQueueItem{}),
+				AssertDeviceMode(storage.DeviceModeA),
 			},
 		},
 		{
@@ -337,6 +338,7 @@ func (ts *OTAATestSuite) TestLW10() {
 					NbTrans:               1,
 					ReferenceAltitude:     5.6,
 				}),
+				AssertDeviceMode(storage.DeviceModeA),
 			},
 		},
 		{
@@ -385,6 +387,53 @@ func (ts *OTAATestSuite) TestLW10() {
 					RxDelay: conf.NetworkServer.NetworkSettings.RX1Delay,
 					CFList:  backend.HEXBytes(cFListB),
 				}),
+				AssertDeviceMode(storage.DeviceModeA),
+			},
+		},
+		{
+			Name: "join-request accepted, Class-B supported",
+			BeforeFunc: func(*OTAATest) error {
+				ts.DeviceProfile.SupportsClassB = true
+				ts.DeviceProfile.SupportsClassC = false
+				return storage.UpdateDeviceProfile(storage.DB(), ts.DeviceProfile)
+			},
+			RXInfo:     rxInfo,
+			TXInfo:     txInfo,
+			PHYPayload: jrPayload,
+			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
+				PHYPayload: backend.HEXBytes(jaBytes),
+				Result: backend.Result{
+					ResultCode: backend.Success,
+				},
+				NwkSKey: &backend.KeyEnvelope{
+					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				},
+			},
+			Assert: []Assertion{
+				AssertDeviceMode(storage.DeviceModeA),
+			},
+		},
+		{
+			Name: "join-request accepted, Class-C supported",
+			BeforeFunc: func(*OTAATest) error {
+				ts.DeviceProfile.SupportsClassB = false
+				ts.DeviceProfile.SupportsClassC = true
+				return storage.UpdateDeviceProfile(storage.DB(), ts.DeviceProfile)
+			},
+			RXInfo:     rxInfo,
+			TXInfo:     txInfo,
+			PHYPayload: jrPayload,
+			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
+				PHYPayload: backend.HEXBytes(jaBytes),
+				Result: backend.Result{
+					ResultCode: backend.Success,
+				},
+				NwkSKey: &backend.KeyEnvelope{
+					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				},
+			},
+			Assert: []Assertion{
+				AssertDeviceMode(storage.DeviceModeC),
 			},
 		},
 	}
@@ -401,6 +450,8 @@ func (ts *OTAATestSuite) TestLW11() {
 
 	conf := test.GetConfig()
 
+	ts.DeviceProfile.SupportsClassB = false
+	ts.DeviceProfile.SupportsClassC = false
 	ts.DeviceProfile.MACVersion = "1.1.0"
 	assert.NoError(storage.UpdateDeviceProfile(storage.DB(), ts.DeviceProfile))
 
@@ -566,6 +617,7 @@ func (ts *OTAATestSuite) TestLW11() {
 					ReferenceAltitude:     5.6,
 				}),
 				AssertDeviceQueueItems([]storage.DeviceQueueItem{}),
+				AssertDeviceMode(storage.DeviceModeA),
 			},
 		},
 		{
@@ -688,6 +740,53 @@ func (ts *OTAATestSuite) TestLW11() {
 					ReferenceAltitude:     5.6,
 				}),
 				AssertDeviceQueueItems([]storage.DeviceQueueItem{}),
+				AssertDeviceMode(storage.DeviceModeA),
+			},
+		},
+		{
+			Name: "join-request accepted, Class-B supported",
+			BeforeFunc: func(*OTAATest) error {
+				ts.DeviceProfile.SupportsClassB = true
+				ts.DeviceProfile.SupportsClassC = false
+				return storage.UpdateDeviceProfile(storage.DB(), ts.DeviceProfile)
+			},
+			RXInfo:     rxInfo,
+			TXInfo:     txInfo,
+			PHYPayload: jrPayload,
+			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
+				PHYPayload: backend.HEXBytes(jaBytes),
+				Result: backend.Result{
+					ResultCode: backend.Success,
+				},
+				NwkSKey: &backend.KeyEnvelope{
+					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				},
+			},
+			Assert: []Assertion{
+				AssertDeviceMode(storage.DeviceModeA),
+			},
+		},
+		{
+			Name: "join-request accepted, Class-C supported",
+			BeforeFunc: func(*OTAATest) error {
+				ts.DeviceProfile.SupportsClassB = false
+				ts.DeviceProfile.SupportsClassC = true
+				return storage.UpdateDeviceProfile(storage.DB(), ts.DeviceProfile)
+			},
+			RXInfo:     rxInfo,
+			TXInfo:     txInfo,
+			PHYPayload: jrPayload,
+			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
+				PHYPayload: backend.HEXBytes(jaBytes),
+				Result: backend.Result{
+					ResultCode: backend.Success,
+				},
+				NwkSKey: &backend.KeyEnvelope{
+					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				},
+			},
+			Assert: []Assertion{
+				AssertDeviceMode(storage.DeviceModeA), // the device will signal with the DeviceModeInd that it has changed to Class-C!
 			},
 		},
 	}

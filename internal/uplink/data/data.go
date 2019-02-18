@@ -362,20 +362,39 @@ func setBeaconLocked(ctx *dataContext) error {
 	}
 
 	ctx.DeviceSession.BeaconLocked = ctx.MACPayload.FHDR.FCtrl.ClassB
+
 	if ctx.DeviceSession.BeaconLocked {
+		d, err := storage.GetDevice(storage.DB(), ctx.DeviceSession.DevEUI)
+		if err != nil {
+			return errors.Wrap(err, "get device")
+		}
+		d.Mode = storage.DeviceModeB
+		if err := storage.UpdateDevice(storage.DB(), &d); err != nil {
+			return errors.Wrap(err, "update device error")
+		}
+
 		if err := classb.ScheduleDeviceQueueToPingSlotsForDevEUI(storage.DB(), ctx.DeviceProfile, ctx.DeviceSession); err != nil {
 			return errors.Wrap(err, "schedule device-queue to ping-slots error")
 		}
 
 		log.WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,
-		}).Info("class-b beacon locked")
-	}
+			"mode":    storage.DeviceModeB,
+		}).Info("device changed mode")
+	} else {
+		d, err := storage.GetDevice(storage.DB(), ctx.DeviceSession.DevEUI)
+		if err != nil {
+			return errors.Wrap(err, "get device")
+		}
+		d.Mode = storage.DeviceModeA
+		if err := storage.UpdateDevice(storage.DB(), &d); err != nil {
+			return errors.Wrap(err, "update device error")
+		}
 
-	if !ctx.DeviceSession.BeaconLocked {
 		log.WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,
-		}).Info("class-b beacon lost")
+			"mode":    storage.DeviceModeA,
+		}).Info("device changed mode")
 	}
 
 	return nil

@@ -36,6 +36,8 @@ func Handle(ds *storage.DeviceSession, dp storage.DeviceProfile, sp storage.Serv
 		return handleResetInd(ds, dp, block)
 	case lorawan.RejoinParamSetupAns:
 		return handleRejoinParamSetupAns(ds, block, pending)
+	case lorawan.DeviceModeInd:
+		return handleDeviceModeInd(ds, block)
 	default:
 		return nil, fmt.Errorf("undefined CID %d", block.CID)
 	}

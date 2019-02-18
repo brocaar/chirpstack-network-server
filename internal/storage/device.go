@@ -10,6 +10,16 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// DeviceMode defines the mode in which the device operates.
+type DeviceMode string
+
+// Available device modes.
+const (
+	DeviceModeA DeviceMode = "A"
+	DeviceModeB DeviceMode = "B"
+	DeviceModeC DeviceMode = "C"
+)
+
 // Device defines a LoRaWAN device.
 type Device struct {
 	DevEUI            lorawan.EUI64 `db:"dev_eui"`
@@ -20,6 +30,7 @@ type Device struct {
 	RoutingProfileID  uuid.UUID     `db:"routing_profile_id"`
 	SkipFCntCheck     bool          `db:"skip_fcnt_check"`
 	ReferenceAltitude float64       `db:"reference_altitude"`
+	Mode              DeviceMode    `db:"mode"`
 }
 
 // DeviceActivation defines the device-activation for a LoRaWAN device.
@@ -51,8 +62,9 @@ func CreateDevice(db sqlx.Execer, d *Device) error {
 			service_profile_id,
 			routing_profile_id,
 			skip_fcnt_check,
-			reference_altitude
-		) values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+			reference_altitude,
+			mode
+		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 		d.DevEUI[:],
 		d.CreatedAt,
 		d.UpdatedAt,
@@ -61,6 +73,7 @@ func CreateDevice(db sqlx.Execer, d *Device) error {
 		d.RoutingProfileID,
 		d.SkipFCntCheck,
 		d.ReferenceAltitude,
+		d.Mode,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -94,7 +107,8 @@ func UpdateDevice(db sqlx.Execer, d *Device) error {
 			service_profile_id = $4,
 			routing_profile_id = $5,
 			skip_fcnt_check = $6,
-			reference_altitude = $7
+			reference_altitude = $7,
+			mode = $8
 		where
 			dev_eui = $1`,
 		d.DevEUI[:],
@@ -104,6 +118,7 @@ func UpdateDevice(db sqlx.Execer, d *Device) error {
 		d.RoutingProfileID,
 		d.SkipFCntCheck,
 		d.ReferenceAltitude,
+		d.Mode,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")

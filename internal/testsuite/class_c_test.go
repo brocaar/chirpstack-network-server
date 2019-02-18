@@ -29,6 +29,10 @@ func (ts *ClassCTestSuite) SetupTest() {
 
 	ts.CreateDeviceProfile(storage.DeviceProfile{SupportsClassC: true})
 
+	ts.CreateDevice(storage.Device{
+		Mode: storage.DeviceModeC,
+	})
+
 	// note that the CreateDeviceSession will automatically set
 	// the device, profiles etc.. :)
 	ds := storage.DeviceSession{
@@ -47,6 +51,7 @@ func (ts *ClassCTestSuite) SetupTest() {
 		NwkSEncKey:  lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
 	}
 	ts.CreateDeviceSession(ds)
+
 }
 
 func (ts *ClassCTestSuite) TestClassC() {

@@ -17,14 +17,12 @@ import (
 	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
-	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/gps"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
-	loraband "github.com/brocaar/lorawan/band"
 )
 
 func TestNetworkServerAPI(t *testing.T) {
@@ -496,142 +494,6 @@ func TestNetworkServerAPI(t *testing.T) {
 						},
 					})
 					So(err, ShouldBeNil)
-
-					Convey("Then the device-queue was flushed", func() {
-						items, err := storage.GetDeviceQueueItemsForDevEUI(storage.DB(), d.DevEUI)
-						So(err, ShouldBeNil)
-						So(items, ShouldHaveLength, 0)
-					})
-
-					Convey("Then the device was activated as expected", func() {
-						ds, err := storage.GetDeviceSession(storage.RedisPool(), devEUI)
-						So(err, ShouldBeNil)
-						So(ds, ShouldResemble, storage.DeviceSession{
-							DeviceProfileID:  dp.ID,
-							ServiceProfileID: sp.ID,
-							RoutingProfileID: rp.ID,
-
-							DevAddr:               devAddr,
-							DevEUI:                devEUI,
-							SNwkSIntKey:           sNwkSIntKey,
-							FNwkSIntKey:           fNwkSIntKey,
-							NwkSEncKey:            nwkSEncKey,
-							FCntUp:                10,
-							NFCntDown:             11,
-							AFCntDown:             12,
-							SkipFCntValidation:    true,
-							EnabledUplinkChannels: band.Band().GetEnabledUplinkChannelIndices(),
-							ChannelFrequencies:    []int{868100000, 868300000, 868500000},
-							ExtraUplinkChannels:   map[int]loraband.Channel{},
-							RXDelay:               3,
-							RX1DROffset:           2,
-							RX2DR:                 5,
-							RX2Frequency:          868900000,
-							MaxSupportedDR:        6,
-							UplinkGatewayHistory:  make(map[lorawan.EUI64]storage.UplinkGatewayHistory),
-							PingSlotNb:            128,
-							PingSlotDR:            5,
-							PingSlotFrequency:     868100000,
-							NbTrans:               1,
-							MACVersion:            "1.0.2",
-						})
-					})
-
-					Convey("Then GetDeviceActivation returns the expected response", func() {
-						resp, err := api.GetDeviceActivation(ctx, &ns.GetDeviceActivationRequest{
-							DevEui: devEUI[:],
-						})
-						So(err, ShouldBeNil)
-						So(resp, ShouldResemble, &ns.GetDeviceActivationResponse{
-							DeviceActivation: &ns.DeviceActivation{
-								DevEui:        devEUI[:],
-								DevAddr:       devAddr[:],
-								SNwkSIntKey:   sNwkSIntKey[:],
-								FNwkSIntKey:   fNwkSIntKey[:],
-								NwkSEncKey:    nwkSEncKey[:],
-								FCntUp:        10,
-								NFCntDown:     11,
-								AFCntDown:     12,
-								SkipFCntCheck: true,
-							},
-						})
-					})
-
-					Convey("For LoRaWAN 1.0", func() {
-						Convey("Then GetNextDownlinkFCntForDevEUI returns the expected FCnt", func() {
-							resp, err := api.GetNextDownlinkFCntForDevEUI(ctx, &ns.GetNextDownlinkFCntForDevEUIRequest{
-								DevEui: devEUI[:],
-							})
-							So(err, ShouldBeNil)
-							So(resp.FCnt, ShouldEqual, 11)
-						})
-					})
-
-					Convey("For LoRaWAN 1.1", func() {
-						Convey("Then GetNextDownlinkFCntForDevEUI returns the expected FCnt", func() {
-							ds, err := storage.GetDeviceSession(storage.RedisPool(), devEUI)
-							So(err, ShouldBeNil)
-
-							ds.MACVersion = "1.1.0"
-							So(storage.SaveDeviceSession(storage.RedisPool(), ds), ShouldBeNil)
-
-							resp, err := api.GetNextDownlinkFCntForDevEUI(ctx, &ns.GetNextDownlinkFCntForDevEUIRequest{
-								DevEui: devEUI[:],
-							})
-							So(err, ShouldBeNil)
-							So(resp.FCnt, ShouldEqual, 12)
-						})
-					})
-
-					Convey("Given an item in the device-queue", func() {
-						_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
-							Item: &ns.DeviceQueueItem{
-								DevEui:     devEUI[:],
-								FrmPayload: []byte{1, 2, 3, 4},
-								FCnt:       11,
-								FPort:      20,
-							},
-						})
-						So(err, ShouldBeNil)
-
-						Convey("Then GetNextDownlinkFCntForDevEUI returns the expected FCnt", func() {
-							resp, err := api.GetNextDownlinkFCntForDevEUI(ctx, &ns.GetNextDownlinkFCntForDevEUIRequest{
-								DevEui: devEUI[:],
-							})
-							So(err, ShouldBeNil)
-							So(resp.FCnt, ShouldEqual, 12)
-						})
-					})
-
-					Convey("Then DeactivateDevice deactivates the device and flushes the queue", func() {
-						_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
-							Item: &ns.DeviceQueueItem{
-								DevEui:     devEUI[:],
-								FrmPayload: []byte{1, 2, 3, 4},
-								FCnt:       10,
-								FPort:      20,
-							},
-						})
-						So(err, ShouldBeNil)
-
-						items, err := storage.GetDeviceQueueItemsForDevEUI(storage.DB(), d.DevEUI)
-						So(err, ShouldBeNil)
-						So(items, ShouldHaveLength, 1)
-
-						_, err = api.DeactivateDevice(ctx, &ns.DeactivateDeviceRequest{
-							DevEui: devEUI[:],
-						})
-						So(err, ShouldBeNil)
-
-						_, err = api.GetDeviceActivation(ctx, &ns.GetDeviceActivationRequest{
-							DevEui: devEUI[:],
-						})
-						So(grpc.Code(err), ShouldEqual, codes.NotFound)
-
-						items, err = storage.GetDeviceQueueItemsForDevEUI(storage.DB(), d.DevEUI)
-						So(err, ShouldBeNil)
-						So(items, ShouldHaveLength, 0)
-					})
 
 					Convey("When calling CreateMACCommandQueueItem", func() {
 						mac := lorawan.MACCommand{

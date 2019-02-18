@@ -24,14 +24,6 @@ import (
 	loraband "github.com/brocaar/lorawan/band"
 )
 
-type deviceClass int
-
-const (
-	classA deviceClass = iota
-	classB
-	classC
-)
-
 const defaultCodeRate = "4/5"
 
 type incompatibleCIDMapping struct {
@@ -106,15 +98,14 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	getDeviceProfile,
 	getServiceProfile,
 	checkLastDownlinkTimestamp,
-	forClass(classC,
+	forClass(storage.DeviceModeC,
 		setImmediately,
 		setTXInfoForRX2,
 	),
-	forClass(classB,
-		checkBeaconLocked,
+	forClass(storage.DeviceModeB,
 		setTXInfoForClassB,
 	),
-	forClass(classA,
+	forClass(storage.DeviceModeA,
 		returnInvalidDeviceClassError,
 	),
 	setToken,
@@ -153,6 +144,9 @@ func Setup(conf config.Config) error {
 }
 
 type dataContext struct {
+	// Device mode.
+	DeviceMode storage.DeviceMode
+
 	// ServiceProfile of the device.
 	ServiceProfile storage.ServiceProfile
 
@@ -220,17 +214,9 @@ func (ctx dataContext) Validate() error {
 	return nil
 }
 
-func forClass(class deviceClass, tasks ...func(*dataContext) error) func(*dataContext) error {
+func forClass(mode storage.DeviceMode, tasks ...func(*dataContext) error) func(*dataContext) error {
 	return func(ctx *dataContext) error {
-		if class == classA && (ctx.DeviceProfile.SupportsClassB || ctx.DeviceProfile.SupportsClassC) {
-			return nil
-		}
-
-		if class == classC && !ctx.DeviceProfile.SupportsClassC {
-			return nil
-		}
-
-		if class == classB && !ctx.DeviceProfile.SupportsClassB {
+		if mode != ctx.DeviceMode {
 			return nil
 		}
 
@@ -269,8 +255,9 @@ func HandleResponse(rxPacket models.RXPacket, sp storage.ServiceProfile, ds stor
 }
 
 // HandleScheduleNextQueueItem handles scheduling the next device-queue item.
-func HandleScheduleNextQueueItem(ds storage.DeviceSession) error {
+func HandleScheduleNextQueueItem(ds storage.DeviceSession, mode storage.DeviceMode) error {
 	ctx := dataContext{
+		DeviceMode:    mode,
 		DeviceSession: ds,
 	}
 
@@ -498,13 +485,6 @@ func setTXInfoForRX2(ctx *dataContext) error {
 		RemainingPayloadSize: plSize.N,
 	})
 
-	return nil
-}
-
-func checkBeaconLocked(ctx *dataContext) error {
-	if !ctx.DeviceSession.BeaconLocked {
-		return ErrAbort
-	}
 	return nil
 }
 

@@ -361,12 +361,8 @@ func GetDevicesWithClassBOrClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Dev
             d.*
         from
             device d
-        inner join device_profile dp
-            on dp.device_profile_id = d.device_profile_id
-        where (
-            	dp.supports_class_c = true
-            	or dp.supports_class_b = true
-            )
+        where
+			d.mode in ('B', 'C')
             -- we want devices with queue items
             and exists (
                 select
@@ -376,9 +372,9 @@ func GetDevicesWithClassBOrClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Dev
                 where
                     dq.dev_eui = d.dev_eui
                     and (
-                    	dp.supports_class_c = true
+						d.mode = 'C'
                     	or (
-                    		dp.supports_class_b = true
+							d.mode = 'B'
                     		and dq.emit_at_time_since_gps_epoch <= $2
                     	)
                     )
@@ -393,7 +389,7 @@ func GetDevicesWithClassBOrClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Dev
                 where
                     dq.dev_eui = d.dev_eui
                     and is_pending = true
-                    and dq.timeout_after > now()
+                    and dq.timeout_after > $3 
             )
         order by
             d.dev_eui
@@ -401,6 +397,7 @@ func GetDevicesWithClassBOrClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Dev
         for update of d skip locked`,
 		count,
 		gpsEpochScheduleTime,
+		time.Now(),
 	)
 	if err != nil {
 		return nil, handlePSQLError(err, "select error")

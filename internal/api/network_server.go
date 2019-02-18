@@ -667,6 +667,25 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		MACVersion: dp.MACVersion,
 	}
 
+	// The device is never set to DeviceModeB because the device first needs to
+	// aquire a Class-B beacon lock and will signal this to the network-server.
+	// For LoRaWAN 1.0 the device will be set to DeviceModeC when support for
+	// Class-C has been enabled. For LoRaWAN 1.1 devices, DeviceModeA is always
+	// set as the device will signal it has switched to Class-C using the
+	// DeviceModeInd mac-command (which is not available in LoRaWAN 1.0).
+	if ds.GetMACVersion() == lorawan.LoRaWAN1_1 {
+		d.Mode = storage.DeviceModeA
+	} else {
+		if dp.SupportsClassC {
+			d.Mode = storage.DeviceModeC
+		} else {
+			d.Mode = storage.DeviceModeA
+		}
+	}
+	if err := storage.UpdateDevice(storage.DB(), &d); err != nil {
+		return nil, errToRPCError(err)
+	}
+
 	// reset the device-session to the device boot parameters
 	ds.ResetToBootParameters(dp)
 

@@ -1,12 +1,12 @@
 package testsuite
 
 import (
-	"github.com/brocaar/loraserver/api/nc"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
@@ -130,6 +130,15 @@ func AssertDeviceQueueItems(items []storage.DeviceQueueItem) Assertion {
 		if len(items) != len(dqi) {
 			assert.Equal(items, dqi)
 		}
+	}
+}
+
+// AssertDeviceMode asserts the current device class.
+func AssertDeviceMode(mode storage.DeviceMode) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		d, err := storage.GetDevice(storage.DB(), ts.Device.DevEUI)
+		assert.NoError(err)
+		assert.Equal(mode, d.Mode)
 	}
 }
 

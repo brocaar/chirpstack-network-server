@@ -51,7 +51,7 @@ func ScheduleDeviceQueueBatch(size int) error {
 				continue
 			}
 
-			err = data.HandleScheduleNextQueueItem(ds)
+			err = data.HandleScheduleNextQueueItem(ds, d.Mode)
 			if err != nil {
 				log.WithError(err).WithField("dev_eui", d.DevEUI).Error("schedule next device-queue item error")
 			}

@@ -325,7 +325,7 @@ type getDeviceQueueItemsTestCase struct {
 	ExpectedDevEUIs [][]lorawan.EUI64 // slice of EUIs per database transaction
 }
 
-func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
+func TestGetDevEUIsWithClassBOrCDeviceQueueItems(t *testing.T) {
 	conf := test.GetConfig()
 	if err := Setup(conf); err != nil {
 		t.Fatal(err)
@@ -352,12 +352,14 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 					DeviceProfileID:  dp.ID,
 					RoutingProfileID: rp.ID,
 					DevEUI:           lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+					Mode:             DeviceModeB,
 				},
 				{
 					ServiceProfileID: sp.ID,
 					DeviceProfileID:  dp.ID,
 					RoutingProfileID: rp.ID,
 					DevEUI:           lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2},
+					Mode:             DeviceModeB,
 				},
 			}
 			for i := range devices {
@@ -441,12 +443,14 @@ func TestGetDevEUIsWithClassCDeviceQueueItems(t *testing.T) {
 					DeviceProfileID:  dp.ID,
 					RoutingProfileID: rp.ID,
 					DevEUI:           lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+					Mode:             DeviceModeC,
 				},
 				{
 					ServiceProfileID: sp.ID,
 					DeviceProfileID:  dp.ID,
 					RoutingProfileID: rp.ID,
 					DevEUI:           lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2},
+					Mode:             DeviceModeC,
 				},
 			}
 			for i := range devices {
