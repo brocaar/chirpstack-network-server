@@ -118,6 +118,10 @@ func updateGatewayState(db sqlx.Ext, p *redis.Pool, stats gw.GatewayStats) error
 		return errors.Wrap(err, "flush gateway cache error")
 	}
 
+	if err := handleConfigurationUpdate(db, gw, stats.ConfigVersion); err != nil {
+		return errors.Wrap(err, "handle gateway stats error")
+	}
+
 	return nil
 }
 
