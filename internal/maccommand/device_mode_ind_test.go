@@ -61,7 +61,7 @@ func (ts *DeviceModeIndTestSuite) TestDeviceModeInd() {
 					{
 						CID: lorawan.DeviceModeInd,
 						Payload: &lorawan.DeviceModeIndPayload{
-							Class: lorawan.DeviceModeIndClassC,
+							Class: lorawan.DeviceModeClassC,
 						},
 					},
 				},
@@ -72,6 +72,9 @@ func (ts *DeviceModeIndTestSuite) TestDeviceModeInd() {
 				MACCommands: storage.MACCommands{
 					{
 						CID: lorawan.DeviceModeConf,
+						Payload: &lorawan.DeviceModeConfPayload{
+							Class: lorawan.DeviceModeClassC,
+						},
 					},
 				},
 			},
@@ -84,7 +87,7 @@ func (ts *DeviceModeIndTestSuite) TestDeviceModeInd() {
 					{
 						CID: lorawan.DeviceModeInd,
 						Payload: &lorawan.DeviceModeIndPayload{
-							Class: lorawan.DeviceModeIndClassA,
+							Class: lorawan.DeviceModeClassA,
 						},
 					},
 				},
@@ -95,6 +98,9 @@ func (ts *DeviceModeIndTestSuite) TestDeviceModeInd() {
 				MACCommands: storage.MACCommands{
 					{
 						CID: lorawan.DeviceModeConf,
+						Payload: &lorawan.DeviceModeConfPayload{
+							Class: lorawan.DeviceModeClassA,
+						},
 					},
 				},
 			},
@@ -107,12 +113,12 @@ func (ts *DeviceModeIndTestSuite) TestDeviceModeInd() {
 					{
 						CID: lorawan.DeviceModeInd,
 						Payload: &lorawan.DeviceModeIndPayload{
-							Class: lorawan.DeviceModeIndRFU,
+							Class: lorawan.DeviceModeRFU,
 						},
 					},
 				},
 			},
-			ExpectedError: errors.New("unexpected device mode: DeviceModeIndRFU"),
+			ExpectedError: errors.New("unexpected device mode: DeviceModeRFU"),
 		},
 	}
 

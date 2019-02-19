@@ -25,9 +25,9 @@ func handleDeviceModeInd(ds *storage.DeviceSession, block storage.MACCommandBloc
 	}
 
 	switch pl.Class {
-	case lorawan.DeviceModeIndClassA:
+	case lorawan.DeviceModeClassA:
 		d.Mode = storage.DeviceModeA
-	case lorawan.DeviceModeIndClassC:
+	case lorawan.DeviceModeClassC:
 		d.Mode = storage.DeviceModeC
 	default:
 		return nil, fmt.Errorf("unexpected device mode: %s", pl.Class)
@@ -43,6 +43,9 @@ func handleDeviceModeInd(ds *storage.DeviceSession, block storage.MACCommandBloc
 			MACCommands: []lorawan.MACCommand{
 				{
 					CID: lorawan.DeviceModeConf,
+					Payload: &lorawan.DeviceModeConfPayload{
+						Class: pl.Class,
+					},
 				},
 			},
 		},
