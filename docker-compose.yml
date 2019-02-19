@@ -6,7 +6,7 @@ services:
       dockerfile: Dockerfile-devel
     command: make serve
     volumes:
-      - ./:/go/src/github.com/brocaar/loraserver
+      - ./:/loraserver
     links:
       - postgres
       - redis
