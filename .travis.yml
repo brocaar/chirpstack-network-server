@@ -4,7 +4,6 @@ services:
   - docker
 
 script:
-  - docker-compose run --rm loraserver make requirements
   - docker-compose run --rm loraserver make test
 
 before_deploy:
