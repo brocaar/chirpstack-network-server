@@ -83,6 +83,7 @@ var setMACCommandsSet = setMACCommands(
 
 var responseTasks = []func(*dataContext) error{
 	getDeviceProfile,
+	getServiceProfile,
 	setDataTXInfo,
 	setToken,
 	getNextDeviceQueueItem,
@@ -773,7 +774,7 @@ func requestADRChange(ctx *dataContext) error {
 		}
 	}
 
-	blocks, err := adr.HandleADR(ctx.DeviceSession, linkADRReq)
+	blocks, err := adr.HandleADR(ctx.ServiceProfile, ctx.DeviceSession, linkADRReq)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,

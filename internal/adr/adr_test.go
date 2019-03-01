@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
@@ -19,16 +18,6 @@ func TestADR(t *testing.T) {
 	}
 
 	Convey("Testing the ADR functions", t, func() {
-		Convey("Testing getMaxAllowedDR", func() {
-			Convey("Given an extra channel up to data-rate 7", func() {
-				So(band.Band().AddChannel(868800000, 0, 7), ShouldBeNil)
-
-				Convey("Then getMaxAllowedDR still returns 5", func() {
-					So(getMaxAllowedDR(), ShouldEqual, 5)
-				})
-			})
-		})
-
 		Convey("Given a testtable for getNbRep", func() {
 			testTable := []struct {
 				PktLossRate   float64
@@ -50,18 +39,20 @@ func TestADR(t *testing.T) {
 			}
 		})
 
-		Convey("Testing getMaxSupportedDRForNode", func() {
+		Convey("Testing getMaxSupportedDRForDevice", func() {
+			sp := storage.ServiceProfile{DRMax: 5}
+
 			Convey("When no MaxSupportedDR is set on the device session, it returns getMaxAllowedDR", func() {
 				ds := storage.DeviceSession{}
-				So(getMaxSupportedDRForNode(ds), ShouldEqual, getMaxAllowedDR())
+				So(getMaxSupportedDRForDevice(sp, ds), ShouldEqual, sp.DRMax)
 			})
 
 			Convey("When MaxSupportedDR is set on the device session, this value is returned", func() {
 				ds := storage.DeviceSession{
 					MaxSupportedDR: 3,
 				}
-				So(getMaxSupportedDRForNode(ds), ShouldEqual, ds.MaxSupportedDR)
-				So(getMaxSupportedDRForNode(ds), ShouldNotEqual, getMaxAllowedDR())
+				So(getMaxSupportedDRForDevice(sp, ds), ShouldEqual, ds.MaxSupportedDR)
+				So(getMaxSupportedDRForDevice(sp, ds), ShouldNotEqual, sp.DRMax)
 			})
 		})
 
@@ -69,18 +60,18 @@ func TestADR(t *testing.T) {
 			So(getMaxTXPowerOffsetIndex(), ShouldEqual, 7)
 		})
 
-		Convey("Testing getMaxSupportedTXPowerOffsetIndexForNode", func() {
+		Convey("Testing getMaxSupportedTXPowerOffsetIndexForDevice", func() {
 			Convey("When no MaxSupportedTXPowerIndex is set on the device session, it returns getMaxTXPowerOffsetIndex", func() {
 				ds := storage.DeviceSession{}
-				So(getMaxSupportedTXPowerOffsetIndexForNode(ds), ShouldEqual, getMaxTXPowerOffsetIndex())
+				So(getMaxSupportedTXPowerOffsetIndexForDevice(ds), ShouldEqual, getMaxTXPowerOffsetIndex())
 			})
 
 			Convey("When MaxSupportedTXPowerIndex is set on the device session, this value is returned", func() {
 				ds := storage.DeviceSession{
 					MaxSupportedTXPowerIndex: 3,
 				}
-				So(getMaxSupportedTXPowerOffsetIndexForNode(ds), ShouldEqual, ds.MaxSupportedTXPowerIndex)
-				So(getMaxSupportedTXPowerOffsetIndexForNode(ds), ShouldNotEqual, getMaxTXPowerOffsetIndex())
+				So(getMaxSupportedTXPowerOffsetIndexForDevice(ds), ShouldEqual, ds.MaxSupportedTXPowerIndex)
+				So(getMaxSupportedTXPowerOffsetIndexForDevice(ds), ShouldNotEqual, getMaxTXPowerOffsetIndex())
 			})
 		})
 
@@ -100,7 +91,7 @@ func TestADR(t *testing.T) {
 					Name:                     "nothing to adjust",
 					NStep:                    0,
 					TXPowerIndex:             1,
-					MaxSupportedDR:           getMaxAllowedDR(),          // 5
+					MaxSupportedDR:           5,
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
 					DR:                       3,
 					ExpectedDR:               3,
@@ -110,7 +101,7 @@ func TestADR(t *testing.T) {
 					Name:                     "one step: one step data-rate increase",
 					NStep:                    1,
 					TXPowerIndex:             1,
-					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedDR:           5,
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
 					DR:                       4,
 					ExpectedDR:               5,
@@ -120,7 +111,7 @@ func TestADR(t *testing.T) {
 					Name:                     "one step: one step tx-power decrease",
 					NStep:                    1,
 					TXPowerIndex:             1,
-					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedDR:           5,
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
 					DR:                       5,
 					ExpectedDR:               5,
@@ -130,7 +121,7 @@ func TestADR(t *testing.T) {
 					Name:                     "two steps: two steps data-rate increase",
 					NStep:                    2,
 					TXPowerIndex:             1,
-					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedDR:           5,
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
 					DR:                       3,
 					ExpectedDR:               5,
@@ -150,7 +141,7 @@ func TestADR(t *testing.T) {
 					Name:                     "two steps: one step data-rate increase, one step tx-power decrease",
 					NStep:                    2,
 					TXPowerIndex:             1,
-					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedDR:           5,
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
 					DR:                       4,
 					ExpectedDR:               5,
@@ -160,7 +151,7 @@ func TestADR(t *testing.T) {
 					Name:                     "two steps: two steps tx-power decrease",
 					NStep:                    2,
 					TXPowerIndex:             1,
-					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedDR:           5,
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
 					DR:                       5,
 					ExpectedDR:               5,
@@ -170,7 +161,7 @@ func TestADR(t *testing.T) {
 					Name:                     "two steps: one step tx-power decrease due to max supported tx power index",
 					NStep:                    2,
 					TXPowerIndex:             1,
-					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedDR:           5,
 					MaxSupportedTXPowerIndex: 2,
 					DR:                       5,
 					ExpectedDR:               5,
@@ -180,7 +171,7 @@ func TestADR(t *testing.T) {
 					Name:                     "one negative step: one step power increase",
 					NStep:                    -1,
 					TXPowerIndex:             1,
-					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedDR:           5,
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
 					DR:                       4,
 					ExpectedDR:               4,
@@ -190,7 +181,7 @@ func TestADR(t *testing.T) {
 					Name:                     "one negative step, nothing to do (adr engine will never decrease data-rate)",
 					NStep:                    -1,
 					TXPowerIndex:             0,
-					MaxSupportedDR:           getMaxAllowedDR(),
+					MaxSupportedDR:           5,
 					MaxSupportedTXPowerIndex: getMaxTXPowerOffsetIndex(), // 5
 					DR:                       4,
 					ExpectedDR:               4,
@@ -263,6 +254,7 @@ func TestADR(t *testing.T) {
 
 				testTable := []struct {
 					Name            string
+					ServiceProfile  storage.ServiceProfile
 					DeviceSession   storage.DeviceSession
 					LinkADRReqBlock *storage.MACCommandBlock
 					Expected        []storage.MACCommandBlock
@@ -270,6 +262,10 @@ func TestADR(t *testing.T) {
 				}{
 					{
 						Name: "ADR increasing data-rate by one step (no CFlist)",
+						ServiceProfile: storage.ServiceProfile{
+							DRMin: 0,
+							DRMax: 5,
+						},
 						DeviceSession: storage.DeviceSession{
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -284,7 +280,48 @@ func TestADR(t *testing.T) {
 						ExpectedError: nil,
 					},
 					{
+						Name: "ADR decreasing data-rate by one step as a lower value has been specified in the service-profile",
+						ServiceProfile: storage.ServiceProfile{
+							DRMin: 0,
+							DRMax: 4,
+						},
+						DeviceSession: storage.DeviceSession{
+							DevAddr:               [4]byte{1, 2, 3, 4},
+							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
+							EnabledUplinkChannels: []int{0, 1, 2},
+							DR:                    5,
+							ADR:                   true,
+							UplinkHistory: []storage.UplinkHistory{
+								{MaxSNR: 20},
+							},
+						},
+						Expected: []storage.MACCommandBlock{
+							{
+								CID: lorawan.LinkADRReq,
+								MACCommands: []lorawan.MACCommand{
+									{
+										CID: lorawan.LinkADRReq,
+										Payload: &lorawan.LinkADRReqPayload{
+											DataRate: 4,
+											TXPower:  0,
+											ChMask:   lorawan.ChMask{true, true, true},
+											Redundancy: lorawan.Redundancy{
+												ChMaskCntl: 0,
+												NbRep:      1,
+											},
+										},
+									},
+								},
+							},
+						},
+						ExpectedError: nil,
+					},
+					{
 						Name: "ADR increasing tx-power by one step (no CFlist)",
+						ServiceProfile: storage.ServiceProfile{
+							DRMin: 0,
+							DRMax: 5,
+						},
 						DeviceSession: storage.DeviceSession{
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -320,6 +357,10 @@ func TestADR(t *testing.T) {
 						// this is because we don't have enough uplink history
 						// and the packetloss function returns therefore 0%.
 						Name: "ADR decreasing NbTrans by one",
+						ServiceProfile: storage.ServiceProfile{
+							DRMin: 0,
+							DRMax: 5,
+						},
 						DeviceSession: storage.DeviceSession{
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -354,6 +395,10 @@ func TestADR(t *testing.T) {
 					},
 					{
 						Name: "ADR increasing data-rate by one step (no CFlist), updating given LinkADRReq block",
+						ServiceProfile: storage.ServiceProfile{
+							DRMin: 0,
+							DRMax: 5,
+						},
 						DeviceSession: storage.DeviceSession{
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -397,6 +442,10 @@ func TestADR(t *testing.T) {
 					},
 					{
 						Name: "ADR increasing data-rate by one step (extra channels added)",
+						ServiceProfile: storage.ServiceProfile{
+							DRMin: 0,
+							DRMax: 5,
+						},
 						DeviceSession: storage.DeviceSession{
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -414,6 +463,10 @@ func TestADR(t *testing.T) {
 					},
 					{
 						Name: "data-rate can be increased, but no ADR flag set",
+						ServiceProfile: storage.ServiceProfile{
+							DRMin: 0,
+							DRMax: 5,
+						},
 						DeviceSession: storage.DeviceSession{
 							DevAddr: [4]byte{1, 2, 3, 4},
 							DevEUI:  [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -427,6 +480,10 @@ func TestADR(t *testing.T) {
 					},
 					{
 						Name: "ADR increasing data-rate by one step (through history table)",
+						ServiceProfile: storage.ServiceProfile{
+							DRMin: 0,
+							DRMax: 5,
+						},
 						DeviceSession: storage.DeviceSession{
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -443,6 +500,10 @@ func TestADR(t *testing.T) {
 					},
 					{
 						Name: "ADR not increasing tx power (as the TX power in the history table does not match)",
+						ServiceProfile: storage.ServiceProfile{
+							DRMin: 0,
+							DRMax: 5,
+						},
 						DeviceSession: storage.DeviceSession{
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -460,6 +521,10 @@ func TestADR(t *testing.T) {
 					},
 					{
 						Name: "ADR not decreasing tx power (as we don't have a full history table for the currently used TXPower)",
+						ServiceProfile: storage.ServiceProfile{
+							DRMin: 0,
+							DRMax: 5,
+						},
 						DeviceSession: storage.DeviceSession{
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -495,6 +560,10 @@ func TestADR(t *testing.T) {
 					},
 					{
 						Name: "ADR decreasing tx power",
+						ServiceProfile: storage.ServiceProfile{
+							DRMin: 0,
+							DRMax: 5,
+						},
 						DeviceSession: storage.DeviceSession{
 							DevAddr:               [4]byte{1, 2, 3, 4},
 							DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
@@ -551,7 +620,7 @@ func TestADR(t *testing.T) {
 
 				for i, tst := range testTable {
 					Convey(fmt.Sprintf("Test: %s [%d]", tst.Name, i), func() {
-						blocks, err := HandleADR(tst.DeviceSession, tst.LinkADRReqBlock)
+						blocks, err := HandleADR(tst.ServiceProfile, tst.DeviceSession, tst.LinkADRReqBlock)
 						if tst.ExpectedError != nil {
 							So(err, ShouldNotBeNil)
 							So(err, ShouldResemble, tst.ExpectedError)
@@ -569,22 +638,9 @@ func TestADR(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				macBlock := storage.MACCommandBlock{
-					CID: lorawan.LinkADRReq,
-					MACCommands: []lorawan.MACCommand{
-						{
-							CID: lorawan.LinkADRReq,
-							Payload: &lorawan.LinkADRReqPayload{
-								DataRate: 0,
-								TXPower:  0,
-								ChMask:   lorawan.ChMask{true, true, true}, // ADR applies to first three standard channels
-								Redundancy: lorawan.Redundancy{
-									ChMaskCntl: 0, // first block of 16 channels
-									NbRep:      0,
-								},
-							},
-						},
-					},
+				sp := storage.ServiceProfile{
+					DRMin: 0,
+					DRMax: 5,
 				}
 
 				ds := storage.DeviceSession{
@@ -611,11 +667,10 @@ func TestADR(t *testing.T) {
 					},
 				}
 
-				blocks, err := HandleADR(ds, larb)
+				blocks, err := HandleADR(sp, ds, larb)
 
 				So(err, ShouldBeNil)
-				So(blocks, ShouldResemble, []storage.MACCommandBlock{macBlock})
-
+				So(blocks, ShouldBeNil)
 			})
 		})
 	})

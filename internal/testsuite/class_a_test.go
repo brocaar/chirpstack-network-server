@@ -54,6 +54,7 @@ func (ts *ClassATestSuite) SetupSuite() {
 	})
 
 	ts.CreateServiceProfile(storage.ServiceProfile{
+		DRMax:         5,
 		AddGWMetadata: true,
 	})
 

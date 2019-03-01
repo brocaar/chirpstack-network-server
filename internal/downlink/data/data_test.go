@@ -271,6 +271,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 		{
 			Name: "trigger channel-reconfiguration",
 			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
 				DeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels: []int{0, 1},
 					TXPowerIndex:          2,
@@ -306,6 +309,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 		{
 			Name: "trigger adr request change",
 			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
 				DeviceSession: storage.DeviceSession{
 					ADR: true,
 					DR:  0,
@@ -343,6 +349,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			Name: "request device-status",
 			DataContext: dataContext{
 				ServiceProfile: storage.ServiceProfile{
+					DRMax:            5,
 					DevStatusReqFreq: 1,
 				},
 				DeviceSession: storage.DeviceSession{
@@ -375,6 +382,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			},
 			Name: "trigger ping-slot parameters",
 			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
 				DeviceProfile: storage.DeviceProfile{
 					SupportsClassB: true,
 				},
@@ -408,6 +418,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 		{
 			Name: "trigger channel-mask reconfiguration",
 			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
 				DeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels: []int{0, 1, 2, 3, 4, 5},
 					ExtraUplinkChannels: map[int]loraband.Channel{
@@ -450,6 +463,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			},
 			Name: "trigger adding new channel",
 			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
 				DeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels: []int{0, 1, 2},
 					RX2Frequency:          869525000,
@@ -504,6 +520,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			},
 			Name: "trigger updating existing channels",
 			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
 				DeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels: []int{0, 1, 2},
 					ExtraUplinkChannels: map[int]loraband.Channel{
@@ -555,6 +574,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			},
 			Name: "trigger rx param setup",
 			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
 				DeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels: []int{0, 1, 2},
 					RX2Frequency:          868100000,
@@ -593,6 +615,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			},
 			Name: "trigger rx timing setup",
 			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
 				DeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels: []int{0, 1, 2},
 					RX2Frequency:          869525000,
@@ -632,6 +657,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			},
 			Name: "LinkADRReq and NewChannelReq requested at the same time (will drop LinkADRReq)",
 			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
 				DeviceSession: storage.DeviceSession{
 					ADR: true,
 					DR:  0,
@@ -673,6 +701,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			},
 			Name: "trigger rejoin param setup request",
 			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
 				DeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels: []int{0, 1, 2},
 					TXPowerIndex:          2,
@@ -712,6 +743,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			},
 			Name: "trigger rejoin param setup request (ignored because of LoRaWAN 1.0)",
 			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
 				DeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels: []int{0, 1, 2},
 					TXPowerIndex:          2,
@@ -737,6 +771,9 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			},
 			Name: "trigger rejoin param setup request are in sync",
 			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
 				DeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels:  []int{0, 1, 2},
 					TXPowerIndex:           2,
