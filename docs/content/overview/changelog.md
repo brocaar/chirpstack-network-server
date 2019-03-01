@@ -9,6 +9,22 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v2.6.0-test1
+
+### Features
+
+* On ADR, decrease device DR when the device is using a higher DR than the maximum DR set in the service-profile. [#375](https://github.com/brocaar/loraserver/issues/375)
+
+### Bugfixes
+
+* Implement missing `DeviceModeReq` mac-command for LoRaWAN 1.1. [#371](https://github.com/brocaar/loraserver/issues/371)
+* Fix triggering gateway config update. [#373](https://github.com/brocaar/loraserver/issues/373)
+
+### Improvements
+
+* Internal code-cleanup with regards to passing configuration and objects.
+* Internal migration from Dep to [Go modules](https://github.com/golang/go/wiki/Modules).
+
 ## v2.5.0
 
 ### Features
