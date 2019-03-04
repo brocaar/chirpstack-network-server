@@ -187,7 +187,7 @@ func enableUplinkChannels() error {
 }
 
 func setRedisPool() error {
-	log.WithField("url", config.C.Redis.URL).Info("setup redis connection pool")
+	log.Info("setting up redis connection pool")
 	config.C.Redis.Pool = common.NewRedisPool(config.C.Redis.URL)
 	return nil
 }
