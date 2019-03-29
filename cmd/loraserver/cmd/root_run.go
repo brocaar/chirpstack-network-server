@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/brocaar/loraserver/internal/backend/gateway/azureiothub"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
@@ -206,6 +207,8 @@ func setGatewayBackend() error {
 		)
 	case "gcp_pub_sub":
 		gw, err = gcppubsub.NewBackend(config.C)
+	case "azure_iot_hub":
+		gw, err = azureiothub.NewBackend(config.C)
 	default:
 		return fmt.Errorf("unexpected gateway backend type: %s", config.C.NetworkServer.Gateway.Backend.Type)
 	}
