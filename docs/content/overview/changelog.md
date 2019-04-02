@@ -9,6 +9,13 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v2.6.1
+
+### Bugfixes
+
+* Fix `CFList` with channel-mask for LoRaWAN 1.0.3 devices.
+* Fix triggering uplink configuration function (fixing de-duplication). [#387](https://github.com/brocaar/loraserver/issues/387)
+
 ## v2.6.0
 
 ### Features
