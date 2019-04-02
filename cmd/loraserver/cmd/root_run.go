@@ -58,6 +58,7 @@ func run(cmd *cobra.Command, args []string) error {
 		setupGeolocationServer,
 		setupJoinServer,
 		setupNetworkController,
+		setupUplink,
 		setupDownlink,
 		fixV2RedisCache,
 		migrateGatewayStats,
@@ -291,6 +292,13 @@ func setupNetworkController() error {
 		controller.SetClient(ncClient)
 	}
 
+	return nil
+}
+
+func setupUplink() error {
+	if err := uplink.Setup(config.C); err != nil {
+		return errors.Wrap(err, "setup link error")
+	}
 	return nil
 }
 
