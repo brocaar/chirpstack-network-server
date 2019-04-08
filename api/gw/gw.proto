@@ -197,6 +197,9 @@ message UplinkFrame {
 
     // RX meta-data.
     UplinkRXInfo rx_info = 3;
+
+    // Gateway specific context.
+    bytes context = 4;
 }
 
 message UplinkFrameSet {
@@ -219,6 +222,10 @@ message DownlinkFrame {
 
     // Token (uint16 value).
     uint32 token = 3;
+
+    // Gateway specific context.
+    // In case of a Class-A downlink, this contains a copy of the uplink context.
+    bytes context = 4;
 }
 
 message DownlinkTXAck {
