@@ -68,7 +68,7 @@ two ping-slots.
 #### Device
 
 The device must be able to operate in Class-B mode. This feature has been
-tested against the `class_b` branch of the Semtech [LoRaMac-node](https://github.com/lora-net/LoRaMac-node/tree/feature/class_b)
+tested against the `develop` branch of the Semtech [LoRaMac-node](https://github.com/lora-net/LoRaMac-node/tree/develop)
 source.
 
 #### Gateway

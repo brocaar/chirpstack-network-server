@@ -662,7 +662,7 @@ In the current implementation LoRa Server uses a fixed join-server URL
 
 In case this endpoint is secured using a TLS certificate and expects a client
 certificate, you must set `ca_cert`, `tls_cert` and `tls_key`.
-Also dont forget to change `server` from `http://...` to `https://...`.
+Also don't forget to change `server` from `http://...` to `https://...`.
 
 See [https://github.com/brocaar/loraserver-certificates](https://github.com/brocaar/loraserver-certificates)
 for a set of scripts to generate such certificates.
