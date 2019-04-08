@@ -4,7 +4,7 @@ package gw;
 
 option go_package = "github.com/brocaar/loraserver/api/gw";
 
-import "github.com/brocaar/loraserver/api/common/common.proto";
+import "api/common/common.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 

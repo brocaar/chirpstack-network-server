@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package geo;
 
-import "github.com/brocaar/loraserver/api/gw/gw.proto";
-import "github.com/brocaar/loraserver/api/common/common.proto";
+import "api/gw/gw.proto";
+import "api/common/common.proto";
 
 
 // GeolocationServerService implements a geolocation-server service.

@@ -1,4 +1,4 @@
-//go:generate protoc -I=. -I=$GOPATH/src --go_out=plugins=grpc:. device_session.proto
+//go:generate protoc -I=. -I=../.. --go_out=. device_session.proto
 
 package storage
 

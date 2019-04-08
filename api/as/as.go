@@ -1,3 +1,3 @@
-//go:generate protoc -I=. -I=$GOPATH/src --go_out=plugins=grpc:. as.proto
+//go:generate protoc -I=. -I=../.. --go_out=paths=source_relative,plugins=grpc:. as.proto
 
 package as

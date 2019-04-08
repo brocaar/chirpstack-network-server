@@ -31,7 +31,6 @@ var Modulation_name = map[int32]string{
 	0: "LORA",
 	1: "FSK",
 }
-
 var Modulation_value = map[string]int32{
 	"LORA": 0,
 	"FSK":  1,
@@ -40,9 +39,8 @@ var Modulation_value = map[string]int32{
 func (x Modulation) String() string {
 	return proto.EnumName(Modulation_name, int32(x))
 }
-
 func (Modulation) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_555bd8c177793206, []int{0}
+	return fileDescriptor_common_24216969a1b4235d, []int{0}
 }
 
 type Region int32
@@ -82,7 +80,6 @@ var Region_name = map[int32]string{
 	9:  "IN865",
 	10: "RU864",
 }
-
 var Region_value = map[string]int32{
 	"EU868": 0,
 	"US915": 2,
@@ -99,9 +96,8 @@ var Region_value = map[string]int32{
 func (x Region) String() string {
 	return proto.EnumName(Region_name, int32(x))
 }
-
 func (Region) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_555bd8c177793206, []int{1}
+	return fileDescriptor_common_24216969a1b4235d, []int{1}
 }
 
 type LocationSource int32
@@ -123,7 +119,6 @@ var LocationSource_name = map[int32]string{
 	2: "CONFIG",
 	3: "GEO_RESOLVER",
 }
-
 var LocationSource_value = map[string]int32{
 	"UNKNOWN":      0,
 	"GPS":          1,
@@ -134,9 +129,8 @@ var LocationSource_value = map[string]int32{
 func (x LocationSource) String() string {
 	return proto.EnumName(LocationSource_name, int32(x))
 }
-
 func (LocationSource) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_555bd8c177793206, []int{2}
+	return fileDescriptor_common_24216969a1b4235d, []int{2}
 }
 
 type KeyEnvelope struct {
@@ -156,7 +150,7 @@ func (m *KeyEnvelope) Reset()         { *m = KeyEnvelope{} }
 func (m *KeyEnvelope) String() string { return proto.CompactTextString(m) }
 func (*KeyEnvelope) ProtoMessage()    {}
 func (*KeyEnvelope) Descriptor() ([]byte, []int) {
-	return fileDescriptor_555bd8c177793206, []int{0}
+	return fileDescriptor_common_24216969a1b4235d, []int{0}
 }
 func (m *KeyEnvelope) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_KeyEnvelope.Unmarshal(m, b)
@@ -210,7 +204,7 @@ func (m *Location) Reset()         { *m = Location{} }
 func (m *Location) String() string { return proto.CompactTextString(m) }
 func (*Location) ProtoMessage()    {}
 func (*Location) Descriptor() ([]byte, []int) {
-	return fileDescriptor_555bd8c177793206, []int{1}
+	return fileDescriptor_common_24216969a1b4235d, []int{1}
 }
 func (m *Location) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Location.Unmarshal(m, b)
@@ -273,9 +267,9 @@ func init() {
 	proto.RegisterEnum("common.LocationSource", LocationSource_name, LocationSource_value)
 }
 
-func init() { proto.RegisterFile("common.proto", fileDescriptor_555bd8c177793206) }
+func init() { proto.RegisterFile("common.proto", fileDescriptor_common_24216969a1b4235d) }
 
-var fileDescriptor_555bd8c177793206 = []byte{
+var fileDescriptor_common_24216969a1b4235d = []byte{
 	// 404 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x52, 0x5d, 0x6f, 0xda, 0x30,
 	0x14, 0xad, 0xf9, 0x08, 0xc9, 0x2d, 0xab, 0x2c, 0x3f, 0x6c, 0x68, 0x9b, 0x34, 0xd4, 0xa7, 0x88,

@@ -3,8 +3,8 @@ syntax = "proto3";
 package as;
 
 import "google/protobuf/empty.proto";
-import "github.com/brocaar/loraserver/api/common/common.proto";
-import "github.com/brocaar/loraserver/api/gw/gw.proto";
+import "api/common/common.proto";
+import "api/gw/gw.proto";
 
 
 // ApplicationServerService is the service providing the application-server interface.
