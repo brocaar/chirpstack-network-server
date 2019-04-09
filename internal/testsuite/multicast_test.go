@@ -100,6 +100,12 @@ func (ts *MulticastTestSuite) TestMulticast() {
 							PolarizationInversion: true,
 						},
 					},
+					Timing: gw.DownlinkTiming_GPS_EPOCH,
+					TimingInfo: &gw.DownlinkTXInfo_GpsEpochTimingInfo{
+						GpsEpochTimingInfo: &gw.GPSEpochTimingInfo{
+							TimeSinceGpsEpoch: ptypes.DurationProto(nowGPS),
+						},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -165,6 +171,12 @@ func (ts *MulticastTestSuite) TestMulticast() {
 							CodeRate:              "4/5",
 							Bandwidth:             125,
 							PolarizationInversion: true,
+						},
+					},
+					Timing: gw.DownlinkTiming_GPS_EPOCH,
+					TimingInfo: &gw.DownlinkTXInfo_GpsEpochTimingInfo{
+						GpsEpochTimingInfo: &gw.GPSEpochTimingInfo{
+							TimeSinceGpsEpoch: ptypes.DurationProto(nowGPS),
 						},
 					},
 				}, lorawan.PHYPayload{

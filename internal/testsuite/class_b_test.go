@@ -257,6 +257,12 @@ func (ts *ClassBTestSuite) TestDownlink() {
 		Frequency:         uint32(ts.DeviceSession.PingSlotFrequency),
 		Power:             int32(band.Band().GetDownlinkTXPower(ts.DeviceSession.PingSlotFrequency)),
 		TimeSinceGpsEpoch: ptypes.DurationProto(emitTime),
+		Timing:            gw.DownlinkTiming_GPS_EPOCH,
+		TimingInfo: &gw.DownlinkTXInfo_GpsEpochTimingInfo{
+			GpsEpochTimingInfo: &gw.GPSEpochTimingInfo{
+				TimeSinceGpsEpoch: ptypes.DurationProto(emitTime),
+			},
+		},
 	}
 	assert.NoError(helpers.SetDownlinkTXInfoDataRate(&txInfo, 2, band.Band()))
 

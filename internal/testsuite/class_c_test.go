@@ -63,6 +63,10 @@ func (ts *ClassCTestSuite) TestClassC() {
 		Immediately: true,
 		Frequency:   uint32(defaults.RX2Frequency),
 		Power:       int32(band.Band().GetDownlinkTXPower(defaults.RX2Frequency)),
+		Timing:      gw.DownlinkTiming_IMMEDIATELY,
+		TimingInfo: &gw.DownlinkTXInfo_ImmediatelyTimingInfo{
+			ImmediatelyTimingInfo: &gw.ImmediatelyTimingInfo{},
+		},
 	}
 	assert.NoError(helpers.SetDownlinkTXInfoDataRate(&txInfo, 5, band.Band()))
 

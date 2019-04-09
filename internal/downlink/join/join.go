@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -97,6 +98,7 @@ func setTXInfoForRX1(ctx *joinContext) error {
 		GatewayId: rxInfo.GatewayId,
 		Board:     rxInfo.Board,
 		Antenna:   rxInfo.Antenna,
+		Context:   rxInfo.Context,
 	}
 
 	// get RX1 data-rate
@@ -126,7 +128,15 @@ func setTXInfoForRX1(ctx *joinContext) error {
 	}
 
 	// set timestamp
+	// TODO: remove in v3
 	txInfo.Timestamp = rxInfo.Timestamp + uint32(band.Band().GetDefaults().JoinAcceptDelay1/time.Microsecond)
+
+	txInfo.Timing = gw.DownlinkTiming_DELAY
+	txInfo.TimingInfo = &gw.DownlinkTXInfo_DelayTimingInfo{
+		DelayTimingInfo: &gw.DelayTimingInfo{
+			Delay: ptypes.DurationProto(band.Band().GetDefaults().JoinAcceptDelay1),
+		},
+	}
 
 	ctx.DownlinkFrames = append(ctx.DownlinkFrames, gw.DownlinkFrame{
 		TxInfo: &txInfo,
@@ -146,6 +156,7 @@ func setTXInfoForRX2(ctx *joinContext) error {
 		Board:     rxInfo.Board,
 		Antenna:   rxInfo.Antenna,
 		Frequency: uint32(band.Band().GetDefaults().RX2Frequency),
+		Context:   rxInfo.Context,
 	}
 
 	// set data-rate
@@ -162,7 +173,15 @@ func setTXInfoForRX2(ctx *joinContext) error {
 	}
 
 	// set timestamp
+	// TODO: remove in v3
 	txInfo.Timestamp = rxInfo.Timestamp + uint32(band.Band().GetDefaults().JoinAcceptDelay2/time.Microsecond)
+
+	txInfo.Timing = gw.DownlinkTiming_DELAY
+	txInfo.TimingInfo = &gw.DownlinkTXInfo_DelayTimingInfo{
+		DelayTimingInfo: &gw.DelayTimingInfo{
+			Delay: ptypes.DurationProto(band.Band().GetDefaults().JoinAcceptDelay2),
+		},
+	}
 
 	ctx.DownlinkFrames = append(ctx.DownlinkFrames, gw.DownlinkFrame{
 		TxInfo: &txInfo,

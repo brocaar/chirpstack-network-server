@@ -3,7 +3,9 @@ package testsuite
 import (
 	"errors"
 	"testing"
+	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -57,6 +59,7 @@ func (ts *OTAATestSuite) TestLW10() {
 
 	rxInfo := gw.UplinkRXInfo{
 		GatewayId: ts.Gateway.GatewayID[:],
+		Context:   []byte{1, 2, 3, 4},
 	}
 
 	txInfo := gw.UplinkTXInfo{
@@ -212,6 +215,13 @@ func (ts *OTAATestSuite) TestLW10() {
 							PolarizationInversion: true,
 						},
 					},
+					Context: []byte{1, 2, 3, 4},
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(5 * time.Second),
+						},
+					},
 				}, jaPHY),
 				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
@@ -225,6 +235,13 @@ func (ts *OTAATestSuite) TestLW10() {
 							SpreadingFactor:       12,
 							CodeRate:              "4/5",
 							PolarizationInversion: true,
+						},
+					},
+					Context: []byte{1, 2, 3, 4},
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(6 * time.Second),
 						},
 					},
 				}, jaPHY),
@@ -303,6 +320,13 @@ func (ts *OTAATestSuite) TestLW10() {
 							PolarizationInversion: true,
 						},
 					},
+					Context: []byte{1, 2, 3, 4},
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(5 * time.Second),
+						},
+					},
 				}, jaPHY),
 				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
@@ -316,6 +340,13 @@ func (ts *OTAATestSuite) TestLW10() {
 							SpreadingFactor:       12,
 							CodeRate:              "4/5",
 							PolarizationInversion: true,
+						},
+					},
+					Context: []byte{1, 2, 3, 4},
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(6 * time.Second),
 						},
 					},
 				}, jaPHY),
@@ -457,6 +488,7 @@ func (ts *OTAATestSuite) TestLW11() {
 
 	rxInfo := gw.UplinkRXInfo{
 		GatewayId: ts.Gateway.GatewayID[:],
+		Context:   []byte{1, 2, 3, 4},
 	}
 
 	txInfo := gw.UplinkTXInfo{
@@ -579,6 +611,13 @@ func (ts *OTAATestSuite) TestLW11() {
 							PolarizationInversion: true,
 						},
 					},
+					Context: []byte{1, 2, 3, 4},
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(5 * time.Second),
+						},
+					},
 				}, jaPHY),
 				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
@@ -592,6 +631,13 @@ func (ts *OTAATestSuite) TestLW11() {
 							SpreadingFactor:       12,
 							CodeRate:              "4/5",
 							PolarizationInversion: true,
+						},
+					},
+					Context: []byte{1, 2, 3, 4},
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(6 * time.Second),
 						},
 					},
 				}, jaPHY),
@@ -701,6 +747,13 @@ func (ts *OTAATestSuite) TestLW11() {
 							PolarizationInversion: true,
 						},
 					},
+					Context: []byte{1, 2, 3, 4},
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(5 * time.Second),
+						},
+					},
 				}, jaPHY),
 				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
@@ -714,6 +767,13 @@ func (ts *OTAATestSuite) TestLW11() {
 							SpreadingFactor:       12,
 							CodeRate:              "4/5",
 							PolarizationInversion: true,
+						},
+					},
+					Context: []byte{1, 2, 3, 4},
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(6 * time.Second),
 						},
 					},
 				}, jaPHY),

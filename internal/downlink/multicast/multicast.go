@@ -155,8 +155,21 @@ func setTXInfo(ctx *multicastContext) error {
 		Frequency:   uint32(ctx.MulticastGroup.Frequency),
 	}
 
-	if ctx.MulticastQueueItem.EmitAtTimeSinceGPSEpoch != nil {
+	if ctx.MulticastQueueItem.EmitAtTimeSinceGPSEpoch == nil {
+		txInfo.Timing = gw.DownlinkTiming_IMMEDIATELY
+		txInfo.TimingInfo = &gw.DownlinkTXInfo_ImmediatelyTimingInfo{
+			ImmediatelyTimingInfo: &gw.ImmediatelyTimingInfo{},
+		}
+	} else {
+		// TODO: remove in v3
 		txInfo.TimeSinceGpsEpoch = ptypes.DurationProto(*ctx.MulticastQueueItem.EmitAtTimeSinceGPSEpoch)
+
+		txInfo.Timing = gw.DownlinkTiming_GPS_EPOCH
+		txInfo.TimingInfo = &gw.DownlinkTXInfo_GpsEpochTimingInfo{
+			GpsEpochTimingInfo: &gw.GPSEpochTimingInfo{
+				TimeSinceGpsEpoch: ptypes.DurationProto(*ctx.MulticastQueueItem.EmitAtTimeSinceGPSEpoch),
+			},
+		}
 	}
 
 	if err := helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.MulticastGroup.DR, band.Band()); err != nil {

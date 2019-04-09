@@ -56,6 +56,10 @@ func (ts *ProprietaryTestCase) TestDownlink() {
 							PolarizationInversion: true,
 						},
 					},
+					Timing: gw.DownlinkTiming_IMMEDIATELY,
+					TimingInfo: &gw.DownlinkTXInfo_ImmediatelyTimingInfo{
+						ImmediatelyTimingInfo: &gw.ImmediatelyTimingInfo{},
+					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						Major: lorawan.LoRaWANR1,
@@ -91,6 +95,10 @@ func (ts *ProprietaryTestCase) TestDownlink() {
 							CodeRate:              "4/5",
 							PolarizationInversion: false,
 						},
+					},
+					Timing: gw.DownlinkTiming_IMMEDIATELY,
+					TimingInfo: &gw.DownlinkTXInfo_ImmediatelyTimingInfo{
+						ImmediatelyTimingInfo: &gw.ImmediatelyTimingInfo{},
 					},
 				}, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{

@@ -3,7 +3,9 @@ package testsuite
 import (
 	"errors"
 	"testing"
+	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -202,6 +204,12 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 							PolarizationInversion: true,
 						},
 					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(5 * time.Second),
+						},
+					},
 				}, jaPHY),
 				AssertDeviceSession(storage.DeviceSession{
 					RoutingProfileID:      ts.RoutingProfile.ID,
@@ -307,6 +315,12 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 							SpreadingFactor:       12,
 							CodeRate:              "4/5",
 							PolarizationInversion: true,
+						},
+					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(5 * time.Second),
 						},
 					},
 				}, jaPHY),
@@ -486,6 +500,12 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 							PolarizationInversion: true,
 						},
 					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(5 * time.Second),
+						},
+					},
 				}, jaPHY),
 				AssertDeviceSession(storage.DeviceSession{
 					RoutingProfileID:      ts.RoutingProfile.ID,
@@ -583,6 +603,12 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 							SpreadingFactor:       12,
 							CodeRate:              "4/5",
 							PolarizationInversion: true,
+						},
+					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(5 * time.Second),
 						},
 					},
 				}, jaPHY),

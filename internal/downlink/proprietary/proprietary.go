@@ -100,6 +100,11 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 			Immediately: true,
 			Frequency:   uint32(ctx.Frequency),
 			Power:       int32(txPower),
+
+			Timing: gw.DownlinkTiming_IMMEDIATELY,
+			TimingInfo: &gw.DownlinkTXInfo_ImmediatelyTimingInfo{
+				ImmediatelyTimingInfo: &gw.ImmediatelyTimingInfo{},
+			},
 		}
 
 		err = helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.DR, band.Band())

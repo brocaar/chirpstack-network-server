@@ -9,7 +9,7 @@ require (
 	github.com/gobuffalo/packr v1.22.0 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gogo/protobuf v1.2.1 // indirect
-	github.com/golang/protobuf v1.2.0
+	github.com/golang/protobuf v1.3.1
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/googleapis/gax-go v0.0.0-20181219185031-c8a15bac9b9f // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect

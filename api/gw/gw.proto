@@ -9,6 +9,18 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 
 
+enum DownlinkTiming {
+    // Send the downlink immediately.
+    IMMEDIATELY = 0;
+
+    // Send downlink at the given delay (based on provided context).
+    DELAY = 1;
+
+    // Send at given GPS epoch value.
+    GPS_EPOCH = 2;
+}
+
+
 enum FineTimestampType {
     // No fine-timestamp available.
     NONE = 0;
@@ -115,6 +127,9 @@ message UplinkRXInfo {
     google.protobuf.Duration time_since_gps_epoch = 3 [json_name = "timeSinceGPSEpoch"];
 
     // Gateway internal timestamp.
+    // TODO: remove in v3.
+    // This as this is a gateway internal value, it will move to the gateway
+    // specific context field.
     uint32 timestamp = 4;
 
     // RSSI.
@@ -149,6 +164,9 @@ message UplinkRXInfo {
         // Plain fine-timestamp data.
         PlainFineTimestamp plain_fine_timestamp = 14;
     }
+
+    // Gateway specific context.
+    bytes context = 15;
 }
 
 message DownlinkTXInfo {
@@ -156,12 +174,15 @@ message DownlinkTXInfo {
     bytes gateway_id = 1 [json_name = "gatewayID"];
 
     // Frame must be sent immediately.
+    // TODO: remove in v3.
     bool immediately = 2;
 
     // Emit frame at the given time since GPS epoch.
+    // TODO: remove in v3.
     google.protobuf.Duration time_since_gps_epoch = 3 [json_name = "timeSinceGPSEpoch"];
 
     // Emit the frame at the given gateway internal timestamp.
+    // TODO: remove in v3.
     uint32 timestamp = 4;
 
     // TX frequency (in Hz).
@@ -186,6 +207,40 @@ message DownlinkTXInfo {
 
     // The antenna identifier for emitting the frame.
     uint32 antenna = 11;
+
+    // Timing defines the downlink timing to use.
+    DownlinkTiming timing = 12;
+
+    oneof timing_info {
+        // Immediately timing information.
+        ImmediatelyTimingInfo immediately_timing_info = 13;
+
+        // Context based delay timing information.
+        DelayTimingInfo delay_timing_info = 14;
+
+        // GPS Epoch timing information.
+        GPSEpochTimingInfo gps_epoch_timing_info = 15;
+    }
+
+    // Gateway specific context.
+    // In case of a Class-A downlink, this contains a copy of the uplink context.
+    bytes context = 16;
+}
+
+message ImmediatelyTimingInfo {
+    // Not implemented yet.
+}
+
+
+message DelayTimingInfo {
+    // Delay (duration).
+    // The delay will be added to the gateway internal timing, provided by the context object.
+    google.protobuf.Duration delay = 1;
+}
+
+message GPSEpochTimingInfo {
+    // Duration since GPS Epoch.
+    google.protobuf.Duration time_since_gps_epoch = 1 [json_name = "timeSinceGPSEpoch"];
 }
 
 message UplinkFrame {
@@ -197,9 +252,6 @@ message UplinkFrame {
 
     // RX meta-data.
     UplinkRXInfo rx_info = 3;
-
-    // Gateway specific context.
-    bytes context = 4;
 }
 
 message UplinkFrameSet {
@@ -222,10 +274,6 @@ message DownlinkFrame {
 
     // Token (uint16 value).
     uint32 token = 3;
-
-    // Gateway specific context.
-    // In case of a Class-A downlink, this contains a copy of the uplink context.
-    bytes context = 4;
 }
 
 message DownlinkTXAck {
