@@ -636,11 +636,6 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		return nil, errToRPCError(err)
 	}
 
-	sp, err := storage.GetServiceProfile(storage.DB(), d.ServiceProfileID)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
 	dp, err := storage.GetDeviceProfile(storage.DB(), d.DeviceProfileID)
 	if err != nil {
 		return nil, errToRPCError(err)
@@ -661,8 +656,7 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		AFCntDown:          req.DeviceActivation.AFCntDown,
 		SkipFCntValidation: req.DeviceActivation.SkipFCntCheck || d.SkipFCntCheck,
 
-		RXWindow:       storage.RX1,
-		MaxSupportedDR: sp.DRMax,
+		RXWindow: storage.RX1,
 
 		MACVersion: dp.MACVersion,
 	}

@@ -127,10 +127,6 @@ type DeviceSession struct {
 	// by the node, or 0 when not set.
 	MaxSupportedTXPowerIndex int
 
-	// MaxSupportedDR defines the maximum supported DR index by the node,
-	// or 0 when not set.
-	MaxSupportedDR int
-
 	// NbTrans defines the number of transmissions for each unconfirmed uplink
 	// frame. In case of 0, the default value is used.
 	// This value is controlled by the ADR engine.
@@ -646,7 +642,6 @@ func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
 		Adr:                      d.ADR,
 		MinSupportedTxPowerIndex: uint32(d.MinSupportedTXPowerIndex),
 		MaxSupportedTxPowerIndex: uint32(d.MaxSupportedTXPowerIndex),
-		MaxSupportedDr:           uint32(d.MaxSupportedDR),
 		NbTrans:                  uint32(d.NbTrans),
 
 		ExtraUplinkChannels:  make(map[uint32]*DeviceSessionPBChannel),
@@ -745,7 +740,6 @@ func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
 		ADR:                      d.Adr,
 		MinSupportedTXPowerIndex: int(d.MinSupportedTxPowerIndex),
 		MaxSupportedTXPowerIndex: int(d.MaxSupportedTxPowerIndex),
-		MaxSupportedDR:           int(d.MaxSupportedDr),
 		NbTrans:                  uint8(d.NbTrans),
 
 		ExtraUplinkChannels:  make(map[int]loraband.Channel),

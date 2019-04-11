@@ -75,7 +75,7 @@ func HandleADR(sp storage.ServiceProfile, ds storage.DeviceSession, linkADRReqBl
 		return nil, nil
 	}
 
-	maxSupportedDR := getMaxSupportedDRForDevice(sp, ds)
+	maxSupportedDR := sp.DRMax
 	maxSupportedTXPowerOffsetIndex := getMaxSupportedTXPowerOffsetIndexForDevice(ds)
 
 	var idealTXPowerIndex, idealDR int
@@ -240,11 +240,4 @@ func getRequiredSNRForSF(sf int) (float64, error) {
 		return 0, fmt.Errorf("sf to required snr for does not exsists (sf: %d)", sf)
 	}
 	return snr, nil
-}
-
-func getMaxSupportedDRForDevice(sp storage.ServiceProfile, ds storage.DeviceSession) int {
-	if ds.MaxSupportedDR != 0 && ds.MaxSupportedDR < sp.DRMax {
-		return ds.MaxSupportedDR
-	}
-	return sp.DRMax
 }

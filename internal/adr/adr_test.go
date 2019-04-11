@@ -39,23 +39,6 @@ func TestADR(t *testing.T) {
 			}
 		})
 
-		Convey("Testing getMaxSupportedDRForDevice", func() {
-			sp := storage.ServiceProfile{DRMax: 5}
-
-			Convey("When no MaxSupportedDR is set on the device session, it returns getMaxAllowedDR", func() {
-				ds := storage.DeviceSession{}
-				So(getMaxSupportedDRForDevice(sp, ds), ShouldEqual, sp.DRMax)
-			})
-
-			Convey("When MaxSupportedDR is set on the device session, this value is returned", func() {
-				ds := storage.DeviceSession{
-					MaxSupportedDR: 3,
-				}
-				So(getMaxSupportedDRForDevice(sp, ds), ShouldEqual, ds.MaxSupportedDR)
-				So(getMaxSupportedDRForDevice(sp, ds), ShouldNotEqual, sp.DRMax)
-			})
-		})
-
 		Convey("getMaxTXPowerOffsetIndex returns 7", func() {
 			So(getMaxTXPowerOffsetIndex(), ShouldEqual, 7)
 		})

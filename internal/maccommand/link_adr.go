@@ -91,14 +91,6 @@ func handleLinkADRAns(ds *storage.DeviceSession, block storage.MACCommandBlock, 
 			ds.MaxSupportedTXPowerIndex = int(adrReq.TXPower) - 1
 		}
 
-		// It is possible that the node does not support all data-rates.
-		// In this case we set the MaxSupportedDR to the requested - 1.
-		// If that DR is not supported, it will be lowered by 1 at the
-		// next nACK.
-		if !dataRateACK && adrReq.DataRate > 0 {
-			ds.MaxSupportedDR = int(adrReq.DataRate) - 1
-		}
-
 		log.WithFields(log.Fields{
 			"dev_eui":          ds.DevEUI,
 			"channel_mask_ack": channelMaskACK,

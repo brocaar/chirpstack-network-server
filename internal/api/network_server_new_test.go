@@ -519,7 +519,6 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 					RX1DROffset:           2,
 					RX2DR:                 5,
 					RX2Frequency:          868900000,
-					MaxSupportedDR:        6,
 					UplinkGatewayHistory:  make(map[lorawan.EUI64]storage.UplinkGatewayHistory),
 					PingSlotNb:            128,
 					PingSlotDR:            5,

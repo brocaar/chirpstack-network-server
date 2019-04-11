@@ -64,29 +64,6 @@ func TestHandleDownlink(t *testing.T) {
 						},
 					},
 					{
-						Name: "pending request and negative DR ack decrements the max allowed data-rate",
-						DeviceSession: storage.DeviceSession{
-							EnabledUplinkChannels: []int{0, 1},
-						},
-						LinkADRReqPayload: &lorawan.LinkADRReqPayload{
-							ChMask:   lorawan.ChMask{true, true, true},
-							DataRate: 5,
-							TXPower:  3,
-							Redundancy: lorawan.Redundancy{
-								NbRep: 2,
-							},
-						},
-						LinkADRAnsPayload: lorawan.LinkADRAnsPayload{
-							ChannelMaskACK: true,
-							DataRateACK:    false,
-							PowerACK:       true,
-						},
-						ExpectedDeviceSession: storage.DeviceSession{
-							EnabledUplinkChannels: []int{0, 1},
-							MaxSupportedDR:        4,
-						},
-					},
-					{
 						Name: "pending request and negative tx-power ack decrements the max allowed tx-power index",
 						DeviceSession: storage.DeviceSession{
 							EnabledUplinkChannels: []int{0, 1},

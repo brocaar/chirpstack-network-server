@@ -331,7 +331,6 @@ func setRejoin0PendingDeviceSession(ctx *context) error {
 		EnabledUplinkChannels: band.Band().GetStandardUplinkChannelIndices(),
 		ExtraUplinkChannels:   make(map[int]loraband.Channel),
 		UplinkGatewayHistory:  map[lorawan.EUI64]storage.UplinkGatewayHistory{},
-		MaxSupportedDR:        ctx.ServiceProfile.DRMax,
 		SkipFCntValidation:    ctx.Device.SkipFCntCheck,
 		PingSlotDR:            ctx.DeviceProfile.PingSlotDR,
 		PingSlotFrequency:     int(ctx.DeviceProfile.PingSlotFreq),

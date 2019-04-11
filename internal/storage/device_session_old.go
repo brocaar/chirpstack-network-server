@@ -52,10 +52,6 @@ type DeviceSessionOld struct {
 	// by the node, or 0 when not set.
 	MaxSupportedTXPowerIndex int
 
-	// MaxSupportedDR defines the maximum supported DR index by the node,
-	// or 0 when not set.
-	MaxSupportedDR int
-
 	// NbTrans defines the number of transmissions for each unconfirmed uplink
 	// frame. In case of 0, the default value is used.
 	// This value is controlled by the ADR engine.
@@ -120,7 +116,6 @@ func migrateDeviceSessionOld(d DeviceSessionOld) DeviceSession {
 		DR:                       d.DR,
 		ADR:                      d.ADR,
 		MaxSupportedTXPowerIndex: d.MaxSupportedTXPowerIndex,
-		MaxSupportedDR:           d.MaxSupportedDR,
 		NbTrans:                  d.NbTrans,
 		EnabledChannels:          d.EnabledChannels,
 		EnabledUplinkChannels:    d.EnabledUplinkChannels,

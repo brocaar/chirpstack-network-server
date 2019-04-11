@@ -108,10 +108,6 @@ message DeviceSessionPB {
     // by the node, or 0 when not set.
     uint32 max_supported_tx_power_index = 21;
 
-	// MaxSupportedDR defines the maximum supported DR index by the node,
-    // or 0 when not set.
-    uint32 max_supported_dr = 22;
-
 	// NbTrans defines the number of transmissions for each unconfirmed uplink
 	// frame. In case of 0, the default value is used.
     // This value is controlled by the ADR engine.
