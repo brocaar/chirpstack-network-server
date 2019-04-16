@@ -3,10 +3,12 @@
 
 package storage
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
-import common "github.com/brocaar/loraserver/api/common"
+import (
+	fmt "fmt"
+	common "github.com/brocaar/loraserver/api/common"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -17,7 +19,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type DeviceSessionPBChannel struct {
 	// Frequency (Hz).
@@ -35,16 +37,17 @@ func (m *DeviceSessionPBChannel) Reset()         { *m = DeviceSessionPBChannel{}
 func (m *DeviceSessionPBChannel) String() string { return proto.CompactTextString(m) }
 func (*DeviceSessionPBChannel) ProtoMessage()    {}
 func (*DeviceSessionPBChannel) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_session_9756df4be2c31499, []int{0}
+	return fileDescriptor_958563bbc6ebadf7, []int{0}
 }
+
 func (m *DeviceSessionPBChannel) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeviceSessionPBChannel.Unmarshal(m, b)
 }
 func (m *DeviceSessionPBChannel) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DeviceSessionPBChannel.Marshal(b, m, deterministic)
 }
-func (dst *DeviceSessionPBChannel) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeviceSessionPBChannel.Merge(dst, src)
+func (m *DeviceSessionPBChannel) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeviceSessionPBChannel.Merge(m, src)
 }
 func (m *DeviceSessionPBChannel) XXX_Size() int {
 	return xxx_messageInfo_DeviceSessionPBChannel.Size(m)
@@ -94,16 +97,17 @@ func (m *DeviceSessionPBUplinkADRHistory) Reset()         { *m = DeviceSessionPB
 func (m *DeviceSessionPBUplinkADRHistory) String() string { return proto.CompactTextString(m) }
 func (*DeviceSessionPBUplinkADRHistory) ProtoMessage()    {}
 func (*DeviceSessionPBUplinkADRHistory) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_session_9756df4be2c31499, []int{1}
+	return fileDescriptor_958563bbc6ebadf7, []int{1}
 }
+
 func (m *DeviceSessionPBUplinkADRHistory) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeviceSessionPBUplinkADRHistory.Unmarshal(m, b)
 }
 func (m *DeviceSessionPBUplinkADRHistory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DeviceSessionPBUplinkADRHistory.Marshal(b, m, deterministic)
 }
-func (dst *DeviceSessionPBUplinkADRHistory) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeviceSessionPBUplinkADRHistory.Merge(dst, src)
+func (m *DeviceSessionPBUplinkADRHistory) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeviceSessionPBUplinkADRHistory.Merge(m, src)
 }
 func (m *DeviceSessionPBUplinkADRHistory) XXX_Size() int {
 	return xxx_messageInfo_DeviceSessionPBUplinkADRHistory.Size(m)
@@ -152,16 +156,17 @@ func (m *DeviceSessionPBUplinkGatewayHistory) Reset()         { *m = DeviceSessi
 func (m *DeviceSessionPBUplinkGatewayHistory) String() string { return proto.CompactTextString(m) }
 func (*DeviceSessionPBUplinkGatewayHistory) ProtoMessage()    {}
 func (*DeviceSessionPBUplinkGatewayHistory) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_session_9756df4be2c31499, []int{2}
+	return fileDescriptor_958563bbc6ebadf7, []int{2}
 }
+
 func (m *DeviceSessionPBUplinkGatewayHistory) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeviceSessionPBUplinkGatewayHistory.Unmarshal(m, b)
 }
 func (m *DeviceSessionPBUplinkGatewayHistory) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DeviceSessionPBUplinkGatewayHistory.Marshal(b, m, deterministic)
 }
-func (dst *DeviceSessionPBUplinkGatewayHistory) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeviceSessionPBUplinkGatewayHistory.Merge(dst, src)
+func (m *DeviceSessionPBUplinkGatewayHistory) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeviceSessionPBUplinkGatewayHistory.Merge(m, src)
 }
 func (m *DeviceSessionPBUplinkGatewayHistory) XXX_Size() int {
 	return xxx_messageInfo_DeviceSessionPBUplinkGatewayHistory.Size(m)
@@ -283,16 +288,17 @@ func (m *DeviceSessionPB) Reset()         { *m = DeviceSessionPB{} }
 func (m *DeviceSessionPB) String() string { return proto.CompactTextString(m) }
 func (*DeviceSessionPB) ProtoMessage()    {}
 func (*DeviceSessionPB) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_session_9756df4be2c31499, []int{3}
+	return fileDescriptor_958563bbc6ebadf7, []int{3}
 }
+
 func (m *DeviceSessionPB) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeviceSessionPB.Unmarshal(m, b)
 }
 func (m *DeviceSessionPB) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DeviceSessionPB.Marshal(b, m, deterministic)
 }
-func (dst *DeviceSessionPB) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeviceSessionPB.Merge(dst, src)
+func (m *DeviceSessionPB) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeviceSessionPB.Merge(m, src)
 }
 func (m *DeviceSessionPB) XXX_Size() int {
 	return xxx_messageInfo_DeviceSessionPB.Size(m)
@@ -620,16 +626,17 @@ func (m *DeviceGatewayRXInfoSetPB) Reset()         { *m = DeviceGatewayRXInfoSet
 func (m *DeviceGatewayRXInfoSetPB) String() string { return proto.CompactTextString(m) }
 func (*DeviceGatewayRXInfoSetPB) ProtoMessage()    {}
 func (*DeviceGatewayRXInfoSetPB) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_session_9756df4be2c31499, []int{4}
+	return fileDescriptor_958563bbc6ebadf7, []int{4}
 }
+
 func (m *DeviceGatewayRXInfoSetPB) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeviceGatewayRXInfoSetPB.Unmarshal(m, b)
 }
 func (m *DeviceGatewayRXInfoSetPB) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DeviceGatewayRXInfoSetPB.Marshal(b, m, deterministic)
 }
-func (dst *DeviceGatewayRXInfoSetPB) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeviceGatewayRXInfoSetPB.Merge(dst, src)
+func (m *DeviceGatewayRXInfoSetPB) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeviceGatewayRXInfoSetPB.Merge(m, src)
 }
 func (m *DeviceGatewayRXInfoSetPB) XXX_Size() int {
 	return xxx_messageInfo_DeviceGatewayRXInfoSetPB.Size(m)
@@ -677,16 +684,17 @@ func (m *DeviceGatewayRXInfoPB) Reset()         { *m = DeviceGatewayRXInfoPB{} }
 func (m *DeviceGatewayRXInfoPB) String() string { return proto.CompactTextString(m) }
 func (*DeviceGatewayRXInfoPB) ProtoMessage()    {}
 func (*DeviceGatewayRXInfoPB) Descriptor() ([]byte, []int) {
-	return fileDescriptor_device_session_9756df4be2c31499, []int{5}
+	return fileDescriptor_958563bbc6ebadf7, []int{5}
 }
+
 func (m *DeviceGatewayRXInfoPB) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeviceGatewayRXInfoPB.Unmarshal(m, b)
 }
 func (m *DeviceGatewayRXInfoPB) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DeviceGatewayRXInfoPB.Marshal(b, m, deterministic)
 }
-func (dst *DeviceGatewayRXInfoPB) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeviceGatewayRXInfoPB.Merge(dst, src)
+func (m *DeviceGatewayRXInfoPB) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeviceGatewayRXInfoPB.Merge(m, src)
 }
 func (m *DeviceGatewayRXInfoPB) XXX_Size() int {
 	return xxx_messageInfo_DeviceGatewayRXInfoPB.Size(m)
@@ -729,11 +737,9 @@ func init() {
 	proto.RegisterType((*DeviceGatewayRXInfoPB)(nil), "storage.DeviceGatewayRXInfoPB")
 }
 
-func init() {
-	proto.RegisterFile("device_session.proto", fileDescriptor_device_session_9756df4be2c31499)
-}
+func init() { proto.RegisterFile("device_session.proto", fileDescriptor_958563bbc6ebadf7) }
 
-var fileDescriptor_device_session_9756df4be2c31499 = []byte{
+var fileDescriptor_958563bbc6ebadf7 = []byte{
 	// 1281 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x96, 0x6d, 0x57, 0x1b, 0xb7,
 	0x12, 0xc7, 0x8f, 0x71, 0x78, 0x1a, 0x70, 0x00, 0xf1, 0x24, 0xb8, 0x70, 0x71, 0x4c, 0x72, 0xe3,
