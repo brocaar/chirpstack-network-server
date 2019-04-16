@@ -9,6 +9,25 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v2.7.0
+
+### Improvements
+
+#### Gateway downlink timing API
+
+In order to implement support for the [Basic Station](https://doc.sm.tc/station/)
+some small additions were made to the [gateway API](https://github.com/brocaar/loraserver/blob/master/api/gw/gw.proto),
+the API used in the communication between the [LoRa Gateway Bridge](https://www.loraserver.io/lora-gateway-bridge/)
+and LoRa Server.
+
+LoRa Server v2.7+ is compatible with both the LoRa Gateway Bridge v2 and
+(upcoming) v3 as it contains both the old and new fields. The old fields will
+be removed once LoRa Server v3 has been released.
+
+#### Max. ADR setting
+
+* Remove max. DR field from device-session and always use max. DR from service-profile.
+
 ## v2.6.1
 
 ### Bugfixes
