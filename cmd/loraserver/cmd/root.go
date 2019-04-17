@@ -102,6 +102,7 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(printDSCmd)
+	rootCmd.AddCommand(mqtt2to3)
 }
 
 // Execute executes the root command.
