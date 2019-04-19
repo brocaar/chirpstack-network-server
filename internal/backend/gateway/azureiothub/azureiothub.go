@@ -1,4 +1,4 @@
-package gcppubsub
+package azureiothub
 
 import (
 	"bytes"
@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"cloud.google.com/go/pubsub"
+	servicebus "github.com/Azure/azure-service-bus-go"
+	"github.com/amenzhinsky/iothub/iotservice"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	"google.golang.org/api/option"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/backend/gateway"
@@ -22,107 +22,94 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-const uplinkSubscriptionTmpl = "%s-loraserver"
-
-// Backend implements a Google Cloud Pub/Sub backend.
+// Backend implement an Azure IoT Hub backend.
 type Backend struct {
 	sync.RWMutex
+
 	ctx    context.Context
 	cancel context.CancelFunc
-
-	client             *pubsub.Client
-	downlinkTopic      *pubsub.Topic
-	uplinkTopic        *pubsub.Topic
-	uplinkSubscription *pubsub.Subscription
+	closed bool
 
 	uplinkFrameChan   chan gw.UplinkFrame
 	gatewayStatsChan  chan gw.GatewayStats
-	downlinkTXAckChan chan gw.DownlinkTXAck
+	downlinkTxAckChan chan gw.DownlinkTXAck
 	gatewayMarshaler  map[lorawan.EUI64]marshaler.Type
+
+	queueName string
+	ns        *servicebus.Namespace
+	queue     *servicebus.Queue
+	iotClient *iotservice.Client
 }
 
 // NewBackend creates a new Backend.
 func NewBackend(c config.Config) (gateway.Gateway, error) {
-	conf := c.NetworkServer.Gateway.Backend.GCPPubSub
+	var err error
+	var ok bool
+
+	conf := c.NetworkServer.Gateway.Backend.AzureIoTHub
 
 	b := Backend{
-		gatewayMarshaler:  make(map[lorawan.EUI64]marshaler.Type),
 		uplinkFrameChan:   make(chan gw.UplinkFrame),
 		gatewayStatsChan:  make(chan gw.GatewayStats),
-		downlinkTXAckChan: make(chan gw.DownlinkTXAck),
-		ctx:               context.Background(),
+		downlinkTxAckChan: make(chan gw.DownlinkTXAck),
+		gatewayMarshaler:  make(map[lorawan.EUI64]marshaler.Type),
+
+		ctx: context.Background(),
 	}
-	var err error
-	var o []option.ClientOption
 
 	b.ctx, b.cancel = context.WithCancel(b.ctx)
 
-	if conf.CredentialsFile != "" {
-		o = append(o, option.WithCredentialsFile(conf.CredentialsFile))
+	connProperties, err := parseConnectionString(conf.EventsConnectionString)
+	if err != nil {
+		return nil, errors.Wrap(err, "parse connection-string error")
 	}
 
-	log.Info("gateway/gcp_pub_sub: setting up client")
-	b.client, err = pubsub.NewClient(b.ctx, conf.ProjectID, o...)
-	if err != nil {
-		return nil, errors.Wrap(err, "gateway/gcp_pub_sub: new pubsub client error")
-	}
-
-	log.WithField("topic", conf.DownlinkTopicName).Info("gateway/gcp_pub_sub: setup downlink topic")
-	b.downlinkTopic = b.client.Topic(conf.DownlinkTopicName)
-	ok, err := b.downlinkTopic.Exists(b.ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "gateway/gcp_pub_sub: topic exists error")
-	}
+	b.queueName, ok = connProperties["EntityPath"]
 	if !ok {
-		return nil, fmt.Errorf("gateway/gcp_pub_sub: downlink topic '%s' does not exist", conf.DownlinkTopicName)
+		return nil, errors.New("connection-string does not contain 'EntityPath', please use the queue connection-string")
 	}
 
-	log.WithField("topic", conf.UplinkTopicName).Info("gateway/gcp_pub_sub: setup uplink topic")
-	b.uplinkTopic = b.client.Topic(conf.UplinkTopicName)
-	ok, err = b.uplinkTopic.Exists(b.ctx)
+	log.Info("gateway/azure_iot_hub: setting up service-bus namespace")
+	b.ns, err = servicebus.NewNamespace(
+		servicebus.NamespaceWithConnectionString(conf.EventsConnectionString),
+	)
 	if err != nil {
-		return nil, errors.Wrap(err, "gateway/gcp_pub_sub: topic exists error")
-	}
-	if !ok {
-		return nil, fmt.Errorf("gateway/gcp_pub_sub: uplink topic '%s' does not exist", conf.UplinkTopicName)
+		return nil, errors.Wrap(err, "new namespace error")
 	}
 
-	upSubName := fmt.Sprintf(uplinkSubscriptionTmpl, conf.UplinkTopicName)
-
-	log.WithField("subscription", upSubName).Info("gateway/gcp_pub_sub: check if uplink subscription exists")
-	b.uplinkSubscription = b.client.Subscription(upSubName)
-	ok, err = b.uplinkSubscription.Exists(b.ctx)
+	b.queue, err = b.ns.NewQueue(b.queueName)
 	if err != nil {
-		return nil, errors.Wrap(err, "gateway/gcp_pub_sub: subscription exists error")
+		return nil, errors.Wrap(err, "new queue client error")
 	}
 
-	// try to create the subscription if it doesn't exist
-	if !ok {
-		log.WithField("subscription", upSubName).Info("gateway/gcp_pub_sub: create uplink subscription")
-		b.uplinkSubscription, err = b.client.CreateSubscription(b.ctx, upSubName, pubsub.SubscriptionConfig{
-			Topic:             b.uplinkTopic,
-			RetentionDuration: conf.UplinkRetentionDuration,
-		})
+	// TODO: migrate to IoT Hub REST API?
+	// Unfortunately, there is no documentation available on how to use the API:
+	// https://docs.microsoft.com/en-us/rest/api/iothub/service/senddevicecommand
+	b.iotClient, err = iotservice.New(
+		iotservice.WithConnectionString(conf.CommandsConnectionString),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "new iotservice client error")
 	}
 
-	// consume uplink frames
 	go func() {
+		log.WithField("queue", b.queueName).Info("gateway/azure_iot_hub: starting queue consumer")
 		for {
-			err := b.uplinkSubscription.Receive(b.ctx, b.receiveFunc)
-			if err != nil {
-				log.WithError(err).Error("gateway/gcp_pub_sub: receive error")
-				time.Sleep(time.Second * 2)
-				continue
+			if b.closed {
+				break
 			}
 
-			break
+			if err := b.queue.Receive(b.ctx, servicebus.HandlerFunc(b.eventHandler)); err != nil {
+				log.WithError(err).Error("gateway/azure_iot_hub: receive from queue error")
+				time.Sleep(time.Second * 2)
+			}
+
 		}
 	}()
 
 	return &b, nil
 }
 
-// SendTXPacket sends the given downlink frame to the gateway.
 func (b *Backend) SendTXPacket(pl gw.DownlinkFrame) error {
 	if pl.TxInfo == nil {
 		return errors.New("tx_info must not be nil")
@@ -133,48 +120,63 @@ func (b *Backend) SendTXPacket(pl gw.DownlinkFrame) error {
 
 	bb, err := marshaler.MarshalDownlinkFrame(t, pl)
 	if err != nil {
-		return errors.Wrap(err, "gateway/gcp_pub_sub: marshal downlink frame error")
+		return errors.Wrap(err, "marshal downlink frame error")
 	}
 
 	return b.publishCommand(gatewayID, "down", bb)
 }
 
-// SendGatewayConfigPacket sends the given gateway configuration to the gateway.
 func (b *Backend) SendGatewayConfigPacket(pl gw.GatewayConfiguration) error {
 	gatewayID := helpers.GetGatewayID(&pl)
 	t := b.getGatewayMarshaler(gatewayID)
 
 	bb, err := marshaler.MarshalGatewayConfiguration(t, pl)
 	if err != nil {
-		return errors.Wrap(err, "gateway/gcp_pub_sub: marshal gateway configuration error")
+		return errors.Wrap(err, "marshal gateway configuration error")
 	}
 
 	return b.publishCommand(gatewayID, "config", bb)
 }
 
-// RXPacketChan returns the channel to which uplink frames are published.
 func (b *Backend) RXPacketChan() chan gw.UplinkFrame {
 	return b.uplinkFrameChan
 }
 
-// StatsPacketChan returns the channel to which gateway stats are published.
 func (b *Backend) StatsPacketChan() chan gw.GatewayStats {
 	return b.gatewayStatsChan
 }
 
-// DownlinkTXAckChan returns the downlink tx ack channel.
 func (b *Backend) DownlinkTXAckChan() chan gw.DownlinkTXAck {
-	return b.downlinkTXAckChan
+	return b.downlinkTxAckChan
 }
 
-// Close closes the backend.
 func (b *Backend) Close() error {
-	log.Info("gateway/gcp_pub_sub: closing backend")
+	log.Info("gateway/azure_iot_hub: closing backend")
 	b.cancel()
 	close(b.uplinkFrameChan)
 	close(b.gatewayStatsChan)
-	close(b.downlinkTXAckChan)
-	return b.client.Close()
+	close(b.downlinkTxAckChan)
+	b.queue.Close(context.Background())
+	return nil
+}
+
+func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, data []byte) error {
+	err := b.iotClient.SendEvent(
+		b.ctx,
+		gatewayID.String(),
+		data,
+		iotservice.WithSendProperty("command", command),
+	)
+	if err != nil {
+		return errors.Wrap(err, "send event error")
+	}
+
+	log.WithFields(log.Fields{
+		"gateway_id": gatewayID,
+		"command":    command,
+	}).Info("gateway/azure_iot_hub: gateway command published")
+
+	return nil
 }
 
 func (b *Backend) setGatewayMarshaler(gatewayID lorawan.EUI64, t marshaler.Type) {
@@ -191,57 +193,52 @@ func (b *Backend) getGatewayMarshaler(gatewayID lorawan.EUI64) marshaler.Type {
 	return b.gatewayMarshaler[gatewayID]
 }
 
-func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, data []byte) error {
-	start := time.Now()
-
-	res := b.downlinkTopic.Publish(b.ctx, &pubsub.Message{
-		Data: data,
-		Attributes: map[string]string{
-			"deviceId":  "gw-" + gatewayID.String(),
-			"subFolder": command,
-		},
-	})
-	if _, err := res.Get(b.ctx); err != nil {
-		return errors.Wrap(err, "get publish result error")
+func (b *Backend) eventHandler(ctx context.Context, msg *servicebus.Message) error {
+	if err := b.handleEventMessage(msg); err != nil {
+		log.WithError(err).Error("gateway/azure_iot_hub: handle event error")
 	}
 
-	log.WithFields(log.Fields{
-		"duration":   time.Now().Sub(start),
-		"gateway_id": gatewayID,
-		"command":    command,
-	}).Info("gateway/gcp_pub_sub: message published")
-
-	return nil
+	return msg.Complete(ctx)
 }
 
-func (b *Backend) receiveFunc(ctx context.Context, msg *pubsub.Message) {
-	msg.Ack()
-
+func (b *Backend) handleEventMessage(msg *servicebus.Message) error {
 	var gatewayID lorawan.EUI64
 
-	gatewayIDStr, ok := msg.Attributes["deviceId"]
-	if !ok {
-		log.Error("gateway/gcp_pub_sub: received message does not contain 'deviceId' attribute")
+	// decode gateway id
+	if gwID, ok := msg.UserProperties["iothub-connection-device-id"]; ok {
+		gwIDStr, ok := gwID.(string)
+		if !ok {
+			return fmt.Errorf("expected 'iothub-connection-device-id' to be a string, got: %T", gwID)
+		}
+
+		if err := gatewayID.UnmarshalText([]byte(gwIDStr)); err != nil {
+			return errors.Wrap(err, "unmarshal gateway id error")
+		}
+
+	} else {
+		return errors.New("'iothub-connection-device-id' missing in UserProperties")
 	}
 
-	typ, ok := msg.Attributes["subFolder"]
-	if !ok {
-		log.Error("gateway/gcp_pub_sub: received message does not contain 'subFolder' attribute")
-	}
+	var event string
+	var err error
 
-	gatewayIDStr = strings.Replace(gatewayIDStr, "gw-", "", 1)
-	if err := gatewayID.UnmarshalText([]byte(gatewayIDStr)); err != nil {
-		log.WithError(err).Error("gateway/gcp_pub_sub: unmarshal gateway id error")
+	// get event type
+	if _, ok := msg.UserProperties["up"]; ok {
+		event = "up"
+	}
+	if _, ok := msg.UserProperties["ack"]; ok {
+		event = "ack"
+	}
+	if _, ok := msg.UserProperties["stats"]; ok {
+		event = "stats"
 	}
 
 	log.WithFields(log.Fields{
 		"gateway_id": gatewayID,
-		"type":       typ,
-	}).Info("gateway/gcp_pub_sub: message received")
+		"event":      event,
+	}).Info("gateway/azure_iot_hub: event received from gateway")
 
-	var err error
-
-	switch typ {
+	switch event {
 	case "up":
 		err = b.handleUplinkFrame(gatewayID, msg.Data)
 	case "stats":
@@ -251,17 +248,19 @@ func (b *Backend) receiveFunc(ctx context.Context, msg *pubsub.Message) {
 	default:
 		log.WithFields(log.Fields{
 			"gateway_id": gatewayID,
-			"type":       typ,
-		}).Warning("gateway/gcp_pub_sub: unexpected message type")
+			"event":      event,
+		}).Warning("gateway/azure_iot_hub: unexpected gateway event received")
 	}
 
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{
 			"gateway_id":  gatewayID,
-			"type":        typ,
+			"event":       event,
 			"data_base64": base64.StdEncoding.EncodeToString(msg.Data),
-		}).Error("gateway/gcp_pub_sub: handle received message error")
+		}).Error("gateway/azure_iot_hub: handle gateway event error")
 	}
+
+	return nil
 }
 
 func (b *Backend) handleUplinkFrame(gatewayID lorawan.EUI64, data []byte) error {
@@ -327,7 +326,22 @@ func (b *Backend) handleDownlinkTXAck(gatewayID lorawan.EUI64, data []byte) erro
 		return errors.New("gateway_id is not equal to expected gateway_id")
 	}
 
-	b.downlinkTXAckChan <- ack
+	b.downlinkTxAckChan <- ack
 
 	return nil
+}
+
+func parseConnectionString(str string) (map[string]string, error) {
+	out := make(map[string]string)
+	pairs := strings.Split(str, ";")
+	for _, pair := range pairs {
+		kv := strings.SplitN(pair, "=", 2)
+		if len(kv) != 2 {
+			return nil, fmt.Errorf("expected two items in: %+v", kv)
+		}
+
+		out[kv[0]] = kv[1]
+	}
+
+	return out, nil
 }

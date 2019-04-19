@@ -2,9 +2,11 @@ module github.com/brocaar/loraserver
 
 require (
 	cloud.google.com/go v0.34.0
+	github.com/Azure/azure-service-bus-go v0.4.1
 	github.com/NickBall/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5
+	github.com/amenzhinsky/iothub v0.0.0-20190415141912-fb38f4d4c9fb
 	github.com/brocaar/lorawan v0.0.0-20190308082318-5ed881e0a2d7
-	github.com/eclipse/paho.mqtt.golang v0.0.0-20190117150808-cb7eb9363b44
+	github.com/eclipse/paho.mqtt.golang v1.1.1
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/gobuffalo/packr v1.22.0 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible
@@ -30,10 +32,9 @@ require (
 	github.com/spf13/viper v1.3.1
 	github.com/stretchr/testify v1.3.0
 	github.com/ziutek/mymysql v1.5.4 // indirect
-	golang.org/x/crypto v0.0.0-20190228161510-8dd112bcdc25 // indirect
 	golang.org/x/exp v0.0.0-20190104205336-ae74f88a12a8 // indirect
 	golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3
-	golang.org/x/net v0.0.0-20190301231341-16b79f2e4e95
+	golang.org/x/net v0.0.0-20190322120337-addf6b3196f6
 	golang.org/x/oauth2 v0.0.0-20190115181402-5dab4167f31c // indirect
 	golang.org/x/sys v0.0.0-20190308023053-584f3b12f43e // indirect
 	golang.org/x/tools v0.0.0-20190118193359-16909d206f00

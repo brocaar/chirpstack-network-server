@@ -406,7 +406,10 @@ get_downlink_data_delay="100ms"
     #
     # This defines the backend to use for the communication with the gateways.
     # Use the section name of one of the following gateway backends.
-    # E.g. "mqtt" or "gcp_pub_sub".
+        # Valid options are:
+    #  * mqtt
+    #  * gcp_pub_sub
+    #  * azure_iot_hub
     type="mqtt"
 
 
@@ -500,6 +503,25 @@ get_downlink_data_delay="100ms"
     #
     # The retention duration that LoRa Server will set on the uplink subscription.
     uplink_retention_duration="24h0m0s"
+
+
+    # Azure IoT Hub backend.
+    #
+    # Use this backend when the LoRa Gateway Bridge is configured to connect
+    # to the Azure IoT Hub MQTT broker.
+    [network_server.gateway.backend.azure_iot_hub]
+
+    # Events connection string.
+    #
+    # This connection string must point to the Service Bus Queue to which the
+    # IoT Hub is forwarding the (uplink) gateway events.
+    events_connection_string=""
+
+    # Commands connection string.
+    #
+    # This connection string must point to the IoT Hub and is used by LoRa Server
+    # for sending commands to the gateways.
+    commands_connection_string=""
 
 
   # Geolocation settings.

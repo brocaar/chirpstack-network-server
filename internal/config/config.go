@@ -119,6 +119,11 @@ type Config struct {
 					DownlinkTopicName       string        `mapstructure:"downlink_topic_name"`
 					UplinkRetentionDuration time.Duration `mapstructure:"uplink_retention_duration"`
 				} `mapstructure:"gcp_pub_sub"`
+
+				AzureIoTHub struct {
+					EventsConnectionString   string `mapstructure:"events_connection_string"`
+					CommandsConnectionString string `mapstructure:"commands_connection_string"`
+				} `mapstructure:"azure_iot_hub"`
 			}
 		}
 	} `mapstructure:"network_server"`
