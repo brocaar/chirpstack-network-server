@@ -114,6 +114,9 @@ message GatewayStats {
 
     // Number of downlink packets emitted.
     uint32 tx_packets_emitted = 8;
+
+    // Additional gateway meta-data.
+    map<string, string> meta_data = 10;
 }
 
 message UplinkRXInfo {
