@@ -9,6 +9,52 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v2.8.0
+
+### Features
+
+#### Add `mqtt2to3` sub-command
+
+This sub-command translates MQTT messages from the old topics to the new
+topics (gw > ns) and backwards (ns > gw) and should help when migrating from
+v2 to v3 MQTT topics (see below).
+
+This sub-command can be started as (when using the [Debian / Ubuntu](https://www.loraserver.io/loraserver/install/debian/) package):
+
+* `/etc/init.d/loraserver-mqtt2to3 start`
+* `systemctl start loraserver-mqtt2to3`
+
+From the CLI, this can be started as:
+
+* `loraserver mqtt2to3`
+
+As soon as all LoRa Gateway Bridge instances are upgraded to v3, this is no
+longer needed.
+
+#### Azure integration
+
+Using the Azure integration, it is possible to connect gateways using the
+[Azure IoT Hub](https://azure.microsoft.com/en-us/services/iot-hub/) service.                                                                                                                                                               │[Azure IoT Hub](https://azure.microsoft.com/en-us/services/iot-hub/) service.
+This feature is still experimental and might (slightly) change.
+
+### Upgrading
+
+As a preparation to upgrade to LoRa Server v3, it is recommended to update the
+MQTT topic configuration to:
+
+```
+uplink_topic_template="gateway/+/event/up"
+stats_topic_template="gateway/+/event/stats"
+ack_topic_template="gateway/+/event/ack"
+downlink_topic_template="gateway/{{ .MAC }}/command/down"
+config_topic_template="gateway/{{ .MAC }}/command/config"
+```
+
+Together with the `mqtt2to3` sub-command (see above), this stays compatible
+with LoRa Gateway Bridge v2, but also provides compatibility with LoRa Gateway Bridge v3.
+Once LoRa Server v3 is released, it is recommended to first upgrade all LoRa
+Gateway Bridge instances to v3 and then upgrade LoRa Server to v3.
+
 ## v2.7.0
 
 ### Improvements
