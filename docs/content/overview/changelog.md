@@ -9,6 +9,34 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v3.0.0
+
+### Features
+
+### Improvements
+
+#### Legacy code removed
+
+Legacy code related to older gateway structures have been removed. All gateway
+messages are now based on the [Protobuf](https://github.com/brocaar/loraserver/blob/master/api/gw/gw.proto)
+messages.
+
+#### MQTT topic refactor
+
+Previously, each topic was configured separatly. To be consistent with
+LoRa Gateway Bridge v3, this has been re-factored into "events" and "commands".
+
+### Upgrading
+
+LoRa Server v3 depends on LoRa Gateway Bridge v3! It is recommended to upgrade to
+the latest LoRa Server v2 release (which is forwards compatible with the
+LoRa Gateway Bridge v3), upgrade all LoRa Gateway Bridge installations to v3
+and then upgrade LoRa Server to v3.
+
+It is also recommended to update your LoRa Server configuration file.
+See [Configuration](https://www.loraserver.io/loraserver/install/config/) for
+more information.
+
 ## v2.8.0
 
 ### Features
@@ -54,6 +82,7 @@ Together with the `mqtt2to3` sub-command (see above), this stays compatible
 with LoRa Gateway Bridge v2, but also provides compatibility with LoRa Gateway Bridge v3.
 Once LoRa Server v3 is released, it is recommended to first upgrade all LoRa
 Gateway Bridge instances to v3 and then upgrade LoRa Server to v3.
+
 
 ## v2.7.0
 
