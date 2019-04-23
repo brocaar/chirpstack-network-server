@@ -36,6 +36,8 @@ nfpm:
     "packaging/files/loraserver.rotate": "/etc/logrotate.d/loraserver"
     "packaging/files/loraserver.init": "/usr/lib/loraserver/scripts/loraserver.init"
     "packaging/files/loraserver.service": "/usr/lib/loraserver/scripts/loraserver.service"
+    "packaging/files/loraserver-mqtt2to3.init": "/usr/lib/loraserver/scripts/loraserver-mqtt2to3.init"
+    "packaging/files/loraserver-mqtt2to3.service": "/usr/lib/loraserver/scripts/loraserver-mqtt2to3.service"
   scripts:
     postinstall: "packaging/scripts/post-install.sh"
     postremove: "packaging/scripts/post-remove.sh"
