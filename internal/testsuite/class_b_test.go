@@ -253,11 +253,10 @@ func (ts *ClassBTestSuite) TestDownlink() {
 	fPortTen := uint8(10)
 
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId:         []byte{1, 2, 1, 2, 1, 2, 1, 2},
-		Frequency:         uint32(ts.DeviceSession.PingSlotFrequency),
-		Power:             int32(band.Band().GetDownlinkTXPower(ts.DeviceSession.PingSlotFrequency)),
-		TimeSinceGpsEpoch: ptypes.DurationProto(emitTime),
-		Timing:            gw.DownlinkTiming_GPS_EPOCH,
+		GatewayId: []byte{1, 2, 1, 2, 1, 2, 1, 2},
+		Frequency: uint32(ts.DeviceSession.PingSlotFrequency),
+		Power:     int32(band.Band().GetDownlinkTXPower(ts.DeviceSession.PingSlotFrequency)),
+		Timing:    gw.DownlinkTiming_GPS_EPOCH,
 		TimingInfo: &gw.DownlinkTXInfo_GpsEpochTimingInfo{
 			GpsEpochTimingInfo: &gw.GPSEpochTimingInfo{
 				TimeSinceGpsEpoch: ptypes.DurationProto(emitTime),

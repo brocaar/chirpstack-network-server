@@ -203,7 +203,6 @@ func (ts *OTAATestSuite) TestLW10() {
 				}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
-					Timestamp:  rxInfo.Timestamp + 5000000,
 					Frequency:  txInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -225,7 +224,6 @@ func (ts *OTAATestSuite) TestLW10() {
 				}, jaPHY),
 				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
-					Timestamp:  rxInfo.Timestamp + 6000000,
 					Frequency:  869525000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -308,7 +306,6 @@ func (ts *OTAATestSuite) TestLW10() {
 				}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
-					Timestamp:  rxInfo.Timestamp + 5000000,
 					Frequency:  txInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -330,7 +327,6 @@ func (ts *OTAATestSuite) TestLW10() {
 				}, jaPHY),
 				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
-					Timestamp:  rxInfo.Timestamp + 6000000,
 					Frequency:  869525000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -599,7 +595,6 @@ func (ts *OTAATestSuite) TestLW11() {
 				}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
-					Timestamp:  rxInfo.Timestamp + 5000000,
 					Frequency:  txInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -621,7 +616,6 @@ func (ts *OTAATestSuite) TestLW11() {
 				}, jaPHY),
 				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
-					Timestamp:  rxInfo.Timestamp + 6000000,
 					Frequency:  869525000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -735,7 +729,6 @@ func (ts *OTAATestSuite) TestLW11() {
 				}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
-					Timestamp:  rxInfo.Timestamp + 5000000,
 					Frequency:  txInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -757,7 +750,6 @@ func (ts *OTAATestSuite) TestLW11() {
 				}, jaPHY),
 				AssertDownlinkFrameSaved(ts.Device.DevEUI, gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
-					Timestamp:  rxInfo.Timestamp + 6000000,
 					Frequency:  869525000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,

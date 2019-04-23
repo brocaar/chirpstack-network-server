@@ -43,11 +43,10 @@ func (ts *ProprietaryTestCase) TestDownlink() {
 
 			Assert: []Assertion{
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:   []byte{8, 7, 6, 5, 4, 3, 2, 1},
-					Immediately: true,
-					Frequency:   868100000,
-					Power:       14,
-					Modulation:  common.Modulation_LORA,
+					GatewayId:  []byte{8, 7, 6, 5, 4, 3, 2, 1},
+					Frequency:  868100000,
+					Power:      14,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -83,11 +82,10 @@ func (ts *ProprietaryTestCase) TestDownlink() {
 
 			Assert: []Assertion{
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:   []byte{8, 7, 6, 5, 4, 3, 2, 1},
-					Immediately: true,
-					Frequency:   868100000,
-					Power:       14,
-					Modulation:  common.Modulation_LORA,
+					GatewayId:  []byte{8, 7, 6, 5, 4, 3, 2, 1},
+					Frequency:  868100000,
+					Power:      14,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							Bandwidth:             125,
@@ -157,7 +155,6 @@ func (ts *ProprietaryTestCase) TestUplink() {
 			},
 			RXInfo: gw.UplinkRXInfo{
 				GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
-				Timestamp: 12345,
 				Rssi:      -10,
 				LoraSnr:   5,
 			},
@@ -181,7 +178,6 @@ func (ts *ProprietaryTestCase) TestUplink() {
 							GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 							Rssi:      -10,
 							LoraSnr:   5,
-							Timestamp: 12345,
 							Location: &common.Location{
 								Latitude:  1.1234,
 								Longitude: 2.345,

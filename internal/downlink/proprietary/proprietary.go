@@ -96,10 +96,9 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 
 	for _, mac := range ctx.GatewayMACs {
 		txInfo := gw.DownlinkTXInfo{
-			GatewayId:   mac[:],
-			Immediately: true,
-			Frequency:   uint32(ctx.Frequency),
-			Power:       int32(txPower),
+			GatewayId: mac[:],
+			Frequency: uint32(ctx.Frequency),
+			Power:     int32(txPower),
 
 			Timing: gw.DownlinkTiming_IMMEDIATELY,
 			TimingInfo: &gw.DownlinkTXInfo_ImmediatelyTimingInfo{

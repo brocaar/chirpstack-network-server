@@ -3,7 +3,6 @@ package join
 import (
 	"crypto/rand"
 	"encoding/binary"
-	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
@@ -128,9 +127,6 @@ func setTXInfoForRX1(ctx *joinContext) error {
 	}
 
 	// set timestamp
-	// TODO: remove in v3
-	txInfo.Timestamp = rxInfo.Timestamp + uint32(band.Band().GetDefaults().JoinAcceptDelay1/time.Microsecond)
-
 	txInfo.Timing = gw.DownlinkTiming_DELAY
 	txInfo.TimingInfo = &gw.DownlinkTXInfo_DelayTimingInfo{
 		DelayTimingInfo: &gw.DelayTimingInfo{
@@ -173,9 +169,6 @@ func setTXInfoForRX2(ctx *joinContext) error {
 	}
 
 	// set timestamp
-	// TODO: remove in v3
-	txInfo.Timestamp = rxInfo.Timestamp + uint32(band.Band().GetDefaults().JoinAcceptDelay2/time.Microsecond)
-
 	txInfo.Timing = gw.DownlinkTiming_DELAY
 	txInfo.TimingInfo = &gw.DownlinkTXInfo_DelayTimingInfo{
 		DelayTimingInfo: &gw.DelayTimingInfo{

@@ -150,9 +150,8 @@ func validatePayloadSize(ctx *multicastContext) error {
 
 func setTXInfo(ctx *multicastContext) error {
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId:   ctx.MulticastQueueItem.GatewayID[:],
-		Immediately: ctx.MulticastQueueItem.EmitAtTimeSinceGPSEpoch == nil,
-		Frequency:   uint32(ctx.MulticastGroup.Frequency),
+		GatewayId: ctx.MulticastQueueItem.GatewayID[:],
+		Frequency: uint32(ctx.MulticastGroup.Frequency),
 	}
 
 	if ctx.MulticastQueueItem.EmitAtTimeSinceGPSEpoch == nil {
@@ -161,9 +160,6 @@ func setTXInfo(ctx *multicastContext) error {
 			ImmediatelyTimingInfo: &gw.ImmediatelyTimingInfo{},
 		}
 	} else {
-		// TODO: remove in v3
-		txInfo.TimeSinceGpsEpoch = ptypes.DurationProto(*ctx.MulticastQueueItem.EmitAtTimeSinceGPSEpoch)
-
 		txInfo.Timing = gw.DownlinkTiming_GPS_EPOCH
 		txInfo.TimingInfo = &gw.DownlinkTXInfo_GpsEpochTimingInfo{
 			GpsEpochTimingInfo: &gw.GPSEpochTimingInfo{

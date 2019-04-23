@@ -59,11 +59,10 @@ func (ts *ClassCTestSuite) TestClassC() {
 	defaults := band.Band().GetDefaults()
 
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId:   []byte{1, 2, 1, 2, 1, 2, 1, 2},
-		Immediately: true,
-		Frequency:   uint32(defaults.RX2Frequency),
-		Power:       int32(band.Band().GetDownlinkTXPower(defaults.RX2Frequency)),
-		Timing:      gw.DownlinkTiming_IMMEDIATELY,
+		GatewayId: []byte{1, 2, 1, 2, 1, 2, 1, 2},
+		Frequency: uint32(defaults.RX2Frequency),
+		Power:     int32(band.Band().GetDownlinkTXPower(defaults.RX2Frequency)),
+		Timing:    gw.DownlinkTiming_IMMEDIATELY,
 		TimingInfo: &gw.DownlinkTXInfo_ImmediatelyTimingInfo{
 			ImmediatelyTimingInfo: &gw.ImmediatelyTimingInfo{},
 		},

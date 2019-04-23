@@ -1,8 +1,6 @@
 package models
 
 import (
-	"time"
-
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/lorawan"
 )
@@ -43,23 +41,4 @@ func (s BySignalStrength) Less(i, j int) bool {
 	}
 
 	return s[i].LoraSnr > s[j].LoraSnr
-}
-
-// RXInfoSet implements a sortable slice of RXInfo elements.
-// First it is sorted by LoRaSNR, within the sub-set where
-// LoRaSNR > maxSNRForSort, it will sort by RSSI.
-type RXInfoSet []RXInfo
-
-// RXInfo defines the RX related metadata (for each receiving gateway).
-type RXInfo struct {
-	MAC               lorawan.EUI64
-	Time              *time.Time
-	TimeSinceGPSEpoch *gw.Duration
-	Timestamp         uint32
-	RSSI              int
-	LoRaSNR           float64
-	Board             int
-	Antenna           int
-	RFChain           int
-	Channel           int
 }

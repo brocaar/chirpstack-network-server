@@ -192,7 +192,6 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 				}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId:  ts.Gateway.GatewayID[:],
-					Timestamp:  5000000,
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -305,7 +304,6 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 				}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId:  ts.Gateway.GatewayID[:],
-					Timestamp:  5000000,
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -488,7 +486,6 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 				}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId:  ts.Gateway.GatewayID[:],
-					Timestamp:  5000000,
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -593,7 +590,6 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 				}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId:  ts.Gateway.GatewayID[:],
-					Timestamp:  5000000,
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,

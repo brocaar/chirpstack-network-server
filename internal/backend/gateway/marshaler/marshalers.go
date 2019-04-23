@@ -5,7 +5,6 @@ type Type int
 
 // Marshaler types.
 const (
-	V2JSON Type = iota
-	Protobuf
+	Protobuf Type = iota
 	JSON
 )

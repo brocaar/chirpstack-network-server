@@ -129,12 +129,6 @@ message UplinkRXInfo {
     // RX time since GPS epoch (only set when the gateway has a GPS module).
     google.protobuf.Duration time_since_gps_epoch = 3 [json_name = "timeSinceGPSEpoch"];
 
-    // Gateway internal timestamp.
-    // TODO: remove in v3.
-    // This as this is a gateway internal value, it will move to the gateway
-    // specific context field.
-    uint32 timestamp = 4;
-
     // RSSI.
     int32 rssi = 5;
 
@@ -175,18 +169,6 @@ message UplinkRXInfo {
 message DownlinkTXInfo {
     // Gateway ID.
     bytes gateway_id = 1 [json_name = "gatewayID"];
-
-    // Frame must be sent immediately.
-    // TODO: remove in v3.
-    bool immediately = 2;
-
-    // Emit frame at the given time since GPS epoch.
-    // TODO: remove in v3.
-    google.protobuf.Duration time_since_gps_epoch = 3 [json_name = "timeSinceGPSEpoch"];
-
-    // Emit the frame at the given gateway internal timestamp.
-    // TODO: remove in v3.
-    uint32 timestamp = 4;
 
     // TX frequency (in Hz).
     uint32 frequency = 5;

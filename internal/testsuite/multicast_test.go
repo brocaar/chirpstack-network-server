@@ -86,12 +86,10 @@ func (ts *MulticastTestSuite) TestMulticast() {
 			Assert: []Assertion{
 				AssertMulticastQueueItems([]storage.MulticastQueueItem{}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:         ts.Gateway.GatewayID[:],
-					Immediately:       false,
-					TimeSinceGpsEpoch: ptypes.DurationProto(nowGPS),
-					Frequency:         uint32(ts.MulticastGroup.Frequency),
-					Power:             14,
-					Modulation:        common.Modulation_LORA,
+					GatewayId:  ts.Gateway.GatewayID[:],
+					Frequency:  uint32(ts.MulticastGroup.Frequency),
+					Power:      14,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							SpreadingFactor:       9,
@@ -159,12 +157,10 @@ func (ts *MulticastTestSuite) TestMulticast() {
 					},
 				}),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:         ts.Gateway.GatewayID[:],
-					Immediately:       false,
-					TimeSinceGpsEpoch: ptypes.DurationProto(nowGPS),
-					Frequency:         uint32(ts.MulticastGroup.Frequency),
-					Power:             14,
-					Modulation:        common.Modulation_LORA,
+					GatewayId:  ts.Gateway.GatewayID[:],
+					Frequency:  uint32(ts.MulticastGroup.Frequency),
+					Power:      14,
+					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
 							SpreadingFactor:       9,

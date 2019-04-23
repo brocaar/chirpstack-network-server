@@ -519,7 +519,6 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 					GatewayId:  ts.Gateway.GatewayID[:],
 					Frequency:  868100000,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -590,7 +589,6 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 					GatewayId:  ts.Gateway.GatewayID[:],
 					Frequency:  868100000,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -807,7 +805,6 @@ func (ts *ClassATestSuite) TestLW10RXDelay() {
 					GatewayId:  ts.Gateway.GatewayID[:],
 					Frequency:  868100000,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 3000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -989,7 +986,6 @@ func (ts *ClassATestSuite) TestLW10MACCommands() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -1066,7 +1062,6 @@ func (ts *ClassATestSuite) TestLW10MACCommands() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -1250,7 +1245,6 @@ func (ts *ClassATestSuite) TestLW10MACCommandsDisabled() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -1539,7 +1533,6 @@ func (ts *ClassATestSuite) TestLW11DeviceQueue() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -1616,7 +1609,6 @@ func (ts *ClassATestSuite) TestLW11DeviceQueue() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -1720,7 +1712,6 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -1798,7 +1789,6 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -1876,7 +1866,6 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -2003,7 +1992,6 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -2095,7 +2083,6 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -2295,7 +2282,6 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -2359,7 +2345,6 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -2511,7 +2496,6 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -2588,7 +2572,6 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -2699,7 +2682,6 @@ func (ts *ClassATestSuite) TestLW10DeviceStatusRequest() {
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -2890,7 +2872,6 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 					GatewayId:  ts.Gateway.GatewayID[:],
 					Frequency:  868100000,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -2963,7 +2944,6 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 					GatewayId:  ts.Gateway.GatewayID[:],
 					Frequency:  869525000,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 2000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -3036,7 +3016,6 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 					GatewayId:  ts.Gateway.GatewayID[:],
 					Frequency:  868100000,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -3075,7 +3054,6 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 					GatewayId:  ts.Gateway.GatewayID[:],
 					Frequency:  869525000,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 2000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -3148,7 +3126,6 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 					GatewayId:  ts.Gateway.GatewayID[:],
 					Frequency:  868100000,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -3232,7 +3209,6 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 					GatewayId:  ts.Gateway.GatewayID[:],
 					Frequency:  868100000,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 1000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -3276,7 +3252,6 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 					GatewayId:  ts.Gateway.GatewayID[:],
 					Frequency:  869525000,
 					Power:      14,
-					Timestamp:  ts.RXInfo.Timestamp + 2000000,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{

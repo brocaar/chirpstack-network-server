@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
 	"github.com/gofrs/uuid"
@@ -62,7 +61,6 @@ type DeviceSessionOld struct {
 	ExtraUplinkChannels   map[int]loraband.Channel // extra uplink channels, configured by the user
 	ChannelFrequencies    []int                    // frequency of each channel
 	UplinkHistory         []UplinkHistory          // contains the last 20 transmissions
-	LastRXInfoSet         models.RXInfoSet         // sorted set (best at index 0)
 
 	// LastDevStatusRequest contains the timestamp when the last device-status
 	// request was made.
@@ -134,10 +132,6 @@ func migrateDeviceSessionOld(d DeviceSessionOld) DeviceSession {
 
 	if len(out.EnabledUplinkChannels) == 0 {
 		out.EnabledUplinkChannels = out.EnabledChannels
-	}
-
-	for _, rx := range d.LastRXInfoSet {
-		out.UplinkGatewayHistory[rx.MAC] = UplinkGatewayHistory{}
 	}
 
 	if out.ExtraUplinkChannels == nil {
