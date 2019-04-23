@@ -81,11 +81,8 @@ func init() {
 
 	viper.SetDefault("network_server.scheduler.scheduler_interval", 1*time.Second)
 	viper.SetDefault("network_server.scheduler.class_c.downlink_lock_duration", 2*time.Second)
-	viper.SetDefault("network_server.gateway.backend.mqtt.uplink_topic_template", "gateway/+/rx")
-	viper.SetDefault("network_server.gateway.backend.mqtt.downlink_topic_template", "gateway/{{ .MAC }}/tx")
-	viper.SetDefault("network_server.gateway.backend.mqtt.stats_topic_template", "gateway/+/stats")
-	viper.SetDefault("network_server.gateway.backend.mqtt.ack_topic_template", "gateway/+/ack")
-	viper.SetDefault("network_server.gateway.backend.mqtt.config_topic_template", "gateway/{{ .MAC }}/config")
+	viper.SetDefault("network_server.gateway.backend.mqtt.event_topic", "gateway/+/event/+")
+	viper.SetDefault("network_server.gateway.backend.mqtt.command_topic_template", "gateway/{{ .GatewayID }}/command/{{ .CommandType }}")
 	viper.SetDefault("network_server.gateway.backend.mqtt.clean_session", true)
 	viper.SetDefault("join_server.resolve_domain_suffix", ".joineuis.lora-alliance.org")
 	viper.SetDefault("join_server.default.server", "http://localhost:8003")

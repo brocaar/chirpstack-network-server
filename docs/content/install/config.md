@@ -420,17 +420,21 @@ get_downlink_data_delay="100ms"
     # MQTT topic templates for the different MQTT topics.
     #
     # The meaning of these topics are documented at:
-    # https://www.loraserver.io/lora-gateway-bridge/use/data/
+    # https://www.loraserver.io/lora-gateway-bridge/
     #
     # The default values match the default expected configuration of the
     # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
     # absolutely needed.
-    # Use "{{ .MAC }}" as an substitution for the LoRa gateway MAC.
-    uplink_topic_template="gateway/+/rx"
-    downlink_topic_template="gateway/{{ .MAC }}/tx"
-    stats_topic_template="gateway/+/stats"
-    ack_topic_template="gateway/+/ack"
-    config_topic_template="gateway/{{ .MAC }}/config"
+
+    # Event topic template.
+    event_topic="gateway/+/event/+"
+
+    # Command topic template.
+    #
+    # Use:
+    #   * "{{ .GatewayID }}" as an substitution for the LoRa gateway ID
+    #   * "{{ .CommandType }}" as an substitution for the command type
+    command_topic_template="gateway/{{ .GatewayID }}/command/{{ .CommandType }}"
 
     # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
     server="tcp://localhost:1883"

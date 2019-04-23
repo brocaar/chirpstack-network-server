@@ -74,7 +74,7 @@ func (ts *BackendTestSuite) TestUplinkFrame() {
 	uplinkFrame.TxInfo.XXX_sizecache = 0
 	uplinkFrame.RxInfo.XXX_sizecache = 0
 
-	token := ts.mqttClient.Publish("gateway/0102030405060708/rx", 0, false, b)
+	token := ts.mqttClient.Publish("gateway/0102030405060708/event/up", 0, false, b)
 	token.Wait()
 	assert.NoError(token.Error())
 
@@ -93,7 +93,7 @@ func (ts *BackendTestSuite) TestGatewayStats() {
 	assert.NoError(err)
 	gatewayStats.XXX_sizecache = 0
 
-	token := ts.mqttClient.Publish("gateway/0102030405060708/stats", 0, false, b)
+	token := ts.mqttClient.Publish("gateway/0102030405060708/event/stats", 0, false, b)
 	token.Wait()
 	assert.NoError(token.Error())
 
@@ -110,7 +110,7 @@ func (ts *BackendTestSuite) TestDownlinkTXAck() {
 	b, err := proto.Marshal(&downlinkTXAck)
 	assert.NoError(err)
 
-	token := ts.mqttClient.Publish("gateway/0102030405060708/ack", 0, false, b)
+	token := ts.mqttClient.Publish("gateway/0102030405060708/event/ack", 0, false, b)
 	token.Wait()
 	assert.NoError(token.Error())
 
@@ -124,7 +124,7 @@ func (ts *BackendTestSuite) TestSendDownlinkFrame() {
 	assert := require.New(ts.T())
 
 	downlinkFrameChan := make(chan gw.DownlinkFrame)
-	token := ts.mqttClient.Subscribe("gateway/+/tx", 0, func(c paho.Client, msg paho.Message) {
+	token := ts.mqttClient.Subscribe("gateway/+/command/down", 0, func(c paho.Client, msg paho.Message) {
 		var pl gw.DownlinkFrame
 		if err := proto.Unmarshal(msg.Payload(), &pl); err != nil {
 			panic(err)
@@ -153,7 +153,7 @@ func (ts *BackendTestSuite) TestSendGatewayConfiguration() {
 	assert := require.New(ts.T())
 
 	gatewayConfigChan := make(chan gw.GatewayConfiguration)
-	token := ts.mqttClient.Subscribe("gateway/+/config", 0, func(c paho.Client, msg paho.Message) {
+	token := ts.mqttClient.Subscribe("gateway/+/command/config", 0, func(c paho.Client, msg paho.Message) {
 		var pl gw.GatewayConfiguration
 		if err := proto.Unmarshal(msg.Payload(), &pl); err != nil {
 			panic(err)

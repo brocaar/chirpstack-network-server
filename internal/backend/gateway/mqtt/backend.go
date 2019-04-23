@@ -8,11 +8,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"sync"
 	"text/template"
 	"time"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
+	"github.com/golang/protobuf/proto"
 	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -44,14 +46,11 @@ type Backend struct {
 	statsPacketChan   chan gw.GatewayStats
 	downlinkTXAckChan chan gw.DownlinkTXAck
 
-	conn                paho.Client
-	redisPool           *redis.Pool
-	downlinkTemplate    *template.Template
-	configTemplate      *template.Template
-	uplinkTopicTemplate string
-	statsTopicTemplate  string
-	ackTopicTemplate    string
-	qos                 uint8
+	conn                 paho.Client
+	redisPool            *redis.Pool
+	eventTopic           string
+	commandTopicTemplate *template.Template
+	qos                  uint8
 
 	gatewayMarshaler map[lorawan.EUI64]marshaler.Type
 }
@@ -62,25 +61,18 @@ func NewBackend(redisPool *redis.Pool, c config.Config) (gateway.Gateway, error)
 	var err error
 
 	b := Backend{
-		rxPacketChan:        make(chan gw.UplinkFrame),
-		statsPacketChan:     make(chan gw.GatewayStats),
-		downlinkTXAckChan:   make(chan gw.DownlinkTXAck),
-		gatewayMarshaler:    make(map[lorawan.EUI64]marshaler.Type),
-		redisPool:           redisPool,
-		uplinkTopicTemplate: conf.UplinkTopicTemplate,
-		statsTopicTemplate:  conf.StatsTopicTemplate,
-		ackTopicTemplate:    conf.AckTopicTemplate,
-		qos:                 conf.QOS,
+		rxPacketChan:      make(chan gw.UplinkFrame),
+		statsPacketChan:   make(chan gw.GatewayStats),
+		downlinkTXAckChan: make(chan gw.DownlinkTXAck),
+		gatewayMarshaler:  make(map[lorawan.EUI64]marshaler.Type),
+		redisPool:         redisPool,
+		eventTopic:        conf.EventTopic,
+		qos:               conf.QOS,
 	}
 
-	b.downlinkTemplate, err = template.New("downlink").Parse(conf.DownlinkTopicTemplate)
+	b.commandTopicTemplate, err = template.New("command").Parse(conf.CommandTopicTemplate)
 	if err != nil {
-		return nil, errors.Wrap(err, "gateway/mqtt: parse downlink template error")
-	}
-
-	b.configTemplate, err = template.New("config").Parse(conf.ConfigTopicTemplate)
-	if err != nil {
-		return nil, errors.Wrap(err, "gateway/mqtt: parse config template error")
+		return nil, errors.Wrap(err, "gateway/mqtt: parse command topic template error")
 	}
 
 	opts := paho.NewClientOptions()
@@ -125,17 +117,9 @@ func NewBackend(redisPool *redis.Pool, c config.Config) (gateway.Gateway, error)
 func (b *Backend) Close() error {
 	log.Info("gateway/mqtt: closing backend")
 
-	log.WithField("topic", b.uplinkTopicTemplate).Info("gateway/mqtt: unsubscribing from rx topic")
-	if token := b.conn.Unsubscribe(b.uplinkTopicTemplate); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("gateway/mqtt: unsubscribe from %s error: %s", b.uplinkTopicTemplate, token.Error())
-	}
-	log.WithField("topic", b.statsTopicTemplate).Info("gateway/mqtt: unsubscribing from stats topic")
-	if token := b.conn.Unsubscribe(b.statsTopicTemplate); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("gateway/mqtt: unsubscribe from %s error: %s", b.statsTopicTemplate, token.Error())
-	}
-	log.WithField("topic", b.ackTopicTemplate).Info("backend/gateway: unsubscribing from ack topic")
-	if token := b.conn.Unsubscribe(b.ackTopicTemplate); token.Wait() && token.Error() != nil {
-		return fmt.Errorf("backend/gateway: unsubscribe from %s error: %s", b.ackTopicTemplate, token.Error())
+	log.WithField("topic", b.eventTopic).Info("gateway/mqtt: unsubscribing from event topic")
+	if token := b.conn.Unsubscribe(b.eventTopic); token.Wait() && token.Error() != nil {
+		return fmt.Errorf("gateway/mqtt: unsubscribe from %s error: %s", b.eventTopic, token.Error())
 	}
 
 	log.Info("backend/gateway: handling last messages")
@@ -168,52 +152,58 @@ func (b *Backend) SendTXPacket(txPacket gw.DownlinkFrame) error {
 	}
 
 	gatewayID := helpers.GetGatewayID(txPacket.TxInfo)
-	t := b.getGatewayMarshaler(gatewayID)
 
-	bb, err := marshaler.MarshalDownlinkFrame(t, txPacket)
-	if err != nil {
-		return errors.Wrap(err, "gateway/mqtt: marshal downlink frame error")
-	}
-
-	topic := bytes.NewBuffer(nil)
-	if err := b.downlinkTemplate.Execute(topic, struct{ MAC lorawan.EUI64 }{gatewayID}); err != nil {
-		return errors.Wrap(err, "execute uplink template error")
-	}
-	log.WithFields(log.Fields{
-		"topic": topic.String(),
-		"qos":   b.qos,
-	}).Info("gateway/mqtt: publishing downlink frame")
-
-	if token := b.conn.Publish(topic.String(), b.qos, false, bb); token.Wait() && token.Error() != nil {
-		return errors.Wrap(err, "gateway/mqtt: publish downlink frame error")
-	}
-	return nil
+	return b.publishCommand(gatewayID, "down", &txPacket)
 }
 
 // SendGatewayConfigPacket sends the given GatewayConfigPacket to the gateway.
 func (b *Backend) SendGatewayConfigPacket(configPacket gw.GatewayConfiguration) error {
 	gatewayID := helpers.GetGatewayID(&configPacket)
+
+	return b.publishCommand(gatewayID, "config", &configPacket)
+}
+
+func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, msg proto.Message) error {
 	t := b.getGatewayMarshaler(gatewayID)
-
-	bb, err := marshaler.MarshalGatewayConfiguration(t, configPacket)
+	bb, err := marshaler.MarshalCommand(t, msg)
 	if err != nil {
-		return errors.Wrap(err, "gateway/mqtt: marshal gateway configuration error")
+		return errors.Wrap(err, "gateway/mqtt: marshal gateway command error")
 	}
 
+	templateCtx := struct {
+		GatewayID   lorawan.EUI64
+		CommandType string
+	}{gatewayID, command}
 	topic := bytes.NewBuffer(nil)
-	if err := b.configTemplate.Execute(topic, struct{ MAC lorawan.EUI64 }{gatewayID}); err != nil {
-		return errors.Wrap(err, "gateway/mqtt: execute config template error")
+	if err := b.commandTopicTemplate.Execute(topic, templateCtx); err != nil {
+		return errors.Wrap(err, "execute command topic template error")
 	}
+
 	log.WithFields(log.Fields{
-		"topic": topic.String(),
-		"qos":   b.qos,
-	}).Info("gateway/mqtt: publishing gateway configuration")
+		"gateway_id": gatewayID,
+		"command":    command,
+		"qos":        b.qos,
+		"topic":      topic.String(),
+	}).Info("gateway/mqtt: publishing gateway command")
 
 	if token := b.conn.Publish(topic.String(), b.qos, false, bb); token.Wait() && token.Error() != nil {
-		return errors.Wrap(err, "gateway/mqtt: publish gateway configuration error")
+		return errors.Wrap(err, "gateway/mqtt: publish gateway command error")
 	}
 
 	return nil
+}
+
+func (b *Backend) eventHandler(c paho.Client, msg paho.Message) {
+	b.wg.Add(1)
+	defer b.wg.Done()
+
+	if strings.HasSuffix(msg.Topic(), "up") {
+		b.rxPacketHandler(c, msg)
+	} else if strings.HasSuffix(msg.Topic(), "ack") {
+		b.ackPacketHandler(c, msg)
+	} else if strings.HasSuffix(msg.Topic(), "stats") {
+		b.statsPacketHandler(c, msg)
+	}
 }
 
 func (b *Backend) rxPacketHandler(c paho.Client, msg paho.Message) {
@@ -350,46 +340,14 @@ func (b *Backend) onConnected(c paho.Client) {
 
 	for {
 		log.WithFields(log.Fields{
-			"topic": b.uplinkTopicTemplate,
+			"topic": b.eventTopic,
 			"qos":   b.qos,
-		}).Info("gateway/mqtt: subscribing to rx topic")
-		if token := b.conn.Subscribe(b.uplinkTopicTemplate, b.qos, b.rxPacketHandler); token.Wait() && token.Error() != nil {
-			log.WithFields(log.Fields{
-				"topic": b.uplinkTopicTemplate,
+		}).Info("gateway/mqtt: subscribing to gateway event topic")
+		if token := b.conn.Subscribe(b.eventTopic, b.qos, b.eventHandler); token.Wait() && token.Error() != nil {
+			log.WithError(token.Error()).WithFields(log.Fields{
+				"topic": b.eventTopic,
 				"qos":   b.qos,
-			}).Errorf("gateway/mqtt: subscribe error: %s", token.Error())
-			time.Sleep(time.Second)
-			continue
-		}
-		break
-	}
-
-	for {
-		log.WithFields(log.Fields{
-			"topic": b.statsTopicTemplate,
-			"qos":   b.qos,
-		}).Info("gateway/mqtt: subscribing to stats topic")
-		if token := b.conn.Subscribe(b.statsTopicTemplate, b.qos, b.statsPacketHandler); token.Wait() && token.Error() != nil {
-			log.WithFields(log.Fields{
-				"topic": b.statsTopicTemplate,
-				"qos":   b.qos,
-			}).Errorf("gateway/mqtt: subscribe error: %s", token.Error())
-			time.Sleep(time.Second)
-			continue
-		}
-		break
-	}
-
-	for {
-		log.WithFields(log.Fields{
-			"topic": b.ackTopicTemplate,
-			"qos":   b.qos,
-		}).Info("backend/gateway: subscribing to ack topic")
-		if token := b.conn.Subscribe(b.ackTopicTemplate, b.qos, b.ackPacketHandler); token.Wait() && token.Error() != nil {
-			log.WithFields(log.Fields{
-				"topic": b.ackTopicTemplate,
-				"qos":   b.qos,
-			}).Errorf("backend/gateway: subscribe error: %s", token.Error())
+			}).Errorf("gateway/mqtt: subscribe error")
 			time.Sleep(time.Second)
 			continue
 		}

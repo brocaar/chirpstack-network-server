@@ -67,11 +67,8 @@ func GetConfig() config.Config {
 
 	c.NetworkServer.Gateway.Backend.MQTT.Server = "tcp://127.0.0.1:1883"
 	c.NetworkServer.Gateway.Backend.MQTT.CleanSession = true
-	c.NetworkServer.Gateway.Backend.MQTT.UplinkTopicTemplate = "gateway/+/rx"
-	c.NetworkServer.Gateway.Backend.MQTT.DownlinkTopicTemplate = "gateway/{{ .MAC }}/tx"
-	c.NetworkServer.Gateway.Backend.MQTT.StatsTopicTemplate = "gateway/+/stats"
-	c.NetworkServer.Gateway.Backend.MQTT.AckTopicTemplate = "gateway/+/ack"
-	c.NetworkServer.Gateway.Backend.MQTT.ConfigTopicTemplate = "gateway/{{ .MAC }}/config"
+	c.NetworkServer.Gateway.Backend.MQTT.EventTopic = "gateway/+/event/+"
+	c.NetworkServer.Gateway.Backend.MQTT.CommandTopicTemplate = "gateway/{{ .GatewayID }}/command/{{ .CommandType }}"
 
 	if v := os.Getenv("TEST_REDIS_URL"); v != "" {
 		c.Redis.URL = v

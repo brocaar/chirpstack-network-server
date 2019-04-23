@@ -96,20 +96,18 @@ type Config struct {
 				Type string `mapstructure:"type"`
 
 				MQTT struct {
-					Server                string
-					Username              string
-					Password              string
-					QOS                   uint8  `mapstructure:"qos"`
-					CleanSession          bool   `mapstructure:"clean_session"`
-					ClientID              string `mapstructure:"client_id"`
-					CACert                string `mapstructure:"ca_cert"`
-					TLSCert               string `mapstructure:"tls_cert"`
-					TLSKey                string `mapstructure:"tls_key"`
-					UplinkTopicTemplate   string `mapstructure:"uplink_topic_template"`
-					DownlinkTopicTemplate string `mapstructure:"downlink_topic_template"`
-					StatsTopicTemplate    string `mapstructure:"stats_topic_template"`
-					AckTopicTemplate      string `mapstructure:"ack_topic_template"`
-					ConfigTopicTemplate   string `mapstructure:"config_topic_template"`
+					Server       string
+					Username     string
+					Password     string
+					QOS          uint8  `mapstructure:"qos"`
+					CleanSession bool   `mapstructure:"clean_session"`
+					ClientID     string `mapstructure:"client_id"`
+					CACert       string `mapstructure:"ca_cert"`
+					TLSCert      string `mapstructure:"tls_cert"`
+					TLSKey       string `mapstructure:"tls_key"`
+
+					EventTopic           string `mapstructure:"event_topic"`
+					CommandTopicTemplate string `mapstructure:"command_topic_template"`
 				} `mapstructure:"mqtt"`
 
 				GCPPubSub struct {
