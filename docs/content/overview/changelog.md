@@ -34,7 +34,7 @@ longer needed.
 #### Azure integration
 
 Using the Azure integration, it is possible to connect gateways using the
-[Azure IoT Hub](https://azure.microsoft.com/en-us/services/iot-hub/) service.                                                                                                                                                               │[Azure IoT Hub](https://azure.microsoft.com/en-us/services/iot-hub/) service.
+[Azure IoT Hub](https://azure.microsoft.com/en-us/services/iot-hub/) service.
 This feature is still experimental and might (slightly) change.
 
 ### Upgrading
