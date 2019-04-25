@@ -4,7 +4,7 @@ require (
 	cloud.google.com/go v0.34.0
 	github.com/Azure/azure-service-bus-go v0.4.1
 	github.com/NickBall/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5
-	github.com/amenzhinsky/iothub v0.0.0-20190415141912-fb38f4d4c9fb
+	github.com/amenzhinsky/iothub v0.1.0
 	github.com/brocaar/lorawan v0.0.0-20190308082318-5ed881e0a2d7
 	github.com/eclipse/paho.mqtt.golang v1.1.1
 	github.com/elazarl/go-bindata-assetfs v1.0.0

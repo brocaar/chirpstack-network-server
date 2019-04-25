@@ -82,9 +82,6 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 		return nil, errors.Wrap(err, "new queue client error")
 	}
 
-	// TODO: migrate to IoT Hub REST API?
-	// Unfortunately, there is no documentation available on how to use the API:
-	// https://docs.microsoft.com/en-us/rest/api/iothub/service/senddevicecommand
 	b.iotClient, err = iotservice.New(
 		iotservice.WithConnectionString(conf.CommandsConnectionString),
 	)

@@ -29,6 +29,8 @@ github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf h1:qet1QNfXsQxTZq
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/amenzhinsky/iothub v0.0.0-20190415141912-fb38f4d4c9fb h1:ni2HPOcImx1iqm16mxjZRRzsXcwvzzsi2fZg0lRLvr0=
 github.com/amenzhinsky/iothub v0.0.0-20190415141912-fb38f4d4c9fb/go.mod h1:5SMEOj96ci5bC7bp/RB1jH44yY5SzQnspyOov8hk39w=
+github.com/amenzhinsky/iothub v0.1.0 h1:nwOWAgRW8WJV8d91NNLUf2Q9sN3OsNyMsE+jactOJhs=
+github.com/amenzhinsky/iothub v0.1.0/go.mod h1:5SMEOj96ci5bC7bp/RB1jH44yY5SzQnspyOov8hk39w=
 github.com/apex/log v1.1.0 h1:J5rld6WVFi6NxA6m8GJ1LJqu3+GiTFIt3mYv27gdQWI=
 github.com/apex/log v1.1.0/go.mod h1:yA770aXIDQrhVOIGurT/pVdfCpSq1GQV/auzMN5fzvY=
 github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6/go.mod h1:grANhF5doyWs3UAsr3K4I6qtAmlQcZDesFNEHPZAzj8=
