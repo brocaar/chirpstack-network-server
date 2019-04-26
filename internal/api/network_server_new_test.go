@@ -462,16 +462,53 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 			fNwkSIntKey := [16]byte{2, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 			nwkSEncKey := [16]byte{3, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}
 
-			// create item in the queue
-			_, err := ts.api.CreateDeviceQueueItem(context.Background(), &ns.CreateDeviceQueueItemRequest{
-				Item: &ns.DeviceQueueItem{
-					DevEui:     devEUI[:],
-					FrmPayload: []byte{1, 2, 3, 4},
-					FCnt:       10,
-					FPort:      20,
+			_, err = ts.api.ActivateDevice(context.Background(), &ns.ActivateDeviceRequest{
+				DeviceActivation: &ns.DeviceActivation{
+					DevEui:        devEUI[:],
+					DevAddr:       devAddr[:],
+					SNwkSIntKey:   sNwkSIntKey[:],
+					FNwkSIntKey:   fNwkSIntKey[:],
+					NwkSEncKey:    nwkSEncKey[:],
+					FCntUp:        10,
+					NFCntDown:     11,
+					AFCntDown:     12,
+					SkipFCntCheck: false,
 				},
 			})
 			assert.NoError(err)
+
+			t.Run("Enqueue with different security-context", func(t *testing.T) {
+				assert := require.New(t)
+
+				// create item in the queue (device is not activated yet)
+				_, err := ts.api.CreateDeviceQueueItem(context.Background(), &ns.CreateDeviceQueueItemRequest{
+					Item: &ns.DeviceQueueItem{
+						DevAddr:    []byte{1, 2, 3, 4},
+						DevEui:     devEUI[:],
+						FrmPayload: []byte{1, 2, 3, 4},
+						FCnt:       10,
+						FPort:      20,
+					},
+				})
+				assert.NotNil(err)
+				assert.Equal(codes.InvalidArgument, grpc.Code(err))
+			})
+
+			t.Run("Enqueue with valid security-context", func(t *testing.T) {
+				assert := require.New(t)
+
+				// create item in the queue (device is not activated yet)
+				_, err := ts.api.CreateDeviceQueueItem(context.Background(), &ns.CreateDeviceQueueItemRequest{
+					Item: &ns.DeviceQueueItem{
+						DevAddr:    []byte{6, 2, 3, 4},
+						DevEui:     devEUI[:],
+						FrmPayload: []byte{1, 2, 3, 4},
+						FCnt:       10,
+						FPort:      20,
+					},
+				})
+				assert.Nil(err)
+			})
 
 			_, err = ts.api.ActivateDevice(context.Background(), &ns.ActivateDeviceRequest{
 				DeviceActivation: &ns.DeviceActivation{

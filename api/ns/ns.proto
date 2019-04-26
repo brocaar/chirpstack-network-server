@@ -540,6 +540,14 @@ message DeviceQueueItem {
     // When set to true, LoRa Server will wait for the device to ack the
     // received frame.
     bool confirmed = 5;
+
+    // Device address (as known by the application-server).
+    // It will be used to validate that the application-server is
+    // using the correct security context of the device. As on OTAA, there
+    // is a gap between the activation and the delivery of the AppSKey to the
+    // application-server, there is a possibility that the application-server
+    // tries to enqueue payloads encrypted with the old session-key.
+    bytes dev_addr = 6;
 }
 
 message CreateDeviceQueueItemRequest {
