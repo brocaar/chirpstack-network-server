@@ -17,17 +17,18 @@ import (
 
 // DeviceQueueItem represents an item in the device queue (downlink).
 type DeviceQueueItem struct {
-	ID                      int64          `db:"id"`
-	CreatedAt               time.Time      `db:"created_at"`
-	UpdatedAt               time.Time      `db:"updated_at"`
-	DevEUI                  lorawan.EUI64  `db:"dev_eui"`
-	FRMPayload              []byte         `db:"frm_payload"`
-	FCnt                    uint32         `db:"f_cnt"`
-	FPort                   uint8          `db:"f_port"`
-	Confirmed               bool           `db:"confirmed"`
-	IsPending               bool           `db:"is_pending"`
-	EmitAtTimeSinceGPSEpoch *time.Duration `db:"emit_at_time_since_gps_epoch"`
-	TimeoutAfter            *time.Time     `db:"timeout_after"`
+	ID                      int64           `db:"id"`
+	CreatedAt               time.Time       `db:"created_at"`
+	UpdatedAt               time.Time       `db:"updated_at"`
+	DevAddr                 lorawan.DevAddr `db:"dev_addr"`
+	DevEUI                  lorawan.EUI64   `db:"dev_eui"`
+	FRMPayload              []byte          `db:"frm_payload"`
+	FCnt                    uint32          `db:"f_cnt"`
+	FPort                   uint8           `db:"f_port"`
+	Confirmed               bool            `db:"confirmed"`
+	IsPending               bool            `db:"is_pending"`
+	EmitAtTimeSinceGPSEpoch *time.Duration  `db:"emit_at_time_since_gps_epoch"`
+	TimeoutAfter            *time.Time      `db:"timeout_after"`
 }
 
 // Validate validates the DeviceQueueItem.
@@ -52,6 +53,7 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
         insert into device_queue (
             created_at,
             updated_at,
+			dev_addr,
             dev_eui,
             frm_payload,
             f_cnt,
@@ -60,10 +62,11 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
             emit_at_time_since_gps_epoch,
             is_pending,
             timeout_after
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         returning id`,
 		qi.CreatedAt,
 		qi.UpdatedAt,
+		qi.DevAddr[:],
 		qi.DevEUI[:],
 		qi.FRMPayload,
 		qi.FCnt,
@@ -110,7 +113,8 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
             confirmed = $7,
             emit_at_time_since_gps_epoch = $8,
             is_pending = $9,
-            timeout_after = $10
+            timeout_after = $10,
+			dev_addr = $11
         where
             id = $1`,
 		qi.ID,
@@ -123,6 +127,7 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
 		qi.EmitAtTimeSinceGPSEpoch,
 		qi.IsPending,
 		qi.TimeoutAfter,
+		qi.DevAddr[:],
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")

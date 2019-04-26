@@ -77,6 +77,7 @@ func TestDeviceQueue(t *testing.T) {
 
 				items := []DeviceQueueItem{
 					{
+						DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
 						DevEUI:     d.DevEUI,
 						FRMPayload: []byte{1, 2, 3},
 						FCnt:       1,
@@ -84,6 +85,7 @@ func TestDeviceQueue(t *testing.T) {
 						Confirmed:  true,
 					},
 					{
+						DevAddr:                 lorawan.DevAddr{1, 2, 3, 4},
 						DevEUI:                  d.DevEUI,
 						FRMPayload:              []byte{4, 5, 6},
 						FCnt:                    3,
@@ -91,6 +93,7 @@ func TestDeviceQueue(t *testing.T) {
 						EmitAtTimeSinceGPSEpoch: &gpsEpochTS1,
 					},
 					{
+						DevAddr:                 lorawan.DevAddr{1, 2, 3, 4},
 						DevEUI:                  d.DevEUI,
 						FRMPayload:              []byte{7, 8, 9},
 						FCnt:                    2,
@@ -180,6 +183,7 @@ func TestDeviceQueue(t *testing.T) {
 
 				items := []DeviceQueueItem{
 					{
+						DevAddr:      lorawan.DevAddr{1, 2, 3, 4},
 						DevEUI:       d.DevEUI,
 						FCnt:         100,
 						FPort:        1,
@@ -188,24 +192,28 @@ func TestDeviceQueue(t *testing.T) {
 						TimeoutAfter: &oneMinuteAgo,
 					},
 					{
+						DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
 						DevEUI:     d.DevEUI,
 						FCnt:       101,
 						FPort:      1,
 						FRMPayload: []byte{1, 2, 3, 4, 5, 6, 7},
 					},
 					{
+						DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
 						DevEUI:     d.DevEUI,
 						FCnt:       102,
 						FPort:      2,
 						FRMPayload: []byte{1, 2, 3, 4, 5, 6},
 					},
 					{
+						DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
 						DevEUI:     d.DevEUI,
 						FCnt:       103,
 						FPort:      3,
 						FRMPayload: []byte{1, 2, 3, 4, 5},
 					},
 					{
+						DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
 						DevEUI:     d.DevEUI,
 						FCnt:       104,
 						FPort:      4,

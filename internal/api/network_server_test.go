@@ -442,6 +442,11 @@ func TestNetworkServerAPI(t *testing.T) {
 			}
 			So(storage.CreateDevice(storage.DB(), &d), ShouldBeNil)
 
+			ds := storage.DeviceSession{
+				DevEUI: d.DevEUI,
+			}
+			So(storage.SaveDeviceSession(storage.RedisPool(), ds), ShouldBeNil)
+
 			Convey("Given an item in the device-queue", func() {
 				_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
 					Item: &ns.DeviceQueueItem{
@@ -592,6 +597,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			Convey("When calling CreateDeviceQueueItem", func() {
 				_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
 					Item: &ns.DeviceQueueItem{
+						DevAddr:    ds.DevAddr[:],
 						DevEui:     devEUI[:],
 						FrmPayload: []byte{1, 2, 3, 4},
 						FCnt:       10,
@@ -608,6 +614,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					So(err, ShouldBeNil)
 					So(resp.Items, ShouldHaveLength, 1)
 					So(resp.Items[0], ShouldResemble, &ns.DeviceQueueItem{
+						DevAddr:    ds.DevAddr[:],
 						DevEui:     devEUI[:],
 						FrmPayload: []byte{1, 2, 3, 4},
 						FCnt:       10,
