@@ -9,6 +9,19 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v2.8.1
+
+### Improvement
+
+#### Validate DevAddr on enqueue
+
+A `DevAddr` field has been added to the `MulticastQueueItem` API field.
+When this field is set, LoRa Server will validate that the current active
+security-context has the same `DevAddr` and if not, the API returns an error.
+
+This prevents enqueue calls after the device (re)joins but before the new
+`AppSKey` has been signalled to LoRa App Server.
+
 ## v2.8.0
 
 ### Features

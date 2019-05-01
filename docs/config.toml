@@ -40,4 +40,4 @@ pygmentsUseClasses = true
     weight = 5
 
 [params]
-    version = "2.8.0"
+    version = "2.8.1"
