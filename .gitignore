@@ -19,5 +19,5 @@ certs/
 # builds
 dist/
 build/
-internal/migrations/
+internal/migrations/migrations_gen.go
 docs/public/
