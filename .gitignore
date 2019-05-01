@@ -11,13 +11,13 @@ Vagrantfile
 *.toml
 
 # dependencies
-vendor/
+/vendor/
 
 # certs
-certs/
+/certs/
 
 # builds
-dist/
-build/
-internal/migrations/migrations_gen.go
-docs/public/
+/dist/
+/build/
+/internal/migrations/migrations_gen.go
+/docs/public/

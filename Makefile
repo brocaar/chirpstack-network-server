@@ -43,7 +43,7 @@ api:
 
 statics:
 	@echo "Generating static files"
-	@go generate cmd/loraserver/main.go
+	@go generate internal/migrations/migrations.go
 
 dev-requirements:
 	go install golang.org/x/lint/golint
