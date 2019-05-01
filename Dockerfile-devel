@@ -1,11 +1,11 @@
-FROM golang:1.11-alpine
+FROM golang:1.12-alpine
 
 ENV PROJECT_PATH=/loraserver
 ENV PATH=$PATH:$PROJECT_PATH/build
 ENV CGO_ENABLED=0
 ENV GO_EXTRA_BUILD_ARGS="-a -installsuffix cgo"
 
-RUN apk add --no-cache ca-certificates tzdata make git bash protobuf alpine-sdk
+RUN apk add --no-cache ca-certificates tzdata make git bash protobuf
 
 RUN mkdir -p $PROJECT_PATH
 COPY . $PROJECT_PATH

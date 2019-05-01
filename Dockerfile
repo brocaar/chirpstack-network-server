@@ -1,4 +1,4 @@
-FROM golang:1.11-alpine AS development
+FROM golang:1.12-alpine AS development
 
 ENV PROJECT_PATH=/loraserver
 ENV PATH=$PATH:$PROJECT_PATH/build
