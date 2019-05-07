@@ -297,6 +297,12 @@ message ChannelConfiguration {
         // FSK modulation config.
         FSKModulationConfig fsk_modulation_config = 4;
     }
+
+    // Board index.
+    uint32 board = 5;
+
+    // Demodulator index (of the given board).
+    uint32 demodulator = 6;
 }
 
 message LoRaModulationConfig {
