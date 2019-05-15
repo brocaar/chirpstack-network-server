@@ -1103,6 +1103,66 @@ func (ts *ClassATestSuite) TestLW10MACCommands() {
 				}),
 			},
 		},
+		{
+			Name:          "RXTimingSetupAns is answered with an empty downlink",
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+						FOpts: []lorawan.Payload{
+							&lorawan.MACCommand{CID: lorawan.RXTimingSetupAns},
+						},
+					},
+				},
+				MIC: lorawan.MIC{0xb6, 0x20, 0xd2, 0x14},
+			},
+			Assert: []Assertion{
+				AssertDownlinkFrame(gw.DownlinkTXInfo{
+					GatewayId:  ts.RXInfo.GatewayId,
+					Frequency:  ts.TXInfo.Frequency,
+					Power:      14,
+					Modulation: common.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							PolarizationInversion: true,
+							CodeRate:              "4/5",
+						},
+					},
+					Context: ts.RXInfo.Context,
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(time.Second),
+						},
+					},
+				}, lorawan.PHYPayload{
+					MHDR: lorawan.MHDR{
+						MType: lorawan.UnconfirmedDataDown,
+						Major: lorawan.LoRaWANR1,
+					},
+					MACPayload: &lorawan.MACPayload{
+						FHDR: lorawan.FHDR{
+							FCtrl: lorawan.FCtrl{
+								ADR: true,
+							},
+							DevAddr: ts.DeviceSession.DevAddr,
+							FCnt:    5,
+						},
+					},
+					MIC: lorawan.MIC{0xc1, 0x0a, 0x08, 0xd9},
+				}),
+			},
+		},
 	}
 
 	for _, tst := range tests {
