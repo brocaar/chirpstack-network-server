@@ -429,6 +429,7 @@ func (b *Backend) negotiateClaimLoop() {
 			if err := cbs.NegotiateClaim(b.ctx, b.c2dHost, b.c2dConn, b.c2dTokenProvider); err != nil {
 				log.WithError(err).Error("gateway/azure_iot_hub: negotiate amqp cbs claim error")
 				ticker.Reset(2 * time.Second)
+				b.Unlock()
 				continue
 			}
 
