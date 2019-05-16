@@ -9,10 +9,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Azure/azure-amqp-common-go/cbs"
+	"github.com/Azure/azure-amqp-common-go/sas"
+	"github.com/Azure/azure-amqp-common-go/uuid"
 	servicebus "github.com/Azure/azure-service-bus-go"
-	"github.com/amenzhinsky/iothub/iotservice"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+	"pack.ag/amqp"
 
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/internal/backend/gateway"
@@ -38,7 +41,13 @@ type Backend struct {
 	queueName string
 	ns        *servicebus.Namespace
 	queue     *servicebus.Queue
-	iotClient *iotservice.Client
+
+	c2dConn            *amqp.Client
+	c2dTokenProvider   *sas.TokenProvider
+	c2dTokenExpiration time.Duration
+	c2dHost            string
+	c2dSession         *amqp.Session
+	c2dSender          *amqp.Sender
 }
 
 // NewBackend creates a new Backend.
@@ -55,10 +64,13 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 		gatewayMarshaler:  make(map[lorawan.EUI64]marshaler.Type),
 
 		ctx: context.Background(),
+
+		c2dTokenExpiration: time.Hour,
 	}
 
 	b.ctx, b.cancel = context.WithCancel(b.ctx)
 
+	// setup uplink
 	connProperties, err := parseConnectionString(conf.EventsConnectionString)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse connection-string error")
@@ -82,13 +94,6 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 		return nil, errors.Wrap(err, "new queue client error")
 	}
 
-	b.iotClient, err = iotservice.New(
-		iotservice.WithConnectionString(conf.CommandsConnectionString),
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "new iotservice client error")
-	}
-
 	go func() {
 		log.WithField("queue", b.queueName).Info("gateway/azure_iot_hub: starting queue consumer")
 		for {
@@ -103,6 +108,39 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 
 		}
 	}()
+
+	// setup Cloud2Device messaging
+	connProperties, err = parseConnectionString(conf.CommandsConnectionString)
+	if err != nil {
+		return nil, errors.Wrap(err, "parse connection-string error")
+	}
+
+	b.c2dHost, ok = connProperties["HostName"]
+	if !ok {
+		return nil, errors.New("connection-string does not contain 'HostName'")
+	}
+
+	if sak, ok := connProperties["SharedAccessKey"]; ok {
+		bb, err := base64.StdEncoding.DecodeString(sak)
+		if err != nil {
+			return nil, errors.Wrap(err, "decode SharedAccessKey error")
+		}
+
+		b.c2dTokenProvider, err = sas.NewTokenProvider(sas.TokenProviderWithKey(connProperties["SharedAccessKeyName"], string(bb)))
+		if err != nil {
+			return nil, errors.Wrap(err, "new sas token error")
+		}
+	} else {
+		return nil, errors.New("connection-string does not contain 'SharedAccessKey'")
+	}
+
+	// credentials are set by the negotiateClaimLoop method
+	b.c2dConn, err = amqp.Dial(fmt.Sprintf("amqps://%s", b.c2dHost), amqp.ConnSASLAnonymous())
+	if err != nil {
+		return nil, errors.Wrap(err, "amqp dial error")
+	}
+
+	go b.negotiateClaimLoop()
 
 	return &b, nil
 }
@@ -154,25 +192,6 @@ func (b *Backend) Close() error {
 	close(b.gatewayStatsChan)
 	close(b.downlinkTxAckChan)
 	b.queue.Close(context.Background())
-	return nil
-}
-
-func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, data []byte) error {
-	err := b.iotClient.SendEvent(
-		b.ctx,
-		gatewayID.String(),
-		data,
-		iotservice.WithSendProperty("command", command),
-	)
-	if err != nil {
-		return errors.Wrap(err, "send event error")
-	}
-
-	log.WithFields(log.Fields{
-		"gateway_id": gatewayID,
-		"command":    command,
-	}).Info("gateway/azure_iot_hub: gateway command published")
-
 	return nil
 }
 
@@ -326,6 +345,101 @@ func (b *Backend) handleDownlinkTXAck(gatewayID lorawan.EUI64, data []byte) erro
 	b.downlinkTxAckChan <- ack
 
 	return nil
+}
+
+func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, data []byte) error {
+	// needed because of negotiateClaimLoop
+	b.RLock()
+	defer b.RUnlock()
+
+	var err error
+
+	// init (new) session
+	if b.c2dSession == nil {
+		b.c2dSession, err = b.c2dConn.NewSession()
+		if err != nil {
+			return errors.Wrap(err, "new amqp session error")
+		}
+	}
+
+	// init (new) sender
+	if b.c2dSender == nil {
+		b.c2dSender, err = b.c2dSession.NewSender(
+			amqp.LinkTargetAddress("/messages/devicebound"),
+		)
+		if err != nil {
+			return errors.Wrap(err, "new amqp sender error")
+		}
+	}
+
+	msgID, err := uuid.NewV4()
+	if err != nil {
+		return errors.Wrap(err, "new uuid error")
+	}
+
+	msg := amqp.NewMessage(data)
+	msg.Properties = &amqp.MessageProperties{
+		MessageID: msgID.String(),
+		To:        fmt.Sprintf("/devices/%s/messages/devicebound", gatewayID),
+	}
+	msg.ApplicationProperties = map[string]interface{}{
+		"iothub-ack": "none",
+		"command":    command,
+	}
+
+	if err := b.c2dSender.Send(b.ctx, msg); err != nil {
+		return errors.Wrap(err, "amqp send error")
+	}
+
+	log.WithFields(log.Fields{
+		"gateway_id": gatewayID,
+		"command":    command,
+	}).Info("gateway/azure_iot_hub: gateway command published")
+
+	return nil
+}
+
+func (b *Backend) negotiateClaimLoop() {
+	ticker := time.NewTimer(0)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			b.Lock()
+
+			// close the sender and session first
+			// testing turned out that without this, Send calls would be rejected due to invalid token
+			if b.c2dSender != nil {
+				if err := b.c2dSender.Close(b.ctx); err != nil {
+					log.WithError(err).Error("gateway/azure_iot_hub: close amqp sender error")
+				}
+				b.c2dSender = nil
+			}
+
+			if b.c2dSession != nil {
+				if err := b.c2dSession.Close(b.ctx); err != nil {
+					log.WithError(err).Error("gateway/azure_iot_hub: close amqp session error")
+				}
+				b.c2dSession = nil
+			}
+
+			// negotiate cbs claim
+			log.Info("gateway/azure_iot_hub: negotiating amqp cbs claim")
+			if err := cbs.NegotiateClaim(b.ctx, b.c2dHost, b.c2dConn, b.c2dTokenProvider); err != nil {
+				log.WithError(err).Error("gateway/azure_iot_hub: negotiate amqp cbs claim error")
+				ticker.Reset(2 * time.Second)
+				continue
+			}
+
+			b.Unlock()
+		case <-b.ctx.Done():
+			return
+		}
+
+		ticker.Reset(b.c2dTokenExpiration)
+	}
+
 }
 
 func parseConnectionString(str string) (map[string]string, error) {
