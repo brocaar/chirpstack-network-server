@@ -26,6 +26,15 @@ messages.
 Previously, each topic was configured separatly. To be consistent with
 LoRa Gateway Bridge v3, this has been re-factored into "events" and "commands".
 
+#### Azure integration
+
+The Azure integration (Cloud to Device) has been improved.
+
+#### RXTimingSetupAns acknowledged
+
+When LoRa Server receives a `RXTimingSetupAns` mac-command, it will always
+respond to the device, even when this results in sending an empty frame.
+
 ### Upgrading
 
 LoRa Server v3 depends on LoRa Gateway Bridge v3! It is recommended to upgrade to
