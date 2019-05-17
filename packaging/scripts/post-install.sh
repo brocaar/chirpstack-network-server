@@ -9,15 +9,12 @@ DAEMON_GROUP=loraserver
 
 function install_init {
 	cp -f $SCRIPT_DIR/$NAME.init /etc/init.d/$NAME
-	cp -f $SCRIPT_DIR/$NAME-mqtt2to3.init /etc/init.d/$NAME-mqtt2to3
 	chmod +x /etc/init.d/$NAME
-	chmod +x /etc/init.d/$NAME-mqtt2to3
 	update-rc.d $NAME defaults
 }
 
 function install_systemd {
 	cp -f $SCRIPT_DIR/$NAME.service /lib/systemd/system/$NAME.service
-	cp -f $SCRIPT_DIR/$NAME-mqtt2to3.service /lib/systemd/system/$NAME-mqtt2to3.service
 	systemctl daemon-reload
 	systemctl enable $NAME
 }
