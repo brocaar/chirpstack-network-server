@@ -15,11 +15,12 @@ clean:
 
 test: statics
 	@echo "Running tests"
+	@rm -f coverage.out
 	@for pkg in $(PKGS) ; do \
 		golint $$pkg ; \
 	done
 	@go vet $(PKGS)
-	@go test -p 1 -v $(PKGS)
+	@go test -p 1 -v -cover $(PKGS) -coverprofile coverage.out
 
 dist:
 	goreleaser
