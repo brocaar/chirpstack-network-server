@@ -11,7 +11,7 @@ Vagrantfile
 coverage.out
 
 # configuration
-*.toml
+/*.toml
 
 # dependencies
 /vendor/

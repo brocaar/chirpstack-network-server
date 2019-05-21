@@ -36,6 +36,8 @@ nfpm:
     "packaging/files/loraserver.rotate": "/etc/logrotate.d/loraserver"
     "packaging/files/loraserver.init": "/usr/lib/loraserver/scripts/loraserver.init"
     "packaging/files/loraserver.service": "/usr/lib/loraserver/scripts/loraserver.service"
+  config_files:
+    "packaging/files/loraserver.toml": "/etc/loraserver/loraserver.toml"
   scripts:
     postinstall: "packaging/scripts/post-install.sh"
     postremove: "packaging/scripts/post-remove.sh"
