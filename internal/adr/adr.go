@@ -38,7 +38,8 @@ func Setup(c config.Config) error {
 func HandleADR(sp storage.ServiceProfile, ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 
 	// if the node has ADR disabled or it's disabled gloablly
-	if !ds.ADR || disableADR {
+	// or "disabled" by ServiceProfile
+	if !ds.ADR || disableADR || sp.DRMin > sp.DRMax {
 		return nil, nil
 	}
 
