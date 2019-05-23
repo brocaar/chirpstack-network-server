@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/brocaar/loraserver/internal/adr"
 	"github.com/brocaar/loraserver/internal/backend/gateway/azureiothub"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
@@ -56,6 +57,7 @@ func run(cmd *cobra.Command, args []string) error {
 		setupStorage,
 		setGatewayBackend,
 		setupApplicationServer,
+		setupADR,
 		setupGeolocationServer,
 		setupJoinServer,
 		setupNetworkController,
@@ -192,6 +194,13 @@ func enableUplinkChannels() error {
 func setupStorage() error {
 	if err := storage.Setup(config.C); err != nil {
 		return errors.Wrap(err, "setup storage error")
+	}
+	return nil
+}
+
+func setupADR() error {
+	if err := adr.Setup(config.C); err != nil {
+		errors.Wrap(err, "setup adr error")
 	}
 	return nil
 }
