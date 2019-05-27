@@ -9,6 +9,12 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v3.0.1
+
+### Bugfixes
+
+* Fix ADR setup. [#396](https://github.com/brocaar/loraserver/pull/396)
+
 ## v3.0.0
 
 ### Features
