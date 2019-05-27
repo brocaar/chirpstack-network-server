@@ -1,9 +1,7 @@
-# This configuration configures LoRa Server for the EU868 band using a MQTT
+# This configuration configures LoRa Server for the US915 band using a MQTT
 # broker to communicate with the gateways. Many options and defaults have been
 # omitted for simplicity.
 # 
-# For other bands, see the ./examples/ sub-directory.
-#
 # See https://www.loraserver.io/loraserver/install/config/ for a full
 # configuration example and documentation.
 
@@ -64,45 +62,17 @@ net_id="000000"
   # specification for valid values that apply to your region.
   # See: https://www.lora-alliance.org/lorawan-for-developers
   [network_server.band]
-  name="EU_863_870"
+  name="US_902_928"
 
 
-  # LoRaWAN network related settings.
-  [network_server.network_settings]
-
-    # Extra channel configuration.
+    # LoRaWAN network related settings.
+    [network_server.network_settings]
+    # Enable only a given sub-set of channels
     #
-    # Use this for LoRaWAN regions where it is possible to extend the by default
-    # available channels with additional channels (e.g. the EU band).
-    # The first 5 channels will be configured as part of the OTAA join-response
-    # (using the CFList field).
-    # The other channels (or channel / data-rate changes) will be (re)configured
-    # using the NewChannelReq mac-command.
-    #
-    [[network_server.network_settings.extra_channels]]
-    frequency=867100000
-    min_dr=0
-    max_dr=5
-
-    [[network_server.network_settings.extra_channels]]
-    frequency=867300000
-    min_dr=0
-    max_dr=5
-
-    [[network_server.network_settings.extra_channels]]
-    frequency=867500000
-    min_dr=0
-    max_dr=5
-
-    [[network_server.network_settings.extra_channels]]
-    frequency=867700000
-    min_dr=0
-    max_dr=5
-
-    [[network_server.network_settings.extra_channels]]
-    frequency=867900000
-    min_dr=0
-    max_dr=5
+    # Use this when ony a sub-set of the by default enabled channels are being
+    # used. For example when only using the first 8 channels of the US band.
+    # Note: when left blank, all channels will be enabled.
+    enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7]
 
 
     # Class B settings

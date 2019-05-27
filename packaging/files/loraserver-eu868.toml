@@ -2,8 +2,6 @@
 # broker to communicate with the gateways. Many options and defaults have been
 # omitted for simplicity.
 # 
-# For other bands, see the ./examples/ sub-directory.
-#
 # See https://www.loraserver.io/loraserver/install/config/ for a full
 # configuration example and documentation.
 
