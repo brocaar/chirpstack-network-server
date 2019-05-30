@@ -9,6 +9,12 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v3.0.2
+
+### Bugfixes
+
+* Fix Azure IoT Hub detached link issue / recover on AMQP error.
+
 ## v3.0.1
 
 ### Bugfixes
