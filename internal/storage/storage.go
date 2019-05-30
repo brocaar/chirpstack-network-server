@@ -31,6 +31,8 @@ func Setup(c config.Config) error {
 	log.Info("storage: setting up Redis connection pool")
 	redisPool = &redis.Pool{
 		MaxIdle:     10,
+		MaxActice:   5000,
+		Wait:        True,
 		IdleTimeout: c.Redis.IdleTimeout,
 		Dial: func() (redis.Conn, error) {
 			c, err := redis.DialURL(c.Redis.URL,
