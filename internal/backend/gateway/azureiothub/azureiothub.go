@@ -134,13 +134,9 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 		return nil, errors.New("connection-string does not contain 'SharedAccessKey'")
 	}
 
-	// credentials are set by the negotiateClaimLoop method
-	b.c2dConn, err = amqp.Dial(fmt.Sprintf("amqps://%s", b.c2dHost), amqp.ConnSASLAnonymous())
-	if err != nil {
-		return nil, errors.Wrap(err, "amqp dial error")
+	if err := b.c2dNewSessionAndLink(); err != nil {
+		return nil, errors.Wrap(err, "new c2d session and link error")
 	}
-
-	go b.negotiateClaimLoop()
 
 	return &b, nil
 }
@@ -348,30 +344,6 @@ func (b *Backend) handleDownlinkTXAck(gatewayID lorawan.EUI64, data []byte) erro
 }
 
 func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, data []byte) error {
-	// needed because of negotiateClaimLoop
-	b.RLock()
-	defer b.RUnlock()
-
-	var err error
-
-	// init (new) session
-	if b.c2dSession == nil {
-		b.c2dSession, err = b.c2dConn.NewSession()
-		if err != nil {
-			return errors.Wrap(err, "new amqp session error")
-		}
-	}
-
-	// init (new) sender
-	if b.c2dSender == nil {
-		b.c2dSender, err = b.c2dSession.NewSender(
-			amqp.LinkTargetAddress("/messages/devicebound"),
-		)
-		if err != nil {
-			return errors.Wrap(err, "new amqp sender error")
-		}
-	}
-
 	msgID, err := uuid.NewV4()
 	if err != nil {
 		return errors.Wrap(err, "new uuid error")
@@ -387,60 +359,82 @@ func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, data [
 		"command":    command,
 	}
 
-	if err := b.c2dSender.Send(b.ctx, msg); err != nil {
-		return errors.Wrap(err, "amqp send error")
+	retries := 0
+
+	for {
+		select {
+		case <-b.ctx.Done():
+			return nil
+		default:
+			// aquire a read-lock to make sure an other go routine isn't
+			// recovering / re-connecting in case of an error.
+			b.RLock()
+			err = b.c2dSender.Send(b.ctx, msg)
+			b.RUnlock()
+			if err == nil {
+				log.WithFields(log.Fields{
+					"gateway_id": gatewayID,
+					"command":    command,
+				}).Info("gateway/azure_iot_hub: gateway command published")
+
+				return nil
+			}
+
+			if retries > 0 {
+				log.WithError(err).Error("gateway/azure_iot_hub: send cloud to device message error")
+			}
+
+			// try to recover connection
+			if err := b.c2dRecover(); err != nil {
+				log.WithError(err).Error("gateway/azure_iot_hub: recover iot hub connection error, retry in 2 seconds")
+				time.Sleep(2 * time.Second)
+			}
+		}
+
+		retries++
+	}
+}
+
+func (b *Backend) c2dNewSessionAndLink() error {
+	var err error
+	log.WithField("host", b.c2dHost).Info("gateway/azure_iot_hub: connecting to iot hub")
+	b.c2dConn, err = amqp.Dial(fmt.Sprintf("amqps://%s", b.c2dHost), amqp.ConnSASLAnonymous())
+	if err != nil {
+		return errors.Wrap(err, "amqp dial error")
 	}
 
-	log.WithFields(log.Fields{
-		"gateway_id": gatewayID,
-		"command":    command,
-	}).Info("gateway/azure_iot_hub: gateway command published")
+	log.Info("gateway/azure_iot_hub: negotiating amqp cbs claim")
+	if err := cbs.NegotiateClaim(b.ctx, b.c2dHost, b.c2dConn, b.c2dTokenProvider); err != nil {
+		return errors.Wrap(err, "cbs negotiate claim error")
+	}
+
+	b.c2dSession, err = b.c2dConn.NewSession()
+	if err != nil {
+		return errors.Wrap(err, "new amqp session error")
+	}
+
+	b.c2dSender, err = b.c2dSession.NewSender(
+		amqp.LinkTargetAddress("/messages/devicebound"),
+	)
+	if err != nil {
+		return errors.Wrap(err, "new amqp sender error")
+	}
 
 	return nil
 }
 
-func (b *Backend) negotiateClaimLoop() {
-	ticker := time.NewTimer(0)
-	defer ticker.Stop()
+func (b *Backend) c2dRecover() error {
+	// aquire a write-lock to make sure that no Send calls are made during the
+	// connection recovery
+	b.Lock()
+	defer b.Unlock()
 
-	for {
-		select {
-		case <-ticker.C:
-			b.Lock()
+	log.Info("gateway/azure_iot_hub: re-connecting to iot hub")
+	_ = b.c2dSender.Close(b.ctx)
+	_ = b.c2dSession.Close(b.ctx)
+	_ = b.c2dConn.Close()
 
-			// close the sender and session first
-			// testing turned out that without this, Send calls would be rejected due to invalid token
-			if b.c2dSender != nil {
-				if err := b.c2dSender.Close(b.ctx); err != nil {
-					log.WithError(err).Error("gateway/azure_iot_hub: close amqp sender error")
-				}
-				b.c2dSender = nil
-			}
-
-			if b.c2dSession != nil {
-				if err := b.c2dSession.Close(b.ctx); err != nil {
-					log.WithError(err).Error("gateway/azure_iot_hub: close amqp session error")
-				}
-				b.c2dSession = nil
-			}
-
-			// negotiate cbs claim
-			log.Info("gateway/azure_iot_hub: negotiating amqp cbs claim")
-			if err := cbs.NegotiateClaim(b.ctx, b.c2dHost, b.c2dConn, b.c2dTokenProvider); err != nil {
-				log.WithError(err).Error("gateway/azure_iot_hub: negotiate amqp cbs claim error")
-				ticker.Reset(2 * time.Second)
-				b.Unlock()
-				continue
-			}
-
-			b.Unlock()
-		case <-b.ctx.Done():
-			return
-		}
-
-		ticker.Reset(b.c2dTokenExpiration)
-	}
-
+	return b.c2dNewSessionAndLink()
 }
 
 func parseConnectionString(str string) (map[string]string, error) {
