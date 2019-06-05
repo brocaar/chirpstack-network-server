@@ -135,6 +135,11 @@ max_idle=10
 # the timeout to a value less than the server's timeout.
 idle_timeout="5m0s"
 
+# Max active connections in the pool.
+#
+# When zero, there is no limit on the number of connections in the pool.
+max_active=0
+
 
 # Network-server settings.
 [network_server]

@@ -80,6 +80,11 @@ max_idle={{ .Redis.MaxIdle }}
 # the timeout to a value less than the server's timeout.
 idle_timeout="{{ .Redis.IdleTimeout }}"
 
+# Max active connections in the pool.
+#
+# When zero, there is no limit on the number of connections in the pool.
+max_active={{ .Redis.MaxActive }}
+
 
 # Network-server settings.
 [network_server]
