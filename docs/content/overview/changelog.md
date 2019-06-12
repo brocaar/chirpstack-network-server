@@ -58,6 +58,12 @@ It is also recommended to update your LoRa Server configuration file.
 See [Configuration](https://www.loraserver.io/loraserver/install/config/) for
 more information.
 
+## v2.8.2
+
+### Bugfixes
+
+* Fix ADR setup. [#396](https://github.com/brocaar/loraserver/pull/396)
+
 ## v2.8.1
 
 ### Improvement
