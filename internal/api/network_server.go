@@ -1319,11 +1319,6 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 	// the next ping-slot.
 	if dp.SupportsClassB {
 		// check if device is currently active and is operating in Class-B mode
-		ds, err := storage.GetDeviceSession(storage.RedisPool(), d.DevEUI)
-		if err != nil && err != storage.ErrDoesNotExist {
-			return nil, errToRPCError(err)
-		}
-
 		if err == nil && ds.BeaconLocked {
 			scheduleAfterGPSEpochTS, err := storage.GetMaxEmitAtTimeSinceGPSEpochForDevEUI(storage.DB(), d.DevEUI)
 			if err != nil {
