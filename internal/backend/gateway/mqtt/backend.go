@@ -239,7 +239,7 @@ func (b *Backend) rxPacketHandler(c paho.Client, msg paho.Message) {
 	b.setGatewayMarshaler(gatewayID, t)
 
 	// Since with MQTT all subscribers will receive the uplink messages sent
-	// by all the gatewyas, the first instance receiving the message must lock it,
+	// by all the gateways, the first instance receiving the message must lock it,
 	// so that other instances can ignore the same message (from the same gw).
 	// As an unique id, the gw mac + hex encoded payload is used. This is because
 	// we can't trust any of the data, as the MIC hasn't been validated yet.
