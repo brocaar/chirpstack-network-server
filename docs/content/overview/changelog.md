@@ -11,9 +11,14 @@ description: Lists the changes per LoRa Server release, including steps how to u
 
 ## v3.0.2
 
+### Improvements
+
+* Make max idle / max active Redis connections configurable.
+
 ### Bugfixes
 
 * Fix Azure IoT Hub detached link issue / recover on AMQP error.
+* Fix load device-session twice from database. [#406](https://github.com/brocaar/loraserver/pull/406).
 
 ## v3.0.1
 
