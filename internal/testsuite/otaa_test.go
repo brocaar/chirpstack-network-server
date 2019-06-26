@@ -838,7 +838,7 @@ func (ts *OTAATestSuite) TestLW11() {
 				},
 			},
 			Assert: []Assertion{
-				AssertDeviceMode(storage.DeviceModeA), // the device will signal with the DeviceModeInd that it has changed to Class-C!
+				AssertDeviceMode(storage.DeviceModeC),
 			},
 		},
 	}

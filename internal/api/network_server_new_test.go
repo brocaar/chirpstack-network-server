@@ -708,7 +708,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 						Name:            "LoRaWAN 1.1 Class C supported",
 						MACVersion:      "1.1.0",
 						ClassCSupported: true,
-						ExpectedMode:    storage.DeviceModeA,
+						ExpectedMode:    storage.DeviceModeC,
 					},
 				}
 

@@ -383,18 +383,10 @@ func createDeviceActivation(ctx *context) error {
 func setDeviceMode(ctx *context) error {
 	// The device is never set to DeviceModeB because the device first needs to
 	// aquire a Class-B beacon lock and will signal this to the network-server.
-	// For LoRaWAN 1.0 the device will be set to DeviceModeC when support for
-	// Class-C has been enabled. For LoRaWAN 1.1 devices, DeviceModeA is always
-	// set as the device will signal it has switched to Class-C using the
-	// DeviceModeInd mac-command (which is not available in LoRaWAN 1.0).
-	if ctx.DeviceSession.GetMACVersion() == lorawan.LoRaWAN1_1 {
-		ctx.Device.Mode = storage.DeviceModeA
+	if ctx.DeviceProfile.SupportsClassC {
+		ctx.Device.Mode = storage.DeviceModeC
 	} else {
-		if ctx.DeviceProfile.SupportsClassC {
-			ctx.Device.Mode = storage.DeviceModeC
-		} else {
-			ctx.Device.Mode = storage.DeviceModeA
-		}
+		ctx.Device.Mode = storage.DeviceModeA
 	}
 	if err := storage.UpdateDevice(storage.DB(), &ctx.Device); err != nil {
 		return errors.Wrap(err, "update device error")
