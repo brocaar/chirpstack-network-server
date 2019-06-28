@@ -1656,16 +1656,17 @@ func (n *NetworkServerAPI) GetMulticastQueueItemsForMulticastGroup(ctx context.C
 // GetVersion returns the LoRa Server version.
 func (n *NetworkServerAPI) GetVersion(ctx context.Context, req *empty.Empty) (*ns.GetVersionResponse, error) {
 	region, ok := map[string]common.Region{
-		common.Region_AS923.String(): common.Region_AS923,
-		common.Region_AU915.String(): common.Region_AU915,
-		common.Region_CN470.String(): common.Region_CN470,
-		common.Region_CN779.String(): common.Region_CN779,
-		common.Region_EU433.String(): common.Region_EU433,
-		common.Region_EU868.String(): common.Region_EU868,
-		common.Region_IN865.String(): common.Region_IN865,
-		common.Region_KR920.String(): common.Region_KR920,
-		common.Region_RU864.String(): common.Region_RU864,
-		common.Region_US915.String(): common.Region_US915,
+		common.Region_AS923.String():    common.Region_AS923,
+		common.Region_AU915.String():    common.Region_AU915,
+		common.Region_CN470.String():    common.Region_CN470,
+		common.Region_CN779.String():    common.Region_CN779,
+		common.Region_EU433.String():    common.Region_EU433,
+		common.Region_EU868.String():    common.Region_EU868,
+		common.Region_IN865.String():    common.Region_IN865,
+		common.Region_KR920.String():    common.Region_KR920,
+		common.Region_RU864.String():    common.Region_RU864,
+		common.Region_US915.String():    common.Region_US915,
+		common.Region_EXP24GHZ.String(): common.Region_EXP24GHZ,
 	}[band.Band().Name()]
 
 	if !ok {

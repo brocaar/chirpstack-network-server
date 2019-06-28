@@ -41,6 +41,8 @@ github.com/blakesmith/ar v0.0.0-20150311145944-8bd4349a67f2 h1:oMCHnXa6CCCafdPDb
 github.com/blakesmith/ar v0.0.0-20150311145944-8bd4349a67f2/go.mod h1:PkYb9DJNAwrSvRx5DYA+gUcOIgTGVMNkfSCbZM8cWpI=
 github.com/brocaar/lorawan v0.0.0-20190402092148-5bca41b178e9 h1:cX5HHyYJFZQLIeSNvydOr+CkoBmqYsv9oB6ZzYn8EN8=
 github.com/brocaar/lorawan v0.0.0-20190402092148-5bca41b178e9/go.mod h1:Fm+51pxK6mZoAQjIaWJqPmnRuXecozsM5Mf9c+kr/ko=
+github.com/brocaar/lorawan v0.0.0-20190628131702-2054f1236a33 h1:hsTgqM8kNcDK3jbjF9j+Y0Nl9JHIStcr/Y5a+M3lkMI=
+github.com/brocaar/lorawan v0.0.0-20190628131702-2054f1236a33/go.mod h1:Fm+51pxK6mZoAQjIaWJqPmnRuXecozsM5Mf9c+kr/ko=
 github.com/caarlos0/ctrlc v1.0.0 h1:2DtF8GSIcajgffDFJzyG15vO+1PuBWOMUdFut7NnXhw=
 github.com/caarlos0/ctrlc v1.0.0/go.mod h1:CdXpj4rmq0q/1Eb44M9zi2nKB0QraNKuRGYGrrHhcQw=
 github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e h1:V9a67dfYqPLAvzk5hMQOXYJlZ4SLIXgyKIE+ZiHzgGQ=

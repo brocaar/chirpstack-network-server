@@ -43,6 +43,9 @@ enum Region {
 
     // RU864
     RU864 = 10;
+
+    // Experimental 2.4GHz.
+    EXP24GHZ = 99;
 }
 
 
