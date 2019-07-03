@@ -58,6 +58,7 @@ func init() {
 
 	viper.SetDefault("network_server.net_id", "000000")
 	viper.SetDefault("network_server.band.name", "EU_863_870")
+	viper.SetDefault("network_server.band.uplink_max_eirp", -1)
 	viper.SetDefault("network_server.api.bind", "0.0.0.0:8000")
 
 	viper.SetDefault("network_server.deduplication_delay", 200*time.Millisecond)
