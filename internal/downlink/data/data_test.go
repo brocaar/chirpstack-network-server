@@ -8,6 +8,7 @@ import (
 
 	"github.com/brocaar/loraserver/internal/backend/applicationserver"
 	"github.com/brocaar/loraserver/internal/band"
+	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/lorawan"
@@ -868,6 +869,151 @@ func TestFilterIncompatibleMACCommands(t *testing.T) {
 
 			out := filterIncompatibleMACCommands(tst.MACCommands)
 			assert.Equal(tst.Expected, out)
+		})
+	}
+}
+
+func TestSetTXParameters(t *testing.T) {
+	tests := []struct {
+		Name string
+
+		Band                   loraband.Name
+		UplinkDwellTime400ms   bool
+		DownlinkDwellTime400ms bool
+		UplinkMaxEIRP          float32
+
+		DeviceProfile storage.DeviceProfile
+		DeviceSession storage.DeviceSession
+
+		ExpectedMACCommands []storage.MACCommandBlock
+	}{
+		{
+			Name:                   "Band does not implement TXParamSetup",
+			Band:                   loraband.EU868,
+			UplinkDwellTime400ms:   true,
+			DownlinkDwellTime400ms: true,
+			UplinkMaxEIRP:          16,
+			DeviceProfile: storage.DeviceProfile{
+				MaxEIRP: 16,
+			},
+			DeviceSession: storage.DeviceSession{
+				UplinkDwellTime400ms:   false,
+				DownlinkDwellTime400ms: false,
+				UplinkMaxEIRPIndex:     0,
+			},
+		},
+		{
+			Name:                   "Band does implement TXParamSetup",
+			Band:                   loraband.AS923,
+			UplinkDwellTime400ms:   true,
+			DownlinkDwellTime400ms: true,
+			UplinkMaxEIRP:          16,
+			DeviceProfile: storage.DeviceProfile{
+				MaxEIRP: 16,
+			},
+			DeviceSession: storage.DeviceSession{
+				UplinkDwellTime400ms:   false,
+				DownlinkDwellTime400ms: false,
+				UplinkMaxEIRPIndex:     0,
+			},
+			ExpectedMACCommands: []storage.MACCommandBlock{
+				{
+					CID: lorawan.TXParamSetupReq,
+					MACCommands: []lorawan.MACCommand{
+						{
+							CID: lorawan.TXParamSetupReq,
+							Payload: &lorawan.TXParamSetupReqPayload{
+								UplinkDwellTime:   lorawan.DwellTime400ms,
+								DownlinkDwelltime: lorawan.DwellTime400ms,
+								MaxEIRP:           5,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name:                   "Band does implement TXParamSetup - MaxEIRP limited by device-profile",
+			Band:                   loraband.AS923,
+			UplinkDwellTime400ms:   true,
+			DownlinkDwellTime400ms: true,
+			UplinkMaxEIRP:          16,
+			DeviceProfile: storage.DeviceProfile{
+				MaxEIRP: 10,
+			},
+			DeviceSession: storage.DeviceSession{
+				UplinkDwellTime400ms:   false,
+				DownlinkDwellTime400ms: false,
+				UplinkMaxEIRPIndex:     0,
+			},
+			ExpectedMACCommands: []storage.MACCommandBlock{
+				{
+					CID: lorawan.TXParamSetupReq,
+					MACCommands: []lorawan.MACCommand{
+						{
+							CID: lorawan.TXParamSetupReq,
+							Payload: &lorawan.TXParamSetupReqPayload{
+								UplinkDwellTime:   lorawan.DwellTime400ms,
+								DownlinkDwelltime: lorawan.DwellTime400ms,
+								MaxEIRP:           1,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name:                   "Band does implement TXParamSetup - MaxEIRP limited by network settings",
+			Band:                   loraband.AS923,
+			UplinkDwellTime400ms:   true,
+			DownlinkDwellTime400ms: true,
+			UplinkMaxEIRP:          16,
+			DeviceProfile: storage.DeviceProfile{
+				MaxEIRP: 30,
+			},
+			DeviceSession: storage.DeviceSession{
+				UplinkDwellTime400ms:   false,
+				DownlinkDwellTime400ms: false,
+				UplinkMaxEIRPIndex:     0,
+			},
+			ExpectedMACCommands: []storage.MACCommandBlock{
+				{
+					CID: lorawan.TXParamSetupReq,
+					MACCommands: []lorawan.MACCommand{
+						{
+							CID: lorawan.TXParamSetupReq,
+							Payload: &lorawan.TXParamSetupReqPayload{
+								UplinkDwellTime:   lorawan.DwellTime400ms,
+								DownlinkDwelltime: lorawan.DwellTime400ms,
+								MaxEIRP:           5,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tst := range tests {
+		t.Run(tst.Name, func(t *testing.T) {
+			assert := require.New(t)
+
+			var c config.Config
+			c.NetworkServer.Band.Name = tst.Band
+			c.NetworkServer.Band.UplinkDwellTime400ms = tst.UplinkDwellTime400ms
+			c.NetworkServer.Band.DownlinkDwellTime400ms = tst.DownlinkDwellTime400ms
+			c.NetworkServer.Band.UplinkMaxEIRP = tst.UplinkMaxEIRP
+
+			assert.NoError(band.Setup(c))
+			assert.NoError(Setup(c))
+
+			ctx := dataContext{
+				DeviceSession: tst.DeviceSession,
+				DeviceProfile: tst.DeviceProfile,
+			}
+
+			assert.NoError(setTXParameters(&ctx))
+			assert.Equal(tst.ExpectedMACCommands, ctx.MACCommands)
 		})
 	}
 }

@@ -40,7 +40,7 @@ type Config struct {
 			Name                   band.Name
 			UplinkDwellTime400ms   bool    `mapstructure:"uplink_dwell_time_400ms"`
 			DownlinkDwellTime400ms bool    `mapstructure:"downlink_dwell_time_401ms"`
-			UplinkMaxEIRP          float64 `mapstructure:"uplink_max_eirp"`
+			UplinkMaxEIRP          float32 `mapstructure:"uplink_max_eirp"`
 			RepeaterCompatible     bool    `mapstructure:"repeater_compatible"`
 		}
 
