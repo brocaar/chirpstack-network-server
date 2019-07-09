@@ -2779,6 +2779,15 @@ func (ts *ClassATestSuite) TestLW10DeviceStatusRequest() {
 					},
 					MIC: lorawan.MIC{0xfa, 0xf0, 0x96, 0xdb},
 				}),
+				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
+					DevEui:  ts.Device.DevEUI[:],
+					JoinEui: ts.DeviceSession.JoinEUI[:],
+					FCnt:    10,
+					FPort:   0,
+					Dr:      0,
+					TxInfo:  &ts.TXInfo,
+					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
+				}),
 			},
 		},
 		{
@@ -2806,6 +2815,15 @@ func (ts *ClassATestSuite) TestLW10DeviceStatusRequest() {
 			Assert: []Assertion{
 				AssertFCntUp(11),
 				AssertNFCntDown(5),
+				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
+					DevEui:  ts.Device.DevEUI[:],
+					JoinEui: ts.DeviceSession.JoinEUI[:],
+					FCnt:    10,
+					FPort:   0,
+					Dr:      0,
+					TxInfo:  &ts.TXInfo,
+					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
+				}),
 				AssertNoDownlinkFrame,
 			},
 		},

@@ -466,10 +466,6 @@ func handleFRMPayloadMACCommands(ctx *dataContext) error {
 }
 
 func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
-	if ctx.MACPayload.FPort == nil || (ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0) {
-		return nil
-	}
-
 	publishDataUpReq := as.HandleUplinkDataRequest{
 		DevEui:  ctx.DeviceSession.DevEUI[:],
 		JoinEui: ctx.DeviceSession.JoinEUI[:],
@@ -504,13 +500,13 @@ func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 		publishDataUpReq.FPort = uint32(*ctx.MACPayload.FPort)
 	}
 
-	if len(ctx.MACPayload.FRMPayload) == 1 {
+	// The DataPayload is only used for FPort != 0 (or nil)
+	if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort != 0 && len(ctx.MACPayload.FRMPayload) == 1 {
 		dataPL, ok := ctx.MACPayload.FRMPayload[0].(*lorawan.DataPayload)
 		if !ok {
 			return fmt.Errorf("expected type *lorawan.DataPayload, got %T", ctx.MACPayload.FRMPayload[0])
 		}
 		publishDataUpReq.Data = dataPL.Bytes
-
 	}
 
 	go func(asClient as.ApplicationServerServiceClient, publishDataUpReq as.HandleUplinkDataRequest) {
