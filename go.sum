@@ -47,6 +47,8 @@ github.com/brocaar/lorawan v0.0.0-20190703113951-572918618986 h1:FzuBVHkiWq3hFGB
 github.com/brocaar/lorawan v0.0.0-20190703113951-572918618986/go.mod h1:Fm+51pxK6mZoAQjIaWJqPmnRuXecozsM5Mf9c+kr/ko=
 github.com/brocaar/lorawan v0.0.0-20190703123053-da0138919efd h1:knocdEjZMvaG+If4BUJdLrAHLSglUAkmUzm4IGe9wzk=
 github.com/brocaar/lorawan v0.0.0-20190703123053-da0138919efd/go.mod h1:Fm+51pxK6mZoAQjIaWJqPmnRuXecozsM5Mf9c+kr/ko=
+github.com/brocaar/lorawan v0.0.0-20190709091804-c3a80883a8fa h1:UcT94Q1RMA+lTAD0kxDY5RjkhagJgcoAjIKlKvs7A8o=
+github.com/brocaar/lorawan v0.0.0-20190709091804-c3a80883a8fa/go.mod h1:Fm+51pxK6mZoAQjIaWJqPmnRuXecozsM5Mf9c+kr/ko=
 github.com/caarlos0/ctrlc v1.0.0 h1:2DtF8GSIcajgffDFJzyG15vO+1PuBWOMUdFut7NnXhw=
 github.com/caarlos0/ctrlc v1.0.0/go.mod h1:CdXpj4rmq0q/1Eb44M9zi2nKB0QraNKuRGYGrrHhcQw=
 github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e h1:V9a67dfYqPLAvzk5hMQOXYJlZ4SLIXgyKIE+ZiHzgGQ=
@@ -637,6 +639,7 @@ golang.org/x/tools v0.0.0-20190312170243-e65039ee4138/go.mod h1:LCzVGOaR6xXOjkQ3
 golang.org/x/tools v0.0.0-20190328211700-ab21143f2384 h1:TFlARGu6Czu1z7q93HTxcP1P+/ZFC/IKythI5RzrnRg=
 golang.org/x/tools v0.0.0-20190328211700-ab21143f2384/go.mod h1:LCzVGOaR6xXOjkQ3onu1FJEFr0SW1gC7cKk1uF8kGRs=
 golang.org/x/tools v0.0.0-20190702201734-44aeb8b7c377/go.mod h1:jcCCGcm9btYwXyDqrUWc6MKQKKGJCWEQ3AfLSRIbEuI=
+golang.org/x/tools v0.0.0-20190708203411-c8855242db9c/go.mod h1:jcCCGcm9btYwXyDqrUWc6MKQKKGJCWEQ3AfLSRIbEuI=
 gonum.org/v1/gonum v0.0.0-20190115205657-1b07048b32c6 h1:xmu0BVBF+KTjDsgfLupTcqkylcA+c2fNIw6HgKc6fH0=
 gonum.org/v1/gonum v0.0.0-20190115205657-1b07048b32c6/go.mod h1:Y+Yx5eoAFn32cQvJDxZx5Dpnq+c3wtXuadVZAcxbbBo=
 gonum.org/v1/netlib v0.0.0-20190219113230-9992c5f5eae4 h1:CBNC/YtKkFL/eReA1B4BnC5ybQloRFmfjvlgySkwjKQ=
