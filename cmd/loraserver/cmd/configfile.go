@@ -141,16 +141,31 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # * US_902_928
   name="{{ .NetworkServer.Band.Name }}"
 
-  # Enforce 400ms dwell time
+  # Enforce 400ms dwell time.
   #
-  # Some band configurations define the max payload size for both dwell-time
-  # limitation enabled as disabled (e.g. AS 923). In this case the
-  # dwell time setting must be set to enforce the max payload size
-  # given the dwell-time limitation. For band configuration where the dwell-time is
-  # always enforced, setting this flag is not required.
-  dwell_time_400ms={{ .NetworkServer.Band.DwellTime400ms }}
+  # Some regions require the configuration of the dwell time, which will
+  # limit the time-on-air to 400ms. Please refer to the LoRaWAN Regional
+  # Parameters specification for more information.
+  #
+  # When configured and required in the configured region, LoRa Server will
+  # use the TxParamSetup mac-command to communicate this to the devices.
+  uplink_dwell_time_400ms={{ .NetworkServer.Band.UplinkDwellTime400ms }}
+  downlink_dwell_time_400ms={{ .NetworkServer.Band.DownlinkDwellTime400ms }}
 
-  # Enforce repeater compatibility
+  # Uplink max. EIRP.
+  #
+  # This defines the maximum allowed device EIRP which must be configured
+  # for some regions. Please refer the LoRaWAN Regional Parameters specification
+  # for more information. Set this to -1 to use the default value for this
+  # region.
+  #
+  # When required in the configured region, LoRa Server will use the
+  # TxParamSetup mac-command to communicate this to the devices.
+  # For regions where the TxParamSetup mac-command is not implemented, this
+  # setting is ignored.
+  uplink_max_eirp={{ .NetworkServer.Band.UplinkMaxEIRP }}
+
+  # Enforce repeater compatibility.
   #
   # Most band configurations define the max payload size for both an optional
   # repeater encapsulation layer as for setups where a repeater will never

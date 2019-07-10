@@ -28,6 +28,8 @@ func Handle(ds *storage.DeviceSession, dp storage.DeviceProfile, sp storage.Serv
 		return handleNewChannelAns(ds, block, pending)
 	case lorawan.RXParamSetupAns:
 		return handleRXParamSetupAns(ds, block, pending)
+	case lorawan.TXParamSetupAns:
+		return handleTXParamSetupAns(ds, block, pending)
 	case lorawan.RXTimingSetupAns:
 		return handleRXTimingSetupAns(ds, block, pending)
 	case lorawan.RekeyInd:
