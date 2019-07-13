@@ -170,6 +170,13 @@ type DeviceSession struct {
 	// ReferenceAltitude holds the device reference altitude used for
 	// geolocation.
 	ReferenceAltitude float64
+
+	// Uplink and Downlink dwell time limitations.
+	UplinkDwellTime400ms   bool
+	DownlinkDwellTime400ms bool
+
+	// Max uplink EIRP limitation.
+	UplinkMaxEIRPIndex uint8
 }
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list
@@ -661,6 +668,10 @@ func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
 
 		RejoinCount_0:     uint32(d.RejoinCount0),
 		ReferenceAltitude: d.ReferenceAltitude,
+
+		UplinkDwellTime_400Ms:   d.UplinkDwellTime400ms,
+		DownlinkDwellTime_400Ms: d.DownlinkDwellTime400ms,
+		UplinkMaxEirpIndex:      uint32(d.UplinkMaxEIRPIndex),
 	}
 
 	if d.AppSKeyEvelope != nil {
@@ -756,6 +767,10 @@ func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
 
 		RejoinCount0:      uint16(d.RejoinCount_0),
 		ReferenceAltitude: d.ReferenceAltitude,
+
+		UplinkDwellTime400ms:   d.UplinkDwellTime_400Ms,
+		DownlinkDwellTime400ms: d.DownlinkDwellTime_400Ms,
+		UplinkMaxEIRPIndex:     uint8(d.UplinkMaxEirpIndex),
 	}
 
 	if d.LastDeviceStatusRequestTimeUnixNs > 0 {

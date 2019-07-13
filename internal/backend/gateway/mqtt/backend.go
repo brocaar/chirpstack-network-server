@@ -243,7 +243,7 @@ func (b *Backend) rxPacketHandler(c paho.Client, msg paho.Message) {
 	// so that other instances can ignore the same message (from the same gw).
 	// As an unique id, the gw mac + hex encoded payload is used. This is because
 	// we can't trust any of the data, as the MIC hasn't been validated yet.
-	key := fmt.Sprintf("lora:ns:uplink:lock:%s:%s", gatewayID, hex.EncodeToString(uplinkFrame.PhyPayload))
+	key := fmt.Sprintf("lora:ns:uplink:lock:%s:%d:%s", gatewayID, uplinkFrame.TxInfo.Frequency, hex.EncodeToString(uplinkFrame.PhyPayload))
 	redisConn := b.redisPool.Get()
 	defer redisConn.Close()
 

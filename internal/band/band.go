@@ -13,7 +13,7 @@ var band loraband.Band
 // Setup sets up the band with the given configuration.
 func Setup(c config.Config) error {
 	dwellTime := lorawan.DwellTimeNoLimit
-	if c.NetworkServer.Band.DwellTime400ms {
+	if c.NetworkServer.Band.DownlinkDwellTime400ms {
 		dwellTime = lorawan.DwellTime400ms
 	}
 	bandConfig, err := loraband.GetConfig(c.NetworkServer.Band.Name, c.NetworkServer.Band.RepeaterCompatible, dwellTime)

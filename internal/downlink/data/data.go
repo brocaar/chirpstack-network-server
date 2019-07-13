@@ -68,6 +68,11 @@ var (
 
 	// ClassC
 	classCDownlinkLockDuration time.Duration
+
+	// Dwell time.
+	uplinkDwellTime400ms   bool
+	downlinkDwellTime400ms bool
+	uplinkMaxEIRPIndex     uint8
 )
 
 var setMACCommandsSet = setMACCommands(
@@ -78,6 +83,7 @@ var setMACCommandsSet = setMACCommands(
 	requestRejoinParamSetup,
 	setPingSlotParameters,
 	setRXParameters,
+	setTXParameters,
 	getMACCommandsFromQueue,
 )
 
@@ -140,6 +146,15 @@ func Setup(conf config.Config) error {
 	disableADR = nsConf.DisableADR
 
 	classCDownlinkLockDuration = conf.NetworkServer.Scheduler.ClassC.DownlinkLockDuration
+
+	uplinkDwellTime400ms = conf.NetworkServer.Band.UplinkDwellTime400ms
+	downlinkDwellTime400ms = conf.NetworkServer.Band.DownlinkDwellTime400ms
+
+	maxEIRP := conf.NetworkServer.Band.UplinkMaxEIRP
+	if maxEIRP == -1 {
+		maxEIRP = band.Band().GetDefaultMaxUplinkEIRP()
+	}
+	uplinkMaxEIRPIndex = lorawan.GetTXParamSetupEIRPIndex(maxEIRP)
 
 	return nil
 }
@@ -340,6 +355,32 @@ func setRXParameters(ctx *dataContext) error {
 
 	if ctx.DeviceSession.RXDelay != uint8(rx1Delay) {
 		block := maccommand.RequestRXTimingSetup(rx1Delay)
+		ctx.MACCommands = append(ctx.MACCommands, block)
+	}
+
+	return nil
+}
+
+func setTXParameters(ctx *dataContext) error {
+	if !band.Band().ImplementsTXParamSetup(ctx.DeviceSession.MACVersion) {
+		// band doesn't implement the TXParamSetup mac-command
+		return nil
+	}
+
+	// Calculate the device max. EIRP.
+	// We take the smallest value (loraserver.toml vs device-profile) to avoid
+	// that the device-profile sets a higher EIRP than that is allowed on the
+	// network.
+	deviceMaxEIRPIndex := uplinkMaxEIRPIndex
+	if i := lorawan.GetTXParamSetupEIRPIndex(float32(ctx.DeviceProfile.MaxEIRP)); i < deviceMaxEIRPIndex {
+		deviceMaxEIRPIndex = i
+	}
+
+	if ctx.DeviceSession.UplinkDwellTime400ms != uplinkDwellTime400ms ||
+		ctx.DeviceSession.DownlinkDwellTime400ms != downlinkDwellTime400ms ||
+		ctx.DeviceSession.UplinkMaxEIRPIndex != deviceMaxEIRPIndex {
+
+		block := maccommand.RequestTXParamSetup(uplinkDwellTime400ms, downlinkDwellTime400ms, deviceMaxEIRPIndex)
 		ctx.MACCommands = append(ctx.MACCommands, block)
 	}
 

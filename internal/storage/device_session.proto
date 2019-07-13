@@ -176,6 +176,15 @@ message DeviceSessionPB {
 
     // Device reference altitude for geolocation.
     double reference_altitude = 46;
+
+    // UplinkDwellTime.
+    bool uplink_dwell_time_400ms = 47;
+
+    // DownlinkDwellTime.
+    bool downlink_dwell_time_400ms = 48;
+
+    // Uplink max. EIRP index.
+    uint32 uplink_max_eirp_index = 49;
 }
 
 
