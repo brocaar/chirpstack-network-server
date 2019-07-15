@@ -607,6 +607,12 @@ timezone="Local"
   # metrics endpoint.
   bind=""
 
+  # API timing histogram.
+  #
+  # By setting this to true, the API request timing histogram will be enabled.
+  # See also: https://github.com/grpc-ecosystem/go-grpc-prometheus#histograms
+  api_timing_histogram=false
+
 
 # Join-server settings.
 [join_server]

@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"os/signal"
 	"strings"
@@ -13,9 +12,7 @@ import (
 
 	"github.com/brocaar/loraserver/internal/adr"
 	"github.com/brocaar/loraserver/internal/backend/gateway/azureiothub"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/brocaar/loraserver/internal/metrics"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -25,7 +22,6 @@ import (
 
 	"github.com/brocaar/loraserver/api/geo"
 	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api"
 	"github.com/brocaar/loraserver/internal/backend/applicationserver"
 	"github.com/brocaar/loraserver/internal/backend/controller"
@@ -51,8 +47,8 @@ func run(cmd *cobra.Command, args []string) error {
 		setLogLevel,
 		setupBand,
 		setRXParameters,
-		setupMetrics,
 		printStartMessage,
+		setupMetrics,
 		enableUplinkChannels,
 		setupStorage,
 		setGatewayBackend,
@@ -65,7 +61,7 @@ func run(cmd *cobra.Command, args []string) error {
 		setupDownlink,
 		fixV2RedisCache,
 		migrateGatewayStats,
-		startAPIServer,
+		setupAPI,
 		startLoRaServer(server),
 		startStatsServer(gwStats),
 		startQueueScheduler,
@@ -122,6 +118,7 @@ func setRXParameters() error {
 	return nil
 }
 
+// TODO: cleanup and put in Setup functions.
 func setupMetrics() error {
 	// setup aggregation intervals
 	var intervals []storage.AggregationInterval
@@ -150,6 +147,10 @@ func setupMetrics() error {
 		config.C.Metrics.Redis.DayAggregationTTL,
 		config.C.Metrics.Redis.MonthAggregationTTL,
 	)
+
+	if err := metrics.Setup(config.C); err != nil {
+		return errors.Wrap(err, "setup metrics error")
+	}
 
 	return nil
 }
@@ -321,46 +322,11 @@ func setupDownlink() error {
 	return nil
 }
 
-func gRPCLoggingServerOptions() []grpc.ServerOption {
-	logrusEntry := log.NewEntry(log.StandardLogger())
-	logrusOpts := []grpc_logrus.Option{
-		grpc_logrus.WithLevels(grpc_logrus.DefaultCodeToLevel),
+func setupAPI() error {
+	if err := api.Setup(config.C); err != nil {
+		return errors.Wrap(err, "setup api error")
 	}
 
-	return []grpc.ServerOption{
-		grpc_middleware.WithUnaryServerChain(
-			grpc_ctxtags.UnaryServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_logrus.UnaryServerInterceptor(logrusEntry, logrusOpts...),
-		),
-		grpc_middleware.WithStreamServerChain(
-			grpc_ctxtags.StreamServerInterceptor(grpc_ctxtags.WithFieldExtractor(grpc_ctxtags.CodeGenRequestFieldExtractor)),
-			grpc_logrus.StreamServerInterceptor(logrusEntry, logrusOpts...),
-		),
-	}
-}
-
-func startAPIServer() error {
-	log.WithFields(log.Fields{
-		"bind":     config.C.NetworkServer.API.Bind,
-		"ca-cert":  config.C.NetworkServer.API.CACert,
-		"tls-cert": config.C.NetworkServer.API.TLSCert,
-		"tls-key":  config.C.NetworkServer.API.TLSKey,
-	}).Info("starting api server")
-
-	opts := gRPCLoggingServerOptions()
-	if config.C.NetworkServer.API.CACert != "" && config.C.NetworkServer.API.TLSCert != "" && config.C.NetworkServer.API.TLSKey != "" {
-		creds := mustGetTransportCredentials(config.C.NetworkServer.API.TLSCert, config.C.NetworkServer.API.TLSKey, config.C.NetworkServer.API.CACert, true)
-		opts = append(opts, grpc.Creds(creds))
-	}
-	gs := grpc.NewServer(opts...)
-	nsAPI := api.NewNetworkServerAPI()
-	ns.RegisterNetworkServerServiceServer(gs, nsAPI)
-
-	ln, err := net.Listen("tcp", config.C.NetworkServer.API.Bind)
-	if err != nil {
-		return errors.Wrap(err, "start api listener error")
-	}
-	go gs.Serve(ln)
 	return nil
 }
 

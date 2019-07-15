@@ -3,6 +3,7 @@ package metrics
 import (
 	"net/http"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
 
@@ -13,6 +14,10 @@ import (
 func Setup(c config.Config) error {
 	if !c.Metrics.Prometheus.EndpointEnabled {
 		return nil
+	}
+
+	if c.Metrics.Prometheus.APITimingHistogram {
+		grpc_prometheus.EnableHandlingTimeHistogram()
 	}
 
 	log.WithFields(log.Fields{
