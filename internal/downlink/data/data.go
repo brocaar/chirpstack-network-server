@@ -76,15 +76,7 @@ var (
 )
 
 var setMACCommandsSet = setMACCommands(
-	requestCustomChannelReconfiguration,
-	requestChannelMaskReconfiguration,
-	requestADRChange,
 	requestDevStatus,
-	requestRejoinParamSetup,
-	setPingSlotParameters,
-	setRXParameters,
-	setTXParameters,
-	getMACCommandsFromQueue,
 )
 
 var responseTasks = []func(*dataContext) error{
