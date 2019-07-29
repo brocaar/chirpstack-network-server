@@ -320,3 +320,40 @@ message FSKModulationConfig {
     // Bitrate.
     uint32 bitrate = 2;
 }
+
+message GatewayCommandExecRequest {
+    // Gateway ID.
+    bytes gateway_id = 1 [json_name = "gatewayID"];
+
+    // Command to execute.
+    // This command must be pre-configured in the LoRa Gateway Bridge configuration.
+    string command = 2;
+
+    // Unique token.
+    // Any value is value and the same token will be returned when the
+    // execution of the command has completed.
+    bytes token = 3;
+
+    // Standard input.
+    bytes stdin = 4;
+
+    // Environment variables.
+    map<string, string> environment = 5;
+}
+
+message GatewayCommandExecResponse {
+    // Gateway ID.
+    bytes gateway_id = 1 [json_name = "gatewayID"];
+
+    // Token of the execution request.
+    bytes token = 2;
+
+    // Standard output.
+    bytes stdout = 3;
+
+    // Standard error.
+    bytes stderr = 4;
+
+    // Error message.
+    string error = 5;
+}
