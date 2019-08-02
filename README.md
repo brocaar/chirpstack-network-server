@@ -1,6 +1,6 @@
 # LoRa Server
 
-[![Build Status](https://travis-ci.org/brocaar/loraserver.svg?branch=master)](https://travis-ci.org/brocaar/loraserver)
+[![CircleCI](https://circleci.com/gh/brocaar/loraserver.svg?style=svg)](https://circleci.com/gh/brocaar/loraserver)
 
 LoRa Server is an open-source LoRaWAN network-server, part of the
 [LoRa Server](https://docs.loraserver.io/) project. It is responsible for
