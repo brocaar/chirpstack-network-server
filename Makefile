@@ -22,7 +22,7 @@ test: statics
 	@go vet $(PKGS)
 	@go test -p 1 -v -cover $(PKGS) -coverprofile coverage.out
 
-dist:
+dist: statics
 	goreleaser
 	mkdir -p dist/upload/tar
 	mkdir -p dist/upload/deb
