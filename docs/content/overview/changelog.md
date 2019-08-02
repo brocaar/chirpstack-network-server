@@ -9,6 +9,29 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v3.1.0
+
+### Features
+
+#### Prometheus metrics
+
+gRPC API metrics can now be exposed using a [Prometheus](https://prometheus.io/) metrics endpoint.
+In future releases, more metrics will be exposed using this endpoint.
+
+### Improvements
+
+#### Always forward uplink data (even on fPort = 0)
+
+Even when no application-payload is sent, this can still provide valuable
+information to the end-application (e.g. data-rate, RX attributes, the fact
+that the device is 'alive'). ([#408](https://github.com/brocaar/loraserver/issues/408))
+
+### Bugfixes
+
+* Revert LoRaWAN 1.1 Class-C device always joins as Class-A. ([#395](https://github.com/brocaar/loraserver/issues/395))
+* Fix TXParamSetupReq mac-command not being sent. ([#397](https://github.com/brocaar/loraserver/issues/397))
+* Fix ignoring packets received on multiple frequencies. ([#401](https://github.com/brocaar/loraserver/issues/401))
+
 ## v3.0.2
 
 ### Improvements
