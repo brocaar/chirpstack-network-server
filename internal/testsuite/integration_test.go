@@ -3,12 +3,14 @@ package testsuite
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/brocaar/loraserver/api/common"
+	"github.com/brocaar/loraserver/api/geo"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/ns"
 	"github.com/brocaar/loraserver/internal/api"
@@ -21,6 +23,7 @@ import (
 	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/downlink/ack"
+	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
 	"github.com/brocaar/loraserver/internal/uplink"
@@ -129,6 +132,21 @@ type DownlinkTXAckTest struct {
 
 	Assert        []Assertion
 	ExpectedError error
+}
+
+// GeolocationTest is the structure for a geolocation test.
+type GeolocationTest struct {
+	Name                          string
+	BeforeFunc                    func(*GeolocationTest) error
+	NwkGeoLoc                     bool
+	RXInfo                        []*gw.UplinkRXInfo
+	GeolocBufferTTL               time.Duration
+	GeolocMinBufferSize           int
+	GeolocBufferItems             []*geo.FrameRXInfo
+	ResolveTDOAResponse           geo.ResolveTDOAResponse
+	ResolveMultiFrameTDOAResponse geo.ResolveMultiFrameTDOAResponse
+
+	Assert []Assertion
 }
 
 // IntegrationTestSuite provides a test-suite for integration-testing
@@ -648,6 +666,53 @@ func (ts *IntegrationTestSuite) AssertDownlinkTXAckTest(t *testing.T, tst Downli
 		return
 	}
 	assert.NoError(tst.ExpectedError)
+
+	// run assertions
+	for _, a := range tst.Assert {
+		a(assert, ts)
+	}
+}
+
+// AssertGeolocationTest asserts the given geolocation test.
+func (ts *IntegrationTestSuite) AssertGeolocationTest(t *testing.T, fCnt uint32, tst GeolocationTest) {
+	assert := require.New(t)
+
+	test.MustFlushRedis(storage.RedisPool())
+
+	ts.FlushClients()
+	ts.initConfig()
+
+	if tst.BeforeFunc != nil {
+		assert.NoError(tst.BeforeFunc(&tst))
+	}
+
+	ts.DeviceSession.FCntUp = uint32(fCnt)
+	assert.NoError(storage.SaveDeviceSession(storage.RedisPool(), *ts.DeviceSession))
+
+	ts.GeoClient.ResolveTDOAResponse = tst.ResolveTDOAResponse
+	ts.GeoClient.ResolveMultiFrameTDOAResponse = tst.ResolveMultiFrameTDOAResponse
+
+	ts.ServiceProfile.NwkGeoLoc = tst.NwkGeoLoc
+	assert.NoError(storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile))
+
+	ts.DeviceProfile.GeolocBufferTTL = int(tst.GeolocBufferTTL / time.Second)
+	ts.DeviceProfile.GeolocMinBufferSize = tst.GeolocMinBufferSize
+	assert.NoError(storage.UpdateDeviceProfile(storage.DB(), ts.DeviceProfile))
+
+	storage.SaveGeolocBuffer(storage.RedisPool(), ts.Device.DevEUI, tst.GeolocBufferItems, tst.GeolocBufferTTL)
+
+	txInfo := gw.UplinkTXInfo{
+		Frequency: 868100000,
+	}
+	assert.NoError(helpers.SetUplinkTXInfoDataRate(&txInfo, 3, band.Band()))
+
+	for j := range tst.RXInfo {
+		uf := ts.GetUplinkFrameForFRMPayload(*tst.RXInfo[j], txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})
+		go func(assert *require.Assertions, uf gw.UplinkFrame) {
+			err := uplink.HandleRXPacket(uf)
+			assert.NoError(err)
+		}(assert, uf)
+	}
 
 	// run assertions
 	for _, a := range tst.Assert {

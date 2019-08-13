@@ -132,6 +132,16 @@ message DeviceProfile {
     
     // End-Device uses 32bit FCnt (mandatory for LoRaWAN 1.0 End-Device).
     bool supports_32bit_f_cnt = 20;
+
+    // Geolocation buffer TTL (in seconds).
+    // When > 0, uplink RX meta-data will be stored in a buffer so that
+    // the meta-data of multiple uplinks can be used for geolocation.
+    uint32 geoloc_buffer_ttl = 21;
+
+    // Geolocation minimum buffer size.
+    // When > 0, geolocation will only be performed when the buffer has
+    // at least the given size.
+    uint32 geoloc_min_buffer_size = 22;
 }
 
 message RoutingProfile {

@@ -22,25 +22,27 @@ func TestDeviceProfile(t *testing.T) {
 
 		Convey("When creating a device-profile", func() {
 			dp := DeviceProfile{
-				SupportsClassB:     true,
-				ClassBTimeout:      1,
-				PingSlotPeriod:     2,
-				PingSlotDR:         3,
-				PingSlotFreq:       868100000,
-				SupportsClassC:     true,
-				ClassCTimeout:      4,
-				MACVersion:         "1.0.2",
-				RegParamsRevision:  "B",
-				RXDelay1:           5,
-				RXDROffset1:        6,
-				RXDataRate2:        7,
-				RXFreq2:            868200000,
-				FactoryPresetFreqs: []int{868400000, 868500000, 868700000},
-				MaxEIRP:            17,
-				MaxDutyCycle:       10,
-				SupportsJoin:       true,
-				RFRegion:           "EU868",
-				Supports32bitFCnt:  true,
+				SupportsClassB:      true,
+				ClassBTimeout:       1,
+				PingSlotPeriod:      2,
+				PingSlotDR:          3,
+				PingSlotFreq:        868100000,
+				SupportsClassC:      true,
+				ClassCTimeout:       4,
+				MACVersion:          "1.0.2",
+				RegParamsRevision:   "B",
+				RXDelay1:            5,
+				RXDROffset1:         6,
+				RXDataRate2:         7,
+				RXFreq2:             868200000,
+				FactoryPresetFreqs:  []int{868400000, 868500000, 868700000},
+				MaxEIRP:             17,
+				MaxDutyCycle:        10,
+				SupportsJoin:        true,
+				RFRegion:            "EU868",
+				Supports32bitFCnt:   true,
+				GeolocBufferTTL:     10,
+				GeolocMinBufferSize: 3,
 			}
 
 			So(CreateDeviceProfile(DB(), &dp), ShouldBeNil)
@@ -102,6 +104,9 @@ func TestDeviceProfile(t *testing.T) {
 				dp.SupportsJoin = false
 				dp.RFRegion = "US902"
 				dp.Supports32bitFCnt = false
+				dp.GeolocBufferTTL = 20
+				dp.GeolocMinBufferSize = 4
+
 				So(UpdateDeviceProfile(DB(), &dp), ShouldBeNil)
 				dp.UpdatedAt = dp.UpdatedAt.UTC().Truncate(time.Millisecond)
 

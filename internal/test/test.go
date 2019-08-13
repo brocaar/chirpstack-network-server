@@ -308,14 +308,17 @@ func (t *NetworkControllerClient) HandleUplinkMACCommand(ctx context.Context, in
 
 // GeolocationClient is a geolocation client for testing.
 type GeolocationClient struct {
-	ResolveTDOAChan     chan geo.ResolveTDOARequest
-	ResolveTDOAResponse geo.ResolveTDOAResponse
+	ResolveTDOAChan               chan geo.ResolveTDOARequest
+	ResolveMultiFrameTDOAChan     chan geo.ResolveMultiFrameTDOARequest
+	ResolveTDOAResponse           geo.ResolveTDOAResponse
+	ResolveMultiFrameTDOAResponse geo.ResolveMultiFrameTDOAResponse
 }
 
 // NewGeolocationClient creates a new GeolocationClient.
 func NewGeolocationClient() *GeolocationClient {
 	return &GeolocationClient{
-		ResolveTDOAChan: make(chan geo.ResolveTDOARequest, 100),
+		ResolveTDOAChan:           make(chan geo.ResolveTDOARequest, 100),
+		ResolveMultiFrameTDOAChan: make(chan geo.ResolveMultiFrameTDOARequest, 100),
 	}
 }
 
@@ -323,4 +326,10 @@ func NewGeolocationClient() *GeolocationClient {
 func (g *GeolocationClient) ResolveTDOA(ctx context.Context, in *geo.ResolveTDOARequest, opts ...grpc.CallOption) (*geo.ResolveTDOAResponse, error) {
 	g.ResolveTDOAChan <- *in
 	return &g.ResolveTDOAResponse, nil
+}
+
+// ResolveMultiFrameTDOA method.
+func (g *GeolocationClient) ResolveMultiFrameTDOA(ctx context.Context, in *geo.ResolveMultiFrameTDOARequest, opts ...grpc.CallOption) (*geo.ResolveMultiFrameTDOAResponse, error) {
+	g.ResolveMultiFrameTDOAChan <- *in
+	return &g.ResolveMultiFrameTDOAResponse, nil
 }

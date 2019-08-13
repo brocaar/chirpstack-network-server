@@ -21,28 +21,30 @@ const (
 
 // DeviceProfile defines the backend.DeviceProfile with some extra meta-data
 type DeviceProfile struct {
-	CreatedAt          time.Time `db:"created_at"`
-	UpdatedAt          time.Time `db:"updated_at"`
-	ID                 uuid.UUID `db:"device_profile_id"`
-	SupportsClassB     bool      `db:"supports_class_b"`
-	ClassBTimeout      int       `db:"class_b_timeout"` // Unit: seconds
-	PingSlotPeriod     int       `db:"ping_slot_period"`
-	PingSlotDR         int       `db:"ping_slot_dr"`
-	PingSlotFreq       int       `db:"ping_slot_freq"` // in Hz
-	SupportsClassC     bool      `db:"supports_class_c"`
-	ClassCTimeout      int       `db:"class_c_timeout"`     // Unit: seconds
-	MACVersion         string    `db:"mac_version"`         // Example: "1.0.2" [LW102]
-	RegParamsRevision  string    `db:"reg_params_revision"` // Example: "B" [RP102B]
-	RXDelay1           int       `db:"rx_delay_1"`
-	RXDROffset1        int       `db:"rx_dr_offset_1"`
-	RXDataRate2        int       `db:"rx_data_rate_2"`       // Unit: bits-per-second
-	RXFreq2            int       `db:"rx_freq_2"`            // In Hz
-	FactoryPresetFreqs []int     `db:"factory_preset_freqs"` // In Hz
-	MaxEIRP            int       `db:"max_eirp"`             // In dBm
-	MaxDutyCycle       int       `db:"max_duty_cycle"`       // Example: 10 indicates 10%
-	SupportsJoin       bool      `db:"supports_join"`
-	RFRegion           string    `db:"rf_region"`
-	Supports32bitFCnt  bool      `db:"supports_32bit_fcnt"`
+	CreatedAt           time.Time `db:"created_at"`
+	UpdatedAt           time.Time `db:"updated_at"`
+	ID                  uuid.UUID `db:"device_profile_id"`
+	SupportsClassB      bool      `db:"supports_class_b"`
+	ClassBTimeout       int       `db:"class_b_timeout"` // Unit: seconds
+	PingSlotPeriod      int       `db:"ping_slot_period"`
+	PingSlotDR          int       `db:"ping_slot_dr"`
+	PingSlotFreq        int       `db:"ping_slot_freq"` // in Hz
+	SupportsClassC      bool      `db:"supports_class_c"`
+	ClassCTimeout       int       `db:"class_c_timeout"`     // Unit: seconds
+	MACVersion          string    `db:"mac_version"`         // Example: "1.0.2" [LW102]
+	RegParamsRevision   string    `db:"reg_params_revision"` // Example: "B" [RP102B]
+	RXDelay1            int       `db:"rx_delay_1"`
+	RXDROffset1         int       `db:"rx_dr_offset_1"`
+	RXDataRate2         int       `db:"rx_data_rate_2"`       // Unit: bits-per-second
+	RXFreq2             int       `db:"rx_freq_2"`            // In Hz
+	FactoryPresetFreqs  []int     `db:"factory_preset_freqs"` // In Hz
+	MaxEIRP             int       `db:"max_eirp"`             // In dBm
+	MaxDutyCycle        int       `db:"max_duty_cycle"`       // Example: 10 indicates 10%
+	SupportsJoin        bool      `db:"supports_join"`
+	RFRegion            string    `db:"rf_region"`
+	Supports32bitFCnt   bool      `db:"supports_32bit_fcnt"`
+	GeolocBufferTTL     int       `db:"geoloc_buffer_ttl"`
+	GeolocMinBufferSize int       `db:"geoloc_min_buffer_size"`
 }
 
 // CreateDeviceProfile creates the given device-profile.
@@ -84,8 +86,10 @@ func CreateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
             max_duty_cycle,
             supports_join,
             rf_region,
-            supports_32bit_fcnt
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
+            supports_32bit_fcnt,
+			geoloc_buffer_ttl,
+			geoloc_min_buffer_size
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)`,
 		dp.CreatedAt,
 		dp.UpdatedAt,
 		dp.ID,
@@ -108,6 +112,8 @@ func CreateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
 		dp.SupportsJoin,
 		dp.RFRegion,
 		dp.Supports32bitFCnt,
+		dp.GeolocBufferTTL,
+		dp.GeolocMinBufferSize,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -238,7 +244,9 @@ func GetDeviceProfile(db sqlx.Queryer, id uuid.UUID) (DeviceProfile, error) {
             max_duty_cycle,
             supports_join,
             rf_region,
-            supports_32bit_fcnt
+            supports_32bit_fcnt,
+			geoloc_buffer_ttl,
+			geoloc_min_buffer_size
         from device_profile
         where
             device_profile_id = $1
@@ -269,6 +277,8 @@ func GetDeviceProfile(db sqlx.Queryer, id uuid.UUID) (DeviceProfile, error) {
 		&dp.SupportsJoin,
 		&dp.RFRegion,
 		&dp.Supports32bitFCnt,
+		&dp.GeolocBufferTTL,
+		&dp.GeolocMinBufferSize,
 	)
 	if err != nil {
 		return dp, handlePSQLError(err, "select error")
@@ -307,7 +317,9 @@ func UpdateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
             max_duty_cycle = $18,
             supports_join = $19,
             rf_region = $20,
-            supports_32bit_fcnt = $21
+            supports_32bit_fcnt = $21,
+			geoloc_buffer_ttl = $22,
+			geoloc_min_buffer_size = $23
         where
             device_profile_id = $1`,
 		dp.ID,
@@ -331,6 +343,8 @@ func UpdateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
 		dp.SupportsJoin,
 		dp.RFRegion,
 		dp.Supports32bitFCnt,
+		dp.GeolocBufferTTL,
+		dp.GeolocMinBufferSize,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")

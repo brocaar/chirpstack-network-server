@@ -265,6 +265,7 @@ func getApplicationServerClientForDataUp(ctx *dataContext) error {
 }
 
 func resolveDeviceLocation(ctx *dataContext) error {
+	// Determine if geolocation is enabled in the service-profile.
 	if !ctx.ServiceProfile.NwkGeoLoc {
 		log.WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,
@@ -272,6 +273,7 @@ func resolveDeviceLocation(ctx *dataContext) error {
 		return nil
 	}
 
+	// Determine if a geolocation server is configured.
 	if geolocationserver.Client() == nil {
 		log.WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,
@@ -279,37 +281,81 @@ func resolveDeviceLocation(ctx *dataContext) error {
 		return nil
 	}
 
+	// Read the geolocation buffer (when TTL=0, this returns an empty slice without db operation).
+	buffer, err := storage.GetGeolocBuffer(storage.RedisPool(), ctx.DeviceSession.DevEUI, time.Duration(ctx.DeviceProfile.GeolocBufferTTL)*time.Second)
+	if err != nil {
+		return errors.Wrap(err, "get geoloc buffer error")
+	}
+
+	// Filter out the rx-info with fine-timestamp and if there is enough
+	// meta-data (at least 3 gateways), add it to the buffer.
 	var rxInfoWithFineTimestamp []*gw.UplinkRXInfo
 	for i := range ctx.RXPacket.RXInfoSet {
 		if ctx.RXPacket.RXInfoSet[i].FineTimestampType == gw.FineTimestampType_PLAIN {
 			rxInfoWithFineTimestamp = append(rxInfoWithFineTimestamp, ctx.RXPacket.RXInfoSet[i])
 		}
 	}
+	if len(rxInfoWithFineTimestamp) >= 3 {
+		buffer = append(buffer, &geo.FrameRXInfo{
+			RxInfo: rxInfoWithFineTimestamp,
+		})
+	}
 
-	if len(rxInfoWithFineTimestamp) < 3 {
+	// Save the buffer when there are > 0 items.
+	if len(buffer) != 0 {
+		if err := storage.SaveGeolocBuffer(storage.RedisPool(), ctx.DeviceSession.DevEUI, buffer, time.Duration(ctx.DeviceProfile.GeolocBufferTTL)*time.Second); err != nil {
+			return errors.Wrap(err, "save geoloc buffer error")
+		}
+	}
+
+	// Return if the buffer is empty or when there are less frames in the buffer
+	// than configured in the device-profile.
+	if len(buffer) == 0 || len(buffer) < ctx.DeviceProfile.GeolocMinBufferSize {
 		log.WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,
-		}).Debug("skipping geolocation, not enough gateway meta-data")
+		}).Debug("skipping geolocation, not enough gateway meta-data or buffer too small")
 		return nil
 	}
 
 	// perform the actual geolocation in a separate goroutine
-	go func(devEUI lorawan.EUI64, referenceAlt float64, geoClient geo.GeolocationServerServiceClient, asClient as.ApplicationServerServiceClient, rxInfo []*gw.UplinkRXInfo) {
-		resp, err := geoClient.ResolveTDOA(context.Background(), &geo.ResolveTDOARequest{
-			DevEui: devEUI[:],
-			FrameRxInfo: &geo.FrameRXInfo{
-				RxInfo: rxInfo,
-			},
-			DeviceReferenceAltitude: referenceAlt,
-		})
-		if err != nil {
-			log.WithFields(log.Fields{
-				"dev_eui": devEUI,
-			}).WithError(err).Error("resolve tdoa error")
-			return
+	go func(devEUI lorawan.EUI64, referenceAlt float64, geoClient geo.GeolocationServerServiceClient, asClient as.ApplicationServerServiceClient, frames []*geo.FrameRXInfo) {
+		var result *geo.ResolveResult
+
+		// Single-frame geolocation.
+		if len(frames) == 1 {
+			resp, err := geoClient.ResolveTDOA(context.Background(), &geo.ResolveTDOARequest{
+				DevEui:                  devEUI[:],
+				FrameRxInfo:             frames[0],
+				DeviceReferenceAltitude: referenceAlt,
+			})
+			if err != nil {
+				log.WithFields(log.Fields{
+					"dev_eui": devEUI,
+				}).WithError(err).Error("resolve tdoa error")
+				return
+			}
+
+			result = resp.Result
 		}
 
-		if resp.Result == nil || resp.Result.Location == nil {
+		// Multi-frame geolocation.
+		if len(frames) > 1 {
+			resp, err := geoClient.ResolveMultiFrameTDOA(context.Background(), &geo.ResolveMultiFrameTDOARequest{
+				DevEui:                  devEUI[:],
+				FrameRxInfoSet:          frames,
+				DeviceReferenceAltitude: referenceAlt,
+			})
+			if err != nil {
+				log.WithFields(log.Fields{
+					"dev_eui": devEUI,
+				}).WithError(err).Error("resolve multi-frame tdoa error")
+				return
+			}
+
+			result = resp.Result
+		}
+
+		if result == nil || result.Location == nil {
 			log.WithFields(log.Fields{
 				"dev_eui": devEUI,
 			}).Error("geolocation-server result or result.location must not be nil")
@@ -318,7 +364,7 @@ func resolveDeviceLocation(ctx *dataContext) error {
 
 		_, err = asClient.SetDeviceLocation(context.Background(), &as.SetDeviceLocationRequest{
 			DevEui:   devEUI[:],
-			Location: resp.Result.Location,
+			Location: result.Location,
 		})
 		if err != nil {
 			log.WithFields(log.Fields{
@@ -326,7 +372,7 @@ func resolveDeviceLocation(ctx *dataContext) error {
 			}).WithError(err).Error("set device-location error")
 		}
 
-	}(ctx.DeviceSession.DevEUI, ctx.DeviceSession.ReferenceAltitude, geolocationserver.Client(), ctx.ApplicationServerClient, rxInfoWithFineTimestamp)
+	}(ctx.DeviceSession.DevEUI, ctx.DeviceSession.ReferenceAltitude, geolocationserver.Client(), ctx.ApplicationServerClient, buffer)
 
 	return nil
 }

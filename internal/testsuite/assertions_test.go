@@ -1,10 +1,15 @@
 package testsuite
 
 import (
+	"encoding/binary"
+	"sort"
+	"time"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
 	"github.com/brocaar/loraserver/api/as"
+	"github.com/brocaar/loraserver/api/geo"
 	"github.com/brocaar/loraserver/api/gw"
 	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -272,6 +277,7 @@ func AssertEnabledUplinkChannels(channels []int) Assertion {
 	}
 }
 
+// AssertASSetDeviceStatusRequests asserts the set device-status request.
 func AssertASSetDeviceStatusRequest(req as.SetDeviceStatusRequest) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
 		r := <-ts.ASClient.SetDeviceStatusChan
@@ -279,4 +285,66 @@ func AssertASSetDeviceStatusRequest(req as.SetDeviceStatusRequest) Assertion {
 			assert.Equal(req, r)
 		}
 	}
+}
+
+// AssertASSetDeviceLocationRequests asserts the set device-location request.
+func AssertASSetDeviceLocationRequest(req as.SetDeviceLocationRequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.ASClient.SetDeviceLocationChan
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
+// AssertNoASSetDeviceLocationRequests asserts that there is no set device-location request.
+func AssertNoASSetDeviceLocationRequest() Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		time.Sleep(100 * time.Millisecond)
+		select {
+		case <-ts.ASClient.SetDeviceLocationChan:
+			assert.Fail("unexpected set device-location request")
+		default:
+		}
+	}
+}
+
+// AssertResolveTDOARequest asserts the ResolveTDOARequest.
+func AssertResolveTDOARequest(req geo.ResolveTDOARequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.GeoClient.ResolveTDOAChan
+		sort.Sort(byGatewayID(r.FrameRxInfo.RxInfo))
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
+// AssertResolveMultiFrameTDOARequest asserts the ResolveMultiFrameTDOARequest.
+func AssertResolveMultiFrameTDOARequest(req geo.ResolveMultiFrameTDOARequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.GeoClient.ResolveMultiFrameTDOAChan
+		for i := range r.FrameRxInfoSet {
+			sort.Sort(byGatewayID(r.FrameRxInfoSet[i].RxInfo))
+		}
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
+type byGatewayID []*gw.UplinkRXInfo
+
+func (s byGatewayID) Len() int {
+	return len(s)
+}
+
+func (s byGatewayID) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s byGatewayID) Less(i, j int) bool {
+	ii := binary.BigEndian.Uint64(s[i].GatewayId)
+	jj := binary.BigEndian.Uint64(s[j].GatewayId)
+	return ii < jj
 }
