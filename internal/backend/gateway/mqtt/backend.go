@@ -186,6 +186,8 @@ func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, msg pr
 		"topic":      topic.String(),
 	}).Info("gateway/mqtt: publishing gateway command")
 
+	mqttCommandCounter(command).Inc()
+
 	if token := b.conn.Publish(topic.String(), b.qos, false, bb); token.Wait() && token.Error() != nil {
 		return errors.Wrap(err, "gateway/mqtt: publish gateway command error")
 	}
@@ -198,10 +200,13 @@ func (b *Backend) eventHandler(c paho.Client, msg paho.Message) {
 	defer b.wg.Done()
 
 	if strings.HasSuffix(msg.Topic(), "up") {
+		mqttEventCounter("up").Inc()
 		b.rxPacketHandler(c, msg)
 	} else if strings.HasSuffix(msg.Topic(), "ack") {
+		mqttEventCounter("ack").Inc()
 		b.ackPacketHandler(c, msg)
 	} else if strings.HasSuffix(msg.Topic(), "stats") {
+		mqttEventCounter("stats").Inc()
 		b.statsPacketHandler(c, msg)
 	}
 }
@@ -338,6 +343,8 @@ func (b *Backend) ackPacketHandler(c paho.Client, msg paho.Message) {
 func (b *Backend) onConnected(c paho.Client) {
 	log.Info("backend/gateway: connected to mqtt server")
 
+	mqttConnectCounter().Inc()
+
 	for {
 		log.WithFields(log.Fields{
 			"topic": b.eventTopic,
@@ -357,6 +364,7 @@ func (b *Backend) onConnected(c paho.Client) {
 
 func (b *Backend) onConnectionLost(c paho.Client, reason error) {
 	log.Errorf("gateway/mqtt: mqtt connection error: %s", reason)
+	mqttDisconnectCounter().Inc()
 }
 
 func (b *Backend) setGatewayMarshaler(gatewayID lorawan.EUI64, t marshaler.Type) {
