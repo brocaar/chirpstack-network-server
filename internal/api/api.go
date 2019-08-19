@@ -40,7 +40,6 @@ func Setup(c config.Config) error {
 	gs := grpc.NewServer(opts...)
 	nsAPI := NewNetworkServerAPI()
 	ns.RegisterNetworkServerServiceServer(gs, nsAPI)
-	grpc_prometheus.Register(gs)
 
 	ln, err := net.Listen("tcp", apiConfig.Bind)
 	if err != nil {
