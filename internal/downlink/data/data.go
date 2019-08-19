@@ -518,7 +518,7 @@ func setTXInfoForRX2(ctx *dataContext) error {
 	if !ctx.Immediately {
 		delay := band.Band().GetDefaults().ReceiveDelay2
 		if ctx.DeviceSession.RXDelay > 0 {
-			delay = time.Duration(ctx.DeviceSession.RXDelay) * time.Second
+			delay = (time.Duration(ctx.DeviceSession.RXDelay) * time.Second) + time.Second
 		}
 		txInfo.Timing = gw.DownlinkTiming_DELAY
 		txInfo.TimingInfo = &gw.DownlinkTXInfo_DelayTimingInfo{
