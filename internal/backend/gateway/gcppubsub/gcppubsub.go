@@ -211,6 +211,8 @@ func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, data [
 		"command":    command,
 	}).Info("gateway/gcp_pub_sub: message published")
 
+	gcpCommandCounter(command).Inc()
+
 	return nil
 }
 
@@ -238,6 +240,8 @@ func (b *Backend) receiveFunc(ctx context.Context, msg *pubsub.Message) {
 		"gateway_id": gatewayID,
 		"type":       typ,
 	}).Info("gateway/gcp_pub_sub: message received")
+
+	gcpEventCounter(typ).Inc()
 
 	var err error
 
