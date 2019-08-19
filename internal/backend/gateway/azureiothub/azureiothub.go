@@ -250,6 +250,8 @@ func (b *Backend) handleEventMessage(msg *servicebus.Message) error {
 		"event":      event,
 	}).Info("gateway/azure_iot_hub: event received from gateway")
 
+	azureEventCounter(event).Inc()
+
 	switch event {
 	case "up":
 		err = b.handleUplinkFrame(gatewayID, msg.Data)
@@ -377,6 +379,8 @@ func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, data [
 					"command":    command,
 				}).Info("gateway/azure_iot_hub: gateway command published")
 
+				azureCommandCounter(command).Inc()
+
 				return nil
 			}
 
@@ -428,6 +432,8 @@ func (b *Backend) c2dRecover() error {
 	// connection recovery
 	b.Lock()
 	defer b.Unlock()
+
+	azureConnectionRecoverCounter().Inc()
 
 	log.Info("gateway/azure_iot_hub: re-connecting to iot hub")
 	_ = b.c2dSender.Close(b.ctx)
