@@ -9,6 +9,26 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v3.2.0
+
+### Features
+
+#### Multi-frame geolocation
+
+Support for geolocation on multiple uplink frames has been added. Using the
+[Device Profile](https://www.loraserver.io/loraserver/features/device-profile/)
+the geolocation "buffer" can be configured.
+
+#### Prometheus metrics
+
+Prometheus metrics have been added to the MQTT, Azure and Google Cloud Platform
+backends.
+
+### Bugfixes
+
+* Fix NetID 3 & 4 NwkID prefix according to the [errata](https://lora-alliance.org/resource-hub/nwkid-length-fix-type-3-and-type-4-netids-errata-lorawan-backend-10-specification) published by the LoRa Alliance.
+* Fix RX2 timing when RXDelay is > 0. ([#419](https://github.com/brocaar/loraserver/issues/419))
+
 ## v3.1.0
 
 ### Features

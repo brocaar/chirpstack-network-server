@@ -25,6 +25,21 @@ will decrypt the fine-timestamp, before forwarding it to the geolocation-server.
 For getting this fine-timestamp decryption key, please contact your gateway vendor
 or Semtech.
 
+## Multi-frame geolocation
+
+LoRa Server support multi-frame geolocation to increase the geolocation accuracy.
+In the [Device Profile]({{<relref "device-profile.md">}}) it is possible to
+configure the:
+
+* TTL of each item in the geolocation buffer
+* Minimum buffer size before using geolocation
+
+Example:
+
+When the TTL is set to 5 minutes (300 seconds) and the minimum buffer size is
+set to 3, then geolocation will only be used when there are at least 3 frames
+in the geolocation buffer that are received within the last 5 minutes.
+
 ## Device location
 
 When LoRa Server (using the geolocation-server) is able to resolve the location

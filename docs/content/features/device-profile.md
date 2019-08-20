@@ -13,7 +13,7 @@ description: Defines the device capabilities and boot parameters needed by LoRa 
 The device-profile defines the device capabilities and boot parameters that
 are needed by LoRa Server to "connect" with a device.
 
-## Fields / options
+## LoRaWAN Backend Interface
 
 The following fields are described by the
 [LoRaWAN Backend Interfaces specification](https://www.lora-alliance.org/lorawan-for-developers).
@@ -38,3 +38,10 @@ Fields marked with an **X** are implemented by LoRa Server.
 - [ ] **MaxDutyCycle** Maximum duty cycle supported by the End-Device
 - [X] **RFRegion** RF region name (automatically set by LoRa Server)
 - [ ] **Supports32bitFCnt** End-Device uses 32bit FCnt (mandatory for LoRaWAN 1.0 End-Device) (always set to `true`)
+
+## Geolocation buffer
+
+The following extra fields can be used to configure the geolocation buffer:
+
+- **GeolocBufferTTL** Maximum TTL for items in the geolocation buffer.
+- **GeolocMinBufferSize** Minimum required buffer size before using geolocation.
