@@ -33,11 +33,18 @@ pygmentsUseClasses = true
     weight = 4
 
 [[menu.main]]
+    pre = "<i class='fas fa-chart-line'></i>"
+    name = "Metrics"
+    identifier = "metrics"
+    url = "/metrics/"
+    weight = 5
+
+[[menu.main]]
     pre = "<i class='fab fa-github'></i>"
     name = "Community & support"
     identifier = "community"
     url = "/community/"
-    weight = 5
+    weight = 6
 
 [params]
 version = "3.2.0"
