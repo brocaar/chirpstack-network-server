@@ -142,7 +142,7 @@ type Config struct {
 
 		Certificates []struct {
 			JoinEUI string `mapstructure:"join_eui"`
-			CaCert  string `mapstructure:"ca_cert"`
+			CACert  string `mapstructure:"ca_cert"`
 			TLSCert string `mapstructure:"tls_cert"`
 			TLSKey  string `mapstructure:"tls_key"`
 		} `mapstructure:"certificates"`

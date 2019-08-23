@@ -32,7 +32,7 @@ func Setup(c config.Config) error {
 
 		certificates = append(certificates, certificate{
 			joinEUI: eui,
-			caCert:  cert.CaCert,
+			caCert:  cert.CACert,
 			tlsCert: cert.TLSCert,
 			tlsKey:  cert.TLSKey,
 		})
