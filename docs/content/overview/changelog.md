@@ -9,6 +9,14 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v3.2.1
+
+Update LoRa Server dependencies to their latest versions.
+
+### Bugfixes
+
+* Fix Azure _Unauthorized access. 'Listen' claim(s) are required to perform this operation._ error. (see [azure-service-bus-go/#116](https://github.com/Azure/azure-service-bus-go/issues/116))
+
 ## v3.2.0
 
 ### Features
