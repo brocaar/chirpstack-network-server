@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"reflect"
 	"strings"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -139,7 +141,13 @@ func initConfig() {
 
 	viperBindEnvs(config.C)
 
-	if err := viper.Unmarshal(&config.C); err != nil {
+	viperHooks := mapstructure.ComposeDecodeHookFunc(
+		viperDecodeJSONSlice,
+		mapstructure.StringToTimeDurationHookFunc(),
+		mapstructure.StringToSliceHookFunc(","),
+	)
+
+	if err := viper.Unmarshal(&config.C, viper.DecodeHook(viperHooks)); err != nil {
 		log.WithError(err).Fatal("unmarshal config error")
 	}
 
@@ -170,4 +178,23 @@ func viperBindEnvs(iface interface{}, parts ...string) {
 			viper.BindEnv(key)
 		}
 	}
+}
+
+func viperDecodeJSONSlice(rf reflect.Kind, rt reflect.Kind, data interface{}) (interface{}, error) {
+	// input must be a string and destination must be a slice
+	if rf != reflect.String || rt != reflect.Slice {
+		return data, nil
+	}
+
+	raw := data.(string)
+
+	// this decoder expects a JSON list
+	if !strings.HasPrefix(raw, "[") || !strings.HasSuffix(raw, "]") {
+		return data, nil
+	}
+
+	var out []map[string]interface{}
+	err := json.Unmarshal([]byte(raw), &out)
+
+	return out, err
 }
