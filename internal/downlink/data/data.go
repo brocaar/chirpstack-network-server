@@ -390,11 +390,107 @@ func setTXParameters(ctx *dataContext) error {
 	return nil
 }
 
-func isRX2Only(ctx *dataContext) (b bool) {
-	if rx2OnlyDR >= 0 && ctx.RXPacket.DR > rx2OnlyDR {
-		return true
+func sfToSNR(sf int) float64 {
+	// Minimal SNR for SFs:
+	// SF 7:   -7.5
+	// SF 8:   -10
+	// SF 9:   -12.5
+	// SF 10:  -15
+	// SF 11:  -17.5
+	// SF 12:  -20
+	switch sf {
+	case 12:
+		return -20
+	case 11:
+		return -17.5
+	case 10:
+		return -15
+	case 9:
+		return -12.5
+	case 8:
+		return -10
+	case 7:
+		return -7.5
+	default:
+		return 0
 	}
-	// TODO: implement "intelligent" RX2Only behavior, based on Linkbudget
+}
+
+func isRX2Only(ctx *dataContext) (b bool) {
+	var (
+		freqRX1       uint32
+		drIndexRX1    int
+	)
+	//Get RX1 "real" DR
+	t, err := band.Band().GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
+	if err != nil {
+		return true //could not get RX1 Frequency for any reason, so just send RX2 then
+	} else {
+		freqRX1 = uint32(t)
+	}
+
+	// get rx1 data-rate
+	drIndexRX1, err = helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
+	if err != nil {
+		return true // on error, omit RX1
+	}
+
+	drIndexRX1, err = band.Band().GetRX1DataRateIndex(drIndexRX1, int(ctx.DeviceSession.RX1DROffset))
+	if err != nil {
+		return true // on error, omit RX1
+	}
+
+	if rx2OnlyDR >= 0 && drIndexRX1 > rx2OnlyDR {
+		return true
+	} else if rx2OnlyDR == -1 {
+		// TODO: implement "intelligent" RX2Only behavior, based on Linkbudget
+		var (
+			txPowerRX1    int32
+			txPowerRX2    int32
+			freqRX2       uint32
+			drIndexRX2    int
+			linkBudgetRX1 float64
+			linkBudgetRX2 float64
+			drRX1		  loraband.DataRate
+			drRX2		  loraband.DataRate
+		)
+
+		// Get rest of RX1 and RX2 parameters and make decision based on link budget
+		freqRX2 = uint32(ctx.DeviceSession.RX2Frequency)
+
+		if downlinkTXPower != -1 {
+			txPowerRX1 = int32(downlinkTXPower)
+			txPowerRX2 = int32(downlinkTXPower)
+		} else {
+			txPowerRX1 = int32(band.Band().GetDownlinkTXPower(int(freqRX1)))
+			txPowerRX2 = int32(band.Band().GetDownlinkTXPower(int(freqRX2)))
+		}
+
+		drIndexRX2 = int(ctx.DeviceSession.RX2DR)
+
+		drRX1, err = band.Band().GetDataRate(drIndexRX1);
+		if err != nil {
+			return true // on error, omit RX1
+		}
+		drRX2, err = band.Band().GetDataRate(drIndexRX2);
+		if err != nil {
+			return false // on error, dont block RX1
+		}
+		// do the Link Budget calculation here (see http://www.techplayon.com/lora-link-budget-sensitivity-calculations-example-explained/)
+		// General formula: L = TX_Power - (-174 + 10 * log10(BW) + NF + minimal SNR)
+		// we assume a noise figure of 6dB, BW of 125 kHz (-> 10log(125) approx. 21) for simplicity
+		// TODO: introduce some more factors like asymmetric up- and down-paths due to local noise, other band widths, ...
+
+		linkBudgetRX1 = float64(txPowerRX1) - (float64(-174 + 21 + 6) + sfToSNR(drRX1.SpreadFactor))
+		linkBudgetRX2 = float64(txPowerRX2) - (float64(-174 + 21 + 6) + sfToSNR(drRX2.SpreadFactor))
+
+		if linkBudgetRX2 > linkBudgetRX1 {
+			return true
+		} else {
+			return false
+		}
+	}
+
 	return false
 }
 
