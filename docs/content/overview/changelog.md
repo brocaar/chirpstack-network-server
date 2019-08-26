@@ -11,7 +11,10 @@ description: Lists the changes per LoRa Server release, including steps how to u
 
 ## v3.2.1
 
-Update LoRa Server dependencies to their latest versions.
+### Improvements
+
+* Improve environment variable based configuration for list of structures.
+* Update LoRa Server dependencies to their latest versions.
 
 ### Bugfixes
 
