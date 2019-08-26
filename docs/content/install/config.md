@@ -245,7 +245,14 @@ get_downlink_data_delay="100ms"
   # 0: RX1, fallback to RX2 (on RX1 scheduling error)
   # 1: RX1 only
   # 2: RX2 only
+  # 3: RX2 only, if Uplink DataRate > RX2OnlyDR (see rx2_only_dr option)
   rx_window=0
+   
+  # RX 2 only DataRate
+  #
+  # Set this to a DataRate from 0 to 5, or to -1 to disable it.
+  # Active, if RX window is set to 3.
+  rx2_only_dr=-1
 
   # Class A RX1 delay
   #

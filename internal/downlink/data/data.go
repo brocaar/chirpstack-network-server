@@ -48,6 +48,7 @@ var (
 
 	// RX window
 	rxWindow int
+	rx2OnlyDR int
 
 	// RX2 params
 	rx2Frequency int
@@ -139,6 +140,8 @@ func Setup(conf config.Config) error {
 	rx1DROffset = nsConf.RX1DROffset
 	rx1Delay = nsConf.RX1Delay
 	rxWindow = nsConf.RXWindow
+
+	rx2OnlyDR = nsConf.RX2OnlyDR
 
 	downlinkTXPower = nsConf.DownlinkTXPower
 
@@ -387,14 +390,23 @@ func setTXParameters(ctx *dataContext) error {
 	return nil
 }
 
+func isRX2Only(ctx *dataContext) (b bool) {
+	if rx2OnlyDR >= 0 && ctx.RXPacket.DR > rx2OnlyDR {
+		return true
+	}
+	// TODO: implement "intelligent" RX2Only behavior, based on Linkbudget
+	return false
+}
+
+
 func setDataTXInfo(ctx *dataContext) error {
-	if rxWindow == 0 || rxWindow == 1 {
+	if rxWindow == 0 || rxWindow == 1 || (rxWindow == 2 && !isRX2Only(ctx)) {
 		if err := setTXInfoForRX1(ctx); err != nil {
 			return err
 		}
 	}
 
-	if rxWindow == 0 || rxWindow == 2 {
+	if rxWindow == 0 || rxWindow == 2 || rxWindow == 3 {
 		if err := setTXInfoForRX2(ctx); err != nil {
 			return err
 		}

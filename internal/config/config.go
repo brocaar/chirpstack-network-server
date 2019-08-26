@@ -47,6 +47,7 @@ type Config struct {
 		NetworkSettings struct {
 			InstallationMargin    float64 `mapstructure:"installation_margin"`
 			RXWindow              int     `mapstructure:"rx_window"`
+			RX2OnlyDR             int     `mapstructure:"rx2_only_dr"`
 			RX1Delay              int     `mapstructure:"rx1_delay"`
 			RX1DROffset           int     `mapstructure:"rx1_dr_offset"`
 			RX2DR                 int     `mapstructure:"rx2_dr"`
