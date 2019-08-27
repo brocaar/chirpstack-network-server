@@ -245,13 +245,17 @@ get_downlink_data_delay="100ms"
   # 0: RX1, fallback to RX2 (on RX1 scheduling error)
   # 1: RX1 only
   # 2: RX2 only
-  # 3: RX2 only, if Uplink DataRate > RX2OnlyDR (see rx2_only_dr option)
+  # 3: Same as 0, but dynamic decision if RX1 will be sent, see RX 2 only DataRate
   rx_window=0
-   
+
   # RX 2 only DataRate
-  #
-  # Set this to a DataRate from 0 to 5, or to -1 to disable it.
   # Active, if RX window is set to 3.
+  # Set this to a DataRate >= 0:
+  #    If RX Parameters of node are set-up according to the LNS settings,
+  #    RX1 will only be sent, if effective RX1 DR > rx2_only_dr
+  # Set to -1:
+  #    If RX Parameters of node are set-up according to the LNS settings,
+  #    the decision if RX1 will be sent is made upon link budget calculation.
   rx2_only_dr=-1
 
   # Class A RX1 delay
