@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
-	"github.com/brocaar/loraserver/api/common"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -458,14 +457,14 @@ func isRX2Only(ctx *dataContext) (b bool, err error) {
 			logBWRX2	  float64
 		)
 
-		if ctx.RXPacket.TXInfo.Modulation == common.Modulation_FSK { //never block RX1 for FSK
-			return false, nil
-		}
-
 		// get rx1 data-rate
 		drRX1, err = band.Band().GetDataRate(drRX1Index)
 		if err != nil {
 			return true, err // on error, omit RX1
+		}
+
+		if drRX1.Modulation == loraband.FSKModulation { //never block RX1 for FSK
+			return false, nil
 		}
 
 		// get rx2 data-rate
