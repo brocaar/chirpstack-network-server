@@ -1,10 +1,11 @@
 package data
 
 import (
-	"crypto/rand"
+	"context"
 	"encoding/binary"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -17,6 +18,7 @@ import (
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/brocaar/loraserver/internal/maccommand"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
@@ -160,6 +162,8 @@ func Setup(conf config.Config) error {
 }
 
 type dataContext struct {
+	ctx context.Context
+
 	// Device mode.
 	DeviceMode storage.DeviceMode
 
@@ -247,8 +251,9 @@ func forClass(mode storage.DeviceMode, tasks ...func(*dataContext) error) func(*
 }
 
 // HandleResponse handles a downlink response.
-func HandleResponse(rxPacket models.RXPacket, sp storage.ServiceProfile, ds storage.DeviceSession, adr, mustSend, ack bool, macCommands []storage.MACCommandBlock) error {
-	ctx := dataContext{
+func HandleResponse(ctx context.Context, rxPacket models.RXPacket, sp storage.ServiceProfile, ds storage.DeviceSession, adr, mustSend, ack bool, macCommands []storage.MACCommandBlock) error {
+	rctx := dataContext{
+		ctx:            ctx,
 		ServiceProfile: sp,
 		DeviceSession:  ds,
 		ACK:            ack,
@@ -258,7 +263,7 @@ func HandleResponse(rxPacket models.RXPacket, sp storage.ServiceProfile, ds stor
 	}
 
 	for _, t := range responseTasks {
-		if err := t(&ctx); err != nil {
+		if err := t(&rctx); err != nil {
 			if err == ErrAbort {
 				return nil
 			}
@@ -271,14 +276,15 @@ func HandleResponse(rxPacket models.RXPacket, sp storage.ServiceProfile, ds stor
 }
 
 // HandleScheduleNextQueueItem handles scheduling the next device-queue item.
-func HandleScheduleNextQueueItem(ds storage.DeviceSession, mode storage.DeviceMode) error {
-	ctx := dataContext{
+func HandleScheduleNextQueueItem(ctx context.Context, ds storage.DeviceSession, mode storage.DeviceMode) error {
+	nqctx := dataContext{
+		ctx:           ctx,
 		DeviceMode:    mode,
 		DeviceSession: ds,
 	}
 
 	for _, t := range scheduleNextQueueItemTasks {
-		if err := t(&ctx); err != nil {
+		if err := t(&nqctx); err != nil {
 			if err == ErrAbort {
 				return nil
 			}
@@ -290,14 +296,18 @@ func HandleScheduleNextQueueItem(ds storage.DeviceSession, mode storage.DeviceMo
 }
 
 func setToken(ctx *dataContext) error {
-	b := make([]byte, 2)
-	_, err := rand.Read(b)
-	if err != nil {
-		return errors.Wrap(err, "read random error")
+	var downID uuid.UUID
+	if ctxID := ctx.ctx.Value(logging.ContextIDKey); ctxID != nil {
+		if id, ok := ctxID.(uuid.UUID); ok {
+			downID = id
+		}
 	}
 
+	// We use the downID bytes for the token so that with either the Token
+	// as the DownlinkID value from the ACK, we can retrieve the pending items.
 	for i := range ctx.DownlinkFrames {
-		ctx.DownlinkFrames[i].DownlinkFrame.Token = uint32(binary.BigEndian.Uint16(b))
+		ctx.DownlinkFrames[i].DownlinkFrame.Token = uint32(binary.BigEndian.Uint16(downID[0:2]))
+		ctx.DownlinkFrames[i].DownlinkFrame.DownlinkId = downID[:]
 	}
 	return nil
 }
@@ -311,7 +321,7 @@ func requestDevStatus(ctx *dataContext) error {
 	curInterval := time.Now().Sub(ctx.DeviceSession.LastDevStatusRequested)
 
 	if curInterval >= reqInterval {
-		ctx.MACCommands = append(ctx.MACCommands, maccommand.RequestDevStatus(&ctx.DeviceSession))
+		ctx.MACCommands = append(ctx.MACCommands, maccommand.RequestDevStatus(ctx.ctx, &ctx.DeviceSession))
 	}
 
 	return nil
@@ -617,7 +627,7 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 		remainingPayloadSize = ctx.DownlinkFrames[0].RemainingPayloadSize
 	}
 
-	qi, err := storage.GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(storage.DB(), ctx.DeviceSession.DevEUI, remainingPayloadSize, fCnt, ctx.DeviceSession.RoutingProfileID)
+	qi, err := storage.GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(ctx.ctx, storage.DB(), ctx.DeviceSession.DevEUI, remainingPayloadSize, fCnt, ctx.DeviceSession.RoutingProfileID)
 	if err != nil {
 		if errors.Cause(err) == storage.ErrDoesNotExist {
 			return nil
@@ -633,7 +643,7 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 		ctx.DownlinkFrames[i].RemainingPayloadSize = ctx.DownlinkFrames[i].RemainingPayloadSize - len(ctx.Data)
 	}
 
-	items, err := storage.GetDeviceQueueItemsForDevEUI(storage.DB(), ctx.DeviceSession.DevEUI)
+	items, err := storage.GetDeviceQueueItemsForDevEUI(ctx.ctx, storage.DB(), ctx.DeviceSession.DevEUI)
 	if err != nil {
 		return errors.Wrap(err, "get device-queue items error")
 	}
@@ -670,7 +680,7 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 
 	if !qi.Confirmed {
 		// delete when not confirmed
-		if err := storage.DeleteDeviceQueueItem(storage.DB(), qi.ID); err != nil {
+		if err := storage.DeleteDeviceQueueItem(ctx.ctx, storage.DB(), qi.ID); err != nil {
 			return errors.Wrap(err, "delete device-queue item error")
 		}
 	} else {
@@ -690,7 +700,7 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 			qi.TimeoutAfter = &timeout
 		}
 
-		if err := storage.UpdateDeviceQueueItem(storage.DB(), &qi); err != nil {
+		if err := storage.UpdateDeviceQueueItem(ctx.ctx, storage.DB(), &qi); err != nil {
 			return errors.Wrap(err, "update device-queue item error")
 		}
 	}
@@ -779,13 +789,13 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 
 		for _, block := range ctx.MACCommands {
 			// set mac-command pending
-			if err := storage.SetPendingMACCommand(storage.RedisPool(), ctx.DeviceSession.DevEUI, block); err != nil {
+			if err := storage.SetPendingMACCommand(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, block); err != nil {
 				return errors.Wrap(err, "set mac-command pending error")
 			}
 
 			// delete from queue, if external
 			if block.External {
-				if err := storage.DeleteMACCommandQueueItem(storage.RedisPool(), ctx.DeviceSession.DevEUI, block); err != nil {
+				if err := storage.DeleteMACCommandQueueItem(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, block); err != nil {
 					return errors.Wrap(err, "delete mac-command block from queue error")
 				}
 			}
@@ -828,6 +838,7 @@ func requestChannelMaskReconfiguration(ctx *dataContext) error {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,
+			"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
 		}).Warningf("handle channel reconfigure error: %s", err)
 	} else {
 		ctx.MACCommands = append(ctx.MACCommands, blocks...)
@@ -844,10 +855,11 @@ func requestADRChange(ctx *dataContext) error {
 		}
 	}
 
-	blocks, err := adr.HandleADR(ctx.ServiceProfile, ctx.DeviceSession, linkADRReq)
+	blocks, err := adr.HandleADR(ctx.ctx, ctx.ServiceProfile, ctx.DeviceSession, linkADRReq)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{
 			"dev_eui": ctx.DeviceSession.DevEUI,
+			"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
 		}).Warning("handle adr error")
 		return nil
 	}
@@ -859,7 +871,7 @@ func requestADRChange(ctx *dataContext) error {
 }
 
 func getMACCommandsFromQueue(ctx *dataContext) error {
-	blocks, err := storage.GetMACCommandQueueItems(storage.RedisPool(), ctx.DeviceSession.DevEUI)
+	blocks, err := storage.GetMACCommandQueueItems(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI)
 	if err != nil {
 		return errors.Wrap(err, "get mac-command queue items error")
 	}
@@ -947,6 +959,7 @@ func setPHYPayloads(ctx *dataContext) error {
 			// this should not happen, but log it in case it would
 			log.WithFields(log.Fields{
 				"dev_eui": ctx.DeviceSession.DevEUI,
+				"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
 			}).Error("mac-commands exceeded size!")
 		}
 
@@ -1005,8 +1018,10 @@ func sendDownlinkFrame(ctx *dataContext) error {
 	ctx.DeviceSession.LastDownlinkTX = time.Now()
 
 	// log for gateway (with encrypted mac-commands)
-	if err := framelog.LogDownlinkFrameForGateway(storage.RedisPool(), ctx.DownlinkFrames[0].DownlinkFrame); err != nil {
-		log.WithError(err).Error("log downlink frame for gateway error")
+	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, storage.RedisPool(), ctx.DownlinkFrames[0].DownlinkFrame); err != nil {
+		log.WithError(err).WithFields(log.Fields{
+			"ctx_id": ctx.ctx.Value(logging.ContextIDKey),
+		}).Error("log downlink frame for gateway error")
 	}
 
 	// log for device (with decrypted mac-commands)
@@ -1036,7 +1051,7 @@ func sendDownlinkFrame(ctx *dataContext) error {
 		}
 
 		// log frame
-		if err := framelog.LogDownlinkFrameForDevEUI(storage.RedisPool(), ctx.DeviceSession.DevEUI, gw.DownlinkFrame{
+		if err := framelog.LogDownlinkFrameForDevEUI(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, gw.DownlinkFrame{
 			Token:      uint32(ctx.DownlinkFrames[0].DownlinkFrame.Token),
 			TxInfo:     ctx.DownlinkFrames[0].DownlinkFrame.TxInfo,
 			PhyPayload: phyB,
@@ -1046,14 +1061,16 @@ func sendDownlinkFrame(ctx *dataContext) error {
 
 		return nil
 	}(); err != nil {
-		log.WithError(err).Error("log downlink frame for device error")
+		log.WithError(err).WithFields(log.Fields{
+			"ctx_id": ctx.ctx.Value(logging.ContextIDKey),
+		}).Error("log downlink frame for device error")
 	}
 
 	return nil
 }
 
 func saveDeviceSession(ctx *dataContext) error {
-	if err := storage.SaveDeviceSession(storage.RedisPool(), ctx.DeviceSession); err != nil {
+	if err := storage.SaveDeviceSession(ctx.ctx, storage.RedisPool(), ctx.DeviceSession); err != nil {
 		return errors.Wrap(err, "save device-session error")
 	}
 	return nil
@@ -1061,7 +1078,7 @@ func saveDeviceSession(ctx *dataContext) error {
 
 func getDeviceProfile(ctx *dataContext) error {
 	var err error
-	ctx.DeviceProfile, err = storage.GetAndCacheDeviceProfile(storage.DB(), storage.RedisPool(), ctx.DeviceSession.DeviceProfileID)
+	ctx.DeviceProfile, err = storage.GetAndCacheDeviceProfile(ctx.ctx, storage.DB(), storage.RedisPool(), ctx.DeviceSession.DeviceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get device-profile error")
 	}
@@ -1070,7 +1087,7 @@ func getDeviceProfile(ctx *dataContext) error {
 
 func getServiceProfile(ctx *dataContext) error {
 	var err error
-	ctx.ServiceProfile, err = storage.GetAndCacheServiceProfile(storage.DB(), storage.RedisPool(), ctx.DeviceSession.ServiceProfileID)
+	ctx.ServiceProfile, err = storage.GetAndCacheServiceProfile(ctx.ctx, storage.DB(), storage.RedisPool(), ctx.DeviceSession.ServiceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
@@ -1085,6 +1102,7 @@ func checkLastDownlinkTimestamp(ctx *dataContext) error {
 			"time":                           time.Now(),
 			"last_downlink_tx_time":          ctx.DeviceSession.LastDownlinkTX,
 			"class_c_downlink_lock_duration": classCDownlinkLockDuration,
+			"ctx_id":                         ctx.ctx.Value(logging.ContextIDKey),
 		}).Debug("skip next downlink queue scheduling dueue to class-c downlink lock")
 		return ErrAbort
 	}
@@ -1105,7 +1123,7 @@ func saveRemainingFrames(ctx *dataContext) error {
 		downlinkFrames = append(downlinkFrames, ctx.DownlinkFrames[i].DownlinkFrame)
 	}
 
-	if err := storage.SaveDownlinkFrames(storage.RedisPool(), ctx.DeviceSession.DevEUI, downlinkFrames); err != nil {
+	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, downlinkFrames); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
 	}
 

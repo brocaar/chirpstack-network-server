@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -20,7 +21,7 @@ const (
 // SaveGeolocBuffer saves the given items in the geolocation buffer.
 // It overwrites the previous buffer to make sure that expired items do not
 // stay in the buffer as the TTL is set on the key, not on the items.
-func SaveGeolocBuffer(p *redis.Pool, devEUI lorawan.EUI64, items []*geo.FrameRXInfo, ttl time.Duration) error {
+func SaveGeolocBuffer(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, items []*geo.FrameRXInfo, ttl time.Duration) error {
 	// nothing to do
 	if ttl == 0 || len(items) == 0 {
 		return nil
@@ -53,7 +54,7 @@ func SaveGeolocBuffer(p *redis.Pool, devEUI lorawan.EUI64, items []*geo.FrameRXI
 
 // GetGeolocBuffer returns the geolocation buffer. Items that exceed the
 // given TTL are not returned.
-func GetGeolocBuffer(p *redis.Pool, devEUI lorawan.EUI64, ttl time.Duration) ([]*geo.FrameRXInfo, error) {
+func GetGeolocBuffer(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, ttl time.Duration) ([]*geo.FrameRXInfo, error) {
 	// nothing to do
 	if ttl == 0 {
 		return nil, nil

@@ -1,6 +1,7 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -66,7 +67,7 @@ func TestHandleRXTimingSetupAns(t *testing.T) {
 
 		for i, t := range tests {
 			Convey(fmt.Sprintf("Testing: %s [%d]", t.Name, i), func() {
-				ans, err := handleRXTimingSetupAns(&t.DeviceSession, t.ReceivedMACCommandBlock, t.PendingMACCommandBlock)
+				ans, err := handleRXTimingSetupAns(context.Background(), &t.DeviceSession, t.ReceivedMACCommandBlock, t.PendingMACCommandBlock)
 				So(err, ShouldResemble, t.ExpectedError)
 				So(ans, ShouldBeNil)
 				So(t.DeviceSession, ShouldResemble, t.ExpectedDeviceSession)

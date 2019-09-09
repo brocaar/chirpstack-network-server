@@ -152,18 +152,21 @@ func (b *Backend) SendTXPacket(txPacket gw.DownlinkFrame) error {
 	}
 
 	gatewayID := helpers.GetGatewayID(txPacket.TxInfo)
+	downID := helpers.GetDownlinkID(&txPacket)
 
-	return b.publishCommand(gatewayID, "down", &txPacket)
+	return b.publishCommand(log.Fields{
+		"downlink_id": downID,
+	}, gatewayID, "down", &txPacket)
 }
 
 // SendGatewayConfigPacket sends the given GatewayConfigPacket to the gateway.
 func (b *Backend) SendGatewayConfigPacket(configPacket gw.GatewayConfiguration) error {
 	gatewayID := helpers.GetGatewayID(&configPacket)
 
-	return b.publishCommand(gatewayID, "config", &configPacket)
+	return b.publishCommand(log.Fields{}, gatewayID, "config", &configPacket)
 }
 
-func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, msg proto.Message) error {
+func (b *Backend) publishCommand(fields log.Fields, gatewayID lorawan.EUI64, command string, msg proto.Message) error {
 	t := b.getGatewayMarshaler(gatewayID)
 	bb, err := marshaler.MarshalCommand(t, msg)
 	if err != nil {
@@ -179,12 +182,12 @@ func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, msg pr
 		return errors.Wrap(err, "execute command topic template error")
 	}
 
-	log.WithFields(log.Fields{
-		"gateway_id": gatewayID,
-		"command":    command,
-		"qos":        b.qos,
-		"topic":      topic.String(),
-	}).Info("gateway/mqtt: publishing gateway command")
+	fields["gateway_id"] = gatewayID
+	fields["command"] = command
+	fields["qos"] = b.qos
+	fields["topic"] = topic.String()
+
+	log.WithFields(fields).Info("gateway/mqtt: publishing gateway command")
 
 	mqttCommandCounter(command).Inc()
 
@@ -215,8 +218,6 @@ func (b *Backend) rxPacketHandler(c paho.Client, msg paho.Message) {
 	b.wg.Add(1)
 	defer b.wg.Done()
 
-	log.Info("gateway/mqtt: uplink frame received")
-
 	var uplinkFrame gw.UplinkFrame
 	t, err := marshaler.UnmarshalUplinkFrame(msg.Payload(), &uplinkFrame)
 	if err != nil {
@@ -242,6 +243,12 @@ func (b *Backend) rxPacketHandler(c paho.Client, msg paho.Message) {
 
 	gatewayID := helpers.GetGatewayID(uplinkFrame.RxInfo)
 	b.setGatewayMarshaler(gatewayID, t)
+	uplinkID := helpers.GetUplinkID(uplinkFrame.RxInfo)
+
+	log.WithFields(log.Fields{
+		"uplink_id":  uplinkID,
+		"gateway_id": gatewayID,
+	}).Info("gateway/mqtt: uplink frame received")
 
 	// Since with MQTT all subscribers will receive the uplink messages sent
 	// by all the gateways, the first instance receiving the message must lock it,
@@ -258,7 +265,9 @@ func (b *Backend) rxPacketHandler(c paho.Client, msg paho.Message) {
 			// the payload is already being processed by an other instance
 			return
 		}
-		log.WithError(err).Error("gateway/mqtt: acquire uplink payload lock error")
+		log.WithFields(log.Fields{
+			"uplink_id": uplinkID,
+		}).WithError(err).Error("gateway/mqtt: acquire uplink payload lock error")
 		return
 	}
 
@@ -279,6 +288,7 @@ func (b *Backend) statsPacketHandler(c paho.Client, msg paho.Message) {
 	}
 
 	gatewayID := helpers.GetGatewayID(&gatewayStats)
+	statsID := helpers.GetStatsID(&gatewayStats)
 	b.setGatewayMarshaler(gatewayID, t)
 
 	// Since with MQTT all subscribers will receive the stats messages sent
@@ -299,7 +309,10 @@ func (b *Backend) statsPacketHandler(c paho.Client, msg paho.Message) {
 		return
 	}
 
-	log.WithField("gateway_id", gatewayID).Info("gateway/mqtt: gateway stats packet received")
+	log.WithFields(log.Fields{
+		"gateway_id": gatewayID,
+		"stats_id":   statsID,
+	}).Info("gateway/mqtt: gateway stats packet received")
 	b.statsPacketChan <- gatewayStats
 }
 
@@ -316,6 +329,7 @@ func (b *Backend) ackPacketHandler(c paho.Client, msg paho.Message) {
 	}
 
 	gatewayID := helpers.GetGatewayID(&ack)
+	downlinkID := helpers.GetDownlinkID(&ack)
 	b.setGatewayMarshaler(gatewayID, t)
 
 	// Since with MQTT all subscribers will receive the ack messages sent
@@ -336,7 +350,10 @@ func (b *Backend) ackPacketHandler(c paho.Client, msg paho.Message) {
 		return
 	}
 
-	log.WithField("gateway_id", gatewayID).Info("backend/gateway: downlink tx acknowledgement received")
+	log.WithFields(log.Fields{
+		"gateway_id":  gatewayID,
+		"downlink_id": downlinkID,
+	}).Info("backend/gateway: downlink tx acknowledgement received")
 	b.downlinkTXAckChan <- ack
 }
 

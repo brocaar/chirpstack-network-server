@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -36,12 +37,12 @@ func TestGatewayProfile(t *testing.T) {
 					},
 				},
 			}
-			So(CreateGatewayProfile(DB(), &gc), ShouldBeNil)
+			So(CreateGatewayProfile(context.Background(), DB(), &gc), ShouldBeNil)
 			gc.CreatedAt = gc.CreatedAt.UTC().Truncate(time.Millisecond)
 			gc.UpdatedAt = gc.UpdatedAt.UTC().Truncate(time.Millisecond)
 
 			Convey("Then it can be retrieved", func() {
-				gc2, err := GetGatewayProfile(DB(), gc.ID)
+				gc2, err := GetGatewayProfile(context.Background(), DB(), gc.ID)
 				So(err, ShouldBeNil)
 
 				gc2.CreatedAt = gc2.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -50,8 +51,8 @@ func TestGatewayProfile(t *testing.T) {
 			})
 
 			Convey("Then it can be deleted", func() {
-				So(DeleteGatewayProfile(DB(), gc.ID), ShouldBeNil)
-				_, err := GetGatewayProfile(DB(), gc.ID)
+				So(DeleteGatewayProfile(context.Background(), DB(), gc.ID), ShouldBeNil)
+				_, err := GetGatewayProfile(context.Background(), DB(), gc.ID)
 				So(err, ShouldEqual, ErrDoesNotExist)
 			})
 
@@ -71,10 +72,10 @@ func TestGatewayProfile(t *testing.T) {
 						SpreadingFactors: []int64{10, 11, 12},
 					},
 				}
-				So(UpdateGatewayProfile(DB(), &gc), ShouldBeNil)
+				So(UpdateGatewayProfile(context.Background(), DB(), &gc), ShouldBeNil)
 				gc.UpdatedAt = gc.UpdatedAt.UTC().Truncate(time.Millisecond)
 
-				gc2, err := GetGatewayProfile(DB(), gc.ID)
+				gc2, err := GetGatewayProfile(context.Background(), DB(), gc.ID)
 				So(err, ShouldBeNil)
 				gc2.CreatedAt = gc2.CreatedAt.UTC().Truncate(time.Millisecond)
 				gc2.UpdatedAt = gc2.UpdatedAt.UTC().Truncate(time.Millisecond)

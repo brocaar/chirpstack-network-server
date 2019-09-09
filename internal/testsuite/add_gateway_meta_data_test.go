@@ -1,6 +1,7 @@
 package testsuite
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -118,7 +119,7 @@ func (ts *AddGatewayMetaDataTestSuite) TestAddGatewayMetaData() {
 		// flush clients and reload device-session as the frame-counter
 		// increments on every test
 		ts.FlushClients()
-		ds, err := storage.GetDeviceSession(storage.RedisPool(), ts.DeviceSession.DevEUI)
+		ds, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), ts.DeviceSession.DevEUI)
 		assert.NoError(err)
 		ts.DeviceSession = &ds
 
@@ -157,10 +158,10 @@ func (ts *AddGatewayMetaDataTestSuite) TestAddGatewayMetaData() {
 
 			ts.Gateway.Location = test.Location
 			ts.Gateway.Altitude = test.Altitude
-			assert.NoError(storage.UpdateGateway(storage.DB(), ts.Gateway))
-			assert.NoError(storage.FlushGatewayCache(storage.RedisPool(), ts.Gateway.GatewayID))
+			assert.NoError(storage.UpdateGateway(context.Background(), storage.DB(), ts.Gateway))
+			assert.NoError(storage.FlushGatewayCache(context.Background(), storage.RedisPool(), ts.Gateway.GatewayID))
 
-			assert.Nil(uplink.HandleRXPacket(ts.GetUplinkFrameForFRMPayload(rxInfo, txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})))
+			assert.Nil(uplink.HandleUplinkFrame(context.Background(), ts.GetUplinkFrameForFRMPayload(rxInfo, txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})))
 
 			ulDataReq := <-ts.ASClient.HandleDataUpChan
 			assert.Len(ulDataReq.RxInfo, 1)

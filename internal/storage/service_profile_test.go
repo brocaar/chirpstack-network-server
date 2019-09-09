@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ func TestServiceProfile(t *testing.T) {
 	if err := Setup(conf); err != nil {
 		t.Fatal(err)
 	}
+	ctx := context.Background()
 
 	Convey("Given a clean database", t, func() {
 		test.MustResetDB(DB().DB)
@@ -43,12 +45,12 @@ func TestServiceProfile(t *testing.T) {
 				MinGWDiversity:         8,
 			}
 
-			So(CreateServiceProfile(DB(), &sp), ShouldBeNil)
+			So(CreateServiceProfile(context.Background(), DB(), &sp), ShouldBeNil)
 			sp.CreatedAt = sp.CreatedAt.UTC().Truncate(time.Millisecond)
 			sp.UpdatedAt = sp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
 			Convey("Then GetServiceProfile returns the expected service-profile", func() {
-				spGet, err := GetServiceProfile(DB(), sp.ID)
+				spGet, err := GetServiceProfile(ctx, DB(), sp.ID)
 				So(err, ShouldBeNil)
 
 				spGet.CreatedAt = spGet.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -77,10 +79,10 @@ func TestServiceProfile(t *testing.T) {
 				sp.TargetPER = 2
 				sp.MinGWDiversity = 9
 
-				So(UpdateServiceProfile(DB(), &sp), ShouldBeNil)
+				So(UpdateServiceProfile(context.Background(), DB(), &sp), ShouldBeNil)
 				sp.UpdatedAt = sp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
-				spGet, err := GetServiceProfile(DB(), sp.ID)
+				spGet, err := GetServiceProfile(ctx, DB(), sp.ID)
 				So(err, ShouldBeNil)
 
 				spGet.CreatedAt = spGet.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -89,26 +91,26 @@ func TestServiceProfile(t *testing.T) {
 			})
 
 			Convey("Then DeleteServiceProfile deletes the service-profile", func() {
-				So(DeleteServiceProfile(DB(), sp.ID), ShouldBeNil)
-				So(DeleteServiceProfile(DB(), sp.ID), ShouldEqual, ErrDoesNotExist)
+				So(DeleteServiceProfile(context.Background(), DB(), sp.ID), ShouldBeNil)
+				So(DeleteServiceProfile(context.Background(), DB(), sp.ID), ShouldEqual, ErrDoesNotExist)
 			})
 
 			Convey("Then GetAndCacheServiceProfile reads the service-profile from db and puts it in cache", func() {
-				spGet, err := GetAndCacheServiceProfile(DB(), RedisPool(), sp.ID)
+				spGet, err := GetAndCacheServiceProfile(ctx, DB(), RedisPool(), sp.ID)
 				So(err, ShouldBeNil)
 				So(spGet.ID, ShouldEqual, sp.ID)
 
 				Convey("Then GetServiceProfileCache returns the service-profile", func() {
-					spGet, err := GetServiceProfileCache(RedisPool(), sp.ID)
+					spGet, err := GetServiceProfileCache(context.Background(), RedisPool(), sp.ID)
 					So(err, ShouldBeNil)
 					So(spGet.ID, ShouldEqual, sp.ID)
 				})
 
 				Convey("Then FlushServiceProfileCache removes the service-profile from cache", func() {
-					err := FlushServiceProfileCache(RedisPool(), sp.ID)
+					err := FlushServiceProfileCache(context.Background(), RedisPool(), sp.ID)
 					So(err, ShouldBeNil)
 
-					_, err = GetServiceProfileCache(RedisPool(), sp.ID)
+					_, err = GetServiceProfileCache(context.Background(), RedisPool(), sp.ID)
 					So(err, ShouldNotBeNil)
 					So(errors.Cause(err), ShouldEqual, ErrDoesNotExist)
 				})

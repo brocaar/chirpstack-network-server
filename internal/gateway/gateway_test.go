@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -35,14 +36,14 @@ func (ts *GatewayConfigurationTestSuite) SetupSuite() {
 	ts.gateway = storage.Gateway{
 		GatewayID: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 	}
-	assert.NoError(storage.CreateGateway(storage.DB(), &ts.gateway))
+	assert.NoError(storage.CreateGateway(context.Background(), storage.DB(), &ts.gateway))
 }
 
 func (ts *GatewayConfigurationTestSuite) TestUpdate() {
 	ts.T().Run("No gateway-profile", func(t *testing.T) {
 		assert := require.New(t)
 
-		assert.NoError(handleConfigurationUpdate(storage.DB(), ts.gateway, ""))
+		assert.NoError(handleConfigurationUpdate(context.Background(), storage.DB(), ts.gateway, ""))
 		assert.Equal(0, len(ts.backend.GatewayConfigPacketChan))
 	})
 
@@ -67,17 +68,17 @@ func (ts *GatewayConfigurationTestSuite) TestUpdate() {
 			},
 		}
 
-		assert.NoError(storage.CreateGatewayProfile(storage.DB(), &gp))
+		assert.NoError(storage.CreateGatewayProfile(context.Background(), storage.DB(), &gp))
 
 		// to work around timestamp truncation
 		var err error
-		gp, err = storage.GetGatewayProfile(storage.DB(), gp.ID)
+		gp, err = storage.GetGatewayProfile(context.Background(), storage.DB(), gp.ID)
 		assert.NoError(err)
 
 		ts.gateway.GatewayProfileID = &gp.ID
-		assert.NoError(storage.UpdateGateway(storage.DB(), &ts.gateway))
+		assert.NoError(storage.UpdateGateway(context.Background(), storage.DB(), &ts.gateway))
 
-		assert.NoError(handleConfigurationUpdate(storage.DB(), ts.gateway, ""))
+		assert.NoError(handleConfigurationUpdate(context.Background(), storage.DB(), ts.gateway, ""))
 
 		gwConfig := <-ts.backend.GatewayConfigPacketChan
 		assert.Equal(gw.GatewayConfiguration{
@@ -158,7 +159,7 @@ func (ts *GatewayStatsTestSuite) SetupSuite() {
 	ts.gateway = storage.Gateway{
 		GatewayID: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 	}
-	assert.NoError(storage.CreateGateway(storage.DB(), &ts.gateway))
+	assert.NoError(storage.CreateGateway(context.Background(), storage.DB(), &ts.gateway))
 
 	assert.NoError(storage.SetAggregationIntervals([]storage.AggregationInterval{
 		storage.AggregationMinute,
@@ -190,9 +191,9 @@ func (ts *GatewayStatsTestSuite) TestStats() {
 	}
 	stats.Time, _ = ptypes.TimestampProto(now)
 
-	assert.NoError(handleGatewayStats(storage.RedisPool(), stats))
+	assert.NoError(handleGatewayStats(context.Background(), storage.RedisPool(), stats))
 
-	metrics, err := storage.GetMetrics(storage.RedisPool(), storage.AggregationMinute, "gw:0102030405060708", now, now)
+	metrics, err := storage.GetMetrics(context.Background(), storage.RedisPool(), storage.AggregationMinute, "gw:0102030405060708", now, now)
 	assert.NoError(err)
 	assert.Equal([]storage.MetricsRecord{
 		{

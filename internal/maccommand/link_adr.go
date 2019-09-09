@@ -1,9 +1,11 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/brocaar/loraserver/internal/band"
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/pkg/errors"
@@ -11,7 +13,7 @@ import (
 )
 
 // handleLinkADRAns handles the ack of an ADR request
-func handleLinkADRAns(ds *storage.DeviceSession, block storage.MACCommandBlock, pendingBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
+func handleLinkADRAns(ctx context.Context, ds *storage.DeviceSession, block storage.MACCommandBlock, pendingBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 	if len(block.MACCommands) == 0 {
 		return nil, errors.New("at least 1 mac-command expected, got none")
 	}
@@ -67,6 +69,7 @@ func handleLinkADRAns(ds *storage.DeviceSession, block storage.MACCommandBlock, 
 			"dr":               adrReq.DataRate,
 			"nb_trans":         adrReq.Redundancy.NbRep,
 			"enabled_channels": chans,
+			"ctx_id":           ctx.Value(logging.ContextIDKey),
 		}).Info("link_adr request acknowledged")
 
 	} else {
@@ -96,6 +99,7 @@ func handleLinkADRAns(ds *storage.DeviceSession, block storage.MACCommandBlock, 
 			"channel_mask_ack": channelMaskACK,
 			"data_rate_ack":    dataRateACK,
 			"power_ack":        powerACK,
+			"ctx_id":           ctx.Value(logging.ContextIDKey),
 		}).Warning("link_adr request not acknowledged")
 	}
 

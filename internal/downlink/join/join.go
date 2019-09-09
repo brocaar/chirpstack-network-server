@@ -1,9 +1,11 @@
 package join
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/binary"
 
+	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -14,6 +16,7 @@ import (
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
@@ -33,6 +36,8 @@ var tasks = []func(*joinContext) error{
 }
 
 type joinContext struct {
+	ctx context.Context
+
 	Token         uint16
 	DeviceSession storage.DeviceSession
 	RXPacket      models.RXPacket
@@ -55,15 +60,16 @@ func Setup(conf config.Config) error {
 }
 
 // Handle handles a downlink join-response.
-func Handle(ds storage.DeviceSession, rxPacket models.RXPacket, phy lorawan.PHYPayload) error {
-	ctx := joinContext{
+func Handle(ctx context.Context, ds storage.DeviceSession, rxPacket models.RXPacket, phy lorawan.PHYPayload) error {
+	jctx := joinContext{
+		ctx:           ctx,
 		DeviceSession: ds,
 		PHYPayload:    phy,
 		RXPacket:      rxPacket,
 	}
 
 	for _, t := range tasks {
-		if err := t(&ctx); err != nil {
+		if err := t(&jctx); err != nil {
 			return err
 		}
 	}
@@ -190,8 +196,16 @@ func setToken(ctx *joinContext) error {
 		return errors.Wrap(err, "read random error")
 	}
 
+	var downID uuid.UUID
+	if ctxID := ctx.ctx.Value(logging.ContextIDKey); ctxID != nil {
+		if id, ok := ctxID.(uuid.UUID); ok {
+			downID = id
+		}
+	}
+
 	for i := range ctx.DownlinkFrames {
 		ctx.DownlinkFrames[i].Token = uint32(binary.BigEndian.Uint16(b))
+		ctx.DownlinkFrames[i].DownlinkId = downID[:]
 	}
 	return nil
 }
@@ -220,11 +234,11 @@ func sendJoinAcceptResponse(ctx *joinContext) error {
 	}
 
 	// log frame
-	if err := framelog.LogDownlinkFrameForGateway(storage.RedisPool(), ctx.DownlinkFrames[0]); err != nil {
+	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, storage.RedisPool(), ctx.DownlinkFrames[0]); err != nil {
 		log.WithError(err).Error("log downlink frame for gateway error")
 	}
 
-	if err := framelog.LogDownlinkFrameForDevEUI(storage.RedisPool(), ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[0]); err != nil {
+	if err := framelog.LogDownlinkFrameForDevEUI(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[0]); err != nil {
 		log.WithError(err).Error("log downlink frame for device error")
 	}
 
@@ -236,7 +250,7 @@ func saveRemainingFrames(ctx *joinContext) error {
 		return nil
 	}
 
-	if err := storage.SaveDownlinkFrames(storage.RedisPool(), ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[1:]); err != nil {
+	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[1:]); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
 	}
 

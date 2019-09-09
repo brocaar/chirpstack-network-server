@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"context"
 	"database/sql/driver"
 	"encoding/gob"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/brocaar/lorawan"
 )
 
@@ -65,7 +67,7 @@ type GatewayBoard struct {
 }
 
 // CreateGateway creates the given gateway.
-func CreateGateway(db sqlx.Execer, gw *Gateway) error {
+func CreateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 	now := time.Now()
 	gw.CreatedAt = now
 	gw.UpdatedAt = now
@@ -112,13 +114,16 @@ func CreateGateway(db sqlx.Execer, gw *Gateway) error {
 		}
 	}
 
-	log.WithField("gateway_id", gw.GatewayID).Info("gateway created")
+	log.WithFields(log.Fields{
+		"gateway_id": gw.GatewayID,
+		"ctx_id":     ctx.Value(logging.ContextIDKey),
+	}).Info("gateway created")
 	return nil
 }
 
 // CreateGatewayCache caches the given gateway in Redis.
 // The TTL of the gateway is the same as that of the device-sessions.
-func CreateGatewayCache(p *redis.Pool, gw Gateway) error {
+func CreateGatewayCache(ctx context.Context, p *redis.Pool, gw Gateway) error {
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(gw); err != nil {
 		return errors.Wrap(err, "gob encode gateway error")
@@ -139,7 +144,7 @@ func CreateGatewayCache(p *redis.Pool, gw Gateway) error {
 }
 
 // GetGatewayCache returns a cached gateway.
-func GetGatewayCache(p *redis.Pool, gatewayID lorawan.EUI64) (Gateway, error) {
+func GetGatewayCache(ctx context.Context, p *redis.Pool, gatewayID lorawan.EUI64) (Gateway, error) {
 	var gw Gateway
 	key := fmt.Sprintf(gatewayKeyTempl, gatewayID)
 
@@ -163,7 +168,7 @@ func GetGatewayCache(p *redis.Pool, gatewayID lorawan.EUI64) (Gateway, error) {
 }
 
 // FlushGatewayCache deletes a cached gateway.
-func FlushGatewayCache(p *redis.Pool, gatewayID lorawan.EUI64) error {
+func FlushGatewayCache(ctx context.Context, p *redis.Pool, gatewayID lorawan.EUI64) error {
 	key := fmt.Sprintf(gatewayKeyTempl, gatewayID)
 	c := p.Get()
 	defer c.Close()
@@ -179,27 +184,29 @@ func FlushGatewayCache(p *redis.Pool, gatewayID lorawan.EUI64) error {
 // GetAndCacheGateway returns a gateway from the cache in case it is available.
 // In case the gateway is not cached, it will be retrieved from the database
 // and then cached.
-func GetAndCacheGateway(db sqlx.Queryer, p *redis.Pool, gatewayID lorawan.EUI64) (Gateway, error) {
-	gw, err := GetGatewayCache(p, gatewayID)
+func GetAndCacheGateway(ctx context.Context, db sqlx.Queryer, p *redis.Pool, gatewayID lorawan.EUI64) (Gateway, error) {
+	gw, err := GetGatewayCache(ctx, p, gatewayID)
 	if err == nil {
 		return gw, nil
 	}
 
 	if err != ErrDoesNotExist {
 		log.WithFields(log.Fields{
+			"ctx_id":     ctx.Value(logging.ContextIDKey),
 			"gateway_id": gatewayID,
 		}).WithError(err).Error("get gateway cache error")
 		// we don't return the error as we can still fall-back onto db retrieval
 	}
 
-	gw, err = GetGateway(db, gatewayID)
+	gw, err = GetGateway(ctx, db, gatewayID)
 	if err != nil {
 		return gw, errors.Wrap(err, "get gateway error")
 	}
 
-	err = CreateGatewayCache(p, gw)
+	err = CreateGatewayCache(ctx, p, gw)
 	if err != nil {
 		log.WithFields(log.Fields{
+			"ctx_id":     ctx.Value(logging.ContextIDKey),
 			"gateway_id": gatewayID,
 		}).WithError(err).Error("create gateway cache error")
 	}
@@ -208,7 +215,7 @@ func GetAndCacheGateway(db sqlx.Queryer, p *redis.Pool, gatewayID lorawan.EUI64)
 }
 
 // GetGateway returns the gateway for the given Gateway ID.
-func GetGateway(db sqlx.Queryer, id lorawan.EUI64) (Gateway, error) {
+func GetGateway(ctx context.Context, db sqlx.Queryer, id lorawan.EUI64) (Gateway, error) {
 	var gw Gateway
 	err := sqlx.Get(db, &gw, "select * from gateway where gateway_id = $1", id[:])
 	if err != nil {
@@ -236,7 +243,7 @@ func GetGateway(db sqlx.Queryer, id lorawan.EUI64) (Gateway, error) {
 }
 
 // UpdateGateway updates the given gateway.
-func UpdateGateway(db sqlx.Execer, gw *Gateway) error {
+func UpdateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 	now := time.Now()
 	gw.UpdatedAt = now
 
@@ -294,12 +301,15 @@ func UpdateGateway(db sqlx.Execer, gw *Gateway) error {
 		}
 	}
 
-	log.WithField("gateway_id", gw.GatewayID).Info("gateway updated")
+	log.WithFields(log.Fields{
+		"gateway_id": gw.GatewayID,
+		"ctx_id":     ctx.Value(logging.ContextIDKey),
+	}).Info("gateway updated")
 	return nil
 }
 
 // DeleteGateway deletes the gateway matching the given Gateway ID.
-func DeleteGateway(db sqlx.Execer, id lorawan.EUI64) error {
+func DeleteGateway(ctx context.Context, db sqlx.Execer, id lorawan.EUI64) error {
 	res, err := db.Exec("delete from gateway where gateway_id = $1", id[:])
 	if err != nil {
 		return handlePSQLError(err, "delete error")
@@ -311,12 +321,15 @@ func DeleteGateway(db sqlx.Execer, id lorawan.EUI64) error {
 	if ra == 0 {
 		return ErrDoesNotExist
 	}
-	log.WithField("gateway_id", id).Info("gateway deleted")
+	log.WithFields(log.Fields{
+		"gateway_id": id,
+		"ctx_id":     ctx.Value(logging.ContextIDKey),
+	}).Info("gateway deleted")
 	return nil
 }
 
 // GetGatewaysForIDs returns a map of gateways given a slice of IDs.
-func GetGatewaysForIDs(db sqlx.Queryer, ids []lorawan.EUI64) (map[lorawan.EUI64]Gateway, error) {
+func GetGatewaysForIDs(ctx context.Context, db sqlx.Queryer, ids []lorawan.EUI64) (map[lorawan.EUI64]Gateway, error) {
 	out := make(map[lorawan.EUI64]Gateway)
 	var idsB [][]byte
 	for i := range ids {

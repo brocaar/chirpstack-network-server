@@ -1,12 +1,14 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
@@ -57,7 +59,7 @@ func RequestNewChannels(devEUI lorawan.EUI64, maxChannels int, currentChannels, 
 	}
 }
 
-func handleNewChannelAns(ds *storage.DeviceSession, block storage.MACCommandBlock, pending *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
+func handleNewChannelAns(ctx context.Context, ds *storage.DeviceSession, block storage.MACCommandBlock, pending *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 
 	if len(block.MACCommands) == 0 {
 		return nil, errors.New("at least 1 mac-command expected, got none")
@@ -104,6 +106,8 @@ func handleNewChannelAns(ds *storage.DeviceSession, block storage.MACCommandBloc
 				"channel":   pendingPL.ChIndex,
 				"min_dr":    pendingPL.MinDR,
 				"max_dr":    pendingPL.MaxDR,
+				"ctx_id":    ctx.Value(logging.ContextIDKey),
+				"dev_eui":   ds.DevEUI,
 			}).Info("new_channel request acknowledged")
 		} else {
 			log.WithFields(log.Fields{
@@ -113,6 +117,8 @@ func handleNewChannelAns(ds *storage.DeviceSession, block storage.MACCommandBloc
 				"max_dr":               pendingPL.MaxDR,
 				"data_rate_range_ok":   pl.DataRateRangeOK,
 				"channel_frequency_ok": pl.ChannelFrequencyOK,
+				"ctx_id":               ctx.Value(logging.ContextIDKey),
+				"dev_eui":              ds.DevEUI,
 			}).Warning("new_channel request not acknowledged")
 		}
 	}

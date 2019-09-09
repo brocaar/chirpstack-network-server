@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ func TestDeviceProfile(t *testing.T) {
 	if err := Setup(conf); err != nil {
 		t.Fatal(err)
 	}
+	ctx := context.Background()
 
 	Convey("Given a clean database", t, func() {
 		test.MustResetDB(DB().DB)
@@ -45,12 +47,12 @@ func TestDeviceProfile(t *testing.T) {
 				GeolocMinBufferSize: 3,
 			}
 
-			So(CreateDeviceProfile(DB(), &dp), ShouldBeNil)
+			So(CreateDeviceProfile(context.Background(), DB(), &dp), ShouldBeNil)
 			dp.CreatedAt = dp.CreatedAt.UTC().Truncate(time.Millisecond)
 			dp.UpdatedAt = dp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
 			Convey("Then GetDeviceProfile returns the expected device-profile", func() {
-				dpGet, err := GetDeviceProfile(DB(), dp.ID)
+				dpGet, err := GetDeviceProfile(ctx, DB(), dp.ID)
 				So(err, ShouldBeNil)
 
 				dpGet.CreatedAt = dpGet.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -59,26 +61,26 @@ func TestDeviceProfile(t *testing.T) {
 			})
 
 			Convey("Then DeleteDeviceProfile deletes the device-profile", func() {
-				So(DeleteDeviceProfile(DB(), dp.ID), ShouldBeNil)
-				So(DeleteDeviceProfile(DB(), dp.ID), ShouldEqual, ErrDoesNotExist)
+				So(DeleteDeviceProfile(context.Background(), DB(), dp.ID), ShouldBeNil)
+				So(DeleteDeviceProfile(context.Background(), DB(), dp.ID), ShouldEqual, ErrDoesNotExist)
 			})
 
 			Convey("Then GetAndCacheDeviceProfile reads the device-profile from db and puts it in cache", func() {
-				dpGet, err := GetAndCacheDeviceProfile(DB(), RedisPool(), dp.ID)
+				dpGet, err := GetAndCacheDeviceProfile(ctx, DB(), RedisPool(), dp.ID)
 				So(err, ShouldBeNil)
 				So(dpGet.ID, ShouldEqual, dp.ID)
 
 				Convey("Then GetDeviceProfileCache returns the device-profile", func() {
-					dpGet, err := GetDeviceProfileCache(RedisPool(), dp.ID)
+					dpGet, err := GetDeviceProfileCache(context.Background(), RedisPool(), dp.ID)
 					So(err, ShouldBeNil)
 					So(dpGet.ID, ShouldEqual, dp.ID)
 				})
 
 				Convey("Then FlushDeviceProfileCache removes the device-profile from cache", func() {
-					err := FlushDeviceProfileCache(RedisPool(), dp.ID)
+					err := FlushDeviceProfileCache(context.Background(), RedisPool(), dp.ID)
 					So(err, ShouldBeNil)
 
-					_, err = GetDeviceProfileCache(RedisPool(), dp.ID)
+					_, err = GetDeviceProfileCache(context.Background(), RedisPool(), dp.ID)
 					So(err, ShouldNotBeNil)
 					So(errors.Cause(err), ShouldEqual, ErrDoesNotExist)
 				})
@@ -107,10 +109,10 @@ func TestDeviceProfile(t *testing.T) {
 				dp.GeolocBufferTTL = 20
 				dp.GeolocMinBufferSize = 4
 
-				So(UpdateDeviceProfile(DB(), &dp), ShouldBeNil)
+				So(UpdateDeviceProfile(context.Background(), DB(), &dp), ShouldBeNil)
 				dp.UpdatedAt = dp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
-				dpGet, err := GetDeviceProfile(DB(), dp.ID)
+				dpGet, err := GetDeviceProfile(ctx, DB(), dp.ID)
 				So(err, ShouldBeNil)
 
 				dpGet.CreatedAt = dpGet.CreatedAt.UTC().Truncate(time.Millisecond)

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -31,7 +32,7 @@ func (ts *StorageTestSuite) TestGateway() {
 				},
 			},
 		}
-		assert.NoError(CreateGateway(ts.Tx(), &gw))
+		assert.NoError(CreateGateway(context.Background(), ts.Tx(), &gw))
 
 		gw.CreatedAt = gw.CreatedAt.Round(time.Millisecond).UTC()
 		gw.UpdatedAt = gw.UpdatedAt.Round(time.Millisecond).UTC()
@@ -39,7 +40,7 @@ func (ts *StorageTestSuite) TestGateway() {
 		t.Run("Get", func(t *testing.T) {
 			assert := require.New(t)
 
-			gwGet, err := GetGateway(ts.Tx(), gw.GatewayID)
+			gwGet, err := GetGateway(context.Background(), ts.Tx(), gw.GatewayID)
 			assert.NoError(err)
 
 			gwGet.CreatedAt = gwGet.CreatedAt.Round(time.Millisecond).UTC()
@@ -49,16 +50,16 @@ func (ts *StorageTestSuite) TestGateway() {
 		})
 
 		t.Run("Test cache", func(t *testing.T) {
-			gwGet, err := GetAndCacheGateway(ts.Tx(), ts.RedisPool(), gw.GatewayID)
+			gwGet, err := GetAndCacheGateway(context.Background(), ts.Tx(), ts.RedisPool(), gw.GatewayID)
 			assert.NoError(err)
 			assert.Equal(gw.GatewayID, gwGet.GatewayID)
 
-			gwGet, err = GetGatewayCache(ts.RedisPool(), gw.GatewayID)
+			gwGet, err = GetGatewayCache(context.Background(), ts.RedisPool(), gw.GatewayID)
 			assert.NoError(err)
 			assert.Equal(gw.GatewayID, gwGet.GatewayID)
 
-			assert.NoError(FlushGatewayCache(ts.RedisPool(), gw.GatewayID))
-			_, err = GetGatewayCache(ts.RedisPool(), gw.GatewayID)
+			assert.NoError(FlushGatewayCache(context.Background(), ts.RedisPool(), gw.GatewayID))
+			_, err = GetGatewayCache(context.Background(), ts.RedisPool(), gw.GatewayID)
 			assert.Equal(ErrDoesNotExist, err)
 		})
 
@@ -69,7 +70,7 @@ func (ts *StorageTestSuite) TestGateway() {
 			gp := GatewayProfile{
 				Channels: []int64{0, 1, 2},
 			}
-			assert.NoError(CreateGatewayProfile(ts.Tx(), &gp))
+			assert.NoError(CreateGatewayProfile(context.Background(), ts.Tx(), &gp))
 
 			gw.GatewayProfileID = &gp.ID
 			gw.FirstSeenAt = &now
@@ -88,10 +89,10 @@ func (ts *StorageTestSuite) TestGateway() {
 				},
 			}
 
-			assert.NoError(UpdateGateway(ts.Tx(), &gw))
+			assert.NoError(UpdateGateway(context.Background(), ts.Tx(), &gw))
 			gw.UpdatedAt = gw.UpdatedAt.Round(time.Millisecond).UTC()
 
-			gwGet, err := GetGateway(ts.Tx(), gw.GatewayID)
+			gwGet, err := GetGateway(context.Background(), ts.Tx(), gw.GatewayID)
 			assert.NoError(err)
 
 			gwGet.CreatedAt = gwGet.CreatedAt.Round(time.Millisecond).UTC()
@@ -107,8 +108,8 @@ func (ts *StorageTestSuite) TestGateway() {
 
 		t.Run("Delete", func(t *testing.T) {
 			assert := require.New(t)
-			assert.NoError(DeleteGateway(ts.Tx(), gw.GatewayID))
-			_, err := GetGateway(ts.Tx(), gw.GatewayID)
+			assert.NoError(DeleteGateway(context.Background(), ts.Tx(), gw.GatewayID))
+			_, err := GetGateway(context.Background(), ts.Tx(), gw.GatewayID)
 			assert.Equal(ErrDoesNotExist, err)
 		})
 	})

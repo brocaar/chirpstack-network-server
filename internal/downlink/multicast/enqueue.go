@@ -1,6 +1,7 @@
 package multicast
 
 import (
+	"context"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -16,9 +17,9 @@ import (
 // within the multicast-group and creates a queue-item for each individial
 // gateway.
 // Note that an enqueue action increments the frame-counter of the multicast-group.
-func EnqueueQueueItem(p *redis.Pool, db sqlx.Ext, qi storage.MulticastQueueItem) error {
+func EnqueueQueueItem(ctx context.Context, p *redis.Pool, db sqlx.Ext, qi storage.MulticastQueueItem) error {
 	// Get multicast-group and lock it.
-	mg, err := storage.GetMulticastGroup(db, qi.MulticastGroupID, true)
+	mg, err := storage.GetMulticastGroup(ctx, db, qi.MulticastGroupID, true)
 	if err != nil {
 		return errors.Wrap(err, "get multicast-group error")
 	}
@@ -28,17 +29,17 @@ func EnqueueQueueItem(p *redis.Pool, db sqlx.Ext, qi storage.MulticastQueueItem)
 	}
 
 	mg.FCnt = qi.FCnt + 1
-	if err := storage.UpdateMulticastGroup(db, &mg); err != nil {
+	if err := storage.UpdateMulticastGroup(ctx, db, &mg); err != nil {
 		return errors.Wrap(err, "update multicast-group error")
 	}
 
 	// get DevEUIs within the multicast-group.
-	devEUIs, err := storage.GetDevEUIsForMulticastGroup(db, qi.MulticastGroupID)
+	devEUIs, err := storage.GetDevEUIsForMulticastGroup(ctx, db, qi.MulticastGroupID)
 	if err != nil {
 		return errors.Wrap(err, "get deveuis for multicast-group error")
 	}
 
-	rxInfoSets, err := storage.GetDeviceGatewayRXInfoSetForDevEUIs(p, devEUIs)
+	rxInfoSets, err := storage.GetDeviceGatewayRXInfoSetForDevEUIs(ctx, p, devEUIs)
 	if err != nil {
 		return errors.Wrap(err, "get device gateway rx-info set for deveuis errors")
 	}
@@ -51,7 +52,7 @@ func EnqueueQueueItem(p *redis.Pool, db sqlx.Ext, qi storage.MulticastQueueItem)
 	// for each gateway we increment the schedule_at timestamp with one second
 	// to avoid colissions.
 	if mg.GroupType == storage.MulticastGroupC {
-		ts, err := storage.GetMaxScheduleAtForMulticastGroup(db, mg.ID)
+		ts, err := storage.GetMaxScheduleAtForMulticastGroup(ctx, db, mg.ID)
 		if err != nil {
 			return errors.Wrap(err, "get maximum schedule at error")
 		}
@@ -64,7 +65,7 @@ func EnqueueQueueItem(p *redis.Pool, db sqlx.Ext, qi storage.MulticastQueueItem)
 			ts = ts.Add(downlinkLockDuration)
 			qi.GatewayID = gatewayID
 			qi.ScheduleAt = ts
-			if err = storage.CreateMulticastQueueItem(db, &qi); err != nil {
+			if err = storage.CreateMulticastQueueItem(ctx, db, &qi); err != nil {
 				return errors.Wrap(err, "create multicast queue-item error")
 			}
 		}
@@ -77,7 +78,7 @@ func EnqueueQueueItem(p *redis.Pool, db sqlx.Ext, qi storage.MulticastQueueItem)
 			pingSlotNb = (1 << 12) / mg.PingSlotPeriod
 		}
 
-		scheduleTS, err := storage.GetMaxEmitAtTimeSinceGPSEpochForMulticastGroup(db, mg.ID)
+		scheduleTS, err := storage.GetMaxEmitAtTimeSinceGPSEpochForMulticastGroup(ctx, db, mg.ID)
 		if err != nil {
 			return errors.Wrap(err, "get maximum emit at time since gps epoch error")
 		}
@@ -96,7 +97,7 @@ func EnqueueQueueItem(p *redis.Pool, db sqlx.Ext, qi storage.MulticastQueueItem)
 			qi.ScheduleAt = time.Time(gps.NewFromTimeSinceGPSEpoch(scheduleTS)).Add(-2 * schedulerInterval)
 			qi.GatewayID = gatewayID
 
-			if err = storage.CreateMulticastQueueItem(db, &qi); err != nil {
+			if err = storage.CreateMulticastQueueItem(ctx, db, &qi); err != nil {
 				return errors.Wrap(err, "create multicast queue-item error")
 			}
 		}

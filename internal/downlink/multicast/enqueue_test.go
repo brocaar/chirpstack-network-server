@@ -1,6 +1,7 @@
 package multicast
 
 import (
+	"context"
 	"math"
 	"testing"
 
@@ -46,8 +47,8 @@ func (ts *EnqueueQueueItemTestCase) SetupTest() {
 	var sp storage.ServiceProfile
 	var rp storage.RoutingProfile
 
-	assert.NoError(storage.CreateServiceProfile(ts.tx, &sp))
-	assert.NoError(storage.CreateRoutingProfile(ts.tx, &rp))
+	assert.NoError(storage.CreateServiceProfile(context.Background(), ts.tx, &sp))
+	assert.NoError(storage.CreateRoutingProfile(context.Background(), ts.tx, &rp))
 
 	ts.MulticastGroup = storage.MulticastGroup{
 		GroupType:        storage.MulticastGroupC,
@@ -59,7 +60,7 @@ func (ts *EnqueueQueueItemTestCase) SetupTest() {
 		ServiceProfileID: sp.ID,
 		RoutingProfileID: rp.ID,
 	}
-	assert.NoError(storage.CreateMulticastGroup(ts.tx, &ts.MulticastGroup))
+	assert.NoError(storage.CreateMulticastGroup(context.Background(), ts.tx, &ts.MulticastGroup))
 
 	ts.Gateways = []storage.Gateway{
 		{
@@ -70,12 +71,12 @@ func (ts *EnqueueQueueItemTestCase) SetupTest() {
 		},
 	}
 	for i := range ts.Gateways {
-		assert.NoError(storage.CreateGateway(ts.tx, &ts.Gateways[i]))
+		assert.NoError(storage.CreateGateway(context.Background(), ts.tx, &ts.Gateways[i]))
 	}
 
 	var dp storage.DeviceProfile
 
-	assert.NoError(storage.CreateDeviceProfile(ts.tx, &dp))
+	assert.NoError(storage.CreateDeviceProfile(context.Background(), ts.tx, &dp))
 
 	ts.Devices = []storage.Device{
 		{
@@ -92,9 +93,9 @@ func (ts *EnqueueQueueItemTestCase) SetupTest() {
 		},
 	}
 	for i := range ts.Devices {
-		assert.NoError(storage.CreateDevice(ts.tx, &ts.Devices[i]))
-		assert.NoError(storage.AddDeviceToMulticastGroup(ts.tx, ts.Devices[i].DevEUI, ts.MulticastGroup.ID))
-		assert.NoError(storage.SaveDeviceGatewayRXInfoSet(storage.RedisPool(), storage.DeviceGatewayRXInfoSet{
+		assert.NoError(storage.CreateDevice(context.Background(), ts.tx, &ts.Devices[i]))
+		assert.NoError(storage.AddDeviceToMulticastGroup(context.Background(), ts.tx, ts.Devices[i].DevEUI, ts.MulticastGroup.ID))
+		assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), storage.RedisPool(), storage.DeviceGatewayRXInfoSet{
 			DevEUI: ts.Devices[i].DevEUI,
 			DR:     3,
 			Items: []storage.DeviceGatewayRXInfo{
@@ -118,7 +119,7 @@ func (ts *EnqueueQueueItemTestCase) TestInvalidFCnt() {
 		FPort:            2,
 		FRMPayload:       []byte{1, 2, 3, 4},
 	}
-	assert.Equal(ErrInvalidFCnt, EnqueueQueueItem(storage.RedisPool(), ts.tx, qi))
+	assert.Equal(ErrInvalidFCnt, EnqueueQueueItem(context.Background(), storage.RedisPool(), ts.tx, qi))
 }
 
 func (ts *EnqueueQueueItemTestCase) TestClassC() {
@@ -131,9 +132,9 @@ func (ts *EnqueueQueueItemTestCase) TestClassC() {
 		FPort:            2,
 		FRMPayload:       []byte{1, 2, 3, 4},
 	}
-	assert.NoError(EnqueueQueueItem(storage.RedisPool(), ts.tx, qi))
+	assert.NoError(EnqueueQueueItem(context.Background(), storage.RedisPool(), ts.tx, qi))
 
-	items, err := storage.GetMulticastQueueItemsForMulticastGroup(ts.tx, ts.MulticastGroup.ID)
+	items, err := storage.GetMulticastQueueItemsForMulticastGroup(context.Background(), ts.tx, ts.MulticastGroup.ID)
 	assert.NoError(err)
 	assert.Len(items, 2)
 
@@ -144,7 +145,7 @@ func (ts *EnqueueQueueItemTestCase) TestClassC() {
 	lockDuration := config.C.NetworkServer.Scheduler.ClassC.DownlinkLockDuration
 	assert.EqualValues(math.Abs(float64(items[0].ScheduleAt.Sub(items[1].ScheduleAt))), lockDuration)
 
-	mg, err := storage.GetMulticastGroup(ts.tx, ts.MulticastGroup.ID, false)
+	mg, err := storage.GetMulticastGroup(context.Background(), ts.tx, ts.MulticastGroup.ID, false)
 	assert.NoError(err)
 	assert.Equal(qi.FCnt+1, mg.FCnt)
 }
@@ -154,7 +155,7 @@ func (ts *EnqueueQueueItemTestCase) TestClassB() {
 
 	ts.MulticastGroup.PingSlotPeriod = 16
 	ts.MulticastGroup.GroupType = storage.MulticastGroupB
-	assert.NoError(storage.UpdateMulticastGroup(ts.tx, &ts.MulticastGroup))
+	assert.NoError(storage.UpdateMulticastGroup(context.Background(), ts.tx, &ts.MulticastGroup))
 
 	qi := storage.MulticastQueueItem{
 		MulticastGroupID: ts.MulticastGroup.ID,
@@ -162,16 +163,16 @@ func (ts *EnqueueQueueItemTestCase) TestClassB() {
 		FPort:            2,
 		FRMPayload:       []byte{1, 2, 3, 4},
 	}
-	assert.NoError(EnqueueQueueItem(storage.RedisPool(), ts.tx, qi))
+	assert.NoError(EnqueueQueueItem(context.Background(), storage.RedisPool(), ts.tx, qi))
 
-	items, err := storage.GetMulticastQueueItemsForMulticastGroup(ts.tx, ts.MulticastGroup.ID)
+	items, err := storage.GetMulticastQueueItemsForMulticastGroup(context.Background(), ts.tx, ts.MulticastGroup.ID)
 	assert.NoError(err)
 	assert.Len(items, 2)
 	assert.NotNil(items[0].EmitAtTimeSinceGPSEpoch)
 	assert.NotNil(items[1].EmitAtTimeSinceGPSEpoch)
 	assert.NotEqual(items[0].ScheduleAt, items[1].ScheduleAt)
 
-	mg, err := storage.GetMulticastGroup(ts.tx, ts.MulticastGroup.ID, false)
+	mg, err := storage.GetMulticastGroup(context.Background(), ts.tx, ts.MulticastGroup.ID, false)
 	assert.NoError(err)
 	assert.Equal(qi.FCnt+1, mg.FCnt)
 }

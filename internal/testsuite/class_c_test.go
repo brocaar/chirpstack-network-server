@@ -1,6 +1,7 @@
 package testsuite
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -184,10 +185,10 @@ func (ts *ClassCTestSuite) TestClassC() {
 			Name: "containing mac-commands",
 			BeforeFunc: func(*DownlinkTest) error {
 				ts.ServiceProfile.DevStatusReqFreq = 1
-				if err := storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile); err != nil {
+				if err := storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile); err != nil {
 					return err
 				}
-				if err := storage.FlushServiceProfileCache(storage.RedisPool(), ts.ServiceProfile.ID); err != nil {
+				if err := storage.FlushServiceProfileCache(context.Background(), storage.RedisPool(), ts.ServiceProfile.ID); err != nil {
 					return err
 				}
 

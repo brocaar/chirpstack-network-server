@@ -88,7 +88,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			}()
 
 			Convey("When logging a downlink gateway frame", func() {
-				So(framelog.LogDownlinkFrameForGateway(storage.RedisPool(), gw.DownlinkFrame{
+				So(framelog.LogDownlinkFrameForGateway(context.Background(), storage.RedisPool(), gw.DownlinkFrame{
 					TxInfo: &gw.DownlinkTXInfo{
 						GatewayId: mac[:],
 					},
@@ -102,7 +102,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			})
 
 			Convey("When logging an uplink gateway frame", func() {
-				So(framelog.LogUplinkFrameForGateways(storage.RedisPool(), gw.UplinkFrameSet{
+				So(framelog.LogUplinkFrameForGateways(context.Background(), storage.RedisPool(), gw.UplinkFrameSet{
 					RxInfo: []*gw.UplinkRXInfo{
 						{
 							GatewayId: mac[:],
@@ -140,7 +140,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			}()
 
 			Convey("When logging a downlink device frame", func() {
-				So(framelog.LogDownlinkFrameForDevEUI(storage.RedisPool(), devEUI, gw.DownlinkFrame{}), ShouldBeNil)
+				So(framelog.LogDownlinkFrameForDevEUI(context.Background(), storage.RedisPool(), devEUI, gw.DownlinkFrame{}), ShouldBeNil)
 
 				Convey("Then the frame-log was received by the client", func() {
 					resp := <-respChan
@@ -150,7 +150,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			})
 
 			Convey("When logging an uplink device frame", func() {
-				So(framelog.LogUplinkFrameForDevEUI(storage.RedisPool(), devEUI, gw.UplinkFrameSet{}), ShouldBeNil)
+				So(framelog.LogUplinkFrameForDevEUI(context.Background(), storage.RedisPool(), devEUI, gw.UplinkFrameSet{}), ShouldBeNil)
 
 				Convey("Then the frame-log was received by the client", func() {
 					resp := <-respChan
@@ -416,10 +416,10 @@ func TestNetworkServerAPI(t *testing.T) {
 				DRMin: 3,
 				DRMax: 6,
 			}
-			So(storage.CreateServiceProfile(storage.DB(), &sp), ShouldBeNil)
+			So(storage.CreateServiceProfile(context.Background(), storage.DB(), &sp), ShouldBeNil)
 
 			rp := storage.RoutingProfile{}
-			So(storage.CreateRoutingProfile(storage.DB(), &rp), ShouldBeNil)
+			So(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp), ShouldBeNil)
 
 			dp := storage.DeviceProfile{
 				FactoryPresetFreqs: []int{
@@ -436,7 +436,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				PingSlotDR:     5,
 				MACVersion:     "1.0.2",
 			}
-			So(storage.CreateDeviceProfile(storage.DB(), &dp), ShouldBeNil)
+			So(storage.CreateDeviceProfile(context.Background(), storage.DB(), &dp), ShouldBeNil)
 
 			d := storage.Device{
 				DevEUI:           devEUI,
@@ -444,12 +444,12 @@ func TestNetworkServerAPI(t *testing.T) {
 				RoutingProfileID: rp.ID,
 				ServiceProfileID: sp.ID,
 			}
-			So(storage.CreateDevice(storage.DB(), &d), ShouldBeNil)
+			So(storage.CreateDevice(context.Background(), storage.DB(), &d), ShouldBeNil)
 
 			ds := storage.DeviceSession{
 				DevEUI: d.DevEUI,
 			}
-			So(storage.SaveDeviceSession(storage.RedisPool(), ds), ShouldBeNil)
+			So(storage.SaveDeviceSession(context.Background(), storage.RedisPool(), ds), ShouldBeNil)
 
 			Convey("Given an item in the device-queue", func() {
 				_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
@@ -464,7 +464,7 @@ func TestNetworkServerAPI(t *testing.T) {
 
 				Convey("When calling ActivateDevice when the Device has SkipFCntCheck set to true", func() {
 					d.SkipFCntCheck = true
-					So(storage.UpdateDevice(storage.DB(), &d), ShouldBeNil)
+					So(storage.UpdateDevice(context.Background(), storage.DB(), &d), ShouldBeNil)
 
 					_, err := api.ActivateDevice(ctx, &ns.ActivateDeviceRequest{
 						DeviceActivation: &ns.DeviceActivation{
@@ -482,7 +482,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					Convey("Then SkipFCntCheck has been enabled in the activation", func() {
-						ds, err := storage.GetDeviceSession(storage.RedisPool(), devEUI)
+						ds, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), devEUI)
 						So(err, ShouldBeNil)
 						So(ds.SkipFCntValidation, ShouldBeTrue)
 					})
@@ -522,7 +522,7 @@ func TestNetworkServerAPI(t *testing.T) {
 						So(err, ShouldBeNil)
 
 						Convey("Then the mac-command has been added to the queue", func() {
-							queue, err := storage.GetMACCommandQueueItems(storage.RedisPool(), devEUI)
+							queue, err := storage.GetMACCommandQueueItems(context.Background(), storage.RedisPool(), devEUI)
 							So(err, ShouldBeNil)
 							So(queue, ShouldResemble, []storage.MACCommandBlock{
 								{
@@ -539,14 +539,14 @@ func TestNetworkServerAPI(t *testing.T) {
 			Convey("Given the device is in Class-B mode", func() {
 				dp.SupportsClassB = true
 				dp.ClassBTimeout = 30
-				So(storage.UpdateDeviceProfile(storage.DB(), &dp), ShouldBeNil)
+				So(storage.UpdateDeviceProfile(context.Background(), storage.DB(), &dp), ShouldBeNil)
 
 				ds := storage.DeviceSession{
 					DevEUI:       d.DevEUI,
 					BeaconLocked: true,
 					PingSlotNb:   1,
 				}
-				So(storage.SaveDeviceSession(storage.RedisPool(), ds), ShouldBeNil)
+				So(storage.SaveDeviceSession(context.Background(), storage.RedisPool(), ds), ShouldBeNil)
 
 				Convey("When calling CreateDeviceQueueItem", func() {
 					_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
@@ -561,7 +561,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					Convey("Then the GPS epoch timestamp and timeout are set", func() {
-						queueItems, err := storage.GetDeviceQueueItemsForDevEUI(storage.DB(), d.DevEUI)
+						queueItems, err := storage.GetDeviceQueueItemsForDevEUI(context.Background(), storage.DB(), d.DevEUI)
 						So(err, ShouldBeNil)
 						So(queueItems, ShouldHaveLength, 1)
 
@@ -587,7 +587,7 @@ func TestNetworkServerAPI(t *testing.T) {
 						So(err, ShouldBeNil)
 
 						Convey("Then the GPS timestamp occurs after the first queue item", func() {
-							queueItems, err := storage.GetDeviceQueueItemsForDevEUI(storage.DB(), d.DevEUI)
+							queueItems, err := storage.GetDeviceQueueItemsForDevEUI(context.Background(), storage.DB(), d.DevEUI)
 							So(err, ShouldBeNil)
 							So(queueItems, ShouldHaveLength, 2)
 							So(queueItems[0].EmitAtTimeSinceGPSEpoch, ShouldNotBeNil)
@@ -741,7 +741,7 @@ func TestNetworkServerAPI(t *testing.T) {
 						"tx_ok_count": 10,
 					},
 				}
-				So(storage.SaveMetricsForInterval(storage.RedisPool(), storage.AggregationMinute, "gw:0102030405060708", metrics), ShouldBeNil)
+				So(storage.SaveMetricsForInterval(context.Background(), storage.RedisPool(), storage.AggregationMinute, "gw:0102030405060708", metrics), ShouldBeNil)
 
 				Convey("Then GetGatewayStats returns these stats", func() {
 					start, _ := ptypes.TimestampProto(now.Truncate(time.Minute))

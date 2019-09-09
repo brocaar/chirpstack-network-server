@@ -4,6 +4,7 @@ package storage
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/gob"
 	"fmt"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/internal/band"
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
 )
@@ -276,7 +278,7 @@ func (s DeviceSession) GetDownlinkGatewayMAC() (lorawan.EUI64, error) {
 
 // GetRandomDevAddr returns a random DevAddr, prefixed with NwkID based on the
 // given NetID.
-func GetRandomDevAddr(p *redis.Pool, netID lorawan.NetID) (lorawan.DevAddr, error) {
+func GetRandomDevAddr(netID lorawan.NetID) (lorawan.DevAddr, error) {
 	var d lorawan.DevAddr
 	b := make([]byte, len(d))
 	if _, err := rand.Read(b); err != nil {
@@ -305,7 +307,7 @@ func ValidateAndGetFullFCntUp(s DeviceSession, fCntUp uint32) (uint32, bool) {
 
 // SaveDeviceSession saves the device-session. In case it doesn't exist yet
 // it will be created.
-func SaveDeviceSession(p *redis.Pool, s DeviceSession) error {
+func SaveDeviceSession(ctx context.Context, p *redis.Pool, s DeviceSession) error {
 	dsPB := deviceSessionToPB(s)
 	b, err := proto.Marshal(&dsPB)
 	if err != nil {
@@ -331,13 +333,14 @@ func SaveDeviceSession(p *redis.Pool, s DeviceSession) error {
 	log.WithFields(log.Fields{
 		"dev_eui":  s.DevEUI,
 		"dev_addr": s.DevAddr,
+		"ctx_id":   ctx.Value(logging.ContextIDKey),
 	}).Info("device-session saved")
 
 	return nil
 }
 
 // GetDeviceSession returns the device-session for the given DevEUI.
-func GetDeviceSession(p *redis.Pool, devEUI lorawan.EUI64) (DeviceSession, error) {
+func GetDeviceSession(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) (DeviceSession, error) {
 	var dsPB DeviceSessionPB
 
 	c := p.Get()
@@ -367,7 +370,7 @@ func GetDeviceSession(p *redis.Pool, devEUI lorawan.EUI64) (DeviceSession, error
 }
 
 // DeleteDeviceSession deletes the device-session matching the given DevEUI.
-func DeleteDeviceSession(p *redis.Pool, devEUI lorawan.EUI64) error {
+func DeleteDeviceSession(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) error {
 	c := p.Get()
 	defer c.Close()
 
@@ -378,14 +381,17 @@ func DeleteDeviceSession(p *redis.Pool, devEUI lorawan.EUI64) error {
 	if val == 0 {
 		return ErrDoesNotExist
 	}
-	log.WithField("dev_eui", devEUI).Info("device-session deleted")
+	log.WithFields(log.Fields{
+		"dev_eui": devEUI,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
+	}).Info("device-session deleted")
 	return nil
 }
 
 // GetDeviceSessionsForDevAddr returns a slice of device-sessions using the
 // given DevAddr. When no device-session is using the given DevAddr, this returns
 // an empty slice.
-func GetDeviceSessionsForDevAddr(p *redis.Pool, devAddr lorawan.DevAddr) ([]DeviceSession, error) {
+func GetDeviceSessionsForDevAddr(ctx context.Context, p *redis.Pool, devAddr lorawan.DevAddr) ([]DeviceSession, error) {
 	var items []DeviceSession
 
 	c := p.Get()
@@ -403,12 +409,13 @@ func GetDeviceSessionsForDevAddr(p *redis.Pool, devAddr lorawan.DevAddr) ([]Devi
 		var devEUI lorawan.EUI64
 		copy(devEUI[:], b)
 
-		s, err := GetDeviceSession(p, devEUI)
+		s, err := GetDeviceSession(ctx, p, devEUI)
 		if err != nil {
 			// TODO: in case not found, remove the DevEUI from the list
 			log.WithFields(log.Fields{
 				"dev_addr": devAddr,
 				"dev_eui":  devEUI,
+				"ctx_id":   ctx.Value(logging.ContextIDKey),
 			}).Warningf("get device-sessions for dev_addr error: %s", err)
 		}
 
@@ -432,14 +439,14 @@ func GetDeviceSessionsForDevAddr(p *redis.Pool, devAddr lorawan.DevAddr) ([]Devi
 // GetDeviceSessionForPHYPayload returns the device-session matching the given
 // PHYPayload. This will fetch all device-sessions associated with the used
 // DevAddr and based on FCnt and MIC decide which one to use.
-func GetDeviceSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload, txDR, txCh int) (DeviceSession, error) {
+func GetDeviceSessionForPHYPayload(ctx context.Context, p *redis.Pool, phy lorawan.PHYPayload, txDR, txCh int) (DeviceSession, error) {
 	macPL, ok := phy.MACPayload.(*lorawan.MACPayload)
 	if !ok {
 		return DeviceSession{}, fmt.Errorf("expected *lorawan.MACPayload, got: %T", phy.MACPayload)
 	}
 	originalFCnt := macPL.FHDR.FCnt
 
-	sessions, err := GetDeviceSessionsForDevAddr(p, macPL.FHDR.DevAddr)
+	sessions, err := GetDeviceSessionsForDevAddr(ctx, p, macPL.FHDR.DevAddr)
 	if err != nil {
 		return DeviceSession{}, err
 	}
@@ -471,12 +478,13 @@ func GetDeviceSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload, txDR, 
 
 				if micOK {
 					// we need to update the NodeSession
-					if err := SaveDeviceSession(p, s); err != nil {
+					if err := SaveDeviceSession(ctx, p, s); err != nil {
 						return DeviceSession{}, err
 					}
 					log.WithFields(log.Fields{
 						"dev_addr": macPL.FHDR.DevAddr,
 						"dev_eui":  s.DevEUI,
+						"ctx_id":   ctx.Value(logging.ContextIDKey),
 					}).Warning("frame counters reset")
 					return s, nil
 				}
@@ -500,7 +508,7 @@ func GetDeviceSessionForPHYPayload(p *redis.Pool, phy lorawan.PHYPayload, txDR, 
 }
 
 // DeviceSessionExists returns a bool indicating if a device session exist.
-func DeviceSessionExists(p *redis.Pool, devEUI lorawan.EUI64) (bool, error) {
+func DeviceSessionExists(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) (bool, error) {
 	c := p.Get()
 	defer c.Close()
 
@@ -515,7 +523,7 @@ func DeviceSessionExists(p *redis.Pool, devEUI lorawan.EUI64) (bool, error) {
 }
 
 // SaveDeviceGatewayRXInfoSet saves the given DeviceGatewayRXInfoSet.
-func SaveDeviceGatewayRXInfoSet(p *redis.Pool, rxInfoSet DeviceGatewayRXInfoSet) error {
+func SaveDeviceGatewayRXInfoSet(ctx context.Context, p *redis.Pool, rxInfoSet DeviceGatewayRXInfoSet) error {
 	rxInfoSetPB := deviceGatewayRXInfoSetToPB(rxInfoSet)
 	b, err := proto.Marshal(&rxInfoSetPB)
 	if err != nil {
@@ -532,6 +540,7 @@ func SaveDeviceGatewayRXInfoSet(p *redis.Pool, rxInfoSet DeviceGatewayRXInfoSet)
 
 	log.WithFields(log.Fields{
 		"dev_eui": rxInfoSet.DevEUI,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
 	}).Info("device gateway rx-info meta-data saved")
 
 	return nil
@@ -539,7 +548,7 @@ func SaveDeviceGatewayRXInfoSet(p *redis.Pool, rxInfoSet DeviceGatewayRXInfoSet)
 
 // DeleteDeviceGatewayRXInfoSet deletes the device gateway rx-info meta-data
 // for the given Device EUI.
-func DeleteDeviceGatewayRXInfoSet(p *redis.Pool, devEUI lorawan.EUI64) error {
+func DeleteDeviceGatewayRXInfoSet(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) error {
 	c := p.Get()
 	defer c.Close()
 
@@ -552,13 +561,14 @@ func DeleteDeviceGatewayRXInfoSet(p *redis.Pool, devEUI lorawan.EUI64) error {
 	}
 	log.WithFields(log.Fields{
 		"dev_eui": devEUI,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
 	}).Info("device gateway rx-info meta-data deleted")
 	return nil
 }
 
 // GetDeviceGatewayRXInfoSet returns the DeviceGatewayRXInfoSet for the given
 // Device EUI.
-func GetDeviceGatewayRXInfoSet(p *redis.Pool, devEUI lorawan.EUI64) (DeviceGatewayRXInfoSet, error) {
+func GetDeviceGatewayRXInfoSet(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) (DeviceGatewayRXInfoSet, error) {
 	var rxInfoSetPB DeviceGatewayRXInfoSetPB
 
 	c := p.Get()
@@ -582,7 +592,7 @@ func GetDeviceGatewayRXInfoSet(p *redis.Pool, devEUI lorawan.EUI64) (DeviceGatew
 
 // GetDeviceGatewayRXInfoSetForDevEUIs returns the DeviceGatewayRXInfoSet
 // objects for the given Device EUIs.
-func GetDeviceGatewayRXInfoSetForDevEUIs(p *redis.Pool, devEUIs []lorawan.EUI64) ([]DeviceGatewayRXInfoSet, error) {
+func GetDeviceGatewayRXInfoSetForDevEUIs(ctx context.Context, p *redis.Pool, devEUIs []lorawan.EUI64) ([]DeviceGatewayRXInfoSet, error) {
 	if len(devEUIs) == 0 {
 		return nil, nil
 	}
@@ -608,7 +618,9 @@ func GetDeviceGatewayRXInfoSetForDevEUIs(p *redis.Pool, devEUIs []lorawan.EUI64)
 
 		var rxInfoSetPB DeviceGatewayRXInfoSetPB
 		if err = proto.Unmarshal(b, &rxInfoSetPB); err != nil {
-			log.WithError(err).Error("protobuf unmarshal error")
+			log.WithError(err).WithFields(log.Fields{
+				"ctx_id": ctx.Value(logging.ContextIDKey),
+			}).Error("protobuf unmarshal error")
 			continue
 		}
 

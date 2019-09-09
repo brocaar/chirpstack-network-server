@@ -1,6 +1,7 @@
 package code
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -35,27 +36,27 @@ func (ts *FlushProfilesCacheTestSuite) TestFlushProfilesCache() {
 
 	// create device-profile
 	dp := storage.DeviceProfile{}
-	assert.NoError(storage.CreateDeviceProfile(storage.DB(), &dp))
-	assert.NoError(storage.CreateDeviceProfileCache(storage.RedisPool(), dp))
-	_, err := storage.GetDeviceProfileCache(storage.RedisPool(), dp.ID)
+	assert.NoError(storage.CreateDeviceProfile(context.Background(), storage.DB(), &dp))
+	assert.NoError(storage.CreateDeviceProfileCache(context.Background(), storage.RedisPool(), dp))
+	_, err := storage.GetDeviceProfileCache(context.Background(), storage.RedisPool(), dp.ID)
 	assert.NoError(err)
 
 	// create service-profile
 	sp := storage.ServiceProfile{}
-	assert.NoError(storage.CreateServiceProfile(storage.DB(), &sp))
-	assert.NoError(storage.CreateServiceProfileCache(storage.RedisPool(), sp))
-	_, err = storage.GetServiceProfileCache(storage.RedisPool(), sp.ID)
+	assert.NoError(storage.CreateServiceProfile(context.Background(), storage.DB(), &sp))
+	assert.NoError(storage.CreateServiceProfileCache(context.Background(), storage.RedisPool(), sp))
+	_, err = storage.GetServiceProfileCache(context.Background(), storage.RedisPool(), sp.ID)
 	assert.NoError(err)
 
 	// flush cache
 	assert.NoError(FlushProfilesCache(storage.RedisPool(), storage.DB()))
 
 	// cache should be empty
-	_, err = storage.GetDeviceProfileCache(storage.RedisPool(), dp.ID)
+	_, err = storage.GetDeviceProfileCache(context.Background(), storage.RedisPool(), dp.ID)
 	assert.Equal(storage.ErrDoesNotExist, err)
 
 	// cache should be empty
-	_, err = storage.GetServiceProfileCache(storage.RedisPool(), sp.ID)
+	_, err = storage.GetServiceProfileCache(context.Background(), storage.RedisPool(), sp.ID)
 	assert.Equal(storage.ErrDoesNotExist, err)
 
 	// flush empty cache

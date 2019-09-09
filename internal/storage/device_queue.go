@@ -12,6 +12,7 @@ import (
 	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/internal/backend/applicationserver"
 	"github.com/brocaar/loraserver/internal/gps"
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/brocaar/lorawan"
 )
 
@@ -40,7 +41,7 @@ func (d DeviceQueueItem) Validate() error {
 }
 
 // CreateDeviceQueueItem adds the given item to the device queue.
-func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
+func CreateDeviceQueueItem(ctx context.Context, db sqlx.Queryer, qi *DeviceQueueItem) error {
 	if err := qi.Validate(); err != nil {
 		return err
 	}
@@ -83,13 +84,14 @@ func CreateDeviceQueueItem(db sqlx.Queryer, qi *DeviceQueueItem) error {
 	log.WithFields(log.Fields{
 		"dev_eui": qi.DevEUI,
 		"f_cnt":   qi.FCnt,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
 	}).Info("device-queue item created")
 
 	return nil
 }
 
 // GetDeviceQueueItem returns the device-queue item matching the given id.
-func GetDeviceQueueItem(db sqlx.Queryer, id int64) (DeviceQueueItem, error) {
+func GetDeviceQueueItem(ctx context.Context, db sqlx.Queryer, id int64) (DeviceQueueItem, error) {
 	var qi DeviceQueueItem
 	err := sqlx.Get(db, &qi, "select * from device_queue where id = $1", id)
 	if err != nil {
@@ -99,7 +101,7 @@ func GetDeviceQueueItem(db sqlx.Queryer, id int64) (DeviceQueueItem, error) {
 }
 
 // UpdateDeviceQueueItem updates the given device-queue item.
-func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
+func UpdateDeviceQueueItem(ctx context.Context, db sqlx.Execer, qi *DeviceQueueItem) error {
 	qi.UpdatedAt = time.Now()
 
 	res, err := db.Exec(`
@@ -146,13 +148,14 @@ func UpdateDeviceQueueItem(db sqlx.Execer, qi *DeviceQueueItem) error {
 		"is_pending":                   qi.IsPending,
 		"emit_at_time_since_gps_epoch": qi.EmitAtTimeSinceGPSEpoch,
 		"timeout_after":                qi.TimeoutAfter,
+		"ctx_id":                       ctx.Value(logging.ContextIDKey),
 	}).Info("device-queue item updated")
 
 	return nil
 }
 
 // DeleteDeviceQueueItem deletes the device-queue item matching the given id.
-func DeleteDeviceQueueItem(db sqlx.Execer, id int64) error {
+func DeleteDeviceQueueItem(ctx context.Context, db sqlx.Execer, id int64) error {
 	res, err := db.Exec("delete from device_queue where id = $1", id)
 	if err != nil {
 		return handlePSQLError(err, "delete error")
@@ -166,20 +169,22 @@ func DeleteDeviceQueueItem(db sqlx.Execer, id int64) error {
 	}
 
 	log.WithFields(log.Fields{
-		"id": id,
+		"id":     id,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
 	}).Info("device-queue deleted")
 
 	return nil
 }
 
 // FlushDeviceQueueForDevEUI deletes all device-queue items for the given DevEUI.
-func FlushDeviceQueueForDevEUI(db sqlx.Execer, devEUI lorawan.EUI64) error {
+func FlushDeviceQueueForDevEUI(ctx context.Context, db sqlx.Execer, devEUI lorawan.EUI64) error {
 	_, err := db.Exec("delete from device_queue where dev_eui = $1", devEUI[:])
 	if err != nil {
 		return handlePSQLError(err, "delete error")
 	}
 
 	log.WithFields(log.Fields{
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
 		"dev_eui": devEUI,
 	}).Info("device-queue flushed")
 
@@ -188,7 +193,7 @@ func FlushDeviceQueueForDevEUI(db sqlx.Execer, devEUI lorawan.EUI64) error {
 
 // GetNextDeviceQueueItemForDevEUI returns the next device-queue item for the
 // given DevEUI, ordered by f_cnt (note that the f_cnt should never roll over).
-func GetNextDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (DeviceQueueItem, error) {
+func GetNextDeviceQueueItemForDevEUI(ctx context.Context, db sqlx.Queryer, devEUI lorawan.EUI64) (DeviceQueueItem, error) {
 	var qi DeviceQueueItem
 	err := sqlx.Get(db, &qi, `
         select
@@ -217,7 +222,7 @@ func GetNextDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (Dev
 
 // GetPendingDeviceQueueItemForDevEUI returns the pending device-queue item for the
 // given DevEUI.
-func GetPendingDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (DeviceQueueItem, error) {
+func GetPendingDeviceQueueItemForDevEUI(ctx context.Context, db sqlx.Queryer, devEUI lorawan.EUI64) (DeviceQueueItem, error) {
 	var qi DeviceQueueItem
 	err := sqlx.Get(db, &qi, `
         select
@@ -244,7 +249,7 @@ func GetPendingDeviceQueueItemForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (
 
 // GetDeviceQueueItemsForDevEUI returns all device-queue items for the given
 // DevEUI, ordered by id (keep in mind FCnt rollover).
-func GetDeviceQueueItemsForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) ([]DeviceQueueItem, error) {
+func GetDeviceQueueItemsForDevEUI(ctx context.Context, db sqlx.Queryer, devEUI lorawan.EUI64) ([]DeviceQueueItem, error) {
 	var items []DeviceQueueItem
 	err := sqlx.Select(db, &items, `
         select
@@ -272,15 +277,15 @@ func GetDeviceQueueItemsForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) ([]Devi
 // frame-counter is behind the actual frame-counter, the payload will be removed
 // from the queue and the next one will be retrieved. In such a case, the
 // application-server will be notified.
-func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lorawan.EUI64, maxPayloadSize int, fCnt uint32, routingProfileID uuid.UUID) (DeviceQueueItem, error) {
+func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(ctx context.Context, db sqlx.Ext, devEUI lorawan.EUI64, maxPayloadSize int, fCnt uint32, routingProfileID uuid.UUID) (DeviceQueueItem, error) {
 	for {
-		qi, err := GetNextDeviceQueueItemForDevEUI(db, devEUI)
+		qi, err := GetNextDeviceQueueItemForDevEUI(ctx, db, devEUI)
 		if err != nil {
 			return DeviceQueueItem{}, errors.Wrap(err, "get next device-queue item error")
 		}
 
 		if qi.FCnt < fCnt || len(qi.FRMPayload) > maxPayloadSize || (qi.TimeoutAfter != nil && qi.TimeoutAfter.Before(time.Now())) {
-			rp, err := GetRoutingProfile(db, routingProfileID)
+			rp, err := GetRoutingProfile(ctx, db, routingProfileID)
 			if err != nil {
 				return DeviceQueueItem{}, errors.Wrap(err, "get routing-profile error")
 			}
@@ -289,7 +294,7 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 				return DeviceQueueItem{}, errors.Wrap(err, "get application-server client error")
 			}
 
-			if err := DeleteDeviceQueueItem(db, qi.ID); err != nil {
+			if err := DeleteDeviceQueueItem(ctx, db, qi.ID); err != nil {
 				return DeviceQueueItem{}, errors.Wrap(err, "delete device-queue item error")
 			}
 
@@ -298,9 +303,10 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 				log.WithFields(log.Fields{
 					"dev_eui":                devEUI,
 					"device_queue_item_fcnt": qi.FCnt,
+					"ctx_id":                 ctx.Value(logging.ContextIDKey),
 				}).Warning("device-queue item discarded due to timeout")
 
-				_, err = asClient.HandleDownlinkACK(context.Background(), &as.HandleDownlinkACKRequest{
+				_, err = asClient.HandleDownlinkACK(ctx, &as.HandleDownlinkACKRequest{
 					DevEui:       devEUI[:],
 					FCnt:         qi.FCnt,
 					Acknowledged: false,
@@ -314,9 +320,10 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 					"dev_eui":                devEUI,
 					"device_session_fcnt":    fCnt,
 					"device_queue_item_fcnt": qi.FCnt,
+					"ctx_id":                 ctx.Value(logging.ContextIDKey),
 				}).Warning("device-queue item discarded due to invalid fCnt")
 
-				_, err = asClient.HandleError(context.Background(), &as.HandleErrorRequest{
+				_, err = asClient.HandleError(ctx, &as.HandleErrorRequest{
 					DevEui: devEUI[:],
 					Type:   as.ErrorType_DEVICE_QUEUE_ITEM_FCNT,
 					FCnt:   qi.FCnt,
@@ -332,9 +339,10 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 					"dev_eui":                        devEUI,
 					"max_payload_size":               maxPayloadSize,
 					"device_queue_item_payload_size": len(qi.FRMPayload),
+					"ctx_id":                         ctx.Value(logging.ContextIDKey),
 				}).Warning("device-queue item discarded as it exceeds the max payload size")
 
-				_, err = asClient.HandleError(context.Background(), &as.HandleErrorRequest{
+				_, err = asClient.HandleError(ctx, &as.HandleErrorRequest{
 					DevEui: devEUI[:],
 					Type:   as.ErrorType_DEVICE_QUEUE_ITEM_SIZE,
 					FCnt:   qi.FCnt,
@@ -357,7 +365,7 @@ func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(db sqlx.Ext, devEUI lo
 // for downlink Class-C transmission.
 // The device records will be locked for update so that multiple instances can
 // run this query in parallel without the risk of duplicate scheduling.
-func GetDevicesWithClassBOrClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Device, error) {
+func GetDevicesWithClassBOrClassCDeviceQueueItems(ctx context.Context, db sqlx.Ext, count int) ([]Device, error) {
 	gpsEpochScheduleTime := gps.Time(time.Now().Add(schedulerInterval * 2)).TimeSinceGPSEpoch()
 
 	var devices []Device
@@ -413,7 +421,7 @@ func GetDevicesWithClassBOrClassCDeviceQueueItems(db sqlx.Ext, count int) ([]Dev
 
 // GetMaxEmitAtTimeSinceGPSEpochForDevEUI returns the maximum / last GPS
 // epoch scheduling timestamp for the given DevEUI.
-func GetMaxEmitAtTimeSinceGPSEpochForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (time.Duration, error) {
+func GetMaxEmitAtTimeSinceGPSEpochForDevEUI(ctx context.Context, db sqlx.Queryer, devEUI lorawan.EUI64) (time.Duration, error) {
 	var timeSinceGPSEpoch time.Duration
 	err := sqlx.Get(db, &timeSinceGPSEpoch, `
 		select

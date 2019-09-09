@@ -1,8 +1,10 @@
 package storage
 
 import (
+	"context"
 	"time"
 
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -42,7 +44,7 @@ func (p GatewayProfile) GetVersion() string {
 // CreateGatewayProfile creates the given gateway-profile.
 // As this will execute multiple SQL statements, it is recommended to perform
 // this within a transaction.
-func CreateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
+func CreateGatewayProfile(ctx context.Context, db sqlx.Execer, c *GatewayProfile) error {
 	now := time.Now()
 	c.CreatedAt = now
 	c.UpdatedAt = now
@@ -94,7 +96,8 @@ func CreateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 	}
 
 	log.WithFields(log.Fields{
-		"id": c.ID,
+		"id":     c.ID,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
 	}).Info("gateway-profile created")
 
 	return nil
@@ -102,7 +105,7 @@ func CreateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 
 // GetGatewayProfile returns the gateway-profile matching the
 // given ID.
-func GetGatewayProfile(db sqlx.Queryer, id uuid.UUID) (GatewayProfile, error) {
+func GetGatewayProfile(ctx context.Context, db sqlx.Queryer, id uuid.UUID) (GatewayProfile, error) {
 	var c GatewayProfile
 	err := db.QueryRowx(`
 		select
@@ -163,7 +166,7 @@ func GetGatewayProfile(db sqlx.Queryer, id uuid.UUID) (GatewayProfile, error) {
 // UpdateGatewayProfile updates the given gateway-profile.
 // As this will execute multiple SQL statements, it is recommended to perform
 // this within a transaction.
-func UpdateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
+func UpdateGatewayProfile(ctx context.Context, db sqlx.Execer, c *GatewayProfile) error {
 	c.UpdatedAt = time.Now()
 	res, err := db.Exec(`
 		update gateway_profile
@@ -224,7 +227,8 @@ func UpdateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 	}
 
 	log.WithFields(log.Fields{
-		"id": c.ID,
+		"id":     c.ID,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
 	}).Info("gateway-profile updated")
 
 	return nil
@@ -232,7 +236,7 @@ func UpdateGatewayProfile(db sqlx.Execer, c *GatewayProfile) error {
 
 // DeleteGatewayProfile deletes the gateway-profile matching the
 // given ID.
-func DeleteGatewayProfile(db sqlx.Execer, id uuid.UUID) error {
+func DeleteGatewayProfile(ctx context.Context, db sqlx.Execer, id uuid.UUID) error {
 	res, err := db.Exec(`
 		delete from gateway_profile
 		where
@@ -252,7 +256,8 @@ func DeleteGatewayProfile(db sqlx.Execer, id uuid.UUID) error {
 	}
 
 	log.WithFields(log.Fields{
-		"id": id,
+		"id":     id,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
 	}).Info("gateway-profile deleted")
 
 	return nil

@@ -1,6 +1,7 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -129,7 +130,7 @@ func TestHandleRXParamSetupAns(t *testing.T) {
 
 		for i, t := range tests {
 			Convey(fmt.Sprintf("Testing: %s [%d]", t.Name, i), func() {
-				ans, err := handleRXParamSetupAns(&t.DeviceSession, t.ReceivedMACCommandBlock, t.PendingMACCommandBlock)
+				ans, err := handleRXParamSetupAns(context.Background(), &t.DeviceSession, t.ReceivedMACCommandBlock, t.PendingMACCommandBlock)
 				So(err, ShouldResemble, t.ExpectedError)
 				So(ans, ShouldBeNil)
 				So(t.DeviceSession, ShouldResemble, t.ExpectedDeviceSession)

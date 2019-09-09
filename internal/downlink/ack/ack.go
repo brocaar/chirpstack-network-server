@@ -1,6 +1,9 @@
 package ack
 
 import (
+	"context"
+	"encoding/binary"
+
 	"github.com/brocaar/lorawan"
 	"github.com/pkg/errors"
 
@@ -15,24 +18,29 @@ var (
 
 var handleDownlinkTXAckTasks = []func(*ackContext) error{
 	abortOnNoError,
+	getToken,
 	getDownlinkFrame,
 	sendDownlinkFrame,
 }
 
 type ackContext struct {
+	ctx context.Context
+
+	Token         uint16
 	DevEUI        lorawan.EUI64
 	DownlinkTXAck gw.DownlinkTXAck
 	DownlinkFrame gw.DownlinkFrame
 }
 
 // HandleDownlinkTXAck handles the given downlink TX acknowledgement.
-func HandleDownlinkTXAck(downlinkTXAck gw.DownlinkTXAck) error {
-	ctx := ackContext{
+func HandleDownlinkTXAck(ctx context.Context, downlinkTXAck gw.DownlinkTXAck) error {
+	actx := ackContext{
+		ctx:           ctx,
 		DownlinkTXAck: downlinkTXAck,
 	}
 
 	for _, t := range handleDownlinkTXAckTasks {
-		if err := t(&ctx); err != nil {
+		if err := t(&actx); err != nil {
 			if err == errAbort {
 				return nil
 			}
@@ -51,9 +59,18 @@ func abortOnNoError(ctx *ackContext) error {
 	return nil
 }
 
+func getToken(ctx *ackContext) error {
+	if ctx.DownlinkTXAck.Token != 0 {
+		ctx.Token = uint16(ctx.DownlinkTXAck.Token)
+	} else if len(ctx.DownlinkTXAck.DownlinkId) == 16 {
+		ctx.Token = binary.BigEndian.Uint16(ctx.DownlinkTXAck.DownlinkId[0:2])
+	}
+	return nil
+}
+
 func getDownlinkFrame(ctx *ackContext) error {
 	var err error
-	ctx.DevEUI, ctx.DownlinkFrame, err = storage.PopDownlinkFrame(storage.RedisPool(), ctx.DownlinkTXAck.Token)
+	ctx.DevEUI, ctx.DownlinkFrame, err = storage.PopDownlinkFrame(ctx.ctx, storage.RedisPool(), uint32(ctx.Token))
 	if err != nil {
 		if err == storage.ErrDoesNotExist {
 			// no retry is possible, abort

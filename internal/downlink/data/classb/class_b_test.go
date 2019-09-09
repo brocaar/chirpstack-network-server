@@ -1,6 +1,7 @@
 package classb
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -137,15 +138,15 @@ func TestScheduleDeviceQueueToPingSlotsForDevEUI(t *testing.T) {
 
 		Convey("Given a device, device-session and three queue items", func() {
 			sp := storage.ServiceProfile{}
-			So(storage.CreateServiceProfile(storage.DB(), &sp), ShouldBeNil)
+			So(storage.CreateServiceProfile(context.Background(), storage.DB(), &sp), ShouldBeNil)
 
 			dp := storage.DeviceProfile{
 				ClassBTimeout: 30,
 			}
-			So(storage.CreateDeviceProfile(storage.DB(), &dp), ShouldBeNil)
+			So(storage.CreateDeviceProfile(context.Background(), storage.DB(), &dp), ShouldBeNil)
 
 			rp := storage.RoutingProfile{}
-			So(storage.CreateRoutingProfile(storage.DB(), &rp), ShouldBeNil)
+			So(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp), ShouldBeNil)
 
 			d := storage.Device{
 				DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
@@ -153,7 +154,7 @@ func TestScheduleDeviceQueueToPingSlotsForDevEUI(t *testing.T) {
 				ServiceProfileID: sp.ID,
 				DeviceProfileID:  dp.ID,
 			}
-			So(storage.CreateDevice(storage.DB(), &d), ShouldBeNil)
+			So(storage.CreateDevice(context.Background(), storage.DB(), &d), ShouldBeNil)
 
 			queueItems := []storage.DeviceQueueItem{
 				{
@@ -176,7 +177,7 @@ func TestScheduleDeviceQueueToPingSlotsForDevEUI(t *testing.T) {
 				},
 			}
 			for i := range queueItems {
-				So(storage.CreateDeviceQueueItem(storage.DB(), &queueItems[i]), ShouldBeNil)
+				So(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &queueItems[i]), ShouldBeNil)
 			}
 
 			ds := storage.DeviceSession{
@@ -187,11 +188,11 @@ func TestScheduleDeviceQueueToPingSlotsForDevEUI(t *testing.T) {
 
 			Convey("When calling ScheduleDeviceQueueToPingSlotsForDevEUI", func() {
 				timeSinceGPSEpochNow := gps.Time(time.Now()).TimeSinceGPSEpoch()
-				So(ScheduleDeviceQueueToPingSlotsForDevEUI(storage.DB(), dp, ds), ShouldBeNil)
+				So(ScheduleDeviceQueueToPingSlotsForDevEUI(context.Background(), storage.DB(), dp, ds), ShouldBeNil)
 
 				Convey("Then each queue-item has a time since GPS epoch emit timestamp", func() {
 					for i := range queueItems {
-						qi, err := storage.GetDeviceQueueItem(storage.DB(), queueItems[i].ID)
+						qi, err := storage.GetDeviceQueueItem(context.Background(), storage.DB(), queueItems[i].ID)
 						So(err, ShouldBeNil)
 
 						So(qi.EmitAtTimeSinceGPSEpoch, ShouldNotBeNil)

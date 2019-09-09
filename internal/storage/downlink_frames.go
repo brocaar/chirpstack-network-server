@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/brocaar/lorawan"
 )
 
@@ -19,7 +21,7 @@ const downlinkFramesDevEUIKeyTempl = "lora:ns:frames:deveui:%d"
 
 // SaveDownlinkFrames saves the given downlink-frames. The downlink-frames
 // must share the same token!
-func SaveDownlinkFrames(p *redis.Pool, devEUI lorawan.EUI64, frames []gw.DownlinkFrame) error {
+func SaveDownlinkFrames(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, frames []gw.DownlinkFrame) error {
 	if len(frames) == 0 {
 		return nil
 	}
@@ -60,13 +62,14 @@ func SaveDownlinkFrames(p *redis.Pool, devEUI lorawan.EUI64, frames []gw.Downlin
 	log.WithFields(log.Fields{
 		"token":   token,
 		"dev_eui": devEUI,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
 	}).Info("downlink-frames saved")
 
 	return nil
 }
 
 // PopDownlinkFrame returns the first downlink-frame for the given token.
-func PopDownlinkFrame(p *redis.Pool, token uint32) (lorawan.EUI64, gw.DownlinkFrame, error) {
+func PopDownlinkFrame(ctx context.Context, p *redis.Pool, token uint32) (lorawan.EUI64, gw.DownlinkFrame, error) {
 	var out gw.DownlinkFrame
 	var devEUI lorawan.EUI64
 

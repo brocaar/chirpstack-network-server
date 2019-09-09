@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -26,7 +27,7 @@ func TestGetRandomDevAddr(t *testing.T) {
 		Convey("When calling getRandomDevAddr many times, it should always return an unique DevAddr", func() {
 			log := make(map[lorawan.DevAddr]struct{})
 			for i := 0; i < 1000; i++ {
-				devAddr, err := GetRandomDevAddr(RedisPool(), netID)
+				devAddr, err := GetRandomDevAddr(netID)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -95,6 +96,7 @@ func TestDeviceSession(t *testing.T) {
 	if err := Setup(conf); err != nil {
 		t.Fatal(err)
 	}
+	ctx := context.Background()
 
 	Convey("Given a clean Redis database", t, func() {
 		test.MustFlushRedis(RedisPool())
@@ -109,7 +111,7 @@ func TestDeviceSession(t *testing.T) {
 			}
 
 			Convey("When getting a non-existing device-session", func() {
-				_, err := GetDeviceSession(RedisPool(), s.DevEUI)
+				_, err := GetDeviceSession(context.Background(), RedisPool(), s.DevEUI)
 
 				Convey("Then the expected error is returned", func() {
 					So(err, ShouldResemble, ErrDoesNotExist)
@@ -117,24 +119,24 @@ func TestDeviceSession(t *testing.T) {
 			})
 
 			Convey("When saving the device-session", func() {
-				So(SaveDeviceSession(RedisPool(), s), ShouldBeNil)
+				So(SaveDeviceSession(ctx, RedisPool(), s), ShouldBeNil)
 
 				Convey("Then GetDeviceSessionsForDevAddr includes the device-session", func() {
-					sessions, err := GetDeviceSessionsForDevAddr(RedisPool(), s.DevAddr)
+					sessions, err := GetDeviceSessionsForDevAddr(context.Background(), RedisPool(), s.DevAddr)
 					So(err, ShouldBeNil)
 					So(sessions, ShouldHaveLength, 1)
 					So(sessions[0], ShouldResemble, s)
 				})
 
 				Convey("Then the session can be retrieved by it's DevEUI", func() {
-					s2, err := GetDeviceSession(RedisPool(), s.DevEUI)
+					s2, err := GetDeviceSession(context.Background(), RedisPool(), s.DevEUI)
 					So(err, ShouldBeNil)
 					So(s2, ShouldResemble, s)
 				})
 
 				Convey("Then DeleteDeviceSession deletes the device-session", func() {
-					So(DeleteDeviceSession(RedisPool(), s.DevEUI), ShouldBeNil)
-					So(DeleteDeviceSession(RedisPool(), s.DevEUI), ShouldEqual, ErrDoesNotExist)
+					So(DeleteDeviceSession(context.Background(), RedisPool(), s.DevEUI), ShouldBeNil)
+					So(DeleteDeviceSession(context.Background(), RedisPool(), s.DevEUI), ShouldEqual, ErrDoesNotExist)
 
 				})
 			})
@@ -178,6 +180,7 @@ func TestGetDeviceSessionForPHYPayload(t *testing.T) {
 	if err := Setup(conf); err != nil {
 		t.Fatal(err)
 	}
+	ctx := context.Background()
 
 	Convey("Given a clean Redis database with a set of device-sessions for the same DevAddr", t, func() {
 		test.MustFlushRedis(RedisPool())
@@ -222,7 +225,7 @@ func TestGetDeviceSessionForPHYPayload(t *testing.T) {
 			},
 		}
 		for _, s := range deviceSessions {
-			So(SaveDeviceSession(RedisPool(), s), ShouldBeNil)
+			So(SaveDeviceSession(ctx, RedisPool(), s), ShouldBeNil)
 		}
 
 		Convey("Given a set of tests", func() {
@@ -315,7 +318,7 @@ func TestGetDeviceSessionForPHYPayload(t *testing.T) {
 					}
 					So(phy.SetUplinkDataMIC(lorawan.LoRaWAN1_0, 0, 0, 0, test.FNwkSIntKey, test.SNwkSIntKey), ShouldBeNil)
 
-					s, err := GetDeviceSessionForPHYPayload(RedisPool(), phy, 0, 0)
+					s, err := GetDeviceSessionForPHYPayload(ctx, RedisPool(), phy, 0, 0)
 					if test.ExpectedError != nil {
 						So(err, ShouldNotBeNil)
 						So(err.Error(), ShouldEqual, test.ExpectedError.Error())
@@ -336,10 +339,10 @@ func (ts *StorageTestSuite) TestDeviceGatewayRXInfoSet() {
 	ts.T().Run("Does not exist", func(t *testing.T) {
 		assert := require.New(t)
 
-		_, err := GetDeviceGatewayRXInfoSet(ts.RedisPool(), devEUI)
+		_, err := GetDeviceGatewayRXInfoSet(context.Background(), ts.RedisPool(), devEUI)
 		assert.Equal(ErrDoesNotExist, err)
 
-		sets, err := GetDeviceGatewayRXInfoSetForDevEUIs(ts.RedisPool(), []lorawan.EUI64{devEUI})
+		sets, err := GetDeviceGatewayRXInfoSetForDevEUIs(context.Background(), ts.RedisPool(), []lorawan.EUI64{devEUI})
 		assert.NoError(err)
 		assert.Len(sets, 0)
 	})
@@ -358,16 +361,16 @@ func (ts *StorageTestSuite) TestDeviceGatewayRXInfoSet() {
 				},
 			},
 		}
-		assert.NoError(SaveDeviceGatewayRXInfoSet(ts.RedisPool(), rxInfoSet))
+		assert.NoError(SaveDeviceGatewayRXInfoSet(context.Background(), ts.RedisPool(), rxInfoSet))
 
 		t.Run("Get", func(t *testing.T) {
 			assert := require.New(t)
 
-			rxInfoSetGet, err := GetDeviceGatewayRXInfoSet(ts.RedisPool(), devEUI)
+			rxInfoSetGet, err := GetDeviceGatewayRXInfoSet(context.Background(), ts.RedisPool(), devEUI)
 			assert.NoError(err)
 			assert.Equal(rxInfoSet, rxInfoSetGet)
 
-			rxInfoSets, err := GetDeviceGatewayRXInfoSetForDevEUIs(ts.RedisPool(), []lorawan.EUI64{devEUI})
+			rxInfoSets, err := GetDeviceGatewayRXInfoSetForDevEUIs(context.Background(), ts.RedisPool(), []lorawan.EUI64{devEUI})
 			assert.NoError(err)
 			assert.Len(rxInfoSets, 1)
 			assert.Equal(rxInfoSet, rxInfoSets[0])
@@ -376,10 +379,10 @@ func (ts *StorageTestSuite) TestDeviceGatewayRXInfoSet() {
 		t.Run("Delete", func(t *testing.T) {
 			assert := require.New(t)
 
-			assert.NoError(DeleteDeviceGatewayRXInfoSet(ts.RedisPool(), devEUI))
-			_, err := GetDeviceGatewayRXInfoSet(ts.RedisPool(), devEUI)
+			assert.NoError(DeleteDeviceGatewayRXInfoSet(context.Background(), ts.RedisPool(), devEUI))
+			_, err := GetDeviceGatewayRXInfoSet(context.Background(), ts.RedisPool(), devEUI)
 			assert.Equal(ErrDoesNotExist, err)
-			assert.Equal(ErrDoesNotExist, DeleteDeviceGatewayRXInfoSet(ts.RedisPool(), devEUI))
+			assert.Equal(ErrDoesNotExist, DeleteDeviceGatewayRXInfoSet(context.Background(), ts.RedisPool(), devEUI))
 		})
 	})
 }

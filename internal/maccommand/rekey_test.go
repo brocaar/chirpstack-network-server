@@ -1,6 +1,7 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -54,7 +55,7 @@ func TestRekey(t *testing.T) {
 
 				ds := storage.DeviceSession{}
 
-				out, err := handleRekeyInd(&ds, req)
+				out, err := handleRekeyInd(context.Background(), &ds, req)
 				So(err, ShouldBeNil)
 				So(out, ShouldHaveLength, 1)
 				So(out[0], ShouldResemble, test.ExpectedMACCommandBlock)

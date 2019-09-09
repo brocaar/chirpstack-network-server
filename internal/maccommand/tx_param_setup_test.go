@@ -1,6 +1,7 @@
 package maccommand
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pkg/errors"
@@ -83,7 +84,7 @@ func TestTXParamSetup(t *testing.T) {
 			t.Run(tst.Name, func(t *testing.T) {
 				assert := require.New(t)
 
-				ret, err := handleTXParamSetupAns(&tst.DeviceSession, storage.MACCommandBlock{}, tst.PendingBlock)
+				ret, err := handleTXParamSetupAns(context.Background(), &tst.DeviceSession, storage.MACCommandBlock{}, tst.PendingBlock)
 				assert.Nil(ret)
 				assert.Equal(tst.ExpectedDeviceSession, tst.DeviceSession)
 				if err != nil {

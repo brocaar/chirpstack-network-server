@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -111,9 +112,9 @@ func (ts *StorageTestSuite) TestGeolocBuffer() {
 			test.MustFlushRedis(RedisPool())
 			assert := require.New(t)
 
-			assert.NoError(SaveGeolocBuffer(RedisPool(), tst.DevEUI, tst.Items, tst.AddTTL))
+			assert.NoError(SaveGeolocBuffer(context.Background(), RedisPool(), tst.DevEUI, tst.Items, tst.AddTTL))
 
-			resp, err := GetGeolocBuffer(RedisPool(), tst.DevEUI, tst.GetTTL)
+			resp, err := GetGeolocBuffer(context.Background(), RedisPool(), tst.DevEUI, tst.GetTTL)
 			assert.NoError(err)
 
 			aa, _ := json.Marshal(tst.ExpectedItems)

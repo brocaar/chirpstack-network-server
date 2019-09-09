@@ -1,6 +1,7 @@
 package testsuite
 
 import (
+	"context"
 	"encoding/binary"
 	"sort"
 	"time"
@@ -74,7 +75,7 @@ func AssertDownlinkFrame(txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Asser
 
 func AssertDownlinkFrameSaved(devEUI lorawan.EUI64, txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		eui, downlinkFrame, err := storage.PopDownlinkFrame(storage.RedisPool(), lastToken)
+		eui, downlinkFrame, err := storage.PopDownlinkFrame(context.Background(), storage.RedisPool(), lastToken)
 		assert.NoError(err)
 
 		assert.Equal(devEUI, eui)
@@ -110,14 +111,14 @@ func AssertNoDownlinkFrame(assert *require.Assertions, ts *IntegrationTestSuite)
 }
 
 func AssertNoDownlinkFrameSaved(assert *require.Assertions, ts *IntegrationTestSuite) {
-	_, _, err := storage.PopDownlinkFrame(storage.RedisPool(), lastToken)
+	_, _, err := storage.PopDownlinkFrame(context.Background(), storage.RedisPool(), lastToken)
 	assert.Equal(storage.ErrDoesNotExist, err)
 }
 
 // AssertMulticastQueueItems asserts the given multicast-queue items.
 func AssertMulticastQueueItems(items []storage.MulticastQueueItem) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		mqi, err := storage.GetMulticastQueueItemsForMulticastGroup(storage.DB(), ts.MulticastGroup.ID)
+		mqi, err := storage.GetMulticastQueueItemsForMulticastGroup(context.Background(), storage.DB(), ts.MulticastGroup.ID)
 		assert.NoError(err)
 		// avoid comparing nil with empty slice
 		if len(items) != len(mqi) {
@@ -129,7 +130,7 @@ func AssertMulticastQueueItems(items []storage.MulticastQueueItem) Assertion {
 // AssertDeviceQueueItems asserts the device-queue items.
 func AssertDeviceQueueItems(items []storage.DeviceQueueItem) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		dqi, err := storage.GetDeviceQueueItemsForDevEUI(storage.DB(), ts.Device.DevEUI)
+		dqi, err := storage.GetDeviceQueueItemsForDevEUI(context.Background(), storage.DB(), ts.Device.DevEUI)
 		assert.NoError(err)
 		// avoid comparing nil vs empty slice
 		if len(items) != len(dqi) {
@@ -141,7 +142,7 @@ func AssertDeviceQueueItems(items []storage.DeviceQueueItem) Assertion {
 // AssertDeviceMode asserts the current device class.
 func AssertDeviceMode(mode storage.DeviceMode) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		d, err := storage.GetDevice(storage.DB(), ts.Device.DevEUI)
+		d, err := storage.GetDevice(context.Background(), storage.DB(), ts.Device.DevEUI)
 		assert.NoError(err)
 		assert.Equal(mode, d.Mode)
 	}
@@ -178,7 +179,7 @@ func AssertJSRejoinReqPayload(pl backend.RejoinReqPayload) Assertion {
 // AssertDeviceSession asserts the given device-session.
 func AssertDeviceSession(ds storage.DeviceSession) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		sess, err := storage.GetDeviceSession(storage.RedisPool(), ts.Device.DevEUI)
+		sess, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), ts.Device.DevEUI)
 		assert.NoError(err)
 
 		assert.NotEqual(lorawan.DevAddr{}, sess.DevAddr)
@@ -196,7 +197,7 @@ func AssertDeviceSession(ds storage.DeviceSession) Assertion {
 // AssertDeviceActivation asserts the given device-activation.
 func AssertDeviceActivation(da storage.DeviceActivation) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		act, err := storage.GetLastDeviceActivationForDevEUI(storage.DB(), ts.Device.DevEUI)
+		act, err := storage.GetLastDeviceActivationForDevEUI(context.Background(), storage.DB(), ts.Device.DevEUI)
 		assert.NoError(err)
 
 		assert.NotEqual(lorawan.DevAddr{}, act.DevAddr)

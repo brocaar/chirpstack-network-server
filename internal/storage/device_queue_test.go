@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -46,6 +47,7 @@ func TestDeviceQueue(t *testing.T) {
 	if err := Setup(conf); err != nil {
 		t.Fatal(err)
 	}
+	ctx := context.Background()
 
 	Convey("Given a clean database", t, func() {
 		test.MustResetDB(DB().DB)
@@ -54,13 +56,13 @@ func TestDeviceQueue(t *testing.T) {
 
 		Convey("Given a service, device and routing profile and device", func() {
 			sp := ServiceProfile{}
-			So(CreateServiceProfile(db, &sp), ShouldBeNil)
+			So(CreateServiceProfile(context.Background(), db, &sp), ShouldBeNil)
 
 			dp := DeviceProfile{}
-			So(CreateDeviceProfile(db, &dp), ShouldBeNil)
+			So(CreateDeviceProfile(context.Background(), db, &dp), ShouldBeNil)
 
 			rp := RoutingProfile{}
-			So(CreateRoutingProfile(db, &rp), ShouldBeNil)
+			So(CreateRoutingProfile(context.Background(), db, &rp), ShouldBeNil)
 
 			d := Device{
 				DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
@@ -68,7 +70,7 @@ func TestDeviceQueue(t *testing.T) {
 				DeviceProfileID:  dp.ID,
 				RoutingProfileID: rp.ID,
 			}
-			So(CreateDevice(db, &d), ShouldBeNil)
+			So(CreateDevice(context.Background(), db, &d), ShouldBeNil)
 
 			Convey("Given a set of queue items", func() {
 				gpsEpochTS1 := time.Second * 30
@@ -102,19 +104,19 @@ func TestDeviceQueue(t *testing.T) {
 					},
 				}
 				for i := range items {
-					So(CreateDeviceQueueItem(db, &items[i]), ShouldBeNil)
+					So(CreateDeviceQueueItem(context.Background(), db, &items[i]), ShouldBeNil)
 					items[i].CreatedAt = items[i].UpdatedAt.UTC().Truncate(time.Millisecond)
 					items[i].UpdatedAt = items[i].UpdatedAt.UTC().Truncate(time.Millisecond)
 				}
 
 				Convey("Then GetMaxEmlitAtTimeSinceGPSEpochForDevEUI returns the expected value", func() {
-					d, err := GetMaxEmitAtTimeSinceGPSEpochForDevEUI(DB(), d.DevEUI)
+					d, err := GetMaxEmitAtTimeSinceGPSEpochForDevEUI(context.Background(), DB(), d.DevEUI)
 					So(err, ShouldBeNil)
 					So(d, ShouldEqual, gpsEpochTS2)
 				})
 
 				Convey("Then GetDeviceQueueItem returns the requested item", func() {
-					qi, err := GetDeviceQueueItem(db, items[0].ID)
+					qi, err := GetDeviceQueueItem(context.Background(), db, items[0].ID)
 					So(err, ShouldBeNil)
 					qi.CreatedAt = qi.CreatedAt.UTC().Truncate(time.Millisecond)
 					qi.UpdatedAt = qi.UpdatedAt.UTC().Truncate(time.Millisecond)
@@ -124,10 +126,10 @@ func TestDeviceQueue(t *testing.T) {
 				Convey("Then UpdateDeviceQueueItem updates the queue item", func() {
 					items[0].IsPending = true
 					items[0].TimeoutAfter = &inOneHour
-					So(UpdateDeviceQueueItem(db, &items[0]), ShouldBeNil)
+					So(UpdateDeviceQueueItem(context.Background(), db, &items[0]), ShouldBeNil)
 					items[0].UpdatedAt = items[0].UpdatedAt.UTC().Truncate(time.Millisecond)
 
-					qi, err := GetDeviceQueueItem(db, items[0].ID)
+					qi, err := GetDeviceQueueItem(context.Background(), db, items[0].ID)
 					So(err, ShouldBeNil)
 					qi.CreatedAt = qi.CreatedAt.UTC().Truncate(time.Millisecond)
 					qi.UpdatedAt = qi.UpdatedAt.UTC().Truncate(time.Millisecond)
@@ -137,7 +139,7 @@ func TestDeviceQueue(t *testing.T) {
 				})
 
 				Convey("Then GetDeviceQueueItemsForDevEUI returns the expected items in the expected order", func() {
-					queueItems, err := GetDeviceQueueItemsForDevEUI(db, d.DevEUI)
+					queueItems, err := GetDeviceQueueItemsForDevEUI(context.Background(), db, d.DevEUI)
 					So(err, ShouldBeNil)
 					So(queueItems, ShouldHaveLength, len(items))
 					So(queueItems[0].FCnt, ShouldEqual, 1)
@@ -146,7 +148,7 @@ func TestDeviceQueue(t *testing.T) {
 				})
 
 				Convey("Then GetNextDeviceQueueItemForDevEUI returns the first item that should be emitted", func() {
-					qi, err := GetNextDeviceQueueItemForDevEUI(db, d.DevEUI)
+					qi, err := GetNextDeviceQueueItemForDevEUI(context.Background(), db, d.DevEUI)
 					So(err, ShouldBeNil)
 					So(qi.FCnt, ShouldEqual, 1)
 				})
@@ -155,24 +157,24 @@ func TestDeviceQueue(t *testing.T) {
 					ts := time.Now().Add(time.Minute)
 					items[0].IsPending = true
 					items[0].TimeoutAfter = &ts
-					So(UpdateDeviceQueueItem(DB(), &items[0]), ShouldBeNil)
+					So(UpdateDeviceQueueItem(context.Background(), DB(), &items[0]), ShouldBeNil)
 
 					Convey("Then GetNextDeviceQueueItemForDevEUI returns does not exist error", func() {
-						_, err := GetNextDeviceQueueItemForDevEUI(DB(), d.DevEUI)
+						_, err := GetNextDeviceQueueItemForDevEUI(context.Background(), DB(), d.DevEUI)
 						So(err, ShouldEqual, ErrDoesNotExist)
 					})
 				})
 
 				Convey("Then FlushDeviceQueueForDevEUI flushes the queue", func() {
-					So(FlushDeviceQueueForDevEUI(db, d.DevEUI), ShouldBeNil)
-					items, err := GetDeviceQueueItemsForDevEUI(db, d.DevEUI)
+					So(FlushDeviceQueueForDevEUI(ctx, db, d.DevEUI), ShouldBeNil)
+					items, err := GetDeviceQueueItemsForDevEUI(context.Background(), db, d.DevEUI)
 					So(err, ShouldBeNil)
 					So(items, ShouldHaveLength, 0)
 				})
 
 				Convey("Then DeleteDeviceQueueItem deletes a queue item", func() {
-					So(DeleteDeviceQueueItem(db, items[0].ID), ShouldBeNil)
-					items, err := GetDeviceQueueItemsForDevEUI(db, d.DevEUI)
+					So(DeleteDeviceQueueItem(context.Background(), db, items[0].ID), ShouldBeNil)
+					items, err := GetDeviceQueueItemsForDevEUI(context.Background(), db, d.DevEUI)
 					So(err, ShouldBeNil)
 					So(items, ShouldHaveLength, 2)
 				})
@@ -221,7 +223,7 @@ func TestDeviceQueue(t *testing.T) {
 					},
 				}
 				for i := range items {
-					So(CreateDeviceQueueItem(DB(), &items[i]), ShouldBeNil)
+					So(CreateDeviceQueueItem(context.Background(), DB(), &items[i]), ShouldBeNil)
 				}
 
 				tests := []struct {
@@ -299,7 +301,7 @@ func TestDeviceQueue(t *testing.T) {
 
 				for i, test := range tests {
 					Convey(fmt.Sprintf("Testing: %s [%d]", test.Name, i), func() {
-						qi, err := GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(DB(), d.DevEUI, test.MaxFRMPayload, test.FCnt, rp.ID)
+						qi, err := GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(context.Background(), DB(), d.DevEUI, test.MaxFRMPayload, test.FCnt, rp.ID)
 						if test.ExpectedHandleError == nil {
 							So(*test.ExpectedDeviceQueueItemID, ShouldEqual, qi.ID)
 							So(err, ShouldBeNil)
@@ -344,15 +346,15 @@ func TestGetDevEUIsWithClassBOrCDeviceQueueItems(t *testing.T) {
 
 		Convey("Given a service-, class-b device- and routing-profile and two, SchedulerInterval setting", func() {
 			sp := ServiceProfile{}
-			So(CreateServiceProfile(DB(), &sp), ShouldBeNil)
+			So(CreateServiceProfile(context.Background(), DB(), &sp), ShouldBeNil)
 
 			rp := RoutingProfile{}
-			So(CreateRoutingProfile(DB(), &rp), ShouldBeNil)
+			So(CreateRoutingProfile(context.Background(), DB(), &rp), ShouldBeNil)
 
 			dp := DeviceProfile{
 				SupportsClassB: true,
 			}
-			So(CreateDeviceProfile(DB(), &dp), ShouldBeNil)
+			So(CreateDeviceProfile(context.Background(), DB(), &dp), ShouldBeNil)
 
 			devices := []Device{
 				{
@@ -371,7 +373,7 @@ func TestGetDevEUIsWithClassBOrCDeviceQueueItems(t *testing.T) {
 				},
 			}
 			for i := range devices {
-				So(CreateDevice(DB(), &devices[i]), ShouldBeNil)
+				So(CreateDevice(context.Background(), DB(), &devices[i]), ShouldBeNil)
 			}
 
 			inTwoSeconds := gps.Time(time.Now().Add(time.Second)).TimeSinceGPSEpoch()
@@ -435,15 +437,15 @@ func TestGetDevEUIsWithClassBOrCDeviceQueueItems(t *testing.T) {
 
 		Convey("Given a service-, class-c device- and routing-profile and two devices", func() {
 			sp := ServiceProfile{}
-			So(CreateServiceProfile(DB(), &sp), ShouldBeNil)
+			So(CreateServiceProfile(context.Background(), DB(), &sp), ShouldBeNil)
 
 			rp := RoutingProfile{}
-			So(CreateRoutingProfile(DB(), &rp), ShouldBeNil)
+			So(CreateRoutingProfile(context.Background(), DB(), &rp), ShouldBeNil)
 
 			dp := DeviceProfile{
 				SupportsClassC: true,
 			}
-			So(CreateDeviceProfile(DB(), &dp), ShouldBeNil)
+			So(CreateDeviceProfile(context.Background(), DB(), &dp), ShouldBeNil)
 
 			devices := []Device{
 				{
@@ -462,7 +464,7 @@ func TestGetDevEUIsWithClassBOrCDeviceQueueItems(t *testing.T) {
 				},
 			}
 			for i := range devices {
-				So(CreateDevice(DB(), &devices[i]), ShouldBeNil)
+				So(CreateDevice(context.Background(), DB(), &devices[i]), ShouldBeNil)
 			}
 
 			inOneMinute := time.Now().Add(time.Minute)
@@ -551,7 +553,7 @@ func runGetDeviceQueueItemsTests(tests []getDeviceQueueItemsTestCase) {
 			}()
 
 			for i := range test.QueueItems {
-				So(CreateDeviceQueueItem(DB(), &test.QueueItems[i]), ShouldBeNil)
+				So(CreateDeviceQueueItem(context.Background(), DB(), &test.QueueItems[i]), ShouldBeNil)
 			}
 
 			for i := 0; i < test.GetCallCount; i++ {
@@ -559,7 +561,7 @@ func runGetDeviceQueueItemsTests(tests []getDeviceQueueItemsTestCase) {
 				So(err, ShouldBeNil)
 				transactions = append(transactions, tx)
 
-				devs, err := GetDevicesWithClassBOrClassCDeviceQueueItems(tx, test.GetCount)
+				devs, err := GetDevicesWithClassBOrClassCDeviceQueueItems(context.Background(), tx, test.GetCount)
 				So(err, ShouldBeNil)
 
 				var euis []lorawan.EUI64

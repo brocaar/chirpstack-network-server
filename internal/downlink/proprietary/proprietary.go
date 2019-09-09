@@ -1,9 +1,11 @@
 package proprietary
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/binary"
 
+	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/loraserver/api/common"
@@ -12,6 +14,7 @@ import (
 	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/brocaar/lorawan"
 )
 
@@ -23,6 +26,8 @@ var tasks = []func(*proprietaryContext) error{
 }
 
 type proprietaryContext struct {
+	ctx context.Context
+
 	Token       uint16
 	MACPayload  []byte
 	MIC         lorawan.MIC
@@ -44,8 +49,9 @@ func Setup(conf config.Config) error {
 }
 
 // Handle handles a proprietary downlink.
-func Handle(macPayload []byte, mic lorawan.MIC, gwMACs []lorawan.EUI64, iPol bool, frequency, dr int) error {
-	ctx := proprietaryContext{
+func Handle(ctx context.Context, macPayload []byte, mic lorawan.MIC, gwMACs []lorawan.EUI64, iPol bool, frequency, dr int) error {
+	pctx := proprietaryContext{
+		ctx:         ctx,
 		MACPayload:  macPayload,
 		MIC:         mic,
 		GatewayMACs: gwMACs,
@@ -55,7 +61,7 @@ func Handle(macPayload []byte, mic lorawan.MIC, gwMACs []lorawan.EUI64, iPol boo
 	}
 
 	for _, t := range tasks {
-		if err := t(&ctx); err != nil {
+		if err := t(&pctx); err != nil {
 			return err
 		}
 	}
@@ -79,6 +85,13 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 		txPower = downlinkTXPower
 	} else {
 		txPower = band.Band().GetDownlinkTXPower(ctx.Frequency)
+	}
+
+	var downID uuid.UUID
+	if ctxID := ctx.ctx.Value(logging.ContextIDKey); ctxID != nil {
+		if id, ok := ctxID.(uuid.UUID); ok {
+			downID = id
+		}
 	}
 
 	phy := lorawan.PHYPayload{
@@ -121,6 +134,7 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 
 		if err := gateway.Backend().SendTXPacket(gw.DownlinkFrame{
 			Token:      uint32(ctx.Token),
+			DownlinkId: downID[:],
 			TxInfo:     &txInfo,
 			PhyPayload: phyB,
 		}); err != nil {

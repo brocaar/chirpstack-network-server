@@ -1,6 +1,7 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -9,7 +10,7 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-func handleDeviceModeInd(ds *storage.DeviceSession, block storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
+func handleDeviceModeInd(ctx context.Context, ds *storage.DeviceSession, block storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 	if len(block.MACCommands) != 1 {
 		return nil, errors.New("exactly 1 mac-command is expected")
 	}
@@ -19,7 +20,7 @@ func handleDeviceModeInd(ds *storage.DeviceSession, block storage.MACCommandBloc
 		return nil, fmt.Errorf("expected *lorawan.DeviceModeIntPayload, got: %T", block.MACCommands[0].Payload)
 	}
 
-	d, err := storage.GetDevice(storage.DB(), ds.DevEUI)
+	d, err := storage.GetDevice(ctx, storage.DB(), ds.DevEUI)
 	if err != nil {
 		return nil, errors.Wrap(err, "get device error")
 	}
@@ -33,7 +34,7 @@ func handleDeviceModeInd(ds *storage.DeviceSession, block storage.MACCommandBloc
 		return nil, fmt.Errorf("unexpected device mode: %s", pl.Class)
 	}
 
-	if err := storage.UpdateDevice(storage.DB(), &d); err != nil {
+	if err := storage.UpdateDevice(ctx, storage.DB(), &d); err != nil {
 		return nil, errors.Wrap(err, "update device error")
 	}
 

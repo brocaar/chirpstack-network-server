@@ -28,7 +28,7 @@ type FrameLog struct {
 }
 
 // LogUplinkFrameForGateways logs the given frame to all the gateway pub-sub keys.
-func LogUplinkFrameForGateways(p *redis.Pool, uplinkFrameSet gw.UplinkFrameSet) error {
+func LogUplinkFrameForGateways(ctx context.Context, p *redis.Pool, uplinkFrameSet gw.UplinkFrameSet) error {
 	c := p.Get()
 	defer c.Close()
 
@@ -60,7 +60,7 @@ func LogUplinkFrameForGateways(p *redis.Pool, uplinkFrameSet gw.UplinkFrameSet) 
 }
 
 // LogDownlinkFrameForGateway logs the given frame to the gateway pub-sub key.
-func LogDownlinkFrameForGateway(p *redis.Pool, frame gw.DownlinkFrame) error {
+func LogDownlinkFrameForGateway(ctx context.Context, p *redis.Pool, frame gw.DownlinkFrame) error {
 	var id lorawan.EUI64
 	copy(id[:], frame.TxInfo.GatewayId)
 
@@ -82,7 +82,7 @@ func LogDownlinkFrameForGateway(p *redis.Pool, frame gw.DownlinkFrame) error {
 }
 
 // LogDownlinkFrameForDevEUI logs the given frame to the device pub-sub key.
-func LogDownlinkFrameForDevEUI(p *redis.Pool, devEUI lorawan.EUI64, frame gw.DownlinkFrame) error {
+func LogDownlinkFrameForDevEUI(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, frame gw.DownlinkFrame) error {
 	c := p.Get()
 	defer c.Close()
 
@@ -101,7 +101,7 @@ func LogDownlinkFrameForDevEUI(p *redis.Pool, devEUI lorawan.EUI64, frame gw.Dow
 }
 
 // LogUplinkFrameForDevEUI logs the given frame to the pub-sub key of the given DevEUI.
-func LogUplinkFrameForDevEUI(p *redis.Pool, devEUI lorawan.EUI64, frame gw.UplinkFrameSet) error {
+func LogUplinkFrameForDevEUI(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, frame gw.UplinkFrameSet) error {
 	c := p.Get()
 	defer c.Close()
 

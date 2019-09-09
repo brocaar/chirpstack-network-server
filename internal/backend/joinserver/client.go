@@ -2,6 +2,7 @@ package joinserver
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -17,8 +18,8 @@ import (
 
 // Client defines the join-server client interface.
 type Client interface {
-	JoinReq(pl backend.JoinReqPayload) (backend.JoinAnsPayload, error)
-	RejoinReq(pl backend.RejoinReqPayload) (backend.RejoinAnsPayload, error)
+	JoinReq(ctx context.Context, pl backend.JoinReqPayload) (backend.JoinAnsPayload, error)
+	RejoinReq(ctx context.Context, pl backend.RejoinReqPayload) (backend.RejoinAnsPayload, error)
 }
 
 type client struct {
@@ -27,7 +28,7 @@ type client struct {
 }
 
 // JoinReq issues a join-request.
-func (c *client) JoinReq(pl backend.JoinReqPayload) (backend.JoinAnsPayload, error) {
+func (c *client) JoinReq(ctx context.Context, pl backend.JoinReqPayload) (backend.JoinAnsPayload, error) {
 	var ans backend.JoinAnsPayload
 
 	b, err := json.Marshal(pl)
@@ -54,7 +55,7 @@ func (c *client) JoinReq(pl backend.JoinReqPayload) (backend.JoinAnsPayload, err
 }
 
 // RejoinReq issues a rejoin-request.
-func (c *client) RejoinReq(pl backend.RejoinReqPayload) (backend.RejoinAnsPayload, error) {
+func (c *client) RejoinReq(ctx context.Context, pl backend.RejoinReqPayload) (backend.RejoinAnsPayload, error) {
 	var ans backend.RejoinAnsPayload
 
 	b, err := json.Marshal(pl)

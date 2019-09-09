@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -11,14 +12,15 @@ import (
 
 func (ts *StorageTestSuite) TestDevice() {
 	assert := require.New(ts.T())
+	ctx := context.Background()
 
 	sp := ServiceProfile{}
 	dp := DeviceProfile{}
 	rp := RoutingProfile{}
 
-	assert.Nil(CreateServiceProfile(ts.Tx(), &sp))
-	assert.Nil(CreateDeviceProfile(ts.Tx(), &dp))
-	assert.Nil(CreateRoutingProfile(ts.Tx(), &rp))
+	assert.Nil(CreateServiceProfile(context.Background(), ts.Tx(), &sp))
+	assert.Nil(CreateDeviceProfile(context.Background(), ts.Tx(), &dp))
+	assert.Nil(CreateRoutingProfile(context.Background(), ts.Tx(), &rp))
 
 	ts.T().Run("Create", func(t *testing.T) {
 		assert := require.New(t)
@@ -33,13 +35,13 @@ func (ts *StorageTestSuite) TestDevice() {
 			Mode:              DeviceModeB,
 		}
 
-		assert.Nil(CreateDevice(ts.Tx(), &d))
+		assert.Nil(CreateDevice(context.Background(), ts.Tx(), &d))
 
 		d.CreatedAt = d.CreatedAt.Round(time.Second).UTC()
 		d.UpdatedAt = d.UpdatedAt.Round(time.Second).UTC()
 
 		t.Run("Get", func(t *testing.T) {
-			dGet, err := GetDevice(ts.Tx(), d.DevEUI)
+			dGet, err := GetDevice(ctx, ts.Tx(), d.DevEUI)
 			assert.Nil(err)
 
 			dGet.CreatedAt = dGet.CreatedAt.Round(time.Second).UTC()
@@ -55,9 +57,9 @@ func (ts *StorageTestSuite) TestDevice() {
 			dpNew := DeviceProfile{}
 			rpNew := RoutingProfile{}
 
-			assert.Nil(CreateServiceProfile(ts.Tx(), &spNew))
-			assert.Nil(CreateDeviceProfile(ts.Tx(), &dpNew))
-			assert.Nil(CreateRoutingProfile(ts.Tx(), &rpNew))
+			assert.Nil(CreateServiceProfile(context.Background(), ts.Tx(), &spNew))
+			assert.Nil(CreateDeviceProfile(context.Background(), ts.Tx(), &dpNew))
+			assert.Nil(CreateRoutingProfile(context.Background(), ts.Tx(), &rpNew))
 
 			d.ServiceProfileID = spNew.ID
 			d.DeviceProfileID = dpNew.ID
@@ -66,10 +68,10 @@ func (ts *StorageTestSuite) TestDevice() {
 			d.ReferenceAltitude = 6.7
 			d.Mode = DeviceModeC
 
-			assert.Nil(UpdateDevice(ts.Tx(), &d))
+			assert.Nil(UpdateDevice(ctx, ts.Tx(), &d))
 			d.UpdatedAt = d.UpdatedAt.Round(time.Second).UTC()
 
-			dGet, err := GetDevice(ts.Tx(), d.DevEUI)
+			dGet, err := GetDevice(ctx, ts.Tx(), d.DevEUI)
 			assert.Nil(err)
 
 			dGet.CreatedAt = dGet.CreatedAt.Round(time.Second).UTC()
@@ -81,9 +83,9 @@ func (ts *StorageTestSuite) TestDevice() {
 		t.Run("Delete", func(t *testing.T) {
 			assert := require.New(t)
 
-			assert.Nil(DeleteDevice(ts.Tx(), d.DevEUI))
-			assert.Equal(ErrDoesNotExist, DeleteDevice(ts.Tx(), d.DevEUI))
-			_, err := GetDevice(ts.Tx(), d.DevEUI)
+			assert.Nil(DeleteDevice(context.Background(), ts.Tx(), d.DevEUI))
+			assert.Equal(ErrDoesNotExist, DeleteDevice(context.Background(), ts.Tx(), d.DevEUI))
+			_, err := GetDevice(ctx, ts.Tx(), d.DevEUI)
 			assert.Equal(ErrDoesNotExist, err)
 		})
 	})
@@ -91,14 +93,15 @@ func (ts *StorageTestSuite) TestDevice() {
 
 func (ts *StorageTestSuite) TestDeviceActivation() {
 	assert := require.New(ts.T())
+	ctx := context.Background()
 
 	sp := ServiceProfile{}
 	dp := DeviceProfile{}
 	rp := RoutingProfile{}
 
-	assert.Nil(CreateServiceProfile(ts.Tx(), &sp))
-	assert.Nil(CreateDeviceProfile(ts.Tx(), &dp))
-	assert.Nil(CreateRoutingProfile(ts.Tx(), &rp))
+	assert.Nil(CreateServiceProfile(context.Background(), ts.Tx(), &sp))
+	assert.Nil(CreateDeviceProfile(context.Background(), ts.Tx(), &dp))
+	assert.Nil(CreateRoutingProfile(context.Background(), ts.Tx(), &rp))
 
 	d := Device{
 		DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
@@ -107,7 +110,7 @@ func (ts *StorageTestSuite) TestDeviceActivation() {
 		RoutingProfileID: rp.ID,
 		SkipFCntCheck:    true,
 	}
-	assert.Nil(CreateDevice(ts.Tx(), &d))
+	assert.Nil(CreateDevice(context.Background(), ts.Tx(), &d))
 
 	ts.T().Run("Create", func(t *testing.T) {
 		assert := require.New(t)
@@ -124,7 +127,7 @@ func (ts *StorageTestSuite) TestDeviceActivation() {
 			JoinReqType: lorawan.JoinRequestType,
 		}
 
-		assert.Nil(CreateDeviceActivation(ts.Tx(), &da))
+		assert.Nil(CreateDeviceActivation(ctx, ts.Tx(), &da))
 
 		t.Run("GetLastDeviceActivationForDevEUI", func(t *testing.T) {
 			assert := require.New(t)
@@ -139,10 +142,10 @@ func (ts *StorageTestSuite) TestDeviceActivation() {
 				DevNonce:    513,
 				JoinReqType: lorawan.JoinRequestType,
 			}
-			assert.Nil(CreateDeviceActivation(ts.Tx(), &da2))
+			assert.Nil(CreateDeviceActivation(ctx, ts.Tx(), &da2))
 			da2.CreatedAt = da2.CreatedAt.Round(time.Second).UTC()
 
-			daGet, err := GetLastDeviceActivationForDevEUI(ts.Tx(), d.DevEUI)
+			daGet, err := GetLastDeviceActivationForDevEUI(context.Background(), ts.Tx(), d.DevEUI)
 			assert.Nil(err)
 			daGet.CreatedAt = daGet.CreatedAt.Round(time.Second).UTC()
 
@@ -151,12 +154,12 @@ func (ts *StorageTestSuite) TestDeviceActivation() {
 
 		t.Run("ValidateDevNonce for used dev-nonce errors", func(t *testing.T) {
 			assert := require.New(t)
-			assert.Equal(ErrAlreadyExists, ValidateDevNonce(ts.Tx(), joinEUI, d.DevEUI, da.DevNonce, lorawan.JoinRequestType))
+			assert.Equal(ErrAlreadyExists, ValidateDevNonce(ctx, ts.Tx(), joinEUI, d.DevEUI, da.DevNonce, lorawan.JoinRequestType))
 		})
 
 		t.Run("ValidateDevNonce for unused dev-nonce does not error", func(t *testing.T) {
 			assert := require.New(t)
-			assert.Equal(ErrAlreadyExists, ValidateDevNonce(ts.Tx(), joinEUI, d.DevEUI, lorawan.DevNonce(513), lorawan.JoinRequestType))
+			assert.Equal(ErrAlreadyExists, ValidateDevNonce(ctx, ts.Tx(), joinEUI, d.DevEUI, lorawan.DevNonce(513), lorawan.JoinRequestType))
 		})
 	})
 

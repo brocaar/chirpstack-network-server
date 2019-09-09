@@ -1,12 +1,14 @@
 package gateway
 
 import (
+	"context"
 	"crypto/aes"
 	"encoding/binary"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
@@ -18,6 +20,7 @@ import (
 	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
@@ -44,11 +47,19 @@ func (s *StatsHandler) Start() error {
 				s.wg.Add(1)
 				defer s.wg.Done()
 
-				if err := updateGatewayState(storage.DB(), storage.RedisPool(), stats); err != nil {
+				var statsID uuid.UUID
+				if stats.StatsId != nil {
+					copy(statsID[:], stats.StatsId)
+				}
+
+				ctx := context.Background()
+				ctx = context.WithValue(ctx, logging.ContextIDKey, statsID)
+
+				if err := updateGatewayState(ctx, storage.DB(), storage.RedisPool(), stats); err != nil {
 					log.WithError(err).Error("update gateway state error")
 				}
 
-				if err := handleGatewayStats(storage.RedisPool(), stats); err != nil {
+				if err := handleGatewayStats(ctx, storage.RedisPool(), stats); err != nil {
 					log.WithError(err).Error("handle gateway stats error")
 				}
 			}(stats)
@@ -64,7 +75,7 @@ func (s *StatsHandler) Stop() error {
 	return nil
 }
 
-func handleGatewayStats(p *redis.Pool, stats gw.GatewayStats) error {
+func handleGatewayStats(ctx context.Context, p *redis.Pool, stats gw.GatewayStats) error {
 	gatewayID := helpers.GetGatewayID(&stats)
 
 	ts, err := ptypes.Timestamp(stats.Time)
@@ -82,7 +93,7 @@ func handleGatewayStats(p *redis.Pool, stats gw.GatewayStats) error {
 		},
 	}
 
-	err = storage.SaveMetrics(p, "gw:"+gatewayID.String(), metrics)
+	err = storage.SaveMetrics(ctx, p, "gw:"+gatewayID.String(), metrics)
 	if err != nil {
 		return errors.Wrap(err, "save metrics error")
 	}
@@ -90,9 +101,9 @@ func handleGatewayStats(p *redis.Pool, stats gw.GatewayStats) error {
 	return nil
 }
 
-func updateGatewayState(db sqlx.Ext, p *redis.Pool, stats gw.GatewayStats) error {
+func updateGatewayState(ctx context.Context, db sqlx.Ext, p *redis.Pool, stats gw.GatewayStats) error {
 	gatewayID := helpers.GetGatewayID(&stats)
-	gw, err := storage.GetAndCacheGateway(db, p, gatewayID)
+	gw, err := storage.GetAndCacheGateway(ctx, db, p, gatewayID)
 	if err != nil {
 		return errors.Wrap(err, "get gateway error")
 	}
@@ -110,15 +121,15 @@ func updateGatewayState(db sqlx.Ext, p *redis.Pool, stats gw.GatewayStats) error
 		gw.Altitude = stats.Location.Altitude
 	}
 
-	if err := storage.UpdateGateway(db, &gw); err != nil {
+	if err := storage.UpdateGateway(ctx, db, &gw); err != nil {
 		return errors.Wrap(err, "update gateway error")
 	}
 
-	if err := storage.FlushGatewayCache(p, gatewayID); err != nil {
+	if err := storage.FlushGatewayCache(ctx, p, gatewayID); err != nil {
 		return errors.Wrap(err, "flush gateway cache error")
 	}
 
-	if err := handleConfigurationUpdate(db, gw, stats.ConfigVersion); err != nil {
+	if err := handleConfigurationUpdate(ctx, db, gw, stats.ConfigVersion); err != nil {
 		return errors.Wrap(err, "handle gateway stats error")
 	}
 
@@ -130,12 +141,13 @@ func updateGatewayState(db sqlx.Ext, p *redis.Pool, stats gw.GatewayStats) error
 //   - add the gateway location
 //   - set the FPGA id if available
 //   - decrypt the fine-timestamp (if available and AES key is set)
-func UpdateMetaDataInRxInfoSet(db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.UplinkRXInfo) error {
+func UpdateMetaDataInRxInfoSet(ctx context.Context, db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.UplinkRXInfo) error {
 	for i := range rxInfo {
 		id := helpers.GetGatewayID(rxInfo[i])
-		g, err := storage.GetAndCacheGateway(db, p, id)
+		g, err := storage.GetAndCacheGateway(ctx, db, p, id)
 		if err != nil {
 			log.WithFields(log.Fields{
+				"ctx_id":     ctx.Value(logging.ContextIDKey),
 				"gateway_id": id,
 			}).WithError(err).Error("get gateway error")
 			continue
@@ -160,6 +172,7 @@ func UpdateMetaDataInRxInfoSet(db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.Upli
 			tsInfo := rxInfo[i].GetEncryptedFineTimestamp()
 			if tsInfo == nil {
 				log.WithFields(log.Fields{
+					"ctx_id":     ctx.Value(logging.ContextIDKey),
 					"gateway_id": id,
 				}).Error("encrypted_fine_timestamp must not be nil")
 				continue
@@ -175,6 +188,7 @@ func UpdateMetaDataInRxInfoSet(db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.Upli
 			tsInfo := rxInfo[i].GetEncryptedFineTimestamp()
 			if tsInfo == nil {
 				log.WithFields(log.Fields{
+					"ctx_id":     ctx.Value(logging.ContextIDKey),
 					"gateway_id": id,
 				}).Error("encrypted_fine_timestamp must not be nil")
 				continue
@@ -182,6 +196,7 @@ func UpdateMetaDataInRxInfoSet(db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.Upli
 
 			if rxInfo[i].Time == nil {
 				log.WithFields(log.Fields{
+					"ctx_id":     ctx.Value(logging.ContextIDKey),
 					"gateway_id": id,
 				}).Error("time must not be nil")
 				continue
@@ -190,6 +205,7 @@ func UpdateMetaDataInRxInfoSet(db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.Upli
 			rxTime, err := ptypes.Timestamp(rxInfo[i].Time)
 			if err != nil {
 				log.WithFields(log.Fields{
+					"ctx_id":     ctx.Value(logging.ContextIDKey),
 					"gateway_id": id,
 				}).WithError(err).Error("get timestamp error")
 			}
@@ -197,6 +213,7 @@ func UpdateMetaDataInRxInfoSet(db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.Upli
 			plainTS, err := decryptFineTimestamp(*board.FineTimestampKey, rxTime, *tsInfo)
 			if err != nil {
 				log.WithFields(log.Fields{
+					"ctx_id":     ctx.Value(logging.ContextIDKey),
 					"gateway_id": id,
 				}).WithError(err).Error("decrypt fine-timestamp error")
 				continue
@@ -244,13 +261,16 @@ func decryptFineTimestamp(key lorawan.AES128Key, rxTime time.Time, ts gw.Encrypt
 	return plainTS, nil
 }
 
-func handleConfigurationUpdate(db sqlx.Queryer, g storage.Gateway, currentVersion string) error {
+func handleConfigurationUpdate(ctx context.Context, db sqlx.Queryer, g storage.Gateway, currentVersion string) error {
 	if g.GatewayProfileID == nil {
-		log.WithField("gateway_id", g.GatewayID).Debug("gateway-profile is not set, skipping configuration update")
+		log.WithFields(log.Fields{
+			"gateway_id": g.GatewayID,
+			"ctx_id":     ctx.Value(logging.ContextIDKey),
+		}).Debug("gateway-profile is not set, skipping configuration update")
 		return nil
 	}
 
-	gwProfile, err := storage.GetGatewayProfile(db, *g.GatewayProfileID)
+	gwProfile, err := storage.GetGatewayProfile(ctx, db, *g.GatewayProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get gateway-profile error")
 	}
@@ -259,6 +279,7 @@ func handleConfigurationUpdate(db sqlx.Queryer, g storage.Gateway, currentVersio
 		log.WithFields(log.Fields{
 			"gateway_id": g.GatewayID,
 			"version":    currentVersion,
+			"ctx_id":     ctx.Value(logging.ContextIDKey),
 		}).Debug("gateway configuration is up-to-date")
 		return nil
 	}

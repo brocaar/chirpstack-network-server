@@ -1,16 +1,16 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
-
-	log "github.com/sirupsen/logrus"
-
-	"github.com/spf13/cobra"
 )
 
 var printDSCmd = &cobra.Command{
@@ -31,7 +31,7 @@ var printDSCmd = &cobra.Command{
 			log.WithError(err).Fatal("decode DevEUI error")
 		}
 
-		ds, err := storage.GetDeviceSession(storage.RedisPool(), devEUI)
+		ds, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), devEUI)
 		if err != nil {
 			log.WithError(err).Fatal("get device-session error")
 		}

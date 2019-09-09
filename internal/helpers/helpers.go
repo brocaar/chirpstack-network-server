@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/brocaar/lorawan"
+	"github.com/gofrs/uuid"
 
 	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
@@ -16,6 +17,11 @@ const defaultCodeRate = "4/5"
 // GatewayIDGetter provides a GatewayId getter interface.
 type GatewayIDGetter interface {
 	GetGatewayId() []byte
+}
+
+// DownlinkIDGetter provides a DownlinkId getter interface.
+type DownlinkIDGetter interface {
+	GetDownlinkId() []byte
 }
 
 // DataRateGetter provides an interface for getting the data-rate.
@@ -96,6 +102,33 @@ func GetGatewayID(v GatewayIDGetter) lorawan.EUI64 {
 	var gatewayID lorawan.EUI64
 	copy(gatewayID[:], v.GetGatewayId())
 	return gatewayID
+}
+
+// GetUplinkID returns the typed message ID.
+func GetUplinkID(v *gw.UplinkRXInfo) uuid.UUID {
+	var msgID uuid.UUID
+	if v != nil {
+		copy(msgID[:], v.GetUplinkId())
+	}
+	return msgID
+}
+
+// GetStatsID returns the typed stats ID.
+func GetStatsID(v *gw.GatewayStats) uuid.UUID {
+	var statsID uuid.UUID
+	if v != nil {
+		copy(statsID[:], v.GetStatsId())
+	}
+	return statsID
+}
+
+// GetDownlinkID returns the types downlink ID.
+func GetDownlinkID(v DownlinkIDGetter) uuid.UUID {
+	var downlinkID uuid.UUID
+	if b := v.GetDownlinkId(); b != nil {
+		copy(downlinkID[:], b)
+	}
+	return downlinkID
 }
 
 // GetDataRateIndex returns the data-rate index.

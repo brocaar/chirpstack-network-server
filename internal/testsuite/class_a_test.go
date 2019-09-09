@@ -1,6 +1,7 @@
 package testsuite
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -958,11 +959,11 @@ func (ts *ClassATestSuite) TestLW10MACCommands() {
 				}
 
 				ts.ServiceProfile.DevStatusReqFreq = 1
-				return storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile)
+				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
 			},
 			AfterFunc: func(tst *ClassATest) error {
 				ts.ServiceProfile.DevStatusReqFreq = 0
-				return storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile)
+				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
 			},
 			DeviceSession: *ts.DeviceSession,
 			TXInfo:        ts.TXInfo,
@@ -1031,11 +1032,11 @@ func (ts *ClassATestSuite) TestLW10MACCommands() {
 				}
 
 				ts.ServiceProfile.DevStatusReqFreq = 1
-				return storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile)
+				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
 			},
 			AfterFunc: func(tst *ClassATest) error {
 				ts.ServiceProfile.DevStatusReqFreq = 0
-				return storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile)
+				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
 			},
 			DeviceSession: *ts.DeviceSession,
 			DeviceQueueItems: []storage.DeviceQueueItem{
@@ -1484,7 +1485,7 @@ func (ts *ClassATestSuite) TestLW10AddGWMetadata() {
 	})
 
 	ts.ServiceProfile.AddGWMetadata = false
-	assert.NoError(storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile))
+	assert.NoError(storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile))
 
 	fPortOne := uint8(1)
 
@@ -1533,7 +1534,7 @@ func (ts *ClassATestSuite) TestLW10AddGWMetadata() {
 	}
 
 	ts.ServiceProfile.AddGWMetadata = true
-	assert.NoError(storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile))
+	assert.NoError(storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile))
 }
 
 func (ts *ClassATestSuite) TestLW11DeviceQueue() {
@@ -2010,11 +2011,11 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 			Name: "unconfirmed uplink data + one unconfirmed downlink payload in queue (exactly max size for dr 0) + one mac command",
 			BeforeFunc: func(tst *ClassATest) error {
 				ts.ServiceProfile.DevStatusReqFreq = 1
-				return storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile)
+				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
 			},
 			AfterFunc: func(tst *ClassATest) error {
 				ts.ServiceProfile.DevStatusReqFreq = 0
-				return storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile)
+				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
 			},
 			DeviceSession: *ts.DeviceSession,
 			TXInfo:        ts.TXInfo,
@@ -2708,7 +2709,7 @@ func (ts *ClassATestSuite) TestLW10DeviceStatusRequest() {
 	ts.ServiceProfile.DevStatusReqFreq = 24
 	ts.ServiceProfile.ReportDevStatusBattery = true
 	ts.ServiceProfile.ReportDevStatusMargin = true
-	assert.NoError(storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile))
+	assert.NoError(storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile))
 
 	fPortOne := uint8(1)
 
@@ -2893,7 +2894,7 @@ func (ts *ClassATestSuite) TestLW10DeviceStatusRequest() {
 	ts.ServiceProfile.DevStatusReqFreq = 0
 	ts.ServiceProfile.ReportDevStatusBattery = false
 	ts.ServiceProfile.ReportDevStatusMargin = false
-	assert.NoError(storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile))
+	assert.NoError(storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile))
 }
 
 func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
@@ -3325,7 +3326,7 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 				downlink.Setup(conf)
 
 				ts.ServiceProfile.DevStatusReqFreq = 1
-				if err := storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile); err != nil {
+				if err := storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile); err != nil {
 					return err
 				}
 
@@ -3333,7 +3334,7 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 			},
 			AfterFunc: func(tst *ClassATest) error {
 				ts.ServiceProfile.DevStatusReqFreq = 0
-				return storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile)
+				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
 			},
 			DeviceQueueItems: []storage.DeviceQueueItem{
 				{DevEUI: ts.Device.DevEUI, FRMPayload: make([]byte, 51), FPort: 1, FCnt: 4},

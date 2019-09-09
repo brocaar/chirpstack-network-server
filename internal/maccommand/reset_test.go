@@ -1,6 +1,7 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -99,7 +100,7 @@ func TestReset(t *testing.T) {
 					},
 				}
 
-				out, err := handleResetInd(&test.DeviceSession, test.DeviceProfile, req)
+				out, err := handleResetInd(context.Background(), &test.DeviceSession, test.DeviceProfile, req)
 				So(err, ShouldBeNil)
 				So(out, ShouldHaveLength, 1)
 				So(out[0], ShouldResemble, test.ExpectedMACCommandBlock)

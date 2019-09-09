@@ -1,6 +1,7 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/brocaar/loraserver/api/as"
@@ -10,36 +11,36 @@ import (
 )
 
 // Handle handles a MACCommand sent by a node.
-func Handle(ds *storage.DeviceSession, dp storage.DeviceProfile, sp storage.ServiceProfile, asClient as.ApplicationServerServiceClient, block storage.MACCommandBlock, pending *storage.MACCommandBlock, rxPacket models.RXPacket) ([]storage.MACCommandBlock, error) {
+func Handle(ctx context.Context, ds *storage.DeviceSession, dp storage.DeviceProfile, sp storage.ServiceProfile, asClient as.ApplicationServerServiceClient, block storage.MACCommandBlock, pending *storage.MACCommandBlock, rxPacket models.RXPacket) ([]storage.MACCommandBlock, error) {
 	switch block.CID {
 	case lorawan.LinkADRAns:
-		return handleLinkADRAns(ds, block, pending)
+		return handleLinkADRAns(ctx, ds, block, pending)
 	case lorawan.LinkCheckReq:
-		return handleLinkCheckReq(ds, rxPacket)
+		return handleLinkCheckReq(ctx, ds, rxPacket)
 	case lorawan.DevStatusAns:
-		return handleDevStatusAns(ds, sp, asClient, block)
+		return handleDevStatusAns(ctx, ds, sp, asClient, block)
 	case lorawan.PingSlotInfoReq:
-		return handlePingSlotInfoReq(ds, block)
+		return handlePingSlotInfoReq(ctx, ds, block)
 	case lorawan.PingSlotChannelAns:
-		return handlePingSlotChannelAns(ds, block, pending)
+		return handlePingSlotChannelAns(ctx, ds, block, pending)
 	case lorawan.DeviceTimeReq:
-		return handleDeviceTimeReq(ds, rxPacket)
+		return handleDeviceTimeReq(ctx, ds, rxPacket)
 	case lorawan.NewChannelAns:
-		return handleNewChannelAns(ds, block, pending)
+		return handleNewChannelAns(ctx, ds, block, pending)
 	case lorawan.RXParamSetupAns:
-		return handleRXParamSetupAns(ds, block, pending)
+		return handleRXParamSetupAns(ctx, ds, block, pending)
 	case lorawan.TXParamSetupAns:
-		return handleTXParamSetupAns(ds, block, pending)
+		return handleTXParamSetupAns(ctx, ds, block, pending)
 	case lorawan.RXTimingSetupAns:
-		return handleRXTimingSetupAns(ds, block, pending)
+		return handleRXTimingSetupAns(ctx, ds, block, pending)
 	case lorawan.RekeyInd:
-		return handleRekeyInd(ds, block)
+		return handleRekeyInd(ctx, ds, block)
 	case lorawan.ResetInd:
-		return handleResetInd(ds, dp, block)
+		return handleResetInd(ctx, ds, dp, block)
 	case lorawan.RejoinParamSetupAns:
-		return handleRejoinParamSetupAns(ds, block, pending)
+		return handleRejoinParamSetupAns(ctx, ds, block, pending)
 	case lorawan.DeviceModeInd:
-		return handleDeviceModeInd(ds, block)
+		return handleDeviceModeInd(ctx, ds, block)
 	default:
 		return nil, fmt.Errorf("undefined CID %d", block.CID)
 	}

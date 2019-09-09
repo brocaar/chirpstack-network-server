@@ -242,7 +242,7 @@ func (ts *IntegrationTestSuite) CreateDeviceSession(ds storage.DeviceSession) {
 		ds.DeviceProfileID = ts.DeviceProfile.ID
 	}
 
-	ts.Nil(storage.SaveDeviceSession(storage.RedisPool(), ds))
+	ts.Nil(storage.SaveDeviceSession(context.Background(), storage.RedisPool(), ds))
 	ts.DeviceSession = &ds
 }
 
@@ -269,7 +269,7 @@ func (ts *IntegrationTestSuite) CreateDevice(d storage.Device) {
 		d.RoutingProfileID = ts.RoutingProfile.ID
 	}
 
-	ts.Nil(storage.CreateDevice(storage.DB(), &d))
+	ts.Nil(storage.CreateDevice(context.Background(), storage.DB(), &d))
 	ts.Device = &d
 }
 
@@ -289,31 +289,31 @@ func (ts *IntegrationTestSuite) CreateMulticastGroup(mg storage.MulticastGroup) 
 		mg.ServiceProfileID = ts.ServiceProfile.ID
 	}
 
-	ts.Nil(storage.CreateMulticastGroup(storage.DB(), &mg))
+	ts.Nil(storage.CreateMulticastGroup(context.Background(), storage.DB(), &mg))
 	ts.MulticastGroup = &mg
 }
 
 // CreateDeviceProfile creates the given device-profile.
 func (ts *IntegrationTestSuite) CreateDeviceProfile(dp storage.DeviceProfile) {
-	ts.Require().Nil(storage.CreateDeviceProfile(storage.DB(), &dp))
+	ts.Require().Nil(storage.CreateDeviceProfile(context.Background(), storage.DB(), &dp))
 	ts.DeviceProfile = &dp
 }
 
 // CreateServiceProfile creates the given service-profile.
 func (ts *IntegrationTestSuite) CreateServiceProfile(sp storage.ServiceProfile) {
-	ts.Require().Nil(storage.CreateServiceProfile(storage.DB(), &sp))
+	ts.Require().Nil(storage.CreateServiceProfile(context.Background(), storage.DB(), &sp))
 	ts.ServiceProfile = &sp
 }
 
 // CreateRoutingProfile creates the given routing-profile.
 func (ts *IntegrationTestSuite) CreateRoutingProfile(rp storage.RoutingProfile) {
-	ts.Require().Nil(storage.CreateRoutingProfile(storage.DB(), &rp))
+	ts.Require().Nil(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp))
 	ts.RoutingProfile = &rp
 }
 
 // CreateGateway creates the given gateway.
 func (ts *IntegrationTestSuite) CreateGateway(gw storage.Gateway) {
-	ts.Require().Nil(storage.CreateGateway(storage.DB(), &gw))
+	ts.Require().Nil(storage.CreateGateway(context.Background(), storage.DB(), &gw))
 	ts.Gateway = &gw
 }
 
@@ -399,17 +399,17 @@ func (ts *IntegrationTestSuite) AssertDownlinkTest(t *testing.T, tst DownlinkTes
 	ts.CreateDeviceSession(tst.DeviceSession)
 
 	// add device-queue items
-	assert.NoError(storage.FlushDeviceQueueForDevEUI(storage.DB(), tst.DeviceSession.DevEUI))
+	assert.NoError(storage.FlushDeviceQueueForDevEUI(context.Background(), storage.DB(), tst.DeviceSession.DevEUI))
 	for _, qi := range tst.DeviceQueueItems {
-		assert.NoError(storage.CreateDeviceQueueItem(storage.DB(), &qi))
+		assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &qi))
 	}
 
 	// run queue scheduler
-	assert.NoError(downlink.ScheduleDeviceQueueBatch(1))
+	assert.NoError(downlink.ScheduleDeviceQueueBatch(context.Background(), 1))
 
 	// refresh device-session
 	var err error
-	ds, err := storage.GetDeviceSession(storage.RedisPool(), ts.DeviceSession.DevEUI)
+	ds, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), ts.DeviceSession.DevEUI)
 	assert.NoError(err)
 	ts.DeviceSession = &ds
 
@@ -430,16 +430,16 @@ func (ts *IntegrationTestSuite) AssertMulticastTest(t *testing.T, tst MulticastT
 	ts.FlushClients()
 
 	// overwrite multicast-group to deal with frame-counter increments
-	assert.NoError(storage.UpdateMulticastGroup(storage.DB(), &tst.MulticastGroup))
+	assert.NoError(storage.UpdateMulticastGroup(context.Background(), storage.DB(), &tst.MulticastGroup))
 
 	// add multicast queue items
-	assert.NoError(storage.FlushMulticastQueueForMulticastGroup(storage.DB(), ts.MulticastGroup.ID))
+	assert.NoError(storage.FlushMulticastQueueForMulticastGroup(context.Background(), storage.DB(), ts.MulticastGroup.ID))
 	for _, qi := range tst.MulticastQueueItems {
-		assert.NoError(storage.CreateMulticastQueueItem(storage.DB(), &qi))
+		assert.NoError(storage.CreateMulticastQueueItem(context.Background(), storage.DB(), &qi))
 	}
 
 	// run multicast scheduler
-	assert.NoError(downlink.ScheduleMulticastQueueBatch(1))
+	assert.NoError(downlink.ScheduleMulticastQueueBatch(context.Background(), 1))
 
 	// run assertions
 	for _, a := range tst.Assert {
@@ -469,21 +469,21 @@ func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 	ts.JSClient.JoinReqError = tst.JoinServerJoinAnsPayloadError
 
 	// create device-activations
-	assert.NoError(storage.DeleteDeviceActivationsForDevice(storage.DB(), ts.Device.DevEUI))
+	assert.NoError(storage.DeleteDeviceActivationsForDevice(context.Background(), storage.DB(), ts.Device.DevEUI))
 	for _, da := range tst.DeviceActivations {
-		assert.NoError(storage.CreateDeviceActivation(storage.DB(), &da))
+		assert.NoError(storage.CreateDeviceActivation(context.Background(), storage.DB(), &da))
 	}
 
 	// create device-queue items
-	assert.NoError(storage.FlushDeviceQueueForDevEUI(storage.DB(), ts.Device.DevEUI))
+	assert.NoError(storage.FlushDeviceQueueForDevEUI(context.Background(), storage.DB(), ts.Device.DevEUI))
 	for _, qi := range tst.DeviceQueueItems {
-		assert.NoError(storage.CreateDeviceQueueItem(storage.DB(), &qi))
+		assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &qi))
 	}
 
 	phyB, err := tst.PHYPayload.MarshalBinary()
 	assert.NoError(err)
 
-	err = uplink.HandleRXPacket(gw.UplinkFrame{
+	err = uplink.HandleUplinkFrame(context.Background(), gw.UplinkFrame{
 		RxInfo:     &tst.RXInfo,
 		TxInfo:     &tst.TXInfo,
 		PhyPayload: phyB,
@@ -524,7 +524,7 @@ func (ts *IntegrationTestSuite) AssertRejoinTest(t *testing.T, tst RejoinTest) {
 	phyB, err := tst.PHYPayload.MarshalBinary()
 	assert.NoError(err)
 
-	err = uplink.HandleRXPacket(gw.UplinkFrame{
+	err = uplink.HandleUplinkFrame(context.Background(), gw.UplinkFrame{
 		RxInfo:     &tst.RXInfo,
 		TxInfo:     &tst.TXInfo,
 		PhyPayload: phyB,
@@ -559,19 +559,19 @@ func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
 	ts.CreateDeviceSession(tst.DeviceSession)
 
 	// add device-queue items
-	assert.NoError(storage.FlushDeviceQueueForDevEUI(storage.DB(), tst.DeviceSession.DevEUI))
+	assert.NoError(storage.FlushDeviceQueueForDevEUI(context.Background(), storage.DB(), tst.DeviceSession.DevEUI))
 	for _, qi := range tst.DeviceQueueItems {
-		assert.NoError(storage.CreateDeviceQueueItem(storage.DB(), &qi))
+		assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &qi))
 	}
 
 	// set mac-command queue
 	for _, qi := range tst.MACCommandQueueItems {
-		assert.NoError(storage.CreateMACCommandQueueItem(storage.RedisPool(), ts.Device.DevEUI, qi))
+		assert.NoError(storage.CreateMACCommandQueueItem(context.Background(), storage.RedisPool(), ts.Device.DevEUI, qi))
 	}
 
 	// set pending mac-commands
 	for _, pending := range tst.PendingMACCommands {
-		assert.NoError(storage.SetPendingMACCommand(storage.RedisPool(), ts.Device.DevEUI, pending))
+		assert.NoError(storage.SetPendingMACCommand(context.Background(), storage.RedisPool(), ts.Device.DevEUI, pending))
 	}
 
 	// set mocks
@@ -583,7 +583,7 @@ func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
 	phyB, err := tst.PHYPayload.MarshalBinary()
 	assert.NoError(err)
 
-	err = uplink.HandleRXPacket(gw.UplinkFrame{
+	err = uplink.HandleUplinkFrame(context.Background(), gw.UplinkFrame{
 		RxInfo:     &tst.RXInfo,
 		TxInfo:     &tst.TXInfo,
 		PhyPayload: phyB,
@@ -599,7 +599,7 @@ func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
 	assert.NoError(tst.ExpectedError)
 
 	// refresh device-session
-	ds, err := storage.GetDeviceSession(storage.RedisPool(), ts.DeviceSession.DevEUI)
+	ds, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), ts.DeviceSession.DevEUI)
 	assert.NoError(err)
 	ts.DeviceSession = &ds
 
@@ -636,7 +636,7 @@ func (ts *IntegrationTestSuite) AssertUplinkProprietaryTest(t *testing.T, tst Up
 	phyB, err := tst.PHYPayload.MarshalBinary()
 	assert.NoError(err)
 
-	assert.NoError(uplink.HandleRXPacket(gw.UplinkFrame{
+	assert.NoError(uplink.HandleUplinkFrame(context.Background(), gw.UplinkFrame{
 		PhyPayload: phyB,
 		TxInfo:     &tst.TXInfo,
 		RxInfo:     &tst.RXInfo,
@@ -654,9 +654,9 @@ func (ts *IntegrationTestSuite) AssertDownlinkTXAckTest(t *testing.T, tst Downli
 
 	test.MustFlushRedis(storage.RedisPool())
 
-	assert.NoError(storage.SaveDownlinkFrames(storage.RedisPool(), tst.DevEUI, tst.DownlinkFrames))
+	assert.NoError(storage.SaveDownlinkFrames(context.Background(), storage.RedisPool(), tst.DevEUI, tst.DownlinkFrames))
 
-	err := ack.HandleDownlinkTXAck(tst.DownlinkTXAck)
+	err := ack.HandleDownlinkTXAck(context.Background(), tst.DownlinkTXAck)
 	if err != nil {
 		if tst.ExpectedError == nil {
 			assert.NoError(err)
@@ -687,19 +687,19 @@ func (ts *IntegrationTestSuite) AssertGeolocationTest(t *testing.T, fCnt uint32,
 	}
 
 	ts.DeviceSession.FCntUp = uint32(fCnt)
-	assert.NoError(storage.SaveDeviceSession(storage.RedisPool(), *ts.DeviceSession))
+	assert.NoError(storage.SaveDeviceSession(context.Background(), storage.RedisPool(), *ts.DeviceSession))
 
 	ts.GeoClient.ResolveTDOAResponse = tst.ResolveTDOAResponse
 	ts.GeoClient.ResolveMultiFrameTDOAResponse = tst.ResolveMultiFrameTDOAResponse
 
 	ts.ServiceProfile.NwkGeoLoc = tst.NwkGeoLoc
-	assert.NoError(storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile))
+	assert.NoError(storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile))
 
 	ts.DeviceProfile.GeolocBufferTTL = int(tst.GeolocBufferTTL / time.Second)
 	ts.DeviceProfile.GeolocMinBufferSize = tst.GeolocMinBufferSize
-	assert.NoError(storage.UpdateDeviceProfile(storage.DB(), ts.DeviceProfile))
+	assert.NoError(storage.UpdateDeviceProfile(context.Background(), storage.DB(), ts.DeviceProfile))
 
-	storage.SaveGeolocBuffer(storage.RedisPool(), ts.Device.DevEUI, tst.GeolocBufferItems, tst.GeolocBufferTTL)
+	storage.SaveGeolocBuffer(context.Background(), storage.RedisPool(), ts.Device.DevEUI, tst.GeolocBufferItems, tst.GeolocBufferTTL)
 
 	txInfo := gw.UplinkTXInfo{
 		Frequency: 868100000,
@@ -709,7 +709,7 @@ func (ts *IntegrationTestSuite) AssertGeolocationTest(t *testing.T, fCnt uint32,
 	for j := range tst.RXInfo {
 		uf := ts.GetUplinkFrameForFRMPayload(*tst.RXInfo[j], txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})
 		go func(assert *require.Assertions, uf gw.UplinkFrame) {
-			err := uplink.HandleRXPacket(uf)
+			err := uplink.HandleUplinkFrame(context.Background(), uf)
 			assert.NoError(err)
 		}(assert, uf)
 	}

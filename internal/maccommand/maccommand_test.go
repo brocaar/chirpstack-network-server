@@ -1,6 +1,7 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -14,6 +15,7 @@ import (
 
 func TestHandleDownlink(t *testing.T) {
 	conf := test.GetConfig()
+	ctx := context.Background()
 
 	Convey("Given a clean Redis database", t, func() {
 		if err := storage.Setup(conf); err != nil {
@@ -27,7 +29,7 @@ func TestHandleDownlink(t *testing.T) {
 				DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 				EnabledUplinkChannels: []int{0, 1},
 			}
-			So(storage.SaveDeviceSession(storage.RedisPool(), ds), ShouldBeNil)
+			So(storage.SaveDeviceSession(ctx, storage.RedisPool(), ds), ShouldBeNil)
 
 			Convey("Testing LinkADRAns", func() {
 				testTable := []struct {
@@ -153,7 +155,7 @@ func TestHandleDownlink(t *testing.T) {
 							},
 						}
 
-						resp, err := Handle(&tst.DeviceSession, storage.DeviceProfile{}, storage.ServiceProfile{}, nil, answer, pending, models.RXPacket{})
+						resp, err := Handle(ctx, &tst.DeviceSession, storage.DeviceProfile{}, storage.ServiceProfile{}, nil, answer, pending, models.RXPacket{})
 						Convey("Then the expected error (or nil) was returned", func() {
 							if err != nil && tst.ExpectedError != nil {
 								So(err.Error(), ShouldResemble, tst.ExpectedError.Error())
@@ -260,7 +262,7 @@ func TestHandleDownlink(t *testing.T) {
 							},
 						}
 
-						_, err := Handle(&test.DeviceSession, storage.DeviceProfile{}, storage.ServiceProfile{}, nil, answer, pending, models.RXPacket{})
+						_, err := Handle(ctx, &test.DeviceSession, storage.DeviceProfile{}, storage.ServiceProfile{}, nil, answer, pending, models.RXPacket{})
 						Convey("Then the expected error (or nil) was returned", func() {
 							if err != nil && test.ExpectedError != nil {
 								So(err.Error(), ShouldEqual, test.ExpectedError.Error())

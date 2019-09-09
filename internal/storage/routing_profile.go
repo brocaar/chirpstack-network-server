@@ -1,8 +1,10 @@
 package storage
 
 import (
+	"context"
 	"time"
 
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -21,7 +23,7 @@ type RoutingProfile struct {
 }
 
 // CreateRoutingProfile creates the given routing-profile.
-func CreateRoutingProfile(db sqlx.Execer, rp *RoutingProfile) error {
+func CreateRoutingProfile(ctx context.Context, db sqlx.Execer, rp *RoutingProfile) error {
 	now := time.Now()
 
 	if rp.ID == uuid.Nil {
@@ -59,14 +61,15 @@ func CreateRoutingProfile(db sqlx.Execer, rp *RoutingProfile) error {
 	}
 
 	log.WithFields(log.Fields{
-		"id": rp.ID,
+		"id":     rp.ID,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
 	}).Info("routing-profile created")
 
 	return nil
 }
 
 // GetRoutingProfile returns the routing-profile matching the given id.
-func GetRoutingProfile(db sqlx.Queryer, id uuid.UUID) (RoutingProfile, error) {
+func GetRoutingProfile(ctx context.Context, db sqlx.Queryer, id uuid.UUID) (RoutingProfile, error) {
 	var rp RoutingProfile
 	err := sqlx.Get(db, &rp, "select * from routing_profile where routing_profile_id = $1", id)
 	if err != nil {
@@ -77,7 +80,7 @@ func GetRoutingProfile(db sqlx.Queryer, id uuid.UUID) (RoutingProfile, error) {
 }
 
 // UpdateRoutingProfile updates the given routing-profile.
-func UpdateRoutingProfile(db sqlx.Execer, rp *RoutingProfile) error {
+func UpdateRoutingProfile(ctx context.Context, db sqlx.Execer, rp *RoutingProfile) error {
 	rp.UpdatedAt = time.Now()
 	res, err := db.Exec(`
 		update routing_profile set
@@ -106,12 +109,15 @@ func UpdateRoutingProfile(db sqlx.Execer, rp *RoutingProfile) error {
 		return ErrDoesNotExist
 	}
 
-	log.WithField("id", rp.ID).Info("routing-profile updated")
+	log.WithFields(log.Fields{
+		"id":     rp.ID,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
+	}).Info("routing-profile updated")
 	return nil
 }
 
 // DeleteRoutingProfile deletes the routing-profile matching the given id.
-func DeleteRoutingProfile(db sqlx.Execer, id uuid.UUID) error {
+func DeleteRoutingProfile(ctx context.Context, db sqlx.Execer, id uuid.UUID) error {
 	res, err := db.Exec("delete from routing_profile where routing_profile_id = $1", id)
 	if err != nil {
 		return handlePSQLError(err, "delete error")
@@ -125,12 +131,15 @@ func DeleteRoutingProfile(db sqlx.Execer, id uuid.UUID) error {
 		return ErrDoesNotExist
 	}
 
-	log.WithField("id", id).Info("routing-profile deleted")
+	log.WithFields(log.Fields{
+		"id":     id,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
+	}).Info("routing-profile deleted")
 	return nil
 }
 
 // GetAllRoutingProfiles returns all the available routing-profiles.
-func GetAllRoutingProfiles(db sqlx.Queryer) ([]RoutingProfile, error) {
+func GetAllRoutingProfiles(ctx context.Context, db sqlx.Queryer) ([]RoutingProfile, error) {
 	var rps []RoutingProfile
 	err := sqlx.Select(db, &rps, "select * from routing_profile")
 	if err != nil {

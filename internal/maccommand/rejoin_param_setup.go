@@ -1,8 +1,10 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/pkg/errors"
@@ -25,7 +27,7 @@ func RequestRejoinParamSetup(maxTimeN, maxCountN int) storage.MACCommandBlock {
 	}
 }
 
-func handleRejoinParamSetupAns(ds *storage.DeviceSession, block storage.MACCommandBlock, pendingBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
+func handleRejoinParamSetupAns(ctx context.Context, ds *storage.DeviceSession, block storage.MACCommandBlock, pendingBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 	if len(block.MACCommands) != 1 {
 		return nil, fmt.Errorf("exactly one mac-command expected, got: %d", len(block.MACCommands))
 	}
@@ -46,11 +48,15 @@ func handleRejoinParamSetupAns(ds *storage.DeviceSession, block storage.MACComma
 
 	if pl.TimeOK {
 		log.WithFields(log.Fields{
+			"dev_eui": ds.DevEUI,
 			"time_ok": pl.TimeOK,
+			"ctx_id":  ctx.Value(logging.ContextIDKey),
 		}).Info("rejoin_param_setup request acknowledged")
 	} else {
 		log.WithFields(log.Fields{
+			"dev_eui": ds.DevEUI,
 			"time_ok": pl.TimeOK,
+			"ctx_id":  ctx.Value(logging.ContextIDKey),
 		}).Warning("rejoin_param_setup request acknowledged")
 	}
 

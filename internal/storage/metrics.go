@@ -1,10 +1,12 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -66,9 +68,9 @@ func SetMetricsTTL(minute, hour, day, month time.Duration) {
 }
 
 // SaveMetrics stores the given metrics into Redis.
-func SaveMetrics(p *redis.Pool, name string, metrics MetricsRecord) error {
+func SaveMetrics(ctx context.Context, p *redis.Pool, name string, metrics MetricsRecord) error {
 	for _, agg := range aggregationIntervals {
-		if err := SaveMetricsForInterval(p, agg, name, metrics); err != nil {
+		if err := SaveMetricsForInterval(ctx, p, agg, name, metrics); err != nil {
 			return errors.Wrap(err, "save metrics for interval error")
 		}
 	}
@@ -76,13 +78,14 @@ func SaveMetrics(p *redis.Pool, name string, metrics MetricsRecord) error {
 	log.WithFields(log.Fields{
 		"name":        name,
 		"aggregation": aggregationIntervals,
+		"ctx_id":      ctx.Value(logging.ContextIDKey),
 	}).Info("metrics saved")
 
 	return nil
 }
 
 // SaveMetricsForInterval aggregates and stores the given metrics.
-func SaveMetricsForInterval(p *redis.Pool, agg AggregationInterval, name string, metrics MetricsRecord) error {
+func SaveMetricsForInterval(ctx context.Context, p *redis.Pool, agg AggregationInterval, name string, metrics MetricsRecord) error {
 	if len(metrics.Metrics) == 0 {
 		return nil
 	}
@@ -129,13 +132,14 @@ func SaveMetricsForInterval(p *redis.Pool, agg AggregationInterval, name string,
 	log.WithFields(log.Fields{
 		"name":        name,
 		"aggregation": agg,
+		"ctx_id":      ctx.Value(logging.ContextIDKey),
 	}).Debug("metrics saved")
 
 	return nil
 }
 
 // GetMetrics returns the metrics for the requested aggregation interval.
-func GetMetrics(p *redis.Pool, agg AggregationInterval, name string, start, end time.Time) ([]MetricsRecord, error) {
+func GetMetrics(ctx context.Context, p *redis.Pool, agg AggregationInterval, name string, start, end time.Time) ([]MetricsRecord, error) {
 	c := p.Get()
 	defer c.Close()
 

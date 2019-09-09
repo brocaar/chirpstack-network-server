@@ -1,6 +1,7 @@
 package testsuite
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -41,7 +42,7 @@ func (ts *MulticastTestSuite) SetupSuite() {
 	})
 
 	assert := require.New(ts.T())
-	assert.NoError(storage.SaveDeviceGatewayRXInfoSet(storage.RedisPool(), storage.DeviceGatewayRXInfoSet{
+	assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), storage.RedisPool(), storage.DeviceGatewayRXInfoSet{
 		DevEUI: ts.Device.DevEUI,
 		DR:     3,
 		Items: []storage.DeviceGatewayRXInfo{
@@ -53,7 +54,7 @@ func (ts *MulticastTestSuite) SetupSuite() {
 		},
 	}))
 
-	assert.NoError(storage.AddDeviceToMulticastGroup(storage.DB(), ts.Device.DevEUI, ts.MulticastGroup.ID))
+	assert.NoError(storage.AddDeviceToMulticastGroup(context.Background(), storage.DB(), ts.Device.DevEUI, ts.MulticastGroup.ID))
 }
 
 func (ts *MulticastTestSuite) TestMulticast() {
