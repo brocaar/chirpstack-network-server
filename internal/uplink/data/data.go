@@ -228,7 +228,7 @@ func appendMetaDataToUplinkHistory(ctx *dataContext) error {
 func storeDeviceGatewayRXInfoSet(ctx *dataContext) error {
 	dr, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
 	if err != nil {
-		errors.Wrap(err, "get data-rate error")
+		return errors.Wrap(err, "get data-rate error")
 	}
 
 	rxInfoSet := storage.DeviceGatewayRXInfoSet{
@@ -538,7 +538,7 @@ func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 
 	dr, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
 	if err != nil {
-		errors.Wrap(err, "get data-rate error")
+		return errors.Wrap(err, "get data-rate error")
 	}
 	publishDataUpReq.Dr = uint32(dr)
 
