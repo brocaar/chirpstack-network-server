@@ -28,6 +28,7 @@ var (
 )
 
 var tasks = []func(*joinContext) error{
+	setDeviceGatewayRXInfo,
 	setTXInfo,
 	setToken,
 	setDownlinkFrame,
@@ -38,10 +39,11 @@ var tasks = []func(*joinContext) error{
 type joinContext struct {
 	ctx context.Context
 
-	Token         uint16
-	DeviceSession storage.DeviceSession
-	RXPacket      models.RXPacket
-	PHYPayload    lorawan.PHYPayload
+	Token               uint16
+	DeviceSession       storage.DeviceSession
+	DeviceGatewayRXInfo []storage.DeviceGatewayRXInfo
+	RXPacket            models.RXPacket
+	PHYPayload          lorawan.PHYPayload
 
 	// Downlink frames to be emitted (this can be a slice e.g. to first try
 	// using RX1 parameters, failing that RX2 parameters).
@@ -77,6 +79,26 @@ func Handle(ctx context.Context, ds storage.DeviceSession, rxPacket models.RXPac
 	return nil
 }
 
+func setDeviceGatewayRXInfo(ctx *joinContext) error {
+	for i := range ctx.RXPacket.RXInfoSet {
+		ctx.DeviceGatewayRXInfo = append(ctx.DeviceGatewayRXInfo, storage.DeviceGatewayRXInfo{
+			GatewayID: helpers.GetGatewayID(ctx.RXPacket.RXInfoSet[i]),
+			RSSI:      int(ctx.RXPacket.RXInfoSet[i].Rssi),
+			LoRaSNR:   ctx.RXPacket.RXInfoSet[i].LoraSnr,
+			Board:     ctx.RXPacket.RXInfoSet[i].Board,
+			Antenna:   ctx.RXPacket.RXInfoSet[i].Antenna,
+			Context:   ctx.RXPacket.RXInfoSet[i].Context,
+		})
+	}
+
+	// this should not happen
+	if len(ctx.DeviceGatewayRXInfo) == 0 {
+		return errors.New("DeviceGatewayRXInfo is empty!")
+	}
+
+	return nil
+}
+
 func setTXInfo(ctx *joinContext) error {
 	if rxWindow == 0 || rxWindow == 1 {
 		if err := setTXInfoForRX1(ctx); err != nil {
@@ -94,13 +116,9 @@ func setTXInfo(ctx *joinContext) error {
 }
 
 func setTXInfoForRX1(ctx *joinContext) error {
-	if len(ctx.RXPacket.RXInfoSet) == 0 {
-		return errors.New("empty RXInfoSet")
-	}
-
-	rxInfo := ctx.RXPacket.RXInfoSet[0]
+	rxInfo := ctx.DeviceGatewayRXInfo[0]
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: rxInfo.GatewayId,
+		GatewayId: rxInfo.GatewayID[:],
 		Board:     rxInfo.Board,
 		Antenna:   rxInfo.Antenna,
 		Context:   rxInfo.Context,
@@ -148,13 +166,9 @@ func setTXInfoForRX1(ctx *joinContext) error {
 }
 
 func setTXInfoForRX2(ctx *joinContext) error {
-	if len(ctx.RXPacket.RXInfoSet) == 0 {
-		return errors.New("empty RXInfoSet")
-	}
-
-	rxInfo := ctx.RXPacket.RXInfoSet[0]
+	rxInfo := ctx.DeviceGatewayRXInfo[0]
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: rxInfo.GatewayId,
+		GatewayId: rxInfo.GatewayID[:],
 		Board:     rxInfo.Board,
 		Antenna:   rxInfo.Antenna,
 		Frequency: uint32(band.Band().GetDefaults().RX2Frequency),

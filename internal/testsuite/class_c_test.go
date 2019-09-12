@@ -37,11 +37,8 @@ func (ts *ClassCTestSuite) SetupTest() {
 	// note that the CreateDeviceSession will automatically set
 	// the device, profiles etc.. :)
 	ds := storage.DeviceSession{
-		FCntUp:    8,
-		NFCntDown: 5,
-		UplinkGatewayHistory: map[lorawan.EUI64]storage.UplinkGatewayHistory{
-			lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}: storage.UplinkGatewayHistory{},
-		},
+		FCntUp:                8,
+		NFCntDown:             5,
 		EnabledUplinkChannels: []int{0, 1, 2},
 		RX2DR:                 5,
 		RX2Frequency:          869525000,
@@ -61,6 +58,8 @@ func (ts *ClassCTestSuite) TestClassC() {
 
 	txInfo := gw.DownlinkTXInfo{
 		GatewayId: []byte{1, 2, 1, 2, 1, 2, 1, 2},
+		Board:     1,
+		Antenna:   2,
 		Frequency: uint32(defaults.RX2Frequency),
 		Power:     int32(band.Band().GetDownlinkTXPower(defaults.RX2Frequency)),
 		Timing:    gw.DownlinkTiming_IMMEDIATELY,
@@ -69,6 +68,21 @@ func (ts *ClassCTestSuite) TestClassC() {
 		},
 	}
 	assert.NoError(helpers.SetDownlinkTXInfoDataRate(&txInfo, 5, band.Band()))
+
+	deviceGatewayRXInfoSet := storage.DeviceGatewayRXInfoSet{
+		DevEUI: ts.Device.DevEUI,
+		DR:     0,
+		Items: []storage.DeviceGatewayRXInfo{
+			{
+				GatewayID: lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2},
+				RSSI:      -50,
+				LoRaSNR:   -3,
+				Antenna:   2,
+				Board:     1,
+			},
+		},
+	}
+	assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), storage.RedisPool(), deviceGatewayRXInfoSet))
 
 	fPortTen := uint8(10)
 

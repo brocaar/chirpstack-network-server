@@ -126,8 +126,6 @@ func migrateDeviceSessionOld(d DeviceSessionOld) DeviceSession {
 		PingSlotNb:               d.PingSlotNb,
 		PingSlotDR:               d.PingSlotDR,
 		PingSlotFrequency:        d.PingSlotFrequency,
-
-		UplinkGatewayHistory: make(map[lorawan.EUI64]UplinkGatewayHistory),
 	}
 
 	if len(out.EnabledUplinkChannels) == 0 {

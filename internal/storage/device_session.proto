@@ -29,9 +29,6 @@ message DeviceSessionPBUplinkADRHistory {
     uint32 gateway_count = 4;
 }
 
-message DeviceSessionPBUplinkGatewayHistory {
-}
-
 message DeviceSessionPB {
     // ID of the device-profile.
     string device_profile_id = 1;
@@ -124,10 +121,6 @@ message DeviceSessionPB {
 
     // Uplink history for ADR (last 20 uplink transmissions).
     repeated DeviceSessionPBUplinkADRHistory uplink_adr_history = 27;
-
-    // Uplink gateway history (for Class B / C).
-    // Note that as bytes are not supported in a Protobuf map, the gateway ID is HEX encoded.
-    map<string, DeviceSessionPBUplinkGatewayHistory> uplink_gateway_history = 28;
 
     // Last device-status requested timestamp (Unix ns)
     int64 last_device_status_request_time_unix_ns = 29;

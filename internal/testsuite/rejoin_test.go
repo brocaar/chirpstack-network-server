@@ -58,7 +58,6 @@ func (ts *RejoinTestSuite) SetupSuite() {
 		RX2Frequency:          869525000,
 		NbTrans:               1,
 		EnabledUplinkChannels: []int{0, 1, 2},
-		UplinkGatewayHistory:  make(map[lorawan.EUI64]storage.UplinkGatewayHistory),
 	})
 
 	ts.CreateGateway(storage.Gateway{
@@ -224,7 +223,6 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 					RX2Frequency:          869525000,
 					NbTrans:               1,
 					EnabledUplinkChannels: []int{0, 1, 2},
-					UplinkGatewayHistory:  make(map[lorawan.EUI64]storage.UplinkGatewayHistory),
 					RejoinCount0:          124,
 					PendingRejoinDeviceSession: &storage.DeviceSession{
 						RoutingProfileID: ts.RoutingProfile.ID,
@@ -247,7 +245,6 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 						RX2Frequency:          869525000,
 						NbTrans:               1,
 						EnabledUplinkChannels: []int{0, 1, 2, 3, 4, 5},
-						UplinkGatewayHistory:  make(map[lorawan.EUI64]storage.UplinkGatewayHistory),
 						RXDelay:               1,
 						RX1DROffset:           2,
 						RX2DR:                 3,
@@ -336,7 +333,6 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 					RX2Frequency:          869525000,
 					NbTrans:               1,
 					EnabledUplinkChannels: []int{0, 1, 2},
-					UplinkGatewayHistory:  make(map[lorawan.EUI64]storage.UplinkGatewayHistory),
 					RejoinCount0:          124,
 					PendingRejoinDeviceSession: &storage.DeviceSession{
 						RoutingProfileID: ts.RoutingProfile.ID,
@@ -360,7 +356,6 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 						RX2Frequency:          869525000,
 						NbTrans:               1,
 						EnabledUplinkChannels: []int{0, 1, 2, 3, 4, 5},
-						UplinkGatewayHistory:  make(map[lorawan.EUI64]storage.UplinkGatewayHistory),
 						RXDelay:               1,
 						RX1DROffset:           2,
 						RX2DR:                 3,
@@ -518,7 +513,6 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 					RX2Frequency:          869525000,
 					NbTrans:               1,
 					EnabledUplinkChannels: []int{0, 1, 2},
-					UplinkGatewayHistory:  make(map[lorawan.EUI64]storage.UplinkGatewayHistory),
 					RejoinCount0:          124,
 					PendingRejoinDeviceSession: &storage.DeviceSession{
 						RoutingProfileID: ts.RoutingProfile.ID,
@@ -537,7 +531,6 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 						RX2Frequency:          869525000,
 						NbTrans:               1,
 						EnabledUplinkChannels: []int{0, 1, 2},
-						UplinkGatewayHistory:  make(map[lorawan.EUI64]storage.UplinkGatewayHistory),
 					},
 				}),
 			},
@@ -622,7 +615,6 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 					RX2Frequency:          869525000,
 					NbTrans:               1,
 					EnabledUplinkChannels: []int{0, 1, 2},
-					UplinkGatewayHistory:  make(map[lorawan.EUI64]storage.UplinkGatewayHistory),
 					RejoinCount0:          124,
 					PendingRejoinDeviceSession: &storage.DeviceSession{
 						RoutingProfileID: ts.RoutingProfile.ID,
@@ -642,7 +634,6 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 						NbTrans:               1,
 						EnabledUplinkChannels: []int{0, 1, 2},
 						ExtraUplinkChannels:   make(map[int]loraband.Channel),
-						UplinkGatewayHistory:  make(map[lorawan.EUI64]storage.UplinkGatewayHistory),
 					},
 				}),
 			},

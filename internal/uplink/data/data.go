@@ -50,7 +50,6 @@ var tasks = []func(*dataContext) error{
 	storeDeviceGatewayRXInfoSet,
 	appendMetaDataToUplinkHistory,
 	sendFRMPayloadToApplicationServer,
-	setLastRXInfoSet,
 	syncUplinkFCnt,
 	saveDeviceSession,
 	handleUplinkACK,
@@ -585,16 +584,6 @@ func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 		}
 	}(ctx.ctx, ctx.ApplicationServerClient, publishDataUpReq)
 
-	return nil
-}
-
-func setLastRXInfoSet(ctx *dataContext) error {
-	if len(ctx.RXPacket.RXInfoSet) != 0 {
-		gatewayID := helpers.GetGatewayID(ctx.RXPacket.RXInfoSet[0])
-		ctx.DeviceSession.UplinkGatewayHistory = map[lorawan.EUI64]storage.UplinkGatewayHistory{
-			gatewayID: storage.UplinkGatewayHistory{},
-		}
-	}
 	return nil
 }
 

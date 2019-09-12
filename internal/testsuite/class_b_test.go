@@ -233,16 +233,13 @@ func (ts *ClassBTestSuite) TestDownlink() {
 	assert.NoError(storage.UpdateDevice(context.Background(), storage.DB(), ts.Device))
 
 	ts.CreateDeviceSession(storage.DeviceSession{
-		DevAddr:     lorawan.DevAddr{1, 2, 3, 4},
-		JoinEUI:     lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
-		FNwkSIntKey: lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-		SNwkSIntKey: lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-		NwkSEncKey:  lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-		FCntUp:      8,
-		NFCntDown:   5,
-		UplinkGatewayHistory: map[lorawan.EUI64]storage.UplinkGatewayHistory{
-			lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}: storage.UplinkGatewayHistory{},
-		},
+		DevAddr:               lorawan.DevAddr{1, 2, 3, 4},
+		JoinEUI:               lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
+		FNwkSIntKey:           lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		SNwkSIntKey:           lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		NwkSEncKey:            lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		FCntUp:                8,
+		NFCntDown:             5,
 		EnabledUplinkChannels: []int{0, 1, 2},
 		BeaconLocked:          true,
 		PingSlotFrequency:     868300000,
@@ -255,6 +252,8 @@ func (ts *ClassBTestSuite) TestDownlink() {
 
 	txInfo := gw.DownlinkTXInfo{
 		GatewayId: []byte{1, 2, 1, 2, 1, 2, 1, 2},
+		Board:     1,
+		Antenna:   2,
 		Frequency: uint32(ts.DeviceSession.PingSlotFrequency),
 		Power:     int32(band.Band().GetDownlinkTXPower(ts.DeviceSession.PingSlotFrequency)),
 		Timing:    gw.DownlinkTiming_GPS_EPOCH,
@@ -265,6 +264,21 @@ func (ts *ClassBTestSuite) TestDownlink() {
 		},
 	}
 	assert.NoError(helpers.SetDownlinkTXInfoDataRate(&txInfo, 2, band.Band()))
+
+	deviceGatewayRXInfoSet := storage.DeviceGatewayRXInfoSet{
+		DevEUI: ts.Device.DevEUI,
+		DR:     0,
+		Items: []storage.DeviceGatewayRXInfo{
+			{
+				GatewayID: lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2},
+				RSSI:      -50,
+				LoRaSNR:   -3,
+				Antenna:   2,
+				Board:     1,
+			},
+		},
+	}
+	assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), storage.RedisPool(), deviceGatewayRXInfoSet))
 
 	txInfoDefaultFreq := txInfo
 	txInfoDefaultFreq.Frequency = 869525000

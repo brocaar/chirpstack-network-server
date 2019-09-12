@@ -92,6 +92,7 @@ var setMACCommandsSet = setMACCommands(
 var responseTasks = []func(*dataContext) error{
 	getDeviceProfile,
 	getServiceProfile,
+	setDeviceGatewayRXInfo,
 	setDataTXInfo,
 	setToken,
 	getNextDeviceQueueItem,
@@ -107,6 +108,7 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	getDeviceProfile,
 	getServiceProfile,
 	checkLastDownlinkTimestamp,
+	setDeviceGatewayRXInfo,
 	forClass(storage.DeviceModeC,
 		setImmediately,
 		setTXInfoForRX2,
@@ -176,6 +178,11 @@ type dataContext struct {
 	// DeviceSession holds the device-session of the device for which to send
 	// the downlink data.
 	DeviceSession storage.DeviceSession
+
+	// DeviceGatewayRXInfo contains the RXInfo of one or multiple gateways
+	// within reach of the device. These gateways can be used for transmitting
+	// downlinks.
+	DeviceGatewayRXInfo []storage.DeviceGatewayRXInfo
 
 	// MustSend defines if a frame must be send. In some cases (e.g. ADRACKReq)
 	// the network-server must respond, even when there are no mac-commands or
@@ -414,13 +421,10 @@ func setDataTXInfo(ctx *dataContext) error {
 }
 
 func setTXInfoForRX1(ctx *dataContext) error {
-	if len(ctx.RXPacket.RXInfoSet) == 0 {
-		return ErrNoLastRXInfoSet
-	}
-	rxInfo := ctx.RXPacket.RXInfoSet[0]
+	rxInfo := ctx.DeviceGatewayRXInfo[0]
 
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: rxInfo.GatewayId,
+		GatewayId: rxInfo.GatewayID[:],
 		Board:     rxInfo.Board,
 		Antenna:   rxInfo.Antenna,
 		Context:   rxInfo.Context,
@@ -490,29 +494,18 @@ func setImmediately(ctx *dataContext) error {
 }
 
 func setTXInfoForRX2(ctx *dataContext) error {
-	gatewayID, err := ctx.DeviceSession.GetDownlinkGatewayMAC()
-	if err != nil {
-		return err
-	}
-
-	var board, antenna uint32
-	var context []byte
-	if ctx.RXPacket != nil && len(ctx.RXPacket.RXInfoSet) != 0 {
-		board = ctx.RXPacket.RXInfoSet[0].Board
-		antenna = ctx.RXPacket.RXInfoSet[0].Antenna
-		context = ctx.RXPacket.RXInfoSet[0].Context
-	}
+	rxInfo := ctx.DeviceGatewayRXInfo[0]
 
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: gatewayID[:],
-		Board:     board,
-		Antenna:   antenna,
+		GatewayId: rxInfo.GatewayID[:],
+		Board:     rxInfo.Board,
+		Antenna:   rxInfo.Antenna,
 		Frequency: uint32(ctx.DeviceSession.RX2Frequency),
-		Context:   context,
+		Context:   rxInfo.Context,
 	}
 
 	// get data-rate
-	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, int(ctx.DeviceSession.RX2DR), band.Band())
+	err := helpers.SetDownlinkTXInfoDataRate(&txInfo, int(ctx.DeviceSession.RX2DR), band.Band())
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
@@ -562,29 +555,18 @@ func setTXInfoForRX2(ctx *dataContext) error {
 }
 
 func setTXInfoForClassB(ctx *dataContext) error {
-	gatewayID, err := ctx.DeviceSession.GetDownlinkGatewayMAC()
-	if err != nil {
-		return err
-	}
-
-	var board, antenna uint32
-	var context []byte
-	if ctx.RXPacket != nil && len(ctx.RXPacket.RXInfoSet) != 0 {
-		board = ctx.RXPacket.RXInfoSet[0].Board
-		antenna = ctx.RXPacket.RXInfoSet[0].Antenna
-		context = ctx.RXPacket.RXInfoSet[0].Context
-	}
+	rxInfo := ctx.DeviceGatewayRXInfo[0]
 
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: gatewayID[:],
-		Board:     board,
-		Antenna:   antenna,
+		GatewayId: rxInfo.GatewayID[:],
+		Board:     rxInfo.Board,
+		Antenna:   rxInfo.Antenna,
 		Frequency: uint32(ctx.DeviceSession.PingSlotFrequency),
-		Context:   context,
+		Context:   rxInfo.Context,
 	}
 
 	// get data-rate
-	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.DeviceSession.PingSlotDR, band.Band())
+	err := helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.DeviceSession.PingSlotDR, band.Band())
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
@@ -1091,6 +1073,36 @@ func getServiceProfile(ctx *dataContext) error {
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
+	return nil
+}
+
+func setDeviceGatewayRXInfo(ctx *dataContext) error {
+	if ctx.RXPacket != nil {
+		// Class-A response.
+		for i := range ctx.RXPacket.RXInfoSet {
+			ctx.DeviceGatewayRXInfo = append(ctx.DeviceGatewayRXInfo, storage.DeviceGatewayRXInfo{
+				GatewayID: helpers.GetGatewayID(ctx.RXPacket.RXInfoSet[i]),
+				RSSI:      int(ctx.RXPacket.RXInfoSet[i].Rssi),
+				LoRaSNR:   ctx.RXPacket.RXInfoSet[i].LoraSnr,
+				Board:     ctx.RXPacket.RXInfoSet[i].Board,
+				Antenna:   ctx.RXPacket.RXInfoSet[i].Antenna,
+				Context:   ctx.RXPacket.RXInfoSet[i].Context,
+			})
+		}
+	} else {
+		// Class-B or Class-C.
+		rxInfo, err := storage.GetDeviceGatewayRXInfoSet(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI)
+		if err != nil {
+			return errors.Wrap(err, "get device gateway RXInfoSet error")
+		}
+
+		ctx.DeviceGatewayRXInfo = rxInfo.Items
+	}
+
+	if len(ctx.DeviceGatewayRXInfo) == 0 {
+		return errors.New("DeviceGatewayRXInfo, the device needs to send an uplink first")
+	}
+
 	return nil
 }
 
