@@ -56,6 +56,9 @@ type DeviceGatewayRXInfo struct {
 	GatewayID lorawan.EUI64
 	RSSI      int
 	LoRaSNR   float64
+	Antenna   uint32
+	Board     uint32
+	Context   []byte
 }
 
 // UplinkHistory contains the meta-data of an uplink transmission.
@@ -864,6 +867,9 @@ func deviceGatewayRXInfoSetToPB(d DeviceGatewayRXInfoSet) DeviceGatewayRXInfoSet
 			GatewayId: d.Items[i].GatewayID[:],
 			Rssi:      int32(d.Items[i].RSSI),
 			LoraSnr:   d.Items[i].LoRaSNR,
+			Board:     d.Items[i].Board,
+			Antenna:   d.Items[i].Antenna,
+			Context:   d.Items[i].Context,
 		})
 	}
 
@@ -883,6 +889,9 @@ func deviceGatewayRXInfoSetFromPB(d DeviceGatewayRXInfoSetPB) DeviceGatewayRXInf
 			GatewayID: id,
 			RSSI:      int(d.Items[i].Rssi),
 			LoRaSNR:   d.Items[i].LoraSnr,
+			Board:     d.Items[i].Board,
+			Antenna:   d.Items[i].Antenna,
+			Context:   d.Items[i].Context,
 		})
 	}
 

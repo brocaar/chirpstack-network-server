@@ -208,4 +208,13 @@ message DeviceGatewayRXInfoPB {
 
     // LoRa SNR.
     double lora_snr = 3;
+
+    // Board.
+    uint32 board = 4;
+
+    // Antenna.
+    uint32 antenna = 5;
+
+    // Gateway specific context.
+    bytes context = 6;
 }

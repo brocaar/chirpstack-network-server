@@ -358,6 +358,9 @@ func (ts *StorageTestSuite) TestDeviceGatewayRXInfoSet() {
 					GatewayID: lorawan.EUI64{2, 2, 3, 4, 5, 6, 7, 8},
 					RSSI:      -60,
 					LoRaSNR:   5.5,
+					Board:     2,
+					Antenna:   3,
+					Context:   []byte{0x01, 0x02, 0x03, 0x04},
 				},
 			},
 		}

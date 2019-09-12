@@ -241,6 +241,9 @@ func storeDeviceGatewayRXInfoSet(ctx *dataContext) error {
 			GatewayID: helpers.GetGatewayID(ctx.RXPacket.RXInfoSet[i]),
 			RSSI:      int(ctx.RXPacket.RXInfoSet[i].Rssi),
 			LoRaSNR:   ctx.RXPacket.RXInfoSet[i].LoraSnr,
+			Board:     ctx.RXPacket.RXInfoSet[i].Board,
+			Antenna:   ctx.RXPacket.RXInfoSet[i].Antenna,
+			Context:   ctx.RXPacket.RXInfoSet[i].Context,
 		})
 	}
 
