@@ -136,23 +136,28 @@ func (ts *NetworkServerAPITestSuite) TestMulticastGroup() {
 func (ts *NetworkServerAPITestSuite) TestMulticastQueue() {
 	assert := require.New(ts.T())
 
+	rp := storage.RoutingProfile{
+		ASID: "localhost:1234",
+	}
+	assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp))
+
 	gateways := []storage.Gateway{
 		{
-			GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+			GatewayID:        lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+			RoutingProfileID: rp.ID,
 		},
 		{
-			GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
+			GatewayID:        lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
+			RoutingProfileID: rp.ID,
 		},
 	}
 	for i := range gateways {
 		assert.NoError(storage.CreateGateway(context.Background(), storage.DB(), &gateways[i]))
 	}
 
-	var rp storage.RoutingProfile
 	var sp storage.ServiceProfile
 	var dp storage.DeviceProfile
 
-	assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp))
 	assert.NoError(storage.CreateServiceProfile(context.Background(), storage.DB(), &sp))
 	assert.NoError(storage.CreateDeviceProfile(context.Background(), storage.DB(), &dp))
 

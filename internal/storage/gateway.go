@@ -50,6 +50,7 @@ func (l *GPSPoint) Scan(src interface{}) error {
 // Gateway represents a gateway.
 type Gateway struct {
 	GatewayID        lorawan.EUI64  `db:"gateway_id"`
+	RoutingProfileID uuid.UUID      `db:"routing_profile_id"`
 	CreatedAt        time.Time      `db:"created_at"`
 	UpdatedAt        time.Time      `db:"updated_at"`
 	FirstSeenAt      *time.Time     `db:"first_seen_at"`
@@ -81,8 +82,9 @@ func CreateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 			last_seen_at,
 			location,
 			altitude,
-			gateway_profile_id
-		) values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+			gateway_profile_id,
+			routing_profile_id
+		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
 		gw.GatewayID[:],
 		gw.CreatedAt,
 		gw.UpdatedAt,
@@ -91,6 +93,7 @@ func CreateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 		gw.Location,
 		gw.Altitude,
 		gw.GatewayProfileID,
+		gw.RoutingProfileID,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -254,7 +257,8 @@ func UpdateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 			last_seen_at = $4,
 			location = $5,
 			altitude = $6,
-			gateway_profile_id = $7
+			gateway_profile_id = $7,
+			routing_profile_id = $8
 		where gateway_id = $1`,
 		gw.GatewayID[:],
 		gw.UpdatedAt,
@@ -263,6 +267,7 @@ func UpdateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 		gw.Location,
 		gw.Altitude,
 		gw.GatewayProfileID,
+		gw.RoutingProfileID,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")

@@ -11,6 +11,12 @@ import (
 )
 
 func (ts *StorageTestSuite) TestGateway() {
+	assert := require.New(ts.T())
+	rp := RoutingProfile{
+		ASID: "localhost:1234",
+	}
+	assert.NoError(CreateRoutingProfile(context.Background(), ts.Tx(), &rp))
+
 	ts.T().Run("Create", func(t *testing.T) {
 		assert := require.New(t)
 
@@ -18,7 +24,8 @@ func (ts *StorageTestSuite) TestGateway() {
 		aesKey := lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8}
 
 		gw := Gateway{
-			GatewayID: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+			GatewayID:        lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+			RoutingProfileID: rp.ID,
 			Location: GPSPoint{
 				Latitude:  1.123,
 				Longitude: 2.123,

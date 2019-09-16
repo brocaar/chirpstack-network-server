@@ -431,6 +431,11 @@ message Gateway {
     // and you you would like to add the FPGA ID to the gateway meta-data or would
     // like LoRa Server to decrypt the fine-timestamp.
     repeated GatewayBoard boards = 4;
+
+    // Routing Profile ID.
+    // The routing-profile ID defines to which application-server statistical
+    // data for this gateway is forwarded.
+    bytes routing_profile_id = 5;
 }
 
 message GatewayBoard {

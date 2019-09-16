@@ -1,16 +1,19 @@
-package gateway
+package stats
 
 import (
 	"context"
 	"testing"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/brocaar/loraserver/api/as"
 	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/internal/backend/applicationserver"
 	"github.com/brocaar/loraserver/internal/backend/gateway"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/loraserver/internal/test"
@@ -21,7 +24,9 @@ import (
 type GatewayConfigurationTestSuite struct {
 	suite.Suite
 
-	backend *test.GatewayBackend
+	backend  *test.GatewayBackend
+	asClient *test.ApplicationClient
+
 	gateway storage.Gateway
 }
 
@@ -31,19 +36,31 @@ func (ts *GatewayConfigurationTestSuite) SetupSuite() {
 	assert.NoError(storage.Setup(conf))
 	test.MustResetDB(storage.DB().DB)
 
+	rp := storage.RoutingProfile{}
+	assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp))
+
 	ts.backend = test.NewGatewayBackend()
 	gateway.SetBackend(ts.backend)
+
 	ts.gateway = storage.Gateway{
-		GatewayID: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+		GatewayID:        lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+		RoutingProfileID: rp.ID,
 	}
 	assert.NoError(storage.CreateGateway(context.Background(), storage.DB(), &ts.gateway))
+
+	ts.asClient = test.NewApplicationClient()
+	applicationserver.SetPool(test.NewApplicationServerPool(ts.asClient))
 }
 
 func (ts *GatewayConfigurationTestSuite) TestUpdate() {
 	ts.T().Run("No gateway-profile", func(t *testing.T) {
 		assert := require.New(t)
 
-		assert.NoError(handleConfigurationUpdate(context.Background(), storage.DB(), ts.gateway, ""))
+		assert.NoError(Handle(context.Background(), gw.GatewayStats{
+			GatewayId:     ts.gateway.GatewayID[:],
+			ConfigVersion: "1.2.3",
+		}))
+
 		assert.Equal(0, len(ts.backend.GatewayConfigPacketChan))
 	})
 
@@ -78,7 +95,10 @@ func (ts *GatewayConfigurationTestSuite) TestUpdate() {
 		ts.gateway.GatewayProfileID = &gp.ID
 		assert.NoError(storage.UpdateGateway(context.Background(), storage.DB(), &ts.gateway))
 
-		assert.NoError(handleConfigurationUpdate(context.Background(), storage.DB(), ts.gateway, ""))
+		assert.NoError(Handle(context.Background(), gw.GatewayStats{
+			GatewayId:     ts.gateway.GatewayID[:],
+			ConfigVersion: "1.2.3",
+		}))
 
 		gwConfig := <-ts.backend.GatewayConfigPacketChan
 		assert.Equal(gw.GatewayConfiguration{
@@ -147,7 +167,8 @@ func TestGatewayConfigurationUpdate(t *testing.T) {
 type GatewayStatsTestSuite struct {
 	suite.Suite
 
-	gateway storage.Gateway
+	gateway  storage.Gateway
+	asClient *test.ApplicationClient
 }
 
 func (ts *GatewayStatsTestSuite) SetupSuite() {
@@ -156,29 +177,29 @@ func (ts *GatewayStatsTestSuite) SetupSuite() {
 	assert.NoError(storage.Setup(conf))
 	test.MustResetDB(storage.DB().DB)
 
+	rp := storage.RoutingProfile{}
+	assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp))
+
 	ts.gateway = storage.Gateway{
-		GatewayID: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+		GatewayID:        lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+		RoutingProfileID: rp.ID,
 	}
 	assert.NoError(storage.CreateGateway(context.Background(), storage.DB(), &ts.gateway))
 
-	assert.NoError(storage.SetAggregationIntervals([]storage.AggregationInterval{
-		storage.AggregationMinute,
-	}))
-
-	assert.NoError(storage.SetTimeLocation("Europe/Amsterdam"))
-
-	storage.SetMetricsTTL(time.Minute, time.Minute, time.Minute, time.Minute)
+	ts.asClient = test.NewApplicationClient()
+	applicationserver.SetPool(test.NewApplicationServerPool(ts.asClient))
 }
 
 func (ts *GatewayStatsTestSuite) TestStats() {
 	assert := require.New(ts.T())
 
-	loc, err := time.LoadLocation("Europe/Amsterdam")
+	now := time.Now()
+	statsID, err := uuid.NewV4()
 	assert.NoError(err)
 
-	now := time.Now().In(loc)
 	stats := gw.GatewayStats{
 		GatewayId: ts.gateway.GatewayID[:],
+		StatsId:   statsID[:],
 		Location: &common.Location{
 			Latitude:  1.123,
 			Longitude: 1.124,
@@ -190,22 +211,19 @@ func (ts *GatewayStatsTestSuite) TestStats() {
 		TxPacketsEmitted:    10,
 	}
 	stats.Time, _ = ptypes.TimestampProto(now)
+	assert.NoError(Handle(context.Background(), stats))
 
-	assert.NoError(handleGatewayStats(context.Background(), storage.RedisPool(), stats))
-
-	metrics, err := storage.GetMetrics(context.Background(), storage.RedisPool(), storage.AggregationMinute, "gw:0102030405060708", now, now)
-	assert.NoError(err)
-	assert.Equal([]storage.MetricsRecord{
-		{
-			Time: time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, loc),
-			Metrics: map[string]float64{
-				"rx_count":    11,
-				"rx_ok_count": 9,
-				"tx_count":    13,
-				"tx_ok_count": 10,
-			},
-		},
-	}, metrics)
+	asReq := <-ts.asClient.HandleGatewayStatsChan
+	assert.Equal(as.HandleGatewayStatsRequest{
+		GatewayId:           stats.GatewayId,
+		StatsId:             stats.StatsId,
+		Time:                stats.Time,
+		Location:            stats.Location,
+		RxPacketsReceived:   stats.RxPacketsReceived,
+		RxPacketsReceivedOk: stats.RxPacketsReceivedOk,
+		TxPacketsReceived:   stats.TxPacketsReceived,
+		TxPacketsEmitted:    stats.TxPacketsEmitted,
+	}, asReq)
 }
 
 func TestGatewayStats(t *testing.T) {

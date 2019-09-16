@@ -96,8 +96,14 @@ func (ts *StorageTestSuite) TestMulticastQueue() {
 	mg := ts.GetMulticastGroup()
 	assert.NoError(CreateMulticastGroup(context.Background(), ts.Tx(), &mg))
 
+	rp := RoutingProfile{
+		ASID: "localhost:1234",
+	}
+	assert.NoError(CreateRoutingProfile(context.Background(), ts.Tx(), &rp))
+
 	gw := Gateway{
-		GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+		GatewayID:        lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+		RoutingProfileID: rp.ID,
 	}
 	assert.NoError(CreateGateway(context.Background(), ts.Tx(), &gw))
 
@@ -187,8 +193,14 @@ func (ts *StorageTestSuite) TestGetMulticastGroupsWithQueueItems() {
 	mg2.GroupType = MulticastGroupC
 	assert.NoError(CreateMulticastGroup(context.Background(), ts.DB(), &mg2))
 
+	rp := RoutingProfile{
+		ASID: "localhost:1234",
+	}
+	assert.NoError(CreateRoutingProfile(context.Background(), ts.DB(), &rp))
+
 	gw := Gateway{
-		GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
+		GatewayID:        lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
+		RoutingProfileID: rp.ID,
 	}
 	assert.NoError(CreateGateway(context.Background(), ts.DB(), &gw))
 

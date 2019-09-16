@@ -61,6 +61,7 @@ func run(cmd *cobra.Command, args []string) error {
 		setupDownlink,
 		fixV2RedisCache,
 		migrateGatewayStats,
+		flushGatewayCache,
 		setupAPI,
 		startLoRaServer(server),
 		startStatsServer(gwStats),
@@ -402,5 +403,11 @@ func fixV2RedisCache() error {
 func migrateGatewayStats() error {
 	return code.Migrate("migrate_gateway_stats_to_redis", func(db sqlx.Ext) error {
 		return code.MigrateGatewayStats(storage.RedisPool(), db)
+	})
+}
+
+func flushGatewayCache() error {
+	return code.Migrate("stats_migration_flush_gw_cache", func(db sqlx.Ext) error {
+		return code.FlushGatewayCache(db)
 	})
 }

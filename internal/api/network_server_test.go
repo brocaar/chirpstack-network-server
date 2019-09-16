@@ -653,9 +653,15 @@ func TestNetworkServerAPI(t *testing.T) {
 		})
 
 		Convey("When calling CreateGateway", func() {
+			rp := storage.RoutingProfile{
+				ASID: "localhost:1234",
+			}
+			So(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp), ShouldBeNil)
+
 			req := ns.CreateGatewayRequest{
 				Gateway: &ns.Gateway{
-					Id: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+					Id:               []byte{1, 2, 3, 4, 5, 6, 7, 8},
+					RoutingProfileId: rp.ID[:],
 					Location: &common.Location{
 						Latitude:  1.1234,
 						Longitude: 1.1235,
@@ -689,7 +695,8 @@ func TestNetworkServerAPI(t *testing.T) {
 			Convey("Then UpdateGateway updates the gateway", func() {
 				req := ns.UpdateGatewayRequest{
 					Gateway: &ns.Gateway{
-						Id: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+						Id:               []byte{1, 2, 3, 4, 5, 6, 7, 8},
+						RoutingProfileId: rp.ID[:],
 						Location: &common.Location{
 							Latitude:  1.1235,
 							Longitude: 1.1236,

@@ -212,6 +212,7 @@ type ApplicationClient struct {
 	HandleProprietaryUpChan chan as.HandleProprietaryUplinkRequest
 	HandleErrorChan         chan as.HandleErrorRequest
 	HandleDownlinkACKChan   chan as.HandleDownlinkACKRequest
+	HandleGatewayStatsChan  chan as.HandleGatewayStatsRequest
 	SetDeviceStatusChan     chan as.SetDeviceStatusRequest
 	SetDeviceLocationChan   chan as.SetDeviceLocationRequest
 
@@ -219,6 +220,7 @@ type ApplicationClient struct {
 	HandleProprietaryUpResponse empty.Empty
 	HandleErrorResponse         empty.Empty
 	HandleDownlinkACKResponse   empty.Empty
+	HandleGatewayStatsResponse  empty.Empty
 	SetDeviceStatusResponse     empty.Empty
 	SetDeviceLocationResponse   empty.Empty
 }
@@ -230,6 +232,7 @@ func NewApplicationClient() *ApplicationClient {
 		HandleProprietaryUpChan: make(chan as.HandleProprietaryUplinkRequest, 100),
 		HandleErrorChan:         make(chan as.HandleErrorRequest, 100),
 		HandleDownlinkACKChan:   make(chan as.HandleDownlinkACKRequest, 100),
+		HandleGatewayStatsChan:  make(chan as.HandleGatewayStatsRequest, 100),
 		SetDeviceStatusChan:     make(chan as.SetDeviceStatusRequest, 100),
 		SetDeviceLocationChan:   make(chan as.SetDeviceLocationRequest, 100),
 	}
@@ -263,6 +266,12 @@ func (t *ApplicationClient) HandleError(ctx context.Context, in *as.HandleErrorR
 func (t *ApplicationClient) HandleDownlinkACK(ctx context.Context, in *as.HandleDownlinkACKRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	t.HandleDownlinkACKChan <- *in
 	return &t.HandleDownlinkACKResponse, nil
+}
+
+// HandleGatewayStats method.
+func (t *ApplicationClient) HandleGatewayStats(ctx context.Context, in *as.HandleGatewayStatsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	t.HandleGatewayStatsChan <- *in
+	return &t.HandleGatewayStatsResponse, nil
 }
 
 // SetDeviceStatus method.

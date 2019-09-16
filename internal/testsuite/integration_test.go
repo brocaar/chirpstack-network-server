@@ -313,6 +313,14 @@ func (ts *IntegrationTestSuite) CreateRoutingProfile(rp storage.RoutingProfile) 
 
 // CreateGateway creates the given gateway.
 func (ts *IntegrationTestSuite) CreateGateway(gw storage.Gateway) {
+	if gw.RoutingProfileID == uuid.Nil {
+		if ts.RoutingProfile == nil {
+			ts.CreateRoutingProfile(storage.RoutingProfile{})
+		}
+
+		gw.RoutingProfileID = ts.RoutingProfile.ID
+	}
+
 	ts.Require().Nil(storage.CreateGateway(context.Background(), storage.DB(), &gw))
 	ts.Gateway = &gw
 }

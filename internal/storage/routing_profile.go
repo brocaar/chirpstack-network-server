@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/brocaar/loraserver/api/as"
+	"github.com/brocaar/loraserver/internal/backend/applicationserver"
 	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
@@ -20,6 +22,21 @@ type RoutingProfile struct {
 	CACert    string    `db:"ca_cert"`
 	TLSCert   string    `db:"tls_cert"`
 	TLSKey    string    `db:"tls_key"`
+}
+
+// GetApplicationServerClient returns the application-server client.
+func (rp RoutingProfile) GetApplicationServerClient() (as.ApplicationServerServiceClient, error) {
+	asClient, err := applicationserver.Pool().Get(
+		rp.ASID,
+		[]byte(rp.CACert),
+		[]byte(rp.TLSCert),
+		[]byte(rp.TLSKey),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "get application-server client error")
+	}
+
+	return asClient, nil
 }
 
 // CreateRoutingProfile creates the given routing-profile.

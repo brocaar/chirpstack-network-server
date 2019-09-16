@@ -826,6 +826,9 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 		gw.GatewayProfileID = &gpID
 	}
 
+	// Routing Profile ID.
+	copy(gw.RoutingProfileID[:], req.Gateway.RoutingProfileId)
+
 	for _, board := range req.Gateway.Boards {
 		var gwBoard storage.GatewayBoard
 
@@ -869,7 +872,8 @@ func (n *NetworkServerAPI) GetGateway(ctx context.Context, req *ns.GetGatewayReq
 
 	resp := ns.GetGatewayResponse{
 		Gateway: &ns.Gateway{
-			Id: gw.GatewayID[:],
+			Id:               gw.GatewayID[:],
+			RoutingProfileId: gw.RoutingProfileID[:],
 			Location: &common.Location{
 				Latitude:  gw.Location.Latitude,
 				Longitude: gw.Location.Longitude,
@@ -926,6 +930,9 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
+
+	// Routing Profile ID.
+	copy(gw.RoutingProfileID[:], req.Gateway.RoutingProfileId)
 
 	// Gateway-profile ID.
 	if b := req.Gateway.GatewayProfileId; len(b) != 0 {

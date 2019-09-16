@@ -64,10 +64,12 @@ func (ts *EnqueueQueueItemTestCase) SetupTest() {
 
 	ts.Gateways = []storage.Gateway{
 		{
-			GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+			GatewayID:        lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+			RoutingProfileID: rp.ID,
 		},
 		{
-			GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
+			GatewayID:        lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
+			RoutingProfileID: rp.ID,
 		},
 	}
 	for i := range ts.Gateways {
