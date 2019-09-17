@@ -3,6 +3,7 @@ package framelog
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	proto "github.com/golang/protobuf/proto"
@@ -145,7 +146,11 @@ func getFrameLogs(ctx context.Context, p *redis.Pool, uplinkKey, downlinkKey str
 
 	done := make(chan error, 1)
 
+	var wg sync.WaitGroup
 	go func() {
+		wg.Add(1)
+		defer wg.Done()
+
 		for {
 			switch v := psc.Receive().(type) {
 			case redis.Message:
@@ -189,7 +194,7 @@ loop:
 	if err := psc.Unsubscribe(); err != nil {
 		return errors.Wrap(err, "unsubscribe error")
 	}
-
+	wg.Wait()
 	return <-done
 }
 
