@@ -87,3 +87,8 @@ message Location {
     // Accuracy (in meters).
     uint32 accuracy = 5;
 }
+
+message ContextDetails {
+    // Context ID (UUID).
+    bytes context_id = 1;
+}
