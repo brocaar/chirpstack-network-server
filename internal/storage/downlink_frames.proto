@@ -1,0 +1,20 @@
+syntax  = "proto3";
+
+package storage;
+
+import "api/gw/gw.proto";
+
+
+message DownlinkFrames {
+    // Token.
+    uint32 token = 1;
+
+    // DevEUI.
+    bytes dev_eui = 2;
+
+    // Multicast Group ID.
+    bytes multicast_group_id = 3;
+
+    // Downlink frames.
+    repeated gw.DownlinkFrame downlink_frames = 4;
+}

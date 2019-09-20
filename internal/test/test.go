@@ -288,24 +288,33 @@ func (t *ApplicationClient) SetDeviceLocation(ctx context.Context, in *as.SetDev
 
 // NetworkControllerClient is a network-controller client for testing.
 type NetworkControllerClient struct {
-	HandleRXInfoChan           chan nc.HandleUplinkMetaDataRequest
+	HandleUplinkMetaDataChan   chan nc.HandleUplinkMetaDataRequest
+	HandleDownlinkMetaDataChan chan nc.HandleDownlinkMetaDataRequest
 	HandleDataUpMACCommandChan chan nc.HandleUplinkMACCommandRequest
 
 	HandleRXInfoResponse           empty.Empty
+	HandleDownlinkMetaDataResponse empty.Empty
 	HandleDataUpMACCommandResponse empty.Empty
 }
 
 // NewNetworkControllerClient returns a new NetworkControllerClient.
 func NewNetworkControllerClient() *NetworkControllerClient {
 	return &NetworkControllerClient{
-		HandleRXInfoChan:           make(chan nc.HandleUplinkMetaDataRequest, 100),
+		HandleUplinkMetaDataChan:   make(chan nc.HandleUplinkMetaDataRequest, 100),
+		HandleDownlinkMetaDataChan: make(chan nc.HandleDownlinkMetaDataRequest, 100),
 		HandleDataUpMACCommandChan: make(chan nc.HandleUplinkMACCommandRequest, 100),
 	}
 }
 
 // HandleUplinkMetaData method.
 func (t *NetworkControllerClient) HandleUplinkMetaData(ctx context.Context, in *nc.HandleUplinkMetaDataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	t.HandleRXInfoChan <- *in
+	t.HandleUplinkMetaDataChan <- *in
+	return &empty.Empty{}, nil
+}
+
+// HandleDownlinkMetaData method.
+func (t *NetworkControllerClient) HandleDownlinkMetaData(ctx context.Context, in *nc.HandleDownlinkMetaDataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	t.HandleDownlinkMetaDataChan <- *in
 	return &empty.Empty{}, nil
 }
 

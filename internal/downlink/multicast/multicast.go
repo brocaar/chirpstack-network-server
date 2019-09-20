@@ -29,6 +29,7 @@ type multicastContext struct {
 	ctx context.Context
 
 	Token              uint16
+	DownlinkFrame      gw.DownlinkFrame
 	DB                 sqlx.Ext
 	MulticastGroup     storage.MulticastGroup
 	MulticastQueueItem storage.MulticastQueueItem
@@ -44,6 +45,7 @@ var multicastTasks = []func(*multicastContext) error{
 	setTXInfo,
 	setPHYPayload,
 	sendDownlinkData,
+	saveDownlinkFrame,
 }
 
 var (
@@ -229,19 +231,33 @@ func sendDownlinkData(ctx *multicastContext) error {
 		}
 	}
 
-	downlinkFrame := gw.DownlinkFrame{
+	ctx.DownlinkFrame = gw.DownlinkFrame{
 		Token:      uint32(ctx.Token),
 		DownlinkId: downID[:],
 		TxInfo:     &ctx.TXInfo,
 		PhyPayload: phyB,
 	}
 
-	if err := gateway.Backend().SendTXPacket(downlinkFrame); err != nil {
+	if err := gateway.Backend().SendTXPacket(ctx.DownlinkFrame); err != nil {
 		return errors.Wrap(err, "send downlink frame to gateway error")
 	}
 
-	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, storage.RedisPool(), downlinkFrame); err != nil {
+	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, storage.RedisPool(), ctx.DownlinkFrame); err != nil {
 		log.WithError(err).Error("log downlink frame for gateway error")
+	}
+
+	return nil
+}
+
+func saveDownlinkFrame(ctx *multicastContext) error {
+	df := storage.DownlinkFrames{
+		MulticastGroupId: ctx.MulticastGroup.ID[:],
+		Token:            uint32(ctx.Token),
+		DownlinkFrames:   []*gw.DownlinkFrame{&ctx.DownlinkFrame},
+	}
+
+	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), df); err != nil {
+		return errors.Wrap(err, "save downlink-frames error")
 	}
 
 	return nil

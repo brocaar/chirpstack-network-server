@@ -11,6 +11,7 @@ import (
 
 	"github.com/brocaar/loraserver/api/common"
 	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/api/nc"
 	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/downlink"
 	"github.com/brocaar/loraserver/internal/helpers"
@@ -66,6 +67,7 @@ func (ts *RejoinTestSuite) SetupSuite() {
 
 	ts.RXInfo = gw.UplinkRXInfo{
 		GatewayId: ts.Gateway.GatewayID[:],
+		Location:  &common.Location{},
 	}
 
 	ts.TXInfo = gw.UplinkTXInfo{
@@ -249,6 +251,13 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 						RX1DROffset:           2,
 						RX2DR:                 3,
 					},
+				}),
+				AssertNCHandleUplinkMetaDataRequest(nc.HandleUplinkMetaDataRequest{
+					DevEui:              ts.Device.DevEUI[:],
+					TxInfo:              &ts.TXInfo,
+					RxInfo:              []*gw.UplinkRXInfo{&ts.RXInfo},
+					MessageType:         nc.MType_REJOIN_REQUEST,
+					PhyPayloadByteCount: 19,
 				}),
 			},
 		},

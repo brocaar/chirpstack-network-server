@@ -128,7 +128,7 @@ type DownlinkTXAckTest struct {
 	Name           string
 	DevEUI         lorawan.EUI64
 	DownlinkTXAck  gw.DownlinkTXAck
-	DownlinkFrames []gw.DownlinkFrame
+	DownlinkFrames storage.DownlinkFrames
 
 	Assert        []Assertion
 	ExpectedError error
@@ -659,10 +659,9 @@ func (ts *IntegrationTestSuite) AssertUplinkProprietaryTest(t *testing.T, tst Up
 // AssertDownlinkTXAckTest asserts the given downlink tx ack test.
 func (ts *IntegrationTestSuite) AssertDownlinkTXAckTest(t *testing.T, tst DownlinkTXAckTest) {
 	assert := require.New(t)
-
 	test.MustFlushRedis(storage.RedisPool())
 
-	assert.NoError(storage.SaveDownlinkFrames(context.Background(), storage.RedisPool(), tst.DevEUI, tst.DownlinkFrames))
+	assert.NoError(storage.SaveDownlinkFrames(context.Background(), storage.RedisPool(), tst.DownlinkFrames))
 
 	err := ack.HandleDownlinkTXAck(context.Background(), tst.DownlinkTXAck)
 	if err != nil {

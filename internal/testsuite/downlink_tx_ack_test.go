@@ -3,10 +3,12 @@ package testsuite
 import (
 	"testing"
 
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -43,13 +45,24 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 				Token:     12345,
 				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 			},
-			DownlinkFrames: []gw.DownlinkFrame{
-				{
-					Token: 12345,
-					TxInfo: &gw.DownlinkTXInfo{
-						GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+			DownlinkFrames: storage.DownlinkFrames{
+				Token:  12345,
+				DevEui: []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+				DownlinkFrames: []*gw.DownlinkFrame{
+					{
+						Token: 12345,
+						TxInfo: &gw.DownlinkTXInfo{
+							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+						},
+						PhyPayload: []byte{1, 2},
 					},
-					PhyPayload: []byte{1, 2, 3},
+					{
+						Token: 12345,
+						TxInfo: &gw.DownlinkTXInfo{
+							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+						},
+						PhyPayload: []byte{1, 2, 3},
+					},
 				},
 			},
 			Assert: []Assertion{
@@ -64,20 +77,35 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 				Error:     "BOOM",
 			},
-			DownlinkFrames: []gw.DownlinkFrame{
-				{
-					Token: 12345,
-					TxInfo: &gw.DownlinkTXInfo{
-						GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+			DownlinkFrames: storage.DownlinkFrames{
+				Token:  12345,
+				DevEui: []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+				DownlinkFrames: []*gw.DownlinkFrame{
+					// the one that was previously "sent"
+					{
+						Token: 12345,
+						TxInfo: &gw.DownlinkTXInfo{
+							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+						},
+						PhyPayload: []byte{1, 2},
 					},
-					PhyPayload: phyB,
+					// the next one in the queue
+					{
+						Token: 12345,
+						TxInfo: &gw.DownlinkTXInfo{
+							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+						},
+						PhyPayload: phyB,
+					},
 				},
 			},
 			Assert: []Assertion{
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 				}, phy),
-				AssertNoDownlinkFrameSaved,
+				AssertDownlinkFrameSaved(lorawan.EUI64{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}, uuid.Nil, gw.DownlinkTXInfo{
+					GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+				}, phy),
 			},
 		},
 		{
@@ -88,13 +116,17 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 				Error:     "BOOM",
 			},
-			DownlinkFrames: []gw.DownlinkFrame{
-				{
-					Token: 12345,
-					TxInfo: &gw.DownlinkTXInfo{
-						GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+			DownlinkFrames: storage.DownlinkFrames{
+				Token:  54321,
+				DevEui: []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+				DownlinkFrames: []*gw.DownlinkFrame{
+					{
+						Token: 54321,
+						TxInfo: &gw.DownlinkTXInfo{
+							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+						},
+						PhyPayload: phyB,
 					},
-					PhyPayload: phyB,
 				},
 			},
 			Assert: []Assertion{

@@ -41,6 +41,7 @@ api:
 	go generate api/geo/geo.go
 	go generate api/common/common.go
 	go generate internal/storage/device_session.go
+	go generate internal/storage/downlink_frames.go
 
 statics:
 	@echo "Generating static files"

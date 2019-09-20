@@ -11,12 +11,15 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/loraserver/api/nc"
+	"github.com/brocaar/loraserver/internal/backend/controller"
 	"github.com/brocaar/loraserver/internal/backend/joinserver"
 	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/config"
 	joindown "github.com/brocaar/loraserver/internal/downlink/join"
 	"github.com/brocaar/loraserver/internal/framelog"
 	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/loraserver/internal/logging"
 	"github.com/brocaar/loraserver/internal/models"
 	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
@@ -34,6 +37,7 @@ var tasks = []func(*rejoinContext) error{
 		validateMIC,
 		getRandomDevAddr,
 		getRejoinAcceptFromJS,
+		sendUplinkMetaDataToNetworkController,
 	),
 	forRejoinType([]lorawan.JoinType{lorawan.RejoinRequestType0},
 		setRejoin0PendingDeviceSession,
@@ -306,6 +310,43 @@ func getRejoinAcceptFromJS(ctx *rejoinContext) error {
 	if err != nil {
 		return errors.Wrap(err, "rejoin-request to join-server error")
 	}
+
+	return nil
+}
+
+func sendUplinkMetaDataToNetworkController(ctx *rejoinContext) error {
+	if controller.Client() == nil {
+		return nil
+	}
+
+	req := nc.HandleUplinkMetaDataRequest{
+		DevEui:      ctx.DevEUI[:],
+		TxInfo:      ctx.RXPacket.TXInfo,
+		RxInfo:      ctx.RXPacket.RXInfoSet,
+		MessageType: nc.MType_REJOIN_REQUEST,
+	}
+
+	// set phypayload size
+	if b, err := ctx.RXPacket.PHYPayload.MarshalBinary(); err == nil {
+		req.PhyPayloadByteCount = uint32(len(b))
+	}
+
+	// send async to controller
+	go func() {
+		_, err := controller.Client().HandleUplinkMetaData(ctx.ctx, &req)
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"dev_eui": ctx.DevEUI,
+				"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+			}).Error("sent uplink meta-data to network-controller error")
+			return
+		}
+
+		log.WithFields(log.Fields{
+			"dev_eui": ctx.DevEUI,
+			"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+		}).Error("sent uplink meta-data to network-controller")
+	}()
 
 	return nil
 }

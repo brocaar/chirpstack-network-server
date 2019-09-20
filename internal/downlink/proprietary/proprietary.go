@@ -2,7 +2,6 @@ package proprietary
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/binary"
 
 	"github.com/gofrs/uuid"
@@ -14,27 +13,27 @@ import (
 	"github.com/brocaar/loraserver/internal/band"
 	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/logging"
+	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
 const defaultCodeRate = "4/5"
 
 var tasks = []func(*proprietaryContext) error{
-	setToken,
 	sendProprietaryDown,
+	saveFrame,
 }
 
 type proprietaryContext struct {
 	ctx context.Context
 
-	Token       uint16
-	MACPayload  []byte
-	MIC         lorawan.MIC
-	GatewayMACs []lorawan.EUI64
-	IPol        bool
-	Frequency   int
-	DR          int
+	MACPayload     []byte
+	MIC            lorawan.MIC
+	GatewayMACs    []lorawan.EUI64
+	IPol           bool
+	Frequency      int
+	DR             int
+	DownlinkFrames []gw.DownlinkFrame
 }
 
 var (
@@ -69,29 +68,12 @@ func Handle(ctx context.Context, macPayload []byte, mic lorawan.MIC, gwMACs []lo
 	return nil
 }
 
-func setToken(ctx *proprietaryContext) error {
-	b := make([]byte, 2)
-	_, err := rand.Read(b)
-	if err != nil {
-		return errors.Wrap(err, "read random erro")
-	}
-	ctx.Token = binary.BigEndian.Uint16(b)
-	return nil
-}
-
 func sendProprietaryDown(ctx *proprietaryContext) error {
 	var txPower int
 	if downlinkTXPower != -1 {
 		txPower = downlinkTXPower
 	} else {
 		txPower = band.Band().GetDownlinkTXPower(ctx.Frequency)
-	}
-
-	var downID uuid.UUID
-	if ctxID := ctx.ctx.Value(logging.ContextIDKey); ctxID != nil {
-		if id, ok := ctxID.(uuid.UUID); ok {
-			downID = id
-		}
 	}
 
 	phy := lorawan.PHYPayload{
@@ -108,6 +90,12 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 	}
 
 	for _, mac := range ctx.GatewayMACs {
+		downID, err := uuid.NewV4()
+		if err != nil {
+			return errors.Wrap(err, "new uuid error")
+		}
+		token := binary.BigEndian.Uint16(downID[0:2])
+
 		txInfo := gw.DownlinkTXInfo{
 			GatewayId: mac[:],
 			Frequency: uint32(ctx.Frequency),
@@ -132,13 +120,30 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 			}
 		}
 
-		if err := gateway.Backend().SendTXPacket(gw.DownlinkFrame{
-			Token:      uint32(ctx.Token),
+		df := gw.DownlinkFrame{
+			Token:      uint32(token),
 			DownlinkId: downID[:],
 			TxInfo:     &txInfo,
 			PhyPayload: phyB,
+		}
+
+		ctx.DownlinkFrames = append(ctx.DownlinkFrames, df)
+
+		if err := gateway.Backend().SendTXPacket(df); err != nil {
+			return errors.Wrap(err, "send downlink frame to gateway error")
+		}
+	}
+
+	return nil
+}
+
+func saveFrame(ctx *proprietaryContext) error {
+	for _, df := range ctx.DownlinkFrames {
+		if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), storage.DownlinkFrames{
+			Token:          df.Token,
+			DownlinkFrames: []*gw.DownlinkFrame{&df},
 		}); err != nil {
-			return errors.Wrap(err, "send tx packet to gateway error")
+			return errors.Wrap(err, "save downlink-frames error")
 		}
 	}
 

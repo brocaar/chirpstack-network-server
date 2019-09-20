@@ -101,7 +101,7 @@ var responseTasks = []func(*dataContext) error{
 	setPHYPayloads,
 	sendDownlinkFrame,
 	saveDeviceSession,
-	saveRemainingFrames,
+	saveFrames,
 }
 
 var scheduleNextQueueItemTasks = []func(*dataContext) error{
@@ -126,6 +126,7 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	setPHYPayloads,
 	sendDownlinkFrame,
 	saveDeviceSession,
+	saveFrames,
 }
 
 // Setup configures the package.
@@ -1122,20 +1123,17 @@ func checkLastDownlinkTimestamp(ctx *dataContext) error {
 	return nil
 }
 
-func saveRemainingFrames(ctx *dataContext) error {
-	if len(ctx.DownlinkFrames) < 2 {
-		return nil
+func saveFrames(ctx *dataContext) error {
+	df := storage.DownlinkFrames{
+		DevEui: ctx.DeviceSession.DevEUI[:],
 	}
 
-	var downlinkFrames []gw.DownlinkFrame
 	for i := range ctx.DownlinkFrames {
-		if i == 0 || ctx.DownlinkFrames[i].RemainingPayloadSize < 0 {
-			continue
-		}
-		downlinkFrames = append(downlinkFrames, ctx.DownlinkFrames[i].DownlinkFrame)
+		df.Token = ctx.DownlinkFrames[i].DownlinkFrame.Token
+		df.DownlinkFrames = append(df.DownlinkFrames, &ctx.DownlinkFrames[i].DownlinkFrame)
 	}
 
-	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, downlinkFrames); err != nil {
+	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), df); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
 	}
 

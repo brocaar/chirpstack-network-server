@@ -44,7 +44,7 @@ var tasks = []func(*dataContext) error{
 	setADR,
 	setUplinkDataRate,
 	setBeaconLocked,
-	sendRXInfoToNetworkController,
+	sendUplinkMetaDataToNetworkController,
 	handleFOptsMACCommands,
 	handleFRMPayloadMACCommands,
 	storeDeviceGatewayRXInfoSet,
@@ -462,11 +462,64 @@ func setBeaconLocked(ctx *dataContext) error {
 	return nil
 }
 
-func sendRXInfoToNetworkController(ctx *dataContext) error {
-	// TODO: change so that errors get logged but not returned
-	if err := sendRXInfoPayload(ctx.ctx, ctx.DeviceSession, ctx.RXPacket); err != nil {
-		return errors.Wrap(err, "send rx-info to network-controller error")
+func sendUplinkMetaDataToNetworkController(ctx *dataContext) error {
+	if controller.Client() == nil {
+		return nil
 	}
+
+	req := nc.HandleUplinkMetaDataRequest{
+		DevEui: ctx.DeviceSession.DevEUI[:],
+		TxInfo: ctx.RXPacket.TXInfo,
+		RxInfo: ctx.RXPacket.RXInfoSet,
+	}
+
+	// set message type
+	switch ctx.RXPacket.PHYPayload.MHDR.MType {
+	case lorawan.UnconfirmedDataUp:
+		req.MessageType = nc.MType_UNCONFIRMED_DATA_UP
+	case lorawan.ConfirmedDataUp:
+		req.MessageType = nc.MType_UNCONFIRMED_DATA_UP
+	}
+
+	// set phypayload size
+	if b, err := ctx.RXPacket.PHYPayload.MarshalBinary(); err == nil {
+		req.PhyPayloadByteCount = uint32(len(b))
+	}
+
+	// set fopts size
+	for _, m := range ctx.MACPayload.FHDR.FOpts {
+		if b, err := m.MarshalBinary(); err == nil {
+			req.MacCommandByteCount += uint32(len(b))
+		}
+	}
+
+	// set frmpayload size
+	for _, pl := range ctx.MACPayload.FRMPayload {
+		if b, err := pl.MarshalBinary(); err == nil {
+			if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort != 0 {
+				req.ApplicationPayloadByteCount += uint32(len(b))
+			} else {
+				req.MacCommandByteCount += uint32(len(b))
+			}
+		}
+	}
+
+	// send async to controller
+	go func() {
+		_, err := controller.Client().HandleUplinkMetaData(ctx.ctx, &req)
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"dev_eui": ctx.DeviceSession.DevEUI,
+				"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+			}).Error("sent uplink meta-data to network-controller error")
+			return
+		}
+
+		log.WithFields(log.Fields{
+			"dev_eui": ctx.DeviceSession.DevEUI,
+			"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+		}).Error("sent uplink meta-data to network-controller")
+	}()
 
 	return nil
 }
@@ -653,25 +706,6 @@ func handleDownlink(ctx *dataContext) error {
 		return errors.Wrap(err, "run uplink response flow error")
 	}
 
-	return nil
-}
-
-// sendRXInfoPayload sends the rx and tx meta-data to the network controller.
-func sendRXInfoPayload(ctx context.Context, ds storage.DeviceSession, rxPacket models.RXPacket) error {
-	rxInfoReq := nc.HandleUplinkMetaDataRequest{
-		DevEui: ds.DevEUI[:],
-		TxInfo: rxPacket.TXInfo,
-		RxInfo: rxPacket.RXInfoSet,
-	}
-
-	_, err := controller.Client().HandleUplinkMetaData(ctx, &rxInfoReq)
-	if err != nil {
-		return fmt.Errorf("publish rxinfo to network-controller error: %s", err)
-	}
-	log.WithFields(log.Fields{
-		"dev_eui": ds.DevEUI,
-		"ctx_id":  ctx.Value(logging.ContextIDKey),
-	}).Info("rx info sent to network-controller")
 	return nil
 }
 

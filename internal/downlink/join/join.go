@@ -33,7 +33,7 @@ var tasks = []func(*joinContext) error{
 	setToken,
 	setDownlinkFrame,
 	sendJoinAcceptResponse,
-	saveRemainingFrames,
+	saveFrames,
 }
 
 type joinContext struct {
@@ -259,12 +259,17 @@ func sendJoinAcceptResponse(ctx *joinContext) error {
 	return nil
 }
 
-func saveRemainingFrames(ctx *joinContext) error {
-	if len(ctx.DownlinkFrames) < 2 {
-		return nil
+func saveFrames(ctx *joinContext) error {
+	df := storage.DownlinkFrames{
+		DevEui: ctx.DeviceSession.DevEUI[:],
 	}
 
-	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[1:]); err != nil {
+	for i := range ctx.DownlinkFrames {
+		df.Token = ctx.DownlinkFrames[i].Token
+		df.DownlinkFrames = append(df.DownlinkFrames, &ctx.DownlinkFrames[i])
+	}
+
+	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), df); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
 	}
 
