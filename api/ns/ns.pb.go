@@ -4297,6 +4297,7 @@ type NetworkServerServiceClient interface {
 	// DeleteGatewayProfile deletes the gateway-profile matching a given id.
 	DeleteGatewayProfile(ctx context.Context, in *DeleteGatewayProfileRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// GetGatewayStats returns stats of an existing gateway.
+	// Deprecated (stats are forwarded to Application Server API).
 	GetGatewayStats(ctx context.Context, in *GetGatewayStatsRequest, opts ...grpc.CallOption) (*GetGatewayStatsResponse, error)
 	// StreamFrameLogsForGateway returns a stream of frames seen by the given gateway.
 	StreamFrameLogsForGateway(ctx context.Context, in *StreamFrameLogsForGatewayRequest, opts ...grpc.CallOption) (NetworkServerService_StreamFrameLogsForGatewayClient, error)
@@ -4874,6 +4875,7 @@ type NetworkServerServiceServer interface {
 	// DeleteGatewayProfile deletes the gateway-profile matching a given id.
 	DeleteGatewayProfile(context.Context, *DeleteGatewayProfileRequest) (*empty.Empty, error)
 	// GetGatewayStats returns stats of an existing gateway.
+	// Deprecated (stats are forwarded to Application Server API).
 	GetGatewayStats(context.Context, *GetGatewayStatsRequest) (*GetGatewayStatsResponse, error)
 	// StreamFrameLogsForGateway returns a stream of frames seen by the given gateway.
 	StreamFrameLogsForGateway(*StreamFrameLogsForGatewayRequest, NetworkServerService_StreamFrameLogsForGatewayServer) error

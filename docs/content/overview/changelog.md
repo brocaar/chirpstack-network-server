@@ -9,6 +9,42 @@ description: Lists the changes per LoRa Server release, including steps how to u
 ---
 # Changelog
 
+## v3.3.0
+
+### Features
+
+#### IDs for correlation
+
+This release implements per context unique IDs that are printed in the
+logs and are returned as header in API responses. This makes it easier to
+correlate log events.
+
+#### Forwards gateway stats to Application Server API
+
+This decouples the storage / handling of gateway stats from the Network Server.
+This deprecates the `GetGatewayStats` API method (will be removed in the next
+major version).
+
+#### Extend Network Controller API
+
+Next to the already existing `HandleUplinkMetaData` method, this adds a
+`HandleDownlinkMetaData` API method. The `HandleUplinkMetaData` API call has
+been extended with more meta-data (e.g. DevEUI, payload size, ...) which can be
+used for accounting purposes.
+
+### Bugfixes
+
+* Fix unreturned errors. ([#428](https://github.com/brocaar/loraserver/pull/428))
+* Fix send on closed channel. ([#433](https://github.com/brocaar/loraserver/issues/433))
+
+### Upgrading
+
+Although not required, to benefit fully from the IDs for correlation feature,
+it is recommended to update LoRa Gateway Bridge to v3.3.0 (or later).
+
+As the gateway stats are now forwarded to the Application Server API, in order
+to continue receiving gateway stats you must upgrade to LoRa App Server v3.4.0 (or later).
+
 ## v3.2.1
 
 ### Improvements

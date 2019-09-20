@@ -115,6 +115,7 @@ service NetworkServerService {
     rpc DeleteGatewayProfile(DeleteGatewayProfileRequest) returns (google.protobuf.Empty) {}
 
     // GetGatewayStats returns stats of an existing gateway.
+    // Deprecated (stats are forwarded to Application Server API).
     rpc GetGatewayStats(GetGatewayStatsRequest) returns (GetGatewayStatsResponse) {}
 
     // StreamFrameLogsForGateway returns a stream of frames seen by the given gateway.
