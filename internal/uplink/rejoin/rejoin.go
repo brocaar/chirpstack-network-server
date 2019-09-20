@@ -345,7 +345,7 @@ func sendUplinkMetaDataToNetworkController(ctx *rejoinContext) error {
 		log.WithFields(log.Fields{
 			"dev_eui": ctx.DevEUI,
 			"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
-		}).Error("sent uplink meta-data to network-controller")
+		}).Info("sent uplink meta-data to network-controller")
 	}()
 
 	return nil

@@ -142,7 +142,7 @@ func sendDownlinkMetaDataToNetworkControllerOnNoError(ctx *ackContext) error {
 
 		log.WithFields(log.Fields{
 			"ctx_id": ctx.ctx.Value(logging.ContextIDKey),
-		}).Error("sent downlink meta-data to network-controller")
+		}).Info("sent downlink meta-data to network-controller")
 	}()
 
 	return nil
