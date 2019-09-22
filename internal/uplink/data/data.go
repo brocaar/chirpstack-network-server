@@ -478,7 +478,7 @@ func sendUplinkMetaDataToNetworkController(ctx *dataContext) error {
 	case lorawan.UnconfirmedDataUp:
 		req.MessageType = nc.MType_UNCONFIRMED_DATA_UP
 	case lorawan.ConfirmedDataUp:
-		req.MessageType = nc.MType_UNCONFIRMED_DATA_UP
+		req.MessageType = nc.MType_CONFIRMED_DATA_UP
 	}
 
 	// set phypayload size
