@@ -437,6 +437,9 @@ func GetDeviceSessionForPHYPayload(ctx context.Context, p *redis.Pool, phy loraw
 	if err != nil {
 		return DeviceSession{}, err
 	}
+	if len(sessions) == 0 {
+		return DeviceSession{}, ErrDoesNotExist
+	}
 
 	for _, s := range sessions {
 		// reset to the original FCnt
@@ -451,7 +454,6 @@ func GetDeviceSessionForPHYPayload(ctx context.Context, p *redis.Pool, phy loraw
 			// downlink frame-counter on a re-transmit, which is not what we
 			// want.
 			if s.SkipFCntValidation {
-				fullFCnt = macPL.FHDR.FCnt
 				s.FCntUp = macPL.FHDR.FCnt
 				s.UplinkHistory = []UplinkHistory{}
 
@@ -491,7 +493,7 @@ func GetDeviceSessionForPHYPayload(ctx context.Context, p *redis.Pool, phy loraw
 		}
 	}
 
-	return DeviceSession{}, ErrDoesNotExistOrFCntOrMICInvalid
+	return DeviceSession{}, ErrFCntInvalid
 }
 
 // DeviceSessionExists returns a bool indicating if a device session exist.

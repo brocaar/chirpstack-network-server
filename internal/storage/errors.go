@@ -12,6 +12,7 @@ var (
 	ErrAlreadyExists                  = errors.New("object already exists")
 	ErrDoesNotExist                   = errors.New("object does not exist")
 	ErrDoesNotExistOrFCntOrMICInvalid = errors.New("device-session does not exist or invalid fcnt or mic")
+	ErrFCntInvalid                    = errors.New("invalid fcnt")
 	ErrInvalidAggregationInterval     = errors.New("invalid aggregation interval")
 	ErrInvalidName                    = errors.New("invalid gateway name")
 	ErrInvalidFPort                   = errors.New("invalid fPort (must be > 0)")
