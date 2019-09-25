@@ -57,6 +57,8 @@ func init() {
 
 	viper.SetDefault("postgresql.dsn", "postgres://localhost/loraserver_ns?sslmode=disable")
 	viper.SetDefault("postgresql.automigrate", true)
+	viper.SetDefault("postgresql.max_open_connections", -1)
+	viper.SetDefault("postgresql.max_idle_connections", 0)
 
 	viper.SetDefault("network_server.net_id", "000000")
 	viper.SetDefault("network_server.band.name", "EU_863_870")

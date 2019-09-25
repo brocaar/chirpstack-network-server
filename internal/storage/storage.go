@@ -62,6 +62,8 @@ func Setup(c config.Config) error {
 	if err != nil {
 		return errors.Wrap(err, "storage: PostgreSQL connection error")
 	}
+	d.SetMaxOpenConns(c.PostgreSQL.MaxOpenConnections)
+	d.SetMaxIdleConns(c.PostgreSQL.MaxIdleConnections)
 	for {
 		if err := d.Ping(); err != nil {
 			log.WithError(err).Warning("storage: ping PostgreSQL database error, will retry in 2s")
