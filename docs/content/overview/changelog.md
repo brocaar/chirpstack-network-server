@@ -38,8 +38,10 @@ used for accounting purposes.
 
 ### Bugfixes
 
+* Recover Azure Service-Bus queue client on Receive error.
 * Fix unreturned errors. ([#428](https://github.com/brocaar/loraserver/pull/428))
-* Fix send on closed channel. ([#433](https://github.com/brocaar/loraserver/issues/433))
+* Fix send on closed channel. ([#434](https://github.com/brocaar/loraserver/issues/433))
+* Fix logging DevEUI in join flow. ([#438](https://github.com/brocaar/loraserver/pull/438))
 
 ### Upgrading
 
