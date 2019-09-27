@@ -260,14 +260,14 @@ func sendUplinkMetaDataToNetworkController(ctx *joinContext) error {
 		_, err := controller.Client().HandleUplinkMetaData(ctx.ctx, &req)
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
-				"dev_eui": ctx.DeviceSession.DevEUI,
+				"dev_eui": ctx.JoinRequestPayload.DevEUI,
 				"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
 			}).Error("sent uplink meta-data to network-controller error")
 			return
 		}
 
 		log.WithFields(log.Fields{
-			"dev_eui": ctx.DeviceSession.DevEUI,
+			"dev_eui": ctx.JoinRequestPayload.DevEUI,
 			"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
 		}).Info("sent uplink meta-data to network-controller")
 	}()
