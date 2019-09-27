@@ -59,13 +59,18 @@ dsn="{{ .PostgreSQL.DSN }}"
 # App Server and / or applying migrations.
 automigrate={{ .PostgreSQL.Automigrate }}
 
-# Max open connections in the pool.
-# <= 0 means unlimited
+# Max open connections.
+#
+# This sets the max. number of open connections that are allowed in the
+# PostgreSQL connection pool (0 = unlimited).
 max_open_connections={{ .PostgreSQL.MaxOpenConnections }}
 
-# Max open connections in the pool.
-# Zero means defaultMaxIdleConns; negative means 0
+# Max idle connections.
+#
+# This sets the max. number of idle connections in the PostgreSQL connection
+# pool (0 = no idle connections are retained).
 max_idle_connections={{ .PostgreSQL.MaxIdleConnections }}
+
 
 # Redis settings
 #

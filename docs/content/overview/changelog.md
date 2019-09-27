@@ -32,6 +32,10 @@ Next to the already existing `HandleUplinkMetaData` method, this adds a
 been extended with more meta-data (e.g. DevEUI, payload size, ...) which can be
 used for accounting purposes.
 
+### Improvements
+
+* Add PostgreSQL max open / idle connections settings. ([#437](https://github.com/brocaar/loraserver/pull/437))
+
 ### Bugfixes
 
 * Fix unreturned errors. ([#428](https://github.com/brocaar/loraserver/pull/428))
