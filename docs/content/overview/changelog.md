@@ -55,6 +55,7 @@ to continue receiving gateway stats you must upgrade to LoRa App Server v3.4.0 (
 ### Bugfixes
 
 * Fix Azure _Unauthorized access. 'Listen' claim(s) are required to perform this operation._ error. (see [azure-service-bus-go/#116](https://github.com/Azure/azure-service-bus-go/issues/116))
+* Recover Azure Service-Bus queue client on `Receive` error.
 
 ## v3.2.0
 

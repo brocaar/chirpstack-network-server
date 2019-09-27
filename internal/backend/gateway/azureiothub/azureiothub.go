@@ -102,10 +102,18 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 			}
 
 			if err := b.queue.Receive(b.ctx, servicebus.HandlerFunc(b.eventHandler)); err != nil {
-				log.WithError(err).Error("gateway/azure_iot_hub: receive from queue error")
-				time.Sleep(time.Second * 2)
-			}
+				log.WithError(err).Error("gateway/azure_iot_hub: receive from queue error, trying to recover")
 
+				err := b.queue.Close(b.ctx)
+				if err != nil {
+					log.WithError(err).Error("gateway/azure_iot_hub: close queue error")
+				}
+
+				b.queue, err = b.ns.NewQueue(b.queueName)
+				if err != nil {
+					log.WithError(err).Error("gateway/azure_iot_hub: new queue client error")
+				}
+			}
 		}
 	}()
 
