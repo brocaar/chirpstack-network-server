@@ -2,6 +2,7 @@ package testsuite
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -713,11 +714,14 @@ func (ts *IntegrationTestSuite) AssertGeolocationTest(t *testing.T, fCnt uint32,
 	}
 	assert.NoError(helpers.SetUplinkTXInfoDataRate(&txInfo, 3, band.Band()))
 
+	var wg sync.WaitGroup
 	for j := range tst.RXInfo {
 		uf := ts.GetUplinkFrameForFRMPayload(*tst.RXInfo[j], txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})
+		wg.Add(1)
 		go func(assert *require.Assertions, uf gw.UplinkFrame) {
 			err := uplink.HandleUplinkFrame(context.Background(), uf)
 			assert.NoError(err)
+			wg.Done()
 		}(assert, uf)
 	}
 
@@ -725,6 +729,7 @@ func (ts *IntegrationTestSuite) AssertGeolocationTest(t *testing.T, fCnt uint32,
 	for _, a := range tst.Assert {
 		a(assert, ts)
 	}
+	wg.Wait()
 }
 
 func (ts *IntegrationTestSuite) initConfig() {
