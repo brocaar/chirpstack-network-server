@@ -3,7 +3,7 @@ package data
 import (
 	"crypto/rand"
 	"encoding/binary"
-	"fmt"
+	"math"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -49,7 +49,8 @@ var (
 
 	// RX window
 	rxWindow int
-	rx2OnlyDR int
+	rx2PreferOnRX1DRlte int
+	rx2PreferOnLinkBudget bool
 
 	// RX2 params
 	rx2Frequency int
@@ -142,7 +143,8 @@ func Setup(conf config.Config) error {
 	rx1Delay = nsConf.RX1Delay
 	rxWindow = nsConf.RXWindow
 
-	rx2OnlyDR = nsConf.RX2OnlyDR
+	rx2PreferOnRX1DRlte = nsConf.RX2PreferOnRX1DRlte
+	rx2PreferOnLinkBudget = nsConf.RX2PreferOnLinkBudget
 
 	downlinkTXPower = nsConf.DownlinkTXPower
 
@@ -391,33 +393,8 @@ func setTXParameters(ctx *dataContext) error {
 	return nil
 }
 
-func sfToSNR(sf int) float64 {
-	// Minimal SNR for SFs:
-	// SF 7:   -7.5
-	// SF 8:   -10
-	// SF 9:   -12.5
-	// SF 10:  -15
-	// SF 11:  -17.5
-	// SF 12:  -20
-	switch sf {
-	case 12:
-		return -20
-	case 11:
-		return -17.5
-	case 10:
-		return -15
-	case 9:
-		return -12.5
-	case 8:
-		return -10
-	case 7:
-		return -7.5
-	default:
-		return 0
-	}
-}
 
-func isRX2Only(ctx *dataContext) (b bool, err error) {
+func preferRX2DR(ctx *dataContext) (b bool, err error) {
 	// do not block RX1 until RX Settings of node are set correctly
 	if ctx.DeviceSession.RX2Frequency != rx2Frequency || ctx.DeviceSession.RX2DR != uint8(rx2DR) ||
 		ctx.DeviceSession.RX1DROffset != uint8(rx1DROffset) || ctx.DeviceSession.RXDelay != uint8(rx1Delay) {
@@ -436,133 +413,129 @@ func isRX2Only(ctx *dataContext) (b bool, err error) {
 		return true, errors.Wrap(err, "get rx1 data-rate index error")
 	}
 
-	if rx2OnlyDR >= 0 { // if the limit is set via config file, apply the settings accordingly
-		if rx2OnlyDR >= drRX1Index {
-			return true, nil
-		} else {
-			return false, nil
-		}
-	} else if rx2OnlyDR == -1 { // try to decide based on simplified link budget
-		var (
-			t			  int
-			txPowerRX1    int32
-			txPowerRX2    int32
-			freqRX1       uint32
-			freqRX2       uint32
-			linkBudgetRX1 float64
-			linkBudgetRX2 float64
-			drRX1		  loraband.DataRate
-			drRX2		  loraband.DataRate
-			logBWRX1 	  float64
-			logBWRX2	  float64
-		)
-
-		// get rx1 data-rate
-		drRX1, err = band.Band().GetDataRate(drRX1Index)
-		if err != nil {
-			return true, err // on error, omit RX1
-		}
-
-		if drRX1.Modulation == loraband.FSKModulation { //never block RX1 for FSK
-			return false, nil
-		}
-
-		// get rx2 data-rate
-		drRX2, err = band.Band().GetDataRate(int(ctx.DeviceSession.RX2DR))
-		if err != nil {
-			return false, err // on error, don't block RX1
-		}
-
-		// get RX1 and RX2 freq
-		t, err = band.Band().GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
-		if err != nil {
-			return true, err //could not get RX1 Frequency for any reason, so just send RX2 then
-		} else {
-			freqRX1 = uint32(t)
-		}
-
-		freqRX2 = uint32(ctx.DeviceSession.RX2Frequency)
-
-		// get RX1 and RX2 TX Power
-		if downlinkTXPower != -1 {
-			txPowerRX1 = int32(downlinkTXPower)
-			txPowerRX2 = int32(downlinkTXPower)
-		} else {
-			txPowerRX1 = int32(band.Band().GetDownlinkTXPower(int(freqRX1)))
-			txPowerRX2 = int32(band.Band().GetDownlinkTXPower(int(freqRX2)))
-		}
-
-		if drRX1.Bandwidth == 125 {
-			logBWRX1 = 21 // 10*log10(125)
-		} else {
-			logBWRX1 = 24 // 10*log10(250)
-		}
-
-		if drRX2.Bandwidth == 125 {
-			logBWRX2 = 21 // 10*log10(125)
-		} else {
-			logBWRX2 = 24 // 10*log10(250)
-		}
-
-		// do the Link Budget calculation here (see http://www.techplayon.com/lora-link-budget-sensitivity-calculations-example-explained/)
-		// General formula: L = TX_Power - (-174 + 10 * log10(BW) + NF + minimal_SNR(SF))
-		// we assume a noise figure of 6dB, BW of 125 kHz (-> 10log(125) approx. 21) for simplicity
-		// TODO: introduce some more factors like asymmetric up- and down-paths due to local noise, other band widths, ...
-
-		linkBudgetRX1 = float64(txPowerRX1) - (float64(-174 + 6) + logBWRX1 + sfToSNR(drRX1.SpreadFactor))
-		linkBudgetRX2 = float64(txPowerRX2) - (float64(-174 + 6) + logBWRX2 + sfToSNR(drRX2.SpreadFactor))
-
-		if linkBudgetRX2 >= linkBudgetRX1 {
-			return true, nil
-		} else {
-			return false, nil
-		}
-	} else {
-		return false, nil // default
-	}
-}
-
-func doRX1(ctx *dataContext) (b bool, err error) {
-	if rxWindow == 0 || rxWindow == 1 {
+	if rx2PreferOnRX1DRlte >= drRX1Index {
 		return true, nil
-	} else if rxWindow == 2 {
-		return false, nil
-	} else if rxWindow == 3 {
-		rx2only, err := isRX2Only(ctx)
-		return !rx2only, err
-	} else {
-		return false, errors.New(fmt.Sprintf("RX Window setting not supported: %d", rxWindow))
 	}
+
+	return false, nil
 }
 
-func doRX2(ctx *dataContext) (b bool, err error) {
-	if rxWindow == 0 || rxWindow == 2 || rxWindow == 3 {
+func preferRX2LinkBudget(ctx *dataContext) (b bool, err error) {
+	// do not block RX1 until RX Settings of node are set correctly
+	if ctx.DeviceSession.RX2Frequency != rx2Frequency || ctx.DeviceSession.RX2DR != uint8(rx2DR) ||
+		ctx.DeviceSession.RX1DROffset != uint8(rx1DROffset) || ctx.DeviceSession.RXDelay != uint8(rx1Delay) {
+		return false, nil
+	}
+
+	var (
+		t			  int
+		txPowerRX1    int32
+		txPowerRX2    int32
+		freqRX1       uint32
+		freqRX2       uint32
+		linkBudgetRX1 float64
+		linkBudgetRX2 float64
+		drRX1		  loraband.DataRate
+		drRX2		  loraband.DataRate
+		logBWRX1 	  float64
+		logBWRX2	  float64
+	)
+
+	// get uplink DR
+	uplinkDR, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
+	if err != nil {
+		return true, errors.Wrap(err, "get data-rate index error")
+	}
+
+	// get rx1 data-rate
+	drRX1Index, err := band.Band().GetRX1DataRateIndex(uplinkDR, int(ctx.DeviceSession.RX1DROffset))
+	if err != nil {
+		return true, errors.Wrap(err, "get rx1 data-rate index error")
+	}
+
+	// get rx1 data-rate
+	drRX1, err = band.Band().GetDataRate(drRX1Index)
+	if err != nil {
+		return true, err // on error, omit RX1
+	}
+
+	if drRX1.Modulation == loraband.FSKModulation { //never block RX1 for FSK
+		return false, nil
+	}
+
+	// get rx2 data-rate
+	drRX2, err = band.Band().GetDataRate(int(ctx.DeviceSession.RX2DR))
+	if err != nil {
+		return false, err // on error, don't block RX1
+	}
+
+	// get RX1 and RX2 freq
+	t, err = band.Band().GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
+	if err != nil {
+		return true, err //could not get RX1 Frequency for any reason, so just send RX2 then
+	}
+
+	freqRX1 = uint32(t)
+	freqRX2 = uint32(ctx.DeviceSession.RX2Frequency)
+
+	// get RX1 and RX2 TX Power
+	if downlinkTXPower != -1 {
+		txPowerRX1 = int32(downlinkTXPower)
+		txPowerRX2 = int32(downlinkTXPower)
+	} else {
+		txPowerRX1 = int32(band.Band().GetDownlinkTXPower(int(freqRX1)))
+		txPowerRX2 = int32(band.Band().GetDownlinkTXPower(int(freqRX2)))
+	}
+
+	logBWRX1 = 10*math.Log10(float64(drRX1.Bandwidth))
+	logBWRX2 = 10*math.Log10(float64(drRX2.Bandwidth))
+
+	// do the Link Budget calculation here (see http://www.techplayon.com/lora-link-budget-sensitivity-calculations-example-explained/)
+	// General formula: L = TX_Power - (-174 + 10 * log10(BW) + NF + minimal_SNR(SF))
+	// we assume a noise figure of 6dB, BW of 125 kHz (-> 10log(125) approx. 21) for simplicity
+	// TODO: introduce some more factors like asymmetric up- and down-paths due to local noise, other band widths, ...
+
+	requiredSNRRX1 := config.SpreadFactorToRequiredSNRTable[drRX1.SpreadFactor] //if DR does not exist, the value 0 is returned
+	requiredSNRRX2 := config.SpreadFactorToRequiredSNRTable[drRX2.SpreadFactor]
+
+	linkBudgetRX1 = float64(txPowerRX1) - (float64(-174 + 6) + logBWRX1 + requiredSNRRX1)
+	linkBudgetRX2 = float64(txPowerRX2) - (float64(-174 + 6) + logBWRX2 + requiredSNRRX2)
+
+	if linkBudgetRX2 >= linkBudgetRX1 {
 		return true, nil
-	} else if rxWindow == 1 {
-		return false, nil
-	} else {
-		return false, errors.New(fmt.Sprintf("RX Window setting not supported: %d", rxWindow))
 	}
-}
 
+	return false, nil
+}
 
 func setDataTXInfo(ctx *dataContext) error {
-	rx1, err := doRX1(ctx)
+	preferRX2overRX1, err := preferRX2DR(ctx)
 	if err != nil {
 		return err
 	}
-	if rx1 {
+
+	if rx2PreferOnLinkBudget == true {
+		prefer, err := preferRX2LinkBudget(ctx)
+		if err != nil {
+			return err
+		}
+		preferRX2overRX1 = prefer || preferRX2overRX1
+	}
+
+	if !preferRX2overRX1 && (rxWindow == 0 || rxWindow == 1) {
 		if err := setTXInfoForRX1(ctx); err != nil {
 			return err
 		}
 	}
 
-	rx2, err := doRX2(ctx)
-	if err != nil {
-		return err
-	}
-	if rx2 {
+	if rxWindow == 0 || rxWindow == 2 {
 		if err := setTXInfoForRX2(ctx); err != nil {
+			return err
+		}
+	}
+
+	if preferRX2overRX1 && (rxWindow == 0 || rxWindow == 1) {
+		if err := setTXInfoForRX1(ctx); err != nil {
 			return err
 		}
 	}
@@ -574,7 +547,7 @@ func setTXInfoForRX1(ctx *dataContext) error {
 	if len(ctx.RXPacket.RXInfoSet) == 0 {
 		return ErrNoLastRXInfoSet
 	}
-	rxInfo := ctx.RXPacket.RXInfoSet[0]
+	rxInfo := getRXInfoSet(ctx.RXPacket.RXInfoSet)
 
 	txInfo := gw.DownlinkTXInfo{
 		GatewayId: rxInfo.GatewayId,
@@ -639,6 +612,10 @@ func setTXInfoForRX1(ctx *dataContext) error {
 	})
 
 	return nil
+}
+
+func getRXInfoSet(infos []*gw.UplinkRXInfo) *gw.UplinkRXInfo{
+	return infos[0]
 }
 
 func setImmediately(ctx *dataContext) error {
