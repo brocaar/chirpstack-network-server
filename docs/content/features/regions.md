@@ -4,15 +4,15 @@ menu:
     main:
         parent: features
         weight: 2
-description: LoRa Supports all regions specified by the LoRaWAN Regional Parameters specification.
+description: ChirpStack Network Server Supports all regions specified by the LoRaWAN Regional Parameters specification.
 ---
 
-# Supported LoRaWAN regions
+# Supported LoRaWAN<sup>&reg;</sup> regions
 
-LoRa Server supports all regions that are defined by the
+ChirpStack Network Server supports all regions that are defined by the
 [LoRaWAN Regional Parameters](https://lora-alliance.org/lorawan-for-developers)
 specification. It also supports different revisions, which
-can be configured in the [Device-Profile]({{<relref "device-profile.md">}}).
+can be configured in the [Device Profile]({{<relref "device-profile.md">}}).
 
 These regions are:
 

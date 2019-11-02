@@ -5,7 +5,7 @@ package storage
 
 import (
 	fmt "fmt"
-	gw "github.com/brocaar/loraserver/api/gw"
+	gw "github.com/brocaar/chirpstack-network-server/api/gw"
 	proto "github.com/golang/protobuf/proto"
 	math "math"
 )

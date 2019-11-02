@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/loraserver/api/geo"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/api/geo"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/require"

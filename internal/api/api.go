@@ -11,10 +11,10 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 
-	"github.com/brocaar/loraserver/api/ns"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/logging"
-	"github.com/brocaar/loraserver/internal/tls"
+	"github.com/brocaar/chirpstack-network-server/api/ns"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/tls"
 )
 
 func Setup(c config.Config) error {

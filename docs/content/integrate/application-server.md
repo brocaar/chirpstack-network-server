@@ -1,5 +1,5 @@
 ---
-title: Application server
+title: Application Server
 menu:
     main:
         parent: integrate
@@ -7,31 +7,31 @@ menu:
 description: Information about the Application Server and how to implement a custom one.
 ---
 
-# Application-server
+# Application Server
 
-LoRa Server forwards received uplink frames and acknowledgements to a so called
-application-server component. You can either use LoRa App Server
-(an application-server provided by the LoRa Server project), or implement
-your own application-server.
+ChirpStack Network Server forwards received uplink frames and acknowledgements to a so called
+Application Server component. You can either use ChirpStack Application Server
+(an Application Server provided by the ChirpStack open-source LoRaWAN<sup>&reg;</sup> Network Server stack), or implement
+your own Application Server.
 
-LoRa Server supports sending data for different devices to different
-application-servers. See [routing-profile]({{<ref "/features/routing-profile.md">}})
+ChirpStack Network Server supports sending data for different devices to different
+Application Servers. See [Routing Profile]({{<ref "/features/routing-profile.md">}})
 for more information.
 
-## LoRa App Server
+## ChirpStack Application Server
 
-[LoRa App Server](https://docs.loraserver.io/lora-app-server/) is a reference
-implementation of an application-server compatible with LoRa Server.
+[ChirpStack Application Server](/application-server/) is an open-source
+implementation of a LoRaWAN Application Server.
 
-## Custom application-server
+## Custom Application Server
 
-It is also possible to implement a custom application-server. The
-application-server API has been defined as a [gRPC](https://grpc.io) service
+It is also possible to implement a custom Application Server. The
+Application Server API has been defined as a [gRPC](https://grpc.io) service
 which allows you to easily generate stubs for various programming languages.
 See the [gRPC](https://grpc.io) site for more information about
 the gRPC framework and how to generate source-code using `.proto` files.
 
-Please refer to [api/as/as.proto](https://github.com/brocaar/loraserver/blob/master/api/as/as.proto)
-for the application-server API specification. 
-For the network-server API, please refer to the [api documentation]({{<ref "/integrate/api.md">}}) for the
+Please refer to [api/as/as.proto](https://github.com/brocaar/chirpstack-network-server/blob/master/api/as/as.proto)
+for the Application Server API specification. 
+For the network-server API, please refer to the [API documentation]({{<ref "/integrate/api.md">}}) for the
 for more information.

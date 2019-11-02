@@ -1,4 +1,4 @@
-/var/log/loraserver/loraserver.log {
+/var/log/chirpstack-network-server/chirpstack-network-server.log {
     daily
     rotate 7
     missingok

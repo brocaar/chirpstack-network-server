@@ -3,7 +3,7 @@ package band
 import (
 	"github.com/pkg/errors"
 
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
 	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
 )

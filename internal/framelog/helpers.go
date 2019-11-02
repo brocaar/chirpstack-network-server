@@ -3,8 +3,8 @@ package framelog
 import (
 	"github.com/pkg/errors"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/models"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/models"
 )
 
 // CreateUplinkFrameSet creates a UplinkFrameSet.

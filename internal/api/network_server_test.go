@@ -14,14 +14,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/api/ns"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/framelog"
-	"github.com/brocaar/loraserver/internal/gps"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/api/common"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
+	"github.com/brocaar/chirpstack-network-server/api/ns"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/framelog"
+	"github.com/brocaar/chirpstack-network-server/internal/gps"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 )
 

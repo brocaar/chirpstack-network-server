@@ -1,5 +1,5 @@
 ---
-title: Gateway-profile
+title: Gateway Profile
 menu:
     main:
         parent: features
@@ -7,25 +7,25 @@ menu:
 description: Configures the channel-plan of a gateway.
 ---
 
-# Gateway-profile
+# Gateway Profile
 
-The gateway-profile is an (optional) profile which can be assigned to a gateway
+The Gateway Profile is an (optional) profile which can be assigned to a gateway
 for the configuration of its channel-plan. This feature must also be configured
-in the [LoRa Gateway Bridge configuration](/lora-gateway-bridge/install/config/).
+in the [ChirpStack Gateway Bridge Configuration](/gateway-bridge/install/config/).
 
 ## Fields
 
 ### Channels
 
 The `channels` field defines the uplink channel-numbers that must be configured
-for the gateways using this gateway-profile. These map to the channel-numbers
-defined by the [LoRaWAN Regional Parameters](https://www.lora-alliance.org/lorawan-for-developers)
+for the gateways using this Gateway Profile. These map to the channel-numbers
+defined by the [LoRaWAN<sup>&reg;</sup> Regional Parameters](https://www.lora-alliance.org/lorawan-for-developers)
 specification.
 
 ### Extra channels
 
 The `extraChannels` field defines a list of extra channel that must be
-configured for the gateway using this gateway-profile. Note that this is not
+configured for the gateway using this Gateway Profile. Note that this is not
 supported by every LoRaWAN band. Please consult the [LoRaWAN Regional Parameters](https://www.lora-alliance.org/lorawan-for-developers)
 specification for more information.
 

@@ -1,8 +1,9 @@
-baseURL = "https://www.loraserver.io/loraserver/"
+baseURL = "https://www.chirpstack.io/network-server/"
 languageCode = "en-us"
-title = "LoRa Server Server documentation"
+title = "ChirpStack Network Server documentation"
 googleAnalytics = "UA-3512995-9"
 pygmentsUseClasses = true
+theme = "chirpstack-hugo-theme"
 
 [[menu.main]]
     pre = "<i class='fas fa-hand-point-right'></i>"
@@ -47,4 +48,5 @@ pygmentsUseClasses = true
     weight = 6
 
 [params]
-version = "3.3.0"
+version = "3.4.0"
+component = "chirpstack-network-server"

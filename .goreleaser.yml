@@ -1,8 +1,8 @@
-project_name: loraserver
+project_name: chirpstack-network-server
 
 builds:
-  - main: cmd/loraserver/main.go
-    binary: loraserver
+  - main: cmd/chirpstack-network-server/main.go
+    binary: chirpstack-network-server
     goos:
       - windows
       - darwin
@@ -24,22 +24,23 @@ release:
   disable: true
 
 nfpm:
-  vendor: LoRa Server project
-  homepage: https://www.loraserver.io/
+  vendor: ChirpStack
+  homepage: https://www.chirpstack.io/
   maintainer: Orne Brocaar <info@brocaar.com>
-  description: LoRa Server
+  description: ChirpStack Network Server
   license: MIT
   formats:
     - deb
   bindir: /usr/bin
   files:
-    "packaging/files/loraserver.rotate": "/etc/logrotate.d/loraserver"
-    "packaging/files/loraserver.init": "/usr/lib/loraserver/scripts/loraserver.init"
-    "packaging/files/loraserver.service": "/usr/lib/loraserver/scripts/loraserver.service"
-    "packaging/files/loraserver-eu868.toml": "/etc/loraserver/examples/loraserver-eu868.toml"
-    "packaging/files/loraserver-us915.toml": "/etc/loraserver/examples/loraserver-us915.toml"
+    "packaging/files/chirpstack-network-server.rotate": "/etc/logrotate.d/chirpstack-network-server"
+    "packaging/files/chirpstack-network-server.init": "/usr/lib/chirpstack-network-server/scripts/chirpstack-network-server.init"
+    "packaging/files/chirpstack-network-server.service": "/usr/lib/chirpstack-network-server/scripts/chirpstack-network-server.service"
+    "packaging/files/chirpstack-network-server-eu868.toml": "/etc/chirpstack-network-server/examples/chirpstack-network-server-eu868.toml"
+    "packaging/files/chirpstack-network-server-us915.toml": "/etc/chirpstack-network-server/examples/chirpstack-network-server-us915.toml"
   config_files:
-    "packaging/files/loraserver.toml": "/etc/loraserver/loraserver.toml"
+    "packaging/files/chirpstack-network-server.toml": "/etc/chirpstack-network-server/chirpstack-network-server.toml"
   scripts:
+    preinstall: "packaging/scripts/pre-install.sh"
     postinstall: "packaging/scripts/post-install.sh"
     postremove: "packaging/scripts/post-remove.sh"

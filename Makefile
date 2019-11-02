@@ -1,11 +1,11 @@
 .PHONY: build clean test package serve update-vendor api statics
-PKGS := $(shell go list ./... | grep -v /vendor/ | grep -v loraserver/api | grep -v /migrations | grep -v /static)
+PKGS := $(shell go list ./... | grep -v /vendor/ | grep -v chirpstack-network-server/api | grep -v /migrations | grep -v /static)
 VERSION := $(shell git describe --always |sed -e "s/^v//")
 
 build: statics
 	@echo "Compiling source"
 	@mkdir -p build
-	go build $(GO_EXTRA_BUILD_ARGS) -ldflags "-s -w -X main.version=$(VERSION)" -o build/loraserver cmd/loraserver/main.go
+	go build $(GO_EXTRA_BUILD_ARGS) -ldflags "-s -w -X main.version=$(VERSION)" -o build/chirpstack-network-server cmd/chirpstack-network-server/main.go
 
 clean:
 	@echo "Cleaning up workspace"
@@ -59,8 +59,8 @@ dev-requirements:
 # shortcuts for development
 
 serve: build
-	@echo "Starting Lora Server"
-	./build/loraserver
+	@echo "Starting ChirpStack Network Server"
+	./build/chirpstack-network-server
 
 run-compose-test:
-	docker-compose run --rm loraserver make test
+	docker-compose run --rm networkserver make test

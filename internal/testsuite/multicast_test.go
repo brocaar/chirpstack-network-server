@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/internal/gps"
-	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/chirpstack-network-server/api/common"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
+	"github.com/brocaar/chirpstack-network-server/api/nc"
+	"github.com/brocaar/chirpstack-network-server/internal/gps"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 )
 
 type MulticastTestSuite struct {

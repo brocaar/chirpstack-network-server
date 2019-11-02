@@ -8,24 +8,24 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/geo"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/internal/backend/applicationserver"
-	"github.com/brocaar/loraserver/internal/backend/controller"
-	"github.com/brocaar/loraserver/internal/backend/geolocationserver"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/config"
-	datadown "github.com/brocaar/loraserver/internal/downlink/data"
-	"github.com/brocaar/loraserver/internal/downlink/data/classb"
-	"github.com/brocaar/loraserver/internal/framelog"
-	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/logging"
-	"github.com/brocaar/loraserver/internal/maccommand"
-	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/api/as"
+	"github.com/brocaar/chirpstack-network-server/api/common"
+	"github.com/brocaar/chirpstack-network-server/api/geo"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
+	"github.com/brocaar/chirpstack-network-server/api/nc"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/controller"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/geolocationserver"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	datadown "github.com/brocaar/chirpstack-network-server/internal/downlink/data"
+	"github.com/brocaar/chirpstack-network-server/internal/downlink/data/classb"
+	"github.com/brocaar/chirpstack-network-server/internal/framelog"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/maccommand"
+	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -781,7 +781,7 @@ func handleUplinkMACCommands(ctx context.Context, ds *storage.DeviceSession, dp 
 				}
 			}
 
-			// CID >= 0x80 are proprietary mac-commands and are not handled by LoRa Server
+			// CID >= 0x80 are proprietary mac-commands and are not handled by ChirpStack Network Server
 			if block.CID < 0x80 {
 				responseBlocks, err := maccommand.Handle(ctx, ds, dp, sp, asClient, block, pending, rxPacket)
 				if err != nil {
@@ -795,7 +795,7 @@ func handleUplinkMACCommands(ctx context.Context, ds *storage.DeviceSession, dp 
 		// Report to external controller:
 		//  * in case of proprietary mac-commands
 		//  * in case when the request has been scheduled through the API
-		//  * in case mac-commands are disabled in the LoRa Server configuration
+		//  * in case mac-commands are disabled in the ChirpStack Network Server configuration
 		if disableMACCommands || block.CID >= 0x80 || external {
 			var data [][]byte
 			for _, cmd := range block.MACCommands {

@@ -10,7 +10,7 @@ description: Automatically (re)configures devices to use the current RX paramete
 
 # RX parameter (re)configuration
 
-LoRa Server supports the (re)configuration of the following RX parameters:
+ChirpStack Network Server supports the (re)configuration of the following RX parameters:
 
 * **RX delay** the delay between the end of TX and the first reception slot.
 * **RX1 data-rate offset** the offset used to calculate the RX1 data-rate,
@@ -22,6 +22,6 @@ The first three parameters are sent to the device as part of the OTAA join-accep
 frame. The RX2 frequency parameter is pushed to the device using the
 `RXParamSetupReq` mac-command.
 
-**Note:** on a LoRa Server configuration change, the new parameters will be
+**Note:** on a ChirpStack Network Server configuration change, the new parameters will be
 pushed to the device using the `RXParamSetupReq` or `RXTimingSetupReq`
 mac-commands at the first opportunity.

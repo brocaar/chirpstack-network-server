@@ -3,7 +3,7 @@ package testclient
 import (
 	"context"
 
-	"github.com/brocaar/loraserver/internal/backend/joinserver"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/joinserver"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
 )

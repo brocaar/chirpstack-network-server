@@ -10,9 +10,9 @@ import (
 
 	"github.com/brocaar/lorawan"
 
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 )
 
 type EnqueueQueueItemTestCase struct {

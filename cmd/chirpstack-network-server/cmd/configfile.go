@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/brocaar/loraserver/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
 )
 
 // when updating this template, don't forget to update config.md!
@@ -26,7 +26,7 @@ log_level={{ .General.LogLevel }}
 #
 # Besides using an URL (e.g. 'postgres://user:password@hostname/database?sslmode=disable')
 # it is also possible to use the following format:
-# 'user=loraserver dbname=loraserver sslmode=disable'.
+# 'user=chirpstack_ns dbname=chirpstack_ns sslmode=disable'.
 #
 # The following connection parameters are supported:
 #
@@ -53,10 +53,10 @@ dsn="{{ .PostgreSQL.DSN }}"
 # Automatically apply database migrations.
 #
 # It is possible to apply the database-migrations by hand
-# (see https://github.com/brocaar/loraserver/tree/master/migrations)
-# or let LoRa App Server migrate to the latest state automatically, by using
-# this setting. Make sure that you always make a backup when upgrading Lora
-# App Server and / or applying migrations.
+# (see https://github.com/brocaar/chirpstack-network-server/tree/master/migrations)
+# or let ChirpStack Application Server migrate to the latest state automatically, by using
+# this setting. Make sure that you always make a backup when upgrading ChirpStack
+# Application Server and / or applying migrations.
 automigrate={{ .PostgreSQL.Automigrate }}
 
 # Max open connections.
@@ -105,10 +105,10 @@ net_id="{{ .NetworkServer.NetID }}"
 
 # Time to wait for uplink de-duplication.
 #
-# This is the time that LoRa Server will wait for other gateways to receive
+# This is the time that ChirpStack Network Server will wait for other gateways to receive
 # the same uplink frame. Valid units are 'ms' or 's'.
 # Please note that this value has influence on the uplink / downlink
-# roundtrip time. Setting this value too high means LoRa Server will be
+# roundtrip time. Setting this value too high means ChirpStack Network Server will be
 # unable to respond to the device within its receive-window.
 deduplication_delay="{{ .NetworkServer.DeduplicationDelay }}"
 
@@ -121,13 +121,13 @@ device_session_ttl="{{ .NetworkServer.DeviceSessionTTL }}"
 
 # Get downlink data delay.
 #
-# This is the time that LoRa Server waits between forwarding data to the
+# This is the time that ChirpStack Network Server waits between forwarding data to the
 # application-server and reading data from the queue. A higher value
 # means that the application-server has more time to schedule a downlink
 # queue item which can be processed within the same uplink / downlink
 # transaction.
 # Please note that this value has influence on the uplink / downlink
-# roundtrip time. Setting this value too high means LoRa Server will be
+# roundtrip time. Setting this value too high means ChirpStack Network Server will be
 # unable to respond to the device within its receive-window.
 get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 
@@ -159,7 +159,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # limit the time-on-air to 400ms. Please refer to the LoRaWAN Regional
   # Parameters specification for more information.
   #
-  # When configured and required in the configured region, LoRa Server will
+  # When configured and required in the configured region, ChirpStack Network Server will
   # use the TxParamSetup mac-command to communicate this to the devices.
   uplink_dwell_time_400ms={{ .NetworkServer.Band.UplinkDwellTime400ms }}
   downlink_dwell_time_400ms={{ .NetworkServer.Band.DownlinkDwellTime400ms }}
@@ -171,7 +171,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # for more information. Set this to -1 to use the default value for this
   # region.
   #
-  # When required in the configured region, LoRa Server will use the
+  # When required in the configured region, ChirpStack Network Server will use the
   # TxParamSetup mac-command to communicate this to the devices.
   # For regions where the TxParamSetup mac-command is not implemented, this
   # setting is ignored.
@@ -206,7 +206,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 
   # Class A RX1 delay
   #
-  # 0=1sec, 1=1sec, ... 15=15sec. A higher value means LoRa Server has more
+  # 0=1sec, 1=1sec, ... 15=15sec. A higher value means ChirpStack Network Server has more
   # time to respond to the device as the delay between the uplink and the
   # first receive-window will be increased.
   rx1_delay={{ .NetworkServer.NetworkSettings.RX1Delay }}
@@ -246,7 +246,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 
   # Disable mac-commands
   #
-  # When set to true, LoRa Server will not handle and / or schedule any
+  # When set to true, ChirpStack Network Server will not handle and / or schedule any
   # mac-commands. However, it is still possible for an external controller
   # to handle and / or schedule mac-commands. This is intended for testing
   # only.
@@ -323,7 +323,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 
   # Rejoin-request settings
   #
-  # When enabled, LoRa Server will request the device to send a rejoin-request
+  # When enabled, ChirpStack Network Server will request the device to send a rejoin-request
   # every time when one of the 2 conditions below is met (frame count or time).
   [network_server.network_settings.rejoin_request]
   # Request device to periodically send rejoin-requests
@@ -363,8 +363,8 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 
   # Network-server API
   #
-  # This is the network-server API that is used by LoRa App Server or other
-  # custom components interacting with LoRa Server.
+  # This is the network-server API that is used by ChirpStack Application Server or other
+  # custom components interacting with ChirpStack Network Server.
   [network_server.api]
   # ip:port to bind the api server
   bind="{{ .NetworkServer.API.Bind }}"
@@ -402,10 +402,10 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
     # MQTT topic templates for the different MQTT topics.
     #
     # The meaning of these topics are documented at:
-    # https://www.loraserver.io/lora-gateway-bridge/
+    # https://www.chirpstack.io/gateway-bridge/
     #
     # The default values match the default expected configuration of the
-    # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
+    # ChirpStack Gateway Bridge MQTT backend. Therefore only change these values when
     # absolutely needed.
 
     # Event topic template.
@@ -467,7 +467,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 
     # Google Cloud Pub/Sub backend.
     #
-    # Use this backend when the LoRa Gateway Bridge is configured to connect
+    # Use this backend when the ChirpStack Gateway Bridge is configured to connect
     # to the Google Cloud IoT Core MQTT broker (which integrates with Pub/Sub).
     [network_server.gateway.backend.gcp_pub_sub]
     # Path to the IAM service-account credentials file.
@@ -487,13 +487,13 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 
     # Uplink retention duration.
     #
-    # The retention duration that LoRa Server will set on the uplink subscription.
+    # The retention duration that ChirpStack Network Server will set on the uplink subscription.
     uplink_retention_duration="{{ .NetworkServer.Gateway.Backend.GCPPubSub.UplinkRetentionDuration }}"
 
 
     # Azure IoT Hub backend.
     #
-    # Use this backend when the LoRa Gateway Bridge is configured to connect
+    # Use this backend when the ChirpStack Gateway Bridge is configured to connect
     # to the Azure IoT Hub MQTT broker.
     [network_server.gateway.backend.azure_iot_hub]
 
@@ -505,14 +505,14 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 
     # Commands connection string.
     #
-    # This connection string must point to the IoT Hub and is used by LoRa Server
+    # This connection string must point to the IoT Hub and is used by ChirpStack Network Server
     # for sending commands to the gateways.
     commands_connection_string="{{ .NetworkServer.Gateway.Backend.AzureIoTHub.CommandsConnectionString }}"
 
 
   # Geolocation settings.
   #
-  # When set, LoRa Server will use the configured geolocation server to
+  # When set, ChirpStack Network Server will use the configured geolocation server to
   # resolve the location of the devices.
   [geolocation_server]
   # Server.
@@ -559,7 +559,7 @@ timezone="{{ .Metrics.Timezone }}"
 
   # Metrics stored in Prometheus.
   #
-  # These metrics expose information about the state of the LoRa Server
+  # These metrics expose information about the state of the ChirpStack Network Server
   # instance.
   [metrics.prometheus]
   # Enable Prometheus metrics endpoint.
@@ -581,8 +581,8 @@ timezone="{{ .Metrics.Timezone }}"
 # Resolve JoinEUI (experimental).
 # Default join-server settings.
 #
-# When set to true, LoRa Server will use the JoinEUI to resolve the join-server
-# for the given JoinEUI. LoRa Server will fallback on the default join-server
+# When set to true, ChirpStack Network Server will use the JoinEUI to resolve the join-server
+# for the given JoinEUI. ChirpStack Network Server will fallback on the default join-server
 # when resolving the JoinEUI fails.
 resolve_join_eui={{ .JoinServer.ResolveJoinEUI }}
 
@@ -631,7 +631,7 @@ resolve_domain_suffix="{{ .JoinServer.ResolveDomainSuffix }}"
   [join_server.default]
   # hostname:port of the default join-server
   #
-  # This API is provided by LoRa App Server.
+  # This API is provided by ChirpStack Application Server.
   server="{{ .JoinServer.Default.Server }}"
 
   # ca certificate used by the default join-server client (optional)
@@ -681,7 +681,7 @@ resolve_domain_suffix="{{ .JoinServer.ResolveDomainSuffix }}"
 
 var configCmd = &cobra.Command{
 	Use:   "configfile",
-	Short: "Print the LoRa Server configuration file",
+	Short: "Print the ChirpStack Network Server configuration file",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		t := template.Must(template.New("config").Parse(configTemplate))
 		err := t.Execute(os.Stdout, &config.C)

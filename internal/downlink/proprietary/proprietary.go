@@ -7,14 +7,14 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/chirpstack-network-server/api/common"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 )
 
 const defaultCodeRate = "4/5"

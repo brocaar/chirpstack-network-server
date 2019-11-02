@@ -1,6 +1,6 @@
 package applicationserver
 
-import "github.com/brocaar/loraserver/internal/api/client/asclient"
+import "github.com/brocaar/chirpstack-network-server/internal/api/client/asclient"
 
 var pool asclient.Pool
 

@@ -11,10 +11,10 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/models"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/internal/models"
 	"github.com/brocaar/lorawan"
 )
 

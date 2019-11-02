@@ -7,12 +7,12 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/internal/backend/applicationserver"
-	"github.com/brocaar/loraserver/internal/logging"
-	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/api/as"
+	"github.com/brocaar/chirpstack-network-server/api/common"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 

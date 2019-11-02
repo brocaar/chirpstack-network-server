@@ -13,8 +13,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/brocaar/loraserver/internal/config"
 	"github.com/brocaar/lorawan/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
 )
 
 var cfgFile string
@@ -34,11 +34,11 @@ var bands = []string{
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "loraserver",
-	Short: "LoRa Server network-server",
-	Long: `LoRa Server is an open-source network-server, part of the LoRa Server project
-	> documentation & support: https://www.loraserver.io/loraserver/
-	> source & copyright information: https://github.com/brocaar/loraserver/`,
+	Use:   "chirpstack-network-server",
+	Short: "ChirpStack Network Server",
+	Long: `ChirpStack Network Server is an open-source LoRaWAN Network Server, part of the ChirpStack Network Server stack
+	> documentation & support: https://www.chirpstack.io/network-server/
+	> source & copyright information: https://github.com/brocaar/chirpstack-network-server/`,
 	RunE: run,
 }
 
@@ -55,7 +55,7 @@ func init() {
 	viper.SetDefault("redis.max_idle", 10)
 	viper.SetDefault("redis.idle_timeout", 5*time.Minute)
 
-	viper.SetDefault("postgresql.dsn", "postgres://localhost/loraserver_ns?sslmode=disable")
+	viper.SetDefault("postgresql.dsn", "postgres://localhost/chirpstack_ns?sslmode=disable")
 	viper.SetDefault("postgresql.automigrate", true)
 	viper.SetDefault("postgresql.max_idle_connections", 2)
 
@@ -126,14 +126,14 @@ func initConfig() {
 			log.WithError(err).WithField("config", cfgFile).Fatal("error loading config file")
 		}
 	} else {
-		viper.SetConfigName("loraserver")
+		viper.SetConfigName("chirpstack-network-server")
 		viper.AddConfigPath(".")
-		viper.AddConfigPath("$HOME/.config/loraserver")
-		viper.AddConfigPath("/etc/loraserver")
+		viper.AddConfigPath("$HOME/.config/chirpstack-network-server")
+		viper.AddConfigPath("/etc/chirpstack-network-server")
 		if err := viper.ReadInConfig(); err != nil {
 			switch err.(type) {
 			case viper.ConfigFileNotFoundError:
-				log.Warning("No configuration file found, using defaults. See: https://www.loraserver.io/loraserver/install/config/")
+				log.Warning("No configuration file found, using defaults. See: https://www.chirpstack.io/network-server/install/config/")
 			default:
 				log.WithError(err).Fatal("read configuration file error")
 			}

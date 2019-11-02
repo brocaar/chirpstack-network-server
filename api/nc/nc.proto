@@ -9,7 +9,7 @@ import "api/gw/gw.proto";
 enum MType {
     UNKNOWN = 0;
     JOIN_REQUEST = 1;
-   JOIN_ACCEPT = 2;
+    JOIN_ACCEPT = 2;
     UNCONFIRMED_DATA_UP = 3;
     UNCONFIRMED_DATA_DOWN = 4;
     CONFIRMED_DATA_UP = 5;

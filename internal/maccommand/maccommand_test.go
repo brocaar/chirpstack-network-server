@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"

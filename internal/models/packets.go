@@ -1,7 +1,7 @@
 package models
 
 import (
-	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
 	"github.com/brocaar/lorawan"
 )
 

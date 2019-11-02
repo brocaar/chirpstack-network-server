@@ -7,9 +7,9 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/brocaar/loraserver/internal/gps"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/internal/gps"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 )
 

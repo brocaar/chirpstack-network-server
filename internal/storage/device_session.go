@@ -17,9 +17,9 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/api/common"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
 )

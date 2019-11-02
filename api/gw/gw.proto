@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package gw;
 
-option go_package = "github.com/brocaar/loraserver/api/gw";
+option go_package = "github.com/brocaar/chirpstack-network-server/api/gw";
 
 import "api/common/common.proto";
 import "google/protobuf/timestamp.proto";
@@ -100,7 +100,7 @@ message GatewayStats {
     common.Location location = 3;
 
     // Gateway configuration version (this maps to the config_version sent
-    // by LoRa Server to the gateway).
+    // by ChirpStack Network Server to the gateway).
     string config_version = 4;
 
     // Number of radio packets received.
@@ -342,7 +342,7 @@ message GatewayCommandExecRequest {
     bytes gateway_id = 1 [json_name = "gatewayID"];
 
     // Command to execute.
-    // This command must be pre-configured in the LoRa Gateway Bridge configuration.
+    // This command must be pre-configured in the ChirpStack Gateway Bridge configuration.
     string command = 2;
 
     // Execution request ID (UUID).

@@ -12,17 +12,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/ns"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/downlink/data/classb"
-	"github.com/brocaar/loraserver/internal/downlink/multicast"
-	proprietarydown "github.com/brocaar/loraserver/internal/downlink/proprietary"
-	"github.com/brocaar/loraserver/internal/framelog"
-	"github.com/brocaar/loraserver/internal/gps"
-	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/api/common"
+	"github.com/brocaar/chirpstack-network-server/api/ns"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/downlink/data/classb"
+	"github.com/brocaar/chirpstack-network-server/internal/downlink/multicast"
+	proprietarydown "github.com/brocaar/chirpstack-network-server/internal/downlink/proprietary"
+	"github.com/brocaar/chirpstack-network-server/internal/framelog"
+	"github.com/brocaar/chirpstack-network-server/internal/gps"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
 )
@@ -1666,7 +1666,7 @@ func (n *NetworkServerAPI) GetMulticastQueueItemsForMulticastGroup(ctx context.C
 	return &out, nil
 }
 
-// GetVersion returns the LoRa Server version.
+// GetVersion returns the ChirpStack Network Server version.
 func (n *NetworkServerAPI) GetVersion(ctx context.Context, req *empty.Empty) (*ns.GetVersionResponse, error) {
 	region, ok := map[string]common.Region{
 		common.Region_AS923.String(): common.Region_AS923,

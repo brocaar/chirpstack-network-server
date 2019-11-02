@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 
-NAME=loraserver
+OLD_NAME=loraserver
+NAME=chirpstack-network-server
 BIN_DIR=/usr/bin
-SCRIPT_DIR=/usr/lib/loraserver/scripts
-LOG_DIR=/var/log/loraserver
-DAEMON_USER=loraserver
-DAEMON_GROUP=loraserver
+SCRIPT_DIR=/usr/lib/chirpstack-network-server/scripts
+LOG_DIR=/var/log/chirpstack-network-server
+DAEMON_USER=networkserver
+DAEMON_GROUP=networkserver
 
 function install_init {
 	cp -f $SCRIPT_DIR/$NAME.init /etc/init.d/$NAME
 	chmod +x /etc/init.d/$NAME
+	ln -s /etc/init.d/$NAME /etc/init.d/$OLD_NAME
 	update-rc.d $NAME defaults
 }
 

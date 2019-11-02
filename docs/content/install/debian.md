@@ -4,20 +4,19 @@ menu:
     main:
         parent: install
         weight: 2
-description: Instructions how to install LoRa Server on a Debian or Ubuntu based Linux installation.
+description: Instructions on how to install ChirpStack Network Server on a Debian or Ubuntu based Linux installation.
 ---
 
 # Debian / Ubuntu installation
 
 These steps have been tested on:
 
-* Ubuntu 16.04 (LTS)
 * Ubuntu 18.04 (LTS)
-* Debian 9 (Stretch)
+* Debian 10 (Stretch)
 
 ## Creating an user and database
 
-LoRa Server needs its **own** database. To create a new database,
+ChirpStack Network Server needs its **own** database. To create a new database,
 start the PostgreSQL prompt as the `postgres` user:
 
 {{<highlight bash>}}
@@ -27,11 +26,11 @@ sudo -u postgres psql
 Within the the PostgreSQL prompt, enter the following queries:
 
 {{<highlight sql>}}
--- create the loraserver_ns user with password 'dbpassword'
-create role loraserver_ns with login password 'dbpassword';
+-- create the chirpstack_ns user with password 'dbpassword'
+create role chirpstack_ns with login password 'dbpassword';
 
--- create the loraserver_ns database
-create database loraserver_ns with owner loraserver_ns;
+-- create the chirpstack_ns database
+create database chirpstack_ns with owner chirpstack_ns;
 
 -- exit the prompt
 \q
@@ -41,33 +40,33 @@ To verify if the user and database have been setup correctly, try to connect
 to it:
 
 {{<highlight bash>}}
-psql -h localhost -U loraserver_ns -W loraserver_ns
+psql -h localhost -U chirpstack_ns -W chirpstack_ns
 {{< /highlight >}}
 
 
-## LoRa Server Debian repository
+## ChirpStack Network Server Debian repository
 
-The LoRa Server project provides pre-compiled binaries packaged as Debian (.deb)
+ChirpStack provides pre-compiled binaries packaged as Debian (.deb)
 packages. In order to activate this repository, execute the following
 commands:
 
 {{<highlight bash>}}
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1CE2AFD36DBCCA00
 
-sudo echo "deb https://artifacts.loraserver.io/packages/3.x/deb stable main" | sudo tee /etc/apt/sources.list.d/loraserver.list
+sudo echo "deb https://artifacts.chirpstack.io/packages/3.x/deb stable main" | sudo tee /etc/apt/sources.list.d/chirpstack.list
 sudo apt-get update
 {{< /highlight >}}
 
-## Install LoRa Server
+## Install ChirpStack Network Server
 
-In order to install LoRa Server, execute the following command:
+In order to install ChirpStack Network Server, execute the following command:
 
 {{<highlight bash>}}
-sudo apt-get install loraserver
+sudo apt-get install chirpstack-network-server
 {{< /highlight >}}
 
 After installation, modify the configuration file which is located at
-`/etc/loraserver/loraserver.toml`.
+`/etc/chirpstack-network-server/chirpstack-network-server.toml`.
 
 Settings you probably want to set / change:
 
@@ -77,27 +76,27 @@ Settings you probably want to set / change:
 * `network_server.band.name`
 * `metrics.timezone`
 
-## Starting LoRa Server
+## Starting ChirpStack Network Server
 
-How you need to (re)start and stop LoRa Server depends on if your
+How you need to (re)start and stop ChirpStack Network Server depends on if your
 distribution uses init.d or systemd.
 
 ### init.d
 
 {{<highlight bash>}}
-sudo /etc/init.d/loraserver [start|stop|restart|status]
+sudo /etc/init.d/chirpstack-network-server [start|stop|restart|status]
 {{< /highlight >}}
 
 ### systemd
 
 {{<highlight bash>}}
-sudo systemctl [start|stop|restart|status] loraserver
+sudo systemctl [start|stop|restart|status] chirpstack-network-server
 {{< /highlight >}}
 
-## LoRa Server log output
+## ChirpStack Network Server log output
 
-Now you've setup LoRa Server, it is a good time to verify that LoRa Server
-is actually up-and-running. This can be done by looking at the LoRa Server
+Now you've setup ChirpStack Network Server, it is a good time to verify that ChirpStack Network Server
+is actually up-and-running. This can be done by looking at the ChirpStack Network Server
 log output.
 
 Like the previous step, which command you need to use for viewing the
@@ -105,24 +104,24 @@ log output depends on if your distribution uses init.d or systemd.
 
 ### init.d
 
-All logs are written to `/var/log/loraserver/loraserver.log`.
+All logs are written to `/var/log/chirpstack-network-server/chirpstack-network-server.log`.
 To view and follow this logfile:
 
 {{<highlight bash>}}
-tail -f /var/log/loraserver/loraserver.log
+tail -f /var/log/chirpstack-network-server/chirpstack-network-server.log
 {{< /highlight >}}
 
 ### systemd
 
 {{<highlight bash>}}
-journalctl -u loraserver -f -n 50
+journalctl -u chirpstack-network-server -f -n 50
 {{< /highlight >}}
 
 
 Example output:
 
 {{<highlight text>}}
-INFO[0000] starting LoRa Server                          band=EU_863_870 docs=https://docs.loraserver.io/ net_id=010203 version=0.12.0
+INFO[0000] starting ChirpStack Network Server                band=EU_863_870 docs=https://www.chirpstack.io/network-server/ net_id=010203 version=3.1.0
 INFO[0000] setup redis connection pool                   url=redis://localhost:6379
 INFO[0000] backend/gateway: connecting to mqtt broker    server=tcp://localhost:1883
 INFO[0000] connecting to application-server              ca-cert= server=127.0.0.1:8001 tls-cert= tls-key=
@@ -132,7 +131,7 @@ INFO[0000] no network-controller configured
 INFO[0000] starting api server                           bind=0.0.0.0:8000 ca-cert= tls-cert= tls-key=
 {{< /highlight >}}
 
-When you get the following log-messages, it means that LoRa Server can't
+When you get the following log-messages, it means that ChirpStack Network Server can't
 connect to the application-server.
 
 {{<highlight text>}}

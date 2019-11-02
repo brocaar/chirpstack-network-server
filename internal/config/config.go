@@ -3,12 +3,12 @@ package config
 import (
 	"time"
 
-	"github.com/brocaar/loraserver/api/nc"
+	"github.com/brocaar/chirpstack-network-server/api/nc"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 )
 
-// Version defines the LoRa Server version.
+// Version defines the ChirpStack Network Server version.
 var Version string
 
 // Config defines the configuration structure.

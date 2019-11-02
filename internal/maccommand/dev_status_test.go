@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/api/as"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 )
 

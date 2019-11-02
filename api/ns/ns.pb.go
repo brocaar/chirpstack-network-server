@@ -6,8 +6,8 @@ package ns
 import (
 	context "context"
 	fmt "fmt"
-	common "github.com/brocaar/loraserver/api/common"
-	gw "github.com/brocaar/loraserver/api/gw"
+	common "github.com/brocaar/chirpstack-network-server/api/common"
+	gw "github.com/brocaar/chirpstack-network-server/api/gw"
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	timestamp "github.com/golang/protobuf/ptypes/timestamp"
@@ -1672,7 +1672,7 @@ type Gateway struct {
 	// Gateway boards configuration (optional).
 	// This is (currently) only needed when the gateway supports the fine-timestamp
 	// and you you would like to add the FPGA ID to the gateway meta-data or would
-	// like LoRa Server to decrypt the fine-timestamp.
+	// like ChirpStack Network Server to decrypt the fine-timestamp.
 	Boards []*GatewayBoard `protobuf:"bytes,4,rep,name=boards,proto3" json:"boards,omitempty"`
 	// Routing Profile ID.
 	// The routing-profile ID defines to which application-server statistical
@@ -2219,7 +2219,7 @@ type DeviceQueueItem struct {
 	FCnt uint32 `protobuf:"varint,3,opt,name=f_cnt,json=fCnt,proto3" json:"f_cnt,omitempty"`
 	// The FPort of the payload.
 	FPort uint32 `protobuf:"varint,4,opt,name=f_port,json=fPort,proto3" json:"f_port,omitempty"`
-	// When set to true, LoRa Server will wait for the device to ack the
+	// When set to true, ChirpStack Network Server will wait for the device to ack the
 	// received frame.
 	Confirmed bool `protobuf:"varint,5,opt,name=confirmed,proto3" json:"confirmed,omitempty"`
 	// Device address (as known by the application-server).
@@ -2780,7 +2780,7 @@ func (*StreamFrameLogsForDeviceResponse) XXX_OneofWrappers() []interface{} {
 }
 
 type GetVersionResponse struct {
-	// LoRa Server version.
+	// ChirpStack Network Server version.
 	Version string `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
 	// Region configured for this network-server.
 	Region               common.Region `protobuf:"varint,2,opt,name=region,proto3,enum=common.Region" json:"region,omitempty"`
@@ -4322,7 +4322,7 @@ type NetworkServerServiceClient interface {
 	FlushMulticastQueueForMulticastGroup(ctx context.Context, in *FlushMulticastQueueForMulticastGroupRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// GetMulticastQueueItemsForMulticastGroup returns the queue-items given a multicast-group id.
 	GetMulticastQueueItemsForMulticastGroup(ctx context.Context, in *GetMulticastQueueItemsForMulticastGroupRequest, opts ...grpc.CallOption) (*GetMulticastQueueItemsForMulticastGroupResponse, error)
-	// GetVersion returns the LoRa Server version.
+	// GetVersion returns the ChirpStack Network Server version.
 	GetVersion(ctx context.Context, in *empty.Empty, opts ...grpc.CallOption) (*GetVersionResponse, error)
 }
 
@@ -4900,7 +4900,7 @@ type NetworkServerServiceServer interface {
 	FlushMulticastQueueForMulticastGroup(context.Context, *FlushMulticastQueueForMulticastGroupRequest) (*empty.Empty, error)
 	// GetMulticastQueueItemsForMulticastGroup returns the queue-items given a multicast-group id.
 	GetMulticastQueueItemsForMulticastGroup(context.Context, *GetMulticastQueueItemsForMulticastGroupRequest) (*GetMulticastQueueItemsForMulticastGroupResponse, error)
-	// GetVersion returns the LoRa Server version.
+	// GetVersion returns the ChirpStack Network Server version.
 	GetVersion(context.Context, *empty.Empty) (*GetVersionResponse, error)
 }
 

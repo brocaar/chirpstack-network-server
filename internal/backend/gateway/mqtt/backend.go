@@ -19,11 +19,11 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/backend/gateway/marshaler"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/marshaler"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/lorawan"
 )
 

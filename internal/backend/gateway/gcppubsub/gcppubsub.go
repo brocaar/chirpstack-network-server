@@ -14,15 +14,15 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/backend/gateway/marshaler"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/marshaler"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/lorawan"
 )
 
-const uplinkSubscriptionTmpl = "%s-loraserver"
+const uplinkSubscriptionTmpl = "%s-chirpstack"
 
 // Backend implements a Google Cloud Pub/Sub backend.
 type Backend struct {

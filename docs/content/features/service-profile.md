@@ -1,5 +1,5 @@
 ---
-title: Service-profile
+title: Service Profile
 menu:
     main:
         parent: features
@@ -8,7 +8,7 @@ toc: false
 description: Defines the network-server features that are enabled for associated devices.
 ---
 
-# Service-profile
+# Service Profile
 
 The service-profile defines the features that are enabled for the associated
 devices and the rate of messages that the associated devices can send over
@@ -17,8 +17,8 @@ the network.
 ## Fields / options
 
 The following fields are described by the
-[LoRaWAN Backend Interfaces specification](https://www.lora-alliance.org/lorawan-for-developers).
-Fields marked with an **X** are implemented by LoRa Server.
+[LoRaWAN<sup>&reg;</sup> Backend Interfaces specification](https://www.lora-alliance.org/lorawan-for-developers).
+Fields marked with an **X** are implemented by ChirpStack Network Server.
 
 - [ ] **ULRate** Token bucket filling rate, including ACKs (packet/h)
 - [ ] **ULBucketSize** Token bucket burst size

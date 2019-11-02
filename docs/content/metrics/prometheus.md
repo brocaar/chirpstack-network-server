@@ -9,8 +9,8 @@ description: Read metrics from the Prometheus metrics endpoint.
 
 # Prometheus metrics
 
-LoRa Server provides a [Prometheus](https://prometheus.io/) metrics endpoint
-for monitoring the performance of the LoRa Server service. Please refer to
+ChirpStack Network Server provides a [Prometheus](https://prometheus.io/) metrics endpoint
+for monitoring the performance of the ChirpStack Network Server service. Please refer to
 the [Prometheus](https://prometheus.io/) website for more information on
 setting up and using Prometheus.
 
@@ -63,4 +63,3 @@ These metrics are prefixed with `backend_mqtt_` and provide:
 * The number of published commands by the MQTT backend
 * The number of times the MQTT backend connected to the MQTT broker
 * The number of times the MQTT backend disconnected from the MQTT broker
-

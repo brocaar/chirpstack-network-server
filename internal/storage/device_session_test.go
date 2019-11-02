@@ -8,8 +8,8 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/require"
 
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
 )

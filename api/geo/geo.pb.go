@@ -6,8 +6,8 @@ package geo
 import (
 	context "context"
 	fmt "fmt"
-	common "github.com/brocaar/loraserver/api/common"
-	gw "github.com/brocaar/loraserver/api/gw"
+	common "github.com/brocaar/chirpstack-network-server/api/common"
+	gw "github.com/brocaar/chirpstack-network-server/api/gw"
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	math "math"

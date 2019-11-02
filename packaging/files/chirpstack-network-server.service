@@ -1,0 +1,15 @@
+[Unit]
+Description=ChirpStack Network Server
+Documentation=https://www.chirpstack.io/
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=networkserver
+Group=networkserver
+ExecStart=/usr/bin/chirpstack-network-server
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+Alias=loraserver.service

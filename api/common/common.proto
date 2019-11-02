@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package common;
 
-option go_package = "github.com/brocaar/loraserver/api/common";
+option go_package = "github.com/brocaar/chirpstack-network-server/api/common";
 
 
 enum Modulation {

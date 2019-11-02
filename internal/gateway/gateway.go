@@ -15,13 +15,13 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/gateway/stats"
-	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/logging"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/api/common"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/gateway/stats"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 

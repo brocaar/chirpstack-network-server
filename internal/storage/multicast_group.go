@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/lorawan"
 )
 

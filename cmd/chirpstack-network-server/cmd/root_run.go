@@ -10,9 +10,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/brocaar/loraserver/internal/adr"
-	"github.com/brocaar/loraserver/internal/backend/gateway/azureiothub"
-	"github.com/brocaar/loraserver/internal/metrics"
+	"github.com/brocaar/chirpstack-network-server/internal/adr"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/azureiothub"
+	"github.com/brocaar/chirpstack-network-server/internal/metrics"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -20,23 +20,23 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/brocaar/loraserver/api/geo"
-	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/internal/api"
-	"github.com/brocaar/loraserver/internal/backend/applicationserver"
-	"github.com/brocaar/loraserver/internal/backend/controller"
-	gwbackend "github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/backend/gateway/gcppubsub"
-	"github.com/brocaar/loraserver/internal/backend/gateway/mqtt"
-	"github.com/brocaar/loraserver/internal/backend/geolocationserver"
-	"github.com/brocaar/loraserver/internal/backend/joinserver"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/downlink"
-	"github.com/brocaar/loraserver/internal/gateway"
-	"github.com/brocaar/loraserver/internal/migrations/code"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/uplink"
+	"github.com/brocaar/chirpstack-network-server/api/geo"
+	"github.com/brocaar/chirpstack-network-server/api/nc"
+	"github.com/brocaar/chirpstack-network-server/internal/api"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/controller"
+	gwbackend "github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/gcppubsub"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/mqtt"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/geolocationserver"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/joinserver"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/downlink"
+	"github.com/brocaar/chirpstack-network-server/internal/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/migrations/code"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/uplink"
 )
 
 func run(cmd *cobra.Command, args []string) error {
@@ -79,7 +79,7 @@ func run(cmd *cobra.Command, args []string) error {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	log.WithField("signal", <-sigChan).Info("signal received")
 	go func() {
-		log.Warning("stopping loraserver")
+		log.Warning("stopping chirpstack-network-server")
 		if err := server.Stop(); err != nil {
 			log.Fatal(err)
 		}
@@ -166,8 +166,8 @@ func printStartMessage() error {
 		"version": version,
 		"net_id":  config.C.NetworkServer.NetID.String(),
 		"band":    config.C.NetworkServer.Band.Name,
-		"docs":    "https:/www.loraserver.io/",
-	}).Info("starting LoRa Server")
+		"docs":    "https://www.chirpstack.io/",
+	}).Info("starting ChirpStack Network Server")
 	return nil
 }
 

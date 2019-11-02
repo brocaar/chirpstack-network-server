@@ -9,10 +9,10 @@ import (
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/internal/backend/applicationserver"
-	"github.com/brocaar/loraserver/internal/gps"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/api/as"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
+	"github.com/brocaar/chirpstack-network-server/internal/gps"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 )
 

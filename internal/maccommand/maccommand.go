@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/api/as"
+	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 

@@ -1,15 +1,23 @@
 ---
-title: LoRa Server
+title: ChirpStack Network Server
 menu:
     main:
         parent: overview
         weight: 1
+listPages: false
 ---
 
-# LoRa Server
+# ChirpStack Network Server
 
-LoRa Server is an open-source LoRaWAN network-server, part of the
-[LoRa Server](https://docs.loraserver.io/) project. 
-The responsibility of the network-server component is the de-duplication
-and handling of received uplink frames received by the gateway(s), handling
-of the LoRaWAN mac-layer and scheduling of downlink data transmissions.
+ChirpStack Network Server is an open-source LoRaWAN<sup>&reg;</sup> Network Server
+implementation. This component is part of the ChirpStack stack.
+
+The responsibility of the Network Server component is the de-duplication of
+received LoRaWAN frames by the LoRa<sup>&reg;</sup> gateways and for the
+collected frames handle the:
+
+* Authentication
+* LoRaWAN mac-layer (and mac-commands)
+* Communication with the [ChirpStack Application Server](/application-server/)
+* Scheduling of downlink frames
+

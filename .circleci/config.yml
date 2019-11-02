@@ -8,7 +8,7 @@ jobs:
       - checkout
       - run:
           name: run tests
-          command: docker-compose run --rm loraserver make test
+          command: docker-compose run --rm chirpstack-network-server make test
 
   deploy:
     machine:
@@ -18,10 +18,10 @@ jobs:
       - checkout
       - run:
           name: compile distributable binaries
-          command: docker-compose run --rm loraserver make dist
+          command: docker-compose run --rm chirpstack-network-server make dist
       - run:
           name: upload binaries to s3
-          command: aws s3 sync dist/upload s3://builds.loraserver.io/loraserver
+          command: aws s3 sync dist/upload s3://builds.loraserver.io/chirpstack-network-server
 
 workflows:
   version: 2

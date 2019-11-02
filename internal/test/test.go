@@ -13,14 +13,14 @@ import (
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/api/geo"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/internal/api/client/asclient"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/migrations"
+	"github.com/brocaar/chirpstack-network-server/api/as"
+	"github.com/brocaar/chirpstack-network-server/api/geo"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
+	"github.com/brocaar/chirpstack-network-server/api/nc"
+	"github.com/brocaar/chirpstack-network-server/internal/api/client/asclient"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/migrations"
 	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
 )
@@ -51,7 +51,7 @@ func GetConfig() config.Config {
 	}
 
 	c.Redis.URL = "redis://localhost:6379/1"
-	c.PostgreSQL.DSN = "postgres://localhost/loraserver_ns_test?sslmode=disable"
+	c.PostgreSQL.DSN = "postgres://localhost/chirpstack_ns_test?sslmode=disable"
 
 	c.NetworkServer.NetID = lorawan.NetID{3, 2, 1}
 	c.NetworkServer.DeviceSessionTTL = time.Hour

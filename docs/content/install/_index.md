@@ -7,4 +7,4 @@ menu:
 hidden: true
 ---
 
-# LoRa Server installation
+# ChirpStack Network Server installation

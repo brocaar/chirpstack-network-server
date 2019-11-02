@@ -6,7 +6,7 @@ package nc
 import (
 	context "context"
 	fmt "fmt"
-	gw "github.com/brocaar/loraserver/api/gw"
+	gw "github.com/brocaar/chirpstack-network-server/api/gw"
 	proto "github.com/golang/protobuf/proto"
 	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"

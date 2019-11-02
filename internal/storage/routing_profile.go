@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/internal/backend/applicationserver"
-	"github.com/brocaar/loraserver/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/api/as"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"

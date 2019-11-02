@@ -1,7 +1,0 @@
-{{ define "main" }}
-    {{ if and (gt .WordCount 100 ) (ne .Params.toc false) }}
-        {{ .TableOfContents }}
-    {{ end }}
-{{ .Content }}
-
-{{ end }}

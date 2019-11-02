@@ -7,4 +7,4 @@ menu:
 hidden: true
 ---
 
-# Integrating LoRa Server
+# Integrating ChirpStack Network Server

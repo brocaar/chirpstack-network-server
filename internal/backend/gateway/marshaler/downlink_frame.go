@@ -1,7 +1,7 @@
 package marshaler
 
 import (
-	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 )

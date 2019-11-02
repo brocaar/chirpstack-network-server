@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 )
 
 func TestDeviceProfile(t *testing.T) {

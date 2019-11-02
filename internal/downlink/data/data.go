@@ -10,18 +10,18 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/adr"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/channels"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/framelog"
-	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/logging"
-	"github.com/brocaar/loraserver/internal/maccommand"
-	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/api/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/adr"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/channels"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/framelog"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/maccommand"
+	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
 )
@@ -386,7 +386,7 @@ func setTXParameters(ctx *dataContext) error {
 	}
 
 	// Calculate the device max. EIRP.
-	// We take the smallest value (loraserver.toml vs device-profile) to avoid
+	// We take the smallest value (chirpstack-network-server.toml vs device-profile) to avoid
 	// that the device-profile sets a higher EIRP than that is allowed on the
 	// network.
 	deviceMaxEIRPIndex := uplinkMaxEIRPIndex
@@ -723,7 +723,7 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 			}
 		}
 
-		// In case mac-commands are disabled in the LoRa Server configuration,
+		// In case mac-commands are disabled in the ChirpStack Network Server configuration,
 		// only allow external mac-commands (e.g. scheduled by an external
 		// controller).
 		if disableMACCommands {

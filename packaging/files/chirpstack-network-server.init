@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 ### BEGIN INIT INFO
-# Provides:          loraserver
+# Provides:          chirpstack-network-server
 # Required-Start:    $all
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: LoRa Server
+# Short-Description: ChirpStack Network Server
 ### END INIT INFO
 
 
-NAME=loraserver
-DESC="LoRa Server"
-DAEMON_USER=loraserver
-DAEMON_GROUP=loraserver
+NAME=chirpstack-network-server
+DESC="ChirpStack Network Server"
+DAEMON_USER=chirpstack-network-server
+DAEMON_GROUP=chirpstack-network-server
 DAEMON=/usr/bin/$NAME
 PID_FILE=/var/run/$NAME.pid
 
