@@ -9,9 +9,9 @@ description: Instructions how to use the API provided by ChirpStack Network Serv
 
 # API
 
-The ChirpStack Network Server components are using [gRPC](http://www.grpc.io) for 
+The ChirpStack Network Server components are using [gRPC](http://www.grpc.io) for
 inter-component communication. The definitions of these interfaces can be
-found in in the form of `.proto` files in the the [API](https://github.com/brocaar/chirpstack-network-server/tree/master/api)
+found in the form of `.proto` files in the [API](https://github.com/brocaar/chirpstack-network-server/tree/master/api)
 folder of the source repository:
 
 * [api/as/as.proto](https://github.com/brocaar/chirpstack-network-server/blob/master/api/as/as.proto): Application Server interface
@@ -24,7 +24,7 @@ folder of the source repository:
 Each subdirectory (e.g. `ns`, `as` or `nc`) provides Go client code and
 server stubs, which means you can import these as packages when using Go.
 When using other programming languages, you'll need to generate the client
-and / or server stubs yourself (which is thanks to gRPC fairly easy). 
+and / or server stubs yourself (which is thanks to gRPC fairly easy).
 
 gRPC has currently support for: C++, Java, Python, Go, Ruby, C#, Node.js,
 Android Java, Objective-C and PHP.
