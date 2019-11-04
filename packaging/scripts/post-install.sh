@@ -33,9 +33,9 @@ function restart_service {
 }
 
 function create_logdir {
-	if [[ ! -d /var/log/$NAME ]]; then
-		mkdir -p /var/log/$NAME
-		chown -R $DAEMON_USER.$DAEMON_GROUP /var/log/$NAME
+	if [[ ! -d $LOG_DIR ]]; then
+		mkdir -p $LOG_DIR
+		chown -R $DAEMON_USER.$DAEMON_GROUP $LOG_DIR
 	fi
 }
 
