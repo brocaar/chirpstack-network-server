@@ -11,8 +11,8 @@
 
 NAME=chirpstack-network-server
 DESC="ChirpStack Network Server"
-DAEMON_USER=chirpstack-network-server
-DAEMON_GROUP=chirpstack-network-server
+DAEMON_USER=networkserver
+DAEMON_GROUP=networkserver
 DAEMON=/usr/bin/$NAME
 PID_FILE=/var/run/$NAME.pid
 
