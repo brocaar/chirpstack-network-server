@@ -6,7 +6,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "api/common/common.proto";
 import "api/gw/gw.proto";
-import "profiles.proto";
+import "api/ns/profiles.proto";
 
 
 // NetworkServerService provides the network-server API methods.
