@@ -32,11 +32,21 @@ function restart_service {
 	fi	
 }
 
+function create_logdir {
+	if [[ ! -d /var/log/$NAME ]]; then
+		mkdir -p /var/log/$NAME
+		chown -R $DAEMON_USER.$DAEMON_GROUP /var/log/$NAME
+	fi
+}
+
 # create user
 id $DAEMON_USER &>/dev/null
 if [[ $? -ne 0 ]]; then
 	useradd --system -U -M $DAEMON_USER -s /bin/false -d /etc/$NAME
 fi
+
+# create log dir
+create_logdir
 
 # set the configuration owner / permissions
 if [[ -f /etc/$NAME/$NAME.toml ]]; then
