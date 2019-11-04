@@ -41,7 +41,7 @@ function do_start {
 }
 
 function do_stop {
-	start-stop-daemon --stop --retry=TERM/30/KILL/5 --pidfile "$PID_FILE" --name "$NAME"
+	start-stop-daemon --stop --retry=TERM/30/KILL/5 --pidfile "$PID_FILE" --exec "$DAEMON"
 	retval="$?"
 	sleep 1
 	return "$retval"
