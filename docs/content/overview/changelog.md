@@ -9,6 +9,13 @@ description: Lists the changes per ChirpStack Network Server release, including 
 ---
 # Changelog
 
+## v3.4.1
+
+### Bugfixes
+
+* Fixes init stop script which could cause the ChirpStack Network Server to not properly stop or restart. ([#447](https://github.com/brocaar/chirpstack-network-server/issues/447))
+* Fix wrong user / group in init script after ChirpStack rename. ([#445](https://github.com/brocaar/chirpstack-network-server/issues/445))
+
 ## v3.4.0
 
 This release renames LoRa Server to ChirpStack Network Server.
