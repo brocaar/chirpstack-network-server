@@ -12,10 +12,10 @@ import (
 
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
-	"github.com/brocaar/chirpstack-network-server/api/as"
-	"github.com/brocaar/chirpstack-network-server/api/geo"
-	"github.com/brocaar/chirpstack-network-server/api/gw"
-	"github.com/brocaar/chirpstack-network-server/api/nc"
+	"github.com/brocaar/chirpstack-api/go/as"
+	"github.com/brocaar/chirpstack-api/go/geo"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-api/go/nc"
 	"github.com/brocaar/chirpstack-network-server/internal/downlink/ack"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 )

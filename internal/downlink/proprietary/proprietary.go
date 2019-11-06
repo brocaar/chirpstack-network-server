@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/lorawan"
-	"github.com/brocaar/chirpstack-network-server/api/common"
-	"github.com/brocaar/chirpstack-network-server/api/gw"
+	"github.com/brocaar/chirpstack-api/go/common"
+	"github.com/brocaar/chirpstack-api/go/gw"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"

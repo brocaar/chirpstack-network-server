@@ -3,7 +3,7 @@ package config
 import (
 	"time"
 
-	"github.com/brocaar/chirpstack-network-server/api/nc"
+	"github.com/brocaar/chirpstack-api/go/nc"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 )

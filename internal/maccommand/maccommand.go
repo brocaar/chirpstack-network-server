@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/brocaar/chirpstack-network-server/api/as"
+	"github.com/brocaar/chirpstack-api/go/as"
 	"github.com/brocaar/chirpstack-network-server/internal/models"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"

@@ -5,7 +5,7 @@ package storage
 
 import (
 	fmt "fmt"
-	common "github.com/brocaar/chirpstack-network-server/api/common"
+	common "github.com/brocaar/chirpstack-api/go/common"
 	proto "github.com/golang/protobuf/proto"
 	math "math"
 )
