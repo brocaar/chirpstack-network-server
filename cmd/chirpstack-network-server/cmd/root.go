@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
+	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -13,8 +14,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/brocaar/lorawan/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/lorawan/band"
 )
 
 var cfgFile string
@@ -140,6 +141,18 @@ func initConfig() {
 		}
 	}
 
+	for _, pair := range os.Environ() {
+		d := strings.SplitN(pair, "=", 2)
+		if strings.Contains(d[0], ".") {
+			log.Warning("Using dots in env variable is illegal and deprecated. Please use double underscore `__` for: ", d[0])
+			underscoreName := strings.ReplaceAll(d[0], ".", "__")
+			// Set only when the underscore version doesn't already exist.
+			if _, exists := os.LookupEnv(underscoreName); !exists {
+				os.Setenv(underscoreName, d[1])
+			}
+		}
+	}
+
 	viperBindEnvs(config.C)
 
 	viperHooks := mapstructure.ComposeDecodeHookFunc(
@@ -175,8 +188,11 @@ func viperBindEnvs(iface interface{}, parts ...string) {
 		case reflect.Struct:
 			viperBindEnvs(v.Interface(), append(parts, tv)...)
 		default:
-			key := strings.Join(append(parts, tv), ".")
-			viper.BindEnv(key)
+			// Bash doesn't allow env variable names with a dot so
+			// bind the double underscore version.
+			keyDot := strings.Join(append(parts, tv), ".")
+			keyUnderscore := strings.Join(append(parts, tv), "__")
+			viper.BindEnv(keyDot, strings.ToUpper(keyUnderscore))
 		}
 	}
 }
