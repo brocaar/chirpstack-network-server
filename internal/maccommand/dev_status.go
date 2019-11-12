@@ -7,13 +7,14 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-api/go/as"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
 // RequestDevStatus returns a mac-command block for requesting the device-status.
-func RequestDevStatus(ds *storage.DeviceSession) storage.MACCommandBlock {
+func RequestDevStatus(ctx context.Context, ds *storage.DeviceSession) storage.MACCommandBlock {
 	block := storage.MACCommandBlock{
 		CID: lorawan.DevStatusReq,
 		MACCommands: []lorawan.MACCommand{
@@ -25,11 +26,12 @@ func RequestDevStatus(ds *storage.DeviceSession) storage.MACCommandBlock {
 	ds.LastDevStatusRequested = time.Now()
 	log.WithFields(log.Fields{
 		"dev_eui": ds.DevEUI,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
 	}).Info("requesting device-status")
 	return block
 }
 
-func handleDevStatusAns(ds *storage.DeviceSession, sp storage.ServiceProfile, asClient as.ApplicationServerServiceClient, block storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
+func handleDevStatusAns(ctx context.Context, ds *storage.DeviceSession, sp storage.ServiceProfile, asClient as.ApplicationServerServiceClient, block storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 	if len(block.MACCommands) != 1 {
 		return nil, fmt.Errorf("exactly one mac-command expected, got %d", len(block.MACCommands))
 	}
@@ -43,10 +45,14 @@ func handleDevStatusAns(ds *storage.DeviceSession, sp storage.ServiceProfile, as
 		"dev_eui": ds.DevEUI,
 		"battery": pl.Battery,
 		"margin":  pl.Margin,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
 	}).Info("dev_status_ans answer received")
 
 	if !sp.ReportDevStatusBattery && !sp.ReportDevStatusMargin {
-		log.WithField("dev_eui", ds.DevEUI).Warning("reporting device-status has been disabled in service-profile")
+		log.WithFields(log.Fields{
+			"dev_eui": ds.DevEUI,
+			"ctx_id":  ctx.Value(logging.ContextIDKey),
+		}).Warning("reporting device-status has been disabled in service-profile")
 		return nil, nil
 	}
 
@@ -78,9 +84,12 @@ func handleDevStatusAns(ds *storage.DeviceSession, sp storage.ServiceProfile, as
 			req.Margin = int32(pl.Margin)
 		}
 
-		_, err := asClient.SetDeviceStatus(context.Background(), &req)
+		_, err := asClient.SetDeviceStatus(ctx, &req)
 		if err != nil {
-			log.WithField("dev_eui", ds.DevEUI).WithError(err).Error("as.SetDeviceStatus error")
+			log.WithFields(log.Fields{
+				"dev_eui": ds.DevEUI,
+				"ctx_id":  ctx.Value(logging.ContextIDKey),
+			}).WithError(err).Error("as.SetDeviceStatus error")
 		}
 	}()
 

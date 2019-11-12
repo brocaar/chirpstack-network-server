@@ -1,42 +1,41 @@
-# LoRa Server
+# ChirpStack Network Server
 
-[![Build Status](https://travis-ci.org/brocaar/loraserver.svg?branch=master)](https://travis-ci.org/brocaar/loraserver)
+[![CircleCI](https://circleci.com/gh/brocaar/chirpstack-network-server.svg?style=svg)](https://circleci.com/gh/brocaar/chirpstack-network-server)
 
-LoRa Server is an open-source LoRaWAN network-server, part of the
-[LoRa Server](https://docs.loraserver.io/) project. It is responsible for
+ChirpStack Network Server is an open-source LoRaWAN network-server, part of
+[ChirpStack](https://www.chirpstack.io/). It is responsible for
 handling (and de-duplication) of uplink data received by the gateway(s)
 and the scheduling of downlink data transmissions.
 
 ## Architecture
 
-![architecture](https://docs.loraserver.io/img/architecture.png)
+![architecture](https://www.chirpstack.io/img/graphs/architecture.png)
 
 ### Component links
 
-* [LoRa Gateway Bridge](https://docs.loraserver.io/lora-gateway-bridge)
-* [LoRa Gateway Config](https://docs.loraserver.io/lora-gateway-config)
-* [LoRa Server](https://docs.loraserver.io/loraserver/)
-* [LoRa App Server](https://docs.loraserver.io/lora-app-server/)
+* [ChirpStack Gateway Bridge](https://www.chirpstack.io/gateway-bridge/)
+* [ChirpStack Network Server](https://www.chirpstack.io/network-server/)
+* [ChirpStack Application Server](https://www.chirpstack.io/application-server/)
 
 ## Links
 
-* [Downloads](https://docs.loraserver.io/loraserver/overview/downloads/)
-* [Docker image](https://hub.docker.com/r/loraserver/loraserver/)
-* [Documentation](https://docs.loraserver.io/loraserver/) and
-  [Getting started](https://docs.loraserver.io/loraserver/getting-started/)
-* [Building from source](https://docs.loraserver.io/loraserver/community/source/)
-* [Contributing](https://docs.loraserver.io/loraserver/community/contribute/)
+* [Downloads](https://www.chirpstack.io/network-server/overview/downloads/)
+* [Docker image](https://hub.docker.com/r/chirpstack/chirpstack-network-server/)
+* [Documentation](https://www.chirpstack.io/network-server/) and
+  [Getting started](https://www.chirpstack.io/network-server/getting-started/)
+* [Building from source](https://www.chirpstack.io/network-server/community/source/)
+* [Contributing](https://www.chirpstack.io/network-server/community/contribute/)
 * Support
-  * [Support forum](https://forum.loraserver.io)
-  * [Bug or feature requests](https://github.com/brocaar/loraserver/issues)
+  * [Support forum](https://forum.chirpstack.io)
+  * [Bug or feature requests](https://github.com/brocaar/chirpstack-network-server/issues)
 
 ## Sponsors
 
-[![CableLabs](https://www.loraserver.io/img/sponsors/cablelabs.png)](https://www.cablelabs.com/)
-[![SIDNFonds](https://www.loraserver.io/img/sponsors/sidn_fonds.png)](https://www.sidnfonds.nl/)
-[![acklio](https://www.loraserver.io/img/sponsors/acklio.png)](http://www.ackl.io/)
+[![CableLabs](https://www.chirpstack.io/img/sponsors/cablelabs.png)](https://www.cablelabs.com/)
+[![SIDNFonds](https://www.chirpstack.io/img/sponsors/sidn_fonds.png)](https://www.sidnfonds.nl/)
+[![acklio](https://www.chirpstack.io/img/sponsors/acklio.png)](http://www.ackl.io/)
 
 ## License
 
-LoRa Server is distributed under the MIT license. See also
-[LICENSE](https://github.com/brocaar/loraserver/blob/master/LICENSE).
+ChirpStack Network Server is distributed under the MIT license. See also
+[LICENSE](https://github.com/brocaar/chirpstack-network-server/blob/master/LICENSE).

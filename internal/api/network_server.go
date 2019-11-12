@@ -12,17 +12,17 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/ns"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/downlink/data/classb"
-	"github.com/brocaar/loraserver/internal/downlink/multicast"
-	proprietarydown "github.com/brocaar/loraserver/internal/downlink/proprietary"
-	"github.com/brocaar/loraserver/internal/framelog"
-	"github.com/brocaar/loraserver/internal/gps"
-	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-api/go/common"
+	"github.com/brocaar/chirpstack-api/go/ns"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/downlink/data/classb"
+	"github.com/brocaar/chirpstack-network-server/internal/downlink/multicast"
+	proprietarydown "github.com/brocaar/chirpstack-network-server/internal/downlink/proprietary"
+	"github.com/brocaar/chirpstack-network-server/internal/framelog"
+	"github.com/brocaar/chirpstack-network-server/internal/gps"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
 )
@@ -86,7 +86,7 @@ func (n *NetworkServerAPI) CreateServiceProfile(ctx context.Context, req *ns.Cre
 		sp.DLRatePolicy = storage.Drop
 	}
 
-	if err := storage.CreateServiceProfile(storage.DB(), &sp); err != nil {
+	if err := storage.CreateServiceProfile(ctx, storage.DB(), &sp); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -100,7 +100,7 @@ func (n *NetworkServerAPI) GetServiceProfile(ctx context.Context, req *ns.GetSer
 	var spID uuid.UUID
 	copy(spID[:], req.Id)
 
-	sp, err := storage.GetServiceProfile(storage.DB(), spID)
+	sp, err := storage.GetServiceProfile(ctx, storage.DB(), spID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -164,7 +164,7 @@ func (n *NetworkServerAPI) UpdateServiceProfile(ctx context.Context, req *ns.Upd
 	var spID uuid.UUID
 	copy(spID[:], req.ServiceProfile.Id)
 
-	sp, err := storage.GetServiceProfile(storage.DB(), spID)
+	sp, err := storage.GetServiceProfile(ctx, storage.DB(), spID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -201,11 +201,11 @@ func (n *NetworkServerAPI) UpdateServiceProfile(ctx context.Context, req *ns.Upd
 		sp.DLRatePolicy = storage.Drop
 	}
 
-	if err := storage.FlushServiceProfileCache(storage.RedisPool(), sp.ID); err != nil {
+	if err := storage.FlushServiceProfileCache(ctx, storage.RedisPool(), sp.ID); err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if err := storage.UpdateServiceProfile(storage.DB(), &sp); err != nil {
+	if err := storage.UpdateServiceProfile(ctx, storage.DB(), &sp); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -217,11 +217,11 @@ func (n *NetworkServerAPI) DeleteServiceProfile(ctx context.Context, req *ns.Del
 	var spID uuid.UUID
 	copy(spID[:], req.Id)
 
-	if err := storage.FlushServiceProfileCache(storage.RedisPool(), spID); err != nil {
+	if err := storage.FlushServiceProfileCache(ctx, storage.RedisPool(), spID); err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if err := storage.DeleteServiceProfile(storage.DB(), spID); err != nil {
+	if err := storage.DeleteServiceProfile(ctx, storage.DB(), spID); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -244,7 +244,7 @@ func (n *NetworkServerAPI) CreateRoutingProfile(ctx context.Context, req *ns.Cre
 		TLSCert: req.RoutingProfile.TlsCert,
 		TLSKey:  req.RoutingProfile.TlsKey,
 	}
-	if err := storage.CreateRoutingProfile(storage.DB(), &rp); err != nil {
+	if err := storage.CreateRoutingProfile(ctx, storage.DB(), &rp); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -258,7 +258,7 @@ func (n *NetworkServerAPI) GetRoutingProfile(ctx context.Context, req *ns.GetRou
 	var rpID uuid.UUID
 	copy(rpID[:], req.Id)
 
-	rp, err := storage.GetRoutingProfile(storage.DB(), rpID)
+	rp, err := storage.GetRoutingProfile(ctx, storage.DB(), rpID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -294,7 +294,7 @@ func (n *NetworkServerAPI) UpdateRoutingProfile(ctx context.Context, req *ns.Upd
 	var rpID uuid.UUID
 	copy(rpID[:], req.RoutingProfile.Id)
 
-	rp, err := storage.GetRoutingProfile(storage.DB(), rpID)
+	rp, err := storage.GetRoutingProfile(ctx, storage.DB(), rpID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -311,7 +311,7 @@ func (n *NetworkServerAPI) UpdateRoutingProfile(ctx context.Context, req *ns.Upd
 		rp.TLSKey = ""
 	}
 
-	if err := storage.UpdateRoutingProfile(storage.DB(), &rp); err != nil {
+	if err := storage.UpdateRoutingProfile(ctx, storage.DB(), &rp); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -323,7 +323,7 @@ func (n *NetworkServerAPI) DeleteRoutingProfile(ctx context.Context, req *ns.Del
 	var rpID uuid.UUID
 	copy(rpID[:], req.Id)
 
-	if err := storage.DeleteRoutingProfile(storage.DB(), rpID); err != nil {
+	if err := storage.DeleteRoutingProfile(ctx, storage.DB(), rpID); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -346,29 +346,31 @@ func (n *NetworkServerAPI) CreateDeviceProfile(ctx context.Context, req *ns.Crea
 	}
 
 	dp := storage.DeviceProfile{
-		ID:                 dpID,
-		SupportsClassB:     req.DeviceProfile.SupportsClassB,
-		ClassBTimeout:      int(req.DeviceProfile.ClassBTimeout),
-		PingSlotPeriod:     int(req.DeviceProfile.PingSlotPeriod),
-		PingSlotDR:         int(req.DeviceProfile.PingSlotDr),
-		PingSlotFreq:       int(req.DeviceProfile.PingSlotFreq),
-		SupportsClassC:     req.DeviceProfile.SupportsClassC,
-		ClassCTimeout:      int(req.DeviceProfile.ClassCTimeout),
-		MACVersion:         req.DeviceProfile.MacVersion,
-		RegParamsRevision:  req.DeviceProfile.RegParamsRevision,
-		RXDelay1:           int(req.DeviceProfile.RxDelay_1),
-		RXDROffset1:        int(req.DeviceProfile.RxDrOffset_1),
-		RXDataRate2:        int(req.DeviceProfile.RxDatarate_2),
-		RXFreq2:            int(req.DeviceProfile.RxFreq_2),
-		FactoryPresetFreqs: factoryPresetFreqs,
-		MaxEIRP:            int(req.DeviceProfile.MaxEirp),
-		MaxDutyCycle:       int(req.DeviceProfile.MaxDutyCycle),
-		SupportsJoin:       req.DeviceProfile.SupportsJoin,
-		Supports32bitFCnt:  req.DeviceProfile.Supports_32BitFCnt,
-		RFRegion:           band.Band().Name(),
+		ID:                  dpID,
+		SupportsClassB:      req.DeviceProfile.SupportsClassB,
+		ClassBTimeout:       int(req.DeviceProfile.ClassBTimeout),
+		PingSlotPeriod:      int(req.DeviceProfile.PingSlotPeriod),
+		PingSlotDR:          int(req.DeviceProfile.PingSlotDr),
+		PingSlotFreq:        int(req.DeviceProfile.PingSlotFreq),
+		SupportsClassC:      req.DeviceProfile.SupportsClassC,
+		ClassCTimeout:       int(req.DeviceProfile.ClassCTimeout),
+		MACVersion:          req.DeviceProfile.MacVersion,
+		RegParamsRevision:   req.DeviceProfile.RegParamsRevision,
+		RXDelay1:            int(req.DeviceProfile.RxDelay_1),
+		RXDROffset1:         int(req.DeviceProfile.RxDrOffset_1),
+		RXDataRate2:         int(req.DeviceProfile.RxDatarate_2),
+		RXFreq2:             int(req.DeviceProfile.RxFreq_2),
+		FactoryPresetFreqs:  factoryPresetFreqs,
+		MaxEIRP:             int(req.DeviceProfile.MaxEirp),
+		MaxDutyCycle:        int(req.DeviceProfile.MaxDutyCycle),
+		SupportsJoin:        req.DeviceProfile.SupportsJoin,
+		Supports32bitFCnt:   req.DeviceProfile.Supports_32BitFCnt,
+		RFRegion:            band.Band().Name(),
+		GeolocBufferTTL:     int(req.DeviceProfile.GeolocBufferTtl),
+		GeolocMinBufferSize: int(req.DeviceProfile.GeolocMinBufferSize),
 	}
 
-	if err := storage.CreateDeviceProfile(storage.DB(), &dp); err != nil {
+	if err := storage.CreateDeviceProfile(ctx, storage.DB(), &dp); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -382,7 +384,7 @@ func (n *NetworkServerAPI) GetDeviceProfile(ctx context.Context, req *ns.GetDevi
 	var dpID uuid.UUID
 	copy(dpID[:], req.Id)
 
-	dp, err := storage.GetDeviceProfile(storage.DB(), dpID)
+	dp, err := storage.GetDeviceProfile(ctx, storage.DB(), dpID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -394,26 +396,28 @@ func (n *NetworkServerAPI) GetDeviceProfile(ctx context.Context, req *ns.GetDevi
 
 	resp := ns.GetDeviceProfileResponse{
 		DeviceProfile: &ns.DeviceProfile{
-			Id:                 dp.ID.Bytes(),
-			SupportsClassB:     dp.SupportsClassB,
-			ClassBTimeout:      uint32(dp.ClassBTimeout),
-			PingSlotPeriod:     uint32(dp.PingSlotPeriod),
-			PingSlotDr:         uint32(dp.PingSlotDR),
-			PingSlotFreq:       uint32(dp.PingSlotFreq),
-			SupportsClassC:     dp.SupportsClassC,
-			ClassCTimeout:      uint32(dp.ClassCTimeout),
-			MacVersion:         dp.MACVersion,
-			RegParamsRevision:  dp.RegParamsRevision,
-			RxDelay_1:          uint32(dp.RXDelay1),
-			RxDrOffset_1:       uint32(dp.RXDROffset1),
-			RxDatarate_2:       uint32(dp.RXDataRate2),
-			RxFreq_2:           uint32(dp.RXFreq2),
-			FactoryPresetFreqs: factoryPresetFreqs,
-			MaxEirp:            uint32(dp.MaxEIRP),
-			MaxDutyCycle:       uint32(dp.MaxDutyCycle),
-			SupportsJoin:       dp.SupportsJoin,
-			RfRegion:           string(dp.RFRegion),
-			Supports_32BitFCnt: dp.Supports32bitFCnt,
+			Id:                  dp.ID.Bytes(),
+			SupportsClassB:      dp.SupportsClassB,
+			ClassBTimeout:       uint32(dp.ClassBTimeout),
+			PingSlotPeriod:      uint32(dp.PingSlotPeriod),
+			PingSlotDr:          uint32(dp.PingSlotDR),
+			PingSlotFreq:        uint32(dp.PingSlotFreq),
+			SupportsClassC:      dp.SupportsClassC,
+			ClassCTimeout:       uint32(dp.ClassCTimeout),
+			MacVersion:          dp.MACVersion,
+			RegParamsRevision:   dp.RegParamsRevision,
+			RxDelay_1:           uint32(dp.RXDelay1),
+			RxDrOffset_1:        uint32(dp.RXDROffset1),
+			RxDatarate_2:        uint32(dp.RXDataRate2),
+			RxFreq_2:            uint32(dp.RXFreq2),
+			FactoryPresetFreqs:  factoryPresetFreqs,
+			MaxEirp:             uint32(dp.MaxEIRP),
+			MaxDutyCycle:        uint32(dp.MaxDutyCycle),
+			SupportsJoin:        dp.SupportsJoin,
+			RfRegion:            string(dp.RFRegion),
+			Supports_32BitFCnt:  dp.Supports32bitFCnt,
+			GeolocBufferTtl:     uint32(dp.GeolocBufferTTL),
+			GeolocMinBufferSize: uint32(dp.GeolocMinBufferSize),
 		},
 	}
 
@@ -440,7 +444,7 @@ func (n *NetworkServerAPI) UpdateDeviceProfile(ctx context.Context, req *ns.Upda
 	var dpID uuid.UUID
 	copy(dpID[:], req.DeviceProfile.Id)
 
-	dp, err := storage.GetDeviceProfile(storage.DB(), dpID)
+	dp, err := storage.GetDeviceProfile(ctx, storage.DB(), dpID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -469,12 +473,14 @@ func (n *NetworkServerAPI) UpdateDeviceProfile(ctx context.Context, req *ns.Upda
 	dp.SupportsJoin = req.DeviceProfile.SupportsJoin
 	dp.Supports32bitFCnt = req.DeviceProfile.Supports_32BitFCnt
 	dp.RFRegion = band.Band().Name()
+	dp.GeolocBufferTTL = int(req.DeviceProfile.GeolocBufferTtl)
+	dp.GeolocMinBufferSize = int(req.DeviceProfile.GeolocMinBufferSize)
 
-	if err := storage.FlushDeviceProfileCache(storage.RedisPool(), dp.ID); err != nil {
+	if err := storage.FlushDeviceProfileCache(ctx, storage.RedisPool(), dp.ID); err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if err := storage.UpdateDeviceProfile(storage.DB(), &dp); err != nil {
+	if err := storage.UpdateDeviceProfile(ctx, storage.DB(), &dp); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -486,11 +492,11 @@ func (n *NetworkServerAPI) DeleteDeviceProfile(ctx context.Context, req *ns.Dele
 	var dpID uuid.UUID
 	copy(dpID[:], req.Id)
 
-	if err := storage.FlushDeviceProfileCache(storage.RedisPool(), dpID); err != nil {
+	if err := storage.FlushDeviceProfileCache(ctx, storage.RedisPool(), dpID); err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if err := storage.DeleteDeviceProfile(storage.DB(), dpID); err != nil {
+	if err := storage.DeleteDeviceProfile(ctx, storage.DB(), dpID); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -519,7 +525,7 @@ func (n *NetworkServerAPI) CreateDevice(ctx context.Context, req *ns.CreateDevic
 		SkipFCntCheck:     req.Device.SkipFCntCheck,
 		ReferenceAltitude: req.Device.ReferenceAltitude,
 	}
-	if err := storage.CreateDevice(storage.DB(), &d); err != nil {
+	if err := storage.CreateDevice(ctx, storage.DB(), &d); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -531,7 +537,7 @@ func (n *NetworkServerAPI) GetDevice(ctx context.Context, req *ns.GetDeviceReque
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEui)
 
-	d, err := storage.GetDevice(storage.DB(), devEUI)
+	d, err := storage.GetDevice(ctx, storage.DB(), devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -574,7 +580,7 @@ func (n *NetworkServerAPI) UpdateDevice(ctx context.Context, req *ns.UpdateDevic
 	copy(rpID[:], req.Device.RoutingProfileId)
 	copy(spID[:], req.Device.ServiceProfileId)
 
-	d, err := storage.GetDevice(storage.DB(), devEUI)
+	d, err := storage.GetDevice(ctx, storage.DB(), devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -585,7 +591,7 @@ func (n *NetworkServerAPI) UpdateDevice(ctx context.Context, req *ns.UpdateDevic
 	d.SkipFCntCheck = req.Device.SkipFCntCheck
 	d.ReferenceAltitude = req.Device.ReferenceAltitude
 
-	if err := storage.UpdateDevice(storage.DB(), &d); err != nil {
+	if err := storage.UpdateDevice(ctx, storage.DB(), &d); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -598,11 +604,11 @@ func (n *NetworkServerAPI) DeleteDevice(ctx context.Context, req *ns.DeleteDevic
 	copy(devEUI[:], req.DevEui)
 
 	err := storage.Transaction(func(tx sqlx.Ext) error {
-		if err := storage.DeleteDevice(tx, devEUI); err != nil {
+		if err := storage.DeleteDevice(ctx, tx, devEUI); err != nil {
 			return errToRPCError(err)
 		}
 
-		if err := storage.DeleteDeviceSession(storage.RedisPool(), devEUI); err != nil && err != storage.ErrDoesNotExist {
+		if err := storage.DeleteDeviceSession(ctx, storage.RedisPool(), devEUI); err != nil && err != storage.ErrDoesNotExist {
 			return errToRPCError(err)
 		}
 
@@ -631,12 +637,12 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 	copy(fNwkSIntKey[:], req.DeviceActivation.FNwkSIntKey)
 	copy(nwkSEncKey[:], req.DeviceActivation.NwkSEncKey)
 
-	d, err := storage.GetDevice(storage.DB(), devEUI)
+	d, err := storage.GetDevice(ctx, storage.DB(), devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	dp, err := storage.GetDeviceProfile(storage.DB(), d.DeviceProfileID)
+	dp, err := storage.GetDeviceProfile(ctx, storage.DB(), d.DeviceProfileID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -668,22 +674,22 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 	} else {
 		d.Mode = storage.DeviceModeA
 	}
-	if err := storage.UpdateDevice(storage.DB(), &d); err != nil {
+	if err := storage.UpdateDevice(ctx, storage.DB(), &d); err != nil {
 		return nil, errToRPCError(err)
 	}
 
 	// reset the device-session to the device boot parameters
 	ds.ResetToBootParameters(dp)
 
-	if err := storage.SaveDeviceSession(storage.RedisPool(), ds); err != nil {
+	if err := storage.SaveDeviceSession(ctx, storage.RedisPool(), ds); err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if err := storage.FlushDeviceQueueForDevEUI(storage.DB(), d.DevEUI); err != nil {
+	if err := storage.FlushDeviceQueueForDevEUI(ctx, storage.DB(), d.DevEUI); err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if err := storage.FlushMACCommandQueue(storage.RedisPool(), ds.DevEUI); err != nil {
+	if err := storage.FlushMACCommandQueue(ctx, storage.RedisPool(), ds.DevEUI); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -695,11 +701,11 @@ func (n *NetworkServerAPI) DeactivateDevice(ctx context.Context, req *ns.Deactiv
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEui)
 
-	if err := storage.DeleteDeviceSession(storage.RedisPool(), devEUI); err != nil {
+	if err := storage.DeleteDeviceSession(ctx, storage.RedisPool(), devEUI); err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if err := storage.FlushDeviceQueueForDevEUI(storage.DB(), devEUI); err != nil {
+	if err := storage.FlushDeviceQueueForDevEUI(ctx, storage.DB(), devEUI); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -711,7 +717,7 @@ func (n *NetworkServerAPI) GetDeviceActivation(ctx context.Context, req *ns.GetD
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEui)
 
-	ds, err := storage.GetDeviceSession(storage.RedisPool(), devEUI)
+	ds, err := storage.GetDeviceSession(ctx, storage.RedisPool(), devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -733,7 +739,7 @@ func (n *NetworkServerAPI) GetDeviceActivation(ctx context.Context, req *ns.GetD
 
 // GetRandomDevAddr returns a random DevAddr.
 func (n *NetworkServerAPI) GetRandomDevAddr(ctx context.Context, req *empty.Empty) (*ns.GetRandomDevAddrResponse, error) {
-	devAddr, err := storage.GetRandomDevAddr(storage.RedisPool(), config.C.NetworkServer.NetID)
+	devAddr, err := storage.GetRandomDevAddr(config.C.NetworkServer.NetID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -765,7 +771,7 @@ func (n *NetworkServerAPI) CreateMACCommandQueueItem(ctx context.Context, req *n
 		MACCommands: commands,
 	}
 
-	if err := storage.CreateMACCommandQueueItem(storage.RedisPool(), devEUI, block); err != nil {
+	if err := storage.CreateMACCommandQueueItem(ctx, storage.RedisPool(), devEUI, block); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -784,7 +790,7 @@ func (n *NetworkServerAPI) SendProprietaryPayload(ctx context.Context, req *ns.S
 		gwIDs = append(gwIDs, id)
 	}
 
-	err := proprietarydown.Handle(req.MacPayload, mic, gwIDs, req.PolarizationInversion, int(req.Frequency), int(req.Dr))
+	err := proprietarydown.Handle(ctx, req.MacPayload, mic, gwIDs, req.PolarizationInversion, int(req.Frequency), int(req.Dr))
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -820,6 +826,9 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 		gw.GatewayProfileID = &gpID
 	}
 
+	// Routing Profile ID.
+	copy(gw.RoutingProfileID[:], req.Gateway.RoutingProfileId)
+
 	for _, board := range req.Gateway.Boards {
 		var gwBoard storage.GatewayBoard
 
@@ -839,7 +848,7 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 	}
 
 	err := storage.Transaction(func(tx sqlx.Ext) error {
-		if err := storage.CreateGateway(tx, &gw); err != nil {
+		if err := storage.CreateGateway(ctx, tx, &gw); err != nil {
 			return errToRPCError(err)
 		}
 		return nil
@@ -856,14 +865,15 @@ func (n *NetworkServerAPI) GetGateway(ctx context.Context, req *ns.GetGatewayReq
 	var id lorawan.EUI64
 	copy(id[:], req.Id)
 
-	gw, err := storage.GetGateway(storage.DB(), id)
+	gw, err := storage.GetGateway(ctx, storage.DB(), id)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
 	resp := ns.GetGatewayResponse{
 		Gateway: &ns.Gateway{
-			Id: gw.GatewayID[:],
+			Id:               gw.GatewayID[:],
+			RoutingProfileId: gw.RoutingProfileID[:],
 			Location: &common.Location{
 				Latitude:  gw.Location.Latitude,
 				Longitude: gw.Location.Longitude,
@@ -916,10 +926,13 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 	var id lorawan.EUI64
 	copy(id[:], req.Gateway.Id)
 
-	gw, err := storage.GetGateway(storage.DB(), id)
+	gw, err := storage.GetGateway(ctx, storage.DB(), id)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
+
+	// Routing Profile ID.
+	copy(gw.RoutingProfileID[:], req.Gateway.RoutingProfileId)
 
 	// Gateway-profile ID.
 	if b := req.Gateway.GatewayProfileId; len(b) != 0 {
@@ -955,12 +968,12 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 		gw.Boards = append(gw.Boards, gwBoard)
 	}
 
-	if err = storage.FlushGatewayCache(storage.RedisPool(), gw.GatewayID); err != nil {
+	if err = storage.FlushGatewayCache(ctx, storage.RedisPool(), gw.GatewayID); err != nil {
 		return nil, errToRPCError(err)
 	}
 
 	err = storage.Transaction(func(tx sqlx.Ext) error {
-		if err = storage.UpdateGateway(tx, &gw); err != nil {
+		if err = storage.UpdateGateway(ctx, tx, &gw); err != nil {
 			return errToRPCError(err)
 		}
 		return nil
@@ -977,11 +990,11 @@ func (n *NetworkServerAPI) DeleteGateway(ctx context.Context, req *ns.DeleteGate
 	var id lorawan.EUI64
 	copy(id[:], req.Id)
 
-	if err := storage.FlushGatewayCache(storage.RedisPool(), id); err != nil {
+	if err := storage.FlushGatewayCache(ctx, storage.RedisPool(), id); err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	if err := storage.DeleteGateway(storage.DB(), id); err != nil {
+	if err := storage.DeleteGateway(ctx, storage.DB(), id); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -1002,7 +1015,7 @@ func (n *NetworkServerAPI) GetGatewayStats(ctx context.Context, req *ns.GetGatew
 		return nil, grpc.Errorf(codes.InvalidArgument, err.Error())
 	}
 
-	metrics, err := storage.GetMetrics(storage.RedisPool(), storage.AggregationInterval(req.Interval.String()), "gw:"+gatewayID.String(), start, end)
+	metrics, err := storage.GetMetrics(ctx, storage.RedisPool(), storage.AggregationInterval(req.Interval.String()), "gw:"+gatewayID.String(), start, end)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1141,7 +1154,7 @@ func (n *NetworkServerAPI) CreateGatewayProfile(ctx context.Context, req *ns.Cre
 	}
 
 	err := storage.Transaction(func(tx sqlx.Ext) error {
-		return storage.CreateGatewayProfile(tx, &gc)
+		return storage.CreateGatewayProfile(ctx, tx, &gc)
 	})
 	if err != nil {
 		return nil, errToRPCError(err)
@@ -1155,7 +1168,7 @@ func (n *NetworkServerAPI) GetGatewayProfile(ctx context.Context, req *ns.GetGat
 	var gpID uuid.UUID
 	copy(gpID[:], req.Id)
 
-	gc, err := storage.GetGatewayProfile(storage.DB(), gpID)
+	gc, err := storage.GetGatewayProfile(ctx, storage.DB(), gpID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1213,7 +1226,7 @@ func (n *NetworkServerAPI) UpdateGatewayProfile(ctx context.Context, req *ns.Upd
 	var gpID uuid.UUID
 	copy(gpID[:], req.GatewayProfile.Id)
 
-	gc, err := storage.GetGatewayProfile(storage.DB(), gpID)
+	gc, err := storage.GetGatewayProfile(ctx, storage.DB(), gpID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1246,7 +1259,7 @@ func (n *NetworkServerAPI) UpdateGatewayProfile(ctx context.Context, req *ns.Upd
 	}
 
 	err = storage.Transaction(func(tx sqlx.Ext) error {
-		return storage.UpdateGatewayProfile(tx, &gc)
+		return storage.UpdateGatewayProfile(ctx, tx, &gc)
 	})
 	if err != nil {
 		return nil, errToRPCError(err)
@@ -1260,7 +1273,7 @@ func (n *NetworkServerAPI) DeleteGatewayProfile(ctx context.Context, req *ns.Del
 	var gpID uuid.UUID
 	copy(gpID[:], req.Id)
 
-	if err := storage.DeleteGatewayProfile(storage.DB(), gpID); err != nil {
+	if err := storage.DeleteGatewayProfile(ctx, storage.DB(), gpID); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -1276,17 +1289,17 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.Item.DevEui)
 
-	d, err := storage.GetDevice(storage.DB(), devEUI)
+	d, err := storage.GetDevice(ctx, storage.DB(), devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	dp, err := storage.GetAndCacheDeviceProfile(storage.DB(), storage.RedisPool(), d.DeviceProfileID)
+	dp, err := storage.GetAndCacheDeviceProfile(ctx, storage.DB(), storage.RedisPool(), d.DeviceProfileID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
-	ds, err := storage.GetDeviceSession(storage.RedisPool(), d.DevEUI)
+	ds, err := storage.GetDeviceSession(ctx, storage.RedisPool(), d.DevEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1312,7 +1325,7 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 	if dp.SupportsClassB {
 		// check if device is currently active and is operating in Class-B mode
 		if err == nil && ds.BeaconLocked {
-			scheduleAfterGPSEpochTS, err := storage.GetMaxEmitAtTimeSinceGPSEpochForDevEUI(storage.DB(), d.DevEUI)
+			scheduleAfterGPSEpochTS, err := storage.GetMaxEmitAtTimeSinceGPSEpochForDevEUI(ctx, storage.DB(), d.DevEUI)
 			if err != nil {
 				return nil, errToRPCError(err)
 			}
@@ -1335,7 +1348,7 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 		}
 	}
 
-	err = storage.CreateDeviceQueueItem(storage.DB(), &qi)
+	err = storage.CreateDeviceQueueItem(ctx, storage.DB(), &qi)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1348,7 +1361,7 @@ func (n *NetworkServerAPI) FlushDeviceQueueForDevEUI(ctx context.Context, req *n
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEui)
 
-	err := storage.FlushDeviceQueueForDevEUI(storage.DB(), devEUI)
+	err := storage.FlushDeviceQueueForDevEUI(ctx, storage.DB(), devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1361,7 +1374,7 @@ func (n *NetworkServerAPI) GetDeviceQueueItemsForDevEUI(ctx context.Context, req
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEui)
 
-	items, err := storage.GetDeviceQueueItemsForDevEUI(storage.DB(), devEUI)
+	items, err := storage.GetDeviceQueueItemsForDevEUI(ctx, storage.DB(), devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1393,7 +1406,7 @@ func (n *NetworkServerAPI) GetNextDownlinkFCntForDevEUI(ctx context.Context, req
 
 	copy(devEUI[:], req.DevEui)
 
-	ds, err := storage.GetDeviceSession(storage.RedisPool(), devEUI)
+	ds, err := storage.GetDeviceSession(ctx, storage.RedisPool(), devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1404,7 +1417,7 @@ func (n *NetworkServerAPI) GetNextDownlinkFCntForDevEUI(ctx context.Context, req
 		resp.FCnt = ds.AFCntDown
 	}
 
-	items, err := storage.GetDeviceQueueItemsForDevEUI(storage.DB(), devEUI)
+	items, err := storage.GetDeviceQueueItemsForDevEUI(ctx, storage.DB(), devEUI)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1443,7 +1456,7 @@ func (n *NetworkServerAPI) CreateMulticastGroup(ctx context.Context, req *ns.Cre
 	copy(mg.ServiceProfileID[:], req.MulticastGroup.ServiceProfileId)
 	copy(mg.RoutingProfileID[:], req.MulticastGroup.RoutingProfileId)
 
-	if err := storage.CreateMulticastGroup(storage.DB(), &mg); err != nil {
+	if err := storage.CreateMulticastGroup(ctx, storage.DB(), &mg); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -1457,7 +1470,7 @@ func (n *NetworkServerAPI) GetMulticastGroup(ctx context.Context, req *ns.GetMul
 	var mgID uuid.UUID
 	copy(mgID[:], req.Id)
 
-	mg, err := storage.GetMulticastGroup(storage.DB(), mgID, false)
+	mg, err := storage.GetMulticastGroup(ctx, storage.DB(), mgID, false)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1508,7 +1521,7 @@ func (n *NetworkServerAPI) UpdateMulticastGroup(ctx context.Context, req *ns.Upd
 	copy(mgID[:], req.MulticastGroup.Id)
 
 	err := storage.Transaction(func(tx sqlx.Ext) error {
-		mg, err := storage.GetMulticastGroup(tx, mgID, true)
+		mg, err := storage.GetMulticastGroup(ctx, tx, mgID, true)
 		if err != nil {
 			return errToRPCError(err)
 		}
@@ -1531,7 +1544,7 @@ func (n *NetworkServerAPI) UpdateMulticastGroup(ctx context.Context, req *ns.Upd
 			return grpc.Errorf(codes.InvalidArgument, "invalid group_type")
 		}
 
-		if err := storage.UpdateMulticastGroup(tx, &mg); err != nil {
+		if err := storage.UpdateMulticastGroup(ctx, tx, &mg); err != nil {
 			return errToRPCError(err)
 		}
 
@@ -1549,7 +1562,7 @@ func (n *NetworkServerAPI) DeleteMulticastGroup(ctx context.Context, req *ns.Del
 	var mgID uuid.UUID
 	copy(mgID[:], req.Id)
 
-	if err := storage.DeleteMulticastGroup(storage.DB(), mgID); err != nil {
+	if err := storage.DeleteMulticastGroup(ctx, storage.DB(), mgID); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -1563,7 +1576,7 @@ func (n *NetworkServerAPI) AddDeviceToMulticastGroup(ctx context.Context, req *n
 	copy(devEUI[:], req.DevEui)
 	copy(mgID[:], req.MulticastGroupId)
 
-	if err := storage.AddDeviceToMulticastGroup(storage.DB(), devEUI, mgID); err != nil {
+	if err := storage.AddDeviceToMulticastGroup(ctx, storage.DB(), devEUI, mgID); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -1577,7 +1590,7 @@ func (n *NetworkServerAPI) RemoveDeviceFromMulticastGroup(ctx context.Context, r
 	copy(devEUI[:], req.DevEui)
 	copy(mgID[:], req.MulticastGroupId)
 
-	if err := storage.RemoveDeviceFromMulticastGroup(storage.DB(), devEUI, mgID); err != nil {
+	if err := storage.RemoveDeviceFromMulticastGroup(ctx, storage.DB(), devEUI, mgID); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -1601,7 +1614,7 @@ func (n *NetworkServerAPI) EnqueueMulticastQueueItem(ctx context.Context, req *n
 	}
 
 	err := storage.Transaction(func(tx sqlx.Ext) error {
-		return multicast.EnqueueQueueItem(storage.RedisPool(), tx, qi)
+		return multicast.EnqueueQueueItem(ctx, storage.RedisPool(), tx, qi)
 	})
 	if err != nil {
 		return nil, errToRPCError(err)
@@ -1615,7 +1628,7 @@ func (n *NetworkServerAPI) FlushMulticastQueueForMulticastGroup(ctx context.Cont
 	var mgID uuid.UUID
 	copy(mgID[:], req.MulticastGroupId)
 
-	if err := storage.FlushMulticastQueueForMulticastGroup(storage.DB(), mgID); err != nil {
+	if err := storage.FlushMulticastQueueForMulticastGroup(ctx, storage.DB(), mgID); err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -1627,7 +1640,7 @@ func (n *NetworkServerAPI) GetMulticastQueueItemsForMulticastGroup(ctx context.C
 	var mgID uuid.UUID
 	copy(mgID[:], req.MulticastGroupId)
 
-	items, err := storage.GetMulticastQueueItemsForMulticastGroup(storage.DB(), mgID)
+	items, err := storage.GetMulticastQueueItemsForMulticastGroup(ctx, storage.DB(), mgID)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1653,7 +1666,7 @@ func (n *NetworkServerAPI) GetMulticastQueueItemsForMulticastGroup(ctx context.C
 	return &out, nil
 }
 
-// GetVersion returns the LoRa Server version.
+// GetVersion returns the ChirpStack Network Server version.
 func (n *NetworkServerAPI) GetVersion(ctx context.Context, req *empty.Empty) (*ns.GetVersionResponse, error) {
 	region, ok := map[string]common.Region{
 		common.Region_AS923.String():    common.Region_AS923,

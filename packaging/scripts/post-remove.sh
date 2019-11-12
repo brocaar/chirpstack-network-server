@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-NAME=loraserver
+OLD_NAME=loraserver
+NAME=chirpstack-network-server
 
 function remove_systemd {
 	systemctl stop $NAME
@@ -12,6 +13,7 @@ function remove_initd {
 	/etc/init.d/$NAME stop
 	update-rc.d -f $NAME remove
 	rm -f /etc/init.d/$NAME
+	rm -f /etc/init.d/$OLD_NAME
 }
 
 which systemctl &>/dev/null

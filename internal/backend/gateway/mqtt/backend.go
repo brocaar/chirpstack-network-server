@@ -19,11 +19,11 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/backend/gateway/marshaler"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/marshaler"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/lorawan"
 )
 
@@ -152,18 +152,21 @@ func (b *Backend) SendTXPacket(txPacket gw.DownlinkFrame) error {
 	}
 
 	gatewayID := helpers.GetGatewayID(txPacket.TxInfo)
+	downID := helpers.GetDownlinkID(&txPacket)
 
-	return b.publishCommand(gatewayID, "down", &txPacket)
+	return b.publishCommand(log.Fields{
+		"downlink_id": downID,
+	}, gatewayID, "down", &txPacket)
 }
 
 // SendGatewayConfigPacket sends the given GatewayConfigPacket to the gateway.
 func (b *Backend) SendGatewayConfigPacket(configPacket gw.GatewayConfiguration) error {
 	gatewayID := helpers.GetGatewayID(&configPacket)
 
-	return b.publishCommand(gatewayID, "config", &configPacket)
+	return b.publishCommand(log.Fields{}, gatewayID, "config", &configPacket)
 }
 
-func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, msg proto.Message) error {
+func (b *Backend) publishCommand(fields log.Fields, gatewayID lorawan.EUI64, command string, msg proto.Message) error {
 	t := b.getGatewayMarshaler(gatewayID)
 	bb, err := marshaler.MarshalCommand(t, msg)
 	if err != nil {
@@ -179,12 +182,14 @@ func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, msg pr
 		return errors.Wrap(err, "execute command topic template error")
 	}
 
-	log.WithFields(log.Fields{
-		"gateway_id": gatewayID,
-		"command":    command,
-		"qos":        b.qos,
-		"topic":      topic.String(),
-	}).Info("gateway/mqtt: publishing gateway command")
+	fields["gateway_id"] = gatewayID
+	fields["command"] = command
+	fields["qos"] = b.qos
+	fields["topic"] = topic.String()
+
+	log.WithFields(fields).Info("gateway/mqtt: publishing gateway command")
+
+	mqttCommandCounter(command).Inc()
 
 	if token := b.conn.Publish(topic.String(), b.qos, false, bb); token.Wait() && token.Error() != nil {
 		return errors.Wrap(err, "gateway/mqtt: publish gateway command error")
@@ -198,10 +203,13 @@ func (b *Backend) eventHandler(c paho.Client, msg paho.Message) {
 	defer b.wg.Done()
 
 	if strings.HasSuffix(msg.Topic(), "up") {
+		mqttEventCounter("up").Inc()
 		b.rxPacketHandler(c, msg)
 	} else if strings.HasSuffix(msg.Topic(), "ack") {
+		mqttEventCounter("ack").Inc()
 		b.ackPacketHandler(c, msg)
 	} else if strings.HasSuffix(msg.Topic(), "stats") {
+		mqttEventCounter("stats").Inc()
 		b.statsPacketHandler(c, msg)
 	}
 }
@@ -209,8 +217,6 @@ func (b *Backend) eventHandler(c paho.Client, msg paho.Message) {
 func (b *Backend) rxPacketHandler(c paho.Client, msg paho.Message) {
 	b.wg.Add(1)
 	defer b.wg.Done()
-
-	log.Info("gateway/mqtt: uplink frame received")
 
 	var uplinkFrame gw.UplinkFrame
 	t, err := marshaler.UnmarshalUplinkFrame(msg.Payload(), &uplinkFrame)
@@ -237,6 +243,12 @@ func (b *Backend) rxPacketHandler(c paho.Client, msg paho.Message) {
 
 	gatewayID := helpers.GetGatewayID(uplinkFrame.RxInfo)
 	b.setGatewayMarshaler(gatewayID, t)
+	uplinkID := helpers.GetUplinkID(uplinkFrame.RxInfo)
+
+	log.WithFields(log.Fields{
+		"uplink_id":  uplinkID,
+		"gateway_id": gatewayID,
+	}).Info("gateway/mqtt: uplink frame received")
 
 	// Since with MQTT all subscribers will receive the uplink messages sent
 	// by all the gateways, the first instance receiving the message must lock it,
@@ -253,7 +265,9 @@ func (b *Backend) rxPacketHandler(c paho.Client, msg paho.Message) {
 			// the payload is already being processed by an other instance
 			return
 		}
-		log.WithError(err).Error("gateway/mqtt: acquire uplink payload lock error")
+		log.WithFields(log.Fields{
+			"uplink_id": uplinkID,
+		}).WithError(err).Error("gateway/mqtt: acquire uplink payload lock error")
 		return
 	}
 
@@ -274,6 +288,7 @@ func (b *Backend) statsPacketHandler(c paho.Client, msg paho.Message) {
 	}
 
 	gatewayID := helpers.GetGatewayID(&gatewayStats)
+	statsID := helpers.GetStatsID(&gatewayStats)
 	b.setGatewayMarshaler(gatewayID, t)
 
 	// Since with MQTT all subscribers will receive the stats messages sent
@@ -294,7 +309,10 @@ func (b *Backend) statsPacketHandler(c paho.Client, msg paho.Message) {
 		return
 	}
 
-	log.WithField("gateway_id", gatewayID).Info("gateway/mqtt: gateway stats packet received")
+	log.WithFields(log.Fields{
+		"gateway_id": gatewayID,
+		"stats_id":   statsID,
+	}).Info("gateway/mqtt: gateway stats packet received")
 	b.statsPacketChan <- gatewayStats
 }
 
@@ -311,6 +329,7 @@ func (b *Backend) ackPacketHandler(c paho.Client, msg paho.Message) {
 	}
 
 	gatewayID := helpers.GetGatewayID(&ack)
+	downlinkID := helpers.GetDownlinkID(&ack)
 	b.setGatewayMarshaler(gatewayID, t)
 
 	// Since with MQTT all subscribers will receive the ack messages sent
@@ -331,12 +350,17 @@ func (b *Backend) ackPacketHandler(c paho.Client, msg paho.Message) {
 		return
 	}
 
-	log.WithField("gateway_id", gatewayID).Info("backend/gateway: downlink tx acknowledgement received")
+	log.WithFields(log.Fields{
+		"gateway_id":  gatewayID,
+		"downlink_id": downlinkID,
+	}).Info("backend/gateway: downlink tx acknowledgement received")
 	b.downlinkTXAckChan <- ack
 }
 
 func (b *Backend) onConnected(c paho.Client) {
 	log.Info("backend/gateway: connected to mqtt server")
+
+	mqttConnectCounter().Inc()
 
 	for {
 		log.WithFields(log.Fields{
@@ -357,6 +381,7 @@ func (b *Backend) onConnected(c paho.Client) {
 
 func (b *Backend) onConnectionLost(c paho.Client, reason error) {
 	log.Errorf("gateway/mqtt: mqtt connection error: %s", reason)
+	mqttDisconnectCounter().Inc()
 }
 
 func (b *Backend) setGatewayMarshaler(gatewayID lorawan.EUI64, t marshaler.Type) {

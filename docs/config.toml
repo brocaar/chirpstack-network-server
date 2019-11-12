@@ -1,8 +1,9 @@
-baseURL = "https://www.loraserver.io/loraserver/"
+baseURL = "https://www.chirpstack.io/network-server/"
 languageCode = "en-us"
-title = "LoRa Server Server documentation"
+title = "ChirpStack Network Server documentation"
 googleAnalytics = "UA-3512995-9"
 pygmentsUseClasses = true
+theme = "chirpstack-hugo-theme"
 
 [[menu.main]]
     pre = "<i class='fas fa-hand-point-right'></i>"
@@ -33,11 +34,19 @@ pygmentsUseClasses = true
     weight = 4
 
 [[menu.main]]
+    pre = "<i class='fas fa-chart-line'></i>"
+    name = "Metrics"
+    identifier = "metrics"
+    url = "/metrics/"
+    weight = 5
+
+[[menu.main]]
     pre = "<i class='fab fa-github'></i>"
     name = "Community & support"
     identifier = "community"
     url = "/community/"
-    weight = 5
+    weight = 6
 
 [params]
-version = "3.0.2"
+version = "3.4.1"
+component = "chirpstack-network-server"

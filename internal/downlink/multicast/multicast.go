@@ -1,29 +1,35 @@
 package multicast
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/binary"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/framelog"
-	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/framelog"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
 var errAbort = errors.New("")
 
 type multicastContext struct {
+	ctx context.Context
+
 	Token              uint16
+	DownlinkFrame      gw.DownlinkFrame
 	DB                 sqlx.Ext
 	MulticastGroup     storage.MulticastGroup
 	MulticastQueueItem storage.MulticastQueueItem
@@ -39,6 +45,7 @@ var multicastTasks = []func(*multicastContext) error{
 	setTXInfo,
 	setPHYPayload,
 	sendDownlinkData,
+	saveDownlinkFrame,
 }
 
 var (
@@ -63,14 +70,15 @@ func Setup(conf config.Config) error {
 
 // HandleScheduleNextQueueItem handles the scheduling of the next queue-item
 // for the given multicast-group.
-func HandleScheduleNextQueueItem(db sqlx.Ext, mg storage.MulticastGroup) error {
-	ctx := multicastContext{
+func HandleScheduleNextQueueItem(ctx context.Context, db sqlx.Ext, mg storage.MulticastGroup) error {
+	nqctx := multicastContext{
+		ctx:            ctx,
 		DB:             db,
 		MulticastGroup: mg,
 	}
 
 	for _, t := range multicastTasks {
-		if err := t(&ctx); err != nil {
+		if err := t(&nqctx); err != nil {
 			if err == errAbort {
 				return nil
 			}
@@ -82,14 +90,15 @@ func HandleScheduleNextQueueItem(db sqlx.Ext, mg storage.MulticastGroup) error {
 }
 
 // HandleScheduleQueueItem handles the scheduling of the given queue-item.
-func HandleScheduleQueueItem(db sqlx.Ext, qi storage.MulticastQueueItem) error {
-	ctx := multicastContext{
+func HandleScheduleQueueItem(ctx context.Context, db sqlx.Ext, qi storage.MulticastQueueItem) error {
+	mctx := multicastContext{
+		ctx:                ctx,
 		DB:                 db,
 		MulticastQueueItem: qi,
 	}
 
 	for _, t := range multicastTasks {
-		if err := t(&ctx); err != nil {
+		if err := t(&mctx); err != nil {
 			if err == errAbort {
 				return nil
 			}
@@ -102,7 +111,7 @@ func HandleScheduleQueueItem(db sqlx.Ext, qi storage.MulticastQueueItem) error {
 
 func getMulticastGroup(ctx *multicastContext) error {
 	var err error
-	ctx.MulticastGroup, err = storage.GetMulticastGroup(ctx.DB, ctx.MulticastQueueItem.MulticastGroupID, false)
+	ctx.MulticastGroup, err = storage.GetMulticastGroup(ctx.ctx, ctx.DB, ctx.MulticastQueueItem.MulticastGroupID, false)
 	if err != nil {
 		return errors.Wrap(err, "get multicast-group error")
 	}
@@ -121,7 +130,7 @@ func setToken(ctx *multicastContext) error {
 }
 
 func removeQueueItem(ctx *multicastContext) error {
-	if err := storage.DeleteMulticastQueueItem(ctx.DB, ctx.MulticastQueueItem.ID); err != nil {
+	if err := storage.DeleteMulticastQueueItem(ctx.ctx, ctx.DB, ctx.MulticastQueueItem.ID); err != nil {
 		return errors.Wrap(err, "delete multicast queue-item error")
 	}
 
@@ -140,6 +149,7 @@ func validatePayloadSize(ctx *multicastContext) error {
 			"dr":                   ctx.MulticastGroup.DR,
 			"max_frm_payload_size": maxSize.N,
 			"frm_payload_size":     len(ctx.MulticastQueueItem.FRMPayload),
+			"ctx_id":               ctx.ctx.Value(logging.ContextIDKey),
 		}).Error("payload exceeds max size for data-rate")
 
 		return errAbort
@@ -214,18 +224,40 @@ func sendDownlinkData(ctx *multicastContext) error {
 		return errors.Wrap(err, "marshal phypayload error")
 	}
 
-	downlinkFrame := gw.DownlinkFrame{
+	var downID uuid.UUID
+	if ctxID := ctx.ctx.Value(logging.ContextIDKey); ctxID != nil {
+		if id, ok := ctxID.(uuid.UUID); ok {
+			downID = id
+		}
+	}
+
+	ctx.DownlinkFrame = gw.DownlinkFrame{
 		Token:      uint32(ctx.Token),
+		DownlinkId: downID[:],
 		TxInfo:     &ctx.TXInfo,
 		PhyPayload: phyB,
 	}
 
-	if err := gateway.Backend().SendTXPacket(downlinkFrame); err != nil {
+	if err := gateway.Backend().SendTXPacket(ctx.DownlinkFrame); err != nil {
 		return errors.Wrap(err, "send downlink frame to gateway error")
 	}
 
-	if err := framelog.LogDownlinkFrameForGateway(storage.RedisPool(), downlinkFrame); err != nil {
+	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, storage.RedisPool(), ctx.DownlinkFrame); err != nil {
 		log.WithError(err).Error("log downlink frame for gateway error")
+	}
+
+	return nil
+}
+
+func saveDownlinkFrame(ctx *multicastContext) error {
+	df := storage.DownlinkFrames{
+		MulticastGroupId: ctx.MulticastGroup.ID[:],
+		Token:            uint32(ctx.Token),
+		DownlinkFrames:   []*gw.DownlinkFrame{&ctx.DownlinkFrame},
+	}
+
+	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), df); err != nil {
+		return errors.Wrap(err, "save downlink-frames error")
 	}
 
 	return nil

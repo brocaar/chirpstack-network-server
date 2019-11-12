@@ -1,27 +1,19 @@
 package testsuite
 
 import (
-	"encoding/binary"
-	"sort"
 	"testing"
 	"time"
 
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/test"
-
-	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/geo"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/uplink"
+	"github.com/brocaar/chirpstack-api/go/as"
+	"github.com/brocaar/chirpstack-api/go/common"
+	"github.com/brocaar/chirpstack-api/go/geo"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -40,14 +32,10 @@ func (ts *GeolocationTestSuite) SetupTest() {
 }
 
 func (ts *GeolocationTestSuite) TestGeolocation() {
-	tests := []struct {
-		Name                             string
-		NwkGeoLoc                        bool
-		RXInfo                           []*gw.UplinkRXInfo
-		ResolveTDOAResponse              geo.ResolveTDOAResponse
-		ExpectedGeolocationRequest       *geo.ResolveTDOARequest
-		ExpectedSetDeviceLocationRequest *as.SetDeviceLocationRequest
-	}{
+	now := time.Now()
+	nowProto, _ := ptypes.TimestampProto(now)
+
+	tests := []GeolocationTest{
 		{
 			Name:      "one gateway",
 			NwkGeoLoc: true,
@@ -63,6 +51,9 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 						},
 					},
 				},
+			},
+			Assert: []Assertion{
+				AssertNoASSetDeviceLocationRequest(),
 			},
 		},
 		{
@@ -92,7 +83,11 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 					},
 				},
 			},
+			Assert: []Assertion{
+				AssertNoASSetDeviceLocationRequest(),
+			},
 		},
+
 		{
 			Name:      "three gateways",
 			NwkGeoLoc: true,
@@ -141,70 +136,72 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 					},
 				},
 			},
-			ExpectedGeolocationRequest: &geo.ResolveTDOARequest{
-				DevEui:                  ts.DeviceSession.DevEUI[:],
-				DeviceReferenceAltitude: 5.6,
-				FrameRxInfo: &geo.FrameRXInfo{
-					RxInfo: []*gw.UplinkRXInfo{
-						{
-							GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 1},
-							Location: &common.Location{
-								Latitude:  1.1,
-								Longitude: 1.1,
-								Altitude:  1.1,
-							},
-							FineTimestampType: gw.FineTimestampType_PLAIN,
-							FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
-								PlainFineTimestamp: &gw.PlainFineTimestamp{
-									Time: &timestamp.Timestamp{
-										Nanos: 1,
+			Assert: []Assertion{
+				AssertResolveTDOARequest(geo.ResolveTDOARequest{
+					DevEui:                  ts.DeviceSession.DevEUI[:],
+					DeviceReferenceAltitude: 5.6,
+					FrameRxInfo: &geo.FrameRXInfo{
+						RxInfo: []*gw.UplinkRXInfo{
+							{
+								GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 1},
+								Location: &common.Location{
+									Latitude:  1.1,
+									Longitude: 1.1,
+									Altitude:  1.1,
+								},
+								FineTimestampType: gw.FineTimestampType_PLAIN,
+								FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+									PlainFineTimestamp: &gw.PlainFineTimestamp{
+										Time: &timestamp.Timestamp{
+											Nanos: 1,
+										},
 									},
 								},
 							},
-						},
-						{
-							GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 2},
-							Location: &common.Location{
-								Latitude:  2.1,
-								Longitude: 2.1,
-								Altitude:  2.1,
-							},
-							FineTimestampType: gw.FineTimestampType_PLAIN,
-							FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
-								PlainFineTimestamp: &gw.PlainFineTimestamp{
-									Time: &timestamp.Timestamp{
-										Nanos: 2,
+							{
+								GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 2},
+								Location: &common.Location{
+									Latitude:  2.1,
+									Longitude: 2.1,
+									Altitude:  2.1,
+								},
+								FineTimestampType: gw.FineTimestampType_PLAIN,
+								FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+									PlainFineTimestamp: &gw.PlainFineTimestamp{
+										Time: &timestamp.Timestamp{
+											Nanos: 2,
+										},
 									},
 								},
 							},
-						},
-						{
-							GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 3},
-							Location: &common.Location{
-								Latitude:  3.1,
-								Longitude: 3.1,
-								Altitude:  3.1,
-							},
-							FineTimestampType: gw.FineTimestampType_PLAIN,
-							FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
-								PlainFineTimestamp: &gw.PlainFineTimestamp{
-									Time: &timestamp.Timestamp{
-										Nanos: 3,
+							{
+								GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 3},
+								Location: &common.Location{
+									Latitude:  3.1,
+									Longitude: 3.1,
+									Altitude:  3.1,
+								},
+								FineTimestampType: gw.FineTimestampType_PLAIN,
+								FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+									PlainFineTimestamp: &gw.PlainFineTimestamp{
+										Time: &timestamp.Timestamp{
+											Nanos: 3,
+										},
 									},
 								},
 							},
 						},
 					},
-				},
-			},
-			ExpectedSetDeviceLocationRequest: &as.SetDeviceLocationRequest{
-				DevEui: ts.DeviceSession.DevEUI[:],
-				Location: &common.Location{
-					Latitude:  1.123,
-					Longitude: 2.123,
-					Altitude:  3.123,
-					Source:    common.LocationSource_GEO_RESOLVER,
-				},
+				}),
+				AssertASSetDeviceLocationRequest(as.SetDeviceLocationRequest{
+					DevEui: ts.DeviceSession.DevEUI[:],
+					Location: &common.Location{
+						Latitude:  1.123,
+						Longitude: 2.123,
+						Altitude:  3.123,
+						Source:    common.LocationSource_GEO_RESOLVER,
+					},
+				}),
 			},
 		},
 		{
@@ -255,6 +252,9 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 					},
 				},
 			},
+			Assert: []Assertion{
+				AssertNoASSetDeviceLocationRequest(),
+			},
 		},
 		{
 			Name:      "three gateways not enough fine-timestamp data",
@@ -296,82 +296,305 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 					},
 				},
 			},
+			Assert: []Assertion{
+				AssertNoASSetDeviceLocationRequest(),
+			},
+		},
+		{
+			Name:      "three gateways + required 2 frames in buffer (have 1)",
+			NwkGeoLoc: true,
+			RXInfo: []*gw.UplinkRXInfo{
+				{
+					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 1},
+					FineTimestampType: gw.FineTimestampType_PLAIN,
+					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+						PlainFineTimestamp: &gw.PlainFineTimestamp{
+							Time: &timestamp.Timestamp{
+								Nanos: 1,
+							},
+						},
+					},
+				},
+				{
+					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 2},
+					FineTimestampType: gw.FineTimestampType_PLAIN,
+					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+						PlainFineTimestamp: &gw.PlainFineTimestamp{
+							Time: &timestamp.Timestamp{
+								Nanos: 2,
+							},
+						},
+					},
+				},
+				{
+					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 3},
+					FineTimestampType: gw.FineTimestampType_PLAIN,
+					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+						PlainFineTimestamp: &gw.PlainFineTimestamp{
+							Time: &timestamp.Timestamp{
+								Nanos: 3,
+							},
+						},
+					},
+				},
+			},
+			ResolveMultiFrameTDOAResponse: geo.ResolveMultiFrameTDOAResponse{
+				Result: &geo.ResolveResult{
+					Location: &common.Location{
+						Latitude:  1.123,
+						Longitude: 2.123,
+						Altitude:  3.123,
+						Source:    common.LocationSource_GEO_RESOLVER,
+					},
+				},
+			},
+			GeolocBufferTTL:     time.Minute,
+			GeolocMinBufferSize: 2,
+			Assert: []Assertion{
+				AssertNoASSetDeviceLocationRequest(),
+			},
+		},
+		{
+			Name:      "three gateways + required 2 frames in buffer (have 2)",
+			NwkGeoLoc: true,
+			RXInfo: []*gw.UplinkRXInfo{
+				{
+					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 1},
+					FineTimestampType: gw.FineTimestampType_PLAIN,
+					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+						PlainFineTimestamp: &gw.PlainFineTimestamp{
+							Time: &timestamp.Timestamp{
+								Nanos: 1,
+							},
+						},
+					},
+				},
+				{
+					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 2},
+					FineTimestampType: gw.FineTimestampType_PLAIN,
+					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+						PlainFineTimestamp: &gw.PlainFineTimestamp{
+							Time: &timestamp.Timestamp{
+								Nanos: 2,
+							},
+						},
+					},
+				},
+				{
+					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 3},
+					FineTimestampType: gw.FineTimestampType_PLAIN,
+					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+						PlainFineTimestamp: &gw.PlainFineTimestamp{
+							Time: &timestamp.Timestamp{
+								Nanos: 3,
+							},
+						},
+					},
+				},
+			},
+			GeolocBufferItems: []*geo.FrameRXInfo{
+				{
+					RxInfo: []*gw.UplinkRXInfo{
+						{
+							GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 1},
+							Time:      nowProto,
+							Location: &common.Location{
+								Latitude:  1.1,
+								Longitude: 1.1,
+								Altitude:  1.1,
+							},
+							FineTimestampType: gw.FineTimestampType_PLAIN,
+							FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+								PlainFineTimestamp: &gw.PlainFineTimestamp{
+									Time: &timestamp.Timestamp{
+										Nanos: 1,
+									},
+								},
+							},
+						},
+						{
+							GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 2},
+							Time:      nowProto,
+							Location: &common.Location{
+								Latitude:  2.1,
+								Longitude: 2.1,
+								Altitude:  2.1,
+							},
+							FineTimestampType: gw.FineTimestampType_PLAIN,
+							FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+								PlainFineTimestamp: &gw.PlainFineTimestamp{
+									Time: &timestamp.Timestamp{
+										Nanos: 2,
+									},
+								},
+							},
+						},
+						{
+							GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 3},
+							Time:      nowProto,
+							Location: &common.Location{
+								Latitude:  3.1,
+								Longitude: 3.1,
+								Altitude:  3.1,
+							},
+							FineTimestampType: gw.FineTimestampType_PLAIN,
+							FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+								PlainFineTimestamp: &gw.PlainFineTimestamp{
+									Time: &timestamp.Timestamp{
+										Nanos: 3,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			ResolveMultiFrameTDOAResponse: geo.ResolveMultiFrameTDOAResponse{
+				Result: &geo.ResolveResult{
+					Location: &common.Location{
+						Latitude:  1.123,
+						Longitude: 2.123,
+						Altitude:  3.123,
+						Source:    common.LocationSource_GEO_RESOLVER,
+					},
+				},
+			},
+			GeolocBufferTTL:     time.Minute,
+			GeolocMinBufferSize: 2,
+			Assert: []Assertion{
+				AssertResolveMultiFrameTDOARequest(geo.ResolveMultiFrameTDOARequest{
+					DevEui: ts.Device.DevEUI[:],
+					FrameRxInfoSet: []*geo.FrameRXInfo{
+						{
+							RxInfo: []*gw.UplinkRXInfo{
+								{
+									GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 1},
+									Time:      nowProto,
+									Location: &common.Location{
+										Latitude:  1.1,
+										Longitude: 1.1,
+										Altitude:  1.1,
+									},
+									FineTimestampType: gw.FineTimestampType_PLAIN,
+									FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+										PlainFineTimestamp: &gw.PlainFineTimestamp{
+											Time: &timestamp.Timestamp{
+												Nanos: 1,
+											},
+										},
+									},
+								},
+								{
+									GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 2},
+									Time:      nowProto,
+									Location: &common.Location{
+										Latitude:  2.1,
+										Longitude: 2.1,
+										Altitude:  2.1,
+									},
+									FineTimestampType: gw.FineTimestampType_PLAIN,
+									FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+										PlainFineTimestamp: &gw.PlainFineTimestamp{
+											Time: &timestamp.Timestamp{
+												Nanos: 2,
+											},
+										},
+									},
+								},
+								{
+									GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 3},
+									Time:      nowProto,
+									Location: &common.Location{
+										Latitude:  3.1,
+										Longitude: 3.1,
+										Altitude:  3.1,
+									},
+									FineTimestampType: gw.FineTimestampType_PLAIN,
+									FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+										PlainFineTimestamp: &gw.PlainFineTimestamp{
+											Time: &timestamp.Timestamp{
+												Nanos: 3,
+											},
+										},
+									},
+								},
+							},
+						},
+						{
+							RxInfo: []*gw.UplinkRXInfo{
+								{
+									GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 1},
+									Location: &common.Location{
+										Latitude:  1.1,
+										Longitude: 1.1,
+										Altitude:  1.1,
+									},
+									FineTimestampType: gw.FineTimestampType_PLAIN,
+									FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+										PlainFineTimestamp: &gw.PlainFineTimestamp{
+											Time: &timestamp.Timestamp{
+												Nanos: 1,
+											},
+										},
+									},
+								},
+								{
+									GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 2},
+									Location: &common.Location{
+										Latitude:  2.1,
+										Longitude: 2.1,
+										Altitude:  2.1,
+									},
+									FineTimestampType: gw.FineTimestampType_PLAIN,
+									FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+										PlainFineTimestamp: &gw.PlainFineTimestamp{
+											Time: &timestamp.Timestamp{
+												Nanos: 2,
+											},
+										},
+									},
+								},
+								{
+									GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 3},
+									Location: &common.Location{
+										Latitude:  3.1,
+										Longitude: 3.1,
+										Altitude:  3.1,
+									},
+									FineTimestampType: gw.FineTimestampType_PLAIN,
+									FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
+										PlainFineTimestamp: &gw.PlainFineTimestamp{
+											Time: &timestamp.Timestamp{
+												Nanos: 3,
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					DeviceReferenceAltitude: 5.6,
+				}),
+				AssertASSetDeviceLocationRequest(as.SetDeviceLocationRequest{
+					DevEui: ts.DeviceSession.DevEUI[:],
+					Location: &common.Location{
+						Latitude:  1.123,
+						Longitude: 2.123,
+						Altitude:  3.123,
+						Source:    common.LocationSource_GEO_RESOLVER,
+					},
+				}),
+			},
 		},
 	}
 
 	for i, tst := range tests {
 		ts.T().Run(tst.Name, func(t *testing.T) {
-			assert := require.New(t)
-
-			ts.FlushClients()
-			test.MustFlushRedis(storage.RedisPool())
-			ts.GeoClient.ResolveTDOAResponse = tst.ResolveTDOAResponse
-
-			ts.ServiceProfile.NwkGeoLoc = tst.NwkGeoLoc
-			assert.NoError(storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile))
-			ts.DeviceSession.FCntUp = uint32(i)
-			assert.NoError(storage.SaveDeviceSession(storage.RedisPool(), *ts.DeviceSession))
-
-			txInfo := gw.UplinkTXInfo{
-				Frequency: 868100000,
-			}
-			assert.NoError(helpers.SetUplinkTXInfoDataRate(&txInfo, 3, band.Band()))
-
-			for j := range tst.RXInfo {
-				uf := ts.GetUplinkFrameForFRMPayload(*tst.RXInfo[j], txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})
-				go func(uf gw.UplinkFrame) {
-					assert.NoError(uplink.HandleRXPacket(uf))
-				}(uf)
-			}
-
-			if tst.ExpectedGeolocationRequest != nil {
-				geoReq := <-ts.GeoClient.ResolveTDOAChan
-				sort.Sort(byGatewayID(geoReq.FrameRxInfo.RxInfo))
-				if !proto.Equal(tst.ExpectedGeolocationRequest, &geoReq) {
-					assert.EqualValues(*tst.ExpectedGeolocationRequest, geoReq)
-				}
-			} else {
-				time.Sleep(100 * time.Millisecond)
-				select {
-				case <-ts.GeoClient.ResolveTDOAChan:
-					t.Fatal("unexpected geolocation client request")
-				default:
-				}
-			}
-
-			if tst.ExpectedSetDeviceLocationRequest != nil {
-				setLocReq := <-ts.ASClient.SetDeviceLocationChan
-				if !proto.Equal(tst.ExpectedSetDeviceLocationRequest, &setLocReq) {
-					assert.EqualValues(*tst.ExpectedSetDeviceLocationRequest, setLocReq)
-				}
-			} else {
-				time.Sleep(100 * time.Millisecond)
-				select {
-				case <-ts.ASClient.SetDeviceLocationChan:
-					t.Fatal("unexpected as client request")
-				default:
-				}
-			}
+			ts.AssertGeolocationTest(t, uint32(i), tst)
 		})
 	}
 }
 
 func TestGeolocation(t *testing.T) {
 	suite.Run(t, new(GeolocationTestSuite))
-}
-
-type byGatewayID []*gw.UplinkRXInfo
-
-func (s byGatewayID) Len() int {
-	return len(s)
-}
-
-func (s byGatewayID) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-
-func (s byGatewayID) Less(i, j int) bool {
-	ii := binary.BigEndian.Uint64(s[i].GatewayId)
-	jj := binary.BigEndian.Uint64(s[j].GatewayId)
-	return ii < jj
 }

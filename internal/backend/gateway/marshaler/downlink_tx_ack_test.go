@@ -7,7 +7,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
-	"github.com/brocaar/loraserver/api/gw"
+	"github.com/brocaar/chirpstack-api/go/gw"
 )
 
 func TestUnmarshalDownlinkTXAck(t *testing.T) {

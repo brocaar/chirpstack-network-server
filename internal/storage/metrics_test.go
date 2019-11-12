@@ -1,12 +1,13 @@
 package storage
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 )
 
 func (ts *StorageTestSuite) TestMetrics() {
@@ -366,10 +367,10 @@ func (ts *StorageTestSuite) TestMetrics() {
 			test.MustFlushRedis(ts.RedisPool())
 
 			for _, metrics := range tst.SaveMetrics {
-				assert.NoError(SaveMetricsForInterval(ts.RedisPool(), tst.Interval, "metrics_test", metrics))
+				assert.NoError(SaveMetricsForInterval(context.Background(), ts.RedisPool(), tst.Interval, "metrics_test", metrics))
 			}
 
-			metrics, err := GetMetrics(ts.RedisPool(), tst.Interval, "metrics_test", tst.GetStart, tst.GetEnd)
+			metrics, err := GetMetrics(context.Background(), ts.RedisPool(), tst.Interval, "metrics_test", tst.GetStart, tst.GetEnd)
 			assert.NoError(err)
 			assert.EqualValues(tst.GetMetrics, metrics)
 		})

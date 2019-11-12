@@ -1,14 +1,16 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	log "github.com/sirupsen/logrus"
 )
 
-func handleResetInd(ds *storage.DeviceSession, dp storage.DeviceProfile, block storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
+func handleResetInd(ctx context.Context, ds *storage.DeviceSession, dp storage.DeviceProfile, block storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 	if len(block.MACCommands) != 1 {
 		return nil, fmt.Errorf("exactly one mac-command expected, got %d", len(block.MACCommands))
 	}
@@ -32,6 +34,7 @@ func handleResetInd(ds *storage.DeviceSession, dp storage.DeviceProfile, block s
 		"dev_eui":                    ds.DevEUI,
 		"dev_lorawan_version_minor":  pl.DevLoRaWANVersion.Minor,
 		"serv_lorawan_version_minor": servLoRaWANVersionMinor,
+		"ctx_id":                     ctx.Value(logging.ContextIDKey),
 	}).Info("reset_ind received")
 
 	ds.ResetToBootParameters(dp)

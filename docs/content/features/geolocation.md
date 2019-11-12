@@ -9,9 +9,9 @@ description: Decrypts the fine-timestamp of geolocation capable LoRa gateways an
 
 # Geolocation
 
-LoRa Server supports geolocation by using an external geolocation-server service.
-You can either use the geolocation-server provided by the LoRa Server project,
-or implement your own (matching the expected [api]({{<ref "/integrate/api.md" >}})).
+ChirpStack Network Server supports geolocation by using an external geolocation-server service.
+You can either use [ChirpStack Geolocation Server](/geolocation-server/)
+or implement your own (matching the expected [API]({{<ref "/integrate/api.md" >}})).
 
 ## Requirements
 
@@ -20,12 +20,27 @@ a "fine-timestamp". Some of these gateways encrypt this fine-timestamp.
 
 ## Decrypt fine-timestamp
 
-When configuring the per gateway and board specific decryption key, LoRa Server
+When configuring the per gateway and board specific decryption key, ChirpStack Network Server
 will decrypt the fine-timestamp, before forwarding it to the geolocation-server.
 For getting this fine-timestamp decryption key, please contact your gateway vendor
 or Semtech.
 
+## Multi-frame geolocation
+
+ChirpStack Network Server support multi-frame geolocation to increase the geolocation accuracy.
+In the [Device Profile]({{<relref "device-profile.md">}}) it is possible to
+configure the:
+
+* TTL of each item in the geolocation buffer
+* Minimum buffer size before using geolocation
+
+Example:
+
+When the TTL is set to 5 minutes (300 seconds) and the minimum buffer size is
+set to 3, then geolocation will only be used when there are at least 3 frames
+in the geolocation buffer that are received within the last 5 minutes.
+
 ## Device location
 
-When LoRa Server (using the geolocation-server) is able to resolve the location
+When ChirpStack Network Server (using the [Geolocation Server](/geolocation-server/)) is able to resolve the location
 of the device, it will forward this to the application-server.

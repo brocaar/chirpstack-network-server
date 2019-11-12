@@ -7,7 +7,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 )
 
 // Migrate checks if the given function code has been applied and if not

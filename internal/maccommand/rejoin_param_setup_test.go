@@ -1,10 +1,11 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/pkg/errors"
 
@@ -141,7 +142,7 @@ func TestHandleRejoinParamSetupAns(t *testing.T) {
 
 		for i, test := range tests {
 			Convey(fmt.Sprintf("Testing: %s [%d]", test.Name, i), func() {
-				ans, err := handleRejoinParamSetupAns(&test.DeviceSession, test.ReceivedMACCommandBlock, test.PendingMACCommandBlock)
+				ans, err := handleRejoinParamSetupAns(context.Background(), &test.DeviceSession, test.ReceivedMACCommandBlock, test.PendingMACCommandBlock)
 				if test.ExpectedError != nil {
 					So(err, ShouldNotBeNil)
 					So(err.Error(), ShouldEqual, test.ExpectedError.Error())

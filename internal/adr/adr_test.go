@@ -1,11 +1,12 @@
 package adr
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -603,7 +604,7 @@ func TestADR(t *testing.T) {
 
 				for i, tst := range testTable {
 					Convey(fmt.Sprintf("Test: %s [%d]", tst.Name, i), func() {
-						blocks, err := HandleADR(tst.ServiceProfile, tst.DeviceSession, tst.LinkADRReqBlock)
+						blocks, err := HandleADR(context.Background(), tst.ServiceProfile, tst.DeviceSession, tst.LinkADRReqBlock)
 						if tst.ExpectedError != nil {
 							So(err, ShouldNotBeNil)
 							So(err, ShouldResemble, tst.ExpectedError)
@@ -650,7 +651,7 @@ func TestADR(t *testing.T) {
 					},
 				}
 
-				blocks, err := HandleADR(sp, ds, larb)
+				blocks, err := HandleADR(context.Background(), sp, ds, larb)
 
 				So(err, ShouldBeNil)
 				So(blocks, ShouldBeNil)

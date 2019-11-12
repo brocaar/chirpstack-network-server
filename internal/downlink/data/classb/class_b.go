@@ -1,6 +1,7 @@
 package classb
 
 import (
+	"context"
 	"crypto/aes"
 	"encoding/binary"
 	"fmt"
@@ -10,8 +11,9 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/gps"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/gps"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -107,8 +109,8 @@ func GetNextPingSlotAfter(afterGPSEpochTS time.Duration, devAddr lorawan.DevAddr
 
 // ScheduleDeviceQueueToPingSlotsForDevEUI schedules the device-queue for the given
 // DevEUI to Class-B ping slots.
-func ScheduleDeviceQueueToPingSlotsForDevEUI(db sqlx.Ext, dp storage.DeviceProfile, ds storage.DeviceSession) error {
-	queueItems, err := storage.GetDeviceQueueItemsForDevEUI(db, ds.DevEUI)
+func ScheduleDeviceQueueToPingSlotsForDevEUI(ctx context.Context, db sqlx.Ext, dp storage.DeviceProfile, ds storage.DeviceSession) error {
+	queueItems, err := storage.GetDeviceQueueItemsForDevEUI(ctx, db, ds.DevEUI)
 	if err != nil {
 		return errors.Wrap(err, "get device-queue items error")
 	}
@@ -129,7 +131,7 @@ func ScheduleDeviceQueueToPingSlotsForDevEUI(db sqlx.Ext, dp storage.DeviceProfi
 		qi.EmitAtTimeSinceGPSEpoch = &gpsEpochTS
 		qi.TimeoutAfter = &timeoutTime
 
-		if err := storage.UpdateDeviceQueueItem(db, &qi); err != nil {
+		if err := storage.UpdateDeviceQueueItem(ctx, db, &qi); err != nil {
 			return errors.Wrap(err, "update device-queue item error")
 		}
 
@@ -139,6 +141,7 @@ func ScheduleDeviceQueueToPingSlotsForDevEUI(db sqlx.Ext, dp storage.DeviceProfi
 	log.WithFields(log.Fields{
 		"dev_eui": ds.DevEUI,
 		"count":   len(queueItems),
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
 	}).Info("device-queue items scheduled to ping-slots")
 
 	return nil

@@ -11,17 +11,17 @@ import (
 
 	"github.com/Azure/azure-amqp-common-go/cbs"
 	"github.com/Azure/azure-amqp-common-go/sas"
-	"github.com/Azure/azure-amqp-common-go/uuid"
 	servicebus "github.com/Azure/azure-service-bus-go"
+	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"pack.ag/amqp"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/backend/gateway/marshaler"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/marshaler"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/lorawan"
 )
 
@@ -102,10 +102,18 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 			}
 
 			if err := b.queue.Receive(b.ctx, servicebus.HandlerFunc(b.eventHandler)); err != nil {
-				log.WithError(err).Error("gateway/azure_iot_hub: receive from queue error")
-				time.Sleep(time.Second * 2)
-			}
+				log.WithError(err).Error("gateway/azure_iot_hub: receive from queue error, trying to recover")
 
+				err := b.queue.Close(b.ctx)
+				if err != nil {
+					log.WithError(err).Error("gateway/azure_iot_hub: close queue error")
+				}
+
+				b.queue, err = b.ns.NewQueue(b.queueName)
+				if err != nil {
+					log.WithError(err).Error("gateway/azure_iot_hub: new queue client error")
+				}
+			}
 		}
 	}()
 
@@ -147,6 +155,7 @@ func (b *Backend) SendTXPacket(pl gw.DownlinkFrame) error {
 	}
 
 	gatewayID := helpers.GetGatewayID(pl.TxInfo)
+	downID := helpers.GetDownlinkID(&pl)
 	t := b.getGatewayMarshaler(gatewayID)
 
 	bb, err := marshaler.MarshalDownlinkFrame(t, pl)
@@ -154,7 +163,9 @@ func (b *Backend) SendTXPacket(pl gw.DownlinkFrame) error {
 		return errors.Wrap(err, "marshal downlink frame error")
 	}
 
-	return b.publishCommand(gatewayID, "down", bb)
+	return b.publishCommand(log.Fields{
+		"downlink_id": downID,
+	}, gatewayID, "down", bb)
 }
 
 func (b *Backend) SendGatewayConfigPacket(pl gw.GatewayConfiguration) error {
@@ -166,7 +177,7 @@ func (b *Backend) SendGatewayConfigPacket(pl gw.GatewayConfiguration) error {
 		return errors.Wrap(err, "marshal gateway configuration error")
 	}
 
-	return b.publishCommand(gatewayID, "config", bb)
+	return b.publishCommand(log.Fields{}, gatewayID, "config", bb)
 }
 
 func (b *Backend) RXPacketChan() chan gw.UplinkFrame {
@@ -245,10 +256,7 @@ func (b *Backend) handleEventMessage(msg *servicebus.Message) error {
 		event = "stats"
 	}
 
-	log.WithFields(log.Fields{
-		"gateway_id": gatewayID,
-		"event":      event,
-	}).Info("gateway/azure_iot_hub: event received from gateway")
+	azureEventCounter(event).Inc()
 
 	switch event {
 	case "up":
@@ -298,6 +306,13 @@ func (b *Backend) handleUplinkFrame(gatewayID lorawan.EUI64, data []byte) error 
 		return errors.New("gateway_id is not equal to expected gateway_id")
 	}
 
+	uplinkID := helpers.GetUplinkID(uplinkFrame.RxInfo)
+
+	log.WithFields(log.Fields{
+		"gateway_id": gatewayID,
+		"uplink_id":  uplinkID,
+	}).Info("gateway/azure_iot_hub: uplink received from gateway")
+
 	b.uplinkFrameChan <- uplinkFrame
 
 	return nil
@@ -317,6 +332,13 @@ func (b *Backend) handleGatewayStats(gatewayID lorawan.EUI64, data []byte) error
 	if !bytes.Equal(gatewayStats.GatewayId, gatewayID[:]) {
 		return errors.New("gateway_id is not equal to expected gateway_id")
 	}
+
+	statsID := helpers.GetStatsID(&gatewayStats)
+
+	log.WithFields(log.Fields{
+		"gateway_id": gatewayID,
+		"stats_id":   statsID,
+	}).Info("gateway/azure_iot_hub: stats received from gateway")
 
 	b.gatewayStatsChan <- gatewayStats
 
@@ -338,12 +360,19 @@ func (b *Backend) handleDownlinkTXAck(gatewayID lorawan.EUI64, data []byte) erro
 		return errors.New("gateway_id is not equal to expected gateway_id")
 	}
 
+	downlinkID := helpers.GetDownlinkID(&ack)
+
+	log.WithFields(log.Fields{
+		"gateway_id":  gatewayID,
+		"downlink_id": downlinkID,
+	}).Info("gateway/azure_iot_hub: ack received from gateway")
+
 	b.downlinkTxAckChan <- ack
 
 	return nil
 }
 
-func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, data []byte) error {
+func (b *Backend) publishCommand(fields log.Fields, gatewayID lorawan.EUI64, command string, data []byte) error {
 	msgID, err := uuid.NewV4()
 	if err != nil {
 		return errors.Wrap(err, "new uuid error")
@@ -372,10 +401,11 @@ func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, data [
 			err = b.c2dSender.Send(b.ctx, msg)
 			b.RUnlock()
 			if err == nil {
-				log.WithFields(log.Fields{
-					"gateway_id": gatewayID,
-					"command":    command,
-				}).Info("gateway/azure_iot_hub: gateway command published")
+				fields["gateway_id"] = gatewayID
+				fields["command"] = command
+				log.WithFields(fields).Info("gateway/azure_iot_hub: gateway command published")
+
+				azureCommandCounter(command).Inc()
 
 				return nil
 			}
@@ -428,6 +458,8 @@ func (b *Backend) c2dRecover() error {
 	// connection recovery
 	b.Lock()
 	defer b.Unlock()
+
+	azureConnectionRecoverCounter().Inc()
 
 	log.Info("gateway/azure_iot_hub: re-connecting to iot hub")
 	_ = b.c2dSender.Close(b.ctx)

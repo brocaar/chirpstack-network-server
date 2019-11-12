@@ -13,14 +13,14 @@ import (
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/api/geo"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/internal/api/client/asclient"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/migrations"
+	"github.com/brocaar/chirpstack-api/go/as"
+	"github.com/brocaar/chirpstack-api/go/geo"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-api/go/nc"
+	"github.com/brocaar/chirpstack-network-server/internal/api/client/asclient"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/migrations"
 	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
 )
@@ -51,7 +51,7 @@ func GetConfig() config.Config {
 	}
 
 	c.Redis.URL = "redis://localhost:6379/1"
-	c.PostgreSQL.DSN = "postgres://localhost/loraserver_ns_test?sslmode=disable"
+	c.PostgreSQL.DSN = "postgres://localhost/chirpstack_ns_test?sslmode=disable"
 
 	c.NetworkServer.NetID = lorawan.NetID{3, 2, 1}
 	c.NetworkServer.DeviceSessionTTL = time.Hour
@@ -212,6 +212,7 @@ type ApplicationClient struct {
 	HandleProprietaryUpChan chan as.HandleProprietaryUplinkRequest
 	HandleErrorChan         chan as.HandleErrorRequest
 	HandleDownlinkACKChan   chan as.HandleDownlinkACKRequest
+	HandleGatewayStatsChan  chan as.HandleGatewayStatsRequest
 	SetDeviceStatusChan     chan as.SetDeviceStatusRequest
 	SetDeviceLocationChan   chan as.SetDeviceLocationRequest
 
@@ -219,6 +220,7 @@ type ApplicationClient struct {
 	HandleProprietaryUpResponse empty.Empty
 	HandleErrorResponse         empty.Empty
 	HandleDownlinkACKResponse   empty.Empty
+	HandleGatewayStatsResponse  empty.Empty
 	SetDeviceStatusResponse     empty.Empty
 	SetDeviceLocationResponse   empty.Empty
 }
@@ -230,6 +232,7 @@ func NewApplicationClient() *ApplicationClient {
 		HandleProprietaryUpChan: make(chan as.HandleProprietaryUplinkRequest, 100),
 		HandleErrorChan:         make(chan as.HandleErrorRequest, 100),
 		HandleDownlinkACKChan:   make(chan as.HandleDownlinkACKRequest, 100),
+		HandleGatewayStatsChan:  make(chan as.HandleGatewayStatsRequest, 100),
 		SetDeviceStatusChan:     make(chan as.SetDeviceStatusRequest, 100),
 		SetDeviceLocationChan:   make(chan as.SetDeviceLocationRequest, 100),
 	}
@@ -265,6 +268,12 @@ func (t *ApplicationClient) HandleDownlinkACK(ctx context.Context, in *as.Handle
 	return &t.HandleDownlinkACKResponse, nil
 }
 
+// HandleGatewayStats method.
+func (t *ApplicationClient) HandleGatewayStats(ctx context.Context, in *as.HandleGatewayStatsRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	t.HandleGatewayStatsChan <- *in
+	return &t.HandleGatewayStatsResponse, nil
+}
+
 // SetDeviceStatus method.
 func (t *ApplicationClient) SetDeviceStatus(ctx context.Context, in *as.SetDeviceStatusRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	t.SetDeviceStatusChan <- *in
@@ -279,24 +288,33 @@ func (t *ApplicationClient) SetDeviceLocation(ctx context.Context, in *as.SetDev
 
 // NetworkControllerClient is a network-controller client for testing.
 type NetworkControllerClient struct {
-	HandleRXInfoChan           chan nc.HandleUplinkMetaDataRequest
+	HandleUplinkMetaDataChan   chan nc.HandleUplinkMetaDataRequest
+	HandleDownlinkMetaDataChan chan nc.HandleDownlinkMetaDataRequest
 	HandleDataUpMACCommandChan chan nc.HandleUplinkMACCommandRequest
 
 	HandleRXInfoResponse           empty.Empty
+	HandleDownlinkMetaDataResponse empty.Empty
 	HandleDataUpMACCommandResponse empty.Empty
 }
 
 // NewNetworkControllerClient returns a new NetworkControllerClient.
 func NewNetworkControllerClient() *NetworkControllerClient {
 	return &NetworkControllerClient{
-		HandleRXInfoChan:           make(chan nc.HandleUplinkMetaDataRequest, 100),
+		HandleUplinkMetaDataChan:   make(chan nc.HandleUplinkMetaDataRequest, 100),
+		HandleDownlinkMetaDataChan: make(chan nc.HandleDownlinkMetaDataRequest, 100),
 		HandleDataUpMACCommandChan: make(chan nc.HandleUplinkMACCommandRequest, 100),
 	}
 }
 
 // HandleUplinkMetaData method.
 func (t *NetworkControllerClient) HandleUplinkMetaData(ctx context.Context, in *nc.HandleUplinkMetaDataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	t.HandleRXInfoChan <- *in
+	t.HandleUplinkMetaDataChan <- *in
+	return &empty.Empty{}, nil
+}
+
+// HandleDownlinkMetaData method.
+func (t *NetworkControllerClient) HandleDownlinkMetaData(ctx context.Context, in *nc.HandleDownlinkMetaDataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	t.HandleDownlinkMetaDataChan <- *in
 	return &empty.Empty{}, nil
 }
 
@@ -308,14 +326,17 @@ func (t *NetworkControllerClient) HandleUplinkMACCommand(ctx context.Context, in
 
 // GeolocationClient is a geolocation client for testing.
 type GeolocationClient struct {
-	ResolveTDOAChan     chan geo.ResolveTDOARequest
-	ResolveTDOAResponse geo.ResolveTDOAResponse
+	ResolveTDOAChan               chan geo.ResolveTDOARequest
+	ResolveMultiFrameTDOAChan     chan geo.ResolveMultiFrameTDOARequest
+	ResolveTDOAResponse           geo.ResolveTDOAResponse
+	ResolveMultiFrameTDOAResponse geo.ResolveMultiFrameTDOAResponse
 }
 
 // NewGeolocationClient creates a new GeolocationClient.
 func NewGeolocationClient() *GeolocationClient {
 	return &GeolocationClient{
-		ResolveTDOAChan: make(chan geo.ResolveTDOARequest, 100),
+		ResolveTDOAChan:           make(chan geo.ResolveTDOARequest, 100),
+		ResolveMultiFrameTDOAChan: make(chan geo.ResolveMultiFrameTDOARequest, 100),
 	}
 }
 
@@ -323,4 +344,10 @@ func NewGeolocationClient() *GeolocationClient {
 func (g *GeolocationClient) ResolveTDOA(ctx context.Context, in *geo.ResolveTDOARequest, opts ...grpc.CallOption) (*geo.ResolveTDOAResponse, error) {
 	g.ResolveTDOAChan <- *in
 	return &g.ResolveTDOAResponse, nil
+}
+
+// ResolveMultiFrameTDOA method.
+func (g *GeolocationClient) ResolveMultiFrameTDOA(ctx context.Context, in *geo.ResolveMultiFrameTDOARequest, opts ...grpc.CallOption) (*geo.ResolveMultiFrameTDOAResponse, error) {
+	g.ResolveMultiFrameTDOAChan <- *in
+	return &g.ResolveMultiFrameTDOAResponse, nil
 }

@@ -1,13 +1,14 @@
 package storage
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/gofrs/uuid"
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 )
 
 func TestRoutingProfile(t *testing.T) {
@@ -26,12 +27,12 @@ func TestRoutingProfile(t *testing.T) {
 				TLSCert: "TLSCERT",
 				TLSKey:  "TLSKEY",
 			}
-			So(CreateRoutingProfile(DB(), &rp), ShouldBeNil)
+			So(CreateRoutingProfile(context.Background(), DB(), &rp), ShouldBeNil)
 			rp.CreatedAt = rp.CreatedAt.UTC().Truncate(time.Millisecond)
 			rp.UpdatedAt = rp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
 			Convey("Then GetRoutingProfile returns the expected routing-profile", func() {
-				rpGet, err := GetRoutingProfile(DB(), rp.ID)
+				rpGet, err := GetRoutingProfile(context.Background(), DB(), rp.ID)
 				So(err, ShouldBeNil)
 
 				rpGet.CreatedAt = rpGet.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -41,7 +42,7 @@ func TestRoutingProfile(t *testing.T) {
 			})
 
 			Convey("Then GetAllRoutingProfiles includes the created routing-profile", func() {
-				rpGetAll, err := GetAllRoutingProfiles(DB())
+				rpGetAll, err := GetAllRoutingProfiles(context.Background(), DB())
 				So(err, ShouldBeNil)
 				So(rpGetAll, ShouldHaveLength, 1)
 
@@ -55,10 +56,10 @@ func TestRoutingProfile(t *testing.T) {
 				rp.CACert = "CACERT2"
 				rp.TLSCert = "TLSCERT2"
 				rp.TLSKey = "TLSKEY2"
-				So(UpdateRoutingProfile(DB(), &rp), ShouldBeNil)
+				So(UpdateRoutingProfile(context.Background(), DB(), &rp), ShouldBeNil)
 				rp.UpdatedAt = rp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
-				rpGet, err := GetRoutingProfile(DB(), rp.ID)
+				rpGet, err := GetRoutingProfile(context.Background(), DB(), rp.ID)
 				So(err, ShouldBeNil)
 
 				rpGet.CreatedAt = rpGet.CreatedAt.UTC().Truncate(time.Millisecond)
@@ -67,8 +68,8 @@ func TestRoutingProfile(t *testing.T) {
 			})
 
 			Convey("Then DeleteRoutingProfile deletes the routing-profile", func() {
-				So(DeleteRoutingProfile(DB(), rp.ID), ShouldBeNil)
-				So(DeleteRoutingProfile(DB(), rp.ID), ShouldEqual, ErrDoesNotExist)
+				So(DeleteRoutingProfile(context.Background(), DB(), rp.ID), ShouldBeNil)
+				So(DeleteRoutingProfile(context.Background(), DB(), rp.ID), ShouldEqual, ErrDoesNotExist)
 			})
 		})
 	})

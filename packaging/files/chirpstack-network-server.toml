@@ -1,0 +1,193 @@
+# This configuration configures ChirpStack Network Server for the EU868 band using a MQTT
+# broker to communicate with the gateways. Many options and defaults have been
+# omitted for simplicity.
+# 
+# For other bands, see the ./examples/ sub-directory.
+#
+# See https://www.chirpstack.io/network-server/install/config/ for a full
+# configuration example and documentation.
+
+
+# PostgreSQL settings.
+#
+# Please note that PostgreSQL 9.5+ is required.
+[postgresql]
+# PostgreSQL dsn (e.g.: postgres://user:password@hostname/database?sslmode=disable).
+#
+# Besides using an URL (e.g. 'postgres://user:password@hostname/database?sslmode=disable')
+# it is also possible to use the following format:
+# 'user=chirpstack_ns dbname=chirpstack_ns sslmode=disable'.
+#
+# The following connection parameters are supported:
+#
+# * dbname - The name of the database to connect to
+# * user - The user to sign in as
+# * password - The user's password
+# * host - The host to connect to. Values that start with / are for unix domain sockets. (default is localhost)
+# * port - The port to bind to. (default is 5432)
+# * sslmode - Whether or not to use SSL (default is require, this is not the default for libpq)
+# * fallback_application_name - An application_name to fall back to if one isn't provided.
+# * connect_timeout - Maximum wait for connection, in seconds. Zero or not specified means wait indefinitely.
+# * sslcert - Cert file location. The file must contain PEM encoded data.
+# * sslkey - Key file location. The file must contain PEM encoded data.
+# * sslrootcert - The location of the root certificate file. The file must contain PEM encoded data.
+#
+# Valid values for sslmode are:
+#
+# * disable - No SSL
+# * require - Always SSL (skip verification)
+# * verify-ca - Always SSL (verify that the certificate presented by the server was signed by a trusted CA)
+# * verify-full - Always SSL (verify that the certification presented by the server was signed by a trusted CA and the server host name matches the one in the certificate)
+dsn="postgres://localhost/chirpstack_ns_ns?sslmode=disable"
+
+
+# Redis settings
+#
+# Please note that Redis 2.6.0+ is required.
+[redis]
+# Redis url (e.g. redis://user:password@hostname/0)
+#
+# For more information about the Redis URL format, see:
+# https://www.iana.org/assignments/uri-schemes/prov/redis
+url="redis://localhost:6379"
+
+
+# Network-server settings.
+[network_server]
+# Network identifier (NetID, 3 bytes) encoded as HEX (e.g. 010203)
+net_id="000000"
+
+
+  # LoRaWAN regional band configuration.
+  #
+  # Note that you might want to consult the LoRaWAN Regional Parameters
+  # specification for valid values that apply to your region.
+  # See: https://www.lora-alliance.org/lorawan-for-developers
+  [network_server.band]
+  name="EU_863_870"
+
+
+  # LoRaWAN network related settings.
+  [network_server.network_settings]
+
+    # Extra channel configuration.
+    #
+    # Use this for LoRaWAN regions where it is possible to extend the by default
+    # available channels with additional channels (e.g. the EU band).
+    # The first 5 channels will be configured as part of the OTAA join-response
+    # (using the CFList field).
+    # The other channels (or channel / data-rate changes) will be (re)configured
+    # using the NewChannelReq mac-command.
+    #
+    [[network_server.network_settings.extra_channels]]
+    frequency=867100000
+    min_dr=0
+    max_dr=5
+
+    [[network_server.network_settings.extra_channels]]
+    frequency=867300000
+    min_dr=0
+    max_dr=5
+
+    [[network_server.network_settings.extra_channels]]
+    frequency=867500000
+    min_dr=0
+    max_dr=5
+
+    [[network_server.network_settings.extra_channels]]
+    frequency=867700000
+    min_dr=0
+    max_dr=5
+
+    [[network_server.network_settings.extra_channels]]
+    frequency=867900000
+    min_dr=0
+    max_dr=5
+
+
+    # Class B settings
+    [network_server.network_settings.class_b]
+    # Ping-slot data-rate.
+    ping_slot_dr=0
+
+    # Ping-slot frequency (Hz)
+    #
+    # Set this to 0 to use the default frequency plan for the configured region
+    # (which could be frequency hopping).
+    ping_slot_frequency=0
+
+
+  # Network-server API
+  #
+  # This is the network-server API that is used by ChirpStack Application Server or other
+  # custom components interacting with ChirpStack Network Server.
+  [network_server.api]
+  # ip:port to bind the api server
+  bind="0.0.0.0:8000"
+
+
+  # Backend defines the gateway backend settings.
+  #
+  # The gateway backend handles the communication with the gateway(s) part of
+  # the LoRaWAN network.
+  [network_server.gateway.backend]
+  # Backend
+  type="mqtt"
+
+
+    # MQTT gateway backend settings.
+    #
+    # This is the backend communicating with the LoRa gateways over a MQTT broker.
+    [network_server.gateway.backend.mqtt]
+    # MQTT topic templates for the different MQTT topics.
+    #
+    # The meaning of these topics are documented at:
+    # https://www.chirpstack.io/gateway-bridge/
+    #
+    # The default values match the default expected configuration of the
+    # ChirpStack Gateway Bridge MQTT backend. Therefore only change these values when
+    # absolutely needed.
+
+    # Event topic template.
+    event_topic="gateway/+/event/+"
+
+    # Command topic template.
+    #
+    # Use:
+    #   * "{{ .GatewayID }}" as an substitution for the LoRa gateway ID
+    #   * "{{ .CommandType }}" as an substitution for the command type
+    command_topic_template="gateway/{{ .GatewayID }}/command/{{ .CommandType }}"
+
+    # MQTT server (e.g. scheme://host:port where scheme is tcp, ssl or ws)
+    server="tcp://localhost:1883"
+
+    # Connect with the given username (optional)
+    username=""
+
+    # Connect with the given password (optional)
+    password=""
+
+
+# Metrics collection settings.
+[metrics]
+# Timezone
+#
+# The timezone is used for correctly aggregating the metrics (e.g. per hour,
+# day or month).
+# Example: "Europe/Amsterdam" or "Local" for the the system's local time zone.
+timezone="Local"
+
+
+# Join-server settings.
+[join_server]
+
+  # Default join-server settings.
+  #
+  # This join-server will be used when resolving the JoinEUI is set to false
+  # or as a fallback when resolving the JoinEUI fails.
+  [join_server.default]
+  # hostname:port of the default join-server
+  #
+  # This API is provided by ChirpStack Application Server.
+  server="http://localhost:8003"
+

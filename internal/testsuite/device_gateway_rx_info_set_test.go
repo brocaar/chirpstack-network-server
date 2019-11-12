@@ -1,15 +1,16 @@
 package testsuite
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/uplink"
+	"github.com/brocaar/chirpstack-api/go/common"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/uplink"
 	"github.com/brocaar/lorawan"
 )
 
@@ -46,9 +47,9 @@ func (ts *DeviceGatewayRXInfoSetTestSuite) TestDeviceGatewayRXInfoSetHasBeenStor
 		LoraSnr:   5.5,
 	}
 
-	assert.Nil(uplink.HandleRXPacket(ts.GetUplinkFrameForFRMPayload(rxInfo, txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})))
+	assert.Nil(uplink.HandleUplinkFrame(context.Background(), ts.GetUplinkFrameForFRMPayload(rxInfo, txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})))
 
-	rxInfoSet, err := storage.GetDeviceGatewayRXInfoSet(storage.RedisPool(), ts.Device.DevEUI)
+	rxInfoSet, err := storage.GetDeviceGatewayRXInfoSet(context.Background(), storage.RedisPool(), ts.Device.DevEUI)
 	assert.Nil(err)
 
 	assert.Equal(storage.DeviceGatewayRXInfoSet{

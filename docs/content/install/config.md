@@ -5,53 +5,53 @@ menu:
         parent: install
         weight: 3
 toc: false
-description: Instructions and examples how to configure the LoRa Server service.
+description: Instructions and examples how to configure the ChirpStack Network Server service.
 ---
 
 # Configuration
 
-To list all configuration options, start `loraserver` with the `--help`
+To list all configuration options, start `chirpstack-network-server` with the `--help`
 flag. This will display:
 
-The `loraserver` binary has the following command-line flags:
+The `chirpstack-network-server` binary has the following command-line flags:
 
 {{<highlight text>}}
-LoRa Server is an open-source network-server, part of the LoRa Server project
-        > documentation & support: https://docs.loraserver.io/loraserver/
-        > source & copyright information: https://github.com/brocaar/loraserver/
+ChirpStack Network Server is an open-source network-server, part of the ChirpStack Network Server stack
+        > documentation & support: https://www.chirpstack.io/network-server/
+        > source & copyright information: https://github.com/brocaar/network-server/
 
 Usage:
-  loraserver [flags]
-  loraserver [command]
+  chirpstack-network-server [flags]
+  chirpstack-network-server [command]
 
 Available Commands:
-  configfile  Print the LoRa Server configuration file
+  configfile  Print the ChirpStack Network Server configuration file
   help        Help about any command
-  version     Print the LoRa Server version
+  version     Print the ChirpStack Network Server version
 
 Flags:
   -c, --config string   path to configuration file (optional)
-  -h, --help            help for loraserver
+  -h, --help            help for chirpstack-network-server
       --log-level int   debug=5, info=4, error=2, fatal=1, panic=0 (default 4)
 
-Use "loraserver [command] --help" for more information about a command.
+Use "chirpstack-network-server [command] --help" for more information about a command.
 {{< /highlight >}}
 
 ## Configuration file
 
-By default `loraserver` will look in the following order for a
+By default `chirpstack-network-server` will look in the following order for a
 configuration file at the following paths when `--config` is not:
 
-* `loraserver.toml` (current working directory)
-* `$HOME/.config/loraserver/loraserver.toml`
-* `/etc/loraserver/loraserver.toml`
+* `chirpstack-network-server.toml` (current working directory)
+* `$HOME/.config/chirpstack-network-server/chirpstack-network-server.toml`
+* `/etc/chirpstack-network-server/chirpstack-network-server.toml`
 
 To load configuration from a different location, use the `--config` flag.
 
-To generate a new configuration file `loraserver.toml`, execute the following command:
+To generate a new configuration file `chirpstack-network-server.toml`, execute the following command:
 
 {{<highlight bash>}}
-loraserver configfile > loraserver.toml
+chirpstack-network-server configfile > chirpstack-network-server.toml
 {{< /highlight >}}
 
 Note that this configuration file will be pre-filled with the current configuration
@@ -60,7 +60,7 @@ This makes it possible when new fields get added to upgrade your configuration f
 while preserving your old configuration. Example:
 
 {{<highlight bash>}}
-loraserver configfile --config loraserver-old.toml > loraserver-new.toml
+chirpstack-network-server configfile --config chirpstack-network-server-old.toml > chirpstack-network-server-new.toml
 {{< /highlight >}}
 
 Example configuration file:
@@ -81,7 +81,7 @@ log_level=4
 #
 # Besides using an URL (e.g. 'postgres://user:password@hostname/database?sslmode=disable')
 # it is also possible to use the following format:
-# 'user=loraserver dbname=loraserver sslmode=disable'.
+# 'user=chirpstack_ns dbname=chirpstack_ns sslmode=disable'.
 #
 # The following connection parameters are supported:
 #
@@ -103,16 +103,28 @@ log_level=4
 # * require - Always SSL (skip verification)
 # * verify-ca - Always SSL (verify that the certificate presented by the server was signed by a trusted CA)
 # * verify-full - Always SSL (verify that the certification presented by the server was signed by a trusted CA and the server host name matches the one in the certificate)
-dsn="postgres://localhost/loraserver_ns?sslmode=disable"
+dsn="postgres://localhost/chirpstack_ns?sslmode=disable"
 
 # Automatically apply database migrations.
 #
 # It is possible to apply the database-migrations by hand
-# (see https://github.com/brocaar/loraserver/tree/master/migrations)
-# or let LoRa App Server migrate to the latest state automatically, by using
-# this setting. Make sure that you always make a backup when upgrading Lora
-# App Server and / or applying migrations.
+# (see https://github.com/brocaar/chirpstack-network-server/tree/master/migrations)
+# or let ChirpStack Application Server migrate to the latest state automatically, by using
+# this setting. Make sure that you always make a backup when upgrading ChirpStack
+# Application Server and / or applying migrations.
 automigrate=true
+
+# Max open connections.
+#
+# This sets the max. number of open connections that are allowed in the
+# PostgreSQL connection pool (0 = unlimited).
+max_open_connections=0
+
+# Max idle connections.
+#
+# This sets the max. number of idle connections in the PostgreSQL connection
+# pool (0 = no idle connections are retained).
+max_idle_connections=2
 
 
 # Redis settings
@@ -148,10 +160,10 @@ net_id="000000"
 
 # Time to wait for uplink de-duplication.
 #
-# This is the time that LoRa Server will wait for other gateways to receive
+# This is the time that ChirpStack Network Server will wait for other gateways to receive
 # the same uplink frame. Valid units are 'ms' or 's'.
 # Please note that this value has influence on the uplink / downlink
-# roundtrip time. Setting this value too high means LoRa Server will be
+# roundtrip time. Setting this value too high means ChirpStack Network Server will be
 # unable to respond to the device within its receive-window.
 deduplication_delay="200ms"
 
@@ -164,13 +176,13 @@ device_session_ttl="744h0m0s"
 
 # Get downlink data delay.
 #
-# This is the time that LoRa Server waits between forwarding data to the
+# This is the time that ChirpStack Network Server waits between forwarding data to the
 # application-server and reading data from the queue. A higher value
 # means that the application-server has more time to schedule a downlink
 # queue item which can be processed within the same uplink / downlink
 # transaction.
 # Please note that this value has influence on the uplink / downlink
-# roundtrip time. Setting this value too high means LoRa Server will be
+# roundtrip time. Setting this value too high means ChirpStack Network Server will be
 # unable to respond to the device within its receive-window.
 get_downlink_data_delay="100ms"
 
@@ -202,7 +214,7 @@ get_downlink_data_delay="100ms"
   # limit the time-on-air to 400ms. Please refer to the LoRaWAN Regional
   # Parameters specification for more information.
   #
-  # When configured and required in the configured region, LoRa Server will
+  # When configured and required in the configured region, ChirpStack Network Server will
   # use the TxParamSetup mac-command to communicate this to the devices.
   uplink_dwell_time_400ms=false
   downlink_dwell_time_400ms=false
@@ -214,7 +226,7 @@ get_downlink_data_delay="100ms"
   # for more information. Set this to -1 to use the default value for this
   # region.
   #
-  # When required in the configured region, LoRa Server will use the
+  # When required in the configured region, ChirpStack Network Server will use the
   # TxParamSetup mac-command to communicate this to the devices.
   # For regions where the TxParamSetup mac-command is not implemented, this
   # setting is ignored.
@@ -249,7 +261,7 @@ get_downlink_data_delay="100ms"
 
   # Class A RX1 delay
   #
-  # 0=1sec, 1=1sec, ... 15=15sec. A higher value means LoRa Server has more
+  # 0=1sec, 1=1sec, ... 15=15sec. A higher value means ChirpStack Network Server has more
   # time to respond to the device as the delay between the uplink and the
   # first receive-window will be increased.
   rx1_delay=1
@@ -289,7 +301,7 @@ get_downlink_data_delay="100ms"
 
   # Disable mac-commands
   #
-  # When set to true, LoRa Server will not handle and / or schedule any
+  # When set to true, ChirpStack Network Server will not handle and / or schedule any
   # mac-commands. However, it is still possible for an external controller
   # to handle and / or schedule mac-commands. This is intended for testing
   # only.
@@ -361,7 +373,7 @@ get_downlink_data_delay="100ms"
 
   # Rejoin-request settings
   #
-  # When enabled, LoRa Server will request the device to send a rejoin-request
+  # When enabled, ChirpStack Network Server will request the device to send a rejoin-request
   # every time when one of the 2 conditions below is met (frame count or time).
   [network_server.network_settings.rejoin_request]
   # Request device to periodically send rejoin-requests
@@ -401,8 +413,8 @@ get_downlink_data_delay="100ms"
 
   # Network-server API
   #
-  # This is the network-server API that is used by LoRa App Server or other
-  # custom components interacting with LoRa Server.
+  # This is the network-server API that is used by ChirpStack Application Server or other
+  # custom components interacting with ChirpStack Network Server.
   [network_server.api]
   # ip:port to bind the api server
   bind="0.0.0.0:8000"
@@ -440,10 +452,10 @@ get_downlink_data_delay="100ms"
     # MQTT topic templates for the different MQTT topics.
     #
     # The meaning of these topics are documented at:
-    # https://www.loraserver.io/lora-gateway-bridge/
+    # https://www.chirpstack.io/gateway-bridge/
     #
     # The default values match the default expected configuration of the
-    # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
+    # ChirpStack Gateway Bridge MQTT backend. Therefore only change these values when
     # absolutely needed.
 
     # Event topic template.
@@ -505,7 +517,7 @@ get_downlink_data_delay="100ms"
 
     # Google Cloud Pub/Sub backend.
     #
-    # Use this backend when the LoRa Gateway Bridge is configured to connect
+    # Use this backend when the ChirpStack Gateway Bridge is configured to connect
     # to the Google Cloud IoT Core MQTT broker (which integrates with Pub/Sub).
     [network_server.gateway.backend.gcp_pub_sub]
     # Path to the IAM service-account credentials file.
@@ -525,13 +537,13 @@ get_downlink_data_delay="100ms"
 
     # Uplink retention duration.
     #
-    # The retention duration that LoRa Server will set on the uplink subscription.
+    # The retention duration that ChirpStack Network Server will set on the uplink subscription.
     uplink_retention_duration="24h0m0s"
 
 
     # Azure IoT Hub backend.
     #
-    # Use this backend when the LoRa Gateway Bridge is configured to connect
+    # Use this backend when the ChirpStack Gateway Bridge is configured to connect
     # to the Azure IoT Hub MQTT broker.
     [network_server.gateway.backend.azure_iot_hub]
 
@@ -543,14 +555,14 @@ get_downlink_data_delay="100ms"
 
     # Commands connection string.
     #
-    # This connection string must point to the IoT Hub and is used by LoRa Server
+    # This connection string must point to the IoT Hub and is used by ChirpStack Network Server
     # for sending commands to the gateways.
     commands_connection_string=""
 
 
   # Geolocation settings.
   #
-  # When set, LoRa Server will use the configured geolocation server to
+  # When set, ChirpStack Network Server will use the configured geolocation server to
   # resolve the location of the devices.
   [geolocation_server]
   # Server.
@@ -595,13 +607,32 @@ timezone="Local"
   month_aggregation_ttl="17520h0m0s"
 
 
+  # Metrics stored in Prometheus.
+  #
+  # These metrics expose information about the state of the ChirpStack Network Server
+  # instance.
+  [metrics.prometheus]
+  # Enable Prometheus metrics endpoint.
+  endpoint_enabled=false
+
+  # The ip:port to bind the Prometheus metrics server to for serving the
+  # metrics endpoint.
+  bind=""
+
+  # API timing histogram.
+  #
+  # By setting this to true, the API request timing histogram will be enabled.
+  # See also: https://github.com/grpc-ecosystem/go-grpc-prometheus#histograms
+  api_timing_histogram=false
+
+
 # Join-server settings.
 [join_server]
 # Resolve JoinEUI (experimental).
 # Default join-server settings.
 #
-# When set to true, LoRa Server will use the JoinEUI to resolve the join-server
-# for the given JoinEUI. LoRa Server will fallback on the default join-server
+# When set to true, ChirpStack Network Server will use the JoinEUI to resolve the join-server
+# for the given JoinEUI. ChirpStack Network Server will fallback on the default join-server
 # when resolving the JoinEUI fails.
 resolve_join_eui=false
 
@@ -644,7 +675,7 @@ resolve_domain_suffix=".joineuis.lora-alliance.org"
   [join_server.default]
   # hostname:port of the default join-server
   #
-  # This API is provided by LoRa App Server.
+  # This API is provided by ChirpStack Application Server.
   server="http://localhost:8003"
 
   # ca certificate used by the default join-server client (optional)
@@ -688,27 +719,27 @@ resolve_domain_suffix=".joineuis.lora-alliance.org"
   tls_key=""
 {{< /highlight >}}
 
-## Securing the network-server API
+## Securing the Network Server API
 
-In order to protect the network-server API (`network_server.api`) against
+In order to protect the Network Server API (`network_server.api`) against
 unauthorized access and to encrypt all communication, it is advised to use
 TLS certificates. Once the `ca_cert`, `tls_cert` and `tls_key` are set,
 the API will enforce client certificate validation on all incoming connections.
-This means that when configuring this network-server instance in LoRa App Server,
-you must provide the CA and TLS client certificate. See also LoRa App Server
-[network-server management](https://docs.loraserver.io/lora-app-server/use/network-servers/).
+This means that when configuring this Network Server instance in [ChirpStack Application Server](/application-server/)
+you must provide the CA and TLS client certificate. See also ChirpStack Application Server
+[Network Server Management](/application-server/use/network-servers/).
 
-See [https://github.com/brocaar/loraserver-certificates](https://github.com/brocaar/loraserver-certificates)
+See [https://github.com/brocaar/chirpstack-certificates](https://github.com/brocaar/chirpstack-certificates)
 for a set of scripts to generate such certificates.
 
-## Join-server API configuration
+## Join Server API configuration
 
-In the current implementation LoRa Server uses a fixed join-server URL
-(provided by LoRa App Server) which is used as a join-server backend (`join_server.default`).
+In the current implementation ChirpStack Network Server uses a fixed join-server URL
+(provided by ChirpStack Application Server) which is used as a Soin Server backend (`join_server.default`).
 
 In case this endpoint is secured using a TLS certificate and expects a client
 certificate, you must set `ca_cert`, `tls_cert` and `tls_key`.
 Also don't forget to change `server` from `http://...` to `https://...`.
 
-See [https://github.com/brocaar/loraserver-certificates](https://github.com/brocaar/loraserver-certificates)
+See [https://github.com/brocaar/chirpstack-certificates](https://github.com/brocaar/chirpstack-certificates)
 for a set of scripts to generate such certificates.

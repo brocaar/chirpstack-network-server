@@ -1,23 +1,23 @@
 ---
-title: Device-profile
+title: Device Profile
 menu:
     main:
         parent: features
         weight: 2
 toc: false
-description: Defines the device capabilities and boot parameters needed by LoRa Server.
+description: Defines the device capabilities and boot parameters needed by ChirpStack Network Server.
 ---
 
-# Device-profile
+# Device Profile
 
-The device-profile defines the device capabilities and boot parameters that
-are needed by LoRa Server to "connect" with a device.
+The Device Profile defines the device capabilities and boot parameters that
+are needed by ChirpStack Network Server to "connect" with a device.
 
-## Fields / options
+## LoRaWAN<sup>&reg;</sup> Backend Interface
 
 The following fields are described by the
 [LoRaWAN Backend Interfaces specification](https://www.lora-alliance.org/lorawan-for-developers).
-Fields marked with an **X** are implemented by LoRa Server.
+Fields marked with an **X** are implemented by ChirpStack Network Server.
 
 - [X] **SupportsClassB** End-Device supports Class B
 - [X] **ClassBTimeout** Maximum delay for the End-Device to answer a MAC request or a confirmed DL frame (mandatory if class B mode supported)
@@ -36,5 +36,12 @@ Fields marked with an **X** are implemented by LoRa Server.
 - [X] **FactoryPresetFreqs** List of factory-preset frequencies (mandatory for ABP)
 - [X] **MaxEIRP** Maximum EIRP supported by the End-Device
 - [ ] **MaxDutyCycle** Maximum duty cycle supported by the End-Device
-- [X] **RFRegion** RF region name (automatically set by LoRa Server)
+- [X] **RFRegion** RF region name (automatically set by ChirpStack Network Server)
 - [ ] **Supports32bitFCnt** End-Device uses 32bit FCnt (mandatory for LoRaWAN 1.0 End-Device) (always set to `true`)
+
+## Geolocation buffer
+
+The following extra fields can be used to configure the geolocation buffer:
+
+- **GeolocBufferTTL** Maximum TTL for items in the geolocation buffer.
+- **GeolocMinBufferSize** Minimum required buffer size before using geolocation.

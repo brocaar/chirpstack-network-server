@@ -1,6 +1,6 @@
 package gateway
 
-import "github.com/brocaar/loraserver/api/gw"
+import "github.com/brocaar/chirpstack-api/go/gw"
 
 var backend Gateway
 

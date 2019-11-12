@@ -1,10 +1,11 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -54,7 +55,7 @@ func TestRekey(t *testing.T) {
 
 				ds := storage.DeviceSession{}
 
-				out, err := handleRekeyInd(&ds, req)
+				out, err := handleRekeyInd(context.Background(), &ds, req)
 				So(err, ShouldBeNil)
 				So(out, ShouldHaveLength, 1)
 				So(out[0], ShouldResemble, test.ExpectedMACCommandBlock)

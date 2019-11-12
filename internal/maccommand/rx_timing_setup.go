@@ -1,10 +1,13 @@
 package maccommand
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -24,7 +27,7 @@ func RequestRXTimingSetup(del int) storage.MACCommandBlock {
 	}
 }
 
-func handleRXTimingSetupAns(ds *storage.DeviceSession, block storage.MACCommandBlock, pendingBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
+func handleRXTimingSetupAns(ctx context.Context, ds *storage.DeviceSession, block storage.MACCommandBlock, pendingBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 	if pendingBlock == nil || len(pendingBlock.MACCommands) == 0 {
 		return nil, errors.New("expected pending mac-command")
 	}
@@ -35,6 +38,7 @@ func handleRXTimingSetupAns(ds *storage.DeviceSession, block storage.MACCommandB
 	log.WithFields(log.Fields{
 		"dev_eui":  ds.DevEUI,
 		"rx_delay": ds.RXDelay,
+		"ctx_id":   ctx.Value(logging.ContextIDKey),
 	}).Info("rx_timing_setup request acknowledged")
 
 	return nil, nil

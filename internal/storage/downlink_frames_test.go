@@ -1,47 +1,37 @@
 package storage
 
 import (
+	"context"
 	"testing"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
-
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/lorawan"
 )
 
 func (ts *StorageTestSuite) TestDownlinkFrames() {
-	downlinkFrames := []gw.DownlinkFrame{
-		{
-			Token:      10,
-			PhyPayload: []byte{1, 2, 3, 4},
-		},
-		{
-			Token:      10,
-			PhyPayload: []byte{5, 6, 7, 8},
-		},
+
+	df := DownlinkFrames{
+		DevEui: []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+		Token:  1234,
 	}
 
-	devEUI := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
+	ts.T().Run("Does not exist", func(t *testing.T) {
+		assert := require.New(t)
+
+		_, err := GetDownlinkFrames(context.Background(), ts.RedisPool(), 1234)
+		assert.Equal(ErrDoesNotExist, err)
+	})
 
 	ts.T().Run("Save", func(t *testing.T) {
 		assert := require.New(t)
-		assert.NoError(SaveDownlinkFrames(ts.RedisPool(), devEUI, downlinkFrames))
+		assert.NoError(SaveDownlinkFrames(context.Background(), ts.RedisPool(), df))
 
-		t.Run("Pop", func(t *testing.T) {
+		t.Run("Get", func(t *testing.T) {
 			assert := require.New(t)
 
-			d, frame, err := PopDownlinkFrame(ts.RedisPool(), 10)
+			dfGet, err := GetDownlinkFrames(context.Background(), ts.RedisPool(), 1234)
 			assert.NoError(err)
-			assert.Equal(downlinkFrames[0], frame)
-			assert.Equal(devEUI, d)
-
-			d, frame, err = PopDownlinkFrame(ts.RedisPool(), 10)
-			assert.NoError(err)
-			assert.Equal(downlinkFrames[1], frame)
-			assert.Equal(devEUI, d)
-
-			_, _, err = PopDownlinkFrame(ts.RedisPool(), 10)
-			assert.Equal(ErrDoesNotExist, err)
+			assert.True(proto.Equal(&df, &dfGet))
 		})
 	})
 }

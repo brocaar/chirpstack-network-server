@@ -1,12 +1,14 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -27,7 +29,7 @@ func RequestPingSlotChannel(devEUI lorawan.EUI64, dr, freq int) storage.MACComma
 	}
 }
 
-func handlePingSlotChannelAns(ds *storage.DeviceSession, block storage.MACCommandBlock, pendingBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
+func handlePingSlotChannelAns(ctx context.Context, ds *storage.DeviceSession, block storage.MACCommandBlock, pendingBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 	if len(block.MACCommands) != 1 {
 		return nil, fmt.Errorf("exactly one mac-command expected, got: %d", len(block.MACCommands))
 	}
@@ -47,6 +49,7 @@ func handlePingSlotChannelAns(ds *storage.DeviceSession, block storage.MACComman
 			"dev_eui":              ds.DevEUI,
 			"channel_frequency_ok": pl.ChannelFrequencyOK,
 			"data_rate_ok":         pl.DataRateOK,
+			"ctx_id":               ctx.Value(logging.ContextIDKey),
 		}).Warning("ping_slot_channel request not acknowledged")
 		return nil, nil
 	}
@@ -58,6 +61,7 @@ func handlePingSlotChannelAns(ds *storage.DeviceSession, block storage.MACComman
 		"dev_eui":           ds.DevEUI,
 		"channel_frequency": ds.PingSlotFrequency,
 		"data_rate":         ds.PingSlotDR,
+		"ctx_id":            ctx.Value(logging.ContextIDKey),
 	}).Info("ping_slot_channel request acknowledged")
 
 	return nil, nil

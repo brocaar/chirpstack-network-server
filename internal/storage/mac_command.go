@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"fmt"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/lorawan"
 )
 
@@ -81,7 +83,7 @@ func (m *MACCommands) UnmarshalBinary(data []byte) error {
 }
 
 // FlushMACCommandQueue flushes the mac-command queue for the given DevEUI.
-func FlushMACCommandQueue(p *redis.Pool, devEUI lorawan.EUI64) error {
+func FlushMACCommandQueue(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) error {
 	c := p.Get()
 	defer c.Close()
 
@@ -94,7 +96,7 @@ func FlushMACCommandQueue(p *redis.Pool, devEUI lorawan.EUI64) error {
 }
 
 // CreateMACCommandQueueItem creates a new mac-command queue item.
-func CreateMACCommandQueueItem(p *redis.Pool, devEUI lorawan.EUI64, block MACCommandBlock) error {
+func CreateMACCommandQueueItem(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, block MACCommandBlock) error {
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(block)
 	if err != nil {
@@ -118,6 +120,7 @@ func CreateMACCommandQueueItem(p *redis.Pool, devEUI lorawan.EUI64, block MACCom
 	log.WithFields(log.Fields{
 		"dev_eui": devEUI,
 		"cid":     block.CID,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
 	}).Info("mac-command queue item created")
 
 	return nil
@@ -125,7 +128,7 @@ func CreateMACCommandQueueItem(p *redis.Pool, devEUI lorawan.EUI64, block MACCom
 
 // GetMACCommandQueueItems returns the mac-command queue items for the
 // given DevEUI.
-func GetMACCommandQueueItems(p *redis.Pool, devEUI lorawan.EUI64) ([]MACCommandBlock, error) {
+func GetMACCommandQueueItems(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) ([]MACCommandBlock, error) {
 	var out []MACCommandBlock
 
 	c := p.Get()
@@ -156,7 +159,7 @@ func GetMACCommandQueueItems(p *redis.Pool, devEUI lorawan.EUI64) ([]MACCommandB
 }
 
 // DeleteMACCommandQueueItem deletes the given mac-command from the queue.
-func DeleteMACCommandQueueItem(p *redis.Pool, devEUI lorawan.EUI64, block MACCommandBlock) error {
+func DeleteMACCommandQueueItem(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, block MACCommandBlock) error {
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(block)
 	if err != nil {
@@ -179,6 +182,7 @@ func DeleteMACCommandQueueItem(p *redis.Pool, devEUI lorawan.EUI64, block MACCom
 	log.WithFields(log.Fields{
 		"dev_eui": devEUI,
 		"cid":     block.CID,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
 	}).Info("mac-command deleted from queue")
 
 	return nil
@@ -187,7 +191,7 @@ func DeleteMACCommandQueueItem(p *redis.Pool, devEUI lorawan.EUI64, block MACCom
 // SetPendingMACCommand sets a mac-command to the pending buffer.
 // In case an other mac-command with the same CID has been set to pending,
 // it will be overwritten.
-func SetPendingMACCommand(p *redis.Pool, devEUI lorawan.EUI64, block MACCommandBlock) error {
+func SetPendingMACCommand(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, block MACCommandBlock) error {
 	var buf bytes.Buffer
 	err := gob.NewEncoder(&buf).Encode(block)
 	if err != nil {
@@ -209,6 +213,7 @@ func SetPendingMACCommand(p *redis.Pool, devEUI lorawan.EUI64, block MACCommandB
 		"dev_eui":  devEUI,
 		"cid":      block.CID,
 		"commands": len(block.MACCommands),
+		"ctx_id":   ctx.Value(logging.ContextIDKey),
 	}).Info("pending mac-command block set")
 
 	return nil
@@ -216,7 +221,7 @@ func SetPendingMACCommand(p *redis.Pool, devEUI lorawan.EUI64, block MACCommandB
 
 // GetPendingMACCommand returns the pending mac-command for the given CID.
 // In case no items are pending, nil is returned.
-func GetPendingMACCommand(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID) (*MACCommandBlock, error) {
+func GetPendingMACCommand(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID) (*MACCommandBlock, error) {
 	var block MACCommandBlock
 
 	c := p.Get()
@@ -240,7 +245,7 @@ func GetPendingMACCommand(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID) 
 }
 
 // DeletePendingMACCommand removes the pending mac-command for the given CID.
-func DeletePendingMACCommand(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID) error {
+func DeletePendingMACCommand(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CID) error {
 	c := p.Get()
 	defer c.Close()
 
@@ -256,6 +261,7 @@ func DeletePendingMACCommand(p *redis.Pool, devEUI lorawan.EUI64, cid lorawan.CI
 	log.WithFields(log.Fields{
 		"dev_eui": devEUI,
 		"cid":     cid,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
 	}).Info("pending mac-command deleted")
 
 	return nil

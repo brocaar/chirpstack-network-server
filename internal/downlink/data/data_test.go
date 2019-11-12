@@ -1,16 +1,17 @@
 package data
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/loraserver/internal/backend/applicationserver"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
 )
@@ -34,13 +35,13 @@ func (ts *GetNextDeviceQueueItemTestSuite) SetupSuite() {
 	applicationserver.SetPool(test.NewApplicationServerPool(ts.ASClient))
 
 	sp := storage.ServiceProfile{}
-	assert.NoError(storage.CreateServiceProfile(storage.DB(), &sp))
+	assert.NoError(storage.CreateServiceProfile(context.Background(), storage.DB(), &sp))
 
 	dp := storage.DeviceProfile{}
-	assert.NoError(storage.CreateDeviceProfile(storage.DB(), &dp))
+	assert.NoError(storage.CreateDeviceProfile(context.Background(), storage.DB(), &dp))
 
 	rp := storage.RoutingProfile{}
-	assert.NoError(storage.CreateRoutingProfile(storage.DB(), &rp))
+	assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp))
 
 	ts.Device = storage.Device{
 		DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
@@ -48,7 +49,7 @@ func (ts *GetNextDeviceQueueItemTestSuite) SetupSuite() {
 		DeviceProfileID:  dp.ID,
 		RoutingProfileID: rp.ID,
 	}
-	assert.NoError(storage.CreateDevice(storage.DB(), &ts.Device))
+	assert.NoError(storage.CreateDevice(context.Background(), storage.DB(), &ts.Device))
 }
 
 func (ts *GetNextDeviceQueueItemTestSuite) SetupTest() {
@@ -223,17 +224,21 @@ func (ts *GetNextDeviceQueueItemTestSuite) TestGetNextDeviceQueueItem() {
 	for _, tst := range tests {
 		ts.T().Run(tst.Name, func(t *testing.T) {
 			assert := require.New(t)
+			ctx := context.Background()
+			tst.DataContext.ctx = ctx
 
-			assert.NoError(storage.FlushDeviceQueueForDevEUI(storage.DB(), ts.Device.DevEUI))
+			assert.NoError(storage.FlushDeviceQueueForDevEUI(ctx, storage.DB(), ts.Device.DevEUI))
 			for i := range tst.DeviceQueueItems {
-				assert.NoError(storage.CreateDeviceQueueItem(storage.DB(), &tst.DeviceQueueItems[i]))
+				assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &tst.DeviceQueueItems[i]))
 			}
 
 			assert.NoError(getNextDeviceQueueItem(&tst.DataContext))
+
+			tst.DataContext.ctx = nil
 			assert.Equal(tst.ExpectedDataContext, tst.DataContext)
 
 			if tst.ExpectedNextDeviceQueueItem != nil {
-				qi, err := storage.GetNextDeviceQueueItemForDevEUI(storage.DB(), ts.Device.DevEUI)
+				qi, err := storage.GetNextDeviceQueueItemForDevEUI(context.Background(), storage.DB(), ts.Device.DevEUI)
 				assert.NoError(err)
 				assert.Equal(tst.ExpectedNextDeviceQueueItem.FRMPayload, qi.FRMPayload)
 				assert.Equal(tst.ExpectedNextDeviceQueueItem.FPort, qi.FPort)
@@ -806,6 +811,8 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			if tst.BeforeFunc != nil {
 				assert.NoError(tst.BeforeFunc())
 			}
+
+			tst.DataContext.ctx = context.Background()
 
 			assert.NoError(setMACCommandsSet(&tst.DataContext))
 			assert.Equal(tst.ExpectedMACCommands, tst.DataContext.MACCommands)

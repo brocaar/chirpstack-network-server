@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -16,8 +17,8 @@ func (ts *StorageTestSuite) GetMulticastGroup() MulticastGroup {
 	var sp ServiceProfile
 	var rp RoutingProfile
 
-	assert.NoError(CreateServiceProfile(ts.DB(), &sp))
-	assert.NoError(CreateRoutingProfile(ts.DB(), &rp))
+	assert.NoError(CreateServiceProfile(context.Background(), ts.DB(), &sp))
+	assert.NoError(CreateRoutingProfile(context.Background(), ts.DB(), &rp))
 
 	return MulticastGroup{
 		MCAddr:           lorawan.DevAddr{1, 2, 3, 4},
@@ -37,7 +38,7 @@ func (ts *StorageTestSuite) TestMulticastGroup() {
 		assert := require.New(t)
 
 		mc := ts.GetMulticastGroup()
-		err := CreateMulticastGroup(ts.Tx(), &mc)
+		err := CreateMulticastGroup(context.Background(), ts.Tx(), &mc)
 		assert.Nil(err)
 
 		mc.CreatedAt = mc.CreatedAt.Round(time.Second).UTC()
@@ -45,7 +46,7 @@ func (ts *StorageTestSuite) TestMulticastGroup() {
 
 		t.Run("Get", func(t *testing.T) {
 			assert := require.New(t)
-			mcGet, err := GetMulticastGroup(ts.Tx(), mc.ID, false)
+			mcGet, err := GetMulticastGroup(context.Background(), ts.Tx(), mc.ID, false)
 			assert.Nil(err)
 
 			mcGet.CreatedAt = mcGet.CreatedAt.Round(time.Second).UTC()
@@ -64,11 +65,11 @@ func (ts *StorageTestSuite) TestMulticastGroup() {
 			mc.Frequency = 868100000
 			mc.PingSlotPeriod = 32
 
-			assert.Nil(UpdateMulticastGroup(ts.Tx(), &mc))
+			assert.Nil(UpdateMulticastGroup(context.Background(), ts.Tx(), &mc))
 
 			mc.UpdatedAt = mc.UpdatedAt.Round(time.Second).UTC()
 
-			mcGet, err := GetMulticastGroup(ts.Tx(), mc.ID, false)
+			mcGet, err := GetMulticastGroup(context.Background(), ts.Tx(), mc.ID, false)
 			assert.Nil(err)
 
 			mcGet.CreatedAt = mcGet.CreatedAt.Round(time.Second).UTC()
@@ -80,10 +81,10 @@ func (ts *StorageTestSuite) TestMulticastGroup() {
 		t.Run("Delete", func(t *testing.T) {
 			assert := require.New(t)
 
-			assert.Nil(DeleteMulticastGroup(ts.Tx(), mc.ID))
-			assert.Equal(ErrDoesNotExist, DeleteMulticastGroup(ts.Tx(), mc.ID))
+			assert.Nil(DeleteMulticastGroup(context.Background(), ts.Tx(), mc.ID))
+			assert.Equal(ErrDoesNotExist, DeleteMulticastGroup(context.Background(), ts.Tx(), mc.ID))
 
-			_, err := GetMulticastGroup(ts.Tx(), mc.ID, false)
+			_, err := GetMulticastGroup(context.Background(), ts.Tx(), mc.ID, false)
 			assert.Equal(ErrDoesNotExist, err)
 		})
 	})
@@ -93,12 +94,18 @@ func (ts *StorageTestSuite) TestMulticastQueue() {
 	assert := require.New(ts.T())
 
 	mg := ts.GetMulticastGroup()
-	assert.NoError(CreateMulticastGroup(ts.Tx(), &mg))
+	assert.NoError(CreateMulticastGroup(context.Background(), ts.Tx(), &mg))
+
+	rp := RoutingProfile{
+		ASID: "localhost:1234",
+	}
+	assert.NoError(CreateRoutingProfile(context.Background(), ts.Tx(), &rp))
 
 	gw := Gateway{
-		GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+		GatewayID:        lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+		RoutingProfileID: rp.ID,
 	}
-	assert.NoError(CreateGateway(ts.Tx(), &gw))
+	assert.NoError(CreateGateway(context.Background(), ts.Tx(), &gw))
 
 	ts.T().Run("Create", func(t *testing.T) {
 		assert := require.New(t)
@@ -124,13 +131,13 @@ func (ts *StorageTestSuite) TestMulticastQueue() {
 			EmitAtTimeSinceGPSEpoch: &gps2,
 		}
 
-		assert.NoError(CreateMulticastQueueItem(ts.Tx(), &qi1))
-		assert.NoError(CreateMulticastQueueItem(ts.Tx(), &qi2))
+		assert.NoError(CreateMulticastQueueItem(context.Background(), ts.Tx(), &qi1))
+		assert.NoError(CreateMulticastQueueItem(context.Background(), ts.Tx(), &qi2))
 
 		t.Run("List", func(t *testing.T) {
 			assert := require.New(t)
 
-			items, err := GetMulticastQueueItemsForMulticastGroup(ts.Tx(), mg.ID)
+			items, err := GetMulticastQueueItemsForMulticastGroup(context.Background(), ts.Tx(), mg.ID)
 			assert.NoError(err)
 			assert.Len(items, 2)
 
@@ -141,7 +148,7 @@ func (ts *StorageTestSuite) TestMulticastQueue() {
 		t.Run("Schedulable multicast queue-items", func(t *testing.T) {
 			assert := require.New(t)
 
-			items, err := GetSchedulableMulticastQueueItems(ts.Tx(), 1)
+			items, err := GetSchedulableMulticastQueueItems(context.Background(), ts.Tx(), 1)
 			assert.NoError(err)
 			assert.Len(items, 1)
 
@@ -151,7 +158,7 @@ func (ts *StorageTestSuite) TestMulticastQueue() {
 		t.Run("Max emit at", func(t *testing.T) {
 			assert := require.New(t)
 
-			d, err := GetMaxEmitAtTimeSinceGPSEpochForMulticastGroup(ts.Tx(), mg.ID)
+			d, err := GetMaxEmitAtTimeSinceGPSEpochForMulticastGroup(context.Background(), ts.Tx(), mg.ID)
 			assert.NoError(err)
 			assert.Equal(gps2, d)
 		})
@@ -159,8 +166,8 @@ func (ts *StorageTestSuite) TestMulticastQueue() {
 		t.Run("Delete", func(t *testing.T) {
 			assert := require.New(t)
 
-			assert.NoError(DeleteMulticastQueueItem(ts.Tx(), qi1.ID))
-			items, err := GetMulticastQueueItemsForMulticastGroup(ts.Tx(), mg.ID)
+			assert.NoError(DeleteMulticastQueueItem(context.Background(), ts.Tx(), qi1.ID))
+			items, err := GetMulticastQueueItemsForMulticastGroup(context.Background(), ts.Tx(), mg.ID)
 			assert.NoError(err)
 			assert.Len(items, 1)
 		})
@@ -168,8 +175,8 @@ func (ts *StorageTestSuite) TestMulticastQueue() {
 		t.Run("Flush", func(t *testing.T) {
 			assert := require.New(t)
 
-			assert.NoError(FlushMulticastQueueForMulticastGroup(ts.Tx(), mg.ID))
-			items, err := GetMulticastQueueItemsForMulticastGroup(ts.Tx(), mg.ID)
+			assert.NoError(FlushMulticastQueueForMulticastGroup(context.Background(), ts.Tx(), mg.ID))
+			items, err := GetMulticastQueueItemsForMulticastGroup(context.Background(), ts.Tx(), mg.ID)
 			assert.NoError(err)
 			assert.Len(items, 0)
 		})
@@ -181,15 +188,21 @@ func (ts *StorageTestSuite) TestGetMulticastGroupsWithQueueItems() {
 
 	mg1 := ts.GetMulticastGroup()
 	mg1.GroupType = MulticastGroupC
-	assert.NoError(CreateMulticastGroup(ts.DB(), &mg1))
+	assert.NoError(CreateMulticastGroup(context.Background(), ts.DB(), &mg1))
 	mg2 := ts.GetMulticastGroup()
 	mg2.GroupType = MulticastGroupC
-	assert.NoError(CreateMulticastGroup(ts.DB(), &mg2))
+	assert.NoError(CreateMulticastGroup(context.Background(), ts.DB(), &mg2))
+
+	rp := RoutingProfile{
+		ASID: "localhost:1234",
+	}
+	assert.NoError(CreateRoutingProfile(context.Background(), ts.DB(), &rp))
 
 	gw := Gateway{
-		GatewayID: lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
+		GatewayID:        lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 2},
+		RoutingProfileID: rp.ID,
 	}
-	assert.NoError(CreateGateway(ts.DB(), &gw))
+	assert.NoError(CreateGateway(context.Background(), ts.DB(), &gw))
 
 	qi1 := MulticastQueueItem{
 		ScheduleAt:       time.Now(),
@@ -199,7 +212,7 @@ func (ts *StorageTestSuite) TestGetMulticastGroupsWithQueueItems() {
 		FPort:            20,
 		FRMPayload:       []byte{1, 2, 3, 4},
 	}
-	assert.NoError(CreateMulticastQueueItem(ts.DB(), &qi1))
+	assert.NoError(CreateMulticastQueueItem(context.Background(), ts.DB(), &qi1))
 
 	qi2 := MulticastQueueItem{
 		ScheduleAt:       time.Now().Add(time.Second),
@@ -209,10 +222,10 @@ func (ts *StorageTestSuite) TestGetMulticastGroupsWithQueueItems() {
 		FPort:            20,
 		FRMPayload:       []byte{1, 2, 3, 4},
 	}
-	assert.NoError(CreateMulticastQueueItem(ts.DB(), &qi2))
+	assert.NoError(CreateMulticastQueueItem(context.Background(), ts.DB(), &qi2))
 
 	Transaction(func(tx sqlx.Ext) error {
-		items, err := GetSchedulableMulticastQueueItems(tx, 10)
+		items, err := GetSchedulableMulticastQueueItems(context.Background(), tx, 10)
 		assert.NoError(err)
 		assert.Len(items, 1)
 		assert.Equal(mg1.ID, items[0].MulticastGroupID)
@@ -220,7 +233,7 @@ func (ts *StorageTestSuite) TestGetMulticastGroupsWithQueueItems() {
 		// new transaction must return 0 items as the first one did lock
 		// the multicast-group
 		Transaction(func(tx sqlx.Ext) error {
-			items, err := GetSchedulableMulticastQueueItems(tx, 10)
+			items, err := GetSchedulableMulticastQueueItems(context.Background(), tx, 10)
 			assert.NoError(err)
 			assert.Len(items, 0)
 			return nil

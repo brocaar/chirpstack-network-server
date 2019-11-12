@@ -3,7 +3,7 @@ package controller
 import (
 	"context"
 
-	"github.com/brocaar/loraserver/api/nc"
+	"github.com/brocaar/chirpstack-api/go/nc"
 	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc"
 )
@@ -14,6 +14,14 @@ type NopNetworkControllerClient struct{}
 
 // HandleUplinkMetaData handles uplink meta-rata.
 func (n *NopNetworkControllerClient) HandleUplinkMetaData(ctx context.Context, in *nc.HandleUplinkMetaDataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return &empty.Empty{}, nil
+}
+
+// HandleUplinkMACCommand handles an uplink mac-command.
+// This method will only be called in case the mac-command request was
+// enqueued throught the API or when the CID is >= 0x80 (proprietary
+// mac-command range).
+func (n *NopNetworkControllerClient) HandleDownlinkMetaData(ctx context.Context, in *nc.HandleDownlinkMetaDataRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	return &empty.Empty{}, nil
 }
 

@@ -1,16 +1,17 @@
 package maccommand
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/require"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/gps"
-	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/gps"
+	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -64,7 +65,7 @@ func TestDeviceTime(t *testing.T) {
 		t.Run(tst.Name, func(t *testing.T) {
 			assert := require.New(t)
 
-			resp, err := handleDeviceTimeReq(&storage.DeviceSession{}, tst.RXPacket)
+			resp, err := handleDeviceTimeReq(context.Background(), &storage.DeviceSession{}, tst.RXPacket)
 			assert.NoError(err)
 			assert.Len(resp, 1)
 			assert.Len(resp[0].MACCommands, 1)
@@ -81,7 +82,7 @@ func TestDeviceTime(t *testing.T) {
 			},
 		}
 
-		resp, err := handleDeviceTimeReq(&storage.DeviceSession{}, rxPacket)
+		resp, err := handleDeviceTimeReq(context.Background(), &storage.DeviceSession{}, rxPacket)
 		assert.NoError(err)
 		assert.Len(resp, 1)
 		assert.Len(resp[0].MACCommands, 1)

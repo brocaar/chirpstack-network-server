@@ -1,15 +1,16 @@
 package maccommand
 
 import (
+	"context"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-api/go/as"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 )
 
@@ -21,7 +22,7 @@ func (ts *DevStatusTestSuite) TestRequestDevStatus() {
 	assert := require.New(ts.T())
 
 	ds := storage.DeviceSession{}
-	block := RequestDevStatus(&ds)
+	block := RequestDevStatus(context.Background(), &ds)
 
 	assert.Equal(storage.MACCommandBlock{
 		CID: lorawan.DevStatusReq,
@@ -129,7 +130,7 @@ func (ts *DevStatusTestSuite) TestDevStatusAns() {
 		ts.T().Run(tst.Name, func(t *testing.T) {
 			assert := require.New(t)
 			asClient := test.NewApplicationClient()
-			resp, err := handleDevStatusAns(&tst.DeviceSession, tst.ServiceProfile, asClient, tst.ReceivedMACCommandBlock)
+			resp, err := handleDevStatusAns(context.Background(), &tst.DeviceSession, tst.ServiceProfile, asClient, tst.ReceivedMACCommandBlock)
 			assert.NoError(err)
 			assert.Len(resp, 0)
 

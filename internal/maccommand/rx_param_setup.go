@@ -1,12 +1,14 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -30,7 +32,7 @@ func RequestRXParamSetup(rx1DROffset, rx2Frequency, rx2DR int) storage.MACComman
 	}
 }
 
-func handleRXParamSetupAns(ds *storage.DeviceSession, block storage.MACCommandBlock, pendingBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
+func handleRXParamSetupAns(ctx context.Context, ds *storage.DeviceSession, block storage.MACCommandBlock, pendingBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 	if len(block.MACCommands) != 1 {
 		return nil, fmt.Errorf("exactly one mac-command expected, got: %d", len(block.MACCommands))
 	}
@@ -51,6 +53,7 @@ func handleRXParamSetupAns(ds *storage.DeviceSession, block storage.MACCommandBl
 			"channel_ack":       pl.ChannelACK,
 			"rx1_dr_offset_ack": pl.RX1DROffsetACK,
 			"rx2_dr_ack":        pl.RX2DataRateACK,
+			"ctx_id":            ctx.Value(logging.ContextIDKey),
 		}).Warning("rx_param_setup not acknowledged")
 		return nil, nil
 	}
@@ -64,6 +67,7 @@ func handleRXParamSetupAns(ds *storage.DeviceSession, block storage.MACCommandBl
 		"rx2_frequency": req.Frequency,
 		"rx2_dr":        req.DLSettings.RX2DataRate,
 		"rx1_dr_offset": req.DLSettings.RX1DROffset,
+		"ctx_id":        ctx.Value(logging.ContextIDKey),
 	}).Info("rx_param_setup request acknowledged")
 
 	return nil, nil

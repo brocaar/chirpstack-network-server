@@ -1,6 +1,7 @@
 package testsuite
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -8,11 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/gps"
-	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/chirpstack-api/go/common"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-api/go/nc"
+	"github.com/brocaar/chirpstack-network-server/internal/gps"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 )
 
 type MulticastTestSuite struct {
@@ -41,7 +43,7 @@ func (ts *MulticastTestSuite) SetupSuite() {
 	})
 
 	assert := require.New(ts.T())
-	assert.NoError(storage.SaveDeviceGatewayRXInfoSet(storage.RedisPool(), storage.DeviceGatewayRXInfoSet{
+	assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), storage.RedisPool(), storage.DeviceGatewayRXInfoSet{
 		DevEUI: ts.Device.DevEUI,
 		DR:     3,
 		Items: []storage.DeviceGatewayRXInfo{
@@ -53,7 +55,7 @@ func (ts *MulticastTestSuite) SetupSuite() {
 		},
 	}))
 
-	assert.NoError(storage.AddDeviceToMulticastGroup(storage.DB(), ts.Device.DevEUI, ts.MulticastGroup.ID))
+	assert.NoError(storage.AddDeviceToMulticastGroup(context.Background(), storage.DB(), ts.Device.DevEUI, ts.MulticastGroup.ID))
 }
 
 func (ts *MulticastTestSuite) TestMulticast() {
@@ -118,6 +120,32 @@ func (ts *MulticastTestSuite) TestMulticast() {
 						FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
 					},
 					MIC: lorawan.MIC{0x8, 0xb5, 0x29, 0xe8},
+				}),
+				AssertNCHandleDownlinkMetaDataRequest(nc.HandleDownlinkMetaDataRequest{
+					MulticastGroupId:            ts.MulticastGroup.ID[:],
+					MessageType:                 nc.MType_UNCONFIRMED_DATA_DOWN,
+					PhyPayloadByteCount:         17,
+					ApplicationPayloadByteCount: 4,
+					TxInfo: &gw.DownlinkTXInfo{
+						GatewayId:  ts.Gateway.GatewayID[:],
+						Frequency:  uint32(ts.MulticastGroup.Frequency),
+						Power:      14,
+						Modulation: common.Modulation_LORA,
+						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+							LoraModulationInfo: &gw.LoRaModulationInfo{
+								SpreadingFactor:       9,
+								CodeRate:              "4/5",
+								Bandwidth:             125,
+								PolarizationInversion: true,
+							},
+						},
+						Timing: gw.DownlinkTiming_GPS_EPOCH,
+						TimingInfo: &gw.DownlinkTXInfo_GpsEpochTimingInfo{
+							GpsEpochTimingInfo: &gw.GPSEpochTimingInfo{
+								TimeSinceGpsEpoch: ptypes.DurationProto(nowGPS),
+							},
+						},
+					},
 				}),
 			},
 		},

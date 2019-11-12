@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-api/go/common"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 )
 
@@ -72,7 +72,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 				},
 			},
 		}
-		assert.NoError(LogUplinkFrameForGateways(storage.RedisPool(), uplinkFrameSet))
+		assert.NoError(LogUplinkFrameForGateways(ctx, storage.RedisPool(), uplinkFrameSet))
 		frameLog := <-logChannel
 		assert.True(proto.Equal(&uplinkFrameSet, frameLog.UplinkFrame))
 	})
@@ -86,7 +86,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 			},
 		}
 
-		assert.NoError(LogDownlinkFrameForGateway(storage.RedisPool(), downlinkFrame))
+		assert.NoError(LogDownlinkFrameForGateway(ctx, storage.RedisPool(), downlinkFrame))
 		downlinkFrame.TxInfo.XXX_sizecache = 0
 
 		assert.Equal(FrameLog{
@@ -132,7 +132,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 			},
 		}
 
-		assert.NoError(LogUplinkFrameForDevEUI(storage.RedisPool(), ts.DevEUI, uplinkFrameSet))
+		assert.NoError(LogUplinkFrameForDevEUI(ctx, storage.RedisPool(), ts.DevEUI, uplinkFrameSet))
 		frameLog := <-logChannel
 		assert.True(proto.Equal(frameLog.UplinkFrame, &uplinkFrameSet))
 	})
@@ -147,7 +147,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 			},
 		}
 
-		assert.NoError(LogDownlinkFrameForDevEUI(storage.RedisPool(), ts.DevEUI, downlinkFrame))
+		assert.NoError(LogDownlinkFrameForDevEUI(ctx, storage.RedisPool(), ts.DevEUI, downlinkFrame))
 		downlinkFrame.TxInfo.XXX_sizecache = 0
 
 		assert.Equal(FrameLog{

@@ -1,11 +1,11 @@
 .PHONY: build clean test package serve update-vendor api statics
-PKGS := $(shell go list ./... | grep -v /vendor/ | grep -v loraserver/api | grep -v /migrations | grep -v /static)
+PKGS := $(shell go list ./... | grep -v /vendor/ | grep -v chirpstack-network-server/api | grep -v /migrations | grep -v /static)
 VERSION := $(shell git describe --always |sed -e "s/^v//")
 
 build: statics
 	@echo "Compiling source"
 	@mkdir -p build
-	go build $(GO_EXTRA_BUILD_ARGS) -ldflags "-s -w -X main.version=$(VERSION)" -o build/loraserver cmd/loraserver/main.go
+	go build $(GO_EXTRA_BUILD_ARGS) -ldflags "-s -w -X main.version=$(VERSION)" -o build/chirpstack-network-server cmd/chirpstack-network-server/main.go
 
 clean:
 	@echo "Cleaning up workspace"
@@ -22,7 +22,7 @@ test: statics
 	@go vet $(PKGS)
 	@go test -p 1 -v -cover $(PKGS) -coverprofile coverage.out
 
-dist:
+dist: statics
 	goreleaser
 	mkdir -p dist/upload/tar
 	mkdir -p dist/upload/deb
@@ -41,6 +41,7 @@ api:
 	go generate api/geo/geo.go
 	go generate api/common/common.go
 	go generate internal/storage/device_session.go
+	go generate internal/storage/downlink_frames.go
 
 statics:
 	@echo "Generating static files"
@@ -50,8 +51,6 @@ dev-requirements:
 	go install golang.org/x/lint/golint
 	go install golang.org/x/tools/cmd/stringer
 	go install github.com/golang/protobuf/protoc-gen-go
-	go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
-	go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 	go install github.com/elazarl/go-bindata-assetfs/go-bindata-assetfs
 	go install github.com/jteeuwen/go-bindata/go-bindata
 	go install github.com/goreleaser/goreleaser
@@ -60,8 +59,8 @@ dev-requirements:
 # shortcuts for development
 
 serve: build
-	@echo "Starting Lora Server"
-	./build/loraserver
+	@echo "Starting ChirpStack Network Server"
+	./build/chirpstack-network-server
 
 run-compose-test:
-	docker-compose run --rm loraserver make test
+	docker-compose run --rm networkserver make test

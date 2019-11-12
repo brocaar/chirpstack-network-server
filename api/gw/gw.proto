@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package gw;
 
-option go_package = "github.com/brocaar/loraserver/api/gw";
+option go_package = "github.com/brocaar/chirpstack-network-server/api/gw";
 
 import "api/common/common.proto";
 import "google/protobuf/timestamp.proto";
@@ -100,7 +100,7 @@ message GatewayStats {
     common.Location location = 3;
 
     // Gateway configuration version (this maps to the config_version sent
-    // by LoRa Server to the gateway).
+    // by ChirpStack Network Server to the gateway).
     string config_version = 4;
 
     // Number of radio packets received.
@@ -117,6 +117,10 @@ message GatewayStats {
 
     // Additional gateway meta-data.
     map<string, string> meta_data = 10;
+
+    // Stats ID (UUID).
+    // Unique identifier for the gateway stats.
+    bytes stats_id = 11 [json_name = "statsID"];
 }
 
 message UplinkRXInfo {
@@ -164,6 +168,10 @@ message UplinkRXInfo {
 
     // Gateway specific context.
     bytes context = 15;
+
+    // Uplink ID (UUID bytes).
+    // Unique and random ID which can be used to correlate the uplink across multiple logs.
+    bytes uplink_id = 16 [json_name = "uplinkID"];
 }
 
 message DownlinkTXInfo {
@@ -258,7 +266,11 @@ message DownlinkFrame {
     DownlinkTXInfo tx_info = 2;
 
     // Token (uint16 value).
+    // Deprecated: will be replaced by downlink_id.
     uint32 token = 3;
+
+    // Downlink ID (UUID).
+    bytes downlink_id = 4 [json_name = "downlinkID"];
 }
 
 message DownlinkTXAck {
@@ -266,10 +278,14 @@ message DownlinkTXAck {
     bytes gateway_id = 1 [json_name = "gatewayID"];
 
     // Token (uint16 value).
+    // Deprecated: will be replaced by downlink_id.
     uint32 token = 2;
 
     // Error.
     string error = 3;
+
+    // Downlink ID (UUID).
+    bytes downlink_id = 4 [json_name = "downlinkID"];
 }
 
 message GatewayConfiguration {
@@ -319,4 +335,41 @@ message FSKModulationConfig {
 
     // Bitrate.
     uint32 bitrate = 2;
+}
+
+message GatewayCommandExecRequest {
+    // Gateway ID.
+    bytes gateway_id = 1 [json_name = "gatewayID"];
+
+    // Command to execute.
+    // This command must be pre-configured in the ChirpStack Gateway Bridge configuration.
+    string command = 2;
+
+    // Execution request ID (UUID).
+    // The same token will be returned when the execution of the command has
+    // completed.
+    bytes ExecId = 3 [json_name = "execID"];
+
+    // Standard input.
+    bytes stdin = 4;
+
+    // Environment variables.
+    map<string, string> environment = 5;
+}
+
+message GatewayCommandExecResponse {
+    // Gateway ID.
+    bytes gateway_id = 1 [json_name = "gatewayID"];
+
+    // Execution request ID (UUID).
+    bytes exec_id = 2 [json_name = "execID"];
+
+    // Standard output.
+    bytes stdout = 3;
+
+    // Standard error.
+    bytes stderr = 4;
+
+    // Error message.
+    string error = 5;
 }

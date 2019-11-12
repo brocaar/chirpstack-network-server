@@ -1,35 +1,39 @@
 package proprietary
 
 import (
-	"crypto/rand"
+	"context"
 	"encoding/binary"
 
+	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/helpers"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/chirpstack-api/go/common"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 )
 
 const defaultCodeRate = "4/5"
 
 var tasks = []func(*proprietaryContext) error{
-	setToken,
 	sendProprietaryDown,
+	saveFrame,
 }
 
 type proprietaryContext struct {
-	Token       uint16
-	MACPayload  []byte
-	MIC         lorawan.MIC
-	GatewayMACs []lorawan.EUI64
-	IPol        bool
-	Frequency   int
-	DR          int
+	ctx context.Context
+
+	MACPayload     []byte
+	MIC            lorawan.MIC
+	GatewayMACs    []lorawan.EUI64
+	IPol           bool
+	Frequency      int
+	DR             int
+	DownlinkFrames []gw.DownlinkFrame
 }
 
 var (
@@ -44,8 +48,9 @@ func Setup(conf config.Config) error {
 }
 
 // Handle handles a proprietary downlink.
-func Handle(macPayload []byte, mic lorawan.MIC, gwMACs []lorawan.EUI64, iPol bool, frequency, dr int) error {
-	ctx := proprietaryContext{
+func Handle(ctx context.Context, macPayload []byte, mic lorawan.MIC, gwMACs []lorawan.EUI64, iPol bool, frequency, dr int) error {
+	pctx := proprietaryContext{
+		ctx:         ctx,
 		MACPayload:  macPayload,
 		MIC:         mic,
 		GatewayMACs: gwMACs,
@@ -55,21 +60,11 @@ func Handle(macPayload []byte, mic lorawan.MIC, gwMACs []lorawan.EUI64, iPol boo
 	}
 
 	for _, t := range tasks {
-		if err := t(&ctx); err != nil {
+		if err := t(&pctx); err != nil {
 			return err
 		}
 	}
 
-	return nil
-}
-
-func setToken(ctx *proprietaryContext) error {
-	b := make([]byte, 2)
-	_, err := rand.Read(b)
-	if err != nil {
-		return errors.Wrap(err, "read random erro")
-	}
-	ctx.Token = binary.BigEndian.Uint16(b)
 	return nil
 }
 
@@ -95,6 +90,12 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 	}
 
 	for _, mac := range ctx.GatewayMACs {
+		downID, err := uuid.NewV4()
+		if err != nil {
+			return errors.Wrap(err, "new uuid error")
+		}
+		token := binary.BigEndian.Uint16(downID[0:2])
+
 		txInfo := gw.DownlinkTXInfo{
 			GatewayId: mac[:],
 			Frequency: uint32(ctx.Frequency),
@@ -119,12 +120,30 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 			}
 		}
 
-		if err := gateway.Backend().SendTXPacket(gw.DownlinkFrame{
-			Token:      uint32(ctx.Token),
+		df := gw.DownlinkFrame{
+			Token:      uint32(token),
+			DownlinkId: downID[:],
 			TxInfo:     &txInfo,
 			PhyPayload: phyB,
+		}
+
+		ctx.DownlinkFrames = append(ctx.DownlinkFrames, df)
+
+		if err := gateway.Backend().SendTXPacket(df); err != nil {
+			return errors.Wrap(err, "send downlink frame to gateway error")
+		}
+	}
+
+	return nil
+}
+
+func saveFrame(ctx *proprietaryContext) error {
+	for _, df := range ctx.DownlinkFrames {
+		if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), storage.DownlinkFrames{
+			Token:          df.Token,
+			DownlinkFrames: []*gw.DownlinkFrame{&df},
 		}); err != nil {
-			return errors.Wrap(err, "send tx packet to gateway error")
+			return errors.Wrap(err, "save downlink-frames error")
 		}
 	}
 

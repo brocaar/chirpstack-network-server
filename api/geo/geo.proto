@@ -10,6 +10,10 @@ import "api/common/common.proto";
 service GeolocationServerService {
     // ResolveTDOA resolves the location based on TDOA.
     rpc ResolveTDOA(ResolveTDOARequest) returns (ResolveTDOAResponse) {}
+
+    // ResolveMultiFrameTDOA resolves the location using TDOA, based on
+    // multiple frames.
+    rpc ResolveMultiFrameTDOA(ResolveMultiFrameTDOARequest) returns (ResolveMultiFrameTDOAResponse) {}
 }
 
 message ResolveResult {
@@ -33,7 +37,23 @@ message ResolveTDOARequest {
     double device_reference_altitude = 3;
 }
 
+message ResolveMultiFrameTDOARequest {
+    // Device ID.
+    bytes dev_eui = 1 [json_name = "devEUI"];
+
+    // Frames meta-data.
+    repeated FrameRXInfo frame_rx_info_set = 2 [json_name = "frameRXInfoSet"];
+
+    // Device reference altitude.
+    double device_reference_altitude = 3;
+}
+
 message ResolveTDOAResponse {
+    // Resolve result.
+    ResolveResult result = 1;
+}
+
+message ResolveMultiFrameTDOAResponse {
     // Resolve result.
     ResolveResult result = 1;
 }

@@ -2,10 +2,12 @@ package storage
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"fmt"
 	"time"
 
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/gofrs/uuid"
 	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
@@ -21,32 +23,34 @@ const (
 
 // DeviceProfile defines the backend.DeviceProfile with some extra meta-data
 type DeviceProfile struct {
-	CreatedAt          time.Time `db:"created_at"`
-	UpdatedAt          time.Time `db:"updated_at"`
-	ID                 uuid.UUID `db:"device_profile_id"`
-	SupportsClassB     bool      `db:"supports_class_b"`
-	ClassBTimeout      int       `db:"class_b_timeout"` // Unit: seconds
-	PingSlotPeriod     int       `db:"ping_slot_period"`
-	PingSlotDR         int       `db:"ping_slot_dr"`
-	PingSlotFreq       int       `db:"ping_slot_freq"` // in Hz
-	SupportsClassC     bool      `db:"supports_class_c"`
-	ClassCTimeout      int       `db:"class_c_timeout"`     // Unit: seconds
-	MACVersion         string    `db:"mac_version"`         // Example: "1.0.2" [LW102]
-	RegParamsRevision  string    `db:"reg_params_revision"` // Example: "B" [RP102B]
-	RXDelay1           int       `db:"rx_delay_1"`
-	RXDROffset1        int       `db:"rx_dr_offset_1"`
-	RXDataRate2        int       `db:"rx_data_rate_2"`       // Unit: bits-per-second
-	RXFreq2            int       `db:"rx_freq_2"`            // In Hz
-	FactoryPresetFreqs []int     `db:"factory_preset_freqs"` // In Hz
-	MaxEIRP            int       `db:"max_eirp"`             // In dBm
-	MaxDutyCycle       int       `db:"max_duty_cycle"`       // Example: 10 indicates 10%
-	SupportsJoin       bool      `db:"supports_join"`
-	RFRegion           string    `db:"rf_region"`
-	Supports32bitFCnt  bool      `db:"supports_32bit_fcnt"`
+	CreatedAt           time.Time `db:"created_at"`
+	UpdatedAt           time.Time `db:"updated_at"`
+	ID                  uuid.UUID `db:"device_profile_id"`
+	SupportsClassB      bool      `db:"supports_class_b"`
+	ClassBTimeout       int       `db:"class_b_timeout"` // Unit: seconds
+	PingSlotPeriod      int       `db:"ping_slot_period"`
+	PingSlotDR          int       `db:"ping_slot_dr"`
+	PingSlotFreq        int       `db:"ping_slot_freq"` // in Hz
+	SupportsClassC      bool      `db:"supports_class_c"`
+	ClassCTimeout       int       `db:"class_c_timeout"`     // Unit: seconds
+	MACVersion          string    `db:"mac_version"`         // Example: "1.0.2" [LW102]
+	RegParamsRevision   string    `db:"reg_params_revision"` // Example: "B" [RP102B]
+	RXDelay1            int       `db:"rx_delay_1"`
+	RXDROffset1         int       `db:"rx_dr_offset_1"`
+	RXDataRate2         int       `db:"rx_data_rate_2"`       // Unit: bits-per-second
+	RXFreq2             int       `db:"rx_freq_2"`            // In Hz
+	FactoryPresetFreqs  []int     `db:"factory_preset_freqs"` // In Hz
+	MaxEIRP             int       `db:"max_eirp"`             // In dBm
+	MaxDutyCycle        int       `db:"max_duty_cycle"`       // Example: 10 indicates 10%
+	SupportsJoin        bool      `db:"supports_join"`
+	RFRegion            string    `db:"rf_region"`
+	Supports32bitFCnt   bool      `db:"supports_32bit_fcnt"`
+	GeolocBufferTTL     int       `db:"geoloc_buffer_ttl"`
+	GeolocMinBufferSize int       `db:"geoloc_min_buffer_size"`
 }
 
 // CreateDeviceProfile creates the given device-profile.
-func CreateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
+func CreateDeviceProfile(ctx context.Context, db sqlx.Execer, dp *DeviceProfile) error {
 	now := time.Now()
 
 	if dp.ID == uuid.Nil {
@@ -84,8 +88,10 @@ func CreateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
             max_duty_cycle,
             supports_join,
             rf_region,
-            supports_32bit_fcnt
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
+            supports_32bit_fcnt,
+			geoloc_buffer_ttl,
+			geoloc_min_buffer_size
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)`,
 		dp.CreatedAt,
 		dp.UpdatedAt,
 		dp.ID,
@@ -108,13 +114,16 @@ func CreateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
 		dp.SupportsJoin,
 		dp.RFRegion,
 		dp.Supports32bitFCnt,
+		dp.GeolocBufferTTL,
+		dp.GeolocMinBufferSize,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
 	}
 
 	log.WithFields(log.Fields{
-		"id": dp.ID,
+		"id":     dp.ID,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
 	}).Info("device-profile created")
 
 	return nil
@@ -122,7 +131,7 @@ func CreateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
 
 // CreateDeviceProfileCache caches the given device-profile in Redis.
 // The TTL of the device-profile is the same as that of the device-sessions.
-func CreateDeviceProfileCache(p *redis.Pool, dp DeviceProfile) error {
+func CreateDeviceProfileCache(ctx context.Context, p *redis.Pool, dp DeviceProfile) error {
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(dp); err != nil {
 		return errors.Wrap(err, "gob encode device-profile error")
@@ -143,7 +152,7 @@ func CreateDeviceProfileCache(p *redis.Pool, dp DeviceProfile) error {
 }
 
 // GetDeviceProfileCache returns a cached device-profile.
-func GetDeviceProfileCache(p *redis.Pool, id uuid.UUID) (DeviceProfile, error) {
+func GetDeviceProfileCache(ctx context.Context, p *redis.Pool, id uuid.UUID) (DeviceProfile, error) {
 	var dp DeviceProfile
 	key := fmt.Sprintf(DeviceProfileKeyTempl, id)
 
@@ -167,7 +176,7 @@ func GetDeviceProfileCache(p *redis.Pool, id uuid.UUID) (DeviceProfile, error) {
 }
 
 // FlushDeviceProfileCache deletes a cached device-profile.
-func FlushDeviceProfileCache(p *redis.Pool, id uuid.UUID) error {
+func FlushDeviceProfileCache(ctx context.Context, p *redis.Pool, id uuid.UUID) error {
 	key := fmt.Sprintf(DeviceProfileKeyTempl, id)
 	c := p.Get()
 	defer c.Close()
@@ -182,8 +191,8 @@ func FlushDeviceProfileCache(p *redis.Pool, id uuid.UUID) error {
 // GetAndCacheDeviceProfile returns the device-profile from cache
 // in case available, else it will be retrieved from the database and then
 // stored in cache.
-func GetAndCacheDeviceProfile(db sqlx.Queryer, p *redis.Pool, id uuid.UUID) (DeviceProfile, error) {
-	dp, err := GetDeviceProfileCache(p, id)
+func GetAndCacheDeviceProfile(ctx context.Context, db sqlx.Queryer, p *redis.Pool, id uuid.UUID) (DeviceProfile, error) {
+	dp, err := GetDeviceProfileCache(ctx, p, id)
 	if err == nil {
 		return dp, nil
 	}
@@ -195,14 +204,15 @@ func GetAndCacheDeviceProfile(db sqlx.Queryer, p *redis.Pool, id uuid.UUID) (Dev
 		// we don't return as we can still fall-back onto db retrieval
 	}
 
-	dp, err = GetDeviceProfile(db, id)
+	dp, err = GetDeviceProfile(ctx, db, id)
 	if err != nil {
 		return DeviceProfile{}, errors.Wrap(err, "get device-profile error")
 	}
 
-	err = CreateDeviceProfileCache(p, dp)
+	err = CreateDeviceProfileCache(ctx, p, dp)
 	if err != nil {
 		log.WithFields(log.Fields{
+			"ctx_id":            ctx.Value(logging.ContextIDKey),
 			"device_profile_id": id,
 		}).WithError(err).Error("create device-profile cache error")
 	}
@@ -211,7 +221,7 @@ func GetAndCacheDeviceProfile(db sqlx.Queryer, p *redis.Pool, id uuid.UUID) (Dev
 }
 
 // GetDeviceProfile returns the device-profile matching the given id.
-func GetDeviceProfile(db sqlx.Queryer, id uuid.UUID) (DeviceProfile, error) {
+func GetDeviceProfile(ctx context.Context, db sqlx.Queryer, id uuid.UUID) (DeviceProfile, error) {
 	var dp DeviceProfile
 
 	row := db.QueryRowx(`
@@ -238,7 +248,9 @@ func GetDeviceProfile(db sqlx.Queryer, id uuid.UUID) (DeviceProfile, error) {
             max_duty_cycle,
             supports_join,
             rf_region,
-            supports_32bit_fcnt
+            supports_32bit_fcnt,
+			geoloc_buffer_ttl,
+			geoloc_min_buffer_size
         from device_profile
         where
             device_profile_id = $1
@@ -269,6 +281,8 @@ func GetDeviceProfile(db sqlx.Queryer, id uuid.UUID) (DeviceProfile, error) {
 		&dp.SupportsJoin,
 		&dp.RFRegion,
 		&dp.Supports32bitFCnt,
+		&dp.GeolocBufferTTL,
+		&dp.GeolocMinBufferSize,
 	)
 	if err != nil {
 		return dp, handlePSQLError(err, "select error")
@@ -282,7 +296,7 @@ func GetDeviceProfile(db sqlx.Queryer, id uuid.UUID) (DeviceProfile, error) {
 }
 
 // UpdateDeviceProfile updates the given device-profile.
-func UpdateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
+func UpdateDeviceProfile(ctx context.Context, db sqlx.Execer, dp *DeviceProfile) error {
 	dp.UpdatedAt = time.Now()
 
 	res, err := db.Exec(`
@@ -307,7 +321,9 @@ func UpdateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
             max_duty_cycle = $18,
             supports_join = $19,
             rf_region = $20,
-            supports_32bit_fcnt = $21
+            supports_32bit_fcnt = $21,
+			geoloc_buffer_ttl = $22,
+			geoloc_min_buffer_size = $23
         where
             device_profile_id = $1`,
 		dp.ID,
@@ -331,6 +347,8 @@ func UpdateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
 		dp.SupportsJoin,
 		dp.RFRegion,
 		dp.Supports32bitFCnt,
+		dp.GeolocBufferTTL,
+		dp.GeolocMinBufferSize,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")
@@ -343,12 +361,15 @@ func UpdateDeviceProfile(db sqlx.Execer, dp *DeviceProfile) error {
 		return ErrDoesNotExist
 	}
 
-	log.WithField("id", dp.ID).Info("device-profile updated")
+	log.WithFields(log.Fields{
+		"id":     dp.ID,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
+	}).Info("device-profile updated")
 	return nil
 }
 
 // DeleteDeviceProfile deletes the device-profile matching the given id.
-func DeleteDeviceProfile(db sqlx.Execer, id uuid.UUID) error {
+func DeleteDeviceProfile(ctx context.Context, db sqlx.Execer, id uuid.UUID) error {
 	res, err := db.Exec("delete from device_profile where device_profile_id = $1", id)
 	if err != nil {
 		return handlePSQLError(err, "delete error")
@@ -361,6 +382,9 @@ func DeleteDeviceProfile(db sqlx.Execer, id uuid.UUID) error {
 	if ra == 0 {
 		return ErrDoesNotExist
 	}
-	log.WithField("id", id).Info("device-profile deleted")
+	log.WithFields(log.Fields{
+		"id":     id,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
+	}).Info("device-profile deleted")
 	return nil
 }

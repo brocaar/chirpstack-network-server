@@ -1,26 +1,28 @@
 package gateway
 
 import (
+	"context"
 	"crypto/aes"
 	"encoding/binary"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-api/go/common"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/gateway/stats"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
-	loraband "github.com/brocaar/lorawan/band"
 )
 
 // StatsHandler represents a stat handler for incoming gateway stats.
@@ -39,19 +41,26 @@ func (s *StatsHandler) Start() error {
 		s.wg.Add(1)
 		defer s.wg.Done()
 
-		for stats := range gateway.Backend().StatsPacketChan() {
-			go func(stats gw.GatewayStats) {
+		for gwStats := range gateway.Backend().StatsPacketChan() {
+			go func(gwStats gw.GatewayStats) {
 				s.wg.Add(1)
 				defer s.wg.Done()
 
-				if err := updateGatewayState(storage.DB(), storage.RedisPool(), stats); err != nil {
-					log.WithError(err).Error("update gateway state error")
+				var statsID uuid.UUID
+				if gwStats.StatsId != nil {
+					copy(statsID[:], gwStats.StatsId)
 				}
 
-				if err := handleGatewayStats(storage.RedisPool(), stats); err != nil {
-					log.WithError(err).Error("handle gateway stats error")
+				ctx := context.Background()
+				ctx = context.WithValue(ctx, logging.ContextIDKey, statsID)
+
+				if err := stats.Handle(ctx, gwStats); err != nil {
+					log.WithError(err).WithFields(log.Fields{
+						"ctx_id": ctx.Value(logging.ContextIDKey),
+					}).Error("gateway: handle gateway stats error")
 				}
-			}(stats)
+
+			}(gwStats)
 		}
 	}()
 	return nil
@@ -64,78 +73,18 @@ func (s *StatsHandler) Stop() error {
 	return nil
 }
 
-func handleGatewayStats(p *redis.Pool, stats gw.GatewayStats) error {
-	gatewayID := helpers.GetGatewayID(&stats)
-
-	ts, err := ptypes.Timestamp(stats.Time)
-	if err != nil {
-		return errors.Wrap(err, "timestamp error")
-	}
-
-	metrics := storage.MetricsRecord{
-		Time: ts,
-		Metrics: map[string]float64{
-			"rx_count":    float64(stats.RxPacketsReceived),
-			"rx_ok_count": float64(stats.RxPacketsReceivedOk),
-			"tx_count":    float64(stats.TxPacketsReceived),
-			"tx_ok_count": float64(stats.TxPacketsEmitted),
-		},
-	}
-
-	err = storage.SaveMetrics(p, "gw:"+gatewayID.String(), metrics)
-	if err != nil {
-		return errors.Wrap(err, "save metrics error")
-	}
-
-	return nil
-}
-
-func updateGatewayState(db sqlx.Ext, p *redis.Pool, stats gw.GatewayStats) error {
-	gatewayID := helpers.GetGatewayID(&stats)
-	gw, err := storage.GetAndCacheGateway(db, p, gatewayID)
-	if err != nil {
-		return errors.Wrap(err, "get gateway error")
-	}
-
-	now := time.Now()
-
-	if gw.FirstSeenAt == nil {
-		gw.FirstSeenAt = &now
-	}
-	gw.LastSeenAt = &now
-
-	if stats.Location != nil {
-		gw.Location.Latitude = stats.Location.Latitude
-		gw.Location.Longitude = stats.Location.Longitude
-		gw.Altitude = stats.Location.Altitude
-	}
-
-	if err := storage.UpdateGateway(db, &gw); err != nil {
-		return errors.Wrap(err, "update gateway error")
-	}
-
-	if err := storage.FlushGatewayCache(p, gatewayID); err != nil {
-		return errors.Wrap(err, "flush gateway cache error")
-	}
-
-	if err := handleConfigurationUpdate(db, gw, stats.ConfigVersion); err != nil {
-		return errors.Wrap(err, "handle gateway stats error")
-	}
-
-	return nil
-}
-
 // UpdateMetaDataInRxInfoSet updates the gateway meta-data in the
 // given rx-info set. It will:
 //   - add the gateway location
 //   - set the FPGA id if available
 //   - decrypt the fine-timestamp (if available and AES key is set)
-func UpdateMetaDataInRxInfoSet(db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.UplinkRXInfo) error {
+func UpdateMetaDataInRxInfoSet(ctx context.Context, db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.UplinkRXInfo) error {
 	for i := range rxInfo {
 		id := helpers.GetGatewayID(rxInfo[i])
-		g, err := storage.GetAndCacheGateway(db, p, id)
+		g, err := storage.GetAndCacheGateway(ctx, db, p, id)
 		if err != nil {
 			log.WithFields(log.Fields{
+				"ctx_id":     ctx.Value(logging.ContextIDKey),
 				"gateway_id": id,
 			}).WithError(err).Error("get gateway error")
 			continue
@@ -160,6 +109,7 @@ func UpdateMetaDataInRxInfoSet(db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.Upli
 			tsInfo := rxInfo[i].GetEncryptedFineTimestamp()
 			if tsInfo == nil {
 				log.WithFields(log.Fields{
+					"ctx_id":     ctx.Value(logging.ContextIDKey),
 					"gateway_id": id,
 				}).Error("encrypted_fine_timestamp must not be nil")
 				continue
@@ -175,6 +125,7 @@ func UpdateMetaDataInRxInfoSet(db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.Upli
 			tsInfo := rxInfo[i].GetEncryptedFineTimestamp()
 			if tsInfo == nil {
 				log.WithFields(log.Fields{
+					"ctx_id":     ctx.Value(logging.ContextIDKey),
 					"gateway_id": id,
 				}).Error("encrypted_fine_timestamp must not be nil")
 				continue
@@ -182,6 +133,7 @@ func UpdateMetaDataInRxInfoSet(db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.Upli
 
 			if rxInfo[i].Time == nil {
 				log.WithFields(log.Fields{
+					"ctx_id":     ctx.Value(logging.ContextIDKey),
 					"gateway_id": id,
 				}).Error("time must not be nil")
 				continue
@@ -190,6 +142,7 @@ func UpdateMetaDataInRxInfoSet(db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.Upli
 			rxTime, err := ptypes.Timestamp(rxInfo[i].Time)
 			if err != nil {
 				log.WithFields(log.Fields{
+					"ctx_id":     ctx.Value(logging.ContextIDKey),
 					"gateway_id": id,
 				}).WithError(err).Error("get timestamp error")
 			}
@@ -197,6 +150,7 @@ func UpdateMetaDataInRxInfoSet(db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.Upli
 			plainTS, err := decryptFineTimestamp(*board.FineTimestampKey, rxTime, *tsInfo)
 			if err != nil {
 				log.WithFields(log.Fields{
+					"ctx_id":     ctx.Value(logging.ContextIDKey),
 					"gateway_id": id,
 				}).WithError(err).Error("decrypt fine-timestamp error")
 				continue
@@ -242,99 +196,4 @@ func decryptFineTimestamp(key lorawan.AES128Key, rxTime time.Time, ts gw.Encrypt
 	}
 
 	return plainTS, nil
-}
-
-func handleConfigurationUpdate(db sqlx.Queryer, g storage.Gateway, currentVersion string) error {
-	if g.GatewayProfileID == nil {
-		log.WithField("gateway_id", g.GatewayID).Debug("gateway-profile is not set, skipping configuration update")
-		return nil
-	}
-
-	gwProfile, err := storage.GetGatewayProfile(db, *g.GatewayProfileID)
-	if err != nil {
-		return errors.Wrap(err, "get gateway-profile error")
-	}
-
-	if gwProfile.GetVersion() == currentVersion {
-		log.WithFields(log.Fields{
-			"gateway_id": g.GatewayID,
-			"version":    currentVersion,
-		}).Debug("gateway configuration is up-to-date")
-		return nil
-	}
-
-	configPacket := gw.GatewayConfiguration{
-		GatewayId: g.GatewayID[:],
-		Version:   gwProfile.GetVersion(),
-	}
-
-	for _, i := range gwProfile.Channels {
-		c, err := band.Band().GetUplinkChannel(int(i))
-		if err != nil {
-			return errors.Wrap(err, "get channel error")
-		}
-
-		gwC := gw.ChannelConfiguration{
-			Frequency:  uint32(c.Frequency),
-			Modulation: common.Modulation_LORA,
-		}
-
-		modConfig := gw.LoRaModulationConfig{}
-
-		for drI := c.MaxDR; drI >= c.MinDR; drI-- {
-			dr, err := band.Band().GetDataRate(drI)
-			if err != nil {
-				return errors.Wrap(err, "get data-rate error")
-			}
-
-			modConfig.SpreadingFactors = append(modConfig.SpreadingFactors, uint32(dr.SpreadFactor))
-			modConfig.Bandwidth = uint32(dr.Bandwidth)
-		}
-
-		gwC.ModulationConfig = &gw.ChannelConfiguration_LoraModulationConfig{
-			LoraModulationConfig: &modConfig,
-		}
-
-		configPacket.Channels = append(configPacket.Channels, &gwC)
-	}
-
-	for _, c := range gwProfile.ExtraChannels {
-		gwC := gw.ChannelConfiguration{
-			Frequency: uint32(c.Frequency),
-		}
-
-		switch loraband.Modulation(c.Modulation) {
-		case loraband.LoRaModulation:
-			gwC.Modulation = common.Modulation_LORA
-			modConfig := gw.LoRaModulationConfig{
-				Bandwidth: uint32(c.Bandwidth),
-			}
-
-			for _, sf := range c.SpreadingFactors {
-				modConfig.SpreadingFactors = append(modConfig.SpreadingFactors, uint32(sf))
-			}
-
-			gwC.ModulationConfig = &gw.ChannelConfiguration_LoraModulationConfig{
-				LoraModulationConfig: &modConfig,
-			}
-		case loraband.FSKModulation:
-			gwC.Modulation = common.Modulation_FSK
-			modConfig := gw.FSKModulationConfig{
-				Bandwidth: uint32(c.Bandwidth),
-				Bitrate:   uint32(c.Bitrate),
-			}
-
-			gwC.ModulationConfig = &gw.ChannelConfiguration_FskModulationConfig{
-				FskModulationConfig: &modConfig,
-			}
-		}
-
-		configPacket.Channels = append(configPacket.Channels, &gwC)
-	}
-
-	if err := gateway.Backend().SendGatewayConfigPacket(configPacket); err != nil {
-		return errors.Wrap(err, "send gateway-configuration packet error")
-	}
-
-	return nil
 }

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -8,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/lorawan"
 )
 
@@ -58,7 +60,7 @@ func (m MulticastQueueItem) Validate() error {
 }
 
 // CreateMulticastGroup creates the given multi-cast group.
-func CreateMulticastGroup(db sqlx.Execer, mg *MulticastGroup) error {
+func CreateMulticastGroup(ctx context.Context, db sqlx.Execer, mg *MulticastGroup) error {
 	now := time.Now()
 	mg.CreatedAt = now
 	mg.UpdatedAt = now
@@ -104,14 +106,15 @@ func CreateMulticastGroup(db sqlx.Execer, mg *MulticastGroup) error {
 	}
 
 	log.WithFields(log.Fields{
-		"id": mg.ID,
+		"id":     mg.ID,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
 	}).Info("multicast-group created")
 
 	return nil
 }
 
 // GetMulticastGroup returns the multicast-group for the given ID.
-func GetMulticastGroup(db sqlx.Queryer, id uuid.UUID, forUpdate bool) (MulticastGroup, error) {
+func GetMulticastGroup(ctx context.Context, db sqlx.Queryer, id uuid.UUID, forUpdate bool) (MulticastGroup, error) {
 	var mg MulticastGroup
 	var fu string
 
@@ -135,7 +138,7 @@ func GetMulticastGroup(db sqlx.Queryer, id uuid.UUID, forUpdate bool) (Multicast
 }
 
 // UpdateMulticastGroup updates the given multicast-grup.
-func UpdateMulticastGroup(db sqlx.Execer, mg *MulticastGroup) error {
+func UpdateMulticastGroup(ctx context.Context, db sqlx.Execer, mg *MulticastGroup) error {
 	mg.UpdatedAt = time.Now()
 
 	res, err := db.Exec(`
@@ -178,14 +181,15 @@ func UpdateMulticastGroup(db sqlx.Execer, mg *MulticastGroup) error {
 	}
 
 	log.WithFields(log.Fields{
-		"id": mg.ID,
+		"id":     mg.ID,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
 	}).Info("multicast-group updated")
 
 	return nil
 }
 
 // DeleteMulticastGroup deletes the multicast-group matching the given ID.
-func DeleteMulticastGroup(db sqlx.Execer, id uuid.UUID) error {
+func DeleteMulticastGroup(ctx context.Context, db sqlx.Execer, id uuid.UUID) error {
 	res, err := db.Exec(`
 		delete from
 			multicast_group
@@ -206,14 +210,15 @@ func DeleteMulticastGroup(db sqlx.Execer, id uuid.UUID) error {
 	}
 
 	log.WithFields(log.Fields{
-		"id": id,
+		"id":     id,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
 	}).Info("multicast-group deleted")
 
 	return nil
 }
 
 // CreateMulticastQueueItem adds the given item to the queue.
-func CreateMulticastQueueItem(db sqlx.Queryer, qi *MulticastQueueItem) error {
+func CreateMulticastQueueItem(ctx context.Context, db sqlx.Queryer, qi *MulticastQueueItem) error {
 	if err := qi.Validate(); err != nil {
 		return err
 	}
@@ -252,13 +257,14 @@ func CreateMulticastQueueItem(db sqlx.Queryer, qi *MulticastQueueItem) error {
 		"f_cnt":              qi.FCnt,
 		"gateway_id":         qi.GatewayID,
 		"multicast_group_id": qi.MulticastGroupID,
+		"ctx_id":             ctx.Value(logging.ContextIDKey),
 	}).Info("multicast queue-item created")
 
 	return nil
 }
 
 // DeleteMulticastQueueItem deletes the queue-item given an id.
-func DeleteMulticastQueueItem(db sqlx.Execer, id int64) error {
+func DeleteMulticastQueueItem(ctx context.Context, db sqlx.Execer, id int64) error {
 	res, err := db.Exec(`
 		delete from
 			multicast_queue
@@ -277,7 +283,8 @@ func DeleteMulticastQueueItem(db sqlx.Execer, id int64) error {
 	}
 
 	log.WithFields(log.Fields{
-		"id": id,
+		"id":     id,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
 	}).Info("multicast queue-item deleted")
 
 	return nil
@@ -285,7 +292,7 @@ func DeleteMulticastQueueItem(db sqlx.Execer, id int64) error {
 
 // FlushMulticastQueueForMulticastGroup flushes the multicast-queue given
 // a multicast-group id.
-func FlushMulticastQueueForMulticastGroup(db sqlx.Execer, multicastGroupID uuid.UUID) error {
+func FlushMulticastQueueForMulticastGroup(ctx context.Context, db sqlx.Execer, multicastGroupID uuid.UUID) error {
 	_, err := db.Exec(`
 		delete from
 			multicast_queue
@@ -298,6 +305,7 @@ func FlushMulticastQueueForMulticastGroup(db sqlx.Execer, multicastGroupID uuid.
 
 	log.WithFields(log.Fields{
 		"multicast_group_id": multicastGroupID,
+		"ctx_id":             ctx.Value(logging.ContextIDKey),
 	}).Info("multicast-group queue flushed")
 
 	return nil
@@ -305,7 +313,7 @@ func FlushMulticastQueueForMulticastGroup(db sqlx.Execer, multicastGroupID uuid.
 
 // GetMulticastQueueItemsForMulticastGroup returns all queue-items given
 // a multicast-group id.
-func GetMulticastQueueItemsForMulticastGroup(db sqlx.Queryer, multicastGroupID uuid.UUID) ([]MulticastQueueItem, error) {
+func GetMulticastQueueItemsForMulticastGroup(ctx context.Context, db sqlx.Queryer, multicastGroupID uuid.UUID) ([]MulticastQueueItem, error) {
 	var items []MulticastQueueItem
 
 	err := sqlx.Select(db, &items, `
@@ -329,7 +337,7 @@ func GetMulticastQueueItemsForMulticastGroup(db sqlx.Queryer, multicastGroupID u
 // for scheduling.
 // The returned queue-items will be locked for update so that this query can
 // be executed in parallel.
-func GetSchedulableMulticastQueueItems(db sqlx.Ext, count int) ([]MulticastQueueItem, error) {
+func GetSchedulableMulticastQueueItems(ctx context.Context, db sqlx.Ext, count int) ([]MulticastQueueItem, error) {
 	var items []MulticastQueueItem
 	err := sqlx.Select(db, &items, `
 		select
@@ -352,7 +360,7 @@ func GetSchedulableMulticastQueueItems(db sqlx.Ext, count int) ([]MulticastQueue
 
 // GetMaxEmitAtTimeSinceGPSEpochForMulticastGroup returns the maximum / last GPS
 // epoch scheduling timestamp for the given multicast-group.
-func GetMaxEmitAtTimeSinceGPSEpochForMulticastGroup(db sqlx.Queryer, multicastGroupID uuid.UUID) (time.Duration, error) {
+func GetMaxEmitAtTimeSinceGPSEpochForMulticastGroup(ctx context.Context, db sqlx.Queryer, multicastGroupID uuid.UUID) (time.Duration, error) {
 	var timeSinceGPSEpoch time.Duration
 	err := sqlx.Get(db, &timeSinceGPSEpoch, `
 		select
@@ -371,7 +379,7 @@ func GetMaxEmitAtTimeSinceGPSEpochForMulticastGroup(db sqlx.Queryer, multicastGr
 
 // GetMaxScheduleAtForMulticastGroup returns the maximum schedule at timestamp
 // for the given multicast-group.
-func GetMaxScheduleAtForMulticastGroup(db sqlx.Queryer, multicastGroupID uuid.UUID) (time.Time, error) {
+func GetMaxScheduleAtForMulticastGroup(ctx context.Context, db sqlx.Queryer, multicastGroupID uuid.UUID) (time.Time, error) {
 	ts := new(time.Time)
 
 	err := sqlx.Get(db, &ts, `

@@ -1,17 +1,18 @@
 package testsuite
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/downlink"
-	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/downlink"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 )
 
@@ -36,11 +37,8 @@ func (ts *ClassCTestSuite) SetupTest() {
 	// note that the CreateDeviceSession will automatically set
 	// the device, profiles etc.. :)
 	ds := storage.DeviceSession{
-		FCntUp:    8,
-		NFCntDown: 5,
-		UplinkGatewayHistory: map[lorawan.EUI64]storage.UplinkGatewayHistory{
-			lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}: storage.UplinkGatewayHistory{},
-		},
+		FCntUp:                8,
+		NFCntDown:             5,
 		EnabledUplinkChannels: []int{0, 1, 2},
 		RX2DR:                 5,
 		RX2Frequency:          869525000,
@@ -60,6 +58,8 @@ func (ts *ClassCTestSuite) TestClassC() {
 
 	txInfo := gw.DownlinkTXInfo{
 		GatewayId: []byte{1, 2, 1, 2, 1, 2, 1, 2},
+		Board:     1,
+		Antenna:   2,
 		Frequency: uint32(defaults.RX2Frequency),
 		Power:     int32(band.Band().GetDownlinkTXPower(defaults.RX2Frequency)),
 		Timing:    gw.DownlinkTiming_IMMEDIATELY,
@@ -68,6 +68,21 @@ func (ts *ClassCTestSuite) TestClassC() {
 		},
 	}
 	assert.NoError(helpers.SetDownlinkTXInfoDataRate(&txInfo, 5, band.Band()))
+
+	deviceGatewayRXInfoSet := storage.DeviceGatewayRXInfoSet{
+		DevEUI: ts.Device.DevEUI,
+		DR:     0,
+		Items: []storage.DeviceGatewayRXInfo{
+			{
+				GatewayID: lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2},
+				RSSI:      -50,
+				LoRaSNR:   -3,
+				Antenna:   2,
+				Board:     1,
+			},
+		},
+	}
+	assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), storage.RedisPool(), deviceGatewayRXInfoSet))
 
 	fPortTen := uint8(10)
 
@@ -184,10 +199,10 @@ func (ts *ClassCTestSuite) TestClassC() {
 			Name: "containing mac-commands",
 			BeforeFunc: func(*DownlinkTest) error {
 				ts.ServiceProfile.DevStatusReqFreq = 1
-				if err := storage.UpdateServiceProfile(storage.DB(), ts.ServiceProfile); err != nil {
+				if err := storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile); err != nil {
 					return err
 				}
-				if err := storage.FlushServiceProfileCache(storage.RedisPool(), ts.ServiceProfile.ID); err != nil {
+				if err := storage.FlushServiceProfileCache(context.Background(), storage.RedisPool(), ts.ServiceProfile.ID); err != nil {
 					return err
 				}
 

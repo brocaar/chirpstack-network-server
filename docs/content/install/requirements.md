@@ -4,20 +4,19 @@ menu:
     main:
         parent: install
         weight: 1
-description: Instructions how to setup the LoRa Server requirements.
+description: Instruction on how to setup the ChirpStack Network Server requirements.
 ---
 
 # Requirements
 
 The mentioned Debian / Ubuntu instructions have been tested on:
 
-* Ubuntu 16.04 (LTS)
 * Ubuntu 18.04 (LTS)
-* Debian 9 (Stretch)
+* Debian 10 (Stretch)
 
 ## MQTT broker
 
-LoRa Server makes use of MQTT for publishing and receivng application
+ChirpStack Network Server makes use of MQTT for publishing and receiving application
 payloads. [Mosquitto](http://mosquitto.org/) is a popular open-source MQTT
 server, but any MQTT broker implementing MQTT 3.1.1 should work.
 In case you install Mosquitto, make sure you install a **recent** version.
@@ -39,7 +38,7 @@ for information about how to setup Mosquitto for your platform.
 
 ## PostgreSQL database
 
-LoRa Server persists the gateway data into a
+ChirpStack Network Server persists the gateway data into a
 [PostgreSQL](https://www.postgresql.org) database. Note that PostgreSQL 9.5+
 is required.
 
@@ -60,7 +59,7 @@ page for information how to setup PostgreSQL on your platform.
 
 ## Redis database
 
-LoRa Server stores all non-persistent data into a
+ChirpStack Network Server stores all non-persistent data into a
 [Redis](http://redis.io/) datastore. Note that at least Redis 2.6.0
 is required.
 

@@ -14,15 +14,15 @@ import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/backend/gateway/marshaler"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/helpers"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/marshaler"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/lorawan"
 )
 
-const uplinkSubscriptionTmpl = "%s-loraserver"
+const uplinkSubscriptionTmpl = "%s-chirpstack"
 
 // Backend implements a Google Cloud Pub/Sub backend.
 type Backend struct {
@@ -129,6 +129,7 @@ func (b *Backend) SendTXPacket(pl gw.DownlinkFrame) error {
 	}
 
 	gatewayID := helpers.GetGatewayID(pl.TxInfo)
+	downID := helpers.GetDownlinkID(&pl)
 	t := b.getGatewayMarshaler(gatewayID)
 
 	bb, err := marshaler.MarshalDownlinkFrame(t, pl)
@@ -136,7 +137,9 @@ func (b *Backend) SendTXPacket(pl gw.DownlinkFrame) error {
 		return errors.Wrap(err, "gateway/gcp_pub_sub: marshal downlink frame error")
 	}
 
-	return b.publishCommand(gatewayID, "down", bb)
+	return b.publishCommand(log.Fields{
+		"downlink_id": downID,
+	}, gatewayID, "down", bb)
 }
 
 // SendGatewayConfigPacket sends the given gateway configuration to the gateway.
@@ -149,7 +152,7 @@ func (b *Backend) SendGatewayConfigPacket(pl gw.GatewayConfiguration) error {
 		return errors.Wrap(err, "gateway/gcp_pub_sub: marshal gateway configuration error")
 	}
 
-	return b.publishCommand(gatewayID, "config", bb)
+	return b.publishCommand(log.Fields{}, gatewayID, "config", bb)
 }
 
 // RXPacketChan returns the channel to which uplink frames are published.
@@ -191,7 +194,7 @@ func (b *Backend) getGatewayMarshaler(gatewayID lorawan.EUI64) marshaler.Type {
 	return b.gatewayMarshaler[gatewayID]
 }
 
-func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, data []byte) error {
+func (b *Backend) publishCommand(fields log.Fields, gatewayID lorawan.EUI64, command string, data []byte) error {
 	start := time.Now()
 
 	res := b.downlinkTopic.Publish(b.ctx, &pubsub.Message{
@@ -205,11 +208,13 @@ func (b *Backend) publishCommand(gatewayID lorawan.EUI64, command string, data [
 		return errors.Wrap(err, "get publish result error")
 	}
 
-	log.WithFields(log.Fields{
-		"duration":   time.Now().Sub(start),
-		"gateway_id": gatewayID,
-		"command":    command,
-	}).Info("gateway/gcp_pub_sub: message published")
+	fields["duration"] = time.Now().Sub(start)
+	fields["gateway_id"] = gatewayID
+	fields["command"] = command
+
+	log.WithFields(fields).Info("gateway/gcp_pub_sub: message published")
+
+	gcpCommandCounter(command).Inc()
 
 	return nil
 }
@@ -234,10 +239,7 @@ func (b *Backend) receiveFunc(ctx context.Context, msg *pubsub.Message) {
 		log.WithError(err).Error("gateway/gcp_pub_sub: unmarshal gateway id error")
 	}
 
-	log.WithFields(log.Fields{
-		"gateway_id": gatewayID,
-		"type":       typ,
-	}).Info("gateway/gcp_pub_sub: message received")
+	gcpEventCounter(typ).Inc()
 
 	var err error
 
@@ -287,6 +289,13 @@ func (b *Backend) handleUplinkFrame(gatewayID lorawan.EUI64, data []byte) error 
 		return errors.New("gateway_id is not equal to expected gateway_id")
 	}
 
+	upID := helpers.GetUplinkID(uplinkFrame.RxInfo)
+
+	log.WithFields(log.Fields{
+		"gateway_id": gatewayID,
+		"uplink_id":  upID,
+	}).Info("gateway/gcp_pub_sub: uplink event received")
+
 	b.uplinkFrameChan <- uplinkFrame
 
 	return nil
@@ -307,6 +316,13 @@ func (b *Backend) handleGatewayStats(gatewayID lorawan.EUI64, data []byte) error
 		return errors.New("gateway_id is not equal to expected gateway_id")
 	}
 
+	statsID := helpers.GetStatsID(&gatewayStats)
+
+	log.WithFields(log.Fields{
+		"gateway_id": gatewayID,
+		"stats_id":   statsID,
+	}).Info("gateway/gcp_pub_sub: stats event received")
+
 	b.gatewayStatsChan <- gatewayStats
 
 	return nil
@@ -326,6 +342,13 @@ func (b *Backend) handleDownlinkTXAck(gatewayID lorawan.EUI64, data []byte) erro
 	if !bytes.Equal(ack.GatewayId, gatewayID[:]) {
 		return errors.New("gateway_id is not equal to expected gateway_id")
 	}
+
+	downID := helpers.GetDownlinkID(&ack)
+
+	log.WithFields(log.Fields{
+		"gateway_id":  gatewayID,
+		"downlink_id": downID,
+	}).Info("gateway/gcp_pub_sub: ack event received")
 
 	b.downlinkTXAckChan <- ack
 

@@ -1,17 +1,18 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/brocaar/loraserver/api/common"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-api/go/common"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/pkg/errors"
 )
 
-func handleLinkCheckReq(ds *storage.DeviceSession, rxPacket models.RXPacket) ([]storage.MACCommandBlock, error) {
+func handleLinkCheckReq(ctx context.Context, ds *storage.DeviceSession, rxPacket models.RXPacket) ([]storage.MACCommandBlock, error) {
 	if len(rxPacket.RXInfoSet) == 0 {
 		return nil, errors.New("rx info-set contains zero items")
 	}

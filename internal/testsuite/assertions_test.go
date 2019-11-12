@@ -1,15 +1,23 @@
 package testsuite
 
 import (
+	"context"
+	"encoding/binary"
+	"sort"
+	"time"
+
+	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
-	"github.com/brocaar/loraserver/api/as"
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/api/nc"
-	"github.com/brocaar/loraserver/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
+	"github.com/brocaar/chirpstack-api/go/as"
+	"github.com/brocaar/chirpstack-api/go/geo"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-api/go/nc"
+	"github.com/brocaar/chirpstack-network-server/internal/downlink/ack"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 )
 
 var lastToken uint32
@@ -64,18 +72,37 @@ func AssertDownlinkFrame(txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Asser
 		}
 
 		assert.Equal(phy, downPHY)
+
+		// ack the downlink transmission
+		assert.NoError(ack.HandleDownlinkTXAck(context.Background(), gw.DownlinkTXAck{
+			GatewayId: txInfo.GatewayId,
+			Token:     downlinkFrame.Token,
+		}))
 	}
 }
 
-func AssertDownlinkFrameSaved(devEUI lorawan.EUI64, txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Assertion {
+func AssertDownlinkFrameSaved(devEUI lorawan.EUI64, mcGroupID uuid.UUID, txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		eui, downlinkFrame, err := storage.PopDownlinkFrame(storage.RedisPool(), lastToken)
+		frames, err := storage.GetDownlinkFrames(context.Background(), storage.RedisPool(), uint16(lastToken))
 		assert.NoError(err)
 
-		assert.Equal(devEUI, eui)
+		assert.True(len(frames.DownlinkFrames) > 0, "empty downlink-frames")
+
+		// if DevEUI is given, validate it
+		var euiNil lorawan.EUI64
+		if devEUI != euiNil {
+			assert.Equal(devEUI[:], frames.DevEui)
+		}
+
+		// if mc group id is given, validate it
+		if mcGroupID != uuid.Nil {
+			assert.Equal(mcGroupID[:], frames.MulticastGroupId)
+		}
+
+		downlinkFrame := frames.DownlinkFrames[0]
 
 		if !proto.Equal(&txInfo, downlinkFrame.TxInfo) {
-			assert.Equal(txInfo, downlinkFrame.TxInfo)
+			assert.Equal(txInfo, *downlinkFrame.TxInfo)
 		}
 
 		switch phy.MHDR.MType {
@@ -96,6 +123,10 @@ func AssertDownlinkFrameSaved(devEUI lorawan.EUI64, txInfo gw.DownlinkTXInfo, ph
 		}
 
 		assert.Equal(phy, downPHY)
+
+		// pop the frame that we have been validating, so that we can validate the next one
+		frames.DownlinkFrames = frames.DownlinkFrames[1:]
+		assert.NoError(storage.SaveDownlinkFrames(context.Background(), storage.RedisPool(), frames))
 	}
 }
 
@@ -105,14 +136,14 @@ func AssertNoDownlinkFrame(assert *require.Assertions, ts *IntegrationTestSuite)
 }
 
 func AssertNoDownlinkFrameSaved(assert *require.Assertions, ts *IntegrationTestSuite) {
-	_, _, err := storage.PopDownlinkFrame(storage.RedisPool(), lastToken)
+	_, err := storage.GetDownlinkFrames(context.Background(), storage.RedisPool(), uint16(lastToken))
 	assert.Equal(storage.ErrDoesNotExist, err)
 }
 
 // AssertMulticastQueueItems asserts the given multicast-queue items.
 func AssertMulticastQueueItems(items []storage.MulticastQueueItem) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		mqi, err := storage.GetMulticastQueueItemsForMulticastGroup(storage.DB(), ts.MulticastGroup.ID)
+		mqi, err := storage.GetMulticastQueueItemsForMulticastGroup(context.Background(), storage.DB(), ts.MulticastGroup.ID)
 		assert.NoError(err)
 		// avoid comparing nil with empty slice
 		if len(items) != len(mqi) {
@@ -124,7 +155,7 @@ func AssertMulticastQueueItems(items []storage.MulticastQueueItem) Assertion {
 // AssertDeviceQueueItems asserts the device-queue items.
 func AssertDeviceQueueItems(items []storage.DeviceQueueItem) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		dqi, err := storage.GetDeviceQueueItemsForDevEUI(storage.DB(), ts.Device.DevEUI)
+		dqi, err := storage.GetDeviceQueueItemsForDevEUI(context.Background(), storage.DB(), ts.Device.DevEUI)
 		assert.NoError(err)
 		// avoid comparing nil vs empty slice
 		if len(items) != len(dqi) {
@@ -136,7 +167,7 @@ func AssertDeviceQueueItems(items []storage.DeviceQueueItem) Assertion {
 // AssertDeviceMode asserts the current device class.
 func AssertDeviceMode(mode storage.DeviceMode) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		d, err := storage.GetDevice(storage.DB(), ts.Device.DevEUI)
+		d, err := storage.GetDevice(context.Background(), storage.DB(), ts.Device.DevEUI)
 		assert.NoError(err)
 		assert.Equal(mode, d.Mode)
 	}
@@ -173,7 +204,7 @@ func AssertJSRejoinReqPayload(pl backend.RejoinReqPayload) Assertion {
 // AssertDeviceSession asserts the given device-session.
 func AssertDeviceSession(ds storage.DeviceSession) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		sess, err := storage.GetDeviceSession(storage.RedisPool(), ts.Device.DevEUI)
+		sess, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), ts.Device.DevEUI)
 		assert.NoError(err)
 
 		assert.NotEqual(lorawan.DevAddr{}, sess.DevAddr)
@@ -191,7 +222,7 @@ func AssertDeviceSession(ds storage.DeviceSession) Assertion {
 // AssertDeviceActivation asserts the given device-activation.
 func AssertDeviceActivation(da storage.DeviceActivation) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		act, err := storage.GetLastDeviceActivationForDevEUI(storage.DB(), ts.Device.DevEUI)
+		act, err := storage.GetLastDeviceActivationForDevEUI(context.Background(), storage.DB(), ts.Device.DevEUI)
 		assert.NoError(err)
 
 		assert.NotEqual(lorawan.DevAddr{}, act.DevAddr)
@@ -251,6 +282,26 @@ func AssertNCHandleUplinkMACCommandRequest(req nc.HandleUplinkMACCommandRequest)
 	}
 }
 
+// AssertNCHandleUplinkMetaDataRequest asserts the given uplink meta-data request.
+func AssertNCHandleUplinkMetaDataRequest(req nc.HandleUplinkMetaDataRequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.NCClient.HandleUplinkMetaDataChan
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
+// AssertNCHandleDownlinkMetaDataRequest asserts the given downlink meta-data request.
+func AssertNCHandleDownlinkMetaDataRequest(req nc.HandleDownlinkMetaDataRequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.NCClient.HandleDownlinkMetaDataChan
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
 // AssertTXPowerIndex asserts the given tx-power index.
 func AssertTXPowerIndex(txPower int) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
@@ -272,6 +323,7 @@ func AssertEnabledUplinkChannels(channels []int) Assertion {
 	}
 }
 
+// AssertASSetDeviceStatusRequests asserts the set device-status request.
 func AssertASSetDeviceStatusRequest(req as.SetDeviceStatusRequest) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
 		r := <-ts.ASClient.SetDeviceStatusChan
@@ -279,4 +331,66 @@ func AssertASSetDeviceStatusRequest(req as.SetDeviceStatusRequest) Assertion {
 			assert.Equal(req, r)
 		}
 	}
+}
+
+// AssertASSetDeviceLocationRequests asserts the set device-location request.
+func AssertASSetDeviceLocationRequest(req as.SetDeviceLocationRequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.ASClient.SetDeviceLocationChan
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
+// AssertNoASSetDeviceLocationRequests asserts that there is no set device-location request.
+func AssertNoASSetDeviceLocationRequest() Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		time.Sleep(100 * time.Millisecond)
+		select {
+		case <-ts.ASClient.SetDeviceLocationChan:
+			assert.Fail("unexpected set device-location request")
+		default:
+		}
+	}
+}
+
+// AssertResolveTDOARequest asserts the ResolveTDOARequest.
+func AssertResolveTDOARequest(req geo.ResolveTDOARequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.GeoClient.ResolveTDOAChan
+		sort.Sort(byGatewayID(r.FrameRxInfo.RxInfo))
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
+// AssertResolveMultiFrameTDOARequest asserts the ResolveMultiFrameTDOARequest.
+func AssertResolveMultiFrameTDOARequest(req geo.ResolveMultiFrameTDOARequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.GeoClient.ResolveMultiFrameTDOAChan
+		for i := range r.FrameRxInfoSet {
+			sort.Sort(byGatewayID(r.FrameRxInfoSet[i].RxInfo))
+		}
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
+type byGatewayID []*gw.UplinkRXInfo
+
+func (s byGatewayID) Len() int {
+	return len(s)
+}
+
+func (s byGatewayID) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s byGatewayID) Less(i, j int) bool {
+	ii := binary.BigEndian.Uint64(s[i].GatewayId)
+	jj := binary.BigEndian.Uint64(s[j].GatewayId)
+	return ii < jj
 }

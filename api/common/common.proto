@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package common;
 
-option go_package = "github.com/brocaar/loraserver/api/common";
+option go_package = "github.com/brocaar/chirpstack-network-server/api/common";
 
 
 enum Modulation {
@@ -89,4 +89,9 @@ message Location {
 
     // Accuracy (in meters).
     uint32 accuracy = 5;
+}
+
+message ContextDetails {
+    // Context ID (UUID).
+    bytes context_id = 1;
 }

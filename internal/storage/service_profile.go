@@ -2,10 +2,12 @@ package storage
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"fmt"
 	"time"
 
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/gofrs/uuid"
 	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
@@ -54,7 +56,7 @@ type ServiceProfile struct {
 }
 
 // CreateServiceProfile creates the given service-profile.
-func CreateServiceProfile(db sqlx.Execer, sp *ServiceProfile) error {
+func CreateServiceProfile(ctx context.Context, db sqlx.Execer, sp *ServiceProfile) error {
 	now := time.Now()
 
 	if sp.ID == uuid.Nil {
@@ -122,7 +124,8 @@ func CreateServiceProfile(db sqlx.Execer, sp *ServiceProfile) error {
 	}
 
 	log.WithFields(log.Fields{
-		"id": sp.ID,
+		"id":     sp.ID,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
 	}).Info("service-profile created")
 
 	return nil
@@ -133,7 +136,7 @@ func CreateServiceProfile(db sqlx.Execer, sp *ServiceProfile) error {
 // only want to store the service-profile of a roaming device for a finite
 // duration.
 // The TTL of the service-profile is the same as that of the device-sessions.
-func CreateServiceProfileCache(p *redis.Pool, sp ServiceProfile) error {
+func CreateServiceProfileCache(ctx context.Context, p *redis.Pool, sp ServiceProfile) error {
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(sp); err != nil {
 		return errors.Wrap(err, "gob encode service-profile error")
@@ -154,7 +157,7 @@ func CreateServiceProfileCache(p *redis.Pool, sp ServiceProfile) error {
 }
 
 // GetServiceProfileCache returns a cached service-profile.
-func GetServiceProfileCache(p *redis.Pool, id uuid.UUID) (ServiceProfile, error) {
+func GetServiceProfileCache(ctx context.Context, p *redis.Pool, id uuid.UUID) (ServiceProfile, error) {
 	var sp ServiceProfile
 	key := fmt.Sprintf(ServiceProfileKeyTempl, id)
 
@@ -178,7 +181,7 @@ func GetServiceProfileCache(p *redis.Pool, id uuid.UUID) (ServiceProfile, error)
 }
 
 // FlushServiceProfileCache deletes a cached service-profile.
-func FlushServiceProfileCache(p *redis.Pool, id uuid.UUID) error {
+func FlushServiceProfileCache(ctx context.Context, p *redis.Pool, id uuid.UUID) error {
 	key := fmt.Sprintf(ServiceProfileKeyTempl, id)
 	c := p.Get()
 	defer c.Close()
@@ -193,28 +196,30 @@ func FlushServiceProfileCache(p *redis.Pool, id uuid.UUID) error {
 // GetAndCacheServiceProfile returns the service-profile from cache in case
 // available, else it will be retrieved from the database and then stored
 // in cache.
-func GetAndCacheServiceProfile(db sqlx.Queryer, p *redis.Pool, id uuid.UUID) (ServiceProfile, error) {
-	sp, err := GetServiceProfileCache(p, id)
+func GetAndCacheServiceProfile(ctx context.Context, db sqlx.Queryer, p *redis.Pool, id uuid.UUID) (ServiceProfile, error) {
+	sp, err := GetServiceProfileCache(ctx, p, id)
 	if err == nil {
 		return sp, nil
 	}
 
 	if err != ErrDoesNotExist {
 		log.WithFields(log.Fields{
-			"id": id,
+			"id":     id,
+			"ctx_id": ctx.Value(logging.ContextIDKey),
 		}).WithError(err).Error("get service-profile cache error")
 		// we don't return as we can fall-back onto db retrieval
 	}
 
-	sp, err = GetServiceProfile(db, id)
+	sp, err = GetServiceProfile(ctx, db, id)
 	if err != nil {
 		return ServiceProfile{}, errors.Wrap(err, "get service-profile-error")
 	}
 
-	err = CreateServiceProfileCache(p, sp)
+	err = CreateServiceProfileCache(ctx, p, sp)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"id": id,
+			"id":     id,
+			"ctx_id": ctx.Value(logging.ContextIDKey),
 		}).WithError(err).Error("create service-profile cache error")
 	}
 
@@ -222,7 +227,7 @@ func GetAndCacheServiceProfile(db sqlx.Queryer, p *redis.Pool, id uuid.UUID) (Se
 }
 
 // GetServiceProfile returns the service-profile matching the given id.
-func GetServiceProfile(db sqlx.Queryer, id uuid.UUID) (ServiceProfile, error) {
+func GetServiceProfile(ctx context.Context, db sqlx.Queryer, id uuid.UUID) (ServiceProfile, error) {
 	var sp ServiceProfile
 	err := sqlx.Get(db, &sp, "select * from service_profile where service_profile_id = $1", id)
 	if err != nil {
@@ -233,7 +238,7 @@ func GetServiceProfile(db sqlx.Queryer, id uuid.UUID) (ServiceProfile, error) {
 }
 
 // UpdateServiceProfile updates the given service-profile.
-func UpdateServiceProfile(db sqlx.Execer, sp *ServiceProfile) error {
+func UpdateServiceProfile(ctx context.Context, db sqlx.Execer, sp *ServiceProfile) error {
 	sp.UpdatedAt = time.Now()
 
 	res, err := db.Exec(`
@@ -294,12 +299,15 @@ func UpdateServiceProfile(db sqlx.Execer, sp *ServiceProfile) error {
 		return ErrDoesNotExist
 	}
 
-	log.WithField("id", sp.ID).Info("service-profile updated")
+	log.WithFields(log.Fields{
+		"id":     sp.ID,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
+	}).Info("service-profile updated")
 	return nil
 }
 
 // DeleteServiceProfile deletes the service-profile matching the given id.
-func DeleteServiceProfile(db sqlx.Execer, id uuid.UUID) error {
+func DeleteServiceProfile(ctx context.Context, db sqlx.Execer, id uuid.UUID) error {
 	res, err := db.Exec("delete from service_profile where service_profile_id = $1", id)
 	if err != nil {
 		return handlePSQLError(err, "delete error")
@@ -313,6 +321,9 @@ func DeleteServiceProfile(db sqlx.Execer, id uuid.UUID) error {
 		return ErrDoesNotExist
 	}
 
-	log.WithField("id", id).Info("service-profile deleted")
+	log.WithFields(log.Fields{
+		"id":     id,
+		"ctx_id": ctx.Value(logging.ContextIDKey),
+	}).Info("service-profile deleted")
 	return nil
 }

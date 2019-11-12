@@ -3,12 +3,12 @@ package config
 import (
 	"time"
 
-	"github.com/brocaar/loraserver/api/nc"
+	"github.com/brocaar/chirpstack-api/go/nc"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 )
 
-// Version defines the LoRa Server version.
+// Version defines the ChirpStack Network Server version.
 var Version string
 
 // Config defines the configuration structure.
@@ -20,6 +20,8 @@ type Config struct {
 	PostgreSQL struct {
 		DSN         string `mapstructure:"dsn"`
 		Automigrate bool
+		MaxOpenConnections int               `mapstructure:"max_open_connections"`
+		MaxIdleConnections int               `mapstructure:"max_idle_connections"`
 	} `mapstructure:"postgresql"`
 
 	Redis struct {
@@ -142,7 +144,7 @@ type Config struct {
 
 		Certificates []struct {
 			JoinEUI string `mapstructure:"join_eui"`
-			CaCert  string `mapstructure:"ca_cert"`
+			CACert  string `mapstructure:"ca_cert"`
 			TLSCert string `mapstructure:"tls_cert"`
 			TLSKey  string `mapstructure:"tls_key"`
 		} `mapstructure:"certificates"`
@@ -173,13 +175,20 @@ type Config struct {
 
 	Metrics struct {
 		Timezone string `mapstructure:"timezone"`
-		Redis    struct {
+
+		Redis struct {
 			AggregationIntervals []string      `mapstructure:"aggregation_intervals"`
 			MinuteAggregationTTL time.Duration `mapstructure:"minute_aggregation_ttl"`
 			HourAggregationTTL   time.Duration `mapstructure:"hour_aggregation_ttl"`
 			DayAggregationTTL    time.Duration `mapstructure:"day_aggregation_ttl"`
 			MonthAggregationTTL  time.Duration `mapstructure:"month_aggregation_ttl"`
 		} `mapstructure:"redis"`
+
+		Prometheus struct {
+			EndpointEnabled    bool   `mapstructure:"endpoint_enabled"`
+			Bind               string `mapstructure:"bind"`
+			APITimingHistogram bool   `mapstructure:"api_timing_histogram"`
+		}
 	} `mapstructure:"metrics"`
 }
 

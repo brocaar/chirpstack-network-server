@@ -3,6 +3,7 @@ syntax = "proto3";
 package as;
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 import "api/common/common.proto";
 import "api/gw/gw.proto";
 
@@ -20,6 +21,9 @@ service ApplicationServerService {
 
     // HandleDownlinkACK handles a downlink ACK or nACK response.
     rpc HandleDownlinkACK(HandleDownlinkACKRequest) returns (google.protobuf.Empty) {}
+
+    // HandleGatewayStats handles the given gateway stats.
+    rpc HandleGatewayStats(HandleGatewayStatsRequest) returns (google.protobuf.Empty) {}
 
     // SetDeviceStatus updates the device-status for a device.
     rpc SetDeviceStatus(SetDeviceStatusRequest) returns (google.protobuf.Empty) {}
@@ -156,4 +160,30 @@ message SetDeviceLocationRequest {
 
     // The location of the device.
     common.Location location = 2;
+}
+
+message HandleGatewayStatsRequest {
+    // Gateway ID (8 bytes).
+    bytes gateway_id = 1;
+
+    // Stats ID (UUID).
+    bytes stats_id = 2;
+
+    // Timestamp.
+    google.protobuf.Timestamp time = 3;
+
+    // Gateway location.
+    common.Location location = 4;
+
+    // Uplink frames received.
+    uint32 rx_packets_received = 5;
+
+    // Uplink frames received OK.
+    uint32 rx_packets_received_ok = 6;
+
+    // Downlink transmissions requested.
+    uint32 tx_packets_received = 7;
+
+    // Downlink emitted.
+    uint32 tx_packets_emitted = 8;
 }

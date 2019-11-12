@@ -1,14 +1,16 @@
 package adr
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -35,7 +37,7 @@ func Setup(c config.Config) error {
 
 // HandleADR handles ADR in case requested by the node and configured
 // in the device-session.
-func HandleADR(sp storage.ServiceProfile, ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
+func HandleADR(ctx context.Context, sp storage.ServiceProfile, ds storage.DeviceSession, linkADRReqBlock *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 
 	// if the node has ADR disabled or it's disabled gloablly
 	if !ds.ADR || disableADR {
@@ -151,6 +153,7 @@ func HandleADR(sp storage.ServiceProfile, ds storage.DeviceSession, linkADRReqBl
 		"req_tx_power_idx": idealTXPowerIndex,
 		"nb_trans":         ds.NbTrans,
 		"req_nb_trans":     idealNbRep,
+		"ctx_id":           ctx.Value(logging.ContextIDKey),
 	}).Info("adr request added to mac-command queue")
 
 	return []storage.MACCommandBlock{*linkADRReqBlock}, nil

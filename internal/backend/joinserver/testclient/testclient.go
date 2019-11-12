@@ -1,7 +1,9 @@
 package testclient
 
 import (
-	"github.com/brocaar/loraserver/internal/backend/joinserver"
+	"context"
+
+	"github.com/brocaar/chirpstack-network-server/internal/backend/joinserver"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
 )
@@ -44,13 +46,13 @@ func NewJoinServerClient() *JoinServerClient {
 }
 
 // JoinReq method.
-func (c *JoinServerClient) JoinReq(pl backend.JoinReqPayload) (backend.JoinAnsPayload, error) {
+func (c *JoinServerClient) JoinReq(ctx context.Context, pl backend.JoinReqPayload) (backend.JoinAnsPayload, error) {
 	c.JoinReqPayloadChan <- pl
 	return c.JoinAnsPayload, c.JoinReqError
 }
 
 // RejoinReq method.
-func (c *JoinServerClient) RejoinReq(pl backend.RejoinReqPayload) (backend.RejoinAnsPayload, error) {
+func (c *JoinServerClient) RejoinReq(ctx context.Context, pl backend.RejoinReqPayload) (backend.RejoinAnsPayload, error) {
 	c.RejoinReqPayloadChan <- pl
 	return c.RejoinAnsPayload, c.RejoinReqError
 }

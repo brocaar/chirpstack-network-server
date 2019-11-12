@@ -1,12 +1,13 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/brocaar/lorawan/band"
 
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -99,7 +100,7 @@ func TestReset(t *testing.T) {
 					},
 				}
 
-				out, err := handleResetInd(&test.DeviceSession, test.DeviceProfile, req)
+				out, err := handleResetInd(context.Background(), &test.DeviceSession, test.DeviceProfile, req)
 				So(err, ShouldBeNil)
 				So(out, ShouldHaveLength, 1)
 				So(out[0], ShouldResemble, test.ExpectedMACCommandBlock)

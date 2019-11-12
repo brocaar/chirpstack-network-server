@@ -1,15 +1,16 @@
 package maccommand
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/storage"
-	"github.com/brocaar/loraserver/internal/test"
+	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 )
 
@@ -27,13 +28,13 @@ func (ts *DeviceModeIndTestSuite) SetupSuite() {
 	test.MustResetDB(storage.DB().DB)
 
 	rp := storage.RoutingProfile{}
-	assert.NoError(storage.CreateRoutingProfile(storage.DB(), &rp))
+	assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp))
 
 	sp := storage.ServiceProfile{}
-	assert.NoError(storage.CreateServiceProfile(storage.DB(), &sp))
+	assert.NoError(storage.CreateServiceProfile(context.Background(), storage.DB(), &sp))
 
 	dp := storage.DeviceProfile{}
-	assert.NoError(storage.CreateDeviceProfile(storage.DB(), &dp))
+	assert.NoError(storage.CreateDeviceProfile(context.Background(), storage.DB(), &dp))
 
 	ts.device = &storage.Device{
 		RoutingProfileID: rp.ID,
@@ -42,7 +43,7 @@ func (ts *DeviceModeIndTestSuite) SetupSuite() {
 		DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 		Mode:             storage.DeviceModeA,
 	}
-	assert.NoError(storage.CreateDevice(storage.DB(), ts.device))
+	assert.NoError(storage.CreateDevice(context.Background(), storage.DB(), ts.device))
 }
 
 func (ts *DeviceModeIndTestSuite) TestDeviceModeInd() {
@@ -125,8 +126,9 @@ func (ts *DeviceModeIndTestSuite) TestDeviceModeInd() {
 	for _, tst := range tests {
 		ts.T().Run(tst.Name, func(t *testing.T) {
 			assert := require.New(t)
+			ctx := context.Background()
 
-			block, err := Handle(&storage.DeviceSession{DevEUI: ts.device.DevEUI}, storage.DeviceProfile{}, storage.ServiceProfile{}, nil, tst.ReceivedMACCommandBlock, nil, models.RXPacket{})
+			block, err := Handle(ctx, &storage.DeviceSession{DevEUI: ts.device.DevEUI}, storage.DeviceProfile{}, storage.ServiceProfile{}, nil, tst.ReceivedMACCommandBlock, nil, models.RXPacket{})
 			if tst.ExpectedError != nil {
 				assert.Equal(tst.ExpectedError.Error(), err.Error())
 				return
@@ -136,7 +138,7 @@ func (ts *DeviceModeIndTestSuite) TestDeviceModeInd() {
 			assert.Len(block, 1)
 			assert.Equal(tst.ExpectedMACCommandBlock, block[0])
 
-			d, err := storage.GetDevice(storage.DB(), ts.device.DevEUI)
+			d, err := storage.GetDevice(ctx, storage.DB(), ts.device.DevEUI)
 			assert.NoError(err)
 			assert.Equal(tst.ExpectedDeviceMode, d.Mode)
 		})

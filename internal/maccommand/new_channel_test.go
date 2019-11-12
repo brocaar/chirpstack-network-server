@@ -1,10 +1,11 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
 
@@ -244,7 +245,7 @@ func TestHandleNewChannelAns(t *testing.T) {
 
 		for i, t := range tests {
 			Convey(fmt.Sprintf("Testing: %s [%d]", t.Name, i), func() {
-				ans, err := handleNewChannelAns(&t.DeviceSession, t.ReceivedMACCommandBlock, t.PendingMACCommandBlock)
+				ans, err := handleNewChannelAns(context.Background(), &t.DeviceSession, t.ReceivedMACCommandBlock, t.PendingMACCommandBlock)
 				So(err, ShouldResemble, t.ExpectedError)
 				So(ans, ShouldBeNil)
 				So(t.DeviceSession, ShouldResemble, t.ExpectedDeviceSession)

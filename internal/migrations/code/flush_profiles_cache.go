@@ -9,12 +9,12 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 )
 
 // FlushProfilesCache fixes an issue with the device-profile and service-profile
-// cache in Redis. As the struct changed the cached value from LoRa Server v1
-// can't be unmarshaled into the LoRa Server v2 struct and therefore we need
+// cache in Redis. As the struct changed the cached value from ChirpStack Network Server v1
+// can't be unmarshaled into the ChirpStack Network Server v2 struct and therefore we need
 // to flush the cache.
 func FlushProfilesCache(p *redis.Pool, db sqlx.Queryer) error {
 	c := p.Get()

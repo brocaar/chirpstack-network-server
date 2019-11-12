@@ -1,6 +1,7 @@
 package code
 
 import (
+	"context"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -8,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -55,7 +56,7 @@ func MigrateGatewayStats(p *redis.Pool, db sqlx.Queryer) error {
 
 		switch row.Interval {
 		case storage.AggregationMinute, storage.AggregationHour, storage.AggregationDay, storage.AggregationMonth:
-			err = storage.SaveMetricsForInterval(p, row.Interval, "gw:"+row.GatewayID.String(), storage.MetricsRecord{
+			err = storage.SaveMetricsForInterval(context.Background(), p, row.Interval, "gw:"+row.GatewayID.String(), storage.MetricsRecord{
 				Time: row.Timestamp,
 				Metrics: map[string]float64{
 					"rx_count":    float64(row.RXPacketsReceived),

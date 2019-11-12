@@ -1,17 +1,19 @@
 package maccommand
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/brocaar/lorawan"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 )
 
 const servLoRaWANVersionMinor uint8 = 1
 
-func handleRekeyInd(ds *storage.DeviceSession, block storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
+func handleRekeyInd(ctx context.Context, ds *storage.DeviceSession, block storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
 	if len(block.MACCommands) != 1 {
 		return nil, fmt.Errorf("exactly one mac-command expected, got %d", len(block.MACCommands))
 	}
@@ -35,6 +37,7 @@ func handleRekeyInd(ds *storage.DeviceSession, block storage.MACCommandBlock) ([
 		"dev_eui":                    ds.DevEUI,
 		"dev_lorawan_version_minor":  pl.DevLoRaWANVersion.Minor,
 		"serv_lorawan_version_minor": servLoRaWANVersionMinor,
+		"ctx_id":                     ctx.Value(logging.ContextIDKey),
 	}).Info("rekey_ind received")
 
 	return []storage.MACCommandBlock{

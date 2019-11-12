@@ -1,12 +1,14 @@
 package storage
 
 import (
+	"context"
 	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/lorawan"
 )
 
@@ -48,7 +50,7 @@ type DeviceActivation struct {
 }
 
 // CreateDevice creates the given device.
-func CreateDevice(db sqlx.Execer, d *Device) error {
+func CreateDevice(ctx context.Context, db sqlx.Execer, d *Device) error {
 	now := time.Now()
 	d.CreatedAt = now
 	d.UpdatedAt = now
@@ -81,13 +83,14 @@ func CreateDevice(db sqlx.Execer, d *Device) error {
 
 	log.WithFields(log.Fields{
 		"dev_eui": d.DevEUI,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
 	}).Info("device created")
 
 	return nil
 }
 
 // GetDevice returns the device matching the given DevEUI.
-func GetDevice(db sqlx.Queryer, devEUI lorawan.EUI64) (Device, error) {
+func GetDevice(ctx context.Context, db sqlx.Queryer, devEUI lorawan.EUI64) (Device, error) {
 	var d Device
 	err := sqlx.Get(db, &d, "select * from device where dev_eui = $1", devEUI[:])
 	if err != nil {
@@ -98,7 +101,7 @@ func GetDevice(db sqlx.Queryer, devEUI lorawan.EUI64) (Device, error) {
 }
 
 // UpdateDevice updates the given device.
-func UpdateDevice(db sqlx.Execer, d *Device) error {
+func UpdateDevice(ctx context.Context, db sqlx.Execer, d *Device) error {
 	d.UpdatedAt = time.Now()
 	res, err := db.Exec(`
 		update device set
@@ -131,12 +134,15 @@ func UpdateDevice(db sqlx.Execer, d *Device) error {
 		return ErrDoesNotExist
 	}
 
-	log.WithField("dev_eui", d.DevEUI).Info("device updated")
+	log.WithFields(log.Fields{
+		"dev_eui": d.DevEUI,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
+	}).Info("device updated")
 	return nil
 }
 
 // DeleteDevice deletes the device matching the given DevEUI.
-func DeleteDevice(db sqlx.Execer, devEUI lorawan.EUI64) error {
+func DeleteDevice(ctx context.Context, db sqlx.Execer, devEUI lorawan.EUI64) error {
 	res, err := db.Exec("delete from device where dev_eui = $1", devEUI[:])
 	if err != nil {
 		return handlePSQLError(err, "delete error")
@@ -150,12 +156,15 @@ func DeleteDevice(db sqlx.Execer, devEUI lorawan.EUI64) error {
 		return ErrDoesNotExist
 	}
 
-	log.WithField("dev_eui", devEUI).Info("node deleted")
+	log.WithFields(log.Fields{
+		"dev_eui": devEUI,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
+	}).Info("device deleted")
 	return nil
 }
 
 // CreateDeviceActivation creates the given device-activation.
-func CreateDeviceActivation(db sqlx.Queryer, da *DeviceActivation) error {
+func CreateDeviceActivation(ctx context.Context, db sqlx.Queryer, da *DeviceActivation) error {
 	da.CreatedAt = time.Now()
 
 	err := sqlx.Get(db, &da.ID, `
@@ -188,6 +197,7 @@ func CreateDeviceActivation(db sqlx.Queryer, da *DeviceActivation) error {
 	log.WithFields(log.Fields{
 		"id":      da.ID,
 		"dev_eui": da.DevEUI,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
 	}).Info("device-activation created")
 
 	return nil
@@ -195,7 +205,7 @@ func CreateDeviceActivation(db sqlx.Queryer, da *DeviceActivation) error {
 
 // DeleteDeviceActivationsForDevice removes the device-activation for the given
 // DevEUI.
-func DeleteDeviceActivationsForDevice(db sqlx.Execer, devEUI lorawan.EUI64) error {
+func DeleteDeviceActivationsForDevice(ctx context.Context, db sqlx.Execer, devEUI lorawan.EUI64) error {
 	_, err := db.Exec(`
 		delete
 		from
@@ -207,13 +217,16 @@ func DeleteDeviceActivationsForDevice(db sqlx.Execer, devEUI lorawan.EUI64) erro
 		return handlePSQLError(err, "delete error")
 	}
 
-	log.WithField("dev_eui", devEUI).Info("device-activations deleted")
+	log.WithFields(log.Fields{
+		"dev_eui": devEUI,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
+	}).Info("device-activations deleted")
 	return nil
 }
 
 // GetLastDeviceActivationForDevEUI returns the most recent activation
 // for the given DevEUI.
-func GetLastDeviceActivationForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (DeviceActivation, error) {
+func GetLastDeviceActivationForDevEUI(ctx context.Context, db sqlx.Queryer, devEUI lorawan.EUI64) (DeviceActivation, error) {
 	var da DeviceActivation
 	err := sqlx.Get(db, &da, `
 		select
@@ -235,7 +248,7 @@ func GetLastDeviceActivationForDevEUI(db sqlx.Queryer, devEUI lorawan.EUI64) (De
 
 // ValidateDevNonce validates the given dev-nonce for the given
 // DevEUI / JoinEUI combination.
-func ValidateDevNonce(db sqlx.Queryer, joinEUI, devEUI lorawan.EUI64, nonce lorawan.DevNonce, joinType lorawan.JoinType) error {
+func ValidateDevNonce(ctx context.Context, db sqlx.Queryer, joinEUI, devEUI lorawan.EUI64, nonce lorawan.DevNonce, joinType lorawan.JoinType) error {
 	var count int
 	err := sqlx.Get(db, &count, `
 		select

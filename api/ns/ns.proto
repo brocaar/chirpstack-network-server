@@ -115,6 +115,7 @@ service NetworkServerService {
     rpc DeleteGatewayProfile(DeleteGatewayProfileRequest) returns (google.protobuf.Empty) {}
 
     // GetGatewayStats returns stats of an existing gateway.
+    // Deprecated (stats are forwarded to Application Server API).
     rpc GetGatewayStats(GetGatewayStatsRequest) returns (GetGatewayStatsResponse) {}
 
     // StreamFrameLogsForGateway returns a stream of frames seen by the given gateway.
@@ -151,7 +152,7 @@ service NetworkServerService {
     // GetMulticastQueueItemsForMulticastGroup returns the queue-items given a multicast-group id.
     rpc GetMulticastQueueItemsForMulticastGroup(GetMulticastQueueItemsForMulticastGroupRequest) returns (GetMulticastQueueItemsForMulticastGroupResponse) {}
 
-    // GetVersion returns the LoRa Server version.
+    // GetVersion returns the ChirpStack Network Server version.
     rpc GetVersion(google.protobuf.Empty) returns (GetVersionResponse) {}
 }
 
@@ -429,8 +430,13 @@ message Gateway {
     // Gateway boards configuration (optional).
     // This is (currently) only needed when the gateway supports the fine-timestamp
     // and you you would like to add the FPGA ID to the gateway meta-data or would
-    // like LoRa Server to decrypt the fine-timestamp.
+    // like ChirpStack Network Server to decrypt the fine-timestamp.
     repeated GatewayBoard boards = 4;
+
+    // Routing Profile ID.
+    // The routing-profile ID defines to which application-server statistical
+    // data for this gateway is forwarded.
+    bytes routing_profile_id = 5;
 }
 
 message GatewayBoard {
@@ -537,7 +543,7 @@ message DeviceQueueItem {
     // The FPort of the payload.
     uint32 f_port = 4;
 
-    // When set to true, LoRa Server will wait for the device to ack the
+    // When set to true, ChirpStack Network Server will wait for the device to ack the
     // received frame.
     bool confirmed = 5;
 
@@ -609,7 +615,7 @@ message StreamFrameLogsForDeviceResponse {
 }
 
 message GetVersionResponse {
-    // LoRa Server version.
+    // ChirpStack Network Server version.
     string version = 1;
 
     // Region configured for this network-server.

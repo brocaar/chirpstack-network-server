@@ -3,8 +3,8 @@ package gcppubsub
 import (
 	"testing"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend/gateway/marshaler"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/marshaler"
 	"github.com/brocaar/lorawan"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"

@@ -1,21 +1,24 @@
 package join
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/binary"
 
+	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/loraserver/api/gw"
-	"github.com/brocaar/loraserver/internal/backend/gateway"
-	"github.com/brocaar/loraserver/internal/band"
-	"github.com/brocaar/loraserver/internal/config"
-	"github.com/brocaar/loraserver/internal/framelog"
-	"github.com/brocaar/loraserver/internal/helpers"
-	"github.com/brocaar/loraserver/internal/models"
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/framelog"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -25,18 +28,22 @@ var (
 )
 
 var tasks = []func(*joinContext) error{
+	setDeviceGatewayRXInfo,
 	setTXInfo,
 	setToken,
 	setDownlinkFrame,
 	sendJoinAcceptResponse,
-	saveRemainingFrames,
+	saveFrames,
 }
 
 type joinContext struct {
-	Token         uint16
-	DeviceSession storage.DeviceSession
-	RXPacket      models.RXPacket
-	PHYPayload    lorawan.PHYPayload
+	ctx context.Context
+
+	Token               uint16
+	DeviceSession       storage.DeviceSession
+	DeviceGatewayRXInfo []storage.DeviceGatewayRXInfo
+	RXPacket            models.RXPacket
+	PHYPayload          lorawan.PHYPayload
 
 	// Downlink frames to be emitted (this can be a slice e.g. to first try
 	// using RX1 parameters, failing that RX2 parameters).
@@ -55,17 +62,38 @@ func Setup(conf config.Config) error {
 }
 
 // Handle handles a downlink join-response.
-func Handle(ds storage.DeviceSession, rxPacket models.RXPacket, phy lorawan.PHYPayload) error {
-	ctx := joinContext{
+func Handle(ctx context.Context, ds storage.DeviceSession, rxPacket models.RXPacket, phy lorawan.PHYPayload) error {
+	jctx := joinContext{
+		ctx:           ctx,
 		DeviceSession: ds,
 		PHYPayload:    phy,
 		RXPacket:      rxPacket,
 	}
 
 	for _, t := range tasks {
-		if err := t(&ctx); err != nil {
+		if err := t(&jctx); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func setDeviceGatewayRXInfo(ctx *joinContext) error {
+	for i := range ctx.RXPacket.RXInfoSet {
+		ctx.DeviceGatewayRXInfo = append(ctx.DeviceGatewayRXInfo, storage.DeviceGatewayRXInfo{
+			GatewayID: helpers.GetGatewayID(ctx.RXPacket.RXInfoSet[i]),
+			RSSI:      int(ctx.RXPacket.RXInfoSet[i].Rssi),
+			LoRaSNR:   ctx.RXPacket.RXInfoSet[i].LoraSnr,
+			Board:     ctx.RXPacket.RXInfoSet[i].Board,
+			Antenna:   ctx.RXPacket.RXInfoSet[i].Antenna,
+			Context:   ctx.RXPacket.RXInfoSet[i].Context,
+		})
+	}
+
+	// this should not happen
+	if len(ctx.DeviceGatewayRXInfo) == 0 {
+		return errors.New("DeviceGatewayRXInfo is empty!")
 	}
 
 	return nil
@@ -88,13 +116,9 @@ func setTXInfo(ctx *joinContext) error {
 }
 
 func setTXInfoForRX1(ctx *joinContext) error {
-	if len(ctx.RXPacket.RXInfoSet) == 0 {
-		return errors.New("empty RXInfoSet")
-	}
-
-	rxInfo := ctx.RXPacket.RXInfoSet[0]
+	rxInfo := ctx.DeviceGatewayRXInfo[0]
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: rxInfo.GatewayId,
+		GatewayId: rxInfo.GatewayID[:],
 		Board:     rxInfo.Board,
 		Antenna:   rxInfo.Antenna,
 		Context:   rxInfo.Context,
@@ -142,13 +166,9 @@ func setTXInfoForRX1(ctx *joinContext) error {
 }
 
 func setTXInfoForRX2(ctx *joinContext) error {
-	if len(ctx.RXPacket.RXInfoSet) == 0 {
-		return errors.New("empty RXInfoSet")
-	}
-
-	rxInfo := ctx.RXPacket.RXInfoSet[0]
+	rxInfo := ctx.DeviceGatewayRXInfo[0]
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: rxInfo.GatewayId,
+		GatewayId: rxInfo.GatewayID[:],
 		Board:     rxInfo.Board,
 		Antenna:   rxInfo.Antenna,
 		Frequency: uint32(band.Band().GetDefaults().RX2Frequency),
@@ -190,8 +210,16 @@ func setToken(ctx *joinContext) error {
 		return errors.Wrap(err, "read random error")
 	}
 
+	var downID uuid.UUID
+	if ctxID := ctx.ctx.Value(logging.ContextIDKey); ctxID != nil {
+		if id, ok := ctxID.(uuid.UUID); ok {
+			downID = id
+		}
+	}
+
 	for i := range ctx.DownlinkFrames {
 		ctx.DownlinkFrames[i].Token = uint32(binary.BigEndian.Uint16(b))
+		ctx.DownlinkFrames[i].DownlinkId = downID[:]
 	}
 	return nil
 }
@@ -220,23 +248,28 @@ func sendJoinAcceptResponse(ctx *joinContext) error {
 	}
 
 	// log frame
-	if err := framelog.LogDownlinkFrameForGateway(storage.RedisPool(), ctx.DownlinkFrames[0]); err != nil {
+	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, storage.RedisPool(), ctx.DownlinkFrames[0]); err != nil {
 		log.WithError(err).Error("log downlink frame for gateway error")
 	}
 
-	if err := framelog.LogDownlinkFrameForDevEUI(storage.RedisPool(), ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[0]); err != nil {
+	if err := framelog.LogDownlinkFrameForDevEUI(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[0]); err != nil {
 		log.WithError(err).Error("log downlink frame for device error")
 	}
 
 	return nil
 }
 
-func saveRemainingFrames(ctx *joinContext) error {
-	if len(ctx.DownlinkFrames) < 2 {
-		return nil
+func saveFrames(ctx *joinContext) error {
+	df := storage.DownlinkFrames{
+		DevEui: ctx.DeviceSession.DevEUI[:],
 	}
 
-	if err := storage.SaveDownlinkFrames(storage.RedisPool(), ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[1:]); err != nil {
+	for i := range ctx.DownlinkFrames {
+		df.Token = ctx.DownlinkFrames[i].Token
+		df.DownlinkFrames = append(df.DownlinkFrames, &ctx.DownlinkFrames[i])
+	}
+
+	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), df); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
 	}
 

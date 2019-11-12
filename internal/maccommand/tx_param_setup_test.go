@@ -1,12 +1,13 @@
 package maccommand
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/brocaar/loraserver/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -83,7 +84,7 @@ func TestTXParamSetup(t *testing.T) {
 			t.Run(tst.Name, func(t *testing.T) {
 				assert := require.New(t)
 
-				ret, err := handleTXParamSetupAns(&tst.DeviceSession, storage.MACCommandBlock{}, tst.PendingBlock)
+				ret, err := handleTXParamSetupAns(context.Background(), &tst.DeviceSession, storage.MACCommandBlock{}, tst.PendingBlock)
 				assert.Nil(ret)
 				assert.Equal(tst.ExpectedDeviceSession, tst.DeviceSession)
 				if err != nil {
