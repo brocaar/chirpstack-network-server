@@ -62,7 +62,7 @@ func EnqueueQueueItem(ctx context.Context, p *redis.Pool, db sqlx.Ext, qi storag
 		}
 
 		for _, gatewayID := range gatewayIDs {
-			ts = ts.Add(downlinkLockDuration)
+			ts = ts.Add(multicastGatewayDelay)
 			qi.GatewayID = gatewayID
 			qi.ScheduleAt = ts
 			if err = storage.CreateMulticastQueueItem(ctx, db, &qi); err != nil {

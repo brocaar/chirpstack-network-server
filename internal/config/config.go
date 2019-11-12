@@ -18,10 +18,10 @@ type Config struct {
 	}
 
 	PostgreSQL struct {
-		DSN         string `mapstructure:"dsn"`
-		Automigrate bool
-		MaxOpenConnections int               `mapstructure:"max_open_connections"`
-		MaxIdleConnections int               `mapstructure:"max_idle_connections"`
+		DSN                string `mapstructure:"dsn"`
+		Automigrate        bool
+		MaxOpenConnections int `mapstructure:"max_open_connections"`
+		MaxIdleConnections int `mapstructure:"max_idle_connections"`
 	} `mapstructure:"postgresql"`
 
 	Redis struct {
@@ -80,7 +80,8 @@ type Config struct {
 			SchedulerInterval time.Duration `mapstructure:"scheduler_interval"`
 
 			ClassC struct {
-				DownlinkLockDuration time.Duration `mapstructure:"downlink_lock_duration"`
+				DownlinkLockDuration  time.Duration `mapstructure:"downlink_lock_duration"`
+				MulticastGatewayDelay time.Duration `mapstructure:"multicast_gateway_delay"`
 			} `mapstructure:"class_c"`
 		} `mapstructure:"scheduler"`
 

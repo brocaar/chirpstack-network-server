@@ -49,10 +49,10 @@ var multicastTasks = []func(*multicastContext) error{
 }
 
 var (
-	downlinkLockDuration time.Duration
-	schedulerInterval    time.Duration
-	installationMargin   float64
-	downlinkTXPower      int
+	multicastGatewayDelay time.Duration
+	schedulerInterval     time.Duration
+	installationMargin    float64
+	downlinkTXPower       int
 
 	// TODO: make configurable
 	classBEnqueueMargin = time.Second * 5
@@ -60,7 +60,7 @@ var (
 
 // Setup sets up the multicast package.
 func Setup(conf config.Config) error {
-	downlinkLockDuration = conf.NetworkServer.Scheduler.ClassC.DownlinkLockDuration
+	multicastGatewayDelay = conf.NetworkServer.Scheduler.ClassC.MulticastGatewayDelay
 	schedulerInterval = conf.NetworkServer.Scheduler.SchedulerInterval
 	installationMargin = conf.NetworkServer.NetworkSettings.InstallationMargin
 	downlinkTXPower = conf.NetworkServer.NetworkSettings.DownlinkTXPower

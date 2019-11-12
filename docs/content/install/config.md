@@ -410,6 +410,13 @@ get_downlink_data_delay="100ms"
     # after a preceeding downlink tx (per device).
     downlink_lock_duration="2s"
 
+        # Multicast gateway delay.
+        #
+        # In case of a multi-gateway multicast downlink, this delay will added to
+        # the transmission time of each downlink to avoid collisions between overlapping
+        # gateways.
+        multicast_gateway_delay="2s"
+
 
   # Network-server API
   #

@@ -360,6 +360,13 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
     # after a preceeding downlink tx (per device).
     downlink_lock_duration="{{ .NetworkServer.Scheduler.ClassC.DownlinkLockDuration }}"
 
+	# Multicast gateway delay.
+	#
+	# In case of a multi-gateway multicast downlink, this delay will added to
+	# the transmission time of each downlink to avoid collisions between overlapping
+	# gateways.
+	multicast_gateway_delay="{{ .NetworkServer.Scheduler.ClassC.MulticastGatewayDelay }}"
+
 
   # Network-server API
   #
