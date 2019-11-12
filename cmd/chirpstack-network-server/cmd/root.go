@@ -13,8 +13,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/brocaar/lorawan/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/lorawan/band"
 )
 
 var cfgFile string
@@ -85,6 +85,7 @@ func init() {
 
 	viper.SetDefault("network_server.scheduler.scheduler_interval", 1*time.Second)
 	viper.SetDefault("network_server.scheduler.class_c.downlink_lock_duration", 2*time.Second)
+	viper.SetDefault("network_server.scheduler.class_c.multicast_gateway_delay", 2*time.Second)
 	viper.SetDefault("network_server.gateway.backend.mqtt.event_topic", "gateway/+/event/+")
 	viper.SetDefault("network_server.gateway.backend.mqtt.command_topic_template", "gateway/{{ .GatewayID }}/command/{{ .CommandType }}")
 	viper.SetDefault("network_server.gateway.backend.mqtt.clean_session", true)
