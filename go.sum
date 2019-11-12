@@ -52,6 +52,8 @@ github.com/brocaar/chirpstack-api/go v0.0.0-20191112140754-9fce5c1d8206 h1:EU4zM
 github.com/brocaar/chirpstack-api/go v0.0.0-20191112140754-9fce5c1d8206/go.mod h1:i8y9q9B7DJ6RHKYeKOmnDHl2kPngMwigTmivoXFcKzQ=
 github.com/brocaar/lorawan v0.0.0-20190713102339-bf0d0f2dd819 h1:Nw1pEwHwZzBf/OVgvdqxGt77CA8lFWue5H+L5lIwmb8=
 github.com/brocaar/lorawan v0.0.0-20190713102339-bf0d0f2dd819/go.mod h1:Fm+51pxK6mZoAQjIaWJqPmnRuXecozsM5Mf9c+kr/ko=
+github.com/brocaar/lorawan v0.0.0-20191112141237-86baefb66ba7 h1:hfA1tOnBuGK2GnvDixEDkLyWbNHBgHAdjJLnvmX9NZM=
+github.com/brocaar/lorawan v0.0.0-20191112141237-86baefb66ba7/go.mod h1:VgyRGAJ/wl1JfqZZmNlCTM8fyaIKF11YvYAGIVtedL8=
 github.com/caarlos0/ctrlc v1.0.0 h1:2DtF8GSIcajgffDFJzyG15vO+1PuBWOMUdFut7NnXhw=
 github.com/caarlos0/ctrlc v1.0.0/go.mod h1:CdXpj4rmq0q/1Eb44M9zi2nKB0QraNKuRGYGrrHhcQw=
 github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e h1:V9a67dfYqPLAvzk5hMQOXYJlZ4SLIXgyKIE+ZiHzgGQ=

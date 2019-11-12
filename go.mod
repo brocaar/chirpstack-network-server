@@ -8,7 +8,7 @@ require (
 	github.com/Azure/azure-service-bus-go v0.9.1
 	github.com/NickBall/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5
 	github.com/brocaar/chirpstack-api/go v0.0.0-20191112140754-9fce5c1d8206
-	github.com/brocaar/lorawan v0.0.0-20190713102339-bf0d0f2dd819
+	github.com/brocaar/lorawan v0.0.0-20191112141237-86baefb66ba7
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/gobuffalo/packr v1.22.0 // indirect
