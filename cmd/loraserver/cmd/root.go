@@ -33,11 +33,9 @@ var bands = []string{
 
 var rootCmd = &cobra.Command{
 	Use:   "loraserver",
-	Short: "LoRa Server network-server",
-	Long: `LoRa Server is an open-source network-server, part of the LoRa Server project
-	> documentation & support: https://www.loraserver.io/loraserver/
-	> source & copyright information: https://github.com/brocaar/loraserver/`,
-	RunE: run,
+	Short: "LoRa Server",
+	Long:  `LoRa Server`,
+	RunE:  run,
 }
 
 func init() {
@@ -130,7 +128,7 @@ func initConfig() {
 		if err := viper.ReadInConfig(); err != nil {
 			switch err.(type) {
 			case viper.ConfigFileNotFoundError:
-				log.Warning("No configuration file found, using defaults. See: https://www.loraserver.io/loraserver/install/config/")
+				log.Warning("No configuration file found, using defaults.")
 			default:
 				log.WithError(err).Fatal("read configuration file error")
 			}

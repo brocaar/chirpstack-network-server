@@ -165,7 +165,7 @@ func printStartMessage() error {
 		"version": version,
 		"net_id":  config.C.NetworkServer.NetID.String(),
 		"band":    config.C.NetworkServer.Band.Name,
-		"docs":    "https:/www.loraserver.io/",
+		"docs":    "",
 	}).Info("starting LoRa Server")
 	return nil
 }
