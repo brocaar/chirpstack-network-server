@@ -11,9 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
-	loraband "github.com/brocaar/lorawan/band"
 	"github.com/brocaar/chirpstack-api/go/common"
 	"github.com/brocaar/chirpstack-api/go/gw"
 	"github.com/brocaar/chirpstack-api/go/nc"
@@ -22,6 +19,9 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/chirpstack-network-server/internal/uplink"
+	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
+	loraband "github.com/brocaar/lorawan/band"
 )
 
 type OTAATestSuite struct {
@@ -250,7 +250,7 @@ func (ts *OTAATestSuite) TestLW10() {
 				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
 					Frequency:  869525000,
-					Power:      14,
+					Power:      27,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -406,7 +406,7 @@ func (ts *OTAATestSuite) TestLW10() {
 				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
 					Frequency:  869525000,
-					Power:      14,
+					Power:      27,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -715,7 +715,7 @@ func (ts *OTAATestSuite) TestLW11() {
 				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
 					Frequency:  869525000,
-					Power:      14,
+					Power:      27,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
@@ -869,7 +869,7 @@ func (ts *OTAATestSuite) TestLW11() {
 				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					GatewayId:  rxInfo.GatewayId,
 					Frequency:  869525000,
-					Power:      14,
+					Power:      27,
 					Modulation: common.Modulation_LORA,
 					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
 						LoraModulationInfo: &gw.LoRaModulationInfo{
