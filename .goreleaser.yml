@@ -25,8 +25,8 @@ release:
 
 nfpm:
   vendor: LoRa Server project
-  homepage: https://www.loraserver.io/
-  maintainer: Orne Brocaar <info@brocaar.com>
+  homepage: https://www.gz.com/
+  maintainer: XHL <rjqj@qq.com>
   description: LoRa Server
   license: MIT
   formats:

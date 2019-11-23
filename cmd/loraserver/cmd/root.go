@@ -121,10 +121,10 @@ func initConfig() {
 			log.WithError(err).WithField("config", cfgFile).Fatal("error loading config file")
 		}
 	} else {
-		viper.SetConfigName("loraserver")
+		viper.SetConfigName("lrs")
 		viper.AddConfigPath(".")
-		viper.AddConfigPath("$HOME/.config/loraserver")
-		viper.AddConfigPath("/etc/loraserver")
+		viper.AddConfigPath("$HOME/.config/lrs")
+		viper.AddConfigPath("/etc/lrs")
 		if err := viper.ReadInConfig(); err != nil {
 			switch err.(type) {
 			case viper.ConfigFileNotFoundError:

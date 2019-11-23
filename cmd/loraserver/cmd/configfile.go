@@ -389,9 +389,6 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
     [network_server.gateway.backend.mqtt]
     # MQTT topic templates for the different MQTT topics.
     #
-    # The meaning of these topics are documented at:
-    # https://www.loraserver.io/lora-gateway-bridge/
-    #
     # The default values match the default expected configuration of the
     # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
     # absolutely needed.

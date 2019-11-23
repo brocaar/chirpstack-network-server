@@ -1,4 +1,4 @@
-baseURL = "https://www.loraserver.io/loraserver/"
+baseURL = ""
 languageCode = "en-us"
 title = "LoRa Server Server documentation"
 googleAnalytics = "UA-3512995-9"

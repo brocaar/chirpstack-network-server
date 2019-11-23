@@ -1,9 +1,6 @@
 # This configuration configures LoRa Server for the US915 band using a MQTT
 # broker to communicate with the gateways. Many options and defaults have been
 # omitted for simplicity.
-# 
-# See https://www.loraserver.io/loraserver/install/config/ for a full
-# configuration example and documentation.
 
 
 # PostgreSQL settings.
@@ -110,9 +107,6 @@ net_id="000000"
     # This is the backend communicating with the LoRa gateways over a MQTT broker.
     [network_server.gateway.backend.mqtt]
     # MQTT topic templates for the different MQTT topics.
-    #
-    # The meaning of these topics are documented at:
-    # https://www.loraserver.io/lora-gateway-bridge/
     #
     # The default values match the default expected configuration of the
     # LoRa Gateway Bridge MQTT backend. Therefore only change these values when
