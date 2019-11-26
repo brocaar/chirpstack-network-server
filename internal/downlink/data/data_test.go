@@ -313,6 +313,30 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			},
 		},
 		{
+			Name: "trigger channel-reconfiguration - exceed error count",
+			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
+				DeviceSession: storage.DeviceSession{
+					EnabledUplinkChannels: []int{0, 1},
+					TXPowerIndex:          2,
+					DR:                    5,
+					NbTrans:               2,
+					RX2Frequency:          869525000,
+					MACCommandErrorCount: map[lorawan.CID]int{
+						lorawan.LinkADRReq: 4, // 3 is the default max
+					},
+				},
+				DownlinkFrames: []downlinkFrame{
+					{
+						RemainingPayloadSize: 200,
+					},
+				},
+			},
+			ExpectedMACCommands: nil,
+		},
+		{
 			Name: "trigger adr request change",
 			DataContext: dataContext{
 				ServiceProfile: storage.ServiceProfile{

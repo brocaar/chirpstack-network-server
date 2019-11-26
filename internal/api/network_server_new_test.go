@@ -566,6 +566,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 					PingSlotFrequency:     868100000,
 					NbTrans:               1,
 					MACVersion:            "1.0.2",
+					MACCommandErrorCount:  make(map[lorawan.CID]int),
 				}, ds)
 			})
 

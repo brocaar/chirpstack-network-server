@@ -48,6 +48,9 @@ func handleRXParamSetupAns(ctx context.Context, ds *storage.DeviceSession, block
 	}
 
 	if !pl.ChannelACK || !pl.RX1DROffsetACK || !pl.RX2DataRateACK {
+		// increase the error counter
+		ds.MACCommandErrorCount[lorawan.RXParamSetupAns]++
+
 		log.WithFields(log.Fields{
 			"dev_eui":           ds.DevEUI,
 			"channel_ack":       pl.ChannelACK,
@@ -57,6 +60,9 @@ func handleRXParamSetupAns(ctx context.Context, ds *storage.DeviceSession, block
 		}).Warning("rx_param_setup not acknowledged")
 		return nil, nil
 	}
+
+	// reset the error counter
+	delete(ds.MACCommandErrorCount, lorawan.RXParamSetupAns)
 
 	ds.RX2Frequency = int(req.Frequency)
 	ds.RX2DR = req.DLSettings.RX2DataRate

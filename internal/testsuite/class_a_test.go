@@ -2580,6 +2580,7 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 				AssertFCntUp(11),
 				AssertNFCntDown(6),
 				AssertEnabledUplinkChannels([]int{0, 1, 2, 3, 4, 5, 6, 7}),
+				AssertMACCommandErrorCount(lorawan.LinkADRAns, 1),
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId:  ts.RXInfo.GatewayId,
 					Frequency:  ts.TXInfo.Frequency,

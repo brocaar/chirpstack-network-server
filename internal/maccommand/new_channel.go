@@ -60,7 +60,6 @@ func RequestNewChannels(devEUI lorawan.EUI64, maxChannels int, currentChannels, 
 }
 
 func handleNewChannelAns(ctx context.Context, ds *storage.DeviceSession, block storage.MACCommandBlock, pending *storage.MACCommandBlock) ([]storage.MACCommandBlock, error) {
-
 	if len(block.MACCommands) == 0 {
 		return nil, errors.New("at least 1 mac-command expected, got none")
 	}
@@ -85,6 +84,9 @@ func handleNewChannelAns(ctx context.Context, ds *storage.DeviceSession, block s
 		}
 
 		if pl.ChannelFrequencyOK && pl.DataRateRangeOK {
+			// reset the error counter
+			delete(ds.MACCommandErrorCount, lorawan.NewChannelAns)
+
 			ds.ExtraUplinkChannels[int(pendingPL.ChIndex)] = band.Channel{
 				Frequency: int(pendingPL.Freq),
 				MinDR:     int(pendingPL.MinDR),
@@ -110,6 +112,9 @@ func handleNewChannelAns(ctx context.Context, ds *storage.DeviceSession, block s
 				"dev_eui":   ds.DevEUI,
 			}).Info("new_channel request acknowledged")
 		} else {
+			// increase error counter
+			ds.MACCommandErrorCount[lorawan.NewChannelAns]++
+
 			log.WithFields(log.Fields{
 				"frequency":            pendingPL.Freq,
 				"channel":              pendingPL.ChIndex,

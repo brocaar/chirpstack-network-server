@@ -257,6 +257,14 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # When set, this globally disables ADR.
   disable_adr={{ .NetworkServer.NetworkSettings.DisableADR }}
 
+  # Max mac-command error count.
+  #
+  # When a mac-command is nACKed for more than the configured value, then the
+  # ChirpStack Network Server will stop sending this mac-command to the device.
+  # This setting prevents that the Network Server will keep sending mac-commands
+  # on every downlink in case of a malfunctioning device.
+  max_mac_command_error_count={{ .NetworkServer.NetworkSettings.MaxMACCommandErrorCount }}
+
   # Enable only a given sub-set of channels
   #
   # Use this when ony a sub-set of the by default enabled channels are being

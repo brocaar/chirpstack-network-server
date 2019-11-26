@@ -2,40 +2,35 @@ package maccommand
 
 import (
 	"context"
-	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestRequestRXParamSetup(t *testing.T) {
-	Convey("When calling RequestRXParamSetup", t, func() {
-		block := RequestRXParamSetup(2, 868700000, 5)
-
-		Convey("Then the expected block is returned", func() {
-			So(block, ShouldResemble, storage.MACCommandBlock{
-				CID: lorawan.RXParamSetupReq,
-				MACCommands: []lorawan.MACCommand{
-					{
-						CID: lorawan.RXParamSetupReq,
-						Payload: &lorawan.RXParamSetupReqPayload{
-							Frequency: 868700000,
-							DLSettings: lorawan.DLSettings{
-								RX2DataRate: 5,
-								RX1DROffset: 2,
-							},
+func TestRXParamSetup(t *testing.T) {
+	t.Run("RequestRXParamSetup", func(t *testing.T) {
+		assert := require.New(t)
+		assert.Equal(storage.MACCommandBlock{
+			CID: lorawan.RXParamSetupReq,
+			MACCommands: []lorawan.MACCommand{
+				{
+					CID: lorawan.RXParamSetupReq,
+					Payload: &lorawan.RXParamSetupReqPayload{
+						Frequency: 868700000,
+						DLSettings: lorawan.DLSettings{
+							RX2DataRate: 5,
+							RX1DROffset: 2,
 						},
 					},
 				},
-			})
-		})
+			},
+		}, RequestRXParamSetup(2, 868700000, 5))
 	})
-}
 
-func TestHandleRXParamSetupAns(t *testing.T) {
-	Convey("Given a set of tests", t, func() {
+	t.Run("handleRXParamSetup", func(t *testing.T) {
 		tests := []struct {
 			Name                    string
 			DeviceSession           storage.DeviceSession
@@ -50,6 +45,9 @@ func TestHandleRXParamSetupAns(t *testing.T) {
 					RX2Frequency: 868100000,
 					RX2DR:        0,
 					RX1DROffset:  1,
+					MACCommandErrorCount: map[lorawan.CID]int{
+						lorawan.RXParamSetupAns: 1,
+					},
 				},
 				ReceivedMACCommandBlock: storage.MACCommandBlock{
 					CID: lorawan.RXParamSetupAns,
@@ -80,9 +78,10 @@ func TestHandleRXParamSetupAns(t *testing.T) {
 					},
 				},
 				ExpectedDeviceSession: storage.DeviceSession{
-					RX2Frequency: 868700000,
-					RX2DR:        5,
-					RX1DROffset:  2,
+					RX2Frequency:         868700000,
+					RX2DR:                5,
+					RX1DROffset:          2,
+					MACCommandErrorCount: map[lorawan.CID]int{},
 				},
 			},
 			{
@@ -91,6 +90,9 @@ func TestHandleRXParamSetupAns(t *testing.T) {
 					RX2Frequency: 868100000,
 					RX2DR:        0,
 					RX1DROffset:  1,
+					MACCommandErrorCount: map[lorawan.CID]int{
+						lorawan.RXParamSetupAns: 1,
+					},
 				},
 				ReceivedMACCommandBlock: storage.MACCommandBlock{
 					CID: lorawan.RXParamSetupAns,
@@ -124,17 +126,23 @@ func TestHandleRXParamSetupAns(t *testing.T) {
 					RX2Frequency: 868100000,
 					RX2DR:        0,
 					RX1DROffset:  1,
+					MACCommandErrorCount: map[lorawan.CID]int{
+						lorawan.RXParamSetupAns: 2,
+					},
 				},
 			},
 		}
 
-		for i, t := range tests {
-			Convey(fmt.Sprintf("Testing: %s [%d]", t.Name, i), func() {
-				ans, err := handleRXParamSetupAns(context.Background(), &t.DeviceSession, t.ReceivedMACCommandBlock, t.PendingMACCommandBlock)
-				So(err, ShouldResemble, t.ExpectedError)
-				So(ans, ShouldBeNil)
-				So(t.DeviceSession, ShouldResemble, t.ExpectedDeviceSession)
+		for _, tst := range tests {
+			t.Run(tst.Name, func(t *testing.T) {
+				assert := require.New(t)
+				ans, err := handleRXParamSetupAns(context.Background(), &tst.DeviceSession, tst.ReceivedMACCommandBlock, tst.PendingMACCommandBlock)
+				assert.NoError(err)
+				assert.Nil(ans)
+
+				assert.Equal(tst.ExpectedDeviceSession, tst.DeviceSession)
 			})
+
 		}
 	})
 }

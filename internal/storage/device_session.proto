@@ -178,6 +178,9 @@ message DeviceSessionPB {
 
     // Uplink max. EIRP index.
     uint32 uplink_max_eirp_index = 49;
+
+    // Mac-command error counter.
+    map<uint32, uint32> mac_command_error_count = 50;
 }
 
 

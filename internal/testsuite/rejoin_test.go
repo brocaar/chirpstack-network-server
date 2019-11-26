@@ -9,9 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
-	loraband "github.com/brocaar/lorawan/band"
 	"github.com/brocaar/chirpstack-api/go/common"
 	"github.com/brocaar/chirpstack-api/go/gw"
 	"github.com/brocaar/chirpstack-api/go/nc"
@@ -21,6 +18,9 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/chirpstack-network-server/internal/uplink"
+	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
+	loraband "github.com/brocaar/lorawan/band"
 )
 
 type RejoinTestSuite struct {
@@ -250,7 +250,9 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 						RXDelay:               1,
 						RX1DROffset:           2,
 						RX2DR:                 3,
+						MACCommandErrorCount:  make(map[lorawan.CID]int),
 					},
+					MACCommandErrorCount: make(map[lorawan.CID]int),
 				}),
 				AssertNCHandleUplinkMetaDataRequest(nc.HandleUplinkMetaDataRequest{
 					DevEui:              ts.Device.DevEUI[:],
@@ -368,7 +370,9 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 						RXDelay:               1,
 						RX1DROffset:           2,
 						RX2DR:                 3,
+						MACCommandErrorCount:  make(map[lorawan.CID]int),
 					},
+					MACCommandErrorCount: make(map[lorawan.CID]int),
 				}),
 			},
 		},
@@ -540,7 +544,9 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 						RX2Frequency:          869525000,
 						NbTrans:               1,
 						EnabledUplinkChannels: []int{0, 1, 2},
+						MACCommandErrorCount:  make(map[lorawan.CID]int),
 					},
+					MACCommandErrorCount: make(map[lorawan.CID]int),
 				}),
 			},
 		},
@@ -643,7 +649,9 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 						NbTrans:               1,
 						EnabledUplinkChannels: []int{0, 1, 2},
 						ExtraUplinkChannels:   make(map[int]loraband.Channel),
+						MACCommandErrorCount:  make(map[lorawan.CID]int),
 					},
+					MACCommandErrorCount: make(map[lorawan.CID]int),
 				}),
 			},
 		},

@@ -177,6 +177,9 @@ type DeviceSession struct {
 
 	// Max uplink EIRP limitation.
 	UplinkMaxEIRPIndex uint8
+
+	// Delayed mac-commands.
+	MACCommandErrorCount map[lorawan.CID]int
 }
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list
@@ -670,6 +673,8 @@ func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
 		UplinkDwellTime_400Ms:   d.UplinkDwellTime400ms,
 		DownlinkDwellTime_400Ms: d.DownlinkDwellTime400ms,
 		UplinkMaxEirpIndex:      uint32(d.UplinkMaxEIRPIndex),
+
+		MacCommandErrorCount: make(map[uint32]uint32),
 	}
 
 	if d.AppSKeyEvelope != nil {
@@ -712,6 +717,10 @@ func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
 		}
 
 		out.PendingRejoinDeviceSession = b
+	}
+
+	for k, v := range d.MACCommandErrorCount {
+		out.MacCommandErrorCount[uint32(k)] = uint32(v)
 	}
 
 	return out
@@ -764,6 +773,8 @@ func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
 		UplinkDwellTime400ms:   d.UplinkDwellTime_400Ms,
 		DownlinkDwellTime400ms: d.DownlinkDwellTime_400Ms,
 		UplinkMaxEIRPIndex:     uint8(d.UplinkMaxEirpIndex),
+
+		MACCommandErrorCount: make(map[lorawan.CID]int),
 	}
 
 	if d.LastDeviceStatusRequestTimeUnixNs > 0 {
@@ -821,6 +832,10 @@ func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
 			ds := deviceSessionFromPB(dsPB)
 			out.PendingRejoinDeviceSession = &ds
 		}
+	}
+
+	for k, v := range d.MacCommandErrorCount {
+		out.MACCommandErrorCount[lorawan.CID(k)] = int(v)
 	}
 
 	return out

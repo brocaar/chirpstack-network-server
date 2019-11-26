@@ -75,6 +75,9 @@ var (
 	uplinkDwellTime400ms   bool
 	downlinkDwellTime400ms bool
 	uplinkMaxEIRPIndex     uint8
+
+	// Max mac-command error count.
+	maxMACCommandErrorCount int
 )
 
 var setMACCommandsSet = setMACCommands(
@@ -160,6 +163,8 @@ func Setup(conf config.Config) error {
 		maxEIRP = band.Band().GetDefaultMaxUplinkEIRP()
 	}
 	uplinkMaxEIRPIndex = lorawan.GetTXParamSetupEIRPIndex(maxEIRP)
+
+	maxMACCommandErrorCount = conf.NetworkServer.NetworkSettings.MaxMACCommandErrorCount
 
 	return nil
 }
@@ -736,6 +741,15 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 			}
 			ctx.MACCommands = externalMACCommands
 		}
+
+		// Filter out mac-commands that exceed the max. error count.
+		var filteredMACCommands []storage.MACCommandBlock
+		for i := range ctx.MACCommands {
+			if ctx.DeviceSession.MACCommandErrorCount[ctx.MACCommands[i].CID] <= maxMACCommandErrorCount {
+				filteredMACCommands = append(filteredMACCommands, ctx.MACCommands[i])
+			}
+		}
+		ctx.MACCommands = filteredMACCommands
 
 		ctx.MACCommands = filterIncompatibleMACCommands(ctx.MACCommands)
 

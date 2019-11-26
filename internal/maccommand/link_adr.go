@@ -53,6 +53,9 @@ func handleLinkADRAns(ctx context.Context, ds *storage.DeviceSession, block stor
 	adrReq := linkADRPayloads[len(linkADRPayloads)-1]
 
 	if channelMaskACK && dataRateACK && powerACK {
+		// reset the error counter
+		delete(ds.MACCommandErrorCount, lorawan.LinkADRAns)
+
 		chans, err := band.Band().GetEnabledUplinkChannelIndicesForLinkADRReqPayloads(ds.EnabledUplinkChannels, linkADRPayloads)
 		if err != nil {
 			return nil, errors.Wrap(err, "get enalbed channels for link_adr_req payloads error")
@@ -73,6 +76,9 @@ func handleLinkADRAns(ctx context.Context, ds *storage.DeviceSession, block stor
 		}).Info("link_adr request acknowledged")
 
 	} else {
+		// increase the error counter
+		ds.MACCommandErrorCount[lorawan.LinkADRAns]++
+
 		// TODO: remove workaround once all RN2483 nodes have the issue below
 		// fixed.
 		//

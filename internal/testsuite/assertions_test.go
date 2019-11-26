@@ -10,14 +10,14 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
-	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
 	"github.com/brocaar/chirpstack-api/go/as"
 	"github.com/brocaar/chirpstack-api/go/geo"
 	"github.com/brocaar/chirpstack-api/go/gw"
 	"github.com/brocaar/chirpstack-api/go/nc"
 	"github.com/brocaar/chirpstack-network-server/internal/downlink/ack"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
 )
 
 var lastToken uint32
@@ -40,6 +40,13 @@ func AssertNFCntDown(fCnt uint32) Assertion {
 func AssertAFCntDown(fCnt uint32) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
 		assert.Equal(fCnt, ts.DeviceSession.AFCntDown)
+	}
+}
+
+// AssertMACCommandErrorCount asserts the mac-command error count.
+func AssertMACCommandErrorCount(cid lorawan.CID, count int) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		assert.Equal(count, ts.DeviceSession.MACCommandErrorCount[cid])
 	}
 }
 

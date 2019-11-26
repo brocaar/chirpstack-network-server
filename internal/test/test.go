@@ -62,6 +62,7 @@ func GetConfig() config.Config {
 	c.NetworkServer.NetworkSettings.RX2DR = band.Band().GetDefaults().RX2DataRate
 	c.NetworkServer.NetworkSettings.RX1Delay = 0
 	c.NetworkServer.NetworkSettings.DownlinkTXPower = -1
+	c.NetworkServer.NetworkSettings.MaxMACCommandErrorCount = 3
 
 	c.NetworkServer.Scheduler.SchedulerInterval = time.Second
 

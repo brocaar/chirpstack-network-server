@@ -2,18 +2,23 @@ package maccommand
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
+	nsband "github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/band"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestRequestNewChannels(t *testing.T) {
-	Convey("Given a set of tests", t, func() {
+func TestNewChannel(t *testing.T) {
+	assert := require.New(t)
+	conf := test.GetConfig()
+	assert.NoError(nsband.Setup(conf))
+
+	t.Run("NewChannelReq", func(t *testing.T) {
 		tests := []struct {
 			Name                    string
 			CurrentChannels         map[int]band.Channel
@@ -100,22 +105,19 @@ func TestRequestNewChannels(t *testing.T) {
 			},
 		}
 
-		for i, t := range tests {
-			Convey(fmt.Sprintf("Testing: %s [%d]", t.Name, i), func() {
-				out := RequestNewChannels(lorawan.EUI64{}, 3, t.CurrentChannels, t.WantedChannels)
-				if t.ExpectedMACCommandBlock == nil {
-					So(out, ShouldEqual, nil)
+		for _, tst := range tests {
+			t.Run(tst.Name, func(t *testing.T) {
+				resp := RequestNewChannels(lorawan.EUI64{}, 3, tst.CurrentChannels, tst.WantedChannels)
+				if tst.ExpectedMACCommandBlock == nil {
+					assert.Nil(resp)
 				} else {
-					So(out, ShouldNotEqual, nil)
-					So(*out, ShouldResemble, *t.ExpectedMACCommandBlock)
+					assert.EqualValues(tst.ExpectedMACCommandBlock, resp)
 				}
 			})
 		}
 	})
-}
 
-func TestHandleNewChannelAns(t *testing.T) {
-	Convey("Given a set of tests", t, func() {
+	t.Run("handleNewChannelAns", func(t *testing.T) {
 		tests := []struct {
 			Name                    string
 			DeviceSession           storage.DeviceSession
@@ -129,6 +131,9 @@ func TestHandleNewChannelAns(t *testing.T) {
 				DeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels: []int{0, 1, 2},
 					ExtraUplinkChannels:   map[int]band.Channel{},
+					MACCommandErrorCount: map[lorawan.CID]int{
+						lorawan.NewChannelAns: 1,
+					},
 				},
 				ReceivedMACCommandBlock: storage.MACCommandBlock{
 					CID: lorawan.NewChannelAns,
@@ -161,6 +166,7 @@ func TestHandleNewChannelAns(t *testing.T) {
 					ExtraUplinkChannels: map[int]band.Channel{
 						3: band.Channel{Frequency: 868600000, MinDR: 3, MaxDR: 5},
 					},
+					MACCommandErrorCount: map[lorawan.CID]int{},
 				},
 			},
 			{
@@ -168,6 +174,7 @@ func TestHandleNewChannelAns(t *testing.T) {
 				DeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels: []int{0, 1, 2},
 					ExtraUplinkChannels:   map[int]band.Channel{},
+					MACCommandErrorCount:  map[lorawan.CID]int{},
 				},
 				ReceivedMACCommandBlock: storage.MACCommandBlock{
 					CID: lorawan.NewChannelAns,
@@ -198,6 +205,9 @@ func TestHandleNewChannelAns(t *testing.T) {
 				ExpectedDeviceSession: storage.DeviceSession{
 					EnabledUplinkChannels: []int{0, 1, 2},
 					ExtraUplinkChannels:   map[int]band.Channel{},
+					MACCommandErrorCount: map[lorawan.CID]int{
+						lorawan.NewChannelAns: 1,
+					},
 				},
 			},
 			{
@@ -206,6 +216,9 @@ func TestHandleNewChannelAns(t *testing.T) {
 					EnabledUplinkChannels: []int{0, 1, 2},
 					ExtraUplinkChannels: map[int]band.Channel{
 						3: band.Channel{Frequency: 868700000, MinDR: 3, MaxDR: 5},
+					},
+					MACCommandErrorCount: map[lorawan.CID]int{
+						lorawan.NewChannelAns: 1,
 					},
 				},
 				ReceivedMACCommandBlock: storage.MACCommandBlock{
@@ -239,16 +252,23 @@ func TestHandleNewChannelAns(t *testing.T) {
 					ExtraUplinkChannels: map[int]band.Channel{
 						3: band.Channel{Frequency: 868600000, MinDR: 3, MaxDR: 5},
 					},
+					MACCommandErrorCount: map[lorawan.CID]int{},
 				},
 			},
 		}
 
-		for i, t := range tests {
-			Convey(fmt.Sprintf("Testing: %s [%d]", t.Name, i), func() {
-				ans, err := handleNewChannelAns(context.Background(), &t.DeviceSession, t.ReceivedMACCommandBlock, t.PendingMACCommandBlock)
-				So(err, ShouldResemble, t.ExpectedError)
-				So(ans, ShouldBeNil)
-				So(t.DeviceSession, ShouldResemble, t.ExpectedDeviceSession)
+		for _, tst := range tests {
+			t.Run(tst.Name, func(t *testing.T) {
+				assert := require.New(t)
+
+				ans, err := handleNewChannelAns(context.Background(), &tst.DeviceSession, tst.ReceivedMACCommandBlock, tst.PendingMACCommandBlock)
+				if tst.ExpectedError != nil {
+					assert.Equal(tst.ExpectedError.Error(), err.Error())
+					return
+				}
+				assert.NoError(err)
+				assert.Nil(ans)
+				assert.Equal(tst.ExpectedDeviceSession, tst.DeviceSession)
 			})
 		}
 	})

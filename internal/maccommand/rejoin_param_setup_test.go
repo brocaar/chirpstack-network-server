@@ -2,40 +2,34 @@ package maccommand
 
 import (
 	"context"
-	"fmt"
 	"testing"
+
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/require"
 
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
-	"github.com/pkg/errors"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestRequestRejoinParamSetup(t *testing.T) {
-	Convey("When calling RequestRejoinParamSetup", t, func() {
-		block := RequestRejoinParamSetup(5, 10)
+func TestRejoinParamSetup(t *testing.T) {
+	t.Run("RejoinParamSetupReq", func(t *testing.T) {
+		assert := require.New(t)
 
-		Convey("Then the expected block is returned", func() {
-			So(block, ShouldResemble, storage.MACCommandBlock{
-				CID: lorawan.RejoinParamSetupReq,
-				MACCommands: []lorawan.MACCommand{
-					{
-						CID: lorawan.RejoinParamSetupReq,
-						Payload: &lorawan.RejoinParamSetupReqPayload{
-							MaxTimeN:  5,
-							MaxCountN: 10,
-						},
+		assert.Equal(storage.MACCommandBlock{
+			CID: lorawan.RejoinParamSetupReq,
+			MACCommands: []lorawan.MACCommand{
+				{
+					CID: lorawan.RejoinParamSetupReq,
+					Payload: &lorawan.RejoinParamSetupReqPayload{
+						MaxTimeN:  5,
+						MaxCountN: 10,
 					},
 				},
-			})
-		})
+			},
+		}, RequestRejoinParamSetup(5, 10))
 	})
-}
 
-func TestHandleRejoinParamSetupAns(t *testing.T) {
-
-	Convey("Given a set of tests", t, func() {
+	t.Run("handleRejoinParamSetupAns", func(t *testing.T) {
 		tests := []struct {
 			Name                    string
 			DeviceSession           storage.DeviceSession
@@ -140,18 +134,20 @@ func TestHandleRejoinParamSetupAns(t *testing.T) {
 			},
 		}
 
-		for i, test := range tests {
-			Convey(fmt.Sprintf("Testing: %s [%d]", test.Name, i), func() {
-				ans, err := handleRejoinParamSetupAns(context.Background(), &test.DeviceSession, test.ReceivedMACCommandBlock, test.PendingMACCommandBlock)
-				if test.ExpectedError != nil {
-					So(err, ShouldNotBeNil)
-					So(err.Error(), ShouldEqual, test.ExpectedError.Error())
-				} else {
-					So(err, ShouldBeNil)
+		for _, tst := range tests {
+			t.Run(tst.Name, func(t *testing.T) {
+				assert := require.New(t)
+
+				ans, err := handleRejoinParamSetupAns(context.Background(), &tst.DeviceSession, tst.ReceivedMACCommandBlock, tst.PendingMACCommandBlock)
+				if tst.ExpectedError != nil {
+					assert.Equal(tst.ExpectedError.Error(), err.Error())
+					return
 				}
-				So(ans, ShouldBeNil)
-				So(test.DeviceSession, ShouldResemble, test.ExpectedDeviceSession)
+				assert.NoError(err)
+				assert.Nil(ans)
+				assert.Equal(tst.ExpectedDeviceSession, tst.DeviceSession)
 			})
 		}
+
 	})
 }
