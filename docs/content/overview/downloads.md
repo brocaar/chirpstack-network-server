@@ -50,6 +50,17 @@ sudo echo "deb https://artifacts.chirpstack.io/packages/3.x/deb stable main" | s
 sudo apt-get update
 {{< /highlight >}}
 
+## Redhat / Centos packages
+| File name                                                                                                                                                                  | OS      | Arch  |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ------- | ----- |
+| [chirpstack-network-server_{{< version >}}_linux_386.rpm](https://artifacts.chirpstack.io/downloads/chirpstack-network-server/chirpstack-network-server_{{< version >}}_linux_386.rpm)     | Linux   | 386   |
+| [chirpstack-network-server_{{< version >}}_linux_amd64.rpm](https://artifacts.chirpstack.io/downloads/chirpstack-network-server/chirpstack-network-server_{{< version >}}_linux_amd64.rpm) | Linux   | amd64 |
+| [chirpstack-network-server_{{< version >}}_linux_armv5.rpm](https://artifacts.chirpstack.io/downloads/chirpstack-network-server/chirpstack-network-server_{{< version >}}_linux_armv5.rpm) | Linux   | arm   |
+| [chirpstack-network-server_{{< version >}}_linux_armv6.rpm](https://artifacts.chirpstack.io/downloads/chirpstack-network-server/chirpstack-network-server_{{< version >}}_linux_armv6.rpm) | Linux   | arm   |
+| [chirpstack-network-server_{{< version >}}_linux_armv7.rpm](https://artifacts.chirpstack.io/downloads/chirpstack-network-server/chirpstack-network-server_{{< version >}}_linux_armv7.rpm) | Linux   | arm   |
+| [chirpstack-network-server_{{< version >}}_linux_arm64.rpm](https://artifacts.chirpstack.io/downloads/chirpstack-network-server/chirpstack-network-server_{{< version >}}_linux_arm64.rpm) | Linux   | arm64 |
+
+
 ## Docker images
 
 For Docker images, please refer to https://hub.docker.com/r/chirpstack/chirpstack-network-server/.
