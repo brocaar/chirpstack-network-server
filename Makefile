@@ -26,8 +26,10 @@ dist: statics
 	goreleaser
 	mkdir -p dist/upload/tar
 	mkdir -p dist/upload/deb
+	mkdir -p dist/upload/rpm
 	mv dist/*.tar.gz dist/upload/tar
 	mv dist/*.deb dist/upload/deb
+	mv dist/*.rpm dist/upload/rpm
 
 snapshot:
 	@goreleaser --snapshot
