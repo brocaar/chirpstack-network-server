@@ -199,7 +199,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # RX window (Class-A).
   #
   # Set this to:
-  # 0: RX1, fallback to RX2 (on RX1 scheduling error)
+  # 0: RX1 / RX2
   # 1: RX1 only
   # 2: RX2 only
   rx_window={{ .NetworkServer.NetworkSettings.RXWindow }}
@@ -233,6 +233,20 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # Please consult the LoRaWAN Regional Parameters specification for valid
   # options of the configured network_server.band.name.
   rx2_frequency={{ .NetworkServer.NetworkSettings.RX2Frequency }}
+  
+  # Prefer RX2 on RX1 data-rate less than.
+  #
+  # Prefer RX2 over RX1 based on the RX1 data-rate. When the RX1 data-rate
+  # is smaller than the configured value, then the Network Server will
+  # first try to schedule the downlink for RX2, failing that (e.g. the gateway
+  # has already a payload scheduled at the RX2 timing) it will try RX1.
+  rx2_prefer_on_rx1_dr_lt={{ .NetworkServer.NetworkSettings.RX2PreferOnRX1DRLt }}
+  
+  # Prefer RX2 on link budget.
+  #
+  # When the link-budget is better for RX2 than for RX1, the Network Server will first
+  # try to schedule the downlink in RX2, failing that it will try RX1.
+  rx2_prefer_on_link_budget={{ .NetworkServer.NetworkSettings.RX2PreferOnLinkBudget }}
 
   # Downlink TX Power (dBm)
   #

@@ -4,12 +4,16 @@ import (
 	"context"
 	"testing"
 
+	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/brocaar/chirpstack-api/go/common"
+	"github.com/brocaar/chirpstack-api/go/gw"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/models"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
@@ -1045,6 +1049,496 @@ func TestSetTXParameters(t *testing.T) {
 
 			assert.NoError(setTXParameters(&ctx))
 			assert.Equal(tst.ExpectedMACCommands, ctx.MACCommands)
+		})
+	}
+}
+
+func TestPreferRX2DR(t *testing.T) {
+	assert := require.New(t)
+	conf := test.GetConfig()
+	assert.NoError(Setup(conf))
+
+	tests := []struct {
+		Name               string
+		UplinkDR           int
+		DeviceSession      storage.DeviceSession
+		RX2PreferOnRX1DRLt int
+		RX2Prefered        bool
+	}{
+		{
+			Name:               "Uplink DR0 - RX1",
+			UplinkDR:           0,
+			RX2PreferOnRX1DRLt: 0,
+			RX2Prefered:        false,
+			DeviceSession: storage.DeviceSession{
+				RX2DR:        0,
+				RX2Frequency: 869525000,
+			},
+		},
+		{
+			Name:               "Uplink DR0, RX2 prefered on DR < 3 - RX2",
+			UplinkDR:           0,
+			RX2PreferOnRX1DRLt: 3,
+			RX2Prefered:        true,
+			DeviceSession: storage.DeviceSession{
+				RX2DR:        0,
+				RX2Frequency: 869525000,
+			},
+		},
+		{
+			Name:               "Uplink DR0, RX2 prefered on DR < 3, device reconfig pending - RX1",
+			UplinkDR:           0,
+			RX2PreferOnRX1DRLt: 3,
+			RX2Prefered:        false,
+			DeviceSession: storage.DeviceSession{
+				RX2DR:        1,
+				RX2Frequency: 869525000,
+			},
+		},
+	}
+
+	for _, tst := range tests {
+		t.Run(tst.Name, func(t *testing.T) {
+			assert := require.New(t)
+
+			rx2PreferOnRX1DRLt = tst.RX2PreferOnRX1DRLt
+
+			ctx := dataContext{
+				DeviceSession: tst.DeviceSession,
+				RXPacket: &models.RXPacket{
+					DR: tst.UplinkDR,
+				},
+			}
+
+			prefered, err := preferRX2DR(&ctx)
+			assert.NoError(err)
+
+			assert.Equal(tst.RX2Prefered, prefered)
+		})
+	}
+}
+
+func TestPreferRX2LinkBudget(t *testing.T) {
+	assert := require.New(t)
+	conf := test.GetConfig()
+	conf.NetworkServer.NetworkSettings.RX2PreferOnLinkBudget = true
+	assert.NoError(Setup(conf))
+
+	tests := []struct {
+		Name                  string
+		UplinkDR              int
+		RX2PreferOnLinkBudget bool
+		DeviceSession         storage.DeviceSession
+		RX2Prefered           bool
+		DownlinkTXPower       int
+	}{
+		{
+			Name:            "Uplink DR0 - RX2",
+			UplinkDR:        0,
+			RX2Prefered:     true,
+			DownlinkTXPower: -1,
+			DeviceSession: storage.DeviceSession{
+				RX2DR:        0,
+				RX2Frequency: 869525000,
+			},
+		},
+		{
+			Name:            "Uplink DR5 - RX2",
+			UplinkDR:        5,
+			RX2Prefered:     true,
+			DownlinkTXPower: -1,
+			DeviceSession: storage.DeviceSession{
+				RX2DR:        0,
+				RX2Frequency: 869525000,
+			},
+		},
+		{
+			Name:            "Uplink DR5 - custom tx power - RX1",
+			UplinkDR:        5,
+			RX2Prefered:     true,
+			DownlinkTXPower: 14,
+			DeviceSession: storage.DeviceSession{
+				RX2DR:        0,
+				RX2Frequency: 869525000,
+			},
+		},
+	}
+
+	for _, tst := range tests {
+		t.Run(tst.Name, func(t *testing.T) {
+			assert := require.New(t)
+
+			downlinkTXPower = tst.DownlinkTXPower
+
+			ctx := dataContext{
+				DeviceSession: tst.DeviceSession,
+				RXPacket: &models.RXPacket{
+					DR: tst.UplinkDR,
+					TXInfo: &gw.UplinkTXInfo{
+						Frequency: 868100000,
+					},
+				},
+			}
+
+			prefered, err := preferRX2LinkBudget(&ctx)
+			assert.NoError(err)
+
+			assert.Equal(tst.RX2Prefered, prefered)
+		})
+	}
+}
+
+func TestSetDataTXInfo(t *testing.T) {
+	assert := require.New(t)
+	conf := test.GetConfig()
+	assert.NoError(Setup(conf))
+
+	tests := []struct {
+		Name                   string
+		RXWindow               int
+		RX2PreferOnLinkBudget  bool
+		RX2PreferOnRX1DRLt     int
+		DeviceSession          storage.DeviceSession
+		UplinkDR               int
+		UplinkFrequency        int
+		DownlinkTXPower        int
+		ExpectedDownlinkTXInfo []*gw.DownlinkTXInfo
+	}{
+		{
+			Name:     "RX1 only",
+			RXWindow: 1,
+			DeviceSession: storage.DeviceSession{
+				RX2DR:        1,
+				RX2Frequency: 869525000,
+			},
+			UplinkDR:        3,
+			UplinkFrequency: 868100000,
+			DownlinkTXPower: -1,
+			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
+				{
+					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					Frequency:  868100000,
+					Power:      14,
+					Modulation: common.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       9,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: &duration.Duration{
+								Seconds: 1,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name:     "RX2 only",
+			RXWindow: 2,
+			DeviceSession: storage.DeviceSession{
+				RX2DR:        1,
+				RX2Frequency: 869525000,
+			},
+			UplinkDR:        3,
+			UplinkFrequency: 868100000,
+			DownlinkTXPower: -1,
+			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
+				{
+					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					Frequency:  869525000,
+					Power:      27,
+					Modulation: common.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       11,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: &duration.Duration{
+								Seconds: 2,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name:     "Prefer RX2 DR - RX1",
+			RXWindow: 0,
+			DeviceSession: storage.DeviceSession{
+				RX2DR:        1,
+				RX2Frequency: 869525000,
+			},
+			UplinkDR:           3,
+			UplinkFrequency:    868100000,
+			RX2PreferOnRX1DRLt: 3,
+			DownlinkTXPower:    -1,
+			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
+				{
+					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					Frequency:  868100000,
+					Power:      14,
+					Modulation: common.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       9,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: &duration.Duration{
+								Seconds: 1,
+							},
+						},
+					},
+				},
+				{
+					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					Frequency:  869525000,
+					Power:      27,
+					Modulation: common.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       11,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: &duration.Duration{
+								Seconds: 2,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name:     "Prefer RX2 DR - RX2",
+			RXWindow: 0,
+			DeviceSession: storage.DeviceSession{
+				RX2DR:        1,
+				RX2Frequency: 869525000,
+			},
+			UplinkDR:           3,
+			UplinkFrequency:    868100000,
+			RX2PreferOnRX1DRLt: 4,
+			DownlinkTXPower:    -1,
+			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
+				{
+					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					Frequency:  869525000,
+					Power:      27,
+					Modulation: common.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       11,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: &duration.Duration{
+								Seconds: 2,
+							},
+						},
+					},
+				},
+				{
+					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					Frequency:  868100000,
+					Power:      14,
+					Modulation: common.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       9,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: &duration.Duration{
+								Seconds: 1,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name:     "Prefer RX2 link-budget - RX1",
+			RXWindow: 0,
+			DeviceSession: storage.DeviceSession{
+				RX2DR:        1,
+				RX2Frequency: 869525000,
+			},
+			UplinkDR:              0,
+			UplinkFrequency:       868100000,
+			RX2PreferOnLinkBudget: true,
+			DownlinkTXPower:       14,
+			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
+				{
+					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					Frequency:  868100000,
+					Power:      14,
+					Modulation: common.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: &duration.Duration{
+								Seconds: 1,
+							},
+						},
+					},
+				},
+				{
+					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					Frequency:  869525000,
+					Power:      14,
+					Modulation: common.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       11,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: &duration.Duration{
+								Seconds: 2,
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			Name:     "Prefer RX2 link-budget - RX2",
+			RXWindow: 0,
+			DeviceSession: storage.DeviceSession{
+				RX2DR:        1,
+				RX2Frequency: 869525000,
+			},
+			UplinkDR:              2,
+			UplinkFrequency:       868100000,
+			RX2PreferOnLinkBudget: true,
+			DownlinkTXPower:       14,
+			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
+				{
+					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					Frequency:  869525000,
+					Power:      14,
+					Modulation: common.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       11,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: &duration.Duration{
+								Seconds: 2,
+							},
+						},
+					},
+				},
+				{
+					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+					Frequency:  868100000,
+					Power:      14,
+					Modulation: common.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       10,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+					Timing: gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: &duration.Duration{
+								Seconds: 1,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tst := range tests {
+		t.Run(tst.Name, func(t *testing.T) {
+			assert := require.New(t)
+
+			rx2PreferOnRX1DRLt = tst.RX2PreferOnRX1DRLt
+			rx2PreferOnLinkBudget = tst.RX2PreferOnLinkBudget
+			downlinkTXPower = tst.DownlinkTXPower
+
+			rxWindow = tst.RXWindow
+			rx2Frequency = tst.DeviceSession.RX2Frequency
+			rx2DR = int(tst.DeviceSession.RX2DR)
+
+			ctx := dataContext{
+				DeviceSession:       tst.DeviceSession,
+				DeviceGatewayRXInfo: []storage.DeviceGatewayRXInfo{{}},
+				RXPacket: &models.RXPacket{
+					DR: tst.UplinkDR,
+					TXInfo: &gw.UplinkTXInfo{
+						Frequency: uint32(tst.UplinkFrequency),
+					},
+				},
+			}
+
+			assert.NoError(setDataTXInfo(&ctx))
+
+			var txInfo []*gw.DownlinkTXInfo
+			for i := range ctx.DownlinkFrames {
+				txInfo = append(txInfo, ctx.DownlinkFrames[i].DownlinkFrame.TxInfo)
+			}
+
+			assert.EqualValues(tst.ExpectedDownlinkTXInfo, txInfo)
 		})
 	}
 }

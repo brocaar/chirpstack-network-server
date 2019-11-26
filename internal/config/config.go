@@ -53,6 +53,8 @@ type Config struct {
 			RX1DROffset             int     `mapstructure:"rx1_dr_offset"`
 			RX2DR                   int     `mapstructure:"rx2_dr"`
 			RX2Frequency            int     `mapstructure:"rx2_frequency"`
+			RX2PreferOnRX1DRLt      int     `mapstructure:"rx2_prefer_on_rx1_dr_lt"`
+			RX2PreferOnLinkBudget   bool    `mapstructure:"rx2_prefer_on_link_budget"`
 			DownlinkTXPower         int     `mapstructure:"downlink_tx_power"`
 			EnabledUplinkChannels   []int   `mapstructure:"enabled_uplink_channels"`
 			DisableMACCommands      bool    `mapstructure:"disable_mac_commands"`
