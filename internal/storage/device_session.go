@@ -384,21 +384,12 @@ func DeleteDeviceSession(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI6
 func GetDeviceSessionsForDevAddr(ctx context.Context, p *redis.Pool, devAddr lorawan.DevAddr) ([]DeviceSession, error) {
 	var items []DeviceSession
 
-	c := p.Get()
-	defer c.Close()
-
-	devEUIs, err := redis.ByteSlices(c.Do("SMEMBERS", fmt.Sprintf(devAddrKeyTempl, devAddr)))
+	devEUIs, err := GetDevEUIsForDevAddr(ctx, p, devAddr)
 	if err != nil {
-		if err == redis.ErrNil {
-			return items, nil
-		}
-		return nil, errors.Wrap(err, "get members error")
+		return nil, err
 	}
 
-	for _, b := range devEUIs {
-		var devEUI lorawan.EUI64
-		copy(devEUI[:], b)
-
+	for _, devEUI := range devEUIs {
 		s, err := GetDeviceSession(ctx, p, devEUI)
 		if err != nil {
 			// TODO: in case not found, remove the DevEUI from the list
@@ -424,6 +415,29 @@ func GetDeviceSessionsForDevAddr(ctx context.Context, p *redis.Pool, devAddr lor
 	}
 
 	return items, nil
+}
+
+// GetDevEUIsForDevAddr returns the DevEUIs that are using the given DevAddr.
+func GetDevEUIsForDevAddr(ctx context.Context, p *redis.Pool, devAddr lorawan.DevAddr) ([]lorawan.EUI64, error) {
+	c := p.Get()
+	defer c.Close()
+
+	devEUIs, err := redis.ByteSlices(c.Do("SMEMBERS", fmt.Sprintf(devAddrKeyTempl, devAddr)))
+	if err != nil {
+		if err == redis.ErrNil {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "get deveuis for devaddr error")
+	}
+
+	var out []lorawan.EUI64
+	for i := range devEUIs {
+		var devEUI lorawan.EUI64
+		copy(devEUI[:], devEUIs[i])
+		out = append(out, devEUI)
+	}
+
+	return out, nil
 }
 
 // GetDeviceSessionForPHYPayload returns the device-session matching the given
