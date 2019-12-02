@@ -9,6 +9,49 @@ description: Lists the changes per ChirpStack Network Server release, including 
 ---
 # Changelog
 
+## v3.5.0
+
+### Features
+
+#### RX1 / RX2 selection logic
+
+New configuration options have been added for RX1 / RX2 selection for downlink. ([#429](https://github.com/brocaar/chirpstack-network-server/issues/429))
+
+* Using `rx2_prefer_on_rx1_dr_lt` it is possible to prefer RX2 for downlink, when
+  the RX1 data-rate is less than the configured value.
+* Using `rx2_prefer_on_link_budget` it is possible to prefer RX2 for downlink when
+  RX2 provides a better link budget than RX1.
+
+#### Mac-command error handling
+
+A new configuration option has been added to limit the number of mac-command
+errors (per device). This resolves the issue where the Network Server keeps
+trying to send a downlink mac-command to a malfunctioning device.
+
+#### RPM packaging
+
+This is the first release providing .rpm packages for CentOS and RedHat. ([#454](https://github.com/brocaar/chirpstack-network-server/pull/454))
+
+### Improvements
+
+#### Update lorawan package
+
+The updated version contains logic for the EU868 band to either use 14 dBm or
+27 dBm based on used frequency.
+
+#### gRPC / Protobuf cleanup
+
+All definitions are now imported from `github.com/brocaar/chirpstack-api/go`.
+When using the gRPC API, you must update your imports.
+
+#### Environment variable configuration
+
+Deprecate use of dots (`.`) in environment variable names, use double understore (`__`) instead. ([#451](https://github.com/brocaar/chirpstack-network-server/pull/451))
+
+#### Internal improvements
+
+The (re)usage of Redis connections has been improved.
+
 ## v3.4.1
 
 ### Bugfixes
