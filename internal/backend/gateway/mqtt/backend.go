@@ -251,7 +251,7 @@ func (b *Backend) rxPacketHandler(c paho.Client, msg paho.Message) {
 	// Since with MQTT all subscribers will receive the uplink messages sent
 	// by all the gateways, the first instance receiving the message must lock it,
 	// so that other instances can ignore the same message (from the same gw).
-	key := fmt.Sprintf("lora:ns:uplink:lock:%s:%d:%s", gatewayID, uplinkFrame.TxInfo.Frequency, hex.EncodeToString(uplinkFrame.PhyPayload))
+	key := fmt.Sprintf("lora:ns:uplink:lock:%s:%d:%d:%d:%s", gatewayID, uplinkFrame.TxInfo.Frequency, uplinkFrame.RxInfo.Board, uplinkFrame.RxInfo.Antenna, hex.EncodeToString(uplinkFrame.PhyPayload))
 	if locked, err := b.isLocked(key); err != nil || locked {
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
@@ -259,7 +259,6 @@ func (b *Backend) rxPacketHandler(c paho.Client, msg paho.Message) {
 				"key":       key,
 			}).Error("gateway/mqtt: acquire lock error")
 		}
-
 		return
 	}
 
