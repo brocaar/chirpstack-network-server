@@ -88,9 +88,16 @@ func init() {
 	viper.SetDefault("network_server.scheduler.scheduler_interval", 1*time.Second)
 	viper.SetDefault("network_server.scheduler.class_c.downlink_lock_duration", 2*time.Second)
 	viper.SetDefault("network_server.scheduler.class_c.multicast_gateway_delay", 2*time.Second)
+
 	viper.SetDefault("network_server.gateway.backend.mqtt.event_topic", "gateway/+/event/+")
 	viper.SetDefault("network_server.gateway.backend.mqtt.command_topic_template", "gateway/{{ .GatewayID }}/command/{{ .CommandType }}")
 	viper.SetDefault("network_server.gateway.backend.mqtt.clean_session", true)
+
+	viper.SetDefault("network_server.gateway.backend.amqp.url", "amqp://guest:guest@localhost:5672")
+	viper.SetDefault("network_server.gateway.backend.amqp.event_queue_name", "gateway-events")
+	viper.SetDefault("network_server.gateway.backend.amqp.event_routing_key", "gateway.*.event.*")
+	viper.SetDefault("network_server.gateway.backend.amqp.command_routing_key_template", "gateway.{{ .GatewayID }}.command.{{ .CommandType }}")
+
 	viper.SetDefault("join_server.resolve_domain_suffix", ".joineuis.lora-alliance.org")
 	viper.SetDefault("join_server.default.server", "http://localhost:8003")
 

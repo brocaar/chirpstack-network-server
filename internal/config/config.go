@@ -119,6 +119,13 @@ type Config struct {
 					CommandTopicTemplate string `mapstructure:"command_topic_template"`
 				} `mapstructure:"mqtt"`
 
+				AMQP struct {
+					URL                       string `mapstructure:"url"`
+					EventQueueName            string `mapstructure:"event_queue_name"`
+					EventRoutingKey           string `mapstructure:"event_routing_key"`
+					CommandRoutingKeyTemplate string `mapstructure:"command_routing_key_template"`
+				} `mapstructure:"amqp"`
+
 				GCPPubSub struct {
 					CredentialsFile         string        `mapstructure:"credentials_file"`
 					ProjectID               string        `mapstructure:"project_id"`

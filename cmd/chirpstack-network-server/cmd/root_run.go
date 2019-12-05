@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/brocaar/chirpstack-network-server/internal/adr"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/amqp"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/azureiothub"
 	"github.com/brocaar/chirpstack-network-server/internal/metrics"
 	"github.com/jmoiron/sqlx"
@@ -217,6 +218,8 @@ func setGatewayBackend() error {
 			storage.RedisPool(),
 			config.C,
 		)
+	case "amqp":
+		gw, err = amqp.NewBackend(config.C)
 	case "gcp_pub_sub":
 		gw, err = gcppubsub.NewBackend(config.C)
 	case "azure_iot_hub":

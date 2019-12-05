@@ -417,8 +417,9 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
     #
     # This defines the backend to use for the communication with the gateways.
     # Use the section name of one of the following gateway backends.
-	# Valid options are:
+    # Valid options are:
     #  * mqtt
+    #  * amqp
     #  * gcp_pub_sub
     #  * azure_iot_hub
     type="{{ .NetworkServer.Gateway.Backend.Type }}"
@@ -492,6 +493,36 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 
     # TLS key file (optional)
     tls_key="{{ .NetworkServer.Gateway.Backend.MQTT.TLSKey }}"
+
+
+    # AMQP / RabbitMQ.
+    #
+    # Use this backend when the ChirpStack Gateway Bridge is configured to connect
+    # to RabbitMQ using the MQTT plugin. See for more details about this plugin:
+    # https://www.rabbitmq.com/mqtt.html
+    [network_server.gateway.backend.amqp]
+    # Server URL.
+    #
+    # See for a specification of all the possible options:
+    # https://www.rabbitmq.com/uri-spec.html
+    url="{{ .NetworkServer.Gateway.Backend.AMQP.URL }}"
+
+    # Event queue name.
+    #
+    # This queue will be created when it does not yet exist and is used to
+    # queue the events received from the gateway.
+    event_queue_name="{{ .NetworkServer.Gateway.Backend.AMQP.EventQueueName }}"
+
+    # Event routing key.
+    #
+    # This is the routing-key used for creating the queue binding.
+    event_routing_key="{{ .NetworkServer.Gateway.Backend.AMQP.EventRoutingKey }}"
+
+    # Command routing key template.
+    #
+    # This is the command routing-key template used when publishing gateway
+    # commands.
+    command_routing_key_template="{{ .NetworkServer.Gateway.Backend.AMQP.CommandRoutingKeyTemplate }}"
 
 
     # Google Cloud Pub/Sub backend.

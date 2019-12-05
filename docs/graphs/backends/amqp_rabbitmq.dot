@@ -1,0 +1,39 @@
+digraph G {
+	fontsize=10;
+	style=filled;
+	color="#bbdefb";
+	node [shape=record, style=filled, color="#e3f2fd", fontsize=10];
+	edge [fontsize=9];
+
+	subgraph cluster_0 {
+		label="LoRa&reg; Gateway";
+
+		"chirpstack-gateway-bridge" [label="Packet Forwarder +\nChirpStack Gateway Bridge"];
+	}
+
+	subgraph cluster_1 {
+		label="RabbitMQ";
+
+		"rabbitmq-mqtt-plugin" [label="MQTT plugin"];
+		"rabbitmq-amq-topic" [label="amq.topic exchange"];
+		"rabbitmq-gateway-events-queue" [label="gateway-events queue"];
+		"rabbitmq-mqtt-plugin-queue" [label="MQTT plugin client queues"];
+
+		"rabbitmq-mqtt-plugin" -> "rabbitmq-amq-topic" [label="gateway.ID.event.EVENT"];
+		"rabbitmq-amq-topic" -> "rabbitmq-gateway-events-queue" [label="gateway.*.event.*"];
+		"rabbitmq-amq-topic" -> "rabbitmq-mqtt-plugin-queue" [label="gateway.ID.command.#"];
+		"rabbitmq-mqtt-plugin-queue" -> "rabbitmq-mqtt-plugin";
+	}
+
+	subgraph cluster_2 {
+		label="Cloud / server / VM";
+
+		"chirpstack-network-server" [label="ChirpStack Network Server"];
+	}
+
+	"chirpstack-gateway-bridge" -> "rabbitmq-mqtt-plugin" [label="gateway/ID/event/EVENT"];
+	"rabbitmq-mqtt-plugin" -> "chirpstack-gateway-bridge" [label="gateway/ID/command/COMMAND"];
+
+	"rabbitmq-gateway-events-queue" -> "chirpstack-network-server";
+	"chirpstack-network-server" -> "rabbitmq-amq-topic" [label="gateway.ID.command.COMMAND"];
+}

@@ -11,6 +11,7 @@ services:
       - postgres
       - redis
       - mosquitto
+      - rabbitmq
     environment:
       - DB_AUTOMIGRATE=true
       - NET_ID=010203
@@ -22,6 +23,7 @@ services:
       - TEST_POSTGRES_DSN=postgres://chirpstack_ns:chirpstack_ns@postgres/chirpstack_ns?sslmode=disable
       - TEST_REDIS_URL=redis://redis:6379
       - TEST_MQTT_SERVER=tcp://mosquitto:1883
+      - TEST_RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
 
   postgres:
     image: postgres:9.5
@@ -35,3 +37,6 @@ services:
 
   mosquitto:
     image: ansi/mosquitto
+
+  rabbitmq:
+    image: rabbitmq:3-alpine

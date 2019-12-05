@@ -30,15 +30,6 @@ func init() {
 
 }
 
-// Config contains the test configuration.
-type Config struct {
-	RedisURL     string
-	PostgresDSN  string
-	MQTTServer   string
-	MQTTUsername string
-	MQTTPassword string
-}
-
 // GetConfig returns the test configuration.
 func GetConfig() config.Config {
 	log.SetLevel(log.FatalLevel)
@@ -71,6 +62,10 @@ func GetConfig() config.Config {
 	c.NetworkServer.Gateway.Backend.MQTT.EventTopic = "gateway/+/event/+"
 	c.NetworkServer.Gateway.Backend.MQTT.CommandTopicTemplate = "gateway/{{ .GatewayID }}/command/{{ .CommandType }}"
 
+	c.NetworkServer.Gateway.Backend.AMQP.EventQueueName = "gateway-events"
+	c.NetworkServer.Gateway.Backend.AMQP.EventRoutingKey = "gateway.*.event.*"
+	c.NetworkServer.Gateway.Backend.AMQP.CommandRoutingKeyTemplate = "gateway.{{ .GatewayID }}.command.{{ .CommandType }}"
+
 	if v := os.Getenv("TEST_REDIS_URL"); v != "" {
 		c.Redis.URL = v
 	}
@@ -85,6 +80,9 @@ func GetConfig() config.Config {
 	}
 	if v := os.Getenv("TEST_MQTT_PASSWORD"); v != "" {
 		c.NetworkServer.Gateway.Backend.MQTT.Password = v
+	}
+	if v := os.Getenv("TEST_RABBITMQ_URL"); v != "" {
+		c.NetworkServer.Gateway.Backend.AMQP.URL = v
 	}
 
 	return c
