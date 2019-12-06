@@ -48,6 +48,10 @@ When using the gRPC API, you must update your imports.
 
 Deprecate use of dots (`.`) in environment variable names, use double understore (`__`) instead. ([#451](https://github.com/brocaar/chirpstack-network-server/pull/451))
 
+#### Antenna diversity
+
+Update lock key of MQTT gateway backend for handling of antenna diversity.
+
 #### Internal improvements
 
 The (re)usage of Redis connections has been improved.
