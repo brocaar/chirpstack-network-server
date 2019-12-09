@@ -157,6 +157,8 @@ func (b *Backend) publishCommand(fields log.Fields, gatewayID lorawan.EUI64, com
 		contentType = "application/octet-stream"
 	}
 
+	amqpCommandCounter(command).Inc()
+
 	err = ch.ch.Publish(
 		"amq.topic",
 		topic.String(),
@@ -242,10 +244,13 @@ func (b *Backend) eventLoop() {
 
 				switch typ {
 				case "up":
+					amqpEventCounter("up").Inc()
 					err = b.handleUplinkFrame(msg)
 				case "ack":
+					amqpEventCounter("ack").Inc()
 					err = b.handleDownlinkTXAck(msg)
 				case "stats":
+					amqpEventCounter("stats").Inc()
 					err = b.handleGatewayStats(msg)
 				default:
 					log.WithFields(log.Fields{
