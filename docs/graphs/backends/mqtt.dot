@@ -1,0 +1,27 @@
+digraph G {
+	fontsize=10;
+	style=filled;
+	color="#bbdefb";
+	node [shape=record, style=filled, color="#e3f2fd", fontsize=10];
+	edge [fontsize=9];
+
+	subgraph cluster_0 {
+		label="LoRa&reg; Gateway";
+
+		"chirpstack-gateway-bridge-gw" [label="Packet Forwarder +\nChirpStack Gateway Bridge"];
+	}
+
+	subgraph cluster_1 {
+		label="Cloud / server / VM";
+
+		"mqtt" [label="MQTT broker"];
+		"chirpstack-network-server" [label="ChirpStack Network Server"];
+	}
+
+
+	"chirpstack-gateway-bridge-gw" -> "mqtt" [label="gateway/ID/event/EVENT"];
+	"mqtt" -> "chirpstack-gateway-bridge-gw" [label="gateway/ID/command/COMMAND"];
+
+	"chirpstack-network-server" -> "mqtt" [label="gateway/ID/command/COMMAND"];
+	"mqtt" -> "chirpstack-network-server" [label="gateway/ID/event/EVENT"];
+}

@@ -1,0 +1,38 @@
+digraph G {
+	fontsize=10;
+	style=filled;
+	color="#bbdefb";
+	node [shape=record, style=filled, color="#e3f2fd", fontsize=10];
+	edge [fontsize=9];
+
+	subgraph cluster_0 {
+		label="LoRa&reg; Gateway";
+
+		"chirpstack-gateway-bridge" [label="Packet Forwarder +\nChirpStack Gateway Bridge"];
+	}
+
+	subgraph cluster_1 {
+		label="GCP Services";
+
+		"gcp-cloud-iot-core" [label="Cloud IoT Core"];
+		"gcp-pub-sub-topic" [label="Pub/Sub Topic"];
+		"gcp-pub-sub-queue" [label="Pub/Sub Queue"];
+		"gcp-cloud-function" [label="Cloud Function"];
+	}
+
+	subgraph cluster_2 {
+		label="VM / Kubernetes cluster";
+
+		"chirpstack-network-server" [label="ChirpStack Network Server"];
+	}
+
+	"chirpstack-gateway-bridge" -> "gcp-cloud-iot-core" [label="/devices/gw-ID/events/EVENT"];
+	"gcp-cloud-iot-core" -> "chirpstack-gateway-bridge" [label="/devices/gw-ID/commands/COMMAND"];
+
+	"gcp-pub-sub-queue" -> "chirpstack-network-server" [label="gateway events"];
+	"chirpstack-network-server" -> "gcp-pub-sub-topic" [label="gateway commands"];
+
+	"gcp-cloud-iot-core" -> "gcp-pub-sub-queue";
+	"gcp-cloud-function" -> "gcp-cloud-iot-core";
+	"gcp-pub-sub-topic" -> "gcp-cloud-function";
+}

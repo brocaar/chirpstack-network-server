@@ -21,31 +21,38 @@ theme = "chirpstack-hugo-theme"
 
 [[menu.main]]
     pre = "<i class='fas fa-cogs'></i>"
+    name = "Gateway backends"
+    identifier = "backends"
+    url = "/backends/"
+    weight = 3
+
+[[menu.main]]
+    pre = "<i class='fas fa-check-double'></i>"
     name = "Features"
     identifier = "features"
     url = "/features/"
-    weight = 3
+    weight = 4
 
 [[menu.main]]
     pre = "<i class='fas fa-code'></i>"
     name = "Integrate"
     identifier = "integrate"
     url = "/integrate/"
-    weight = 4
+    weight = 5
 
 [[menu.main]]
     pre = "<i class='fas fa-chart-line'></i>"
     name = "Metrics"
     identifier = "metrics"
     url = "/metrics/"
-    weight = 5
+    weight = 6
 
 [[menu.main]]
     pre = "<i class='fab fa-github'></i>"
     name = "Community & support"
     identifier = "community"
     url = "/community/"
-    weight = 6
+    weight = 7
 
 [params]
 version = "3.5.0"

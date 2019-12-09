@@ -1,0 +1,33 @@
+digraph G {
+	fontsize=10;
+	style=filled;
+	color="#bbdefb";
+	node [shape=record, style=filled, color="#e3f2fd", fontsize=10];
+	edge [fontsize=9];
+
+	subgraph cluster_0 {
+		label="LoRa&reg; Gateway";
+
+		"chirpstack-gateway-bridge" [label="Packet Forwarder +\nChirpStack Gateway Bridge"];
+	}
+
+	subgraph cluster_1 {
+		label="Azure services";
+
+		"azure-iot-hub" [label="IoT Hub"];
+		"azure-service-bus-queue" [label="Service-Bus Queue"];
+	}
+
+	subgraph cluster_2 {
+		label="VM / Kubernetes cluster";
+
+		"chirpstack-network-server" [label="ChirpStack Network Server"];
+	}
+
+	"azure-iot-hub" -> "azure-service-bus-queue";
+	"azure-service-bus-queue" -> "chirpstack-network-server" [label="gateway events"];
+	"chirpstack-network-server" -> "azure-iot-hub" [label="gateway commands"];
+
+	"chirpstack-gateway-bridge" -> "azure-iot-hub" [label="devices/ID/messages/events/EVENT"];
+	"azure-iot-hub" -> "chirpstack-gateway-bridge" [label="devices/ID/messages/devicebound/COMMAND"];
+}
