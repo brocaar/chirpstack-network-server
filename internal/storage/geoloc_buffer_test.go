@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brocaar/chirpstack-api/go/geo"
-	"github.com/brocaar/chirpstack-api/go/gw"
+	"github.com/brocaar/chirpstack-api/go/v3/geo"
+	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/golang/protobuf/ptypes"

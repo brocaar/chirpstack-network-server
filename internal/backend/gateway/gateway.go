@@ -1,6 +1,6 @@
 package gateway
 
-import "github.com/brocaar/chirpstack-api/go/gw"
+import "github.com/brocaar/chirpstack-api/go/v3/gw"
 
 var backend Gateway
 

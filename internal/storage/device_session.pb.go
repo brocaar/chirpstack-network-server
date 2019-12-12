@@ -7,7 +7,7 @@ import (
 	fmt "fmt"
 	math "math"
 
-	common "github.com/brocaar/chirpstack-api/go/common"
+	common "github.com/brocaar/chirpstack-api/go/v3/common"
 	proto "github.com/golang/protobuf/proto"
 )
 

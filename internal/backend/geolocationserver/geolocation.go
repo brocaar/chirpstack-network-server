@@ -1,6 +1,6 @@
 package geolocationserver
 
-import "github.com/brocaar/chirpstack-api/go/geo"
+import "github.com/brocaar/chirpstack-api/go/v3/geo"
 
 var client geo.GeolocationServerServiceClient
 

@@ -10,7 +10,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 
-	"github.com/brocaar/chirpstack-api/go/geo"
+	"github.com/brocaar/chirpstack-api/go/v3/geo"
 	"github.com/brocaar/lorawan"
 )
 
