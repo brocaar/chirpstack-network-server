@@ -9,6 +9,17 @@ description: Lists the changes per ChirpStack Network Server release, including 
 ---
 # Changelog
 
+## v3.6.0
+
+### Features
+
+#### RabbitMQ / AMQP backend
+
+This backend uses [RabbitMQ](https://www.rabbitmq.com/) for gateway communication.
+See the [AMQP / RabbitMQ gateway backend](https://www.chirpstack.io/network-server/backends/amqp/)
+documentation for more information. Please note that this backend does not
+replace the default MQTT backend.
+
 ## v3.5.0
 
 ### Features
