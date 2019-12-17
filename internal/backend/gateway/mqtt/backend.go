@@ -81,6 +81,7 @@ func NewBackend(redisPool *redis.Pool, c config.Config) (gateway.Gateway, error)
 	opts.SetClientID(conf.ClientID)
 	opts.SetOnConnectHandler(b.onConnected)
 	opts.SetConnectionLostHandler(b.onConnectionLost)
+	opts.SetMaxReconnectInterval(conf.MaxReconnectInterval)
 
 	tlsconfig, err := newTLSConfig(conf.CACert, conf.TLSCert, conf.TLSKey)
 	if err != nil {

@@ -105,15 +105,16 @@ type Config struct {
 				Type string `mapstructure:"type"`
 
 				MQTT struct {
-					Server       string
-					Username     string
-					Password     string
-					QOS          uint8  `mapstructure:"qos"`
-					CleanSession bool   `mapstructure:"clean_session"`
-					ClientID     string `mapstructure:"client_id"`
-					CACert       string `mapstructure:"ca_cert"`
-					TLSCert      string `mapstructure:"tls_cert"`
-					TLSKey       string `mapstructure:"tls_key"`
+					Server               string        `mapstructure:"server"`
+					Username             string        `mapstructure:"username"`
+					Password             string        `mapstructure:"password"`
+					MaxReconnectInterval time.Duration `mapstructure:"max_reconnect_interval"`
+					QOS                  uint8         `mapstructure:"qos"`
+					CleanSession         bool          `mapstructure:"clean_session"`
+					ClientID             string        `mapstructure:"client_id"`
+					CACert               string        `mapstructure:"ca_cert"`
+					TLSCert              string        `mapstructure:"tls_cert"`
+					TLSKey               string        `mapstructure:"tls_key"`
 
 					EventTopic           string `mapstructure:"event_topic"`
 					CommandTopicTemplate string `mapstructure:"command_topic_template"`
