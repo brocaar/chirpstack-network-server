@@ -16,7 +16,6 @@ RUN make
 
 FROM alpine:latest AS production
 
-WORKDIR /root/
 RUN apk --no-cache add ca-certificates tzdata
-COPY --from=development /chirpstack-network-server/build/chirpstack-network-server .
-ENTRYPOINT ["./chirpstack-network-server"]
+COPY --from=development /chirpstack-network-server/build/chirpstack-network-server /usr/bin/chirpstack-network-server
+ENTRYPOINT ["/usr/bin/chirpstack-network-server"]
