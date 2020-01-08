@@ -353,7 +353,7 @@ func (ts *IntegrationTestSuite) GetUplinkFrameForFRMPayload(rxInfo gw.UplinkRXIn
 
 		txDR, err = band.Band().GetDataRateIndex(true, loraband.DataRate{
 			Modulation: loraband.FSKModulation,
-			BitRate:    int(modInfo.Bitrate),
+			BitRate:    int(modInfo.Datarate),
 		})
 		ts.Require().Nil(err)
 	}

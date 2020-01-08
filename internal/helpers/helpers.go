@@ -53,8 +53,8 @@ func SetDownlinkTXInfoDataRate(txInfo *gw.DownlinkTXInfo, dr int, b band.Band) e
 		txInfo.Modulation = common.Modulation_FSK
 		txInfo.ModulationInfo = &gw.DownlinkTXInfo_FskModulationInfo{
 			FskModulationInfo: &gw.FSKModulationInfo{
-				Bitrate:   uint32(dataRate.BitRate),
-				Bandwidth: uint32(dataRate.Bandwidth),
+				Datarate:           uint32(dataRate.BitRate),
+				FrequencyDeviation: uint32(dataRate.BitRate / 2), // see: https://github.com/brocaar/chirpstack-gateway-bridge/issues/16
 			},
 		}
 	default:
@@ -86,8 +86,7 @@ func SetUplinkTXInfoDataRate(txInfo *gw.UplinkTXInfo, dr int, b band.Band) error
 		txInfo.Modulation = common.Modulation_FSK
 		txInfo.ModulationInfo = &gw.UplinkTXInfo_FskModulationInfo{
 			FskModulationInfo: &gw.FSKModulationInfo{
-				Bitrate:   uint32(dataRate.BitRate),
-				Bandwidth: uint32(dataRate.Bandwidth),
+				Datarate: uint32(dataRate.BitRate),
 			},
 		}
 	default:
@@ -150,8 +149,7 @@ func GetDataRateIndex(uplink bool, v DataRateGetter, b band.Band) (int, error) {
 			return 0, errors.New("fsk_modulation_info must not be nil")
 		}
 		dr.Modulation = band.FSKModulation
-		dr.Bandwidth = int(modInfo.Bandwidth)
-		dr.BitRate = int(modInfo.Bitrate)
+		dr.BitRate = int(modInfo.Datarate)
 	default:
 		return 0, fmt.Errorf("unknown modulation: %s", v.GetModulation())
 	}
