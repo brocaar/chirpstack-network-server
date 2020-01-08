@@ -513,6 +513,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 					},
 				})
 				assert.Nil(err)
+
 			})
 
 			_, err = ts.api.ActivateDevice(context.Background(), &ns.ActivateDeviceRequest{
@@ -629,9 +630,18 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 			t.Run("DeactivateDevice", func(t *testing.T) {
 				assert := require.New(t)
 
-				items, err := storage.GetDeviceQueueItemsForDevEUI(context.Background(), storage.DB(), devEUI)
-				assert.NoError(err)
-				assert.Len(items, 1)
+				resp, err := ts.api.GetDeviceQueueItemsForDevEUI(context.Background(), &ns.GetDeviceQueueItemsForDevEUIRequest{
+					DevEui: devEUI[:],
+				})
+				assert.EqualValues(1, resp.TotalCount)
+				assert.Len(resp.Items, 1)
+
+				resp, err = ts.api.GetDeviceQueueItemsForDevEUI(context.Background(), &ns.GetDeviceQueueItemsForDevEUIRequest{
+					DevEui:    devEUI[:],
+					CountOnly: true,
+				})
+				assert.EqualValues(1, resp.TotalCount)
+				assert.Len(resp.Items, 0)
 
 				_, err = ts.api.DeactivateDevice(context.Background(), &ns.DeactivateDeviceRequest{
 					DevEui: devEUI[:],
@@ -641,7 +651,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 				_, err = ts.api.GetDeviceActivation(context.Background(), &ns.GetDeviceActivationRequest{DevEui: devEUI[:]})
 				assert.Equal(codes.NotFound, grpc.Code(err))
 
-				items, err = storage.GetDeviceQueueItemsForDevEUI(context.Background(), storage.DB(), devEUI)
+				items, err := storage.GetDeviceQueueItemsForDevEUI(context.Background(), storage.DB(), devEUI)
 				assert.NoError(err)
 				assert.Len(items, 0)
 			})

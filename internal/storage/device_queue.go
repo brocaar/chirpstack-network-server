@@ -269,6 +269,25 @@ func GetDeviceQueueItemsForDevEUI(ctx context.Context, db sqlx.Queryer, devEUI l
 	return items, nil
 }
 
+// GetDeviceQueueItemCountForDevEUI returns the device-queue item count for
+// the given DevEUI.
+func GetDeviceQueueItemCountForDevEUI(ctx context.Context, db sqlx.Queryer, devEUI lorawan.EUI64) (int, error) {
+	var count int
+	err := sqlx.Get(db, &count, `
+		select
+			count(*)
+		from
+			device_queue
+		where
+			dev_eui = $1
+	`, devEUI)
+	if err != nil {
+		return 0, handlePSQLError(err, "select error")
+	}
+
+	return count, nil
+}
+
 // GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt returns the next
 // device-queue for the given DevEUI item respecting:
 // * maxPayloadSize: the maximum payload size

@@ -1374,23 +1374,33 @@ func (n *NetworkServerAPI) GetDeviceQueueItemsForDevEUI(ctx context.Context, req
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEui)
 
-	items, err := storage.GetDeviceQueueItemsForDevEUI(ctx, storage.DB(), devEUI)
-	if err != nil {
-		return nil, errToRPCError(err)
-	}
-
 	var out ns.GetDeviceQueueItemsForDevEUIResponse
-	for i := range items {
-		qi := ns.DeviceQueueItem{
-			DevAddr:    items[i].DevAddr[:],
-			DevEui:     items[i].DevEUI[:],
-			FrmPayload: items[i].FRMPayload,
-			FCnt:       items[i].FCnt,
-			FPort:      uint32(items[i].FPort),
-			Confirmed:  items[i].Confirmed,
+	if req.CountOnly {
+		count, err := storage.GetDeviceQueueItemCountForDevEUI(ctx, storage.DB(), devEUI)
+		if err != nil {
+			return nil, errToRPCError(err)
+		}
+		out.TotalCount = uint32(count)
+	} else {
+		items, err := storage.GetDeviceQueueItemsForDevEUI(ctx, storage.DB(), devEUI)
+		if err != nil {
+			return nil, errToRPCError(err)
 		}
 
-		out.Items = append(out.Items, &qi)
+		out.TotalCount = uint32(len(items))
+
+		for i := range items {
+			qi := ns.DeviceQueueItem{
+				DevAddr:    items[i].DevAddr[:],
+				DevEui:     items[i].DevEUI[:],
+				FrmPayload: items[i].FRMPayload,
+				FCnt:       items[i].FCnt,
+				FPort:      uint32(items[i].FPort),
+				Confirmed:  items[i].Confirmed,
+			}
+
+			out.Items = append(out.Items, &qi)
+		}
 	}
 
 	return &out, nil
