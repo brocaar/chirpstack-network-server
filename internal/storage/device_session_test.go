@@ -2,13 +2,11 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/require"
 
-	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
@@ -91,248 +89,6 @@ func TestUplinkHistory(t *testing.T) {
 	})
 }
 
-func TestDeviceSession(t *testing.T) {
-	conf := test.GetConfig()
-	if err := Setup(conf); err != nil {
-		t.Fatal(err)
-	}
-	ctx := context.Background()
-
-	Convey("Given a clean Redis database", t, func() {
-		test.MustFlushRedis(RedisPool())
-
-		Convey("Given a device-session", func() {
-			s := DeviceSession{
-				DevAddr:              lorawan.DevAddr{1, 2, 3, 4},
-				DevEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-				ExtraUplinkChannels:  map[int]loraband.Channel{},
-				RX2Frequency:         869525000,
-				MACCommandErrorCount: make(map[lorawan.CID]int),
-			}
-
-			Convey("When getting a non-existing device-session", func() {
-				_, err := GetDeviceSession(context.Background(), RedisPool(), s.DevEUI)
-
-				Convey("Then the expected error is returned", func() {
-					So(err, ShouldResemble, ErrDoesNotExist)
-				})
-			})
-
-			Convey("When saving the device-session", func() {
-				So(SaveDeviceSession(ctx, RedisPool(), s), ShouldBeNil)
-
-				Convey("Then GetDeviceSessionsForDevAddr includes the device-session", func() {
-					sessions, err := GetDeviceSessionsForDevAddr(context.Background(), RedisPool(), s.DevAddr)
-					So(err, ShouldBeNil)
-					So(sessions, ShouldHaveLength, 1)
-					So(sessions[0], ShouldResemble, s)
-				})
-
-				Convey("Then the session can be retrieved by it's DevEUI", func() {
-					s2, err := GetDeviceSession(context.Background(), RedisPool(), s.DevEUI)
-					So(err, ShouldBeNil)
-					So(s2, ShouldResemble, s)
-				})
-
-				Convey("Then DeleteDeviceSession deletes the device-session", func() {
-					So(DeleteDeviceSession(context.Background(), RedisPool(), s.DevEUI), ShouldBeNil)
-					So(DeleteDeviceSession(context.Background(), RedisPool(), s.DevEUI), ShouldEqual, ErrDoesNotExist)
-
-				})
-			})
-
-			Convey("When calling validateAndGetFullFCntUp", func() {
-				defaults := band.Band().GetDefaults()
-
-				testTable := []struct {
-					ServerFCnt uint32
-					NodeFCnt   uint32
-					FullFCnt   uint32
-					Valid      bool
-				}{
-					{0, 1, 1, true},                    // one packet was lost
-					{1, 1, 1, true},                    // ideal case, the FCnt has the expected value
-					{2, 1, 0, false},                   // old packet received or re-transmission
-					{0, defaults.MaxFCntGap, 0, false}, // gap should be less than MaxFCntGap
-					{0, defaults.MaxFCntGap - 1, defaults.MaxFCntGap - 1, true},             // gap is exactly within the allowed MaxFCntGap
-					{65536, defaults.MaxFCntGap - 1, defaults.MaxFCntGap - 1 + 65536, true}, // roll-over happened, gap ix exactly within allowed MaxFCntGap
-					{65535, defaults.MaxFCntGap, 0, false},                                  // roll-over happened, but too many lost frames
-					{65535, 0, 65536, true},                                                 // roll-over happened
-					{65536, 0, 65536, true},                                                 // re-transmission
-					{4294967295, 0, 0, true},                                                // 32 bit roll-over happened, counter started at 0 again
-				}
-
-				for _, test := range testTable {
-					Convey(fmt.Sprintf("Then when FCntUp=%d, ValidateAndGetFullFCntUp(%d) should return (%d, %t)", test.ServerFCnt, test.NodeFCnt, test.FullFCnt, test.Valid), func() {
-						s.FCntUp = test.ServerFCnt
-						fullFCntUp, ok := ValidateAndGetFullFCntUp(s, test.NodeFCnt)
-						So(ok, ShouldEqual, test.Valid)
-						So(fullFCntUp, ShouldEqual, test.FullFCnt)
-					})
-				}
-			})
-		})
-	})
-}
-
-func TestGetDeviceSessionForPHYPayload(t *testing.T) {
-	conf := test.GetConfig()
-	if err := Setup(conf); err != nil {
-		t.Fatal(err)
-	}
-	ctx := context.Background()
-
-	Convey("Given a clean Redis database with a set of device-sessions for the same DevAddr", t, func() {
-		test.MustFlushRedis(RedisPool())
-
-		devAddr := lorawan.DevAddr{1, 2, 3, 4}
-
-		deviceSessions := []DeviceSession{
-			{
-				DevAddr:            devAddr,
-				DevEUI:             lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
-				SNwkSIntKey:        lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-				FNwkSIntKey:        lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-				NwkSEncKey:         lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-				FCntUp:             100,
-				SkipFCntValidation: true,
-			},
-			{
-				DevAddr:            devAddr,
-				DevEUI:             lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2},
-				SNwkSIntKey:        lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-				FNwkSIntKey:        lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-				NwkSEncKey:         lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
-				FCntUp:             200,
-				SkipFCntValidation: false,
-			},
-			{
-				DevAddr:            devAddr,
-				DevEUI:             lorawan.EUI64{3, 3, 3, 3, 3, 3, 3, 3},
-				SNwkSIntKey:        lorawan.AES128Key{3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
-				FNwkSIntKey:        lorawan.AES128Key{3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
-				NwkSEncKey:         lorawan.AES128Key{3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
-				FCntUp:             300,
-				SkipFCntValidation: false,
-				PendingRejoinDeviceSession: &DeviceSession{
-					DevAddr:     lorawan.DevAddr{4, 3, 2, 1},
-					DevEUI:      lorawan.EUI64{3, 3, 3, 3, 3, 3, 3, 3},
-					SNwkSIntKey: lorawan.AES128Key{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4},
-					FNwkSIntKey: lorawan.AES128Key{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4},
-					NwkSEncKey:  lorawan.AES128Key{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4},
-					FCntUp:      0,
-				},
-			},
-		}
-		for _, s := range deviceSessions {
-			So(SaveDeviceSession(ctx, RedisPool(), s), ShouldBeNil)
-		}
-
-		Convey("Given a set of tests", func() {
-			testTable := []struct {
-				Name           string
-				DevAddr        lorawan.DevAddr
-				SNwkSIntKey    lorawan.AES128Key
-				FNwkSIntKey    lorawan.AES128Key
-				FCnt           uint32
-				ExpectedDevEUI lorawan.EUI64
-				ExpectedFCntUp uint32
-				ExpectedError  error
-			}{
-				{
-					Name:           "matching DevEUI 0101010101010101",
-					DevAddr:        devAddr,
-					FNwkSIntKey:    deviceSessions[0].FNwkSIntKey,
-					SNwkSIntKey:    deviceSessions[0].SNwkSIntKey,
-					FCnt:           deviceSessions[0].FCntUp,
-					ExpectedFCntUp: deviceSessions[0].FCntUp,
-					ExpectedDevEUI: deviceSessions[0].DevEUI,
-				},
-				{
-					Name:           "matching DevEUI 0202020202020202",
-					DevAddr:        devAddr,
-					FNwkSIntKey:    deviceSessions[1].FNwkSIntKey,
-					SNwkSIntKey:    deviceSessions[1].SNwkSIntKey,
-					FCnt:           deviceSessions[1].FCntUp,
-					ExpectedFCntUp: deviceSessions[1].FCntUp,
-					ExpectedDevEUI: deviceSessions[1].DevEUI,
-				},
-				{
-					Name:           "matching DevEUI 0101010101010101 with frame counter reset",
-					DevAddr:        devAddr,
-					FNwkSIntKey:    deviceSessions[0].FNwkSIntKey,
-					SNwkSIntKey:    deviceSessions[0].SNwkSIntKey,
-					FCnt:           0,
-					ExpectedFCntUp: 0, // has been reset
-					ExpectedDevEUI: deviceSessions[0].DevEUI,
-				},
-				{
-					Name:          "matching DevEUI 0202020202020202 with invalid frame counter",
-					DevAddr:       devAddr,
-					FNwkSIntKey:   deviceSessions[1].FNwkSIntKey,
-					SNwkSIntKey:   deviceSessions[1].SNwkSIntKey,
-					FCnt:          0,
-					ExpectedError: ErrDoesNotExistOrFCntOrMICInvalid,
-				},
-				{
-					Name:          "invalid DevAddr",
-					DevAddr:       lorawan.DevAddr{1, 1, 1, 1},
-					FNwkSIntKey:   deviceSessions[0].FNwkSIntKey,
-					SNwkSIntKey:   deviceSessions[0].SNwkSIntKey,
-					FCnt:          deviceSessions[0].FCntUp,
-					ExpectedError: ErrDoesNotExistOrFCntOrMICInvalid,
-				},
-				{
-					Name:          "invalid NwkSKey",
-					DevAddr:       deviceSessions[0].DevAddr,
-					FNwkSIntKey:   lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-					SNwkSIntKey:   lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-					FCnt:          deviceSessions[0].FCntUp,
-					ExpectedError: ErrDoesNotExistOrFCntOrMICInvalid,
-				},
-				{
-					Name:           "matching pending rejoin device-session",
-					DevAddr:        lorawan.DevAddr{4, 3, 2, 1},
-					SNwkSIntKey:    lorawan.AES128Key{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4},
-					FNwkSIntKey:    lorawan.AES128Key{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4},
-					FCnt:           0,
-					ExpectedDevEUI: lorawan.EUI64{3, 3, 3, 3, 3, 3, 3, 3},
-					ExpectedFCntUp: 0,
-				},
-			}
-
-			for i, test := range testTable {
-				Convey(fmt.Sprintf("Testing: %s [%d]", test.Name, i), func() {
-					phy := lorawan.PHYPayload{
-						MHDR: lorawan.MHDR{
-							MType: lorawan.UnconfirmedDataUp,
-							Major: lorawan.LoRaWANR1,
-						},
-						MACPayload: &lorawan.MACPayload{
-							FHDR: lorawan.FHDR{
-								DevAddr: test.DevAddr,
-								FCtrl:   lorawan.FCtrl{},
-								FCnt:    test.FCnt,
-							},
-						},
-					}
-					So(phy.SetUplinkDataMIC(lorawan.LoRaWAN1_0, 0, 0, 0, test.FNwkSIntKey, test.SNwkSIntKey), ShouldBeNil)
-
-					s, err := GetDeviceSessionForPHYPayload(ctx, RedisPool(), phy, 0, 0)
-					if test.ExpectedError != nil {
-						So(err, ShouldNotBeNil)
-						So(err.Error(), ShouldEqual, test.ExpectedError.Error())
-						return
-					}
-					So(err, ShouldBeNil)
-					So(s.DevEUI, ShouldResemble, test.ExpectedDevEUI)
-					So(s.FCntUp, ShouldEqual, test.ExpectedFCntUp)
-				})
-			}
-		})
-	})
-}
-
 func (ts *StorageTestSuite) TestDeviceGatewayRXInfoSet() {
 	devEUI := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
 
@@ -388,4 +144,215 @@ func (ts *StorageTestSuite) TestDeviceGatewayRXInfoSet() {
 			assert.Equal(ErrDoesNotExist, DeleteDeviceGatewayRXInfoSet(context.Background(), ts.RedisPool(), devEUI))
 		})
 	})
+}
+
+func (ts *StorageTestSuite) TestDeviceSession() {
+	s := DeviceSession{
+		DevAddr:              lorawan.DevAddr{1, 2, 3, 4},
+		DevEUI:               lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+		ExtraUplinkChannels:  map[int]loraband.Channel{},
+		RX2Frequency:         869525000,
+		MACCommandErrorCount: make(map[lorawan.CID]int),
+	}
+
+	ts.T().Run("Get non existing", func(t *testing.T) {
+		assert := require.New(t)
+		_, err := GetDeviceSession(context.Background(), RedisPool(), s.DevEUI)
+		assert.Equal(ErrDoesNotExist, err)
+	})
+
+	ts.T().Run("Save", func(t *testing.T) {
+		assert := require.New(t)
+		assert.NoError(SaveDeviceSession(context.Background(), RedisPool(), s))
+
+		t.Run("Get", func(t *testing.T) {
+			assert := require.New(t)
+			s2, err := GetDeviceSession(context.Background(), RedisPool(), s.DevEUI)
+			assert.NoError(err)
+			assert.Equal(s, s2)
+		})
+
+		t.Run("Delete", func(t *testing.T) {
+			assert := require.New(t)
+			assert.NoError(DeleteDeviceSession(context.Background(), RedisPool(), s.DevEUI))
+			assert.Equal(DeleteDeviceSession(context.Background(), RedisPool(), s.DevEUI), ErrDoesNotExist)
+		})
+	})
+}
+
+func (ts *StorageTestSuite) TestGetDeviceSessionForPHYPayload() {
+	assert := require.New(ts.T())
+	devAddr := lorawan.DevAddr{1, 2, 3, 4}
+
+	deviceSessions := []DeviceSession{
+		{
+			DevAddr:            devAddr,
+			DevEUI:             lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+			SNwkSIntKey:        lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+			FNwkSIntKey:        lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+			NwkSEncKey:         lorawan.AES128Key{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+			FCntUp:             100,
+			SkipFCntValidation: true,
+		},
+		{
+			DevAddr:            devAddr,
+			DevEUI:             lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2},
+			SNwkSIntKey:        lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+			FNwkSIntKey:        lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+			NwkSEncKey:         lorawan.AES128Key{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+			FCntUp:             200,
+			SkipFCntValidation: false,
+		},
+		{
+			DevAddr:            devAddr,
+			DevEUI:             lorawan.EUI64{3, 3, 3, 3, 3, 3, 3, 3},
+			SNwkSIntKey:        lorawan.AES128Key{3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+			FNwkSIntKey:        lorawan.AES128Key{3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+			NwkSEncKey:         lorawan.AES128Key{3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3},
+			FCntUp:             300,
+			SkipFCntValidation: false,
+			PendingRejoinDeviceSession: &DeviceSession{
+				DevAddr:     lorawan.DevAddr{4, 3, 2, 1},
+				DevEUI:      lorawan.EUI64{3, 3, 3, 3, 3, 3, 3, 3},
+				SNwkSIntKey: lorawan.AES128Key{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4},
+				FNwkSIntKey: lorawan.AES128Key{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4},
+				NwkSEncKey:  lorawan.AES128Key{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4},
+				FCntUp:      0,
+			},
+		},
+	}
+	for _, s := range deviceSessions {
+		assert.NoError(SaveDeviceSession(context.Background(), RedisPool(), s))
+	}
+
+	testTable := []struct {
+		Name           string
+		DevAddr        lorawan.DevAddr
+		SNwkSIntKey    lorawan.AES128Key
+		FNwkSIntKey    lorawan.AES128Key
+		FCnt           uint32
+		ExpectedDevEUI lorawan.EUI64
+		ExpectedFCntUp uint32
+		ExpectedError  error
+	}{
+		{
+			Name:           "matching DevEUI 0101010101010101",
+			DevAddr:        devAddr,
+			FNwkSIntKey:    deviceSessions[0].FNwkSIntKey,
+			SNwkSIntKey:    deviceSessions[0].SNwkSIntKey,
+			FCnt:           deviceSessions[0].FCntUp,
+			ExpectedFCntUp: deviceSessions[0].FCntUp,
+			ExpectedDevEUI: deviceSessions[0].DevEUI,
+		},
+		{
+			Name:           "matching DevEUI 0202020202020202",
+			DevAddr:        devAddr,
+			FNwkSIntKey:    deviceSessions[1].FNwkSIntKey,
+			SNwkSIntKey:    deviceSessions[1].SNwkSIntKey,
+			FCnt:           deviceSessions[1].FCntUp,
+			ExpectedFCntUp: deviceSessions[1].FCntUp,
+			ExpectedDevEUI: deviceSessions[1].DevEUI,
+		},
+		{
+			Name:           "matching DevEUI 0101010101010101 with frame counter reset",
+			DevAddr:        devAddr,
+			FNwkSIntKey:    deviceSessions[0].FNwkSIntKey,
+			SNwkSIntKey:    deviceSessions[0].SNwkSIntKey,
+			FCnt:           0,
+			ExpectedFCntUp: 0, // has been reset
+			ExpectedDevEUI: deviceSessions[0].DevEUI,
+		},
+		{
+			Name:          "matching DevEUI 0202020202020202 with invalid frame counter",
+			DevAddr:       devAddr,
+			FNwkSIntKey:   deviceSessions[1].FNwkSIntKey,
+			SNwkSIntKey:   deviceSessions[1].SNwkSIntKey,
+			FCnt:          0,
+			ExpectedError: ErrFrameCounterReset,
+		},
+		{
+			Name:          "invalid DevAddr",
+			DevAddr:       lorawan.DevAddr{1, 1, 1, 1},
+			FNwkSIntKey:   deviceSessions[0].FNwkSIntKey,
+			SNwkSIntKey:   deviceSessions[0].SNwkSIntKey,
+			FCnt:          deviceSessions[0].FCntUp,
+			ExpectedError: ErrDoesNotExist,
+		},
+		{
+			Name:          "invalid NwkSKey",
+			DevAddr:       deviceSessions[0].DevAddr,
+			FNwkSIntKey:   lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			SNwkSIntKey:   lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+			FCnt:          deviceSessions[0].FCntUp,
+			ExpectedError: ErrInvalidMIC,
+		},
+		{
+			Name:           "matching pending rejoin device-session",
+			DevAddr:        lorawan.DevAddr{4, 3, 2, 1},
+			SNwkSIntKey:    lorawan.AES128Key{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4},
+			FNwkSIntKey:    lorawan.AES128Key{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4},
+			FCnt:           0,
+			ExpectedDevEUI: lorawan.EUI64{3, 3, 3, 3, 3, 3, 3, 3},
+			ExpectedFCntUp: 0,
+		},
+	}
+
+	for _, tst := range testTable {
+		ts.T().Run(tst.Name, func(t *testing.T) {
+			assert := require.New(t)
+
+			phy := lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: tst.DevAddr,
+						FCtrl:   lorawan.FCtrl{},
+						FCnt:    tst.FCnt,
+					},
+				},
+			}
+			assert.NoError(phy.SetUplinkDataMIC(lorawan.LoRaWAN1_0, 0, 0, 0, tst.FNwkSIntKey, tst.SNwkSIntKey))
+
+			s, err := GetDeviceSessionForPHYPayload(context.Background(), RedisPool(), phy, 0, 0)
+			if tst.ExpectedError != nil {
+				assert.NotNil(err)
+				assert.Equal(tst.ExpectedError.Error(), err.Error())
+				return
+			}
+
+			assert.NoError(err)
+			assert.Equal(tst.ExpectedDevEUI, s.DevEUI)
+			assert.Equal(tst.ExpectedFCntUp, s.FCntUp)
+		})
+	}
+}
+
+func TestGetFullFCntUp(t *testing.T) {
+	assert := require.New(t)
+
+	// note that the ServerFCnt stores the expected frame-counter for the next
+	// uplink, so in the ideal case the ServerFCnt and DeviceFCnt are equal.
+	tests := []struct {
+		ServerFCnt uint32
+		DeviceFCnt uint32
+		FullFCnt   uint32
+	}{
+		{1, 1, 1},                                 // frame-counter is as expected
+		{1 << 16, 0, 1 << 16},                     // frame-counter is as expected
+		{(1 << 16) + 1, 1, (1 << 16) + 1},         // frame-counter is as expected
+		{0, 1, 1},                                 // one frame packet-loss
+		{(1 << 16) + 1, 2, (1 << 16) + 2},         // one frame packet-loss
+		{2, 1, 1},                                 // re-transmission of previous frame
+		{(1 << 16) + 1, 0, (1 << 16)},             // re-transmission of previous frame
+		{(1 << 16), (1 << 16) - 1, (1 << 16) - 1}, // re-transmission of previous frame
+		{(1 << 32) - 1, 0, 0},                     // 32bit frame-counter rollover
+	}
+
+	for i, test := range tests {
+		out := GetFullFCntUp(DeviceSession{FCntUp: test.ServerFCnt}, test.DeviceFCnt)
+		assert.Equalf(test.FullFCnt, out, "Test %d: expected %d, got %d", i, test.FullFCnt, out)
+	}
 }

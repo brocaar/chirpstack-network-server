@@ -22,12 +22,11 @@ var errToCode = map[error]codes.Code{
 
 	multicast.ErrInvalidFCnt: codes.InvalidArgument,
 
-	storage.ErrAlreadyExists:                  codes.AlreadyExists,
-	storage.ErrDoesNotExistOrFCntOrMICInvalid: codes.NotFound,
-	storage.ErrDoesNotExist:                   codes.NotFound,
-	storage.ErrInvalidName:                    codes.InvalidArgument,
-	storage.ErrInvalidAggregationInterval:     codes.InvalidArgument,
-	storage.ErrInvalidFPort:                   codes.InvalidArgument,
+	storage.ErrAlreadyExists:              codes.AlreadyExists,
+	storage.ErrDoesNotExist:               codes.NotFound,
+	storage.ErrInvalidName:                codes.InvalidArgument,
+	storage.ErrInvalidAggregationInterval: codes.InvalidArgument,
+	storage.ErrInvalidFPort:               codes.InvalidArgument,
 }
 
 func errToRPCError(err error) error {

@@ -280,19 +280,26 @@ func GetRandomDevAddr(netID lorawan.NetID) (lorawan.DevAddr, error) {
 	return d, nil
 }
 
-// ValidateAndGetFullFCntUp validates if the given fCntUp is valid
-// and returns the full 32 bit frame-counter.
-// Note that the LoRaWAN packet only contains the 16 LSB, so in order
-// to validate the MIC, the full 32 bit frame-counter needs to be set.
-// After a succesful validation of the FCntUp and the MIC, don't forget
-// to synchronize the Node FCntUp with the packet FCnt.
-func ValidateAndGetFullFCntUp(s DeviceSession, fCntUp uint32) (uint32, bool) {
-	// we need to compare the difference of the 16 LSB
-	gap := uint32(uint16(fCntUp) - uint16(s.FCntUp%65536))
-	if gap < band.Band().GetDefaults().MaxFCntGap {
-		return s.FCntUp + gap, true
+// GetFullFCntUp returns the full 32bit frame-counter, given the fCntUp which
+// has been truncated to the last 16 LSB.
+// Notes:
+// * After a succesful validation of the FCntUp and the MIC, don't forget
+//   to synchronize the device FCntUp with the packet FCnt.
+// * In case of a frame-counter rollover, the returned values will be less
+//   than the given DeviceSession FCntUp. This must be validated outside this
+//   function!
+// * In case of a re-transmission, the returned frame-counter equals
+//   DeviceSession.FCntUp - 1, as the FCntUp value holds the next expected
+//   frame-counter, not the FCntUp which was last seen.
+func GetFullFCntUp(s DeviceSession, fCntUp uint32) uint32 {
+	// Handle re-transmission.
+	// Note: the s.FCntUp value holds the next expected uplink frame-counter,
+	// therefore this function returns sFCntUp - 1 in case of a re-transmission.
+	if fCntUp == uint32(uint16(s.FCntUp%(1<<16))-1) {
+		return s.FCntUp - 1
 	}
-	return 0, false
+	gap := uint32(uint16(fCntUp) - uint16(s.FCntUp%(1<<16)))
+	return s.FCntUp + gap
 }
 
 // SaveDeviceSession saves the device-session. In case it doesn't exist yet
@@ -450,65 +457,60 @@ func GetDeviceSessionForPHYPayload(ctx context.Context, p *redis.Pool, phy loraw
 	}
 	originalFCnt := macPL.FHDR.FCnt
 
-	sessions, err := GetDeviceSessionsForDevAddr(ctx, p, macPL.FHDR.DevAddr)
+	deviceSessions, err := GetDeviceSessionsForDevAddr(ctx, p, macPL.FHDR.DevAddr)
 	if err != nil {
 		return DeviceSession{}, err
 	}
+	if len(deviceSessions) == 0 {
+		return DeviceSession{}, ErrDoesNotExist
+	}
 
-	for _, s := range sessions {
-		// reset to the original FCnt
+	for _, ds := range deviceSessions {
+		// restore the original frame-counter
 		macPL.FHDR.FCnt = originalFCnt
-		// get full FCnt
-		fullFCnt, ok := ValidateAndGetFullFCntUp(s, macPL.FHDR.FCnt)
-		if !ok {
-			// If RelaxFCnt is turned on, just trust the uplink FCnt
-			// this is insecure, but has been requested by many people for
-			// debugging purposes.
-			// Note that we do not reset the FCntDown as this would reset the
-			// downlink frame-counter on a re-transmit, which is not what we
-			// want.
-			if s.SkipFCntValidation {
-				fullFCnt = macPL.FHDR.FCnt
-				s.FCntUp = macPL.FHDR.FCnt
-				s.UplinkHistory = []UplinkHistory{}
 
-				// validate if the mic is valid given the FCnt reset
-				// note that we can always set the ConfFCnt as the validation
-				// function will only use it when the ACK bit is set
-				micOK, err := phy.ValidateUplinkDataMIC(s.GetMACVersion(), s.ConfFCnt, uint8(txDR), uint8(txCh), s.FNwkSIntKey, s.SNwkSIntKey)
-				if err != nil {
-					return DeviceSession{}, errors.Wrap(err, "validate mic error")
-				}
+		// get the full frame-counter (from 16bit to 32bit)
+		fullFCnt := GetFullFCntUp(ds, macPL.FHDR.FCnt)
 
-				if micOK {
-					// we need to update the NodeSession
-					if err := SaveDeviceSession(ctx, p, s); err != nil {
-						return DeviceSession{}, err
-					}
-					log.WithFields(log.Fields{
-						"dev_addr": macPL.FHDR.DevAddr,
-						"dev_eui":  s.DevEUI,
-						"ctx_id":   ctx.Value(logging.ContextIDKey),
-					}).Warning("frame counters reset")
-					return s, nil
-				}
+		// Check both the full frame-counter and the received frame-counter
+		// truncated to the 16LSB.
+		// The latter is needed in case of a frame-counter reset as the
+		// GetFullFCntUp will think the 16LSB has rolled over and will
+		// increment the 16MSB bit.
+		var micOK bool
+		for _, fullFCnt := range []uint32{fullFCnt, originalFCnt} {
+			macPL.FHDR.FCnt = fullFCnt
+			micOK, err = phy.ValidateUplinkDataMIC(ds.GetMACVersion(), ds.ConfFCnt, uint8(txDR), uint8(txCh), ds.FNwkSIntKey, ds.SNwkSIntKey)
+			if err != nil {
+				// this is not related to a bad MIC, but is a software error
+				return DeviceSession{}, errors.Wrap(err, "validate mic error")
 			}
-			// try the next node-session
-			continue
+
+			if micOK {
+				break
+			}
 		}
 
-		// the FCnt is valid, validate the MIC
-		macPL.FHDR.FCnt = fullFCnt
-		micOK, err := phy.ValidateUplinkDataMIC(s.GetMACVersion(), s.ConfFCnt, uint8(txDR), uint8(txCh), s.FNwkSIntKey, s.SNwkSIntKey)
-		if err != nil {
-			return DeviceSession{}, errors.Wrap(err, "validate mic error")
-		}
 		if micOK {
-			return s, nil
+			if macPL.FHDR.FCnt >= ds.FCntUp {
+				// the frame-counter is greater than or equal to the expected value
+				return ds, nil
+			} else if ds.SkipFCntValidation {
+				// re-transmission or frame-counter reset
+				ds.FCntUp = 0
+				ds.UplinkHistory = []UplinkHistory{}
+				return ds, nil
+			} else if macPL.FHDR.FCnt == (ds.FCntUp - 1) {
+				// re-transmission, the frame-counter did not increment
+				return ds, ErrFrameCounterRetransmission
+			} else {
+				// frame-counter reset or roll-over happened
+				return ds, ErrFrameCounterReset
+			}
 		}
 	}
 
-	return DeviceSession{}, ErrDoesNotExistOrFCntOrMICInvalid
+	return DeviceSession{}, ErrInvalidMIC
 }
 
 // DeviceSessionExists returns a bool indicating if a device session exist.

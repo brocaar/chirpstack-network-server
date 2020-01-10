@@ -3,7 +3,6 @@ package data
 import (
 	"context"
 	"encoding/binary"
-	"fmt"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -488,11 +487,6 @@ func preferRX2LinkBudget(ctx *dataContext) (b bool, err error) {
 
 	linkBudgetRX1 := sensitivity.CalculateLinkBudget(drRX1.Bandwidth*1000, 6, float32(config.SpreadFactorToRequiredSNRTable[drRX1.SpreadFactor]), float32(txPowerRX1))
 	linkBudgetRX2 := sensitivity.CalculateLinkBudget(drRX2.Bandwidth*1000, 6, float32(config.SpreadFactorToRequiredSNRTable[drRX2.SpreadFactor]), float32(txPowerRX2))
-
-	fmt.Println("RX1", sensitivity.CalculateSensitivity(drRX1.Bandwidth*1000, 6, float32(config.SpreadFactorToRequiredSNRTable[drRX1.SpreadFactor])))
-
-	fmt.Println(txPowerRX1, drRX1.Bandwidth, config.SpreadFactorToRequiredSNRTable[drRX1.SpreadFactor], linkBudgetRX1)
-	fmt.Println(txPowerRX2, drRX2.Bandwidth, config.SpreadFactorToRequiredSNRTable[drRX2.SpreadFactor], linkBudgetRX2)
 
 	return linkBudgetRX2 > linkBudgetRX1, nil
 }

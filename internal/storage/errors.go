@@ -9,12 +9,14 @@ import (
 
 // errors
 var (
-	ErrAlreadyExists                  = errors.New("object already exists")
-	ErrDoesNotExist                   = errors.New("object does not exist")
-	ErrDoesNotExistOrFCntOrMICInvalid = errors.New("device-session does not exist or invalid fcnt or mic")
-	ErrInvalidAggregationInterval     = errors.New("invalid aggregation interval")
-	ErrInvalidName                    = errors.New("invalid gateway name")
-	ErrInvalidFPort                   = errors.New("invalid fPort (must be > 0)")
+	ErrAlreadyExists              = errors.New("object already exists")
+	ErrDoesNotExist               = errors.New("object does not exist")
+	ErrFrameCounterRetransmission = errors.New("frame-counter did not increment")
+	ErrFrameCounterReset          = errors.New("frame-counter reset or rollover occured")
+	ErrInvalidMIC                 = errors.New("invalid MIC")
+	ErrInvalidAggregationInterval = errors.New("invalid aggregation interval")
+	ErrInvalidName                = errors.New("invalid gateway name")
+	ErrInvalidFPort               = errors.New("invalid fPort (must be > 0)")
 )
 
 func handlePSQLError(err error, description string) error {

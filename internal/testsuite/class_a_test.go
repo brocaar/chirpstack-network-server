@@ -119,7 +119,7 @@ func (ts *ClassATestSuite) TestLW10Errors() {
 				},
 				MIC: lorawan.MIC{48, 94, 26, 239},
 			},
-			ExpectedError: errors.New("get device-session error: device-session does not exist or invalid fcnt or mic"),
+			ExpectedError: errors.New("get device-session error: frame-counter did not increment"),
 			Assert: []Assertion{
 				AssertFCntUp(8),
 				AssertNFCntDown(5),
@@ -175,7 +175,7 @@ func (ts *ClassATestSuite) TestLW11Errors() {
 				},
 				MIC: lorawan.MIC{160, 195, 160, 195},
 			},
-			ExpectedError: errors.New("get device-session error: device-session does not exist or invalid fcnt or mic"),
+			ExpectedError: errors.New("get device-session error: invalid MIC"),
 		},
 		{
 			Name: "the data-rate is invalid (MIC)",
@@ -199,7 +199,7 @@ func (ts *ClassATestSuite) TestLW11Errors() {
 				},
 				MIC: lorawan.MIC{160, 195, 160, 195},
 			},
-			ExpectedError: errors.New("get device-session error: device-session does not exist or invalid fcnt or mic"),
+			ExpectedError: errors.New("get device-session error: invalid MIC"),
 		},
 	}
 
