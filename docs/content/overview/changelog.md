@@ -57,7 +57,7 @@ When using the gRPC API, you must update your imports.
 
 #### Environment variable configuration
 
-Deprecate use of dots (`.`) in environment variable names, use double understore (`__`) instead. ([#451](https://github.com/brocaar/chirpstack-network-server/pull/451))
+Deprecate use of dots (`.`) in environment variable names, use double underscore (`__`) instead. ([#451](https://github.com/brocaar/chirpstack-network-server/pull/451))
 
 #### Antenna diversity
 
