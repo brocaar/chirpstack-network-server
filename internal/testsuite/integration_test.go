@@ -603,9 +603,9 @@ func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
 		} else {
 			assert.Equal(tst.ExpectedError.Error(), err.Error())
 		}
-		return
+	} else {
+		assert.NoError(tst.ExpectedError)
 	}
-	assert.NoError(tst.ExpectedError)
 
 	// refresh device-session
 	ds, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), ts.DeviceSession.DevEUI)

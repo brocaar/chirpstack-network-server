@@ -101,7 +101,7 @@ func (ts *ClassATestSuite) TestLW10Errors() {
 
 	tests := []ClassATest{
 		{
-			Name:          "invalid frame-counter",
+			Name:          "invalid frame-counter (did not increment)",
 			DeviceSession: *ts.DeviceSession,
 			TXInfo:        ts.TXInfo,
 			RXInfo:        ts.RXInfo,
@@ -123,6 +123,74 @@ func (ts *ClassATestSuite) TestLW10Errors() {
 			Assert: []Assertion{
 				AssertFCntUp(8),
 				AssertNFCntDown(5),
+				AssertASHandleErrorRequest(as.HandleErrorRequest{
+					DevEui: ts.Device.DevEUI[:],
+					Type:   as.ErrorType_DATA_UP_FCNT_RETRANSMISSION,
+					Error:  "frame-counter did not increment",
+					FCnt:   7,
+				}),
+			},
+		},
+		{
+			Name:          "invalid frame-counter (reset)",
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    0,
+					},
+					FPort: &fPortOne,
+				},
+				MIC: lorawan.MIC{0x83, 0x24, 0x53, 0xa3},
+			},
+			ExpectedError: errors.New("get device-session error: frame-counter reset or rollover occured"),
+			Assert: []Assertion{
+				AssertFCntUp(8),
+				AssertNFCntDown(5),
+				AssertASHandleErrorRequest(as.HandleErrorRequest{
+					DevEui: ts.Device.DevEUI[:],
+					Type:   as.ErrorType_DATA_UP_FCNT_RESET,
+					Error:  "frame-counter reset or rollover occured",
+					FCnt:   0,
+				}),
+			},
+		},
+		{
+			Name:          "invalid MIC",
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    7,
+					},
+					FPort: &fPortOne,
+				},
+				MIC: lorawan.MIC{0x83, 0x24, 0x53, 0xa3},
+			},
+			ExpectedError: errors.New("get device-session error: invalid MIC"),
+			Assert: []Assertion{
+				AssertFCntUp(8),
+				AssertNFCntDown(5),
+				AssertASHandleErrorRequest(as.HandleErrorRequest{
+					DevEui: ts.Device.DevEUI[:],
+					Type:   as.ErrorType_DATA_UP_MIC,
+					Error:  "invalid MIC",
+					FCnt:   7,
+				}),
 			},
 		},
 	}

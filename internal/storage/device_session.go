@@ -510,7 +510,11 @@ func GetDeviceSessionForPHYPayload(ctx context.Context, p *redis.Pool, phy loraw
 		}
 	}
 
-	return DeviceSession{}, ErrInvalidMIC
+	// Return the first device-session. We could not validate if this is the
+	// device-session matching the uplink DevAddr, but it could still provide
+	// value to forward the MIC error to the AS in the Routing Profile of the
+	// device-session.
+	return deviceSessions[0], ErrInvalidMIC
 }
 
 // DeviceSessionExists returns a bool indicating if a device session exist.

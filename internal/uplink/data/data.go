@@ -108,11 +108,6 @@ func setContextFromDataPHYPayload(ctx *dataContext) error {
 }
 
 func getDeviceSessionForPHYPayload(ctx *dataContext) error {
-	txDR, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
-	if err != nil {
-		return errors.Wrap(err, "get data-rate index error")
-	}
-
 	var txCh int
 	for _, defaultChannel := range []bool{true, false} {
 		i, err := band.Band().GetUplinkChannelIndex(int(ctx.RXPacket.TXInfo.Frequency), defaultChannel)
@@ -129,17 +124,53 @@ func getDeviceSessionForPHYPayload(ctx *dataContext) error {
 		// eg EU868:
 		//  channel 1 (868.3 DR 0-5)
 		//  channel x (868.3 DR 6)
-		if c.MinDR <= txDR && c.MaxDR >= txDR {
+		if c.MinDR <= ctx.RXPacket.DR && c.MaxDR >= ctx.RXPacket.DR {
 			txCh = i
 		}
 	}
 
-	ds, err := storage.GetDeviceSessionForPHYPayload(ctx.ctx, storage.RedisPool(), ctx.RXPacket.PHYPayload, txDR, txCh)
+	ds, err := storage.GetDeviceSessionForPHYPayload(ctx.ctx, storage.RedisPool(), ctx.RXPacket.PHYPayload, ctx.RXPacket.DR, txCh)
 	if err != nil {
-		return errors.Wrap(err, "get device-session error")
-	}
-	ctx.DeviceSession = ds
+		returnErr := errors.Wrap(err, "get device-session error")
 
+		// Forward error notification to the AS for debugging purpose.
+		if err == storage.ErrFrameCounterReset || err == storage.ErrInvalidMIC || err == storage.ErrFrameCounterRetransmission {
+			req := as.HandleErrorRequest{
+				DevEui: ds.DevEUI[:],
+				Error:  err.Error(),
+				FCnt:   ctx.MACPayload.FHDR.FCnt,
+			}
+
+			switch err {
+			case storage.ErrFrameCounterReset:
+				req.Type = as.ErrorType_DATA_UP_FCNT_RESET
+			case storage.ErrInvalidMIC:
+				req.Type = as.ErrorType_DATA_UP_MIC
+			case storage.ErrFrameCounterRetransmission:
+				req.Type = as.ErrorType_DATA_UP_FCNT_RETRANSMISSION
+			}
+
+			asClient, err := helpers.GetASClientForRoutingProfileID(ctx.ctx, ds.RoutingProfileID)
+			if err != nil {
+				log.WithError(err).WithFields(log.Fields{
+					"dev_eui": ds.DevEUI,
+					"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+				}).Error("uplink/data: get as client for routing-profile id error")
+			} else {
+				_, err := asClient.HandleError(ctx.ctx, &req)
+				if err != nil {
+					log.WithError(err).WithFields(log.Fields{
+						"dev_eui": ds.DevEUI,
+						"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+					}).Error("uplink/data: as.HandleError error")
+				}
+			}
+		}
+
+		return returnErr
+	}
+
+	ctx.DeviceSession = ds
 	return nil
 }
 
