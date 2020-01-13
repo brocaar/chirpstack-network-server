@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/brocaar/chirpstack-api/go/v3/as"
 	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
@@ -142,6 +143,13 @@ func (ts *OTAATestSuite) TestLW10() {
 			PHYPayload:                    jrPayload,
 			JoinServerJoinAnsPayloadError: errors.New("invalid deveui"),
 			ExpectedError:                 errors.New("join-request to join-server error: invalid deveui"),
+			Assert: []Assertion{
+				AssertASHandleErrorRequest(as.HandleErrorRequest{
+					DevEui: ts.Device.DevEUI[:],
+					Type:   as.ErrorType_OTAA,
+					Error:  "join-server returned error: invalid deveui",
+				}),
+			},
 		},
 		{
 			Name:       "device already activated with dev-nonce",
@@ -161,6 +169,13 @@ func (ts *OTAATestSuite) TestLW10() {
 				},
 			},
 			ExpectedError: errors.New("validate dev-nonce error: object already exists"),
+			Assert: []Assertion{
+				AssertASHandleErrorRequest(as.HandleErrorRequest{
+					DevEui: ts.Device.DevEUI[:],
+					Type:   as.ErrorType_OTAA,
+					Error:  "validate dev-nonce error",
+				}),
+			},
 		},
 		{
 			Name:       "join-request accepted (rx1 + rx2)",

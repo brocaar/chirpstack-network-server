@@ -11,9 +11,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/lorawan"
-	"github.com/brocaar/lorawan/backend"
-	loraband "github.com/brocaar/lorawan/band"
+	"github.com/brocaar/chirpstack-api/go/v3/as"
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/controller"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/joinserver"
@@ -21,9 +19,13 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 	joindown "github.com/brocaar/chirpstack-network-server/internal/downlink/join"
 	"github.com/brocaar/chirpstack-network-server/internal/framelog"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/models"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
+	loraband "github.com/brocaar/lorawan/band"
 )
 
 var tasks = []func(*joinContext) error{
@@ -161,7 +163,28 @@ func validateNonce(ctx *joinContext) error {
 		lorawan.JoinRequestType,
 	)
 	if err != nil {
-		return errors.Wrap(err, "validate dev-nonce error")
+		returnErr := errors.Wrap(err, "validate dev-nonce error")
+		asClient, err := helpers.GetASClientForRoutingProfileID(ctx.ctx, ctx.Device.RoutingProfileID)
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+				"dev_eui": ctx.Device.DevEUI,
+			}).Error("uplink/join: get as client for routing-profile id error")
+		} else {
+			_, err := asClient.HandleError(ctx.ctx, &as.HandleErrorRequest{
+				DevEui: ctx.Device.DevEUI[:],
+				Type:   as.ErrorType_OTAA,
+				Error:  "validate dev-nonce error",
+			})
+			if err != nil {
+				log.WithError(err).WithFields(log.Fields{
+					"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+					"dev_eui": ctx.Device.DevEUI,
+				}).Error("uplink/join: as.HandleError error")
+			}
+		}
+
+		return returnErr
 	}
 
 	return nil
@@ -232,7 +255,31 @@ func getJoinAcceptFromAS(ctx *joinContext) error {
 
 	ctx.JoinAnsPayload, err = jsClient.JoinReq(ctx.ctx, joinReqPL)
 	if err != nil {
-		return errors.Wrap(err, "join-request to join-server error")
+		returnErr := errors.Wrap(err, "join-request to join-server error")
+		req := as.HandleErrorRequest{
+			DevEui: ctx.Device.DevEUI[:],
+			Type:   as.ErrorType_OTAA,
+			Error:  "join-server returned error: " + err.Error(),
+		}
+
+		asClient, err := helpers.GetASClientForRoutingProfileID(ctx.ctx, ctx.Device.RoutingProfileID)
+		if err != nil {
+
+			log.WithError(err).WithFields(log.Fields{
+				"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+				"dev_eui": ctx.Device.DevEUI,
+			}).Error("uplink/join: get as client for routing-profile id error")
+		} else {
+			_, err := asClient.HandleError(ctx.ctx, &req)
+			if err != nil {
+				log.WithError(err).WithFields(log.Fields{
+					"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+					"dev_eui": ctx.Device.DevEUI,
+				}).Error("uplink/join: as.HandleError error")
+			}
+		}
+
+		return returnErr
 	}
 
 	return nil

@@ -1,11 +1,15 @@
 package helpers
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/gofrs/uuid"
 
+	"github.com/brocaar/chirpstack-api/go/v3/as"
 	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/lorawan/band"
@@ -155,4 +159,19 @@ func GetDataRateIndex(uplink bool, v DataRateGetter, b band.Band) (int, error) {
 	}
 
 	return b.GetDataRateIndex(uplink, dr)
+}
+
+// GetASClientForRoutingProfileID returns the AS client given a Routing Profile ID.
+func GetASClientForRoutingProfileID(ctx context.Context, id uuid.UUID) (as.ApplicationServerServiceClient, error) {
+	rp, err := storage.GetRoutingProfile(ctx, storage.DB(), id)
+	if err != nil {
+		return nil, errors.Wrap(err, "get routing-profile error")
+	}
+
+	asClient, err := applicationserver.Pool().Get(rp.ASID, []byte(rp.CACert), []byte(rp.TLSCert), []byte(rp.TLSKey))
+	if err != nil {
+		return nil, errors.Wrap(err, "get application-server client error")
+	}
+
+	return asClient, nil
 }

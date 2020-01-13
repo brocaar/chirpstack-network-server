@@ -503,9 +503,9 @@ func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 		} else {
 			assert.Equal(tst.ExpectedError.Error(), err.Error())
 		}
-		return
+	} else {
+		assert.NoError(tst.ExpectedError)
 	}
-	assert.NoError(tst.ExpectedError)
 
 	// run assertions
 	for _, a := range tst.Assert {
