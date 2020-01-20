@@ -19,6 +19,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials"
 
 	"github.com/brocaar/chirpstack-api/go/v3/geo"
@@ -257,7 +258,9 @@ func setupGeolocationServer() error {
 		"tls_key":  config.C.GeolocationServer.TLSKey,
 	}).Info("connecting to geolocation-server")
 
-	var dialOptions []grpc.DialOption
+	dialOptions := []grpc.DialOption{
+		grpc.WithBalancerName(roundrobin.Name),
+	}
 	if config.C.GeolocationServer.TLSCert != "" && config.C.GeolocationServer.TLSKey != "" {
 		dialOptions = append(dialOptions, grpc.WithTransportCredentials(
 			mustGetTransportCredentials(config.C.GeolocationServer.TLSCert, config.C.GeolocationServer.TLSKey, config.C.GeolocationServer.CACert, false),
@@ -293,7 +296,9 @@ func setupNetworkController() error {
 			"tls-cert": config.C.NetworkController.TLSCert,
 			"tls-key":  config.C.NetworkController.TLSKey,
 		}).Info("connecting to network-controller")
-		var ncDialOptions []grpc.DialOption
+		ncDialOptions := []grpc.DialOption{
+			grpc.WithBalancerName(roundrobin.Name),
+		}
 		if config.C.NetworkController.TLSCert != "" && config.C.NetworkController.TLSKey != "" {
 			ncDialOptions = append(ncDialOptions, grpc.WithTransportCredentials(
 				mustGetTransportCredentials(config.C.NetworkController.TLSCert, config.C.NetworkController.TLSKey, config.C.NetworkController.CACert, false),

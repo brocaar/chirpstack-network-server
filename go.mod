@@ -43,7 +43,7 @@ require (
 	gonum.org/v1/gonum v0.0.0-20190115205657-1b07048b32c6
 	gonum.org/v1/netlib v0.0.0-20190219113230-9992c5f5eae4 // indirect
 	google.golang.org/api v0.9.0
-	google.golang.org/grpc v1.24.0
+	google.golang.org/grpc v1.26.0
 	gopkg.in/gorp.v1 v1.7.2 // indirect
 	pack.ag/amqp v0.12.1
 )
