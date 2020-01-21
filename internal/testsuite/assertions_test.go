@@ -269,12 +269,46 @@ func AssertASHandleDownlinkACKRequest(req as.HandleDownlinkACKRequest) Assertion
 	}
 }
 
+// AssertASHandleTxAckRequest asserts the given tx ack request.
+func AssertASHandleTxAckRequest(req as.HandleTxAckRequest) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		r := <-ts.ASClient.HandleTxAckChan
+		if !proto.Equal(&r, &req) {
+			assert.Equal(req, r)
+		}
+	}
+}
+
+// AssertASNoHandleTxAckRequest asserts that there is no tx ack request.
+func AssertASNoHandleTxAckRequest() Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		time.Sleep(100 * time.Millisecond)
+		select {
+		case <-ts.ASClient.HandleTxAckChan:
+			assert.Fail("unexpected tx ack request")
+		default:
+		}
+	}
+}
+
 // AssertASHandleErrorRequest asserts the given error request.
 func AssertASHandleErrorRequest(req as.HandleErrorRequest) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
 		r := <-ts.ASClient.HandleErrorChan
 		if !proto.Equal(&r, &req) {
 			assert.Equal(req, r)
+		}
+	}
+}
+
+// AssertASNoHandleErrorRequest asserts that there is no error request.
+func AssertASNoHandleErrorRequest() Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		time.Sleep(100 * time.Millisecond)
+		select {
+		case <-ts.ASClient.HandleErrorChan:
+			assert.Fail("unexpected error request")
+		default:
 		}
 	}
 }

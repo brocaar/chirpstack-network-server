@@ -17,4 +17,13 @@ message DownlinkFrames {
 
     // Downlink frames.
     repeated gw.DownlinkFrame downlink_frames = 4;
+
+    // Routing Profile ID.
+    bytes routing_profile_id = 5;
+
+    // Downlink frame-counter.
+    uint32 f_cnt = 6;
+
+    // Frame port.
+    uint32 f_port = 7;
 }

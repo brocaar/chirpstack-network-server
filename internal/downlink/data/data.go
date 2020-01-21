@@ -1241,8 +1241,20 @@ func checkLastDownlinkTimestamp(ctx *dataContext) error {
 }
 
 func saveFrames(ctx *dataContext) error {
+	var fCnt uint32
+	if ctx.DeviceSession.GetMACVersion() == lorawan.LoRaWAN1_0 || ctx.FPort == 0 {
+		fCnt = ctx.DeviceSession.NFCntDown
+		ctx.DeviceSession.NFCntDown++
+	} else {
+		fCnt = ctx.DeviceSession.AFCntDown
+		ctx.DeviceSession.AFCntDown++
+	}
+
 	df := storage.DownlinkFrames{
-		DevEui: ctx.DeviceSession.DevEUI[:],
+		DevEui:           ctx.DeviceSession.DevEUI[:],
+		RoutingProfileId: ctx.DeviceSession.RoutingProfileID.Bytes(),
+		FCnt:             fCnt,
+		FPort:            uint32(ctx.FPort),
 	}
 
 	for i := range ctx.DownlinkFrames {

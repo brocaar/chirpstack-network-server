@@ -7,9 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/brocaar/lorawan"
+	"github.com/brocaar/chirpstack-api/go/v3/as"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/lorawan"
 )
 
 type DownlinkTXAckTestSuite struct {
@@ -18,6 +19,10 @@ type DownlinkTXAckTestSuite struct {
 
 func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 	assert := require.New(ts.T())
+
+	ts.CreateDevice(storage.Device{
+		DevEUI: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+	})
 
 	var fPortOne uint8 = 1
 	phy := lorawan.PHYPayload{
@@ -39,15 +44,18 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 
 	tests := []DownlinkTXAckTest{
 		{
-			Name:   "positive ack",
-			DevEUI: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+			Name:   "positive ack for app data",
+			DevEUI: ts.Device.DevEUI,
 			DownlinkTXAck: gw.DownlinkTXAck{
 				Token:     12345,
 				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 			},
 			DownlinkFrames: storage.DownlinkFrames{
-				Token:  12345,
-				DevEui: []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+				Token:            12345,
+				DevEui:           []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+				RoutingProfileId: ts.RoutingProfile.ID.Bytes(),
+				FPort:            10,
+				FCnt:             7,
 				DownlinkFrames: []*gw.DownlinkFrame{
 					{
 						Token: 12345,
@@ -67,11 +75,50 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 			},
 			Assert: []Assertion{
 				AssertNoDownlinkFrame,
+				AssertASHandleTxAckRequest(as.HandleTxAckRequest{
+					DevEui: ts.Device.DevEUI[:],
+					FCnt:   7,
+				}),
+			},
+		},
+		{
+			Name:   "positive ack for ns data",
+			DevEUI: ts.Device.DevEUI,
+			DownlinkTXAck: gw.DownlinkTXAck{
+				Token:     12345,
+				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+			},
+			DownlinkFrames: storage.DownlinkFrames{
+				Token:            12345,
+				DevEui:           []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+				RoutingProfileId: ts.RoutingProfile.ID.Bytes(),
+				FPort:            0,
+				FCnt:             7,
+				DownlinkFrames: []*gw.DownlinkFrame{
+					{
+						Token: 12345,
+						TxInfo: &gw.DownlinkTXInfo{
+							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+						},
+						PhyPayload: []byte{1, 2},
+					},
+					{
+						Token: 12345,
+						TxInfo: &gw.DownlinkTXInfo{
+							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+						},
+						PhyPayload: []byte{1, 2, 3},
+					},
+				},
+			},
+			Assert: []Assertion{
+				AssertNoDownlinkFrame,
+				AssertASNoHandleTxAckRequest(),
 			},
 		},
 		{
 			Name:   "negative ack",
-			DevEUI: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+			DevEUI: ts.Device.DevEUI,
 			DownlinkTXAck: gw.DownlinkTXAck{
 				Token:     12345,
 				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
@@ -109,16 +156,19 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 			},
 		},
 		{
-			Name:   "negative ack, no saved downlink-frame",
-			DevEUI: lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+			Name:   "negative ack for app data, no saved downlink-frame",
+			DevEUI: ts.Device.DevEUI,
 			DownlinkTXAck: gw.DownlinkTXAck{
 				Token:     54321,
 				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 				Error:     "BOOM",
 			},
 			DownlinkFrames: storage.DownlinkFrames{
-				Token:  54321,
-				DevEui: []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
+				Token:            54321,
+				DevEui:           ts.Device.DevEUI[:],
+				RoutingProfileId: ts.RoutingProfile.ID.Bytes(),
+				FPort:            10,
+				FCnt:             7,
 				DownlinkFrames: []*gw.DownlinkFrame{
 					{
 						Token: 54321,
@@ -131,6 +181,41 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 			},
 			Assert: []Assertion{
 				AssertNoDownlinkFrame,
+				AssertASHandleErrorRequest(as.HandleErrorRequest{
+					DevEui: ts.Device.DevEUI[:],
+					Type:   as.ErrorType_DATA_DOWN_GATEWAY,
+					Error:  "BOOM",
+					FCnt:   7,
+				}),
+			},
+		},
+		{
+			Name:   "negative ack for ns data, no saved downlink-frame",
+			DevEUI: ts.Device.DevEUI,
+			DownlinkTXAck: gw.DownlinkTXAck{
+				Token:     54321,
+				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+				Error:     "BOOM",
+			},
+			DownlinkFrames: storage.DownlinkFrames{
+				Token:            54321,
+				DevEui:           ts.Device.DevEUI[:],
+				RoutingProfileId: ts.RoutingProfile.ID.Bytes(),
+				FPort:            0,
+				FCnt:             7,
+				DownlinkFrames: []*gw.DownlinkFrame{
+					{
+						Token: 54321,
+						TxInfo: &gw.DownlinkTXInfo{
+							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+						},
+						PhyPayload: phyB,
+					},
+				},
+			},
+			Assert: []Assertion{
+				AssertNoDownlinkFrame,
+				AssertASNoHandleErrorRequest(),
 			},
 		},
 	}
