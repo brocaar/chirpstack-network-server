@@ -1,4 +1,4 @@
-//go:generate protoc -I=. -I=../.. --go_out=. device_session.proto
+//go:generate protoc -I=/tmp/chirpstack-api/protobuf -I=. --go_out=. device_session.proto
 
 package storage
 

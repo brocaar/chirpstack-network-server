@@ -1,4 +1,4 @@
-//go:generate protoc -I=. -I=../.. --go_out=. downlink_frames.proto
+//go:generate protoc -I=/protobuf/src -I=/tmp/chirpstack-api/protobuf -I=. --go_out=. downlink_frames.proto
 
 package storage
 

@@ -1,6 +1,7 @@
 .PHONY: build clean test package serve update-vendor api statics
 PKGS := $(shell go list ./... | grep -v /vendor/ | grep -v chirpstack-network-server/api | grep -v /migrations | grep -v /static)
 VERSION := $(shell git describe --always |sed -e "s/^v//")
+API_VERSION := $(shell go list -m -f '{{ .Version }}' github.com/brocaar/chirpstack-api/go/v3 | awk '{n=split($$0, a, "-"); print a[n]}')
 
 build: statics
 	@echo "Compiling source"
@@ -35,13 +36,12 @@ snapshot:
 	@goreleaser --snapshot
 
 api:
+	@echo "Fetching Protobuf API files"
+	@rm -rf /tmp/chirpstack-api
+	@git clone https://github.com/brocaar/chirpstack-api.git /tmp/chirpstack-api
+	@git --git-dir=/tmp/chirpstack-api/.git --work-tree=/tmp/chirpstack-api checkout $(API_VERSION)
+
 	@echo "Generating API code from .proto files"
-	go generate api/gw/gw.go
-	go generate api/as/as.go
-	go generate api/nc/nc.go
-	go generate api/ns/ns.go
-	go generate api/geo/geo.go
-	go generate api/common/common.go
 	go generate internal/storage/device_session.go
 	go generate internal/storage/downlink_frames.go
 

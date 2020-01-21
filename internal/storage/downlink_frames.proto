@@ -2,7 +2,7 @@ syntax  = "proto3";
 
 package storage;
 
-import "api/gw/gw.proto";
+import "gw/gw.proto";
 
 
 message DownlinkFrames {

@@ -2,7 +2,7 @@ syntax  = "proto3";
 
 package storage;
 
-import "api/common/common.proto";
+import "common/common.proto";
 
 message DeviceSessionPBChannel {
     // Frequency (Hz).
