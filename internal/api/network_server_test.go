@@ -8,7 +8,6 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/empty"
 	. "github.com/smartystreets/goconvey/convey"
 	"google.golang.org/grpc"
@@ -31,9 +30,6 @@ func TestNetworkServerAPI(t *testing.T) {
 		panic(err)
 	}
 	config.C.NetworkServer.NetID = [3]byte{1, 2, 3}
-
-	storage.SetAggregationIntervals([]storage.AggregationInterval{storage.AggregationMinute})
-	storage.SetMetricsTTL(time.Minute, time.Minute, time.Minute, time.Minute)
 
 	Convey("Given a clean PostgreSQL and Redis database + api instance", t, func() {
 		test.MustResetDB(storage.DB().DB)
@@ -735,40 +731,6 @@ func TestNetworkServerAPI(t *testing.T) {
 					Id: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 				})
 				So(err, ShouldResemble, grpc.Errorf(codes.NotFound, "object does not exist"))
-			})
-
-			Convey("Given some stats for this gateway", func() {
-				now := time.Now().UTC()
-				metrics := storage.MetricsRecord{
-					Time: now,
-					Metrics: map[string]float64{
-						"rx_count":    10,
-						"rx_ok_count": 5,
-						"tx_count":    11,
-						"tx_ok_count": 10,
-					},
-				}
-				So(storage.SaveMetricsForInterval(context.Background(), storage.RedisPool(), storage.AggregationMinute, "gw:0102030405060708", metrics), ShouldBeNil)
-
-				Convey("Then GetGatewayStats returns these stats", func() {
-					start, _ := ptypes.TimestampProto(now.Truncate(time.Minute))
-					end, _ := ptypes.TimestampProto(now)
-					nowTrunc, _ := ptypes.TimestampProto(now.Truncate(time.Minute))
-
-					resp, err := api.GetGatewayStats(ctx, &ns.GetGatewayStatsRequest{
-						GatewayId:      []byte{1, 2, 3, 4, 5, 6, 7, 8},
-						Interval:       ns.AggregationInterval_MINUTE,
-						StartTimestamp: start,
-						EndTimestamp:   end,
-					})
-					So(err, ShouldBeNil)
-					So(resp.Result, ShouldHaveLength, 1)
-					So(resp.Result[0].Timestamp, ShouldResemble, nowTrunc)
-					So(resp.Result[0].RxPacketsReceived, ShouldEqual, 10)
-					So(resp.Result[0].RxPacketsReceivedOk, ShouldEqual, 5)
-					So(resp.Result[0].TxPacketsReceived, ShouldEqual, 11)
-					So(resp.Result[0].TxPacketsEmitted, ShouldEqual, 10)
-				})
 			})
 
 			Convey("When creating a gateway-profile object", func() {

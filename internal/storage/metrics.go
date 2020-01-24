@@ -6,10 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 // AggregationInterval defines the aggregation type.
@@ -29,12 +27,7 @@ const (
 )
 
 var (
-	timeLocation         = time.Local
-	aggregationIntervals []AggregationInterval
-	metricsMinuteTTL     time.Duration
-	metricsHourTTL       time.Duration
-	metricsDayTTL        time.Duration
-	metricsMonthTTL      time.Duration
+	timeLocation = time.Local
 )
 
 // MetricsRecord holds a single metrics record.
@@ -50,91 +43,6 @@ func SetTimeLocation(name string) error {
 	if err != nil {
 		return errors.Wrap(err, "load location error")
 	}
-	return nil
-}
-
-// SetAggregationIntervals sets the metrics aggregation to the given intervals.
-func SetAggregationIntervals(intervals []AggregationInterval) error {
-	aggregationIntervals = intervals
-	return nil
-}
-
-// SetMetricsTTL sets the storage TTL.
-func SetMetricsTTL(minute, hour, day, month time.Duration) {
-	metricsMinuteTTL = minute
-	metricsHourTTL = hour
-	metricsDayTTL = day
-	metricsMonthTTL = month
-}
-
-// SaveMetrics stores the given metrics into Redis.
-func SaveMetrics(ctx context.Context, p *redis.Pool, name string, metrics MetricsRecord) error {
-	for _, agg := range aggregationIntervals {
-		if err := SaveMetricsForInterval(ctx, p, agg, name, metrics); err != nil {
-			return errors.Wrap(err, "save metrics for interval error")
-		}
-	}
-
-	log.WithFields(log.Fields{
-		"name":        name,
-		"aggregation": aggregationIntervals,
-		"ctx_id":      ctx.Value(logging.ContextIDKey),
-	}).Info("metrics saved")
-
-	return nil
-}
-
-// SaveMetricsForInterval aggregates and stores the given metrics.
-func SaveMetricsForInterval(ctx context.Context, p *redis.Pool, agg AggregationInterval, name string, metrics MetricsRecord) error {
-	if len(metrics.Metrics) == 0 {
-		return nil
-	}
-
-	c := p.Get()
-	defer c.Close()
-	var exp int64
-
-	// handle aggregation
-	ts := metrics.Time.In(timeLocation)
-	switch agg {
-	case AggregationMinute:
-		// truncate timestamp to minute precision
-		ts = time.Date(ts.Year(), ts.Month(), ts.Day(), ts.Hour(), ts.Minute(), 0, 0, timeLocation)
-		exp = int64(metricsMinuteTTL) / int64(time.Millisecond)
-	case AggregationHour:
-		// truncate timestamp to hour precision
-		ts = time.Date(ts.Year(), ts.Month(), ts.Day(), ts.Hour(), 0, 0, 0, timeLocation)
-		exp = int64(metricsHourTTL) / int64(time.Millisecond)
-	case AggregationDay:
-		// truncate timestamp to day precision
-		ts = time.Date(ts.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, timeLocation)
-		exp = int64(metricsDayTTL) / int64(time.Millisecond)
-	case AggregationMonth:
-		// truncate timestamp to month precision
-		ts = time.Date(ts.Year(), ts.Month(), 1, 0, 0, 0, 0, timeLocation)
-		exp = int64(metricsMonthTTL) / int64(time.Millisecond)
-	default:
-		return fmt.Errorf("unexepcted aggregation interval: %s", agg)
-	}
-
-	key := fmt.Sprintf(metricsKeyTempl, name, agg, ts.Unix())
-
-	c.Send("MULTI")
-	for k, v := range metrics.Metrics {
-		c.Send("HINCRBYFLOAT", key, k, v)
-	}
-	c.Send("PEXPIRE", key, exp)
-
-	if _, err := c.Do("EXEC"); err != nil {
-		return errors.Wrap(err, "exec error")
-	}
-
-	log.WithFields(log.Fields{
-		"name":        name,
-		"aggregation": agg,
-		"ctx_id":      ctx.Value(logging.ContextIDKey),
-	}).Debug("metrics saved")
-
 	return nil
 }
 

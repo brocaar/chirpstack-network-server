@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/brocaar/chirpstack-network-server/internal/adr"
@@ -62,7 +61,6 @@ func run(cmd *cobra.Command, args []string) error {
 		setupUplink,
 		setupDownlink,
 		fixV2RedisCache,
-		migrateGatewayStats,
 		flushGatewayCache,
 		setupAPI,
 		startLoRaServer(server),
@@ -123,15 +121,6 @@ func setRXParameters() error {
 
 // TODO: cleanup and put in Setup functions.
 func setupMetrics() error {
-	// setup aggregation intervals
-	var intervals []storage.AggregationInterval
-	for _, agg := range config.C.Metrics.Redis.AggregationIntervals {
-		intervals = append(intervals, storage.AggregationInterval(strings.ToUpper(agg)))
-	}
-	if err := storage.SetAggregationIntervals(intervals); err != nil {
-		return errors.Wrap(err, "set aggregation intervals error")
-	}
-
 	// setup timezone
 	var err error
 	if config.C.Metrics.Timezone == "" {
@@ -142,14 +131,6 @@ func setupMetrics() error {
 	if err != nil {
 		return errors.Wrap(err, "set time location error")
 	}
-
-	// setup storage TTL
-	storage.SetMetricsTTL(
-		config.C.Metrics.Redis.MinuteAggregationTTL,
-		config.C.Metrics.Redis.HourAggregationTTL,
-		config.C.Metrics.Redis.DayAggregationTTL,
-		config.C.Metrics.Redis.MonthAggregationTTL,
-	)
 
 	if err := metrics.Setup(config.C); err != nil {
 		return errors.Wrap(err, "setup metrics error")
@@ -405,12 +386,6 @@ func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCer
 func fixV2RedisCache() error {
 	return code.Migrate("v1_to_v2_flush_profiles_cache", func(db sqlx.Ext) error {
 		return code.FlushProfilesCache(storage.RedisPool(), db)
-	})
-}
-
-func migrateGatewayStats() error {
-	return code.Migrate("migrate_gateway_stats_to_redis", func(db sqlx.Ext) error {
-		return code.MigrateGatewayStats(storage.RedisPool(), db)
 	})
 }
 
