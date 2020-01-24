@@ -405,10 +405,19 @@ func resolveDeviceLocation(ctx *dataContext) error {
 			return
 		}
 
+		uplink_ids := [][]byte{}
+		for i := range frames {
+			for j := range frames[i].RxInfo {
+				uplink_ids = append(uplink_ids, frames[i].RxInfo[j].UplinkId)
+			}
+		}
+
 		_, err = asClient.SetDeviceLocation(ctx.ctx, &as.SetDeviceLocationRequest{
-			DevEui:   devEUI[:],
-			Location: result.Location,
+			DevEui:    devEUI[:],
+			Location:  result.Location,
+			UplinkIds: uplink_ids,
 		})
+
 		if err != nil {
 			log.WithFields(log.Fields{
 				"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),

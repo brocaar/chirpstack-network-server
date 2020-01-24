@@ -42,6 +42,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 			RXInfo: []*gw.UplinkRXInfo{
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 1},
+					UplinkId:          []byte{1},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -62,6 +63,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 			RXInfo: []*gw.UplinkRXInfo{
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 1},
+					UplinkId:          []byte{1},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -73,6 +75,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 				},
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 2},
+					UplinkId:          []byte{2},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -94,6 +97,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 			RXInfo: []*gw.UplinkRXInfo{
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 1},
+					UplinkId:          []byte{1},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -105,6 +109,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 				},
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 2},
+					UplinkId:          []byte{2},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -116,6 +121,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 				},
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 3},
+					UplinkId:          []byte{3},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -144,6 +150,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 						RxInfo: []*gw.UplinkRXInfo{
 							{
 								GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 1},
+								UplinkId:  []byte{1},
 								Location: &common.Location{
 									Latitude:  1.1,
 									Longitude: 1.1,
@@ -160,6 +167,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 							},
 							{
 								GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 2},
+								UplinkId:  []byte{2},
 								Location: &common.Location{
 									Latitude:  2.1,
 									Longitude: 2.1,
@@ -176,6 +184,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 							},
 							{
 								GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 3},
+								UplinkId:  []byte{3},
 								Location: &common.Location{
 									Latitude:  3.1,
 									Longitude: 3.1,
@@ -201,6 +210,11 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 						Altitude:  3.123,
 						Source:    common.LocationSource_GEO_RESOLVER,
 					},
+					UplinkIds: [][]byte{
+						{1},
+						{2},
+						{3},
+					},
 				}),
 			},
 		},
@@ -210,6 +224,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 			RXInfo: []*gw.UplinkRXInfo{
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 1},
+					UplinkId:          []byte{1},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -221,6 +236,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 				},
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 2},
+					UplinkId:          []byte{2},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -232,6 +248,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 				},
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 3},
+					UplinkId:          []byte{3},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -262,6 +279,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 			RXInfo: []*gw.UplinkRXInfo{
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 1},
+					UplinkId:          []byte{1},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -273,6 +291,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 				},
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 2},
+					UplinkId:          []byte{2},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -306,6 +325,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 			RXInfo: []*gw.UplinkRXInfo{
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 1},
+					UplinkId:          []byte{1},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -317,6 +337,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 				},
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 2},
+					UplinkId:          []byte{2},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -328,6 +349,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 				},
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 3},
+					UplinkId:          []byte{3},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -360,6 +382,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 			RXInfo: []*gw.UplinkRXInfo{
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 1},
+					UplinkId:          []byte{1},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -371,6 +394,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 				},
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 2},
+					UplinkId:          []byte{2},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -382,6 +406,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 				},
 				{
 					GatewayId:         []byte{1, 1, 1, 1, 1, 1, 1, 3},
+					UplinkId:          []byte{3},
 					FineTimestampType: gw.FineTimestampType_PLAIN,
 					FineTimestamp: &gw.UplinkRXInfo_PlainFineTimestamp{
 						PlainFineTimestamp: &gw.PlainFineTimestamp{
@@ -397,6 +422,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 					RxInfo: []*gw.UplinkRXInfo{
 						{
 							GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 1},
+							UplinkId:  []byte{4},
 							Time:      nowProto,
 							Location: &common.Location{
 								Latitude:  1.1,
@@ -414,6 +440,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 						},
 						{
 							GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 2},
+							UplinkId:  []byte{5},
 							Time:      nowProto,
 							Location: &common.Location{
 								Latitude:  2.1,
@@ -431,6 +458,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 						},
 						{
 							GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 3},
+							UplinkId:  []byte{6},
 							Time:      nowProto,
 							Location: &common.Location{
 								Latitude:  3.1,
@@ -469,6 +497,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 							RxInfo: []*gw.UplinkRXInfo{
 								{
 									GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 1},
+									UplinkId:  []byte{4},
 									Time:      nowProto,
 									Location: &common.Location{
 										Latitude:  1.1,
@@ -486,6 +515,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 								},
 								{
 									GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 2},
+									UplinkId:  []byte{5},
 									Time:      nowProto,
 									Location: &common.Location{
 										Latitude:  2.1,
@@ -503,6 +533,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 								},
 								{
 									GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 3},
+									UplinkId:  []byte{6},
 									Time:      nowProto,
 									Location: &common.Location{
 										Latitude:  3.1,
@@ -524,6 +555,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 							RxInfo: []*gw.UplinkRXInfo{
 								{
 									GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 1},
+									UplinkId:  []byte{1},
 									Location: &common.Location{
 										Latitude:  1.1,
 										Longitude: 1.1,
@@ -540,6 +572,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 								},
 								{
 									GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 2},
+									UplinkId:  []byte{2},
 									Location: &common.Location{
 										Latitude:  2.1,
 										Longitude: 2.1,
@@ -556,6 +589,7 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 								},
 								{
 									GatewayId: []byte{1, 1, 1, 1, 1, 1, 1, 3},
+									UplinkId:  []byte{3},
 									Location: &common.Location{
 										Latitude:  3.1,
 										Longitude: 3.1,
@@ -582,6 +616,14 @@ func (ts *GeolocationTestSuite) TestGeolocation() {
 						Longitude: 2.123,
 						Altitude:  3.123,
 						Source:    common.LocationSource_GEO_RESOLVER,
+					},
+					UplinkIds: [][]byte{
+						{1},
+						{2},
+						{3},
+						{4},
+						{5},
+						{6},
 					},
 				}),
 			},

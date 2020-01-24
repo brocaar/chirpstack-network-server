@@ -378,6 +378,12 @@ func AssertASSetDeviceStatusRequest(req as.SetDeviceStatusRequest) Assertion {
 func AssertASSetDeviceLocationRequest(req as.SetDeviceLocationRequest) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
 		r := <-ts.ASClient.SetDeviceLocationChan
+
+		// we assume that we can sort on the first byte of each uplink_id
+		sort.Slice(r.UplinkIds, func(i, j int) bool {
+			return r.UplinkIds[i][0] < r.UplinkIds[j][0]
+		})
+
 		if !proto.Equal(&r, &req) {
 			assert.Equal(req, r)
 		}
