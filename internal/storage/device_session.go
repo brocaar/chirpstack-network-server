@@ -3,10 +3,8 @@
 package storage
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
-	"encoding/gob"
 	"fmt"
 	"strings"
 	"time"
@@ -353,14 +351,7 @@ func GetDeviceSession(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) 
 
 	err = proto.Unmarshal(val, &dsPB)
 	if err != nil {
-		// fallback on old gob encoding
-		var dsOld DeviceSessionOld
-		err = gob.NewDecoder(bytes.NewReader(val)).Decode(&dsOld)
-		if err != nil {
-			return DeviceSession{}, errors.Wrap(err, "gob decode error")
-		}
-
-		return migrateDeviceSessionOld(dsOld), nil
+		return DeviceSession{}, errors.Wrap(err, "unmarshal protobuf error")
 	}
 
 	return deviceSessionFromPB(dsPB), nil
