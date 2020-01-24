@@ -213,18 +213,13 @@ func setADR(ctx *dataContext) error {
 }
 
 func setUplinkDataRate(ctx *dataContext) error {
-	currentDR, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
-	if err != nil {
-		return errors.Wrap(err, "get data-rate error")
-	}
-
 	// The node changed its data-rate. Possibly the node did also reset its
 	// tx-power to max power. Because of this, we need to reset the tx-power
 	// at the network-server side too.
-	if ctx.DeviceSession.DR != currentDR {
+	if ctx.DeviceSession.DR != ctx.RXPacket.DR {
 		ctx.DeviceSession.TXPowerIndex = 0
 	}
-	ctx.DeviceSession.DR = currentDR
+	ctx.DeviceSession.DR = ctx.RXPacket.DR
 
 	return nil
 }
@@ -256,14 +251,9 @@ func appendMetaDataToUplinkHistory(ctx *dataContext) error {
 }
 
 func storeDeviceGatewayRXInfoSet(ctx *dataContext) error {
-	dr, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
-	if err != nil {
-		return errors.Wrap(err, "get data-rate error")
-	}
-
 	rxInfoSet := storage.DeviceGatewayRXInfoSet{
 		DevEUI: ctx.DeviceSession.DevEUI,
-		DR:     dr,
+		DR:     ctx.RXPacket.DR,
 	}
 
 	for i := range ctx.RXPacket.RXInfoSet {
@@ -277,7 +267,7 @@ func storeDeviceGatewayRXInfoSet(ctx *dataContext) error {
 		})
 	}
 
-	err = storage.SaveDeviceGatewayRXInfoSet(ctx.ctx, storage.RedisPool(), rxInfoSet)
+	err := storage.SaveDeviceGatewayRXInfoSet(ctx.ctx, storage.RedisPool(), rxInfoSet)
 	if err != nil {
 		return errors.Wrap(err, "save device gateway rx-info set error")
 	}
@@ -631,11 +621,7 @@ func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 		TxInfo:  ctx.RXPacket.TXInfo,
 	}
 
-	dr, err := helpers.GetDataRateIndex(true, ctx.RXPacket.TXInfo, band.Band())
-	if err != nil {
-		return errors.Wrap(err, "get data-rate error")
-	}
-	publishDataUpReq.Dr = uint32(dr)
+	publishDataUpReq.Dr = uint32(ctx.RXPacket.DR)
 
 	if ctx.DeviceSession.AppSKeyEvelope != nil {
 		publishDataUpReq.DeviceActivationContext = &as.DeviceActivationContext{
