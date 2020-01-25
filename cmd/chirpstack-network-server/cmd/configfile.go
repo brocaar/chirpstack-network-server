@@ -17,6 +17,11 @@ const configTemplate = `[general]
 # debug=5, info=4, warning=3, error=2, fatal=1, panic=0
 log_level={{ .General.LogLevel }}
 
+# Log to syslog.
+#
+# When set to true, log messages are being written to syslog.
+log_to_syslog={{ .General.LogToSyslog }}
+
 
 # PostgreSQL settings.
 #
@@ -602,23 +607,6 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 # day or month).
 # Example: "Europe/Amsterdam" or "Local" for the the system's local time zone.
 timezone="{{ .Metrics.Timezone }}"
-
-  # Metrics stored in Redis.
-  #
-  # The following metrics are stored in Redis:
-  # * gateway statistics
-  [metrics.redis]
-  # Aggregation intervals
-  #
-  # The intervals on which to aggregate. Available options are:
-  # 'MINUTE', 'HOUR', 'DAY', 'MONTH'.
-  aggregation_intervals=[{{ if .Metrics.Redis.AggregationIntervals|len }}"{{ end }}{{ range $index, $elm := .Metrics.Redis.AggregationIntervals }}{{ if $index }}", "{{ end }}{{ $elm }}{{ end }}{{ if .Metrics.Redis.AggregationIntervals|len }}"{{ end }}]
-
-  # Aggregated statistics storage duration.
-  minute_aggregation_ttl="{{ .Metrics.Redis.MinuteAggregationTTL }}"
-  hour_aggregation_ttl="{{ .Metrics.Redis.HourAggregationTTL }}"
-  day_aggregation_ttl="{{ .Metrics.Redis.DayAggregationTTL }}"
-  month_aggregation_ttl="{{ .Metrics.Redis.MonthAggregationTTL }}"
 
 
   # Metrics stored in Prometheus.

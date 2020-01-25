@@ -72,6 +72,11 @@ Example configuration file:
 # debug=5, info=4, warning=3, error=2, fatal=1, panic=0
 log_level=4
 
+# Log to syslog.
+#
+# When set to true, log messages are being written to syslog.
+log_to_syslog=false
+
 
 # PostgreSQL settings.
 #
@@ -652,23 +657,6 @@ get_downlink_data_delay="100ms"
 # day or month).
 # Example: "Europe/Amsterdam" or "Local" for the the system's local time zone.
 timezone="Local"
-
-  # Metrics stored in Redis.
-  #
-  # The following metrics are stored in Redis:
-  # * gateway statistics
-  [metrics.redis]
-  # Aggregation intervals
-  #
-  # The intervals on which to aggregate. Available options are:
-  # 'MINUTE', 'HOUR', 'DAY', 'MONTH'.
-  aggregation_intervals=["MINUTE", "HOUR", "DAY", "MONTH"]
-
-  # Aggregated statistics storage duration.
-  minute_aggregation_ttl="2h0m0s"
-  hour_aggregation_ttl="48h0m0s"
-  day_aggregation_ttl="2160h0m0s"
-  month_aggregation_ttl="17520h0m0s"
 
 
   # Metrics stored in Prometheus.
