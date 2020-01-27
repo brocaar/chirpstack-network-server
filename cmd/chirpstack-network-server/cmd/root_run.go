@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
-	"log/syslog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,7 +12,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-	lsyslog "github.com/sirupsen/logrus/hooks/syslog"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/balancer/roundrobin"
@@ -144,38 +142,6 @@ func setupMetrics() error {
 
 func setLogLevel() error {
 	log.SetLevel(log.Level(uint8(config.C.General.LogLevel)))
-	return nil
-}
-
-func setSyslog() error {
-	if !config.C.General.LogToSyslog {
-		return nil
-	}
-
-	var prio syslog.Priority
-
-	switch log.StandardLogger().Level {
-	case log.DebugLevel:
-		prio = syslog.LOG_USER | syslog.LOG_DEBUG
-	case log.InfoLevel:
-		prio = syslog.LOG_USER | syslog.LOG_INFO
-	case log.WarnLevel:
-		prio = syslog.LOG_USER | syslog.LOG_WARNING
-	case log.ErrorLevel:
-		prio = syslog.LOG_USER | syslog.LOG_ERR
-	case log.FatalLevel:
-		prio = syslog.LOG_USER | syslog.LOG_CRIT
-	case log.PanicLevel:
-		prio = syslog.LOG_USER | syslog.LOG_CRIT
-	}
-
-	hook, err := lsyslog.NewSyslogHook("", "", prio, "chirpstack-network-server")
-	if err != nil {
-		return errors.Wrap(err, "get syslog hook error")
-	}
-
-	log.AddHook(hook)
-
 	return nil
 }
 
