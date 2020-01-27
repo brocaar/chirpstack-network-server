@@ -9,6 +9,42 @@ description: Lists the changes per ChirpStack Network Server release, including 
 ---
 # Changelog
 
+## v3.7.0
+
+### Features
+
+#### Improve frame-counter validation
+
+The refactored frame-counter validation makes it possible to report different
+types of errors to the Application Server which will make it easier to debug
+frame-counter related issues.
+
+#### OTAA error event
+
+OTAA related errors will now be pushed to the Application Server to make it
+easier to debug OTAA related issues.
+
+#### Downlink tx acknowledgements
+
+Downlink TX acknowledgements (by the gateway) are now forwarded to the
+Application Server. Please note that this is the TX acknowledgement by the
+gateway, indicating that it was enqueued for transmission.
+
+#### Syslog output
+
+When `log_to_syslog` is enabled in the configuration file, the log output will
+be written to syslog.
+
+### Improvements
+
+* Implement setting max reconnect interval for MQTT gateway backend.
+* Implement getting the device queue size only (instead of fetching the complete queue).
+* Implement DNS round-robin load-balancing for gRPC.
+* Cleanup old `api` package (the API definitions have been moved to [chirpstack-api](https://github.com/brocaar/chirpstack-api)).
+* Add uplink IDs to geolocation events for correlation.
+* Remove legacy (and broken) device-session migration code.
+* Cleanup (unused) gateway statistics code.
+
 ## v3.6.0
 
 ### Features
