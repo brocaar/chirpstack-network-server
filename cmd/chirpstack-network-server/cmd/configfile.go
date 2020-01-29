@@ -290,8 +290,16 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # used. For example when only using the first 8 channels of the US band.
   # Note: when left blank, all channels will be enabled.
   # 
-  # Example:
-  # enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7]
+  # For the US band, there are 64 125kHz channels (0-63) with 8 500kHz 
+  # channels (65-71) with frequencies in the middle of each 
+  # sub-band of 125kHz channels.
+  # Most US LoRa gateways recieve on only one sub-band which consists of 
+  # 8 125kHz channels and 1 500 kHz channel
+  # 
+  # Example: (sub-band 1)
+  # enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7, 64]
+  # Exmaple: (sub-band 2)
+  # enabled_uplink_channels=[8, 9, 19, 11, 12, 13, 14, 15, 65]
   enabled_uplink_channels=[{{ range $index, $element := .NetworkServer.NetworkSettings.EnabledUplinkChannels }}{{ if $index }}, {{ end }}{{ $element }}{{ end }}]
 
 
