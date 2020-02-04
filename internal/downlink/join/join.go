@@ -14,6 +14,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
+	dwngateway "github.com/brocaar/chirpstack-network-server/internal/downlink/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/framelog"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
@@ -23,8 +24,9 @@ import (
 )
 
 var (
-	rxWindow        int
-	downlinkTXPower int
+	rxWindow               int
+	downlinkTXPower        int
+	gatewayPreferMinMargin float64
 )
 
 var tasks = []func(*joinContext) error{
@@ -57,6 +59,7 @@ func Setup(conf config.Config) error {
 	nsConfig := conf.NetworkServer.NetworkSettings
 	rxWindow = nsConfig.RXWindow
 	downlinkTXPower = nsConfig.DownlinkTXPower
+	gatewayPreferMinMargin = nsConfig.GatewayPreferMinMargin
 
 	return nil
 }
@@ -116,7 +119,11 @@ func setTXInfo(ctx *joinContext) error {
 }
 
 func setTXInfoForRX1(ctx *joinContext) error {
-	rxInfo := ctx.DeviceGatewayRXInfo[0]
+	rxInfo, err := dwngateway.SelectDownlinkGateway(gatewayPreferMinMargin, ctx.RXPacket.DR, ctx.DeviceGatewayRXInfo)
+	if err != nil {
+		return err
+	}
+
 	txInfo := gw.DownlinkTXInfo{
 		GatewayId: rxInfo.GatewayID[:],
 		Board:     rxInfo.Board,
@@ -166,7 +173,11 @@ func setTXInfoForRX1(ctx *joinContext) error {
 }
 
 func setTXInfoForRX2(ctx *joinContext) error {
-	rxInfo := ctx.DeviceGatewayRXInfo[0]
+	rxInfo, err := dwngateway.SelectDownlinkGateway(gatewayPreferMinMargin, ctx.RXPacket.DR, ctx.DeviceGatewayRXInfo)
+	if err != nil {
+		return err
+	}
+
 	txInfo := gw.DownlinkTXInfo{
 		GatewayId: rxInfo.GatewayID[:],
 		Board:     rxInfo.Board,
@@ -176,7 +187,7 @@ func setTXInfoForRX2(ctx *joinContext) error {
 	}
 
 	// set data-rate
-	err := helpers.SetDownlinkTXInfoDataRate(&txInfo, band.Band().GetDefaults().RX2DataRate, band.Band())
+	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, band.Band().GetDefaults().RX2DataRate, band.Band())
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}

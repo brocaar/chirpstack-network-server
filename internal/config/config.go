@@ -56,6 +56,7 @@ type Config struct {
 			RX2Frequency            int     `mapstructure:"rx2_frequency"`
 			RX2PreferOnRX1DRLt      int     `mapstructure:"rx2_prefer_on_rx1_dr_lt"`
 			RX2PreferOnLinkBudget   bool    `mapstructure:"rx2_prefer_on_link_budget"`
+			GatewayPreferMinMargin  float64 `mapstructure:"gateway_prefer_min_margin"`
 			DownlinkTXPower         int     `mapstructure:"downlink_tx_power"`
 			EnabledUplinkChannels   []int   `mapstructure:"enabled_uplink_channels"`
 			DisableMACCommands      bool    `mapstructure:"disable_mac_commands"`
