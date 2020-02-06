@@ -44,6 +44,7 @@ be written to syslog.
 * Add uplink IDs to geolocation events for correlation.
 * Remove legacy (and broken) device-session migration code.
 * Cleanup (unused) gateway statistics code.
+* Include 500KHz channels in US915 config examples. ([#462](https://github.com/brocaar/chirpstack-network-server/pull/462))
 
 ## v3.6.0
 
