@@ -354,7 +354,7 @@ get_downlink_data_delay="100ms"
   # Example: (sub-band 1)
   # enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7, 64]
   # Exmaple: (sub-band 2)
-  # enabled_uplink_channels=[8, 9, 19, 11, 12, 13, 14, 15, 65]
+  # enabled_uplink_channels=[8, 9, 10, 11, 12, 13, 14, 15, 65]
   enabled_uplink_channels=[]
 
 
