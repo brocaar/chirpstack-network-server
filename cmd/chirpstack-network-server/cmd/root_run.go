@@ -34,8 +34,8 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 	"github.com/brocaar/chirpstack-network-server/internal/downlink"
 	"github.com/brocaar/chirpstack-network-server/internal/gateway"
-	"github.com/brocaar/chirpstack-network-server/internal/metrics"
 	"github.com/brocaar/chirpstack-network-server/internal/migrations/code"
+	"github.com/brocaar/chirpstack-network-server/internal/monitoring"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/uplink"
 )
@@ -50,7 +50,7 @@ func run(cmd *cobra.Command, args []string) error {
 		setupBand,
 		setRXParameters,
 		printStartMessage,
-		setupMetrics,
+		setupMonitoring,
 		enableUplinkChannels,
 		setupStorage,
 		setGatewayBackend,
@@ -121,7 +121,7 @@ func setRXParameters() error {
 }
 
 // TODO: cleanup and put in Setup functions.
-func setupMetrics() error {
+func setupMonitoring() error {
 	// setup timezone
 	var err error
 	if config.C.Metrics.Timezone == "" {
@@ -133,7 +133,7 @@ func setupMetrics() error {
 		return errors.Wrap(err, "set time location error")
 	}
 
-	if err := metrics.Setup(config.C); err != nil {
+	if err := monitoring.Setup(config.C); err != nil {
 		return errors.Wrap(err, "setup metrics error")
 	}
 

@@ -196,6 +196,13 @@ type Config struct {
 			APITimingHistogram bool   `mapstructure:"api_timing_histogram"`
 		}
 	} `mapstructure:"metrics"`
+
+	Monitoring struct {
+		Bind                         string `mapstructure:"bind"`
+		PrometheusEndpoint           bool   `mapstructure:"prometheus_endpoint"`
+		PrometheusAPITimingHistogram bool   `mapstructure:"prometheus_api_timing_histogram"`
+		HealthcheckEndpoint          bool   `mapstructure:"healthcheck_endpoint"`
+	} `mapstructure:"monitoring"`
 }
 
 // SpreadFactorToRequiredSNRTable contains the required SNR to demodulate a

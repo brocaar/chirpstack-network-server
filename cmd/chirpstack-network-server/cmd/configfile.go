@@ -621,33 +621,37 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   tls_key="{{ .GeolocationServer.TLSKey }}"
 
 
-# Metrics collection settings.
-[metrics]
-# Timezone
-#
-# The timezone is used for correctly aggregating the metrics (e.g. per hour,
-# day or month).
-# Example: "Europe/Amsterdam" or "Local" for the the system's local time zone.
-timezone="{{ .Metrics.Timezone }}"
-
-
-  # Metrics stored in Prometheus.
+  # Monitoring settings.
   #
-  # These metrics expose information about the state of the ChirpStack Network Server
-  # instance.
-  [metrics.prometheus]
-  # Enable Prometheus metrics endpoint.
-  endpoint_enabled={{ .Metrics.Prometheus.EndpointEnabled }}
+  # Note that this replaces the metrics configuration. If a metrics section is
+  # found in the configuration, then it will fall back to that and the monitoring
+  # section is ignored.
+  [monitoring]
 
-  # The ip:port to bind the Prometheus metrics server to for serving the
-  # metrics endpoint.
-  bind="{{ .Metrics.Prometheus.Bind }}"
+  # IP:port to bind the monitoring endpoint to.
+  #
+  # When left blank, the monitoring endpoint will be disabled.
+  bind="{{ .Monitoring.Bind }}"
 
-  # API timing histogram.
+  # Prometheus metrics endpoint.
+  #
+  # When set true, Prometheus metrics will be served at '/metrics'.
+  prometheus_endpoint={{ .Monitoring.PrometheusEndpoint }}
+
+  # Prometheus API timing histogram.
   #
   # By setting this to true, the API request timing histogram will be enabled.
   # See also: https://github.com/grpc-ecosystem/go-grpc-prometheus#histograms
-  api_timing_histogram={{ .Metrics.Prometheus.APITimingHistogram }}
+  prometheus_api_timing_histogram={{ .Monitoring.PrometheusAPITimingHistogram }}
+
+  # Health check endpoint.
+  #
+  # When set to true, the healthcheck endpoint will be served at '/health'.
+  # When requesting, this endpoint will perform the following actions to
+  # determine the health of this service:
+  #   * Ping PostgreSQL database
+  #   * Ping Redis database
+  healthcheck_endpoint={{ .Monitoring.HealthcheckEndpoint }}
 
 
 # Join-server settings.
