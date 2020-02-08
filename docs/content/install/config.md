@@ -813,7 +813,7 @@ for a set of scripts to generate such certificates.
 ## Join Server API configuration
 
 In the current implementation ChirpStack Network Server uses a fixed join-server URL
-(provided by ChirpStack Application Server) which is used as a Soin Server backend (`join_server.default`).
+(provided by ChirpStack Application Server) which is used as a Join Server backend (`join_server.default`).
 
 In case this endpoint is secured using a TLS certificate and expects a client
 certificate, you must set `ca_cert`, `tls_cert` and `tls_key`.
