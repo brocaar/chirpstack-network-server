@@ -253,6 +253,20 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # try to schedule the downlink in RX2, failing that it will try RX1.
   rx2_prefer_on_link_budget={{ .NetworkServer.NetworkSettings.RX2PreferOnLinkBudget }}
 
+  # Prefer gateways for downlink with given uplink (SNR) margin.
+  #
+  # When receiving an uplink (by multiple gateways), the Network Server will
+  # prefer the gateways that have at least the configured margin for the uplink
+  # SNR when sending a downlink. Margin:
+  #   uplink SNR - required SNR for spreading factor
+  #
+  #  * In case multiple gateways match, the Network Server will select a random
+  #    gateway from the match.
+  #  * In case non of the gateways have the desired margin or the uplink
+  #    modulation was not LoRa, then the gateway with the best SNR (or RSSI
+       in case of FSK) will be selected when sending a downlink.
+  gateway_prefer_min_margin={{ .NetworkServer.NetworkSettings.GatewayPreferMinMargin }}
+
   # Downlink TX Power (dBm)
   #
   # When set to -1, the downlink TX Power from the configured band will

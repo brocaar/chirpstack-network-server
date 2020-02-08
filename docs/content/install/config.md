@@ -308,6 +308,20 @@ get_downlink_data_delay="100ms"
   # try to schedule the downlink in RX2, failing that it will try RX1.
   rx2_prefer_on_link_budget=false
 
+  # Prefer gateways for downlink with given uplink (SNR) margin.
+  #
+  # When receiving an uplink (by multiple gateways), the Network Server will
+  # prefer the gateways that have at least the configured margin for the uplink
+  # SNR when sending a downlink. Margin:
+  #   uplink SNR - required SNR for spreading factor
+  #
+  #  * In case multiple gateways match, the Network Server will select a random
+  #    gateway from the match.
+  #  * In case non of the gateways have the desired margin or the uplink
+  #    modulation was not LoRa, then the gateway with the best SNR (or RSSI
+       in case of FSK) will be selected when sending a downlink.
+  gateway_prefer_min_margin=10
+
   # Downlink TX Power (dBm)
   #
   # When set to -1, the downlink TX Power from the configured band will
@@ -344,13 +358,13 @@ get_downlink_data_delay="100ms"
   # Use this when ony a sub-set of the by default enabled channels are being
   # used. For example when only using the first 8 channels of the US band.
   # Note: when left blank, all channels will be enabled.
-  # 
-  # For the US band, there are 64 125kHz channels (0-63) with 8 500kHz 
-  # channels (65-71) with frequencies in the middle of each 
+  #
+  # For the US band, there are 64 125kHz channels (0-63) with 8 500kHz
+  # channels (65-71) with frequencies in the middle of each
   # sub-band of 125kHz channels.
-  # Most US LoRa gateways recieve on only one sub-band which consists of 
+  # Most US LoRa gateways recieve on only one sub-band which consists of
   # 8 125kHz channels and 1 500 kHz channel
-  # 
+  #
   # Example: (sub-band 1)
   # enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7, 64]
   # Exmaple: (sub-band 2)

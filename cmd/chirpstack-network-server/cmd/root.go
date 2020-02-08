@@ -80,6 +80,7 @@ func init() {
 	viper.SetDefault("network_server.network_settings.rx1_delay", 1)
 	viper.SetDefault("network_server.network_settings.rx2_frequency", -1)
 	viper.SetDefault("network_server.network_settings.rx2_dr", -1)
+	viper.SetDefault("network_server.network_settings.gateway_prefer_min_margin", 10)
 	viper.SetDefault("network_server.network_settings.downlink_tx_power", -1)
 	viper.SetDefault("network_server.network_settings.disable_adr", false)
 	viper.SetDefault("network_server.network_settings.max_mac_command_error_count", 3)

@@ -16,6 +16,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/channels"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
+	dwngateway "github.com/brocaar/chirpstack-network-server/internal/downlink/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/framelog"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
@@ -81,6 +82,9 @@ var (
 
 	// Max mac-command error count.
 	maxMACCommandErrorCount int
+
+	// Prefer gateways with min uplink SNR margin
+	gatewayPreferMinMargin float64
 )
 
 var setMACCommandsSet = setMACCommands(
@@ -171,6 +175,7 @@ func Setup(conf config.Config) error {
 	uplinkMaxEIRPIndex = lorawan.GetTXParamSetupEIRPIndex(maxEIRP)
 
 	maxMACCommandErrorCount = conf.NetworkServer.NetworkSettings.MaxMACCommandErrorCount
+	gatewayPreferMinMargin = conf.NetworkServer.NetworkSettings.GatewayPreferMinMargin
 
 	return nil
 }
@@ -425,7 +430,7 @@ func preferRX2DR(ctx *dataContext) (bool, error) {
 	}
 
 	// get rx1 data-rate
-	drRX1Index, err := band.Band().GetRX1DataRateIndex(ctx.RXPacket.DR, int(ctx.DeviceSession.RX1DROffset))
+	drRX1Index, err := band.Band().GetRX1DataRateIndex(ctx.DeviceSession.DR, int(ctx.DeviceSession.RX1DROffset))
 	if err != nil {
 		return false, errors.Wrap(err, "get rx1 data-rate index error")
 	}
@@ -446,7 +451,7 @@ func preferRX2LinkBudget(ctx *dataContext) (b bool, err error) {
 	}
 
 	// get rx1 data-rate
-	drRX1Index, err := band.Band().GetRX1DataRateIndex(ctx.RXPacket.DR, int(ctx.DeviceSession.RX1DROffset))
+	drRX1Index, err := band.Band().GetRX1DataRateIndex(ctx.DeviceSession.DR, int(ctx.DeviceSession.RX1DROffset))
 	if err != nil {
 		return false, errors.Wrap(err, "get rx1 data-rate index error")
 	}
@@ -536,7 +541,10 @@ func setDataTXInfo(ctx *dataContext) error {
 }
 
 func setTXInfoForRX1(ctx *dataContext) error {
-	rxInfo := ctx.DeviceGatewayRXInfo[0]
+	rxInfo, err := dwngateway.SelectDownlinkGateway(gatewayPreferMinMargin, ctx.DeviceSession.DR, ctx.DeviceGatewayRXInfo)
+	if err != nil {
+		return err
+	}
 
 	txInfo := gw.DownlinkTXInfo{
 		GatewayId: rxInfo.GatewayID[:],
@@ -545,7 +553,7 @@ func setTXInfoForRX1(ctx *dataContext) error {
 		Context:   rxInfo.Context,
 	}
 
-	rx1DR, err := band.Band().GetRX1DataRateIndex(ctx.RXPacket.DR, int(ctx.DeviceSession.RX1DROffset))
+	rx1DR, err := band.Band().GetRX1DataRateIndex(ctx.DeviceSession.DR, int(ctx.DeviceSession.RX1DROffset))
 	if err != nil {
 		return errors.Wrap(err, "get rx1 data-rate index error")
 	}
@@ -603,7 +611,10 @@ func setImmediately(ctx *dataContext) error {
 }
 
 func setTXInfoForRX2(ctx *dataContext) error {
-	rxInfo := ctx.DeviceGatewayRXInfo[0]
+	rxInfo, err := dwngateway.SelectDownlinkGateway(gatewayPreferMinMargin, ctx.DeviceSession.DR, ctx.DeviceGatewayRXInfo)
+	if err != nil {
+		return err
+	}
 
 	txInfo := gw.DownlinkTXInfo{
 		GatewayId: rxInfo.GatewayID[:],
@@ -614,7 +625,7 @@ func setTXInfoForRX2(ctx *dataContext) error {
 	}
 
 	// get data-rate
-	err := helpers.SetDownlinkTXInfoDataRate(&txInfo, int(ctx.DeviceSession.RX2DR), band.Band())
+	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, int(ctx.DeviceSession.RX2DR), band.Band())
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
@@ -664,7 +675,10 @@ func setTXInfoForRX2(ctx *dataContext) error {
 }
 
 func setTXInfoForClassB(ctx *dataContext) error {
-	rxInfo := ctx.DeviceGatewayRXInfo[0]
+	rxInfo, err := dwngateway.SelectDownlinkGateway(gatewayPreferMinMargin, ctx.DeviceSession.DR, ctx.DeviceGatewayRXInfo)
+	if err != nil {
+		return err
+	}
 
 	txInfo := gw.DownlinkTXInfo{
 		GatewayId: rxInfo.GatewayID[:],
@@ -675,7 +689,7 @@ func setTXInfoForClassB(ctx *dataContext) error {
 	}
 
 	// get data-rate
-	err := helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.DeviceSession.PingSlotDR, band.Band())
+	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.DeviceSession.PingSlotDR, band.Band())
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
@@ -1207,6 +1221,7 @@ func setDeviceGatewayRXInfo(ctx *dataContext) error {
 				Context:   ctx.RXPacket.RXInfoSet[i].Context,
 			})
 		}
+
 	} else {
 		// Class-B or Class-C.
 		rxInfo, err := storage.GetDeviceGatewayRXInfoSet(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI)

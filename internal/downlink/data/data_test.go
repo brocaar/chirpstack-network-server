@@ -1060,39 +1060,38 @@ func TestPreferRX2DR(t *testing.T) {
 
 	tests := []struct {
 		Name               string
-		UplinkDR           int
 		DeviceSession      storage.DeviceSession
 		RX2PreferOnRX1DRLt int
 		RX2Prefered        bool
 	}{
 		{
 			Name:               "Uplink DR0 - RX1",
-			UplinkDR:           0,
 			RX2PreferOnRX1DRLt: 0,
 			RX2Prefered:        false,
 			DeviceSession: storage.DeviceSession{
 				RX2DR:        0,
 				RX2Frequency: 869525000,
+				DR:           0,
 			},
 		},
 		{
 			Name:               "Uplink DR0, RX2 prefered on DR < 3 - RX2",
-			UplinkDR:           0,
 			RX2PreferOnRX1DRLt: 3,
 			RX2Prefered:        true,
 			DeviceSession: storage.DeviceSession{
 				RX2DR:        0,
 				RX2Frequency: 869525000,
+				DR:           0,
 			},
 		},
 		{
 			Name:               "Uplink DR0, RX2 prefered on DR < 3, device reconfig pending - RX1",
-			UplinkDR:           0,
 			RX2PreferOnRX1DRLt: 3,
 			RX2Prefered:        false,
 			DeviceSession: storage.DeviceSession{
 				RX2DR:        1,
 				RX2Frequency: 869525000,
+				DR:           0,
 			},
 		},
 	}
@@ -1105,9 +1104,7 @@ func TestPreferRX2DR(t *testing.T) {
 
 			ctx := dataContext{
 				DeviceSession: tst.DeviceSession,
-				RXPacket: &models.RXPacket{
-					DR: tst.UplinkDR,
-				},
+				RXPacket:      &models.RXPacket{},
 			}
 
 			prefered, err := preferRX2DR(&ctx)
@@ -1126,7 +1123,6 @@ func TestPreferRX2LinkBudget(t *testing.T) {
 
 	tests := []struct {
 		Name                  string
-		UplinkDR              int
 		RX2PreferOnLinkBudget bool
 		DeviceSession         storage.DeviceSession
 		RX2Prefered           bool
@@ -1134,32 +1130,32 @@ func TestPreferRX2LinkBudget(t *testing.T) {
 	}{
 		{
 			Name:            "Uplink DR0 - RX2",
-			UplinkDR:        0,
 			RX2Prefered:     true,
 			DownlinkTXPower: -1,
 			DeviceSession: storage.DeviceSession{
 				RX2DR:        0,
 				RX2Frequency: 869525000,
+				DR:           0,
 			},
 		},
 		{
 			Name:            "Uplink DR5 - RX2",
-			UplinkDR:        5,
 			RX2Prefered:     true,
 			DownlinkTXPower: -1,
 			DeviceSession: storage.DeviceSession{
 				RX2DR:        0,
 				RX2Frequency: 869525000,
+				DR:           5,
 			},
 		},
 		{
 			Name:            "Uplink DR5 - custom tx power - RX1",
-			UplinkDR:        5,
 			RX2Prefered:     true,
 			DownlinkTXPower: 14,
 			DeviceSession: storage.DeviceSession{
 				RX2DR:        0,
 				RX2Frequency: 869525000,
+				DR:           5,
 			},
 		},
 	}
@@ -1173,7 +1169,6 @@ func TestPreferRX2LinkBudget(t *testing.T) {
 			ctx := dataContext{
 				DeviceSession: tst.DeviceSession,
 				RXPacket: &models.RXPacket{
-					DR: tst.UplinkDR,
 					TXInfo: &gw.UplinkTXInfo{
 						Frequency: 868100000,
 					},
@@ -1199,7 +1194,6 @@ func TestSetDataTXInfo(t *testing.T) {
 		RX2PreferOnLinkBudget  bool
 		RX2PreferOnRX1DRLt     int
 		DeviceSession          storage.DeviceSession
-		UplinkDR               int
 		UplinkFrequency        int
 		DownlinkTXPower        int
 		ExpectedDownlinkTXInfo []*gw.DownlinkTXInfo
@@ -1210,8 +1204,8 @@ func TestSetDataTXInfo(t *testing.T) {
 			DeviceSession: storage.DeviceSession{
 				RX2DR:        1,
 				RX2Frequency: 869525000,
+				DR:           3,
 			},
-			UplinkDR:        3,
 			UplinkFrequency: 868100000,
 			DownlinkTXPower: -1,
 			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
@@ -1245,8 +1239,8 @@ func TestSetDataTXInfo(t *testing.T) {
 			DeviceSession: storage.DeviceSession{
 				RX2DR:        1,
 				RX2Frequency: 869525000,
+				DR:           3,
 			},
-			UplinkDR:        3,
 			UplinkFrequency: 868100000,
 			DownlinkTXPower: -1,
 			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
@@ -1280,8 +1274,8 @@ func TestSetDataTXInfo(t *testing.T) {
 			DeviceSession: storage.DeviceSession{
 				RX2DR:        1,
 				RX2Frequency: 869525000,
+				DR:           3,
 			},
-			UplinkDR:           3,
 			UplinkFrequency:    868100000,
 			RX2PreferOnRX1DRLt: 3,
 			DownlinkTXPower:    -1,
@@ -1338,8 +1332,8 @@ func TestSetDataTXInfo(t *testing.T) {
 			DeviceSession: storage.DeviceSession{
 				RX2DR:        1,
 				RX2Frequency: 869525000,
+				DR:           3,
 			},
-			UplinkDR:           3,
 			UplinkFrequency:    868100000,
 			RX2PreferOnRX1DRLt: 4,
 			DownlinkTXPower:    -1,
@@ -1396,8 +1390,8 @@ func TestSetDataTXInfo(t *testing.T) {
 			DeviceSession: storage.DeviceSession{
 				RX2DR:        1,
 				RX2Frequency: 869525000,
+				DR:           0,
 			},
-			UplinkDR:              0,
 			UplinkFrequency:       868100000,
 			RX2PreferOnLinkBudget: true,
 			DownlinkTXPower:       14,
@@ -1454,8 +1448,8 @@ func TestSetDataTXInfo(t *testing.T) {
 			DeviceSession: storage.DeviceSession{
 				RX2DR:        1,
 				RX2Frequency: 869525000,
+				DR:           2,
 			},
-			UplinkDR:              2,
 			UplinkFrequency:       868100000,
 			RX2PreferOnLinkBudget: true,
 			DownlinkTXPower:       14,
@@ -1524,7 +1518,6 @@ func TestSetDataTXInfo(t *testing.T) {
 				DeviceSession:       tst.DeviceSession,
 				DeviceGatewayRXInfo: []storage.DeviceGatewayRXInfo{{}},
 				RXPacket: &models.RXPacket{
-					DR: tst.UplinkDR,
 					TXInfo: &gw.UplinkTXInfo{
 						Frequency: uint32(tst.UplinkFrequency),
 					},

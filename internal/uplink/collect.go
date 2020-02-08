@@ -3,7 +3,6 @@ package uplink
 import (
 	"encoding/hex"
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/golang/protobuf/proto"
@@ -102,7 +101,6 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.UplinkFrame, callback func(pa
 		out.RXInfoSet = append(out.RXInfoSet, uplinkFrame.RxInfo)
 	}
 
-	sort.Sort(models.BySignalStrength(out.RXInfoSet))
 	return callback(out)
 }
 
