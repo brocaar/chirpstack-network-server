@@ -209,6 +209,9 @@ func (ts *GatewayStatsTestSuite) TestStats() {
 		RxPacketsReceivedOk: 9,
 		TxPacketsReceived:   13,
 		TxPacketsEmitted:    10,
+		MetaData: map[string]string{
+			"foo": "bar",
+		},
 	}
 	stats.Time, _ = ptypes.TimestampProto(now)
 	assert.NoError(Handle(context.Background(), stats))
@@ -223,6 +226,9 @@ func (ts *GatewayStatsTestSuite) TestStats() {
 		RxPacketsReceivedOk: stats.RxPacketsReceivedOk,
 		TxPacketsReceived:   stats.TxPacketsReceived,
 		TxPacketsEmitted:    stats.TxPacketsEmitted,
+		Metadata: map[string]string{
+			"foo": "bar",
+		},
 	}, asReq)
 }
 

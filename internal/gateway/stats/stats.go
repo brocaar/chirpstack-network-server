@@ -201,6 +201,7 @@ func forwardGatewayStats(ctx *statsContext) error {
 		RxPacketsReceivedOk: ctx.gatewayStats.RxPacketsReceivedOk,
 		TxPacketsReceived:   ctx.gatewayStats.TxPacketsReceived,
 		TxPacketsEmitted:    ctx.gatewayStats.TxPacketsEmitted,
+		Metadata:            ctx.gatewayStats.MetaData,
 	})
 	if err != nil {
 		return errors.Wrap(err, "handle gateway stats error")
