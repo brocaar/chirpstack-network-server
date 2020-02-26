@@ -14,6 +14,7 @@ import (
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/controller"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/framelog"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
@@ -26,21 +27,27 @@ var (
 var handleDownlinkTXAckTasks = []func(*ackContext) error{
 	getToken,
 	getDownlinkFrames,
-	sendDownlinkMetaDataToNetworkControllerOnNoError,
-	sendTxAckToApplicationServerOnNoError,
-	abortOnNoError,
-	sendErrorToApplicationServerOnLastFrame,
-	sendDownlinkFrame,
-	saveDownlinkFrames,
+	decodePHYPayload,
+	onError(
+		sendErrorToApplicationServerOnLastFrame,
+		sendDownlinkFrame,
+		saveDownlinkFrames,
+	),
+	onNoError(
+		sendDownlinkMetaDataToNetworkController,
+		sendTxAckToApplicationServer,
+		logDownlinkFrame,
+	),
 }
 
 type ackContext struct {
 	ctx context.Context
 
 	Token          uint16
-	DevEUI         lorawan.EUI64
 	DownlinkTXAck  gw.DownlinkTXAck
 	DownlinkFrames storage.DownlinkFrames
+	MHDR           lorawan.MHDR
+	MACPayload     *lorawan.MACPayload
 }
 
 // HandleDownlinkTXAck handles the given downlink TX acknowledgement.
@@ -62,6 +69,38 @@ func HandleDownlinkTXAck(ctx context.Context, downlinkTXAck gw.DownlinkTXAck) er
 	return nil
 }
 
+func onError(funcs ...func(*ackContext) error) func(*ackContext) error {
+	return func(ctx *ackContext) error {
+		if ctx.DownlinkTXAck.Error == "" {
+			return nil
+		}
+
+		for _, f := range funcs {
+			if err := f(ctx); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+}
+
+func onNoError(funcs ...func(*ackContext) error) func(*ackContext) error {
+	return func(ctx *ackContext) error {
+		if ctx.DownlinkTXAck.Error != "" {
+			return nil
+		}
+
+		for _, f := range funcs {
+			if err := f(ctx); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+}
+
 func getToken(ctx *ackContext) error {
 	if ctx.DownlinkTXAck.Token != 0 {
 		ctx.Token = uint16(ctx.DownlinkTXAck.Token)
@@ -81,11 +120,7 @@ func getDownlinkFrames(ctx *ackContext) error {
 	return nil
 }
 
-func sendDownlinkMetaDataToNetworkControllerOnNoError(ctx *ackContext) error {
-	if ctx.DownlinkTXAck.Error != "" || controller.Client() == nil {
-		return nil
-	}
-
+func decodePHYPayload(ctx *ackContext) error {
 	if len(ctx.DownlinkFrames.DownlinkFrames) == 0 {
 		return errors.New("downlink-frames is empty")
 	}
@@ -97,8 +132,22 @@ func sendDownlinkMetaDataToNetworkControllerOnNoError(ctx *ackContext) error {
 		log.WithError(err).WithFields(log.Fields{
 			"ctx_id": ctx.ctx.Value(logging.ContextIDKey),
 		}).Error("unmarshal phypayload error")
-		return nil
 	}
+
+	ctx.MHDR = phy.MHDR
+	if macPL, ok := phy.MACPayload.(*lorawan.MACPayload); ok {
+		ctx.MACPayload = macPL
+	}
+
+	return nil
+}
+
+func sendDownlinkMetaDataToNetworkController(ctx *ackContext) error {
+	if len(ctx.DownlinkFrames.DownlinkFrames) == 0 {
+		return errors.New("downlink-frames is empty")
+	}
+
+	downlinkFrame := ctx.DownlinkFrames.DownlinkFrames[0]
 
 	req := nc.HandleDownlinkMetaDataRequest{
 		DevEui:              ctx.DownlinkFrames.DevEui,
@@ -108,7 +157,7 @@ func sendDownlinkMetaDataToNetworkControllerOnNoError(ctx *ackContext) error {
 	}
 
 	// message type
-	switch phy.MHDR.MType {
+	switch ctx.MHDR.MType {
 	case lorawan.JoinAccept:
 		req.MessageType = nc.MType_JOIN_ACCEPT
 	case lorawan.UnconfirmedDataDown:
@@ -117,10 +166,10 @@ func sendDownlinkMetaDataToNetworkControllerOnNoError(ctx *ackContext) error {
 		req.MessageType = nc.MType_CONFIRMED_DATA_DOWN
 	}
 
-	if macPL, ok := phy.MACPayload.(*lorawan.MACPayload); ok {
-		for _, pl := range macPL.FRMPayload {
+	if ctx.MACPayload != nil {
+		for _, pl := range ctx.MACPayload.FRMPayload {
 			if b, err := pl.MarshalBinary(); err == nil {
-				if macPL.FPort != nil && *macPL.FPort != 0 {
+				if ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort != 0 {
 					req.ApplicationPayloadByteCount += uint32(len(b))
 				} else {
 					req.MacCommandByteCount += uint32(len(b))
@@ -128,7 +177,7 @@ func sendDownlinkMetaDataToNetworkControllerOnNoError(ctx *ackContext) error {
 			}
 		}
 
-		for _, m := range macPL.FHDR.FOpts {
+		for _, m := range ctx.MACPayload.FHDR.FOpts {
 			if b, err := m.MarshalBinary(); err == nil {
 				req.MacCommandByteCount += uint32(len(b))
 			}
@@ -153,9 +202,9 @@ func sendDownlinkMetaDataToNetworkControllerOnNoError(ctx *ackContext) error {
 	return nil
 }
 
-func sendTxAckToApplicationServerOnNoError(ctx *ackContext) error {
+func sendTxAckToApplicationServer(ctx *ackContext) error {
 	// We do not want to inform the AS on non-application TX events.
-	if ctx.DownlinkTXAck.Error != "" || ctx.DownlinkFrames.FPort == 0 {
+	if len(ctx.DownlinkFrames.DevEui) == 0 || ctx.MACPayload == nil || ctx.MACPayload.FPort == nil || *ctx.MACPayload.FPort == 0 {
 		return nil
 	}
 
@@ -171,7 +220,7 @@ func sendTxAckToApplicationServerOnNoError(ctx *ackContext) error {
 	go func(ctx *ackContext, asClient as.ApplicationServerServiceClient) {
 		_, err := asClient.HandleTxAck(ctx.ctx, &as.HandleTxAckRequest{
 			DevEui: ctx.DownlinkFrames.DevEui,
-			FCnt:   ctx.DownlinkFrames.FCnt,
+			FCnt:   ctx.MACPayload.FHDR.FCnt,
 		})
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
@@ -188,18 +237,10 @@ func sendTxAckToApplicationServerOnNoError(ctx *ackContext) error {
 	return nil
 }
 
-func abortOnNoError(ctx *ackContext) error {
-	if ctx.DownlinkTXAck.Error == "" {
-		// no error, nothing to do
-		return errAbort
-	}
-	return nil
-}
-
 func sendErrorToApplicationServerOnLastFrame(ctx *ackContext) error {
 	// Only send an error to the AS on the last possible attempt.
 	// We only want to send error for application payloads.
-	if len(ctx.DownlinkFrames.DownlinkFrames) >= 2 || ctx.DownlinkFrames.FPort == 0 {
+	if len(ctx.DownlinkFrames.DownlinkFrames) >= 2 || ctx.MACPayload == nil || ctx.MACPayload.FPort == nil || *ctx.MACPayload.FPort == 0 {
 		return nil
 	}
 
@@ -215,7 +256,7 @@ func sendErrorToApplicationServerOnLastFrame(ctx *ackContext) error {
 	go func(ctx *ackContext, asClient as.ApplicationServerServiceClient) {
 		_, err := asClient.HandleError(ctx.ctx, &as.HandleErrorRequest{
 			DevEui: ctx.DownlinkFrames.DevEui,
-			FCnt:   ctx.DownlinkFrames.FCnt,
+			FCnt:   ctx.MACPayload.FHDR.FCnt,
 			Type:   as.ErrorType_DATA_DOWN_GATEWAY,
 			Error:  ctx.DownlinkTXAck.Error,
 		})
@@ -254,6 +295,64 @@ func saveDownlinkFrames(ctx *ackContext) error {
 	ctx.DownlinkFrames.DownlinkFrames = ctx.DownlinkFrames.DownlinkFrames[1:]
 	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), ctx.DownlinkFrames); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
+	}
+
+	return nil
+}
+
+func logDownlinkFrame(ctx *ackContext) error {
+	if len(ctx.DownlinkFrames.DownlinkFrames) == 0 {
+		return errors.New("downlink-frames is empty")
+	}
+
+	downlinkFrame := ctx.DownlinkFrames.DownlinkFrames[0]
+
+	// log for gateway (with encrypted mac-commands)
+	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, storage.RedisPool(), *downlinkFrame); err != nil {
+		log.WithError(err).WithFields(log.Fields{
+			"ctx_id": ctx.ctx.Value(logging.ContextIDKey),
+		}).Error("log downlink frame for gateway error")
+	}
+
+	var devEUI lorawan.EUI64
+	var nwkSEncKey lorawan.AES128Key
+	copy(devEUI[:], ctx.DownlinkFrames.DevEui)
+	copy(nwkSEncKey[:], ctx.DownlinkFrames.NwkSEncKey)
+
+	// log for device (with decrypted mac-commands)
+	var phy lorawan.PHYPayload
+	if err := phy.UnmarshalBinary(downlinkFrame.PhyPayload); err != nil {
+		return err
+	}
+
+	// decrypt FRMPayload mac-commands
+	if ctx.MACPayload != nil && ctx.MACPayload.FPort != nil && *ctx.MACPayload.FPort == 0 {
+		if err := phy.DecryptFRMPayload(nwkSEncKey); err != nil {
+			return errors.Wrap(err, "decrypt frmpayload error")
+		}
+	}
+
+	// decrypt FOpts mac-commands (LoRaWAN 1.1)
+	if ctx.DownlinkFrames.EncryptedFopts {
+		if err := phy.DecryptFOpts(nwkSEncKey); err != nil {
+			return errors.Wrap(err, "decrypt FOpts error")
+		}
+	}
+
+	phyB, err := phy.MarshalBinary()
+	if err != nil {
+		return err
+	}
+
+	if err := framelog.LogDownlinkFrameForDevEUI(ctx.ctx, storage.RedisPool(), devEUI, gw.DownlinkFrame{
+		PhyPayload: phyB,
+		TxInfo:     downlinkFrame.TxInfo,
+		Token:      downlinkFrame.Token,
+		DownlinkId: downlinkFrame.DownlinkId,
+	}); err != nil {
+		log.WithError(err).WithFields(log.Fields{
+			"ctx_id": ctx.ctx.Value(logging.ContextIDKey),
+		}).Error("log downlink frame for device error")
 	}
 
 	return nil

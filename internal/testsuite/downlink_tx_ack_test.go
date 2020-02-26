@@ -42,6 +42,22 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 	phyB, err := phy.MarshalBinary()
 	assert.NoError(err)
 
+	phyNS := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.UnconfirmedDataUp,
+			Major: lorawan.LoRaWANR1,
+		},
+		MACPayload: &lorawan.MACPayload{
+			FHDR: lorawan.FHDR{
+				DevAddr: lorawan.DevAddr{1, 2, 3, 4},
+				FCnt:    7,
+			},
+		},
+		MIC: lorawan.MIC{48, 94, 26, 239},
+	}
+	phyNSB, err := phyNS.MarshalBinary()
+	assert.NoError(err)
+
 	tests := []DownlinkTXAckTest{
 		{
 			Name:   "positive ack for app data",
@@ -54,7 +70,6 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 				Token:            12345,
 				DevEui:           []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
 				RoutingProfileId: ts.RoutingProfile.ID.Bytes(),
-				FPort:            10,
 				FCnt:             7,
 				DownlinkFrames: []*gw.DownlinkFrame{
 					{
@@ -62,14 +77,14 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 						TxInfo: &gw.DownlinkTXInfo{
 							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 						},
-						PhyPayload: []byte{1, 2},
+						PhyPayload: phyB,
 					},
 					{
 						Token: 12345,
 						TxInfo: &gw.DownlinkTXInfo{
 							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 						},
-						PhyPayload: []byte{1, 2, 3},
+						PhyPayload: phyB,
 					},
 				},
 			},
@@ -92,7 +107,6 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 				Token:            12345,
 				DevEui:           []byte{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08},
 				RoutingProfileId: ts.RoutingProfile.ID.Bytes(),
-				FPort:            0,
 				FCnt:             7,
 				DownlinkFrames: []*gw.DownlinkFrame{
 					{
@@ -100,14 +114,14 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 						TxInfo: &gw.DownlinkTXInfo{
 							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 						},
-						PhyPayload: []byte{1, 2},
+						PhyPayload: phyNSB,
 					},
 					{
 						Token: 12345,
 						TxInfo: &gw.DownlinkTXInfo{
 							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 						},
-						PhyPayload: []byte{1, 2, 3},
+						PhyPayload: phyNSB,
 					},
 				},
 			},
@@ -121,7 +135,7 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 			DevEUI: ts.Device.DevEUI,
 			DownlinkTXAck: gw.DownlinkTXAck{
 				Token:     12345,
-				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 2},
 				Error:     "BOOM",
 			},
 			DownlinkFrames: storage.DownlinkFrames{
@@ -132,9 +146,9 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 					{
 						Token: 12345,
 						TxInfo: &gw.DownlinkTXInfo{
-							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 2},
 						},
-						PhyPayload: []byte{1, 2},
+						PhyPayload: phyNSB,
 					},
 					// the next one in the queue
 					{
@@ -142,17 +156,17 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 						TxInfo: &gw.DownlinkTXInfo{
 							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 						},
-						PhyPayload: phyB,
+						PhyPayload: phyNSB,
 					},
 				},
 			},
 			Assert: []Assertion{
 				AssertDownlinkFrame(gw.DownlinkTXInfo{
 					GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
-				}, phy),
+				}, phyNS),
 				AssertDownlinkFrameSaved(lorawan.EUI64{0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08}, uuid.Nil, gw.DownlinkTXInfo{
 					GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
-				}, phy),
+				}, phyNS),
 			},
 		},
 		{
@@ -167,7 +181,6 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 				Token:            54321,
 				DevEui:           ts.Device.DevEUI[:],
 				RoutingProfileId: ts.RoutingProfile.ID.Bytes(),
-				FPort:            10,
 				FCnt:             7,
 				DownlinkFrames: []*gw.DownlinkFrame{
 					{
@@ -201,7 +214,6 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 				Token:            54321,
 				DevEui:           ts.Device.DevEUI[:],
 				RoutingProfileId: ts.RoutingProfile.ID.Bytes(),
-				FPort:            0,
 				FCnt:             7,
 				DownlinkFrames: []*gw.DownlinkFrame{
 					{
@@ -209,7 +221,7 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 						TxInfo: &gw.DownlinkTXInfo{
 							GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 						},
-						PhyPayload: phyB,
+						PhyPayload: phyNSB,
 					},
 				},
 			},
@@ -220,7 +232,7 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 		},
 	}
 
-	for _, tst := range tests {
+	for _, tst := range tests[2:] {
 		ts.T().Run(tst.Name, func(t *testing.T) {
 			ts.AssertDownlinkTXAckTest(t, tst)
 		})

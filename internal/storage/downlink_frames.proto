@@ -21,9 +21,12 @@ message DownlinkFrames {
     // Routing Profile ID.
     bytes routing_profile_id = 5;
 
-    // Downlink frame-counter.
+    // Downlink frame-counter (full).
     uint32 f_cnt = 6;
 
-    // Frame port.
-    uint32 f_port = 7;
+    // Encrypted FOpts (LoRaWAN 1.1).
+    bool encrypted_fopts = 7;
+
+    // Network session encryption key (for FOpts).
+    bytes nwk_s_enc_key = 8;
 }

@@ -8,14 +8,12 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 	dwngateway "github.com/brocaar/chirpstack-network-server/internal/downlink/gateway"
-	"github.com/brocaar/chirpstack-network-server/internal/framelog"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/models"
@@ -256,15 +254,6 @@ func sendJoinAcceptResponse(ctx *joinContext) error {
 	err := gateway.Backend().SendTXPacket(ctx.DownlinkFrames[0])
 	if err != nil {
 		return errors.Wrap(err, "send downlink frame error")
-	}
-
-	// log frame
-	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, storage.RedisPool(), ctx.DownlinkFrames[0]); err != nil {
-		log.WithError(err).Error("log downlink frame for gateway error")
-	}
-
-	if err := framelog.LogDownlinkFrameForDevEUI(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, ctx.DownlinkFrames[0]); err != nil {
-		log.WithError(err).Error("log downlink frame for device error")
 	}
 
 	return nil

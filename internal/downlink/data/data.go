@@ -17,7 +17,6 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/channels"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 	dwngateway "github.com/brocaar/chirpstack-network-server/internal/downlink/gateway"
-	"github.com/brocaar/chirpstack-network-server/internal/framelog"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/maccommand"
@@ -1131,55 +1130,6 @@ func sendDownlinkFrame(ctx *dataContext) error {
 	// set last downlink tx timestamp
 	ctx.DeviceSession.LastDownlinkTX = time.Now()
 
-	// log for gateway (with encrypted mac-commands)
-	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, storage.RedisPool(), ctx.DownlinkFrames[0].DownlinkFrame); err != nil {
-		log.WithError(err).WithFields(log.Fields{
-			"ctx_id": ctx.ctx.Value(logging.ContextIDKey),
-		}).Error("log downlink frame for gateway error")
-	}
-
-	// log for device (with decrypted mac-commands)
-	if err := func() error {
-		var phy lorawan.PHYPayload
-		if err := phy.UnmarshalBinary(ctx.DownlinkFrames[0].DownlinkFrame.PhyPayload); err != nil {
-			return err
-		}
-
-		// decrypt FRMPayload mac-commands
-		if ctx.FPort == 0 {
-			if err := phy.DecryptFRMPayload(ctx.DeviceSession.NwkSEncKey); err != nil {
-				return errors.Wrap(err, "decrypt frmpayload error")
-			}
-		}
-
-		// decrypt FOpts mac-commands (LoRaWAN 1.1)
-		if ctx.DeviceSession.GetMACVersion() != lorawan.LoRaWAN1_0 {
-			if err := phy.DecryptFOpts(ctx.DeviceSession.NwkSEncKey); err != nil {
-				return errors.Wrap(err, "encrypt FOpts error")
-			}
-		}
-
-		phyB, err := phy.MarshalBinary()
-		if err != nil {
-			return err
-		}
-
-		// log frame
-		if err := framelog.LogDownlinkFrameForDevEUI(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, gw.DownlinkFrame{
-			Token:      uint32(ctx.DownlinkFrames[0].DownlinkFrame.Token),
-			TxInfo:     ctx.DownlinkFrames[0].DownlinkFrame.TxInfo,
-			PhyPayload: phyB,
-		}); err != nil {
-			return err
-		}
-
-		return nil
-	}(); err != nil {
-		log.WithError(err).WithFields(log.Fields{
-			"ctx_id": ctx.ctx.Value(logging.ContextIDKey),
-		}).Error("log downlink frame for device error")
-	}
-
 	return nil
 }
 
@@ -1269,7 +1219,8 @@ func saveFrames(ctx *dataContext) error {
 		DevEui:           ctx.DeviceSession.DevEUI[:],
 		RoutingProfileId: ctx.DeviceSession.RoutingProfileID.Bytes(),
 		FCnt:             fCnt,
-		FPort:            uint32(ctx.FPort),
+		EncryptedFopts:   ctx.DeviceSession.GetMACVersion() != lorawan.LoRaWAN1_0,
+		NwkSEncKey:       ctx.DeviceSession.NwkSEncKey[:],
 	}
 
 	for i := range ctx.DownlinkFrames {
