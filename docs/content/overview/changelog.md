@@ -9,6 +9,45 @@ description: Lists the changes per ChirpStack Network Server release, including 
 ---
 # Changelog
 
+## v3.8.0
+
+### Features
+
+#### Downlink gateway randomization
+
+When sending a downlink response, ChirpStack Network Server will select from
+the list of gateways with a given (configurable) margin, a random gateway
+for the downlink. This should result in a better downlink distribution across
+gateways. In case non of the gateways are within the configured margin, the
+best gateway is selected (old behavior).
+
+#### Monitoring
+
+The monitoring configuration has been updated so that it is possible to
+configure both a [Prometheus](https://prometheus.io/) endpoint at `/metrics`
+and healthcheck endpoint at `/health`. This change is backwards compatible,
+but to use the `/health` endpoint you must update your configuration.
+
+#### Forward gateway metadata to AS
+
+By forwarding gateway metadata to the (ChirpStack) Application Server,
+information like serial number, temperature, ... could be stored by the
+Application Server for various use-cases. The configuration of metadata
+is covered by the [ChirpStack Gateway Bridge](https://www.chirpstack.io/gateway-bridge/).
+
+### Improvements
+
+#### Downlink LoRaWAN frame logging
+
+Previously the first downlink scheduling attempt was logged (visible in the
+ChirpStack Application Server under the Gateway / Device LoRaWAN frames). This
+has been changed so that the scheduling attempt acknowledged by the gateway
+is logged. E.g. when RX1 fails, but RX2 succeeds this will log the RX2 attempt.
+
+### Bugfixes
+
+* Update gRPC dependency to fix 'DNS name does not exist' error. ([#426](https://github.com/brocaar/chirpstack-application-server/issues/426))
+
 ## v3.7.0
 
 ### Features
