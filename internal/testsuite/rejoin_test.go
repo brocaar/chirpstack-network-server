@@ -86,7 +86,7 @@ func (ts *RejoinTestSuite) SetupTest() {
 	conf.NetworkServer.NetworkSettings.RX1Delay = 1
 	conf.JoinServer.KEK.Set = []struct {
 		Label string
-		KEK   string `mapstructure:"kek"`
+		KEK   string
 	}{
 		{
 			Label: "010203",

@@ -781,7 +781,7 @@ func (ts *OTAATestSuite) TestLW11() {
 				conf := test.GetConfig()
 				conf.JoinServer.KEK.Set = []struct {
 					Label string
-					KEK   string `mapstructure:"kek"`
+					KEK   string
 				}{
 					{
 						Label: "010203",
