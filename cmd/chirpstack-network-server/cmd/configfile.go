@@ -264,7 +264,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   #    gateway from the match.
   #  * In case non of the gateways have the desired margin or the uplink
   #    modulation was not LoRa, then the gateway with the best SNR (or RSSI
-       in case of FSK) will be selected when sending a downlink.
+  #    in case of FSK) will be selected when sending a downlink.
   gateway_prefer_min_margin={{ .NetworkServer.NetworkSettings.GatewayPreferMinMargin }}
 
   # Downlink TX Power (dBm)
