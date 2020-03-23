@@ -2,8 +2,10 @@ package amqp
 
 import (
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 )
 
@@ -18,18 +20,21 @@ type poolChannel struct {
 
 type pool struct {
 	mu    sync.RWMutex
+	url   string
 	chans chan *amqp.Channel
 	conn  *amqp.Connection
 }
 
-func newPool(size int, conn *amqp.Connection) (*pool, error) {
+func newPool(size int, url string) (*pool, error) {
 	p := &pool{
 		chans: make(chan *amqp.Channel, size),
-		conn:  conn,
+		url:   url,
 	}
 
+	p.connect()
+
 	for i := 0; i < size; i++ {
-		ch, err := conn.Channel()
+		ch, err := p.conn.Channel()
 		if err != nil {
 			p.close()
 			return nil, errors.Wrap(err, "create channel error")
@@ -39,6 +44,33 @@ func newPool(size int, conn *amqp.Connection) (*pool, error) {
 	}
 
 	return p, nil
+}
+
+func (p *pool) connect() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+	for {
+		conn, err := amqp.Dial(p.url)
+		if err != nil {
+			log.WithError(err).Error("gateway/amqp: dial amqp url error")
+			time.Sleep(time.Second)
+			continue
+		}
+
+		p.conn = conn
+
+		closeChan := make(chan *amqp.Error)
+		p.conn.NotifyClose(closeChan)
+
+		go func() {
+			for _ = range closeChan {
+				p.connect()
+			}
+		}()
+
+		break
+	}
 }
 
 func (p *pool) getChansAndConn() (chan *amqp.Channel, *amqp.Connection) {
@@ -99,21 +131,26 @@ func (p *pool) put(ch *amqp.Channel) error {
 	}
 }
 
-func (p *pool) close() {
+func (p *pool) close() error {
 	p.mu.Lock()
 	chans := p.chans
+	conn := p.conn
 	p.chans = nil
 	p.conn = nil
 	p.mu.Unlock()
 
-	if chans == nil {
-		return
+	if chans != nil {
+		close(chans)
+		for ch := range chans {
+			ch.Close()
+		}
 	}
 
-	close(chans)
-	for ch := range chans {
-		ch.Close()
+	if conn != nil {
+		return conn.Close()
 	}
+
+	return nil
 }
 
 func (pc *poolChannel) close() error {
@@ -122,7 +159,7 @@ func (pc *poolChannel) close() error {
 
 	if pc.unusable {
 		if pc.ch != nil {
-			return pc.ch.Close()
+			pc.ch.Close()
 		}
 		return nil
 	}

@@ -24,7 +24,6 @@ var gatewayIDRegexp = regexp.MustCompile(`([0-9a-fA-F]{16})`)
 
 // Backend implements an AMQP backend.
 type Backend struct {
-	conn   *amqp.Connection
 	chPool *pool
 
 	eventQueueName    string
@@ -54,12 +53,7 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 	}
 
 	log.Info("gateway/amqp: connecting to AMQP server")
-	b.conn, err = amqp.Dial(config.URL)
-	if err != nil {
-		return nil, errors.Wrap(err, "dial amqp url error")
-	}
-
-	b.chPool, err = newPool(10, b.conn)
+	b.chPool, err = newPool(10, config.URL)
 	if err != nil {
 		return nil, errors.Wrap(err, "new amqp channel pool error")
 	}
@@ -126,7 +120,7 @@ func (b *Backend) Close() error {
 	close(b.uplinkFrameChan)
 	close(b.gatewayStatsChan)
 	close(b.downlinkTXAckChan)
-	return b.conn.Close()
+	return b.chPool.close()
 }
 
 func (b *Backend) publishCommand(fields log.Fields, gatewayID lorawan.EUI64, command string, t marshaler.Type, data []byte) error {
@@ -177,13 +171,13 @@ func (b *Backend) publishCommand(fields log.Fields, gatewayID lorawan.EUI64, com
 }
 
 func (b *Backend) setupQueue() error {
-	ch, err := b.conn.Channel()
+	ch, err := b.chPool.get()
 	if err != nil {
 		return errors.Wrap(err, "open channel error")
 	}
-	defer ch.Close()
+	defer ch.close()
 
-	_, err = ch.QueueDeclare(
+	_, err = ch.ch.QueueDeclare(
 		b.eventQueueName,
 		true,
 		false,
@@ -195,7 +189,7 @@ func (b *Backend) setupQueue() error {
 		return errors.Wrap(err, "declare queue error")
 	}
 
-	err = ch.QueueBind(
+	err = ch.ch.QueueBind(
 		b.eventQueueName,
 		b.eventRoutingKey,
 		"amq.topic",
@@ -232,6 +226,7 @@ func (b *Backend) eventLoop() {
 				nil,
 			)
 			if err != nil {
+				ch.markUnusable()
 				return errors.Wrap(err, "register consumer error")
 			}
 
