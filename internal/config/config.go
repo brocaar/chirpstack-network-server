@@ -16,13 +16,13 @@ type Config struct {
 	General struct {
 		LogLevel    int  `mapstructure:"log_level"`
 		LogToSyslog bool `mapstructure:"log_to_syslog"`
-	}
+	} `mapstructure:"general"`
 
 	PostgreSQL struct {
-		DSN                string `mapstructure:"dsn"`
-		Automigrate        bool
-		MaxOpenConnections int `mapstructure:"max_open_connections"`
-		MaxIdleConnections int `mapstructure:"max_idle_connections"`
+		DSN                string  `mapstructure:"dsn"`
+		Automigrate        bool    `mapstructure:"automigrate"`
+		MaxOpenConnections int     `mapstructure:"max_open_connections"`
+		MaxIdleConnections int     `mapstructure:"max_idle_connections"`
 	} `mapstructure:"postgresql"`
 
 	Redis struct {
@@ -30,7 +30,7 @@ type Config struct {
 		MaxIdle     int           `mapstructure:"max_idle"`
 		MaxActive   int           `mapstructure:"max_active"`
 		IdleTimeout time.Duration `mapstructure:"idle_timeout"`
-	}
+	} `mapstructure:"redis"`
 
 	NetworkServer struct {
 		NetID                lorawan.NetID
@@ -40,12 +40,12 @@ type Config struct {
 		GetDownlinkDataDelay time.Duration `mapstructure:"get_downlink_data_delay"`
 
 		Band struct {
-			Name                   band.Name
-			UplinkDwellTime400ms   bool    `mapstructure:"uplink_dwell_time_400ms"`
-			DownlinkDwellTime400ms bool    `mapstructure:"downlink_dwell_time_400ms"`
-			UplinkMaxEIRP          float32 `mapstructure:"uplink_max_eirp"`
-			RepeaterCompatible     bool    `mapstructure:"repeater_compatible"`
-		}
+			Name                   band.Name `mapstructure:"name"`
+			UplinkDwellTime400ms   bool      `mapstructure:"uplink_dwell_time_400ms"`
+			DownlinkDwellTime400ms bool      `mapstructure:"downlink_dwell_time_400ms"`
+			UplinkMaxEIRP          float32   `mapstructure:"uplink_max_eirp"`
+			RepeaterCompatible     bool      `mapstructure:"repeater_compatible"`
+		}  `mapstructure:"band"`
 
 		NetworkSettings struct {
 			InstallationMargin      float64 `mapstructure:"installation_margin"`
@@ -64,7 +64,7 @@ type Config struct {
 			MaxMACCommandErrorCount int     `mapstructure:"max_mac_command_error_count"`
 
 			ExtraChannels []struct {
-				Frequency int
+				Frequency int `mapstructure:"frequency"`
 				MinDR     int `mapstructure:"min_dr"`
 				MaxDR     int `mapstructure:"max_dr"`
 			} `mapstructure:"extra_channels"`
@@ -91,7 +91,7 @@ type Config struct {
 		} `mapstructure:"scheduler"`
 
 		API struct {
-			Bind    string
+			Bind    string `mapstructure:"bind"`
 			CACert  string `mapstructure:"ca_cert"`
 			TLSCert string `mapstructure:"tls_cert"`
 			TLSKey  string `mapstructure:"tls_key"`
@@ -141,8 +141,8 @@ type Config struct {
 					EventsConnectionString   string `mapstructure:"events_connection_string"`
 					CommandsConnectionString string `mapstructure:"commands_connection_string"`
 				} `mapstructure:"azure_iot_hub"`
-			}
-		}
+			}  `mapstructure:"backend"`
+		} `mapstructure:"gateway"`
 	} `mapstructure:"network_server"`
 
 	GeolocationServer struct {
@@ -164,24 +164,24 @@ type Config struct {
 		} `mapstructure:"certificates"`
 
 		Default struct {
-			Server  string
+			Server  string `mapstructure:"server"`
 			CACert  string `mapstructure:"ca_cert"`
 			TLSCert string `mapstructure:"tls_cert"`
 			TLSKey  string `mapstructure:"tls_key"`
-		}
+		} `mapstructure:"default"`
 
 		KEK struct {
 			Set []struct {
-				Label string
+				Label string  `mapstructure:"label"`
 				KEK   string `mapstructure:"kek"`
-			}
+			} `mapstructure:"set"`
 		} `mapstructure:"kek"`
 	} `mapstructure:"join_server"`
 
 	NetworkController struct {
-		Client nc.NetworkControllerServiceClient
+		Client nc.NetworkControllerServiceClient  `mapstructure:"client"`
 
-		Server  string
+		Server  string `mapstructure:"server"`
 		CACert  string `mapstructure:"ca_cert"`
 		TLSCert string `mapstructure:"tls_cert"`
 		TLSKey  string `mapstructure:"tls_key"`
@@ -194,7 +194,7 @@ type Config struct {
 			EndpointEnabled    bool   `mapstructure:"endpoint_enabled"`
 			Bind               string `mapstructure:"bind"`
 			APITimingHistogram bool   `mapstructure:"api_timing_histogram"`
-		}
+		} `mapstructure:"prometheus"`
 	} `mapstructure:"metrics"`
 
 	Monitoring struct {

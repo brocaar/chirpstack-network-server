@@ -780,7 +780,7 @@ func (ts *OTAATestSuite) TestLW11() {
 			BeforeFunc: func(*OTAATest) error {
 				conf := test.GetConfig()
 				conf.JoinServer.KEK.Set = []struct {
-					Label string
+					Label string `mapstructure:"label"`
 					KEK   string `mapstructure:"kek"`
 				}{
 					{
