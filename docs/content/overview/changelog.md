@@ -9,6 +9,12 @@ description: Lists the changes per ChirpStack Network Server release, including 
 ---
 # Changelog
 
+## v3.8.1
+
+### Bugfixes
+
+* Fix AMQP re-connect issue.
+
 ## v3.8.0
 
 ### Features
