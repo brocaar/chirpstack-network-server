@@ -142,20 +142,10 @@ max_idle_connections=2
 # https://www.iana.org/assignments/uri-schemes/prov/redis
 url="redis://localhost:6379"
 
-# Max idle connections in the pool.
-max_idle=10
-
-# Idle timeout.
+# Connection pool size.
 #
-# Close connections after remaining idle for this duration. If the value
-# is zero, then idle connections are not closed. You should set
-# the timeout to a value less than the server's timeout.
-idle_timeout="5m0s"
-
-# Max active connections in the pool.
-#
-# When zero, there is no limit on the number of connections in the pool.
-max_active=0
+# Default is 10 connections per every CPU.
+pool_size=0
 
 
 # Network-server settings.
@@ -319,7 +309,7 @@ get_downlink_data_delay="100ms"
   #    gateway from the match.
   #  * In case non of the gateways have the desired margin or the uplink
   #    modulation was not LoRa, then the gateway with the best SNR (or RSSI
-       in case of FSK) will be selected when sending a downlink.
+  #    in case of FSK) will be selected when sending a downlink.
   gateway_prefer_min_margin=10
 
   # Downlink TX Power (dBm)
@@ -671,12 +661,12 @@ get_downlink_data_delay="100ms"
   tls_key=""
 
 
-# Monitoring settings.
-#
-# Note that this replaces the metrics configuration. If a metrics section is
-# found in the configuration, then it will fall back to that and the monitoring
-# section is ignored.
-[monitoring]
+  # Monitoring settings.
+  #
+  # Note that this replaces the metrics configuration. If a metrics section is
+  # found in the configuration, then it will fall back to that and the monitoring
+  # section is ignored.
+  [monitoring]
 
   # IP:port to bind the monitoring endpoint to.
   #

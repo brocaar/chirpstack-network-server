@@ -36,7 +36,7 @@ func (ts *NetworkServerAPITestSuite) SetupSuite() {
 }
 
 func (ts *NetworkServerAPITestSuite) SetupTest() {
-	test.MustFlushRedis(storage.RedisPool())
+	storage.RedisClient().FlushAll()
 }
 
 func (ts *NetworkServerAPITestSuite) TestMulticastGroup() {
@@ -177,7 +177,7 @@ func (ts *NetworkServerAPITestSuite) TestMulticastQueue() {
 	}
 	for i := range devices {
 		assert.NoError(storage.CreateDevice(context.Background(), storage.DB(), &devices[i]))
-		assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), storage.RedisPool(), storage.DeviceGatewayRXInfoSet{
+		assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), storage.DeviceGatewayRXInfoSet{
 			DevEUI: devices[i].DevEUI,
 			DR:     3,
 			Items: []storage.DeviceGatewayRXInfo{
@@ -539,7 +539,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 			})
 
 			t.Run("Device-session is created", func(t *testing.T) {
-				ds, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), devEUI)
+				ds, err := storage.GetDeviceSession(context.Background(), devEUI)
 				assert.NoError(err)
 				assert.Equal(storage.DeviceSession{
 					DeviceProfileID:  dp.ID,
@@ -599,10 +599,10 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 
 				t.Run("LoRaWAN 1.1", func(t *testing.T) {
 					assert := require.New(t)
-					ds, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), devEUI)
+					ds, err := storage.GetDeviceSession(context.Background(), devEUI)
 					assert.NoError(err)
 					ds.MACVersion = "1.1.0"
-					assert.NoError(storage.SaveDeviceSession(context.Background(), storage.RedisPool(), ds))
+					assert.NoError(storage.SaveDeviceSession(context.Background(), ds))
 
 					resp, err := ts.api.GetNextDownlinkFCntForDevEUI(context.Background(), &ns.GetNextDownlinkFCntForDevEUIRequest{DevEui: devEUI[:]})
 					assert.NoError(err)
@@ -678,7 +678,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 				})
 				assert.NoError(err)
 
-				ds, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), devEUI)
+				ds, err := storage.GetDeviceSession(context.Background(), devEUI)
 				assert.NoError(err)
 				assert.True(ds.SkipFCntValidation)
 			})

@@ -90,7 +90,7 @@ func AssertDownlinkFrame(txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Asser
 
 func AssertDownlinkFrameSaved(devEUI lorawan.EUI64, mcGroupID uuid.UUID, txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		frames, err := storage.GetDownlinkFrames(context.Background(), storage.RedisPool(), uint16(lastToken))
+		frames, err := storage.GetDownlinkFrames(context.Background(), uint16(lastToken))
 		assert.NoError(err)
 
 		assert.True(len(frames.DownlinkFrames) > 0, "empty downlink-frames")
@@ -133,7 +133,7 @@ func AssertDownlinkFrameSaved(devEUI lorawan.EUI64, mcGroupID uuid.UUID, txInfo 
 
 		// pop the frame that we have been validating, so that we can validate the next one
 		frames.DownlinkFrames = frames.DownlinkFrames[1:]
-		assert.NoError(storage.SaveDownlinkFrames(context.Background(), storage.RedisPool(), frames))
+		assert.NoError(storage.SaveDownlinkFrames(context.Background(), frames))
 	}
 }
 
@@ -143,7 +143,7 @@ func AssertNoDownlinkFrame(assert *require.Assertions, ts *IntegrationTestSuite)
 }
 
 func AssertNoDownlinkFrameSaved(assert *require.Assertions, ts *IntegrationTestSuite) {
-	_, err := storage.GetDownlinkFrames(context.Background(), storage.RedisPool(), uint16(lastToken))
+	_, err := storage.GetDownlinkFrames(context.Background(), uint16(lastToken))
 	assert.Equal(storage.ErrDoesNotExist, err)
 }
 
@@ -211,7 +211,7 @@ func AssertJSRejoinReqPayload(pl backend.RejoinReqPayload) Assertion {
 // AssertDeviceSession asserts the given device-session.
 func AssertDeviceSession(ds storage.DeviceSession) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		sess, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), ts.Device.DevEUI)
+		sess, err := storage.GetDeviceSession(context.Background(), ts.Device.DevEUI)
 		assert.NoError(err)
 
 		assert.NotEqual(lorawan.DevAddr{}, sess.DevAddr)

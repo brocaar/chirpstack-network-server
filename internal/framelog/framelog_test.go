@@ -33,7 +33,7 @@ func (ts *FrameLogTestSuite) SetupSuite() {
 }
 
 func (ts *FrameLogTestSuite) SetupTest() {
-	test.MustFlushRedis(storage.RedisPool())
+	storage.RedisClient().FlushAll()
 }
 
 func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
@@ -45,7 +45,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 	defer cancel()
 
 	go func() {
-		err := GetFrameLogForGateway(cctx, storage.RedisPool(), ts.GatewayID, logChannel)
+		err := GetFrameLogForGateway(cctx, ts.GatewayID, logChannel)
 		assert.NoError(err)
 	}()
 
@@ -72,7 +72,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 				},
 			},
 		}
-		assert.NoError(LogUplinkFrameForGateways(ctx, storage.RedisPool(), uplinkFrameSet))
+		assert.NoError(LogUplinkFrameForGateways(ctx, uplinkFrameSet))
 		frameLog := <-logChannel
 		assert.True(proto.Equal(&uplinkFrameSet, frameLog.UplinkFrame))
 	})
@@ -86,7 +86,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 			},
 		}
 
-		assert.NoError(LogDownlinkFrameForGateway(ctx, storage.RedisPool(), downlinkFrame))
+		assert.NoError(LogDownlinkFrameForGateway(ctx, downlinkFrame))
 		downlinkFrame.TxInfo.XXX_sizecache = 0
 
 		assert.Equal(FrameLog{
@@ -104,7 +104,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 	defer cancel()
 
 	go func() {
-		err := GetFrameLogForDevice(cctx, storage.RedisPool(), ts.DevEUI, logChannel)
+		err := GetFrameLogForDevice(cctx, ts.DevEUI, logChannel)
 		assert.NoError(err)
 	}()
 
@@ -132,7 +132,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 			},
 		}
 
-		assert.NoError(LogUplinkFrameForDevEUI(ctx, storage.RedisPool(), ts.DevEUI, uplinkFrameSet))
+		assert.NoError(LogUplinkFrameForDevEUI(ctx, ts.DevEUI, uplinkFrameSet))
 		frameLog := <-logChannel
 		assert.True(proto.Equal(frameLog.UplinkFrame, &uplinkFrameSet))
 	})
@@ -147,7 +147,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 			},
 		}
 
-		assert.NoError(LogDownlinkFrameForDevEUI(ctx, storage.RedisPool(), ts.DevEUI, downlinkFrame))
+		assert.NoError(LogDownlinkFrameForDevEUI(ctx, ts.DevEUI, downlinkFrame))
 		downlinkFrame.TxInfo.XXX_sizecache = 0
 
 		assert.Equal(FrameLog{

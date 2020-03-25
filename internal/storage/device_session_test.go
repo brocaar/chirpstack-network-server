@@ -19,7 +19,7 @@ func TestGetRandomDevAddr(t *testing.T) {
 	}
 
 	Convey("Given a Redis database and NetID 010203", t, func() {
-		test.MustFlushRedis(RedisPool())
+		RedisClient().FlushAll()
 		netID := lorawan.NetID{1, 2, 3}
 
 		Convey("When calling getRandomDevAddr many times, it should always return an unique DevAddr", func() {
@@ -95,10 +95,10 @@ func (ts *StorageTestSuite) TestDeviceGatewayRXInfoSet() {
 	ts.T().Run("Does not exist", func(t *testing.T) {
 		assert := require.New(t)
 
-		_, err := GetDeviceGatewayRXInfoSet(context.Background(), ts.RedisPool(), devEUI)
+		_, err := GetDeviceGatewayRXInfoSet(context.Background(), devEUI)
 		assert.Equal(ErrDoesNotExist, err)
 
-		sets, err := GetDeviceGatewayRXInfoSetForDevEUIs(context.Background(), ts.RedisPool(), []lorawan.EUI64{devEUI})
+		sets, err := GetDeviceGatewayRXInfoSetForDevEUIs(context.Background(), []lorawan.EUI64{devEUI})
 		assert.NoError(err)
 		assert.Len(sets, 0)
 	})
@@ -120,16 +120,16 @@ func (ts *StorageTestSuite) TestDeviceGatewayRXInfoSet() {
 				},
 			},
 		}
-		assert.NoError(SaveDeviceGatewayRXInfoSet(context.Background(), ts.RedisPool(), rxInfoSet))
+		assert.NoError(SaveDeviceGatewayRXInfoSet(context.Background(), rxInfoSet))
 
 		t.Run("Get", func(t *testing.T) {
 			assert := require.New(t)
 
-			rxInfoSetGet, err := GetDeviceGatewayRXInfoSet(context.Background(), ts.RedisPool(), devEUI)
+			rxInfoSetGet, err := GetDeviceGatewayRXInfoSet(context.Background(), devEUI)
 			assert.NoError(err)
 			assert.Equal(rxInfoSet, rxInfoSetGet)
 
-			rxInfoSets, err := GetDeviceGatewayRXInfoSetForDevEUIs(context.Background(), ts.RedisPool(), []lorawan.EUI64{devEUI})
+			rxInfoSets, err := GetDeviceGatewayRXInfoSetForDevEUIs(context.Background(), []lorawan.EUI64{devEUI})
 			assert.NoError(err)
 			assert.Len(rxInfoSets, 1)
 			assert.Equal(rxInfoSet, rxInfoSets[0])
@@ -138,10 +138,10 @@ func (ts *StorageTestSuite) TestDeviceGatewayRXInfoSet() {
 		t.Run("Delete", func(t *testing.T) {
 			assert := require.New(t)
 
-			assert.NoError(DeleteDeviceGatewayRXInfoSet(context.Background(), ts.RedisPool(), devEUI))
-			_, err := GetDeviceGatewayRXInfoSet(context.Background(), ts.RedisPool(), devEUI)
+			assert.NoError(DeleteDeviceGatewayRXInfoSet(context.Background(), devEUI))
+			_, err := GetDeviceGatewayRXInfoSet(context.Background(), devEUI)
 			assert.Equal(ErrDoesNotExist, err)
-			assert.Equal(ErrDoesNotExist, DeleteDeviceGatewayRXInfoSet(context.Background(), ts.RedisPool(), devEUI))
+			assert.Equal(ErrDoesNotExist, DeleteDeviceGatewayRXInfoSet(context.Background(), devEUI))
 		})
 	})
 }
@@ -157,25 +157,25 @@ func (ts *StorageTestSuite) TestDeviceSession() {
 
 	ts.T().Run("Get non existing", func(t *testing.T) {
 		assert := require.New(t)
-		_, err := GetDeviceSession(context.Background(), RedisPool(), s.DevEUI)
+		_, err := GetDeviceSession(context.Background(), s.DevEUI)
 		assert.Equal(ErrDoesNotExist, err)
 	})
 
 	ts.T().Run("Save", func(t *testing.T) {
 		assert := require.New(t)
-		assert.NoError(SaveDeviceSession(context.Background(), RedisPool(), s))
+		assert.NoError(SaveDeviceSession(context.Background(), s))
 
 		t.Run("Get", func(t *testing.T) {
 			assert := require.New(t)
-			s2, err := GetDeviceSession(context.Background(), RedisPool(), s.DevEUI)
+			s2, err := GetDeviceSession(context.Background(), s.DevEUI)
 			assert.NoError(err)
 			assert.Equal(s, s2)
 		})
 
 		t.Run("Delete", func(t *testing.T) {
 			assert := require.New(t)
-			assert.NoError(DeleteDeviceSession(context.Background(), RedisPool(), s.DevEUI))
-			assert.Equal(DeleteDeviceSession(context.Background(), RedisPool(), s.DevEUI), ErrDoesNotExist)
+			assert.NoError(DeleteDeviceSession(context.Background(), s.DevEUI))
+			assert.Equal(DeleteDeviceSession(context.Background(), s.DevEUI), ErrDoesNotExist)
 		})
 	})
 }
@@ -222,7 +222,7 @@ func (ts *StorageTestSuite) TestGetDeviceSessionForPHYPayload() {
 		},
 	}
 	for _, s := range deviceSessions {
-		assert.NoError(SaveDeviceSession(context.Background(), RedisPool(), s))
+		assert.NoError(SaveDeviceSession(context.Background(), s))
 	}
 
 	testTable := []struct {
@@ -316,7 +316,7 @@ func (ts *StorageTestSuite) TestGetDeviceSessionForPHYPayload() {
 			}
 			assert.NoError(phy.SetUplinkDataMIC(lorawan.LoRaWAN1_0, 0, 0, 0, tst.FNwkSIntKey, tst.SNwkSIntKey))
 
-			s, err := GetDeviceSessionForPHYPayload(context.Background(), RedisPool(), phy, 0, 0)
+			s, err := GetDeviceSessionForPHYPayload(context.Background(), phy, 0, 0)
 			if tst.ExpectedError != nil {
 				assert.NotNil(err)
 				assert.Equal(tst.ExpectedError.Error(), err.Error())

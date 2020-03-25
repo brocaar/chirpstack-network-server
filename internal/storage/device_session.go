@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/gofrs/uuid"
 	proto "github.com/golang/protobuf/proto"
-	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -302,26 +302,26 @@ func GetFullFCntUp(s DeviceSession, fCntUp uint32) uint32 {
 
 // SaveDeviceSession saves the device-session. In case it doesn't exist yet
 // it will be created.
-func SaveDeviceSession(ctx context.Context, p *redis.Pool, s DeviceSession) error {
+func SaveDeviceSession(ctx context.Context, s DeviceSession) error {
+	devAddrKey := fmt.Sprintf(devAddrKeyTempl, s.DevAddr)
+	devSessKey := fmt.Sprintf(deviceSessionKeyTempl, s.DevEUI)
+
 	dsPB := deviceSessionToPB(s)
 	b, err := proto.Marshal(&dsPB)
 	if err != nil {
 		return errors.Wrap(err, "protobuf encode error")
 	}
 
-	c := p.Get()
-	defer c.Close()
-	exp := int64(deviceSessionTTL) / int64(time.Millisecond)
-
-	c.Send("MULTI")
-	c.Send("PSETEX", fmt.Sprintf(deviceSessionKeyTempl, s.DevEUI), exp, b)
-	c.Send("SADD", fmt.Sprintf(devAddrKeyTempl, s.DevAddr), s.DevEUI[:])
-	c.Send("PEXPIRE", fmt.Sprintf(devAddrKeyTempl, s.DevAddr), exp)
+	pipe := RedisClient().TxPipeline()
+	pipe.Set(devSessKey, b, deviceSessionTTL)
+	pipe.SAdd(devAddrKey, s.DevEUI[:])
+	pipe.PExpire(devAddrKey, deviceSessionTTL)
 	if s.PendingRejoinDeviceSession != nil {
-		c.Send("SADD", fmt.Sprintf(devAddrKeyTempl, s.PendingRejoinDeviceSession.DevAddr), s.DevEUI[:])
-		c.Send("PEXPIRE", fmt.Sprintf(devAddrKeyTempl, s.PendingRejoinDeviceSession.DevAddr), exp)
+		pipe.SAdd(fmt.Sprintf(devAddrKeyTempl, s.PendingRejoinDeviceSession.DevAddr), s.DevEUI[:])
+		pipe.PExpire(fmt.Sprintf(devAddrKeyTempl, s.PendingRejoinDeviceSession.DevAddr), deviceSessionTTL)
 	}
-	if _, err := c.Do("EXEC"); err != nil {
+
+	if _, err := pipe.Exec(); err != nil {
 		return errors.Wrap(err, "exec error")
 	}
 
@@ -335,15 +335,13 @@ func SaveDeviceSession(ctx context.Context, p *redis.Pool, s DeviceSession) erro
 }
 
 // GetDeviceSession returns the device-session for the given DevEUI.
-func GetDeviceSession(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) (DeviceSession, error) {
+func GetDeviceSession(ctx context.Context, devEUI lorawan.EUI64) (DeviceSession, error) {
+	key := fmt.Sprintf(deviceSessionKeyTempl, devEUI)
 	var dsPB DeviceSessionPB
 
-	c := p.Get()
-	defer c.Close()
-
-	val, err := redis.Bytes(c.Do("GET", fmt.Sprintf(deviceSessionKeyTempl, devEUI)))
+	val, err := RedisClient().Get(key).Bytes()
 	if err != nil {
-		if err == redis.ErrNil {
+		if err == redis.Nil {
 			return DeviceSession{}, ErrDoesNotExist
 		}
 		return DeviceSession{}, errors.Wrap(err, "get error")
@@ -358,17 +356,17 @@ func GetDeviceSession(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) 
 }
 
 // DeleteDeviceSession deletes the device-session matching the given DevEUI.
-func DeleteDeviceSession(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) error {
-	c := p.Get()
-	defer c.Close()
+func DeleteDeviceSession(ctx context.Context, devEUI lorawan.EUI64) error {
+	key := fmt.Sprintf(deviceSessionKeyTempl, devEUI)
 
-	val, err := redis.Int(c.Do("DEL", fmt.Sprintf(deviceSessionKeyTempl, devEUI)))
+	val, err := RedisClient().Del(key).Result()
 	if err != nil {
 		return errors.Wrap(err, "delete error")
 	}
 	if val == 0 {
 		return ErrDoesNotExist
 	}
+
 	log.WithFields(log.Fields{
 		"dev_eui": devEUI,
 		"ctx_id":  ctx.Value(logging.ContextIDKey),
@@ -379,16 +377,16 @@ func DeleteDeviceSession(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI6
 // GetDeviceSessionsForDevAddr returns a slice of device-sessions using the
 // given DevAddr. When no device-session is using the given DevAddr, this returns
 // an empty slice.
-func GetDeviceSessionsForDevAddr(ctx context.Context, p *redis.Pool, devAddr lorawan.DevAddr) ([]DeviceSession, error) {
+func GetDeviceSessionsForDevAddr(ctx context.Context, devAddr lorawan.DevAddr) ([]DeviceSession, error) {
 	var items []DeviceSession
 
-	devEUIs, err := GetDevEUIsForDevAddr(ctx, p, devAddr)
+	devEUIs, err := GetDevEUIsForDevAddr(ctx, devAddr)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, devEUI := range devEUIs {
-		s, err := GetDeviceSession(ctx, p, devEUI)
+		s, err := GetDeviceSession(ctx, devEUI)
 		if err != nil {
 			// TODO: in case not found, remove the DevEUI from the list
 			log.WithFields(log.Fields{
@@ -416,22 +414,21 @@ func GetDeviceSessionsForDevAddr(ctx context.Context, p *redis.Pool, devAddr lor
 }
 
 // GetDevEUIsForDevAddr returns the DevEUIs that are using the given DevAddr.
-func GetDevEUIsForDevAddr(ctx context.Context, p *redis.Pool, devAddr lorawan.DevAddr) ([]lorawan.EUI64, error) {
-	c := p.Get()
-	defer c.Close()
+func GetDevEUIsForDevAddr(ctx context.Context, devAddr lorawan.DevAddr) ([]lorawan.EUI64, error) {
+	key := fmt.Sprintf(devAddrKeyTempl, devAddr)
 
-	devEUIs, err := redis.ByteSlices(c.Do("SMEMBERS", fmt.Sprintf(devAddrKeyTempl, devAddr)))
+	val, err := RedisClient().SMembers(key).Result()
 	if err != nil {
-		if err == redis.ErrNil {
+		if err == redis.Nil {
 			return nil, nil
 		}
 		return nil, errors.Wrap(err, "get deveuis for devaddr error")
 	}
 
 	var out []lorawan.EUI64
-	for i := range devEUIs {
+	for i := range val {
 		var devEUI lorawan.EUI64
-		copy(devEUI[:], devEUIs[i])
+		copy(devEUI[:], []byte(val[i]))
 		out = append(out, devEUI)
 	}
 
@@ -441,14 +438,14 @@ func GetDevEUIsForDevAddr(ctx context.Context, p *redis.Pool, devAddr lorawan.De
 // GetDeviceSessionForPHYPayload returns the device-session matching the given
 // PHYPayload. This will fetch all device-sessions associated with the used
 // DevAddr and based on FCnt and MIC decide which one to use.
-func GetDeviceSessionForPHYPayload(ctx context.Context, p *redis.Pool, phy lorawan.PHYPayload, txDR, txCh int) (DeviceSession, error) {
+func GetDeviceSessionForPHYPayload(ctx context.Context, phy lorawan.PHYPayload, txDR, txCh int) (DeviceSession, error) {
 	macPL, ok := phy.MACPayload.(*lorawan.MACPayload)
 	if !ok {
 		return DeviceSession{}, fmt.Errorf("expected *lorawan.MACPayload, got: %T", phy.MACPayload)
 	}
 	originalFCnt := macPL.FHDR.FCnt
 
-	deviceSessions, err := GetDeviceSessionsForDevAddr(ctx, p, macPL.FHDR.DevAddr)
+	deviceSessions, err := GetDeviceSessionsForDevAddr(ctx, macPL.FHDR.DevAddr)
 	if err != nil {
 		return DeviceSession{}, err
 	}
@@ -509,11 +506,10 @@ func GetDeviceSessionForPHYPayload(ctx context.Context, p *redis.Pool, phy loraw
 }
 
 // DeviceSessionExists returns a bool indicating if a device session exist.
-func DeviceSessionExists(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) (bool, error) {
-	c := p.Get()
-	defer c.Close()
+func DeviceSessionExists(ctx context.Context, devEUI lorawan.EUI64) (bool, error) {
+	key := fmt.Sprintf(deviceSessionKeyTempl, devEUI)
 
-	r, err := redis.Int(c.Do("EXISTS", fmt.Sprintf(deviceSessionKeyTempl, devEUI)))
+	r, err := RedisClient().Exists(key).Result()
 	if err != nil {
 		return false, errors.Wrap(err, "get exists error")
 	}
@@ -524,17 +520,16 @@ func DeviceSessionExists(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI6
 }
 
 // SaveDeviceGatewayRXInfoSet saves the given DeviceGatewayRXInfoSet.
-func SaveDeviceGatewayRXInfoSet(ctx context.Context, p *redis.Pool, rxInfoSet DeviceGatewayRXInfoSet) error {
+func SaveDeviceGatewayRXInfoSet(ctx context.Context, rxInfoSet DeviceGatewayRXInfoSet) error {
+	key := fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, rxInfoSet.DevEUI)
+
 	rxInfoSetPB := deviceGatewayRXInfoSetToPB(rxInfoSet)
 	b, err := proto.Marshal(&rxInfoSetPB)
 	if err != nil {
 		return errors.Wrap(err, "protobuf encode error")
 	}
 
-	c := p.Get()
-	defer c.Close()
-	exp := int64(deviceSessionTTL / time.Millisecond)
-	_, err = c.Do("PSETEX", fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, rxInfoSet.DevEUI), exp, b)
+	err = RedisClient().Set(key, b, deviceSessionTTL).Err()
 	if err != nil {
 		return errors.Wrap(err, "psetex error")
 	}
@@ -549,17 +544,17 @@ func SaveDeviceGatewayRXInfoSet(ctx context.Context, p *redis.Pool, rxInfoSet De
 
 // DeleteDeviceGatewayRXInfoSet deletes the device gateway rx-info meta-data
 // for the given Device EUI.
-func DeleteDeviceGatewayRXInfoSet(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) error {
-	c := p.Get()
-	defer c.Close()
+func DeleteDeviceGatewayRXInfoSet(ctx context.Context, devEUI lorawan.EUI64) error {
+	key := fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, devEUI)
 
-	val, err := redis.Int(c.Do("DEL", fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, devEUI)))
+	val, err := RedisClient().Del(key).Result()
 	if err != nil {
 		return errors.Wrap(err, "delete error")
 	}
 	if val == 0 {
 		return ErrDoesNotExist
 	}
+
 	log.WithFields(log.Fields{
 		"dev_eui": devEUI,
 		"ctx_id":  ctx.Value(logging.ContextIDKey),
@@ -569,15 +564,13 @@ func DeleteDeviceGatewayRXInfoSet(ctx context.Context, p *redis.Pool, devEUI lor
 
 // GetDeviceGatewayRXInfoSet returns the DeviceGatewayRXInfoSet for the given
 // Device EUI.
-func GetDeviceGatewayRXInfoSet(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64) (DeviceGatewayRXInfoSet, error) {
+func GetDeviceGatewayRXInfoSet(ctx context.Context, devEUI lorawan.EUI64) (DeviceGatewayRXInfoSet, error) {
 	var rxInfoSetPB DeviceGatewayRXInfoSetPB
+	key := fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, devEUI)
 
-	c := p.Get()
-	defer c.Close()
-
-	val, err := redis.Bytes(c.Do("GET", fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, devEUI)))
+	val, err := RedisClient().Get(key).Bytes()
 	if err != nil {
-		if err == redis.ErrNil {
+		if err == redis.Nil {
 			return DeviceGatewayRXInfoSet{}, ErrDoesNotExist
 		}
 		return DeviceGatewayRXInfoSet{}, errors.Wrap(err, "get error")
@@ -593,29 +586,28 @@ func GetDeviceGatewayRXInfoSet(ctx context.Context, p *redis.Pool, devEUI lorawa
 
 // GetDeviceGatewayRXInfoSetForDevEUIs returns the DeviceGatewayRXInfoSet
 // objects for the given Device EUIs.
-func GetDeviceGatewayRXInfoSetForDevEUIs(ctx context.Context, p *redis.Pool, devEUIs []lorawan.EUI64) ([]DeviceGatewayRXInfoSet, error) {
+func GetDeviceGatewayRXInfoSetForDevEUIs(ctx context.Context, devEUIs []lorawan.EUI64) ([]DeviceGatewayRXInfoSet, error) {
 	if len(devEUIs) == 0 {
 		return nil, nil
 	}
 
-	var keys []interface{}
+	var keys []string
 	for _, d := range devEUIs {
 		keys = append(keys, fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, d))
 	}
 
-	c := p.Get()
-	defer c.Close()
-
-	bs, err := redis.ByteSlices(c.Do("MGET", keys...))
+	bs, err := RedisClient().MGet(keys...).Result()
 	if err != nil {
 		return nil, errors.Wrap(err, "get byte slices error")
 	}
 
 	var out []DeviceGatewayRXInfoSet
-	for _, b := range bs {
-		if len(b) == 0 {
+	for _, val := range bs {
+		if val == nil {
 			continue
 		}
+
+		b := []byte(val.(string))
 
 		var rxInfoSetPB DeviceGatewayRXInfoSetPB
 		if err = proto.Unmarshal(b, &rxInfoSetPB); err != nil {

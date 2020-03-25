@@ -57,16 +57,16 @@ func (ts *StorageTestSuite) TestGateway() {
 		})
 
 		t.Run("Test cache", func(t *testing.T) {
-			gwGet, err := GetAndCacheGateway(context.Background(), ts.Tx(), ts.RedisPool(), gw.GatewayID)
+			gwGet, err := GetAndCacheGateway(context.Background(), ts.Tx(), gw.GatewayID)
 			assert.NoError(err)
 			assert.Equal(gw.GatewayID, gwGet.GatewayID)
 
-			gwGet, err = GetGatewayCache(context.Background(), ts.RedisPool(), gw.GatewayID)
+			gwGet, err = GetGatewayCache(context.Background(), gw.GatewayID)
 			assert.NoError(err)
 			assert.Equal(gw.GatewayID, gwGet.GatewayID)
 
-			assert.NoError(FlushGatewayCache(context.Background(), ts.RedisPool(), gw.GatewayID))
-			_, err = GetGatewayCache(context.Background(), ts.RedisPool(), gw.GatewayID)
+			assert.NoError(FlushGatewayCache(context.Background(), gw.GatewayID))
+			_, err = GetGatewayCache(context.Background(), gw.GatewayID)
 			assert.Equal(ErrDoesNotExist, err)
 		})
 

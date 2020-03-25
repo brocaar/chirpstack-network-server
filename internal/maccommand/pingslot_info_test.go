@@ -24,7 +24,7 @@ func (ts *PingSlotInfoTestSuite) TestPingSlotInfoReq() {
 		DevEUI:                [8]byte{1, 2, 3, 4, 5, 6, 7, 8},
 		EnabledUplinkChannels: []int{0, 1},
 	}
-	assert.NoError(storage.SaveDeviceSession(ctx, storage.RedisPool(), ds))
+	assert.NoError(storage.SaveDeviceSession(ctx, ds))
 
 	block := storage.MACCommandBlock{
 		CID: lorawan.PingSlotInfoReq,

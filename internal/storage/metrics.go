@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/pkg/errors"
 )
 
@@ -47,10 +47,7 @@ func SetTimeLocation(name string) error {
 }
 
 // GetMetrics returns the metrics for the requested aggregation interval.
-func GetMetrics(ctx context.Context, p *redis.Pool, agg AggregationInterval, name string, start, end time.Time) ([]MetricsRecord, error) {
-	c := p.Get()
-	defer c.Close()
-
+func GetMetrics(ctx context.Context, agg AggregationInterval, name string, start, end time.Time) ([]MetricsRecord, error) {
 	var keys []string
 	var timestamps []time.Time
 
@@ -107,25 +104,26 @@ func GetMetrics(ctx context.Context, p *redis.Pool, agg AggregationInterval, nam
 		return nil, nil
 	}
 
+	pipe := RedisClient().Pipeline()
+	var vals []*redis.StringStringMapCmd
 	for _, k := range keys {
-		c.Send("HGETALL", k)
+		vals = append(vals, pipe.HGetAll(k))
 	}
-	c.Flush()
+
+	if _, err := pipe.Exec(); err != nil {
+		return nil, errors.Wrap(err, "hget error")
+	}
 
 	var out []MetricsRecord
 
-	for _, ts := range timestamps {
+	for i, ts := range timestamps {
 		metrics := MetricsRecord{
 			Time:    ts,
 			Metrics: make(map[string]float64),
 		}
 
-		vals, err := redis.StringMap(c.Receive())
-		if err != nil {
-			return nil, errors.Wrap(err, "receive stringmap error")
-		}
-
-		for k, v := range vals {
+		val := vals[i].Val()
+		for k, v := range val {
 			f, err := strconv.ParseFloat(v, 64)
 			if err != nil {
 				return nil, errors.Wrap(err, "parse float error")

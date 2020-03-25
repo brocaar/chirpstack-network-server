@@ -118,7 +118,7 @@ func logJoinRequestFramesCollected(ctx *joinContext) error {
 		return errors.Wrap(err, "create uplink frame-set error")
 	}
 
-	if err := framelog.LogUplinkFrameForDevEUI(ctx.ctx, storage.RedisPool(), ctx.JoinRequestPayload.DevEUI, uplinkFrameSet); err != nil {
+	if err := framelog.LogUplinkFrameForDevEUI(ctx.ctx, ctx.JoinRequestPayload.DevEUI, uplinkFrameSet); err != nil {
 		log.WithFields(log.Fields{
 			"ctx_id": ctx.ctx.Value("join_ctx"),
 		}).WithError(err).Error("log uplink frame for device error")
@@ -437,11 +437,11 @@ func createDeviceSession(ctx *joinContext) error {
 
 	ctx.DeviceSession = ds
 
-	if err := storage.SaveDeviceSession(ctx.ctx, storage.RedisPool(), ctx.DeviceSession); err != nil {
+	if err := storage.SaveDeviceSession(ctx.ctx, ctx.DeviceSession); err != nil {
 		return errors.Wrap(err, "save node-session error")
 	}
 
-	if err := storage.FlushMACCommandQueue(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI); err != nil {
+	if err := storage.FlushMACCommandQueue(ctx.ctx, ctx.DeviceSession.DevEUI); err != nil {
 		return fmt.Errorf("flush mac-command queue error: %s", err)
 	}
 

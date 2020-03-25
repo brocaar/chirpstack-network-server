@@ -20,7 +20,7 @@ func TestDeviceProfile(t *testing.T) {
 
 	Convey("Given a clean database", t, func() {
 		test.MustResetDB(DB().DB)
-		test.MustFlushRedis(RedisPool())
+		RedisClient().FlushAll()
 
 		Convey("When creating a device-profile", func() {
 			dp := DeviceProfile{
@@ -66,21 +66,21 @@ func TestDeviceProfile(t *testing.T) {
 			})
 
 			Convey("Then GetAndCacheDeviceProfile reads the device-profile from db and puts it in cache", func() {
-				dpGet, err := GetAndCacheDeviceProfile(ctx, DB(), RedisPool(), dp.ID)
+				dpGet, err := GetAndCacheDeviceProfile(ctx, DB(), dp.ID)
 				So(err, ShouldBeNil)
 				So(dpGet.ID, ShouldEqual, dp.ID)
 
 				Convey("Then GetDeviceProfileCache returns the device-profile", func() {
-					dpGet, err := GetDeviceProfileCache(context.Background(), RedisPool(), dp.ID)
+					dpGet, err := GetDeviceProfileCache(context.Background(), dp.ID)
 					So(err, ShouldBeNil)
 					So(dpGet.ID, ShouldEqual, dp.ID)
 				})
 
 				Convey("Then FlushDeviceProfileCache removes the device-profile from cache", func() {
-					err := FlushDeviceProfileCache(context.Background(), RedisPool(), dp.ID)
+					err := FlushDeviceProfileCache(context.Background(), dp.ID)
 					So(err, ShouldBeNil)
 
-					_, err = GetDeviceProfileCache(context.Background(), RedisPool(), dp.ID)
+					_, err = GetDeviceProfileCache(context.Background(), dp.ID)
 					So(err, ShouldNotBeNil)
 					So(errors.Cause(err), ShouldEqual, ErrDoesNotExist)
 				})

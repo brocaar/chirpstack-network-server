@@ -112,7 +112,7 @@ func getToken(ctx *ackContext) error {
 
 func getDownlinkFrames(ctx *ackContext) error {
 	var err error
-	ctx.DownlinkFrames, err = storage.GetDownlinkFrames(ctx.ctx, storage.RedisPool(), ctx.Token)
+	ctx.DownlinkFrames, err = storage.GetDownlinkFrames(ctx.ctx, ctx.Token)
 	if err != nil {
 		return errors.Wrap(err, "get downlink-frames error")
 	}
@@ -293,7 +293,7 @@ func saveDownlinkFrames(ctx *ackContext) error {
 	}
 
 	ctx.DownlinkFrames.DownlinkFrames = ctx.DownlinkFrames.DownlinkFrames[1:]
-	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), ctx.DownlinkFrames); err != nil {
+	if err := storage.SaveDownlinkFrames(ctx.ctx, ctx.DownlinkFrames); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
 	}
 
@@ -308,7 +308,7 @@ func logDownlinkFrame(ctx *ackContext) error {
 	downlinkFrame := ctx.DownlinkFrames.DownlinkFrames[0]
 
 	// log for gateway (with encrypted mac-commands)
-	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, storage.RedisPool(), *downlinkFrame); err != nil {
+	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, *downlinkFrame); err != nil {
 		log.WithError(err).WithFields(log.Fields{
 			"ctx_id": ctx.ctx.Value(logging.ContextIDKey),
 		}).Error("log downlink frame for gateway error")
@@ -344,7 +344,7 @@ func logDownlinkFrame(ctx *ackContext) error {
 		return err
 	}
 
-	if err := framelog.LogDownlinkFrameForDevEUI(ctx.ctx, storage.RedisPool(), devEUI, gw.DownlinkFrame{
+	if err := framelog.LogDownlinkFrameForDevEUI(ctx.ctx, devEUI, gw.DownlinkFrame{
 		PhyPayload: phyB,
 		TxInfo:     downlinkFrame.TxInfo,
 		Token:      downlinkFrame.Token,

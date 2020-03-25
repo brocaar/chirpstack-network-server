@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 
@@ -17,7 +16,7 @@ import (
 // within the multicast-group and creates a queue-item for each individial
 // gateway.
 // Note that an enqueue action increments the frame-counter of the multicast-group.
-func EnqueueQueueItem(ctx context.Context, p *redis.Pool, db sqlx.Ext, qi storage.MulticastQueueItem) error {
+func EnqueueQueueItem(ctx context.Context, db sqlx.Ext, qi storage.MulticastQueueItem) error {
 	// Get multicast-group and lock it.
 	mg, err := storage.GetMulticastGroup(ctx, db, qi.MulticastGroupID, true)
 	if err != nil {
@@ -39,7 +38,7 @@ func EnqueueQueueItem(ctx context.Context, p *redis.Pool, db sqlx.Ext, qi storag
 		return errors.Wrap(err, "get deveuis for multicast-group error")
 	}
 
-	rxInfoSets, err := storage.GetDeviceGatewayRXInfoSetForDevEUIs(ctx, p, devEUIs)
+	rxInfoSets, err := storage.GetDeviceGatewayRXInfoSetForDevEUIs(ctx, devEUIs)
 	if err != nil {
 		return errors.Wrap(err, "get device gateway rx-info set for deveuis errors")
 	}

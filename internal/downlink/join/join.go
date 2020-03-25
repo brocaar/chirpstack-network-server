@@ -269,7 +269,7 @@ func saveFrames(ctx *joinContext) error {
 		df.DownlinkFrames = append(df.DownlinkFrames, &ctx.DownlinkFrames[i])
 	}
 
-	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), df); err != nil {
+	if err := storage.SaveDownlinkFrames(ctx.ctx, df); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
 	}
 

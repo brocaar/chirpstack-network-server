@@ -49,7 +49,7 @@ func (ts *DeviceGatewayRXInfoSetTestSuite) TestDeviceGatewayRXInfoSetHasBeenStor
 
 	assert.Nil(uplink.HandleUplinkFrame(context.Background(), ts.GetUplinkFrameForFRMPayload(rxInfo, txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})))
 
-	rxInfoSet, err := storage.GetDeviceGatewayRXInfoSet(context.Background(), storage.RedisPool(), ts.Device.DevEUI)
+	rxInfoSet, err := storage.GetDeviceGatewayRXInfoSet(context.Background(), ts.Device.DevEUI)
 	assert.Nil(err)
 
 	assert.Equal(storage.DeviceGatewayRXInfoSet{

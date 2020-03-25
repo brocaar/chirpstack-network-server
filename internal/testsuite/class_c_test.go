@@ -82,7 +82,7 @@ func (ts *ClassCTestSuite) TestClassC() {
 			},
 		},
 	}
-	assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), storage.RedisPool(), deviceGatewayRXInfoSet))
+	assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), deviceGatewayRXInfoSet))
 
 	fPortTen := uint8(10)
 
@@ -202,7 +202,7 @@ func (ts *ClassCTestSuite) TestClassC() {
 				if err := storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile); err != nil {
 					return err
 				}
-				if err := storage.FlushServiceProfileCache(context.Background(), storage.RedisPool(), ts.ServiceProfile.ID); err != nil {
+				if err := storage.FlushServiceProfileCache(context.Background(), ts.ServiceProfile.ID); err != nil {
 					return err
 				}
 

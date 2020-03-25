@@ -20,7 +20,7 @@ func TestServiceProfile(t *testing.T) {
 
 	Convey("Given a clean database", t, func() {
 		test.MustResetDB(DB().DB)
-		test.MustFlushRedis(RedisPool())
+		RedisClient().FlushAll()
 
 		Convey("When creating a service-profile", func() {
 			sp := ServiceProfile{
@@ -96,21 +96,21 @@ func TestServiceProfile(t *testing.T) {
 			})
 
 			Convey("Then GetAndCacheServiceProfile reads the service-profile from db and puts it in cache", func() {
-				spGet, err := GetAndCacheServiceProfile(ctx, DB(), RedisPool(), sp.ID)
+				spGet, err := GetAndCacheServiceProfile(ctx, DB(), sp.ID)
 				So(err, ShouldBeNil)
 				So(spGet.ID, ShouldEqual, sp.ID)
 
 				Convey("Then GetServiceProfileCache returns the service-profile", func() {
-					spGet, err := GetServiceProfileCache(context.Background(), RedisPool(), sp.ID)
+					spGet, err := GetServiceProfileCache(context.Background(), sp.ID)
 					So(err, ShouldBeNil)
 					So(spGet.ID, ShouldEqual, sp.ID)
 				})
 
 				Convey("Then FlushServiceProfileCache removes the service-profile from cache", func() {
-					err := FlushServiceProfileCache(context.Background(), RedisPool(), sp.ID)
+					err := FlushServiceProfileCache(context.Background(), sp.ID)
 					So(err, ShouldBeNil)
 
-					_, err = GetServiceProfileCache(context.Background(), RedisPool(), sp.ID)
+					_, err = GetServiceProfileCache(context.Background(), sp.ID)
 					So(err, ShouldNotBeNil)
 					So(errors.Cause(err), ShouldEqual, ErrDoesNotExist)
 				})

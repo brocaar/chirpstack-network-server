@@ -198,7 +198,6 @@ func setGatewayBackend() error {
 	switch config.C.NetworkServer.Gateway.Backend.Type {
 	case "mqtt":
 		gw, err = mqtt.NewBackend(
-			storage.RedisPool(),
 			config.C,
 		)
 	case "amqp":
@@ -386,7 +385,7 @@ func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCer
 
 func fixV2RedisCache() error {
 	return code.Migrate("v1_to_v2_flush_profiles_cache", func(db sqlx.Ext) error {
-		return code.FlushProfilesCache(storage.RedisPool(), db)
+		return code.FlushProfilesCache(db)
 	})
 }
 

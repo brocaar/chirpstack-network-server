@@ -7,7 +7,6 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/golang/protobuf/ptypes/empty"
-	"github.com/gomodule/redigo/redis"
 	migrate "github.com/rubenv/sql-migrate"
 	log "github.com/sirupsen/logrus"
 	context "golang.org/x/net/context"
@@ -86,28 +85,6 @@ func GetConfig() config.Config {
 	}
 
 	return c
-}
-
-// MustFlushRedis flushes the Redis storage.
-func MustFlushRedis(p *redis.Pool) {
-	c := p.Get()
-	defer c.Close()
-	if _, err := c.Do("FLUSHALL"); err != nil {
-		log.Fatal(err)
-	}
-}
-
-// MustPrefillRedisPool pre-fills the pool with count connections.
-func MustPrefillRedisPool(p *redis.Pool, count int) {
-	conns := []redis.Conn{}
-
-	for i := 0; i < count; i++ {
-		conns = append(conns, p.Get())
-	}
-
-	for i := range conns {
-		conns[i].Close()
-	}
 }
 
 // MustResetDB re-applies all database migrations.

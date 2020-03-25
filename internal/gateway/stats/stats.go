@@ -49,7 +49,7 @@ func Handle(ctx context.Context, stats gw.GatewayStats) error {
 
 func getGateway(ctx *statsContext) error {
 	gatewayID := helpers.GetGatewayID(&ctx.gatewayStats)
-	gw, err := storage.GetAndCacheGateway(ctx.ctx, storage.DB(), storage.RedisPool(), gatewayID)
+	gw, err := storage.GetAndCacheGateway(ctx.ctx, storage.DB(), gatewayID)
 	if err != nil {
 		return errors.Wrap(err, "get gateway error")
 	}
@@ -75,7 +75,7 @@ func updateGatewayState(ctx *statsContext) error {
 		return errors.Wrap(err, "update gateway error")
 	}
 
-	if err := storage.FlushGatewayCache(ctx.ctx, storage.RedisPool(), ctx.gateway.GatewayID); err != nil {
+	if err := storage.FlushGatewayCache(ctx.ctx, ctx.gateway.GatewayID); err != nil {
 		return errors.Wrap(err, "flush gateway cache error")
 	}
 

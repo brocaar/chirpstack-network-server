@@ -15,7 +15,6 @@ import (
 
 	paho "github.com/eclipse/paho.mqtt.golang"
 	"github.com/golang/protobuf/proto"
-	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -24,6 +23,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/marshaler"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -45,7 +45,6 @@ type Backend struct {
 	downlinkTXAckChan chan gw.DownlinkTXAck
 
 	conn                 paho.Client
-	redisPool            *redis.Pool
 	eventTopic           string
 	commandTopicTemplate *template.Template
 	qos                  uint8
@@ -54,7 +53,7 @@ type Backend struct {
 }
 
 // NewBackend creates a new Backend.
-func NewBackend(redisPool *redis.Pool, c config.Config) (gateway.Gateway, error) {
+func NewBackend(c config.Config) (gateway.Gateway, error) {
 	conf := c.NetworkServer.Gateway.Backend.MQTT
 	var err error
 
@@ -63,7 +62,6 @@ func NewBackend(redisPool *redis.Pool, c config.Config) (gateway.Gateway, error)
 		statsPacketChan:   make(chan gw.GatewayStats),
 		downlinkTXAckChan: make(chan gw.DownlinkTXAck),
 		gatewayMarshaler:  make(map[lorawan.EUI64]marshaler.Type),
-		redisPool:         redisPool,
 		eventTopic:        conf.EventTopic,
 		qos:               conf.QOS,
 	}
@@ -389,20 +387,14 @@ func (b *Backend) getGatewayMarshaler(gatewayID lorawan.EUI64) marshaler.Type {
 // isLocked returns if a lock exists for the given key, if false a lock is
 // acquired.
 func (b *Backend) isLocked(key string) (bool, error) {
-	c := b.redisPool.Get()
-	defer c.Close()
-
-	_, err := redis.String(c.Do("SET", key, "lock", "PX", int64(deduplicationLockTTL/time.Millisecond), "NX"))
+	set, err := storage.RedisClient().SetNX(key, "lock", deduplicationLockTTL).Result()
 	if err != nil {
-		if err == redis.ErrNil {
-			// the payload is already being processed by an other instance
-			return true, nil
-		}
-
-		return false, err
+		return false, errors.Wrap(err, "acquire lock error")
 	}
 
-	return false, nil
+	// Set is true when we were able to set the lock, we return true if it
+	// was already locked.
+	return !set, nil
 }
 
 func newTLSConfig(cafile, certFile, certKeyFile string) (*tls.Config, error) {

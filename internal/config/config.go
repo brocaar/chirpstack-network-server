@@ -19,17 +19,15 @@ type Config struct {
 	} `mapstructure:"general"`
 
 	PostgreSQL struct {
-		DSN                string  `mapstructure:"dsn"`
-		Automigrate        bool    `mapstructure:"automigrate"`
-		MaxOpenConnections int     `mapstructure:"max_open_connections"`
-		MaxIdleConnections int     `mapstructure:"max_idle_connections"`
+		DSN                string `mapstructure:"dsn"`
+		Automigrate        bool   `mapstructure:"automigrate"`
+		MaxOpenConnections int    `mapstructure:"max_open_connections"`
+		MaxIdleConnections int    `mapstructure:"max_idle_connections"`
 	} `mapstructure:"postgresql"`
 
 	Redis struct {
-		URL         string        `mapstructure:"url"`
-		MaxIdle     int           `mapstructure:"max_idle"`
-		MaxActive   int           `mapstructure:"max_active"`
-		IdleTimeout time.Duration `mapstructure:"idle_timeout"`
+		URL      string `mapstructure:"url"`
+		PoolSize int    `mapstructure:"pool_size"`
 	} `mapstructure:"redis"`
 
 	NetworkServer struct {
@@ -45,7 +43,7 @@ type Config struct {
 			DownlinkDwellTime400ms bool      `mapstructure:"downlink_dwell_time_400ms"`
 			UplinkMaxEIRP          float32   `mapstructure:"uplink_max_eirp"`
 			RepeaterCompatible     bool      `mapstructure:"repeater_compatible"`
-		}  `mapstructure:"band"`
+		} `mapstructure:"band"`
 
 		NetworkSettings struct {
 			InstallationMargin      float64 `mapstructure:"installation_margin"`
@@ -141,7 +139,7 @@ type Config struct {
 					EventsConnectionString   string `mapstructure:"events_connection_string"`
 					CommandsConnectionString string `mapstructure:"commands_connection_string"`
 				} `mapstructure:"azure_iot_hub"`
-			}  `mapstructure:"backend"`
+			} `mapstructure:"backend"`
 		} `mapstructure:"gateway"`
 	} `mapstructure:"network_server"`
 
@@ -172,14 +170,14 @@ type Config struct {
 
 		KEK struct {
 			Set []struct {
-				Label string  `mapstructure:"label"`
+				Label string `mapstructure:"label"`
 				KEK   string `mapstructure:"kek"`
 			} `mapstructure:"set"`
 		} `mapstructure:"kek"`
 	} `mapstructure:"join_server"`
 
 	NetworkController struct {
-		Client nc.NetworkControllerServiceClient  `mapstructure:"client"`
+		Client nc.NetworkControllerServiceClient `mapstructure:"client"`
 
 		Server  string `mapstructure:"server"`
 		CACert  string `mapstructure:"ca_cert"`

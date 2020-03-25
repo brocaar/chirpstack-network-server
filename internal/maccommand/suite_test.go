@@ -18,5 +18,5 @@ func (ts *TestBase) SetupSuite() {
 }
 
 func (ts *TestBase) SetupTest() {
-	test.MustFlushRedis(storage.RedisPool())
+	storage.RedisClient().FlushAll()
 }

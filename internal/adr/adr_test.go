@@ -197,7 +197,7 @@ func TestADR(t *testing.T) {
 			if err := storage.Setup(conf); err != nil {
 				panic(err)
 			}
-			test.MustFlushRedis(storage.RedisPool())
+			storage.RedisClient().FlushAll()
 
 			Convey("Given a testtable for HandleADR", func() {
 				macBlock := storage.MACCommandBlock{

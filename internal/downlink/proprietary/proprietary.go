@@ -7,7 +7,6 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/brocaar/lorawan"
 	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
@@ -15,6 +14,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/lorawan"
 )
 
 const defaultCodeRate = "4/5"
@@ -139,7 +139,7 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 
 func saveFrame(ctx *proprietaryContext) error {
 	for _, df := range ctx.DownlinkFrames {
-		if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), storage.DownlinkFrames{
+		if err := storage.SaveDownlinkFrames(ctx.ctx, storage.DownlinkFrames{
 			Token:          df.Token,
 			DownlinkFrames: []*gw.DownlinkFrame{&df},
 		}); err != nil {

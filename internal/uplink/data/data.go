@@ -129,7 +129,7 @@ func getDeviceSessionForPHYPayload(ctx *dataContext) error {
 		}
 	}
 
-	ds, err := storage.GetDeviceSessionForPHYPayload(ctx.ctx, storage.RedisPool(), ctx.RXPacket.PHYPayload, ctx.RXPacket.DR, txCh)
+	ds, err := storage.GetDeviceSessionForPHYPayload(ctx.ctx, ctx.RXPacket.PHYPayload, ctx.RXPacket.DR, txCh)
 	if err != nil {
 		returnErr := errors.Wrap(err, "get device-session error")
 
@@ -180,7 +180,7 @@ func logUplinkFrame(ctx *dataContext) error {
 		return errors.Wrap(err, "create uplink frame-log error")
 	}
 
-	if err := framelog.LogUplinkFrameForDevEUI(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, uplinkFrameSet); err != nil {
+	if err := framelog.LogUplinkFrameForDevEUI(ctx.ctx, ctx.DeviceSession.DevEUI, uplinkFrameSet); err != nil {
 		log.WithError(err).Error("log uplink frame for device error")
 	}
 
@@ -188,7 +188,7 @@ func logUplinkFrame(ctx *dataContext) error {
 }
 
 func getDeviceProfile(ctx *dataContext) error {
-	dp, err := storage.GetAndCacheDeviceProfile(ctx.ctx, storage.DB(), storage.RedisPool(), ctx.DeviceSession.DeviceProfileID)
+	dp, err := storage.GetAndCacheDeviceProfile(ctx.ctx, storage.DB(), ctx.DeviceSession.DeviceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get device-profile error")
 	}
@@ -198,7 +198,7 @@ func getDeviceProfile(ctx *dataContext) error {
 }
 
 func getServiceProfile(ctx *dataContext) error {
-	sp, err := storage.GetAndCacheServiceProfile(ctx.ctx, storage.DB(), storage.RedisPool(), ctx.DeviceSession.ServiceProfileID)
+	sp, err := storage.GetAndCacheServiceProfile(ctx.ctx, storage.DB(), ctx.DeviceSession.ServiceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
@@ -267,7 +267,7 @@ func storeDeviceGatewayRXInfoSet(ctx *dataContext) error {
 		})
 	}
 
-	err := storage.SaveDeviceGatewayRXInfoSet(ctx.ctx, storage.RedisPool(), rxInfoSet)
+	err := storage.SaveDeviceGatewayRXInfoSet(ctx.ctx, rxInfoSet)
 	if err != nil {
 		return errors.Wrap(err, "save device gateway rx-info set error")
 	}
@@ -311,8 +311,9 @@ func resolveDeviceLocation(ctx *dataContext) error {
 	}
 
 	// Read the geolocation buffer (when TTL=0, this returns an empty slice without db operation).
-	buffer, err := storage.GetGeolocBuffer(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, time.Duration(ctx.DeviceProfile.GeolocBufferTTL)*time.Second)
+	buffer, err := storage.GetGeolocBuffer(ctx.ctx, ctx.DeviceSession.DevEUI, time.Duration(ctx.DeviceProfile.GeolocBufferTTL)*time.Second)
 	if err != nil {
+		fmt.Println("error", err)
 		return errors.Wrap(err, "get geoloc buffer error")
 	}
 
@@ -332,7 +333,7 @@ func resolveDeviceLocation(ctx *dataContext) error {
 
 	// Save the buffer when there are > 0 items.
 	if len(buffer) != 0 {
-		if err := storage.SaveGeolocBuffer(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, buffer, time.Duration(ctx.DeviceProfile.GeolocBufferTTL)*time.Second); err != nil {
+		if err := storage.SaveGeolocBuffer(ctx.ctx, ctx.DeviceSession.DevEUI, buffer, time.Duration(ctx.DeviceProfile.GeolocBufferTTL)*time.Second); err != nil {
 			return errors.Wrap(err, "save geoloc buffer error")
 		}
 	}
@@ -674,7 +675,7 @@ func syncUplinkFCnt(ctx *dataContext) error {
 
 func saveDeviceSession(ctx *dataContext) error {
 	// save node-session
-	return storage.SaveDeviceSession(ctx.ctx, storage.RedisPool(), ctx.DeviceSession)
+	return storage.SaveDeviceSession(ctx.ctx, ctx.DeviceSession)
 }
 
 func handleUplinkACK(ctx *dataContext) error {
@@ -791,7 +792,7 @@ func handleUplinkMACCommands(ctx context.Context, ds *storage.DeviceSession, dp 
 			// pending mac-command block contains the request.
 			// we need this pending mac-command block to find out if the command
 			// was scheduled through the API (external).
-			pending, err := storage.GetPendingMACCommand(ctx, storage.RedisPool(), ds.DevEUI, block.CID)
+			pending, err := storage.GetPendingMACCommand(ctx, ds.DevEUI, block.CID)
 			if err != nil {
 				log.WithFields(logFields).Errorf("read pending mac-command error: %s", err)
 				continue
@@ -802,7 +803,7 @@ func handleUplinkMACCommands(ctx context.Context, ds *storage.DeviceSession, dp 
 
 			// in case the node is requesting a mac-command, there is nothing pending
 			if pending != nil {
-				if err = storage.DeletePendingMACCommand(ctx, storage.RedisPool(), ds.DevEUI, block.CID); err != nil {
+				if err = storage.DeletePendingMACCommand(ctx, ds.DevEUI, block.CID); err != nil {
 					log.WithFields(logFields).Errorf("delete pending mac-command error: %s", err)
 				}
 			}

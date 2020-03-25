@@ -1,10 +1,9 @@
 package storage
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	migrate "github.com/rubenv/sql-migrate"
@@ -28,34 +27,13 @@ func Setup(c config.Config) error {
 	deviceSessionTTL = c.NetworkServer.DeviceSessionTTL
 	schedulerInterval = c.NetworkServer.Scheduler.SchedulerInterval
 
-	log.Info("storage: setting up Redis connection pool")
-	redisPool = &redis.Pool{
-		MaxIdle:     c.Redis.MaxIdle,
-		MaxActive:   c.Redis.MaxActive,
-		IdleTimeout: c.Redis.IdleTimeout,
-		Wait:        true,
-		Dial: func() (redis.Conn, error) {
-			c, err := redis.DialURL(c.Redis.URL,
-				redis.DialReadTimeout(redisDialReadTimeout),
-				redis.DialWriteTimeout(redisDialWriteTimeout),
-			)
-			if err != nil {
-				return nil, fmt.Errorf("redis connection error: %s", err)
-			}
-			return c, err
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			if time.Now().Sub(t) < onBorrowPingInterval {
-				return nil
-			}
-
-			_, err := c.Do("PING")
-			if err != nil {
-				return fmt.Errorf("ping redis error: %s", err)
-			}
-			return nil
-		},
+	log.Info("storage: setting up Redis client")
+	opt, err := redis.ParseURL(c.Redis.URL)
+	if err != nil {
+		return errors.Wrap(err, "parse redis url error")
 	}
+	opt.PoolSize = c.Redis.PoolSize
+	redisClient = redis.NewClient(opt)
 
 	log.Info("storage: connecting to PostgreSQL")
 	d, err := sqlx.Open("postgres", c.PostgreSQL.DSN)

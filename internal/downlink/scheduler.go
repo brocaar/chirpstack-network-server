@@ -72,7 +72,7 @@ func ScheduleDeviceQueueBatch(ctx context.Context, size int) error {
 		}
 
 		for _, d := range devices {
-			ds, err := storage.GetDeviceSession(ctx, storage.RedisPool(), d.DevEUI)
+			ds, err := storage.GetDeviceSession(ctx, d.DevEUI)
 			if err != nil {
 				log.WithError(err).WithFields(log.Fields{
 					"dev_eui": d.DevEUI,

@@ -39,7 +39,7 @@ func (ts *BackendTestSuite) SetupSuite() {
 	assert.NoError(token.Error())
 
 	var err error
-	ts.backend, err = NewBackend(storage.RedisPool(), conf)
+	ts.backend, err = NewBackend(conf)
 	assert.NoError(err)
 
 	ts.backend.(*Backend).setGatewayMarshaler(lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}, marshaler.Protobuf)
@@ -52,7 +52,7 @@ func (ts *BackendTestSuite) TearDownSuite() {
 }
 
 func (ts *BackendTestSuite) SetupTest() {
-	test.MustFlushRedis(storage.RedisPool())
+	storage.RedisClient().FlushAll()
 }
 
 func (ts *BackendTestSuite) TestUplinkFrame() {

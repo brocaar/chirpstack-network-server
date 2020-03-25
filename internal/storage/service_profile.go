@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/go-redis/redis/v7"
 	"github.com/gofrs/uuid"
-	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
 )
 
 // Templates used for generating Redis keys
@@ -136,19 +137,15 @@ func CreateServiceProfile(ctx context.Context, db sqlx.Execer, sp *ServiceProfil
 // only want to store the service-profile of a roaming device for a finite
 // duration.
 // The TTL of the service-profile is the same as that of the device-sessions.
-func CreateServiceProfileCache(ctx context.Context, p *redis.Pool, sp ServiceProfile) error {
+func CreateServiceProfileCache(ctx context.Context, sp ServiceProfile) error {
+	key := fmt.Sprintf(ServiceProfileKeyTempl, sp.ID)
+
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(sp); err != nil {
 		return errors.Wrap(err, "gob encode service-profile error")
 	}
 
-	c := p.Get()
-	defer c.Close()
-
-	key := fmt.Sprintf(ServiceProfileKeyTempl, sp.ID)
-	exp := int64(deviceSessionTTL) / int64(time.Millisecond)
-
-	_, err := c.Do("PSETEX", key, exp, buf.Bytes())
+	err := RedisClient().Set(key, buf.Bytes(), deviceSessionTTL).Err()
 	if err != nil {
 		return errors.Wrap(err, "set service-profile error")
 	}
@@ -157,16 +154,13 @@ func CreateServiceProfileCache(ctx context.Context, p *redis.Pool, sp ServicePro
 }
 
 // GetServiceProfileCache returns a cached service-profile.
-func GetServiceProfileCache(ctx context.Context, p *redis.Pool, id uuid.UUID) (ServiceProfile, error) {
+func GetServiceProfileCache(ctx context.Context, id uuid.UUID) (ServiceProfile, error) {
 	var sp ServiceProfile
 	key := fmt.Sprintf(ServiceProfileKeyTempl, id)
 
-	c := p.Get()
-	defer c.Close()
-
-	val, err := redis.Bytes(c.Do("GET", key))
+	val, err := RedisClient().Get(key).Bytes()
 	if err != nil {
-		if err == redis.ErrNil {
+		if err == redis.Nil {
 			return sp, ErrDoesNotExist
 		}
 		return sp, errors.Wrap(err, "get error")
@@ -181,12 +175,10 @@ func GetServiceProfileCache(ctx context.Context, p *redis.Pool, id uuid.UUID) (S
 }
 
 // FlushServiceProfileCache deletes a cached service-profile.
-func FlushServiceProfileCache(ctx context.Context, p *redis.Pool, id uuid.UUID) error {
+func FlushServiceProfileCache(ctx context.Context, id uuid.UUID) error {
 	key := fmt.Sprintf(ServiceProfileKeyTempl, id)
-	c := p.Get()
-	defer c.Close()
 
-	_, err := c.Do("DEL", key)
+	err := RedisClient().Del(key).Err()
 	if err != nil {
 		return errors.Wrap(err, "delete error")
 	}
@@ -196,8 +188,8 @@ func FlushServiceProfileCache(ctx context.Context, p *redis.Pool, id uuid.UUID) 
 // GetAndCacheServiceProfile returns the service-profile from cache in case
 // available, else it will be retrieved from the database and then stored
 // in cache.
-func GetAndCacheServiceProfile(ctx context.Context, db sqlx.Queryer, p *redis.Pool, id uuid.UUID) (ServiceProfile, error) {
-	sp, err := GetServiceProfileCache(ctx, p, id)
+func GetAndCacheServiceProfile(ctx context.Context, db sqlx.Queryer, id uuid.UUID) (ServiceProfile, error) {
+	sp, err := GetServiceProfileCache(ctx, id)
 	if err == nil {
 		return sp, nil
 	}
@@ -215,7 +207,7 @@ func GetAndCacheServiceProfile(ctx context.Context, db sqlx.Queryer, p *redis.Po
 		return ServiceProfile{}, errors.Wrap(err, "get service-profile-error")
 	}
 
-	err = CreateServiceProfileCache(ctx, p, sp)
+	err = CreateServiceProfileCache(ctx, sp)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"id":     id,

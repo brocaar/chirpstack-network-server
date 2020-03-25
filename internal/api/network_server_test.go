@@ -33,7 +33,7 @@ func TestNetworkServerAPI(t *testing.T) {
 
 	Convey("Given a clean PostgreSQL and Redis database + api instance", t, func() {
 		test.MustResetDB(storage.DB().DB)
-		test.MustFlushRedis(storage.RedisPool())
+		storage.RedisClient().FlushAll()
 
 		grpcServer := grpc.NewServer()
 		apiServer := NewNetworkServerAPI()
@@ -84,7 +84,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			}()
 
 			Convey("When logging a downlink gateway frame", func() {
-				So(framelog.LogDownlinkFrameForGateway(context.Background(), storage.RedisPool(), gw.DownlinkFrame{
+				So(framelog.LogDownlinkFrameForGateway(context.Background(), gw.DownlinkFrame{
 					TxInfo: &gw.DownlinkTXInfo{
 						GatewayId: mac[:],
 					},
@@ -98,7 +98,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			})
 
 			Convey("When logging an uplink gateway frame", func() {
-				So(framelog.LogUplinkFrameForGateways(context.Background(), storage.RedisPool(), gw.UplinkFrameSet{
+				So(framelog.LogUplinkFrameForGateways(context.Background(), gw.UplinkFrameSet{
 					RxInfo: []*gw.UplinkRXInfo{
 						{
 							GatewayId: mac[:],
@@ -136,7 +136,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			}()
 
 			Convey("When logging a downlink device frame", func() {
-				So(framelog.LogDownlinkFrameForDevEUI(context.Background(), storage.RedisPool(), devEUI, gw.DownlinkFrame{}), ShouldBeNil)
+				So(framelog.LogDownlinkFrameForDevEUI(context.Background(), devEUI, gw.DownlinkFrame{}), ShouldBeNil)
 
 				Convey("Then the frame-log was received by the client", func() {
 					resp := <-respChan
@@ -146,7 +146,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			})
 
 			Convey("When logging an uplink device frame", func() {
-				So(framelog.LogUplinkFrameForDevEUI(context.Background(), storage.RedisPool(), devEUI, gw.UplinkFrameSet{}), ShouldBeNil)
+				So(framelog.LogUplinkFrameForDevEUI(context.Background(), devEUI, gw.UplinkFrameSet{}), ShouldBeNil)
 
 				Convey("Then the frame-log was received by the client", func() {
 					resp := <-respChan
@@ -445,7 +445,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			ds := storage.DeviceSession{
 				DevEUI: d.DevEUI,
 			}
-			So(storage.SaveDeviceSession(context.Background(), storage.RedisPool(), ds), ShouldBeNil)
+			So(storage.SaveDeviceSession(context.Background(), ds), ShouldBeNil)
 
 			Convey("Given an item in the device-queue", func() {
 				_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{
@@ -478,7 +478,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					So(err, ShouldBeNil)
 
 					Convey("Then SkipFCntCheck has been enabled in the activation", func() {
-						ds, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), devEUI)
+						ds, err := storage.GetDeviceSession(context.Background(), devEUI)
 						So(err, ShouldBeNil)
 						So(ds.SkipFCntValidation, ShouldBeTrue)
 					})
@@ -518,7 +518,7 @@ func TestNetworkServerAPI(t *testing.T) {
 						So(err, ShouldBeNil)
 
 						Convey("Then the mac-command has been added to the queue", func() {
-							queue, err := storage.GetMACCommandQueueItems(context.Background(), storage.RedisPool(), devEUI)
+							queue, err := storage.GetMACCommandQueueItems(context.Background(), devEUI)
 							So(err, ShouldBeNil)
 							So(queue, ShouldResemble, []storage.MACCommandBlock{
 								{
@@ -542,7 +542,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					BeaconLocked: true,
 					PingSlotNb:   1,
 				}
-				So(storage.SaveDeviceSession(context.Background(), storage.RedisPool(), ds), ShouldBeNil)
+				So(storage.SaveDeviceSession(context.Background(), ds), ShouldBeNil)
 
 				Convey("When calling CreateDeviceQueueItem", func() {
 					_, err := api.CreateDeviceQueueItem(ctx, &ns.CreateDeviceQueueItemRequest{

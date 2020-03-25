@@ -186,7 +186,7 @@ func (ts *IntegrationTestSuite) SetupSuite() {
 
 // SetupTest initializes the test-suite before running each test.
 func (ts *IntegrationTestSuite) SetupTest() {
-	test.MustFlushRedis(storage.RedisPool())
+	storage.RedisClient().FlushAll()
 	ts.initConfig()
 	ts.FlushClients()
 }
@@ -243,7 +243,7 @@ func (ts *IntegrationTestSuite) CreateDeviceSession(ds storage.DeviceSession) {
 		ds.DeviceProfileID = ts.DeviceProfile.ID
 	}
 
-	ts.Nil(storage.SaveDeviceSession(context.Background(), storage.RedisPool(), ds))
+	ts.Nil(storage.SaveDeviceSession(context.Background(), ds))
 	ts.DeviceSession = &ds
 }
 
@@ -418,7 +418,7 @@ func (ts *IntegrationTestSuite) AssertDownlinkTest(t *testing.T, tst DownlinkTes
 
 	// refresh device-session
 	var err error
-	ds, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), ts.DeviceSession.DevEUI)
+	ds, err := storage.GetDeviceSession(context.Background(), ts.DeviceSession.DevEUI)
 	assert.NoError(err)
 	ts.DeviceSession = &ds
 
@@ -460,7 +460,7 @@ func (ts *IntegrationTestSuite) AssertMulticastTest(t *testing.T, tst MulticastT
 func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 	assert := require.New(t)
 
-	test.MustFlushRedis(storage.RedisPool())
+	storage.RedisClient().FlushAll()
 
 	ts.FlushClients()
 	ts.initConfig()
@@ -517,7 +517,7 @@ func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 func (ts *IntegrationTestSuite) AssertRejoinTest(t *testing.T, tst RejoinTest) {
 	assert := require.New(t)
 
-	test.MustFlushRedis(storage.RedisPool())
+	storage.RedisClient().FlushAll()
 
 	if tst.BeforeFunc != nil {
 		assert.NoError(tst.BeforeFunc(&tst))
@@ -558,7 +558,7 @@ func (ts *IntegrationTestSuite) AssertRejoinTest(t *testing.T, tst RejoinTest) {
 func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
 	assert := require.New(t)
 
-	test.MustFlushRedis(storage.RedisPool())
+	storage.RedisClient().FlushAll()
 
 	if tst.BeforeFunc != nil {
 		assert.NoError(tst.BeforeFunc(&tst))
@@ -575,12 +575,12 @@ func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
 
 	// set mac-command queue
 	for _, qi := range tst.MACCommandQueueItems {
-		assert.NoError(storage.CreateMACCommandQueueItem(context.Background(), storage.RedisPool(), ts.Device.DevEUI, qi))
+		assert.NoError(storage.CreateMACCommandQueueItem(context.Background(), ts.Device.DevEUI, qi))
 	}
 
 	// set pending mac-commands
 	for _, pending := range tst.PendingMACCommands {
-		assert.NoError(storage.SetPendingMACCommand(context.Background(), storage.RedisPool(), ts.Device.DevEUI, pending))
+		assert.NoError(storage.SetPendingMACCommand(context.Background(), ts.Device.DevEUI, pending))
 	}
 
 	// set mocks
@@ -608,7 +608,7 @@ func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
 	}
 
 	// refresh device-session
-	ds, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), ts.DeviceSession.DevEUI)
+	ds, err := storage.GetDeviceSession(context.Background(), ts.DeviceSession.DevEUI)
 	assert.NoError(err)
 	ts.DeviceSession = &ds
 
@@ -639,7 +639,7 @@ func (ts *IntegrationTestSuite) AssertDownlinkProprietaryTest(t *testing.T, tst 
 func (ts *IntegrationTestSuite) AssertUplinkProprietaryTest(t *testing.T, tst UplinkProprietaryTest) {
 	assert := require.New(t)
 
-	test.MustFlushRedis(storage.RedisPool())
+	storage.RedisClient().FlushAll()
 	ts.FlushClients()
 
 	phyB, err := tst.PHYPayload.MarshalBinary()
@@ -660,9 +660,9 @@ func (ts *IntegrationTestSuite) AssertUplinkProprietaryTest(t *testing.T, tst Up
 // AssertDownlinkTXAckTest asserts the given downlink tx ack test.
 func (ts *IntegrationTestSuite) AssertDownlinkTXAckTest(t *testing.T, tst DownlinkTXAckTest) {
 	assert := require.New(t)
-	test.MustFlushRedis(storage.RedisPool())
+	storage.RedisClient().FlushAll()
 
-	assert.NoError(storage.SaveDownlinkFrames(context.Background(), storage.RedisPool(), tst.DownlinkFrames))
+	assert.NoError(storage.SaveDownlinkFrames(context.Background(), tst.DownlinkFrames))
 
 	err := ack.HandleDownlinkTXAck(context.Background(), tst.DownlinkTXAck)
 	if err != nil {
@@ -685,7 +685,7 @@ func (ts *IntegrationTestSuite) AssertDownlinkTXAckTest(t *testing.T, tst Downli
 func (ts *IntegrationTestSuite) AssertGeolocationTest(t *testing.T, fCnt uint32, tst GeolocationTest) {
 	assert := require.New(t)
 
-	test.MustFlushRedis(storage.RedisPool())
+	storage.RedisClient().FlushAll()
 
 	ts.FlushClients()
 	ts.initConfig()
@@ -695,7 +695,7 @@ func (ts *IntegrationTestSuite) AssertGeolocationTest(t *testing.T, fCnt uint32,
 	}
 
 	ts.DeviceSession.FCntUp = uint32(fCnt)
-	assert.NoError(storage.SaveDeviceSession(context.Background(), storage.RedisPool(), *ts.DeviceSession))
+	assert.NoError(storage.SaveDeviceSession(context.Background(), *ts.DeviceSession))
 
 	ts.GeoClient.ResolveTDOAResponse = tst.ResolveTDOAResponse
 	ts.GeoClient.ResolveMultiFrameTDOAResponse = tst.ResolveMultiFrameTDOAResponse
@@ -707,7 +707,7 @@ func (ts *IntegrationTestSuite) AssertGeolocationTest(t *testing.T, fCnt uint32,
 	ts.DeviceProfile.GeolocMinBufferSize = tst.GeolocMinBufferSize
 	assert.NoError(storage.UpdateDeviceProfile(context.Background(), storage.DB(), ts.DeviceProfile))
 
-	storage.SaveGeolocBuffer(context.Background(), storage.RedisPool(), ts.Device.DevEUI, tst.GeolocBufferItems, tst.GeolocBufferTTL)
+	storage.SaveGeolocBuffer(context.Background(), ts.Device.DevEUI, tst.GeolocBufferItems, tst.GeolocBufferTTL)
 
 	txInfo := gw.UplinkTXInfo{
 		Frequency: 868100000,

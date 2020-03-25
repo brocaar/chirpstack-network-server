@@ -3,15 +3,14 @@ package framelog
 import (
 	"context"
 	"fmt"
-	"sync"
-	"time"
 
+	"github.com/go-redis/redis/v7"
 	proto "github.com/golang/protobuf/proto"
-	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -29,11 +28,9 @@ type FrameLog struct {
 }
 
 // LogUplinkFrameForGateways logs the given frame to all the gateway pub-sub keys.
-func LogUplinkFrameForGateways(ctx context.Context, p *redis.Pool, uplinkFrameSet gw.UplinkFrameSet) error {
-	c := p.Get()
-	defer c.Close()
+func LogUplinkFrameForGateways(ctx context.Context, uplinkFrameSet gw.UplinkFrameSet) error {
+	pipe := storage.RedisClient().TxPipeline()
 
-	c.Send("MULTI")
 	for _, rx := range uplinkFrameSet.RxInfo {
 		var id lorawan.EUI64
 		copy(id[:], rx.GatewayId)
@@ -50,9 +47,10 @@ func LogUplinkFrameForGateways(ctx context.Context, p *redis.Pool, uplinkFrameSe
 		}
 
 		key := fmt.Sprintf(gatewayFrameLogUplinkPubSubKeyTempl, id)
-		c.Send("PUBLISH", key, b)
+		pipe.Publish(key, b)
 	}
-	_, err := c.Do("EXEC")
+
+	_, err := pipe.Exec()
 	if err != nil {
 		return errors.Wrap(err, "publish frame to gateway channel error")
 	}
@@ -61,12 +59,9 @@ func LogUplinkFrameForGateways(ctx context.Context, p *redis.Pool, uplinkFrameSe
 }
 
 // LogDownlinkFrameForGateway logs the given frame to the gateway pub-sub key.
-func LogDownlinkFrameForGateway(ctx context.Context, p *redis.Pool, frame gw.DownlinkFrame) error {
+func LogDownlinkFrameForGateway(ctx context.Context, frame gw.DownlinkFrame) error {
 	var id lorawan.EUI64
 	copy(id[:], frame.TxInfo.GatewayId)
-
-	c := p.Get()
-	defer c.Close()
 
 	key := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, id)
 
@@ -75,7 +70,7 @@ func LogDownlinkFrameForGateway(ctx context.Context, p *redis.Pool, frame gw.Dow
 		return errors.Wrap(err, "marshal downlink frame error")
 	}
 
-	_, err = c.Do("PUBLISH", key, b)
+	err = storage.RedisClient().Publish(key, b).Err()
 	if err != nil {
 		return errors.Wrap(err, "publish frame to gateway channel error")
 	}
@@ -83,10 +78,7 @@ func LogDownlinkFrameForGateway(ctx context.Context, p *redis.Pool, frame gw.Dow
 }
 
 // LogDownlinkFrameForDevEUI logs the given frame to the device pub-sub key.
-func LogDownlinkFrameForDevEUI(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, frame gw.DownlinkFrame) error {
-	c := p.Get()
-	defer c.Close()
-
+func LogDownlinkFrameForDevEUI(ctx context.Context, devEUI lorawan.EUI64, frame gw.DownlinkFrame) error {
 	key := fmt.Sprintf(deviceFrameLogDownlinkPubSubKeyTempl, devEUI)
 
 	b, err := proto.Marshal(&frame)
@@ -94,25 +86,24 @@ func LogDownlinkFrameForDevEUI(ctx context.Context, p *redis.Pool, devEUI lorawa
 		return errors.Wrap(err, "marshal downlink frame error")
 	}
 
-	_, err = c.Do("PUBLISH", key, b)
+	err = storage.RedisClient().Publish(key, b).Err()
 	if err != nil {
 		return errors.Wrap(err, "publish frame to device channel error")
 	}
+
 	return nil
 }
 
 // LogUplinkFrameForDevEUI logs the given frame to the pub-sub key of the given DevEUI.
-func LogUplinkFrameForDevEUI(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, frame gw.UplinkFrameSet) error {
-	c := p.Get()
-	defer c.Close()
-
+func LogUplinkFrameForDevEUI(ctx context.Context, devEUI lorawan.EUI64, frame gw.UplinkFrameSet) error {
 	b, err := proto.Marshal(&frame)
 	if err != nil {
 		return errors.Wrap(err, "marshal uplink frame error")
 	}
 
 	key := fmt.Sprintf(deviceFrameLogUplinkPubSubKeyTempl, devEUI)
-	_, err = c.Do("PUBLISH", key, b)
+
+	err = storage.RedisClient().Publish(key, b).Err()
 	if err != nil {
 		return errors.Wrap(err, "publish frame to device channel error")
 	}
@@ -121,96 +112,63 @@ func LogUplinkFrameForDevEUI(ctx context.Context, p *redis.Pool, devEUI lorawan.
 
 // GetFrameLogForGateway subscribes to the uplink and downlink frame logs
 // for the given gateway and sends this to the given channel.
-func GetFrameLogForGateway(ctx context.Context, p *redis.Pool, gatewayID lorawan.EUI64, frameLogChan chan FrameLog) error {
+func GetFrameLogForGateway(ctx context.Context, gatewayID lorawan.EUI64, frameLogChan chan FrameLog) error {
 	uplinkKey := fmt.Sprintf(gatewayFrameLogUplinkPubSubKeyTempl, gatewayID)
 	downlinkKey := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, gatewayID)
-	return getFrameLogs(ctx, p, uplinkKey, downlinkKey, frameLogChan)
+	return getFrameLogs(ctx, uplinkKey, downlinkKey, frameLogChan)
 }
 
 // GetFrameLogForDevice subscribes to the uplink and downlink frame logs
 // for the given device and sends this to the given channel.
-func GetFrameLogForDevice(ctx context.Context, p *redis.Pool, devEUI lorawan.EUI64, frameLogChan chan FrameLog) error {
+func GetFrameLogForDevice(ctx context.Context, devEUI lorawan.EUI64, frameLogChan chan FrameLog) error {
 	uplinkKey := fmt.Sprintf(deviceFrameLogUplinkPubSubKeyTempl, devEUI)
 	downlinkKey := fmt.Sprintf(deviceFrameLogDownlinkPubSubKeyTempl, devEUI)
-	return getFrameLogs(ctx, p, uplinkKey, downlinkKey, frameLogChan)
+	return getFrameLogs(ctx, uplinkKey, downlinkKey, frameLogChan)
 }
 
-func getFrameLogs(ctx context.Context, p *redis.Pool, uplinkKey, downlinkKey string, frameLogChan chan FrameLog) error {
-	c := p.Get()
-	defer c.Close()
-
-	psc := redis.PubSubConn{Conn: c}
-	if err := psc.Subscribe(uplinkKey, downlinkKey); err != nil {
+func getFrameLogs(ctx context.Context, uplinkKey, downlinkKey string, frameLogChan chan FrameLog) error {
+	sub := storage.RedisClient().Subscribe(uplinkKey, downlinkKey)
+	_, err := sub.Receive()
+	if err != nil {
 		return errors.Wrap(err, "subscribe error")
 	}
 
-	done := make(chan error, 1)
+	ch := sub.Channel()
 
-	var wg sync.WaitGroup
-	go func() {
-		wg.Add(1)
-		defer wg.Done()
-
-		for {
-			switch v := psc.Receive().(type) {
-			case redis.Message:
-				fl, err := redisMessageToFrameLog(v, uplinkKey, downlinkKey)
-				if err != nil {
-					log.WithError(err).Error("decode message error")
-				} else {
-					frameLogChan <- fl
-				}
-			case redis.Subscription:
-				if v.Count == 0 {
-					done <- nil
-					return
-				}
-			case error:
-				done <- v
-				return
-			}
-		}
-	}()
-
-	// todo: make this a config value?
-	ticker := time.NewTicker(30 * time.Second)
-	defer ticker.Stop()
-
-loop:
 	for {
 		select {
-		case <-ticker.C:
-			if err := psc.Ping(""); err != nil {
-				log.WithError(err).Error("subscription ping error")
-				break loop
+		case msg := <-ch:
+			if msg == nil {
+				continue
+			}
+
+			fl, err := redisMessageToFrameLog(msg, uplinkKey, downlinkKey)
+			if err != nil {
+				log.WithError(err).Error("decode message error")
+			} else {
+				frameLogChan <- fl
 			}
 		case <-ctx.Done():
-			break loop
-		case err := <-done:
-			return err
+			// This will also close the channel
+			sub.Close()
+			break
 		}
 	}
-
-	if err := psc.Unsubscribe(); err != nil {
-		return errors.Wrap(err, "unsubscribe error")
-	}
-	wg.Wait()
-	return <-done
 }
 
-func redisMessageToFrameLog(msg redis.Message, uplinkKey, downlinkKey string) (FrameLog, error) {
+func redisMessageToFrameLog(msg *redis.Message, uplinkKey, downlinkKey string) (FrameLog, error) {
 	var fl FrameLog
 
 	if msg.Channel == uplinkKey {
 		fl.UplinkFrame = &gw.UplinkFrameSet{}
-		if err := proto.Unmarshal(msg.Data, fl.UplinkFrame); err != nil {
+		if err := proto.Unmarshal([]byte(msg.Payload), fl.UplinkFrame); err != nil {
 			return fl, errors.Wrap(err, "unmarshal uplink frame-set error")
 		}
 	}
 
 	if msg.Channel == downlinkKey {
 		fl.DownlinkFrame = &gw.DownlinkFrame{}
-		if err := proto.Unmarshal(msg.Data, fl.DownlinkFrame); err != nil {
+		if err := proto.Unmarshal([]byte(msg.Payload), fl.DownlinkFrame); err != nil {
 			return fl, errors.Wrap(err, "unmarshal downlink frame error")
 		}
 	}

@@ -8,7 +8,6 @@ import (
 
 	"github.com/brocaar/chirpstack-api/go/v3/geo"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
-	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/require"
@@ -109,12 +108,12 @@ func (ts *StorageTestSuite) TestGeolocBuffer() {
 
 	for _, tst := range tests {
 		ts.T().Run(tst.Name, func(t *testing.T) {
-			test.MustFlushRedis(RedisPool())
+			RedisClient().FlushAll()
 			assert := require.New(t)
 
-			assert.NoError(SaveGeolocBuffer(context.Background(), RedisPool(), tst.DevEUI, tst.Items, tst.AddTTL))
+			assert.NoError(SaveGeolocBuffer(context.Background(), tst.DevEUI, tst.Items, tst.AddTTL))
 
-			resp, err := GetGeolocBuffer(context.Background(), RedisPool(), tst.DevEUI, tst.GetTTL)
+			resp, err := GetGeolocBuffer(context.Background(), tst.DevEUI, tst.GetTTL)
 			assert.NoError(err)
 
 			aa, _ := json.Marshal(tst.ExpectedItems)

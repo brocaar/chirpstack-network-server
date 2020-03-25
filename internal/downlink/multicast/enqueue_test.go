@@ -42,7 +42,7 @@ func (ts *EnqueueQueueItemTestCase) SetupTest() {
 	var err error
 	ts.tx, err = storage.DB().Beginx()
 	assert.NoError(err)
-	test.MustFlushRedis(storage.RedisPool())
+	storage.RedisClient().FlushAll()
 
 	var sp storage.ServiceProfile
 	var rp storage.RoutingProfile
@@ -97,7 +97,7 @@ func (ts *EnqueueQueueItemTestCase) SetupTest() {
 	for i := range ts.Devices {
 		assert.NoError(storage.CreateDevice(context.Background(), ts.tx, &ts.Devices[i]))
 		assert.NoError(storage.AddDeviceToMulticastGroup(context.Background(), ts.tx, ts.Devices[i].DevEUI, ts.MulticastGroup.ID))
-		assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), storage.RedisPool(), storage.DeviceGatewayRXInfoSet{
+		assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), storage.DeviceGatewayRXInfoSet{
 			DevEUI: ts.Devices[i].DevEUI,
 			DR:     3,
 			Items: []storage.DeviceGatewayRXInfo{
@@ -121,7 +121,7 @@ func (ts *EnqueueQueueItemTestCase) TestInvalidFCnt() {
 		FPort:            2,
 		FRMPayload:       []byte{1, 2, 3, 4},
 	}
-	assert.Equal(ErrInvalidFCnt, EnqueueQueueItem(context.Background(), storage.RedisPool(), ts.tx, qi))
+	assert.Equal(ErrInvalidFCnt, EnqueueQueueItem(context.Background(), ts.tx, qi))
 }
 
 func (ts *EnqueueQueueItemTestCase) TestClassC() {
@@ -134,7 +134,7 @@ func (ts *EnqueueQueueItemTestCase) TestClassC() {
 		FPort:            2,
 		FRMPayload:       []byte{1, 2, 3, 4},
 	}
-	assert.NoError(EnqueueQueueItem(context.Background(), storage.RedisPool(), ts.tx, qi))
+	assert.NoError(EnqueueQueueItem(context.Background(), ts.tx, qi))
 
 	items, err := storage.GetMulticastQueueItemsForMulticastGroup(context.Background(), ts.tx, ts.MulticastGroup.ID)
 	assert.NoError(err)
@@ -165,7 +165,7 @@ func (ts *EnqueueQueueItemTestCase) TestClassB() {
 		FPort:            2,
 		FRMPayload:       []byte{1, 2, 3, 4},
 	}
-	assert.NoError(EnqueueQueueItem(context.Background(), storage.RedisPool(), ts.tx, qi))
+	assert.NoError(EnqueueQueueItem(context.Background(), ts.tx, qi))
 
 	items, err := storage.GetMulticastQueueItemsForMulticastGroup(context.Background(), ts.tx, ts.MulticastGroup.ID)
 	assert.NoError(err)

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/go-redis/redis/v7"
 	"github.com/gofrs/uuid"
-	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -131,19 +131,15 @@ func CreateDeviceProfile(ctx context.Context, db sqlx.Execer, dp *DeviceProfile)
 
 // CreateDeviceProfileCache caches the given device-profile in Redis.
 // The TTL of the device-profile is the same as that of the device-sessions.
-func CreateDeviceProfileCache(ctx context.Context, p *redis.Pool, dp DeviceProfile) error {
+func CreateDeviceProfileCache(ctx context.Context, dp DeviceProfile) error {
+	key := fmt.Sprintf(DeviceProfileKeyTempl, dp.ID)
+
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(dp); err != nil {
 		return errors.Wrap(err, "gob encode device-profile error")
 	}
 
-	c := p.Get()
-	defer c.Close()
-
-	key := fmt.Sprintf(DeviceProfileKeyTempl, dp.ID)
-	exp := int64(deviceSessionTTL) / int64(time.Millisecond)
-
-	_, err := c.Do("PSETEX", key, exp, buf.Bytes())
+	err := RedisClient().Set(key, buf.Bytes(), deviceSessionTTL).Err()
 	if err != nil {
 		return errors.Wrap(err, "set device-profile error")
 	}
@@ -152,16 +148,13 @@ func CreateDeviceProfileCache(ctx context.Context, p *redis.Pool, dp DeviceProfi
 }
 
 // GetDeviceProfileCache returns a cached device-profile.
-func GetDeviceProfileCache(ctx context.Context, p *redis.Pool, id uuid.UUID) (DeviceProfile, error) {
+func GetDeviceProfileCache(ctx context.Context, id uuid.UUID) (DeviceProfile, error) {
 	var dp DeviceProfile
 	key := fmt.Sprintf(DeviceProfileKeyTempl, id)
 
-	c := p.Get()
-	defer c.Close()
-
-	val, err := redis.Bytes(c.Do("GET", key))
+	val, err := RedisClient().Get(key).Bytes()
 	if err != nil {
-		if err == redis.ErrNil {
+		if err == redis.Nil {
 			return dp, ErrDoesNotExist
 		}
 		return dp, errors.Wrap(err, "get error")
@@ -176,12 +169,10 @@ func GetDeviceProfileCache(ctx context.Context, p *redis.Pool, id uuid.UUID) (De
 }
 
 // FlushDeviceProfileCache deletes a cached device-profile.
-func FlushDeviceProfileCache(ctx context.Context, p *redis.Pool, id uuid.UUID) error {
+func FlushDeviceProfileCache(ctx context.Context, id uuid.UUID) error {
 	key := fmt.Sprintf(DeviceProfileKeyTempl, id)
-	c := p.Get()
-	defer c.Close()
 
-	_, err := c.Do("DEL", key)
+	err := RedisClient().Del(key).Err()
 	if err != nil {
 		return errors.Wrap(err, "delete error")
 	}
@@ -191,8 +182,8 @@ func FlushDeviceProfileCache(ctx context.Context, p *redis.Pool, id uuid.UUID) e
 // GetAndCacheDeviceProfile returns the device-profile from cache
 // in case available, else it will be retrieved from the database and then
 // stored in cache.
-func GetAndCacheDeviceProfile(ctx context.Context, db sqlx.Queryer, p *redis.Pool, id uuid.UUID) (DeviceProfile, error) {
-	dp, err := GetDeviceProfileCache(ctx, p, id)
+func GetAndCacheDeviceProfile(ctx context.Context, db sqlx.Queryer, id uuid.UUID) (DeviceProfile, error) {
+	dp, err := GetDeviceProfileCache(ctx, id)
 	if err == nil {
 		return dp, nil
 	}
@@ -209,7 +200,7 @@ func GetAndCacheDeviceProfile(ctx context.Context, db sqlx.Queryer, p *redis.Poo
 		return DeviceProfile{}, errors.Wrap(err, "get device-profile error")
 	}
 
-	err = CreateDeviceProfileCache(ctx, p, dp)
+	err = CreateDeviceProfileCache(ctx, dp)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"ctx_id":            ctx.Value(logging.ContextIDKey),

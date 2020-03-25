@@ -3,7 +3,6 @@ package storage
 import (
 	"testing"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/suite"
 
@@ -30,8 +29,7 @@ func (b *StorageTestSuite) SetupTest() {
 		panic(err)
 	}
 	b.tx = tx
-
-	test.MustFlushRedis(RedisPool())
+	RedisClient().FlushAll()
 }
 
 func (b *StorageTestSuite) TearDownTest() {
@@ -46,10 +44,6 @@ func (b *StorageTestSuite) Tx() sqlx.Ext {
 
 func (b *StorageTestSuite) DB() *DBLogger {
 	return DB()
-}
-
-func (b *StorageTestSuite) RedisPool() *redis.Pool {
-	return RedisPool()
 }
 
 func TestStorage(t *testing.T) {

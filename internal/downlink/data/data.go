@@ -902,13 +902,13 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 
 		for _, block := range ctx.MACCommands {
 			// set mac-command pending
-			if err := storage.SetPendingMACCommand(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, block); err != nil {
+			if err := storage.SetPendingMACCommand(ctx.ctx, ctx.DeviceSession.DevEUI, block); err != nil {
 				return errors.Wrap(err, "set mac-command pending error")
 			}
 
 			// delete from queue, if external
 			if block.External {
-				if err := storage.DeleteMACCommandQueueItem(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI, block); err != nil {
+				if err := storage.DeleteMACCommandQueueItem(ctx.ctx, ctx.DeviceSession.DevEUI, block); err != nil {
 					return errors.Wrap(err, "delete mac-command block from queue error")
 				}
 			}
@@ -984,7 +984,7 @@ func requestADRChange(ctx *dataContext) error {
 }
 
 func getMACCommandsFromQueue(ctx *dataContext) error {
-	blocks, err := storage.GetMACCommandQueueItems(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI)
+	blocks, err := storage.GetMACCommandQueueItems(ctx.ctx, ctx.DeviceSession.DevEUI)
 	if err != nil {
 		return errors.Wrap(err, "get mac-command queue items error")
 	}
@@ -1134,7 +1134,7 @@ func sendDownlinkFrame(ctx *dataContext) error {
 }
 
 func saveDeviceSession(ctx *dataContext) error {
-	if err := storage.SaveDeviceSession(ctx.ctx, storage.RedisPool(), ctx.DeviceSession); err != nil {
+	if err := storage.SaveDeviceSession(ctx.ctx, ctx.DeviceSession); err != nil {
 		return errors.Wrap(err, "save device-session error")
 	}
 	return nil
@@ -1142,7 +1142,7 @@ func saveDeviceSession(ctx *dataContext) error {
 
 func getDeviceProfile(ctx *dataContext) error {
 	var err error
-	ctx.DeviceProfile, err = storage.GetAndCacheDeviceProfile(ctx.ctx, storage.DB(), storage.RedisPool(), ctx.DeviceSession.DeviceProfileID)
+	ctx.DeviceProfile, err = storage.GetAndCacheDeviceProfile(ctx.ctx, storage.DB(), ctx.DeviceSession.DeviceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get device-profile error")
 	}
@@ -1151,7 +1151,7 @@ func getDeviceProfile(ctx *dataContext) error {
 
 func getServiceProfile(ctx *dataContext) error {
 	var err error
-	ctx.ServiceProfile, err = storage.GetAndCacheServiceProfile(ctx.ctx, storage.DB(), storage.RedisPool(), ctx.DeviceSession.ServiceProfileID)
+	ctx.ServiceProfile, err = storage.GetAndCacheServiceProfile(ctx.ctx, storage.DB(), ctx.DeviceSession.ServiceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
@@ -1174,7 +1174,7 @@ func setDeviceGatewayRXInfo(ctx *dataContext) error {
 
 	} else {
 		// Class-B or Class-C.
-		rxInfo, err := storage.GetDeviceGatewayRXInfoSet(ctx.ctx, storage.RedisPool(), ctx.DeviceSession.DevEUI)
+		rxInfo, err := storage.GetDeviceGatewayRXInfoSet(ctx.ctx, ctx.DeviceSession.DevEUI)
 		if err != nil {
 			return errors.Wrap(err, "get device gateway RXInfoSet error")
 		}
@@ -1228,7 +1228,7 @@ func saveFrames(ctx *dataContext) error {
 		df.DownlinkFrames = append(df.DownlinkFrames, &ctx.DownlinkFrames[i].DownlinkFrame)
 	}
 
-	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), df); err != nil {
+	if err := storage.SaveDownlinkFrames(ctx.ctx, df); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
 	}
 

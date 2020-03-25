@@ -88,7 +88,7 @@ func (ts *CollectTestSuite) TestDeduplication() {
 	for _, tst := range testTable {
 		ts.T().Run(tst.Name, func(t *testing.T) {
 			assert := require.New(t)
-			test.MustFlushRedis(storage.RedisPool())
+			storage.RedisClient().FlushAll()
 
 			var received int
 			var called int
@@ -116,7 +116,7 @@ func (ts *CollectTestSuite) TestDeduplication() {
 				assert.NoError(helpers.SetUplinkTXInfoDataRate(packet.TxInfo, 0, band.Band()))
 
 				go func(packet gw.UplinkFrame) {
-					assert.NoError(collectAndCallOnce(storage.RedisPool(), packet, cb))
+					assert.NoError(collectAndCallOnce(packet, cb))
 					wg.Done()
 				}(packet)
 			}

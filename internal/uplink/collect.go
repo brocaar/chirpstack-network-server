@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
@@ -31,7 +31,7 @@ const (
 // It is safe to collect the same packet received by the same gateway twice.
 // Since the underlying storage type is a set, the result will always be a
 // unique set per gateway MAC and packet MIC.
-func collectAndCallOnce(p *redis.Pool, rxPacket gw.UplinkFrame, callback func(packet models.RXPacket) error) error {
+func collectAndCallOnce(rxPacket gw.UplinkFrame, callback func(packet models.RXPacket) error) error {
 	phyKey := hex.EncodeToString(rxPacket.PhyPayload)
 	key := fmt.Sprintf(CollectKeyTempl, phyKey)
 	lockKey := fmt.Sprintf(CollectLockKeyTempl, phyKey)
@@ -43,11 +43,11 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.UplinkFrame, callback func(pa
 		deduplicationTTL = time.Millisecond * 200
 	}
 
-	if err := collectAndCallOncePut(p, key, deduplicationTTL, rxPacket); err != nil {
+	if err := collectAndCallOncePut(key, deduplicationTTL, rxPacket); err != nil {
 		return err
 	}
 
-	if locked, err := collectAndCallOnceLocked(p, lockKey, deduplicationTTL); err != nil || locked {
+	if locked, err := collectAndCallOnceLocked(lockKey, deduplicationTTL); err != nil || locked {
 		// when locked == true, err == nil
 		return err
 	}
@@ -57,7 +57,7 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.UplinkFrame, callback func(pa
 	time.Sleep(deduplicationDelay)
 
 	// collect all packets from the set
-	payloads, err := collectAndCallOnceCollect(p, key)
+	payloads, err := collectAndCallOnceCollect(key)
 	if err != nil {
 		return errors.Wrap(err, "get deduplication set members error")
 	}
@@ -104,19 +104,17 @@ func collectAndCallOnce(p *redis.Pool, rxPacket gw.UplinkFrame, callback func(pa
 	return callback(out)
 }
 
-func collectAndCallOncePut(p *redis.Pool, key string, ttl time.Duration, rxPacket gw.UplinkFrame) error {
+func collectAndCallOncePut(key string, ttl time.Duration, rxPacket gw.UplinkFrame) error {
 	b, err := proto.Marshal(&rxPacket)
 	if err != nil {
 		return errors.Wrap(err, "marshal uplink frame error")
 	}
 
-	c := p.Get()
-	defer c.Close()
+	pipe := storage.RedisClient().TxPipeline()
+	pipe.SAdd(key, b)
+	pipe.PExpire(key, ttl)
 
-	c.Send("MULTI")
-	c.Send("SADD", key, b)
-	c.Send("PEXPIRE", key, int64(ttl)/int64(time.Millisecond))
-	_, err = c.Do("EXEC")
+	_, err = pipe.Exec()
 	if err != nil {
 		return errors.Wrap(err, "add uplink frame to set error")
 	}
@@ -124,10 +122,7 @@ func collectAndCallOncePut(p *redis.Pool, key string, ttl time.Duration, rxPacke
 	return nil
 }
 
-func collectAndCallOnceLocked(p *redis.Pool, key string, ttl time.Duration) (bool, error) {
-	c := p.Get()
-	defer c.Close()
-
+func collectAndCallOnceLocked(key string, ttl time.Duration) (bool, error) {
 	// this way we can set a really low DeduplicationDelay for testing, without
 	// the risk that the set already expired in redis on read
 	deduplicationTTL := deduplicationDelay * 2
@@ -135,22 +130,27 @@ func collectAndCallOnceLocked(p *redis.Pool, key string, ttl time.Duration) (boo
 		deduplicationTTL = time.Millisecond * 200
 	}
 
-	_, err := redis.String(c.Do("SET", key, "lock", "PX", int64(ttl)/int64(time.Millisecond), "NX"))
+	set, err := storage.RedisClient().SetNX(key, "lock", ttl).Result()
 	if err != nil {
-		if err == redis.ErrNil {
-			// the packet processing is already locked by an other process
-			// so there is nothing to do anymore :-)
-			return true, nil
-		}
 		return false, errors.Wrap(err, "acquire deduplication lock error")
 	}
 
-	return false, nil
+	// Set is true when we were able to set the lock, we return true if it
+	// was already locked.
+	return !set, nil
 }
 
-func collectAndCallOnceCollect(p *redis.Pool, key string) ([][]byte, error) {
-	c := p.Get()
-	defer c.Close()
+func collectAndCallOnceCollect(key string) ([][]byte, error) {
+	val, err := storage.RedisClient().SMembers(key).Result()
+	if err != nil {
+		return nil, errors.Wrap(err, "get set members error")
+	}
 
-	return redis.ByteSlices(c.Do("SMEMBERS", key))
+	var out [][]byte
+
+	for i := range val {
+		out = append(out, []byte(val[i]))
+	}
+
+	return out, nil
 }

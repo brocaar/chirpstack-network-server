@@ -242,7 +242,7 @@ func sendDownlinkData(ctx *multicastContext) error {
 		return errors.Wrap(err, "send downlink frame to gateway error")
 	}
 
-	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, storage.RedisPool(), ctx.DownlinkFrame); err != nil {
+	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, ctx.DownlinkFrame); err != nil {
 		log.WithError(err).Error("log downlink frame for gateway error")
 	}
 
@@ -256,7 +256,7 @@ func saveDownlinkFrame(ctx *multicastContext) error {
 		DownlinkFrames:   []*gw.DownlinkFrame{&ctx.DownlinkFrame},
 	}
 
-	if err := storage.SaveDownlinkFrames(ctx.ctx, storage.RedisPool(), df); err != nil {
+	if err := storage.SaveDownlinkFrames(ctx.ctx, df); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
 	}
 

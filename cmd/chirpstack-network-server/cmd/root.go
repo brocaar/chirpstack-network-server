@@ -53,8 +53,6 @@ func init() {
 
 	// default values
 	viper.SetDefault("redis.url", "redis://localhost:6379")
-	viper.SetDefault("redis.max_idle", 10)
-	viper.SetDefault("redis.idle_timeout", 5*time.Minute)
 
 	viper.SetDefault("postgresql.dsn", "postgres://localhost/chirpstack_ns?sslmode=disable")
 	viper.SetDefault("postgresql.automigrate", true)

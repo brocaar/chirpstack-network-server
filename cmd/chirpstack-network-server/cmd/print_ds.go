@@ -8,9 +8,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/brocaar/lorawan"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/lorawan"
 )
 
 var printDSCmd = &cobra.Command{
@@ -31,7 +31,7 @@ var printDSCmd = &cobra.Command{
 			log.WithError(err).Fatal("decode DevEUI error")
 		}
 
-		ds, err := storage.GetDeviceSession(context.Background(), storage.RedisPool(), devEUI)
+		ds, err := storage.GetDeviceSession(context.Background(), devEUI)
 		if err != nil {
 			log.WithError(err).Fatal("get device-session error")
 		}

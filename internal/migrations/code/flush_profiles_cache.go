@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gofrs/uuid"
-	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -16,12 +15,9 @@ import (
 // cache in Redis. As the struct changed the cached value from ChirpStack Network Server v1
 // can't be unmarshaled into the ChirpStack Network Server v2 struct and therefore we need
 // to flush the cache.
-func FlushProfilesCache(p *redis.Pool, db sqlx.Queryer) error {
-	c := p.Get()
-	defer c.Close()
-
+func FlushProfilesCache(db sqlx.Queryer) error {
 	var uuids []uuid.UUID
-	var keys []interface{}
+	var keys []string
 
 	// device-profiles
 	err := sqlx.Select(db, &uuids, `
@@ -39,7 +35,7 @@ func FlushProfilesCache(p *redis.Pool, db sqlx.Queryer) error {
 	}
 
 	if len(keys) != 0 {
-		_, err = redis.Int(c.Do("DEL", keys...))
+		err = storage.RedisClient().Del(keys...).Err()
 		if err != nil {
 			return errors.Wrap(err, "delete device-profiles from cache error")
 		}
@@ -62,7 +58,7 @@ func FlushProfilesCache(p *redis.Pool, db sqlx.Queryer) error {
 	}
 
 	if len(keys) != 0 {
-		_, err = redis.Int(c.Do("DEL", keys...))
+		err = storage.RedisClient().Del(keys...).Err()
 		if err != nil {
 			return errors.Wrap(err, "delete service-profiles from cache error")
 		}

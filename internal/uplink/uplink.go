@@ -153,7 +153,7 @@ func HandleDownlinkTXAcks(wg *sync.WaitGroup) {
 }
 
 func collectUplinkFrames(ctx context.Context, uplinkFrame gw.UplinkFrame) error {
-	return collectAndCallOnce(storage.RedisPool(), uplinkFrame, func(rxPacket models.RXPacket) error {
+	return collectAndCallOnce(uplinkFrame, func(rxPacket models.RXPacket) error {
 		var uplinkIDs []uuid.UUID
 		for _, p := range rxPacket.RXInfoSet {
 			uplinkIDs = append(uplinkIDs, helpers.GetUplinkID(p))
@@ -166,12 +166,12 @@ func collectUplinkFrames(ctx context.Context, uplinkFrame gw.UplinkFrame) error 
 		}).Info("uplink: frame(s) collected")
 
 		// update the gateway meta-data
-		if err := gateway.UpdateMetaDataInRxInfoSet(ctx, storage.DB(), storage.RedisPool(), rxPacket.RXInfoSet); err != nil {
+		if err := gateway.UpdateMetaDataInRxInfoSet(ctx, storage.DB(), rxPacket.RXInfoSet); err != nil {
 			log.WithError(err).Error("uplink: update gateway meta-data in rx-info set error")
 		}
 
 		// log the frame for each receiving gatewa
-		if err := framelog.LogUplinkFrameForGateways(ctx, storage.RedisPool(), gw.UplinkFrameSet{
+		if err := framelog.LogUplinkFrameForGateways(ctx, gw.UplinkFrameSet{
 			PhyPayload: uplinkFrame.PhyPayload,
 			TxInfo:     rxPacket.TXInfo,
 			RxInfo:     rxPacket.RXInfoSet,

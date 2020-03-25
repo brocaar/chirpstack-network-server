@@ -87,20 +87,10 @@ max_idle_connections={{ .PostgreSQL.MaxIdleConnections }}
 # https://www.iana.org/assignments/uri-schemes/prov/redis
 url="{{ .Redis.URL }}"
 
-# Max idle connections in the pool.
-max_idle={{ .Redis.MaxIdle }}
-
-# Idle timeout.
+# Connection pool size.
 #
-# Close connections after remaining idle for this duration. If the value
-# is zero, then idle connections are not closed. You should set
-# the timeout to a value less than the server's timeout.
-idle_timeout="{{ .Redis.IdleTimeout }}"
-
-# Max active connections in the pool.
-#
-# When zero, there is no limit on the number of connections in the pool.
-max_active={{ .Redis.MaxActive }}
+# Default is 10 connections per every CPU.
+pool_size={{ .Redis.PoolSize }}
 
 
 # Network-server settings.

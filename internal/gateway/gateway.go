@@ -10,7 +10,6 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/gomodule/redigo/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -78,10 +77,10 @@ func (s *StatsHandler) Stop() error {
 //   - add the gateway location
 //   - set the FPGA id if available
 //   - decrypt the fine-timestamp (if available and AES key is set)
-func UpdateMetaDataInRxInfoSet(ctx context.Context, db sqlx.Queryer, p *redis.Pool, rxInfo []*gw.UplinkRXInfo) error {
+func UpdateMetaDataInRxInfoSet(ctx context.Context, db sqlx.Queryer, rxInfo []*gw.UplinkRXInfo) error {
 	for i := range rxInfo {
 		id := helpers.GetGatewayID(rxInfo[i])
-		g, err := storage.GetAndCacheGateway(ctx, db, p, id)
+		g, err := storage.GetAndCacheGateway(ctx, db, id)
 		if err != nil {
 			log.WithFields(log.Fields{
 				"ctx_id":     ctx.Value(logging.ContextIDKey),

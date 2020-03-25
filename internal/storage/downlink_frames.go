@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	proto "github.com/golang/protobuf/proto"
-	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -19,19 +19,15 @@ const downlinkFramesTTL = time.Second * 10
 const downlinkFramesKeyTempl = "lora:ns:frames:%d"
 
 // SaveDownlinkFrames saves the given downlink-frames.
-func SaveDownlinkFrames(ctx context.Context, p *redis.Pool, frames DownlinkFrames) error {
-	c := p.Get()
-	defer c.Close()
+func SaveDownlinkFrames(ctx context.Context, frames DownlinkFrames) error {
+	key := fmt.Sprintf(downlinkFramesKeyTempl, frames.Token)
 
 	b, err := proto.Marshal(&frames)
 	if err != nil {
 		return errors.Wrap(err, "marshal proto error")
 	}
 
-	key := fmt.Sprintf(downlinkFramesKeyTempl, frames.Token)
-	exp := int64(downlinkFramesTTL) / int64(time.Millisecond)
-
-	_, err = c.Do("PSETEX", key, exp, b)
+	err = RedisClient().Set(key, b, downlinkFramesTTL).Err()
 	if err != nil {
 		return errors.Wrap(err, "save frames error")
 	}
@@ -45,14 +41,12 @@ func SaveDownlinkFrames(ctx context.Context, p *redis.Pool, frames DownlinkFrame
 }
 
 // GetDownlinkFrames returns the downlink-frames.
-func GetDownlinkFrames(ctx context.Context, p *redis.Pool, token uint16) (DownlinkFrames, error) {
-	c := p.Get()
-	defer c.Close()
-
+func GetDownlinkFrames(ctx context.Context, token uint16) (DownlinkFrames, error) {
 	key := fmt.Sprintf(downlinkFramesKeyTempl, token)
-	val, err := redis.Bytes(c.Do("GET", key))
+
+	val, err := RedisClient().Get(key).Bytes()
 	if err != nil {
-		if err == redis.ErrNil {
+		if err == redis.Nil {
 			return DownlinkFrames{}, ErrDoesNotExist
 		}
 	}
