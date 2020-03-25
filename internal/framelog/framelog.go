@@ -151,7 +151,7 @@ func getFrameLogs(ctx context.Context, uplinkKey, downlinkKey string, frameLogCh
 		case <-ctx.Done():
 			// This will also close the channel
 			sub.Close()
-			break
+			return nil
 		}
 	}
 }
