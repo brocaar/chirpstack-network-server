@@ -1,7 +1,7 @@
 # This configuration configures ChirpStack Network Server for the EU868 band using a MQTT
 # broker to communicate with the gateways. Many options and defaults have been
 # omitted for simplicity.
-# 
+#
 # For other bands, see the ./examples/ sub-directory.
 #
 # See https://www.chirpstack.io/network-server/install/config/ for a full
@@ -64,7 +64,7 @@ net_id="000000"
   # specification for valid values that apply to your region.
   # See: https://www.lora-alliance.org/lorawan-for-developers
   [network_server.band]
-  name="EU_863_870"
+  name="EU868"
 
 
   # LoRaWAN network related settings.
@@ -190,4 +190,3 @@ timezone="Local"
   #
   # This API is provided by ChirpStack Application Server.
   server="http://localhost:8003"
-

@@ -34,7 +34,7 @@ func GetConfig() config.Config {
 	log.SetLevel(log.FatalLevel)
 
 	var c config.Config
-	c.NetworkServer.Band.Name = loraband.EU_863_870
+	c.NetworkServer.Band.Name = loraband.EU868
 
 	if err := band.Setup(c); err != nil {
 		panic(err)

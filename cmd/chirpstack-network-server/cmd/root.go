@@ -59,7 +59,7 @@ func init() {
 	viper.SetDefault("postgresql.max_idle_connections", 2)
 
 	viper.SetDefault("network_server.net_id", "000000")
-	viper.SetDefault("network_server.band.name", "EU_863_870")
+	viper.SetDefault("network_server.band.name", "EU868")
 	viper.SetDefault("network_server.band.uplink_max_eirp", -1)
 	viper.SetDefault("network_server.api.bind", "0.0.0.0:8000")
 

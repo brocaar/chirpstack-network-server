@@ -121,7 +121,7 @@ journalctl -u chirpstack-network-server -f -n 50
 Example output:
 
 {{<highlight text>}}
-INFO[0000] starting ChirpStack Network Server                band=EU_863_870 docs=https://www.chirpstack.io/network-server/ net_id=010203 version=3.1.0
+INFO[0000] starting ChirpStack Network Server                band=EU868 docs=https://www.chirpstack.io/network-server/ net_id=010203 version=3.1.0
 INFO[0000] setup redis connection pool                   url=redis://localhost:6379
 INFO[0000] backend/gateway: connecting to mqtt broker    server=tcp://localhost:1883
 INFO[0000] connecting to application-server              ca-cert= server=127.0.0.1:8001 tls-cert= tls-key=
