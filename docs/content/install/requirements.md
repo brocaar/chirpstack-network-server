@@ -59,9 +59,13 @@ page for information how to setup PostgreSQL on your platform.
 
 ## Redis database
 
-ChirpStack Network Server stores all non-persistent data into a
-[Redis](http://redis.io/) datastore. Note that at least Redis 2.6.0
-is required.
+ChirpStack Network Server uses [Redis](http://redis.io) for storing
+device-session data and non-persistent data like distributed locks,
+deduplication sets and meta-data. 
+
+Notes:
+* At least Redis 2.6.0 is required.
+* Flushing the Redis database means all devices have to rejoin (OTAA) the network.
 
 ### Install
 
