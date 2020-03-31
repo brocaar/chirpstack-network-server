@@ -141,15 +141,19 @@ func collectAndCallOnceLocked(key string, ttl time.Duration) (bool, error) {
 }
 
 func collectAndCallOnceCollect(key string) ([][]byte, error) {
-	val, err := storage.RedisClient().SMembers(key).Result()
-	if err != nil {
+	pipe := storage.RedisClient().Pipeline()
+	val := pipe.SMembers(key)
+	pipe.Del(key)
+
+	if _, err := pipe.Exec(); err != nil {
 		return nil, errors.Wrap(err, "get set members error")
 	}
 
 	var out [][]byte
+	vals := val.Val()
 
-	for i := range val {
-		out = append(out, []byte(val[i]))
+	for i := range vals {
+		out = append(out, []byte(vals[i]))
 	}
 
 	return out, nil

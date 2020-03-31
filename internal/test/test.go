@@ -274,21 +274,19 @@ func (t *ApplicationClient) SetDeviceLocation(ctx context.Context, in *as.SetDev
 
 // NetworkControllerClient is a network-controller client for testing.
 type NetworkControllerClient struct {
-	HandleUplinkMetaDataChan   chan nc.HandleUplinkMetaDataRequest
-	HandleDownlinkMetaDataChan chan nc.HandleDownlinkMetaDataRequest
-	HandleDataUpMACCommandChan chan nc.HandleUplinkMACCommandRequest
-
-	HandleRXInfoResponse           empty.Empty
-	HandleDownlinkMetaDataResponse empty.Empty
-	HandleDataUpMACCommandResponse empty.Empty
+	HandleUplinkMetaDataChan         chan nc.HandleUplinkMetaDataRequest
+	HandleDownlinkMetaDataChan       chan nc.HandleDownlinkMetaDataRequest
+	HandleDataUpMACCommandChan       chan nc.HandleUplinkMACCommandRequest
+	HandleRejectedUplinkFrameSetChan chan nc.HandleRejectedUplinkFrameSetRequest
 }
 
 // NewNetworkControllerClient returns a new NetworkControllerClient.
 func NewNetworkControllerClient() *NetworkControllerClient {
 	return &NetworkControllerClient{
-		HandleUplinkMetaDataChan:   make(chan nc.HandleUplinkMetaDataRequest, 100),
-		HandleDownlinkMetaDataChan: make(chan nc.HandleDownlinkMetaDataRequest, 100),
-		HandleDataUpMACCommandChan: make(chan nc.HandleUplinkMACCommandRequest, 100),
+		HandleUplinkMetaDataChan:         make(chan nc.HandleUplinkMetaDataRequest, 100),
+		HandleDownlinkMetaDataChan:       make(chan nc.HandleDownlinkMetaDataRequest, 100),
+		HandleDataUpMACCommandChan:       make(chan nc.HandleUplinkMACCommandRequest, 100),
+		HandleRejectedUplinkFrameSetChan: make(chan nc.HandleRejectedUplinkFrameSetRequest, 100),
 	}
 }
 
@@ -307,6 +305,12 @@ func (t *NetworkControllerClient) HandleDownlinkMetaData(ctx context.Context, in
 // HandleUplinkMACCommand method.
 func (t *NetworkControllerClient) HandleUplinkMACCommand(ctx context.Context, in *nc.HandleUplinkMACCommandRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	t.HandleDataUpMACCommandChan <- *in
+	return &empty.Empty{}, nil
+}
+
+// HandleRejectedUplinkFrameSet method.
+func (t *NetworkControllerClient) HandleRejectedUplinkFrameSet(ctx context.Context, in *nc.HandleRejectedUplinkFrameSetRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	t.HandleRejectedUplinkFrameSetChan <- *in
 	return &empty.Empty{}, nil
 }
 

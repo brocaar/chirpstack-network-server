@@ -32,3 +32,10 @@ func (n *NopNetworkControllerClient) HandleDownlinkMetaData(ctx context.Context,
 func (n *NopNetworkControllerClient) HandleUplinkMACCommand(ctx context.Context, in *nc.HandleUplinkMACCommandRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	return &empty.Empty{}, nil
 }
+
+// HandleRejectedUplinkFrameSet handles a rejected uplink.
+// And uplink can be rejected in the case the device has not (yet) been
+// provisioned, because of invalid frame-counter, MIC, ...
+func (n *NopNetworkControllerClient) HandleRejectedUplinkFrameSet(ctx context.Context, in *nc.HandleRejectedUplinkFrameSetRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
+	return &empty.Empty{}, nil
+}
