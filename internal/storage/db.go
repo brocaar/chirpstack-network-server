@@ -13,7 +13,7 @@ import (
 )
 
 // redisClient holds the Redis client.
-var redisClient *redis.Client
+var redisClient redis.UniversalClient
 
 // db holds the PostgreSQL connection pool.
 var db *DBLogger
@@ -113,6 +113,6 @@ func DB() *DBLogger {
 }
 
 // RedisClient returns the Redis client.
-func RedisClient() *redis.Client {
+func RedisClient() redis.UniversalClient {
 	return redisClient
 }

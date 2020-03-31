@@ -29,7 +29,7 @@ type FrameLog struct {
 
 // LogUplinkFrameForGateways logs the given frame to all the gateway pub-sub keys.
 func LogUplinkFrameForGateways(ctx context.Context, uplinkFrameSet gw.UplinkFrameSet) error {
-	pipe := storage.RedisClient().TxPipeline()
+	pipe := storage.RedisClient().Pipeline()
 
 	for _, rx := range uplinkFrameSet.RxInfo {
 		var id lorawan.EUI64

@@ -63,6 +63,7 @@ func run(cmd *cobra.Command, args []string) error {
 		setupDownlink,
 		fixV2RedisCache,
 		flushGatewayCache,
+		migrateToClusterKeys,
 		setupAPI,
 		startLoRaServer(server),
 		startStatsServer(gwStats),
@@ -392,5 +393,11 @@ func fixV2RedisCache() error {
 func flushGatewayCache() error {
 	return code.Migrate("stats_migration_flush_gw_cache", func(db sqlx.Ext) error {
 		return code.FlushGatewayCache(db)
+	})
+}
+
+func migrateToClusterKeys() error {
+	return code.Migrate("migrate_to_cluster_keys", func(db sqlx.Ext) error {
+		return code.MigrateToClusterKeys()
 	})
 }

@@ -33,7 +33,23 @@ func Setup(c config.Config) error {
 		return errors.Wrap(err, "parse redis url error")
 	}
 	opt.PoolSize = c.Redis.PoolSize
-	redisClient = redis.NewClient(opt)
+	if c.Redis.Cluster {
+		redisClient = redis.NewClusterClient(&redis.ClusterOptions{
+			Addrs:    []string{opt.Addr},
+			PoolSize: opt.PoolSize,
+			Password: opt.Password,
+		})
+	} else if c.Redis.MasterName != "" {
+		redisClient = redis.NewFailoverClient(&redis.FailoverOptions{
+			MasterName:       c.Redis.MasterName,
+			SentinelAddrs:    []string{opt.Addr},
+			SentinelPassword: opt.Password,
+			DB:               opt.DB,
+			PoolSize:         opt.PoolSize,
+		})
+	} else {
+		redisClient = redis.NewClient(opt)
+	}
 
 	log.Info("storage: connecting to PostgreSQL")
 	d, err := sqlx.Open("postgres", c.PostgreSQL.DSN)

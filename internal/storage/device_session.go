@@ -312,17 +312,32 @@ func SaveDeviceSession(ctx context.Context, s DeviceSession) error {
 		return errors.Wrap(err, "protobuf encode error")
 	}
 
+	// Note that we must execute the DevAddr set related operations in multiple
+	// tx pipelines in order to support Redis Cluster. It can not be guaranteed
+	// that devAddrKey, pendingDevAddrKey and DevSessKey are on the same Cluster
+	// shard.
+
 	pipe := RedisClient().TxPipeline()
-	pipe.Set(devSessKey, b, deviceSessionTTL)
 	pipe.SAdd(devAddrKey, s.DevEUI[:])
 	pipe.PExpire(devAddrKey, deviceSessionTTL)
-	if s.PendingRejoinDeviceSession != nil {
-		pipe.SAdd(fmt.Sprintf(devAddrKeyTempl, s.PendingRejoinDeviceSession.DevAddr), s.DevEUI[:])
-		pipe.PExpire(fmt.Sprintf(devAddrKeyTempl, s.PendingRejoinDeviceSession.DevAddr), deviceSessionTTL)
-	}
-
 	if _, err := pipe.Exec(); err != nil {
 		return errors.Wrap(err, "exec error")
+	}
+
+	if s.PendingRejoinDeviceSession != nil {
+		pendingDevAddrKey := fmt.Sprintf(devAddrKeyTempl, s.PendingRejoinDeviceSession.DevAddr)
+
+		pipe = RedisClient().TxPipeline()
+		pipe.SAdd(pendingDevAddrKey, s.DevEUI[:])
+		pipe.PExpire(pendingDevAddrKey, deviceSessionTTL)
+		if _, err := pipe.Exec(); err != nil {
+			return errors.Wrap(err, "exec error")
+		}
+	}
+
+	err = RedisClient().Set(devSessKey, b, deviceSessionTTL).Err()
+	if err != nil {
+		return errors.Wrap(err, "set error")
 	}
 
 	log.WithFields(log.Fields{

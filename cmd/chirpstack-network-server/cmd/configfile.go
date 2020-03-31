@@ -87,6 +87,18 @@ max_idle_connections={{ .PostgreSQL.MaxIdleConnections }}
 # https://www.iana.org/assignments/uri-schemes/prov/redis
 url="{{ .Redis.URL }}"
 
+# Redis Cluster.
+#
+# Set this to true when the provided URL is pointing to a Redis Cluster
+# instance.
+cluster={{ .Redis.Cluster }}
+
+# The master name.
+#
+# Set the master name when the provided URL is pointing to a Redis Sentinel
+# instance.
+master_name="{{ .Redis.MasterName }}"
+
 # Connection pool size.
 #
 # Default is 10 connections per every CPU.

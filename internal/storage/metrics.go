@@ -22,8 +22,10 @@ const (
 )
 
 const (
-	metricsKeyTempl = "lora:ns:metrics:%s:%s:%d" // metrics key (identifier | aggregation | timestamp)
-
+	// Metrics key (identifier | aggregation | timestamp).
+	// The identifier is used as hash tag to make sure that all keys for the
+	// same identifier are on the same shard when using Redis Cluster.
+	metricsKeyTempl = "lora:ns:metrics:{%s}:%s:%d"
 )
 
 var (
