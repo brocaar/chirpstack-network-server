@@ -15,24 +15,10 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/brocaar/chirpstack-network-server/internal/config"
-	"github.com/brocaar/lorawan/band"
 )
 
 var cfgFile string
 var version string
-
-var bands = []string{
-	string(band.AS_923),
-	string(band.AU_915_928),
-	string(band.CN_470_510),
-	string(band.CN_779_787),
-	string(band.EU_433),
-	string(band.EU_863_870),
-	string(band.IN_865_867),
-	string(band.KR_920_923),
-	string(band.RU_864_870),
-	string(band.US_902_928),
-}
 
 var rootCmd = &cobra.Command{
 	Use:   "chirpstack-network-server",
