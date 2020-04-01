@@ -148,16 +148,16 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # LoRaWAN band to use.
   #
   # Valid values are:
-  # * AS_923
-  # * AU_915_928
-  # * CN_470_510
-  # * CN_779_787
-  # * EU_433
-  # * EU_863_870
-  # * IN_865_867
-  # * KR_920_923
-  # * RU_864_870
-  # * US_902_928
+  # * AS923
+  # * AU915
+  # * CN470
+  # * CN779
+  # * EU433
+  # * EU868
+  # * IN865
+  # * KR920
+  # * RU864
+  # * US915
   name="{{ .NetworkServer.Band.Name }}"
 
   # Enforce 400ms dwell time.
@@ -240,7 +240,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # Please consult the LoRaWAN Regional Parameters specification for valid
   # options of the configured network_server.band.name.
   rx2_frequency={{ .NetworkServer.NetworkSettings.RX2Frequency }}
-  
+
   # Prefer RX2 on RX1 data-rate less than.
   #
   # Prefer RX2 over RX1 based on the RX1 data-rate. When the RX1 data-rate
@@ -248,7 +248,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # first try to schedule the downlink for RX2, failing that (e.g. the gateway
   # has already a payload scheduled at the RX2 timing) it will try RX1.
   rx2_prefer_on_rx1_dr_lt={{ .NetworkServer.NetworkSettings.RX2PreferOnRX1DRLt }}
-  
+
   # Prefer RX2 on link budget.
   #
   # When the link-budget is better for RX2 than for RX1, the Network Server will first
@@ -305,13 +305,13 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # Use this when ony a sub-set of the by default enabled channels are being
   # used. For example when only using the first 8 channels of the US band.
   # Note: when left blank, all channels will be enabled.
-  # 
-  # For the US band, there are 64 125kHz channels (0-63) with 8 500kHz 
-  # channels (65-71) with frequencies in the middle of each 
+  #
+  # For the US band, there are 64 125kHz channels (0-63) with 8 500kHz
+  # channels (65-71) with frequencies in the middle of each
   # sub-band of 125kHz channels.
-  # Most US LoRa gateways recieve on only one sub-band which consists of 
+  # Most US LoRa gateways recieve on only one sub-band which consists of
   # 8 125kHz channels and 1 500 kHz channel
-  # 
+  #
   # Example: (sub-band 1)
   # enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7, 64]
   # Exmaple: (sub-band 2)

@@ -15,7 +15,7 @@ services:
     environment:
       - DB_AUTOMIGRATE=true
       - NET_ID=010203
-      - BAND=EU_863_870
+      - BAND=EU868
       - REDIS_URL=redis://redis:6379
       - GW_MQTT_SERVER=tcp://mosquitto:1883
       - GW_SERVER_JWT_SECRET=verysecret
