@@ -9,6 +9,23 @@ description: Lists the changes per ChirpStack Network Server release, including 
 ---
 # Changelog
 
+## v3.9.0
+
+### Features
+
+#### Redis Cluster and Sentinel
+
+This release introduces the support for [Redis Cluster](https://redis.io/topics/cluster-tutorial)
+and [Redis Sentinel](https://redis.io/topics/sentinel). 
+
+#### Rejected uplink callback to Network Controller
+
+A new API method has been added to the (optional) Network Controller called
+`HandleRejectedUplinkFrameSet`. When ChirpStack Network Server rejects an
+uplink (e.g. when the device is not known to the network, or the activation
+is missing), it will call this method (when the Network Controller is
+configured).
+
 ## v3.8.1
 
 ### Bugfixes
