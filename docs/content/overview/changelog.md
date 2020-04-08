@@ -26,6 +26,10 @@ uplink (e.g. when the device is not known to the network, or the activation
 is missing), it will call this method (when the Network Controller is
 configured).
 
+### Improvements
+
+* Chnage ISM band names to their common name. ([#477](https://github.com/brocaar/chirpstack-network-server/pull/477))
+
 ## v3.8.1
 
 ### Bugfixes
