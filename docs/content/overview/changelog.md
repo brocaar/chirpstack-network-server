@@ -28,7 +28,7 @@ configured).
 
 ### Improvements
 
-* Chnage ISM band names to their common name. ([#477](https://github.com/brocaar/chirpstack-network-server/pull/477))
+* Change ISM band names to their common name. ([#477](https://github.com/brocaar/chirpstack-network-server/pull/477))
 
 ## v3.8.1
 
