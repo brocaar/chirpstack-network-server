@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
@@ -38,7 +39,7 @@ type GatewayProfile struct {
 
 // GetVersion returns the gateway-profile version.
 func (p GatewayProfile) GetVersion() string {
-	return p.UpdatedAt.UTC().Format(time.RFC3339Nano)
+	return fmt.Sprintf("%s-r%d", p.ID, p.UpdatedAt.Unix())
 }
 
 // CreateGatewayProfile creates the given gateway-profile.

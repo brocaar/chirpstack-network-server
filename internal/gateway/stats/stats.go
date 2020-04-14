@@ -96,7 +96,7 @@ func handleGatewayConfigurationUpdate(ctx *statsContext) error {
 		return errors.Wrap(err, "get gateway-profile error")
 	}
 
-	if gwProfile.GetVersion() == ctx.gatewayStats.ConfigVersion {
+	if gwProfile.GetVersion() == ctx.gatewayStats.ConfigVersion || gwProfile.GetVersion() == ctx.gatewayStats.GetMetaData()["config_version"] {
 		log.WithFields(log.Fields{
 			"gateway_id": ctx.gateway.GatewayID,
 			"version":    ctx.gatewayStats.ConfigVersion,
