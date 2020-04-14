@@ -1,0 +1,5 @@
+blank_issues_enabled: false # force the usage of a template
+contact_links:
+  - name: ChirpStack Community Forum
+    url: https://forum.chirpstack.io/
+    about: I need support with ChirpStack.
