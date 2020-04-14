@@ -15,7 +15,7 @@ component schedule mac-commands for example.
 
 For this to work, the external Network Controller must implement the
 `NetworkController` gRPC service as specified in
-[`api/nc/nc.proto`](https://github.com/brocaar/chirpstack-network-server/blob/master/api/nc/nc.proto).
+[`protobuf/nc/nc.proto`](https://github.com/brocaar/chirpstack-api/blob/master/protobuf/nc/nc.proto).
 Also ChirpStack Network Server must be configured so that it connects to this Network Controller
 (see [Configuration]({{< ref "/install/config.md" >}})).
 
