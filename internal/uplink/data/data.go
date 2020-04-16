@@ -615,11 +615,12 @@ func handleFRMPayloadMACCommands(ctx *dataContext) error {
 
 func sendFRMPayloadToApplicationServer(ctx *dataContext) error {
 	publishDataUpReq := as.HandleUplinkDataRequest{
-		DevEui:  ctx.DeviceSession.DevEUI[:],
-		JoinEui: ctx.DeviceSession.JoinEUI[:],
-		FCnt:    ctx.MACPayload.FHDR.FCnt,
-		Adr:     ctx.MACPayload.FHDR.FCtrl.ADR,
-		TxInfo:  ctx.RXPacket.TXInfo,
+		DevEui:          ctx.DeviceSession.DevEUI[:],
+		JoinEui:         ctx.DeviceSession.JoinEUI[:],
+		FCnt:            ctx.MACPayload.FHDR.FCnt,
+		Adr:             ctx.MACPayload.FHDR.FCtrl.ADR,
+		TxInfo:          ctx.RXPacket.TXInfo,
+		ConfirmedUplink: ctx.RXPacket.PHYPayload.MHDR.MType == lorawan.ConfirmedDataUp,
 	}
 
 	publishDataUpReq.Dr = uint32(ctx.RXPacket.DR)
