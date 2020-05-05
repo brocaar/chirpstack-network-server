@@ -126,10 +126,10 @@ type ClassATest struct {
 
 // DownlinkTXAckTest is the structure for a downlink tx ack test.
 type DownlinkTXAckTest struct {
-	Name           string
-	DevEUI         lorawan.EUI64
-	DownlinkTXAck  gw.DownlinkTXAck
-	DownlinkFrames storage.DownlinkFrames
+	Name          string
+	DevEUI        lorawan.EUI64
+	DownlinkTXAck gw.DownlinkTXAck
+	DownlinkFrame storage.DownlinkFrame
 
 	Assert        []Assertion
 	ExpectedError error
@@ -662,7 +662,7 @@ func (ts *IntegrationTestSuite) AssertDownlinkTXAckTest(t *testing.T, tst Downli
 	assert := require.New(t)
 	storage.RedisClient().FlushAll()
 
-	assert.NoError(storage.SaveDownlinkFrames(context.Background(), tst.DownlinkFrames))
+	assert.NoError(storage.SaveDownlinkFrame(context.Background(), tst.DownlinkFrame))
 
 	err := ack.HandleDownlinkTXAck(context.Background(), tst.DownlinkTXAck)
 	if err != nil {

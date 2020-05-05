@@ -29,6 +29,8 @@ func (ts *ProprietaryTestCase) SetupTest() {
 }
 
 func (ts *ProprietaryTestCase) TestDownlink() {
+	gatewayID := lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1}
+
 	tests := []DownlinkProprietaryTest{
 		{
 			Name: "send proprietary payload (iPol true)",
@@ -42,8 +44,7 @@ func (ts *ProprietaryTestCase) TestDownlink() {
 			},
 
 			Assert: []Assertion{
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  []byte{8, 7, 6, 5, 4, 3, 2, 1},
+				AssertDownlinkFrame(gatewayID, gw.DownlinkTXInfo{
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -81,8 +82,7 @@ func (ts *ProprietaryTestCase) TestDownlink() {
 			},
 
 			Assert: []Assertion{
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  []byte{8, 7, 6, 5, 4, 3, 2, 1},
+				AssertDownlinkFrame(gatewayID, gw.DownlinkTXInfo{
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,

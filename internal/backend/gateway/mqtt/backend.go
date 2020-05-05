@@ -49,6 +49,7 @@ type Backend struct {
 	commandTopicTemplate *template.Template
 	qos                  uint8
 
+	downMode         string
 	gatewayMarshaler map[lorawan.EUI64]marshaler.Type
 }
 
@@ -64,6 +65,7 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 		gatewayMarshaler:  make(map[lorawan.EUI64]marshaler.Type),
 		eventTopic:        conf.EventTopic,
 		qos:               conf.QOS,
+		downMode:          c.NetworkServer.Gateway.Backend.MultiDownlinkFeature,
 	}
 
 	b.commandTopicTemplate, err = template.New("command").Parse(conf.CommandTopicTemplate)
@@ -144,12 +146,12 @@ func (b *Backend) DownlinkTXAckChan() chan gw.DownlinkTXAck {
 
 // SendTXPacket sends the given downlink-frame to the gateway.
 func (b *Backend) SendTXPacket(txPacket gw.DownlinkFrame) error {
-	if txPacket.TxInfo == nil {
-		return errors.New("tx_info must not be nil")
-	}
-
-	gatewayID := helpers.GetGatewayID(txPacket.TxInfo)
+	gatewayID := helpers.GetGatewayID(&txPacket)
 	downID := helpers.GetDownlinkID(&txPacket)
+
+	if err := gateway.UpdateDownlinkFrame(b.downMode, &txPacket); err != nil {
+		return errors.Wrap(err, "set downlink compatibility mode error")
+	}
 
 	return b.publishCommand(log.Fields{
 		"downlink_id": downID,

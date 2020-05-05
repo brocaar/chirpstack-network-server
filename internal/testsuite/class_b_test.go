@@ -251,7 +251,6 @@ func (ts *ClassBTestSuite) TestDownlink() {
 	fPortTen := uint8(10)
 
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: []byte{1, 2, 1, 2, 1, 2, 1, 2},
 		Board:     1,
 		Antenna:   2,
 		Frequency: uint32(ts.DeviceSession.PingSlotFrequency),
@@ -264,6 +263,8 @@ func (ts *ClassBTestSuite) TestDownlink() {
 		},
 	}
 	assert.NoError(helpers.SetDownlinkTXInfoDataRate(&txInfo, 2, band.Band()))
+
+	gatewayID := lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}
 
 	deviceGatewayRXInfoSet := storage.DeviceGatewayRXInfoSet{
 		DevEUI: ts.Device.DevEUI,
@@ -293,7 +294,7 @@ func (ts *ClassBTestSuite) TestDownlink() {
 			Assert: []Assertion{
 				AssertFCntUp(8),
 				AssertNFCntDown(6),
-				AssertDownlinkFrame(txInfo, lorawan.PHYPayload{
+				AssertDownlinkFrame(gatewayID, txInfo, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
 						Major: lorawan.LoRaWANR1,
@@ -325,7 +326,7 @@ func (ts *ClassBTestSuite) TestDownlink() {
 			Assert: []Assertion{
 				AssertFCntUp(8),
 				AssertNFCntDown(6),
-				AssertDownlinkFrame(txInfo, lorawan.PHYPayload{
+				AssertDownlinkFrame(gatewayID, txInfo, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
 						Major: lorawan.LoRaWANR1,
@@ -366,7 +367,7 @@ func (ts *ClassBTestSuite) TestDownlink() {
 			Assert: []Assertion{
 				AssertFCntUp(8),
 				AssertNFCntDown(6),
-				AssertDownlinkFrame(txInfoDefaultFreq, lorawan.PHYPayload{
+				AssertDownlinkFrame(gatewayID, txInfoDefaultFreq, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
 						Major: lorawan.LoRaWANR1,

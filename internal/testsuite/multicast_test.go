@@ -72,7 +72,7 @@ func (ts *MulticastTestSuite) TestMulticast() {
 			},
 		},
 		{
-			Name:           "one item im queue",
+			Name:           "one item in queue",
 			MulticastGroup: *ts.MulticastGroup,
 			MulticastQueueItems: []storage.MulticastQueueItem{
 				{
@@ -87,8 +87,7 @@ func (ts *MulticastTestSuite) TestMulticast() {
 			},
 			Assert: []Assertion{
 				AssertMulticastQueueItems([]storage.MulticastQueueItem{}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  uint32(ts.MulticastGroup.Frequency),
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -126,8 +125,8 @@ func (ts *MulticastTestSuite) TestMulticast() {
 					MessageType:                 nc.MType_UNCONFIRMED_DATA_DOWN,
 					PhyPayloadByteCount:         17,
 					ApplicationPayloadByteCount: 4,
+					GatewayId:                   ts.Gateway.GatewayID[:],
 					TxInfo: &gw.DownlinkTXInfo{
-						GatewayId:  ts.Gateway.GatewayID[:],
 						Frequency:  uint32(ts.MulticastGroup.Frequency),
 						Power:      14,
 						Modulation: common.Modulation_LORA,
@@ -184,8 +183,7 @@ func (ts *MulticastTestSuite) TestMulticast() {
 						FRMPayload:              []byte{1, 2, 3, 4},
 					},
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  uint32(ts.MulticastGroup.Frequency),
 					Power:      14,
 					Modulation: common.Modulation_LORA,

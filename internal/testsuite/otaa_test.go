@@ -220,8 +220,7 @@ func (ts *OTAATestSuite) TestLW10() {
 					},
 					RxDelay: conf.NetworkServer.NetworkSettings.RX1Delay,
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  rxInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  txInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -241,8 +240,7 @@ func (ts *OTAATestSuite) TestLW10() {
 						},
 					},
 				}, jaPHY),
-				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					GatewayId:  rxInfo.GatewayId,
+				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					Frequency:  txInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -262,8 +260,7 @@ func (ts *OTAATestSuite) TestLW10() {
 						},
 					},
 				}, jaPHY),
-				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					GatewayId:  rxInfo.GatewayId,
+				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					Frequency:  869525000,
 					Power:      27,
 					Modulation: common.Modulation_LORA,
@@ -314,9 +311,9 @@ func (ts *OTAATestSuite) TestLW10() {
 					PhyPayloadByteCount: 23,
 				}),
 				AssertNCHandleDownlinkMetaDataRequest(nc.HandleDownlinkMetaDataRequest{
-					DevEui: ts.Device.DevEUI[:],
+					DevEui:    ts.Device.DevEUI[:],
+					GatewayId: ts.Gateway.GatewayID[:],
 					TxInfo: &gw.DownlinkTXInfo{
-						GatewayId:  rxInfo.GatewayId,
 						Frequency:  txInfo.Frequency,
 						Power:      14,
 						Modulation: common.Modulation_LORA,
@@ -377,8 +374,7 @@ func (ts *OTAATestSuite) TestLW10() {
 					},
 					RxDelay: conf.NetworkServer.NetworkSettings.RX1Delay,
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  rxInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  txInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -398,8 +394,7 @@ func (ts *OTAATestSuite) TestLW10() {
 						},
 					},
 				}, jaPHY),
-				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					GatewayId:  rxInfo.GatewayId,
+				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					Frequency:  txInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -419,8 +414,7 @@ func (ts *OTAATestSuite) TestLW10() {
 						},
 					},
 				}, jaPHY),
-				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					GatewayId:  rxInfo.GatewayId,
+				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					Frequency:  869525000,
 					Power:      27,
 					Modulation: common.Modulation_LORA,
@@ -687,8 +681,7 @@ func (ts *OTAATestSuite) TestLW11() {
 					},
 					RxDelay: conf.NetworkServer.NetworkSettings.RX1Delay,
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  rxInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  txInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -708,8 +701,7 @@ func (ts *OTAATestSuite) TestLW11() {
 						},
 					},
 				}, jaPHY),
-				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					GatewayId:  rxInfo.GatewayId,
+				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					Frequency:  txInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -729,8 +721,7 @@ func (ts *OTAATestSuite) TestLW11() {
 						},
 					},
 				}, jaPHY),
-				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					GatewayId:  rxInfo.GatewayId,
+				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					Frequency:  869525000,
 					Power:      27,
 					Modulation: common.Modulation_LORA,
@@ -842,8 +833,7 @@ func (ts *OTAATestSuite) TestLW11() {
 					},
 					RxDelay: conf.NetworkServer.NetworkSettings.RX1Delay,
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  rxInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  txInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -863,8 +853,7 @@ func (ts *OTAATestSuite) TestLW11() {
 						},
 					},
 				}, jaPHY),
-				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					GatewayId:  rxInfo.GatewayId,
+				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					Frequency:  txInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -884,8 +873,7 @@ func (ts *OTAATestSuite) TestLW11() {
 						},
 					},
 				}, jaPHY),
-				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					GatewayId:  rxInfo.GatewayId,
+				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					Frequency:  869525000,
 					Power:      27,
 					Modulation: common.Modulation_LORA,

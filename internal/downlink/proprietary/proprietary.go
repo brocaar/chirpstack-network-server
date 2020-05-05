@@ -21,7 +21,7 @@ const defaultCodeRate = "4/5"
 
 var tasks = []func(*proprietaryContext) error{
 	sendProprietaryDown,
-	saveFrame,
+	saveDownlinkFrames,
 }
 
 type proprietaryContext struct {
@@ -97,7 +97,6 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 		token := binary.BigEndian.Uint16(downID[0:2])
 
 		txInfo := gw.DownlinkTXInfo{
-			GatewayId: mac[:],
 			Frequency: uint32(ctx.Frequency),
 			Power:     int32(txPower),
 
@@ -123,8 +122,13 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 		df := gw.DownlinkFrame{
 			Token:      uint32(token),
 			DownlinkId: downID[:],
-			TxInfo:     &txInfo,
-			PhyPayload: phyB,
+			GatewayId:  mac[:],
+			Items: []*gw.DownlinkFrameItem{
+				{
+					TxInfo:     &txInfo,
+					PhyPayload: phyB,
+				},
+			},
 		}
 
 		ctx.DownlinkFrames = append(ctx.DownlinkFrames, df)
@@ -137,13 +141,13 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 	return nil
 }
 
-func saveFrame(ctx *proprietaryContext) error {
+func saveDownlinkFrames(ctx *proprietaryContext) error {
 	for _, df := range ctx.DownlinkFrames {
-		if err := storage.SaveDownlinkFrames(ctx.ctx, storage.DownlinkFrames{
-			Token:          df.Token,
-			DownlinkFrames: []*gw.DownlinkFrame{&df},
+		if err := storage.SaveDownlinkFrame(ctx.ctx, storage.DownlinkFrame{
+			Token:         df.Token,
+			DownlinkFrame: &df,
 		}); err != nil {
-			return errors.Wrap(err, "save downlink-frames error")
+			return errors.Wrap(err, "save downlink-frame error")
 		}
 	}
 

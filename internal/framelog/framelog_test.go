@@ -11,6 +11,7 @@ import (
 
 	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
+	"github.com/brocaar/chirpstack-api/go/v3/ns"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
@@ -54,7 +55,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 	ts.T().Run("LogUplinkFrameForGateways", func(t *testing.T) {
 		assert := require.New(t)
 
-		uplinkFrameSet := gw.UplinkFrameSet{
+		uplinkFrameLog := ns.UplinkFrameLog{
 			PhyPayload: []byte{1, 2, 3, 4},
 			TxInfo: &gw.UplinkTXInfo{
 				Frequency:  868100000,
@@ -72,25 +73,24 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 				},
 			},
 		}
-		assert.NoError(LogUplinkFrameForGateways(ctx, uplinkFrameSet))
+		assert.NoError(LogUplinkFrameForGateways(ctx, uplinkFrameLog))
 		frameLog := <-logChannel
-		assert.True(proto.Equal(&uplinkFrameSet, frameLog.UplinkFrame))
+		assert.True(proto.Equal(&uplinkFrameLog, frameLog.UplinkFrame))
 	})
 
 	ts.T().Run("LogDownlinkFrameForGateway", func(t *testing.T) {
 		assert := require.New(t)
-		downlinkFrame := gw.DownlinkFrame{
+		downlinkFrameLog := ns.DownlinkFrameLog{
+			GatewayId:  ts.GatewayID[:],
 			PhyPayload: []byte{1, 2, 3, 4},
-			TxInfo: &gw.DownlinkTXInfo{
-				GatewayId: ts.GatewayID[:],
-			},
+			TxInfo:     &gw.DownlinkTXInfo{},
 		}
 
-		assert.NoError(LogDownlinkFrameForGateway(ctx, downlinkFrame))
-		downlinkFrame.TxInfo.XXX_sizecache = 0
+		assert.NoError(LogDownlinkFrameForGateway(ctx, downlinkFrameLog))
+		downlinkFrameLog.TxInfo.XXX_sizecache = 0
 
 		assert.Equal(FrameLog{
-			DownlinkFrame: &downlinkFrame,
+			DownlinkFrame: &downlinkFrameLog,
 		}, <-logChannel)
 	})
 }
@@ -113,7 +113,7 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 	ts.T().Run("LogUplinkFrameForDevEUI", func(t *testing.T) {
 		assert := require.New(t)
 
-		uplinkFrameSet := gw.UplinkFrameSet{
+		uplinkFrameLog := ns.UplinkFrameLog{
 			PhyPayload: []byte{1, 2, 3, 4},
 			TxInfo: &gw.UplinkTXInfo{
 				Frequency:  868100000,
@@ -132,26 +132,25 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 			},
 		}
 
-		assert.NoError(LogUplinkFrameForDevEUI(ctx, ts.DevEUI, uplinkFrameSet))
+		assert.NoError(LogUplinkFrameForDevEUI(ctx, ts.DevEUI, uplinkFrameLog))
 		frameLog := <-logChannel
-		assert.True(proto.Equal(frameLog.UplinkFrame, &uplinkFrameSet))
+		assert.True(proto.Equal(frameLog.UplinkFrame, &uplinkFrameLog))
 	})
 
 	ts.T().Run("LogDownlinkFrameForDevEUI", func(t *testing.T) {
 		assert := require.New(t)
 
-		downlinkFrame := gw.DownlinkFrame{
+		downlinkFrameLog := ns.DownlinkFrameLog{
 			PhyPayload: []byte{1, 2, 3, 4},
-			TxInfo: &gw.DownlinkTXInfo{
-				GatewayId: ts.GatewayID[:],
-			},
+			GatewayId:  ts.GatewayID[:],
+			TxInfo:     &gw.DownlinkTXInfo{},
 		}
 
-		assert.NoError(LogDownlinkFrameForDevEUI(ctx, ts.DevEUI, downlinkFrame))
-		downlinkFrame.TxInfo.XXX_sizecache = 0
+		assert.NoError(LogDownlinkFrameForDevEUI(ctx, ts.DevEUI, downlinkFrameLog))
+		downlinkFrameLog.TxInfo.XXX_sizecache = 0
 
 		assert.Equal(FrameLog{
-			DownlinkFrame: &downlinkFrame,
+			DownlinkFrame: &downlinkFrameLog,
 		}, <-logChannel)
 	})
 }

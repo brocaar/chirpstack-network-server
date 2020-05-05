@@ -29,11 +29,12 @@ var (
 
 var tasks = []func(*joinContext) error{
 	setDeviceGatewayRXInfo,
+	selectDownlinkGateway,
 	setTXInfo,
 	setToken,
 	setDownlinkFrame,
 	sendJoinAcceptResponse,
-	saveFrames,
+	saveDownlinkFrame,
 }
 
 type joinContext struct {
@@ -44,12 +45,8 @@ type joinContext struct {
 	DeviceGatewayRXInfo []storage.DeviceGatewayRXInfo
 	RXPacket            models.RXPacket
 	PHYPayload          lorawan.PHYPayload
-
-	// Downlink frames to be emitted (this can be a slice e.g. to first try
-	// using RX1 parameters, failing that RX2 parameters).
-	// Only the first item will be emitted, the other(s) will be enqueued
-	// and emitted on a scheduling error.
-	DownlinkFrames []gw.DownlinkFrame
+	DownlinkGateway     storage.DeviceGatewayRXInfo
+	DownlinkFrame       gw.DownlinkFrame
 }
 
 // Setup sets up the join handler.
@@ -100,6 +97,18 @@ func setDeviceGatewayRXInfo(ctx *joinContext) error {
 	return nil
 }
 
+func selectDownlinkGateway(ctx *joinContext) error {
+	var err error
+	ctx.DownlinkGateway, err = dwngateway.SelectDownlinkGateway(gatewayPreferMinMargin, ctx.RXPacket.DR, ctx.DeviceGatewayRXInfo)
+	if err != nil {
+		return err
+	}
+
+	ctx.DownlinkFrame.GatewayId = ctx.DownlinkGateway.GatewayID[:]
+
+	return nil
+}
+
 func setTXInfo(ctx *joinContext) error {
 	if rxWindow == 0 || rxWindow == 1 {
 		if err := setTXInfoForRX1(ctx); err != nil {
@@ -117,16 +126,10 @@ func setTXInfo(ctx *joinContext) error {
 }
 
 func setTXInfoForRX1(ctx *joinContext) error {
-	rxInfo, err := dwngateway.SelectDownlinkGateway(gatewayPreferMinMargin, ctx.RXPacket.DR, ctx.DeviceGatewayRXInfo)
-	if err != nil {
-		return err
-	}
-
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: rxInfo.GatewayID[:],
-		Board:     rxInfo.Board,
-		Antenna:   rxInfo.Antenna,
-		Context:   rxInfo.Context,
+		Board:   ctx.DownlinkGateway.Board,
+		Antenna: ctx.DownlinkGateway.Antenna,
+		Context: ctx.DownlinkGateway.Context,
 	}
 
 	// get RX1 data-rate
@@ -163,7 +166,8 @@ func setTXInfoForRX1(ctx *joinContext) error {
 		},
 	}
 
-	ctx.DownlinkFrames = append(ctx.DownlinkFrames, gw.DownlinkFrame{
+	// set downlink item
+	ctx.DownlinkFrame.Items = append(ctx.DownlinkFrame.Items, &gw.DownlinkFrameItem{
 		TxInfo: &txInfo,
 	})
 
@@ -171,21 +175,15 @@ func setTXInfoForRX1(ctx *joinContext) error {
 }
 
 func setTXInfoForRX2(ctx *joinContext) error {
-	rxInfo, err := dwngateway.SelectDownlinkGateway(gatewayPreferMinMargin, ctx.RXPacket.DR, ctx.DeviceGatewayRXInfo)
-	if err != nil {
-		return err
-	}
-
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: rxInfo.GatewayID[:],
-		Board:     rxInfo.Board,
-		Antenna:   rxInfo.Antenna,
+		Board:     ctx.DownlinkGateway.Board,
+		Antenna:   ctx.DownlinkGateway.Antenna,
 		Frequency: uint32(band.Band().GetDefaults().RX2Frequency),
-		Context:   rxInfo.Context,
+		Context:   ctx.DownlinkGateway.Context,
 	}
 
 	// set data-rate
-	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, band.Band().GetDefaults().RX2DataRate, band.Band())
+	err := helpers.SetDownlinkTXInfoDataRate(&txInfo, band.Band().GetDefaults().RX2DataRate, band.Band())
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
@@ -205,7 +203,7 @@ func setTXInfoForRX2(ctx *joinContext) error {
 		},
 	}
 
-	ctx.DownlinkFrames = append(ctx.DownlinkFrames, gw.DownlinkFrame{
+	ctx.DownlinkFrame.Items = append(ctx.DownlinkFrame.Items, &gw.DownlinkFrameItem{
 		TxInfo: &txInfo,
 	})
 
@@ -226,10 +224,9 @@ func setToken(ctx *joinContext) error {
 		}
 	}
 
-	for i := range ctx.DownlinkFrames {
-		ctx.DownlinkFrames[i].Token = uint32(binary.BigEndian.Uint16(b))
-		ctx.DownlinkFrames[i].DownlinkId = downID[:]
-	}
+	ctx.DownlinkFrame.Token = uint32(binary.BigEndian.Uint16(b))
+	ctx.DownlinkFrame.DownlinkId = downID[:]
+
 	return nil
 }
 
@@ -239,19 +236,15 @@ func setDownlinkFrame(ctx *joinContext) error {
 		return errors.Wrap(err, "marshal phypayload error")
 	}
 
-	for i := range ctx.DownlinkFrames {
-		ctx.DownlinkFrames[i].PhyPayload = phyB
+	for i := range ctx.DownlinkFrame.Items {
+		ctx.DownlinkFrame.Items[i].PhyPayload = phyB
 	}
 
 	return nil
 }
 
 func sendJoinAcceptResponse(ctx *joinContext) error {
-	if len(ctx.DownlinkFrames) == 0 {
-		return nil
-	}
-
-	err := gateway.Backend().SendTXPacket(ctx.DownlinkFrames[0])
+	err := gateway.Backend().SendTXPacket(ctx.DownlinkFrame)
 	if err != nil {
 		return errors.Wrap(err, "send downlink frame error")
 	}
@@ -259,18 +252,15 @@ func sendJoinAcceptResponse(ctx *joinContext) error {
 	return nil
 }
 
-func saveFrames(ctx *joinContext) error {
-	df := storage.DownlinkFrames{
-		DevEui: ctx.DeviceSession.DevEUI[:],
+func saveDownlinkFrame(ctx *joinContext) error {
+	df := storage.DownlinkFrame{
+		DevEui:        ctx.DeviceSession.DevEUI[:],
+		Token:         ctx.DownlinkFrame.Token,
+		DownlinkFrame: &ctx.DownlinkFrame,
 	}
 
-	for i := range ctx.DownlinkFrames {
-		df.Token = ctx.DownlinkFrames[i].Token
-		df.DownlinkFrames = append(df.DownlinkFrames, &ctx.DownlinkFrames[i])
-	}
-
-	if err := storage.SaveDownlinkFrames(ctx.ctx, df); err != nil {
-		return errors.Wrap(err, "save downlink-frames error")
+	if err := storage.SaveDownlinkFrame(ctx.ctx, df); err != nil {
+		return errors.Wrap(err, "save downlink-frame error")
 	}
 
 	return nil

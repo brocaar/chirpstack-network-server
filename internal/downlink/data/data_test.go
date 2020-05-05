@@ -94,7 +94,7 @@ func (ts *GetNextDeviceQueueItemTestSuite) TestGetNextDeviceQueueItem() {
 					DevEUI:           ts.Device.DevEUI,
 					NFCntDown:        12,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 242,
 					},
@@ -106,7 +106,7 @@ func (ts *GetNextDeviceQueueItemTestSuite) TestGetNextDeviceQueueItem() {
 					DevEUI:           ts.Device.DevEUI,
 					NFCntDown:        12,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 242,
 					},
@@ -136,7 +136,7 @@ func (ts *GetNextDeviceQueueItemTestSuite) TestGetNextDeviceQueueItem() {
 					DevEUI:           ts.Device.DevEUI,
 					NFCntDown:        10,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 242,
 					},
@@ -151,7 +151,7 @@ func (ts *GetNextDeviceQueueItemTestSuite) TestGetNextDeviceQueueItem() {
 				Data:     []byte{1, 2, 3, 4},
 				FPort:    1,
 				MoreData: true,
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 242 - 4,
 					},
@@ -190,7 +190,7 @@ func (ts *GetNextDeviceQueueItemTestSuite) TestGetNextDeviceQueueItem() {
 					DevEUI:           ts.Device.DevEUI,
 					NFCntDown:        11, // so the first one is skipped
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 242,
 					},
@@ -206,7 +206,7 @@ func (ts *GetNextDeviceQueueItemTestSuite) TestGetNextDeviceQueueItem() {
 				Data:      []byte{4, 5, 6, 7},
 				FPort:     1,
 				Confirmed: true,
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 242 - 4,
 					},
@@ -291,7 +291,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 					NbTrans:               2,
 					RX2Frequency:          869525000,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -332,7 +332,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 						lorawan.LinkADRReq: 4, // 3 is the default max
 					},
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -354,7 +354,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 					},
 					RX2Frequency: 869525000,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -390,7 +390,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 					EnabledUplinkChannels: []int{0, 1, 2},
 					RX2Frequency:          869525000,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -428,7 +428,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 					EnabledUplinkChannels: []int{0, 1, 2},
 					RX2Frequency:          869525000,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -466,7 +466,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 					TXPowerIndex: 3,
 					RX2Frequency: 869525000,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -504,7 +504,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 					EnabledUplinkChannels: []int{0, 1, 2},
 					RX2Frequency:          869525000,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -566,7 +566,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 					},
 					RX2Frequency: 869525000,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -617,7 +617,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 					RX2DR:                 1,
 					RX1DROffset:           0,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -657,7 +657,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 					RX2Frequency:          869525000,
 					RXDelay:               1,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -702,7 +702,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 					},
 					RX2Frequency: 869525000,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -746,7 +746,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 					RX2Frequency:          869525000,
 					MACVersion:            "1.1.0",
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -788,7 +788,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 					RX2Frequency:          869525000,
 					MACVersion:            "1.0.2",
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -818,7 +818,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 					RejoinRequestMaxCountN: 1,
 					RejoinRequestMaxTimeN:  2,
 				},
-				DownlinkFrames: []downlinkFrame{
+				DownlinkFrameItems: []downlinkFrameItem{
 					{
 						RemainingPayloadSize: 200,
 					},
@@ -1210,7 +1210,6 @@ func TestSetDataTXInfo(t *testing.T) {
 			DownlinkTXPower: -1,
 			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
 				{
-					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1245,7 +1244,6 @@ func TestSetDataTXInfo(t *testing.T) {
 			DownlinkTXPower: -1,
 			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
 				{
-					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 					Frequency:  869525000,
 					Power:      27,
 					Modulation: common.Modulation_LORA,
@@ -1281,7 +1279,6 @@ func TestSetDataTXInfo(t *testing.T) {
 			DownlinkTXPower:    -1,
 			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
 				{
-					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1303,7 +1300,6 @@ func TestSetDataTXInfo(t *testing.T) {
 					},
 				},
 				{
-					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 					Frequency:  869525000,
 					Power:      27,
 					Modulation: common.Modulation_LORA,
@@ -1339,7 +1335,6 @@ func TestSetDataTXInfo(t *testing.T) {
 			DownlinkTXPower:    -1,
 			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
 				{
-					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 					Frequency:  869525000,
 					Power:      27,
 					Modulation: common.Modulation_LORA,
@@ -1361,7 +1356,6 @@ func TestSetDataTXInfo(t *testing.T) {
 					},
 				},
 				{
-					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1397,7 +1391,6 @@ func TestSetDataTXInfo(t *testing.T) {
 			DownlinkTXPower:       14,
 			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
 				{
-					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1419,7 +1412,6 @@ func TestSetDataTXInfo(t *testing.T) {
 					},
 				},
 				{
-					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 					Frequency:  869525000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1455,7 +1447,6 @@ func TestSetDataTXInfo(t *testing.T) {
 			DownlinkTXPower:       14,
 			ExpectedDownlinkTXInfo: []*gw.DownlinkTXInfo{
 				{
-					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 					Frequency:  869525000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1477,7 +1468,6 @@ func TestSetDataTXInfo(t *testing.T) {
 					},
 				},
 				{
-					GatewayId:  []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1527,8 +1517,8 @@ func TestSetDataTXInfo(t *testing.T) {
 			assert.NoError(setDataTXInfo(&ctx))
 
 			var txInfo []*gw.DownlinkTXInfo
-			for i := range ctx.DownlinkFrames {
-				txInfo = append(txInfo, ctx.DownlinkFrames[i].DownlinkFrame.TxInfo)
+			for i := range ctx.DownlinkFrameItems {
+				txInfo = append(txInfo, ctx.DownlinkFrameItems[i].DownlinkFrameItem.TxInfo)
 			}
 
 			assert.EqualValues(tst.ExpectedDownlinkTXInfo, txInfo)

@@ -102,6 +102,7 @@ var responseTasks = []func(*dataContext) error{
 	getDeviceProfile,
 	getServiceProfile,
 	setDeviceGatewayRXInfo,
+	selectDownlinkGateway,
 	setDataTXInfo,
 	setToken,
 	getNextDeviceQueueItem,
@@ -110,7 +111,7 @@ var responseTasks = []func(*dataContext) error{
 	setPHYPayloads,
 	sendDownlinkFrame,
 	saveDeviceSession,
-	saveFrames,
+	saveDownlinkFrame,
 }
 
 var scheduleNextQueueItemTasks = []func(*dataContext) error{
@@ -118,6 +119,7 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	getServiceProfile,
 	checkLastDownlinkTimestamp,
 	setDeviceGatewayRXInfo,
+	selectDownlinkGateway,
 	forClass(storage.DeviceModeC,
 		setImmediately,
 		setTXInfoForRX2,
@@ -135,7 +137,7 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	setPHYPayloads,
 	sendDownlinkFrame,
 	saveDeviceSession,
-	saveFrames,
+	saveDownlinkFrame,
 }
 
 // Setup configures the package.
@@ -233,16 +235,20 @@ type dataContext struct {
 	// total size fits within the FRMPayload or FOpts.
 	MACCommands []storage.MACCommandBlock
 
-	// Downlink frames to be emitted (this can be a slice e.g. to first try
-	// using RX1 parameters, failing that RX2 parameters).
-	// Only the first item will be emitted, the other(s) will be enqueued
-	// and emitted on a scheduling error.
-	DownlinkFrames []downlinkFrame
+	// Downlink frame.
+	DownlinkFrame gw.DownlinkFrame
+
+	// Downlink frame items. This can be multiple items so that failing the
+	// first one, there can be a retry with the next item.
+	DownlinkFrameItems []downlinkFrameItem
+
+	// Gateway to use for downlink.
+	DownlinkGateway storage.DeviceGatewayRXInfo
 }
 
-type downlinkFrame struct {
-	// Downlink frame
-	DownlinkFrame gw.DownlinkFrame
+type downlinkFrameItem struct {
+	// Downlink frame item
+	DownlinkFrameItem gw.DownlinkFrameItem
 
 	// The remaining payload size which can be used for mac-commands and / or
 	// FRMPayload.
@@ -328,10 +334,9 @@ func setToken(ctx *dataContext) error {
 
 	// We use the downID bytes for the token so that with either the Token
 	// as the DownlinkID value from the ACK, we can retrieve the pending items.
-	for i := range ctx.DownlinkFrames {
-		ctx.DownlinkFrames[i].DownlinkFrame.Token = uint32(binary.BigEndian.Uint16(downID[0:2]))
-		ctx.DownlinkFrames[i].DownlinkFrame.DownlinkId = downID[:]
-	}
+	ctx.DownlinkFrame.Token = uint32(binary.BigEndian.Uint16(downID[0:2]))
+	ctx.DownlinkFrame.DownlinkId = downID[:]
+
 	return nil
 }
 
@@ -495,6 +500,18 @@ func preferRX2LinkBudget(ctx *dataContext) (b bool, err error) {
 	return linkBudgetRX2 > linkBudgetRX1, nil
 }
 
+func selectDownlinkGateway(ctx *dataContext) error {
+	var err error
+	ctx.DownlinkGateway, err = dwngateway.SelectDownlinkGateway(gatewayPreferMinMargin, ctx.DeviceSession.DR, ctx.DeviceGatewayRXInfo)
+	if err != nil {
+		return err
+	}
+
+	ctx.DownlinkFrame.GatewayId = ctx.DownlinkGateway.GatewayID[:]
+
+	return nil
+}
+
 func setDataTXInfo(ctx *dataContext) error {
 	preferRX2overRX1, err := preferRX2DR(ctx)
 	if err != nil {
@@ -540,16 +557,10 @@ func setDataTXInfo(ctx *dataContext) error {
 }
 
 func setTXInfoForRX1(ctx *dataContext) error {
-	rxInfo, err := dwngateway.SelectDownlinkGateway(gatewayPreferMinMargin, ctx.DeviceSession.DR, ctx.DeviceGatewayRXInfo)
-	if err != nil {
-		return err
-	}
-
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: rxInfo.GatewayID[:],
-		Board:     rxInfo.Board,
-		Antenna:   rxInfo.Antenna,
-		Context:   rxInfo.Context,
+		Board:   ctx.DownlinkGateway.Board,
+		Antenna: ctx.DownlinkGateway.Antenna,
+		Context: ctx.DownlinkGateway.Context,
 	}
 
 	rx1DR, err := band.Band().GetRX1DataRateIndex(ctx.DeviceSession.DR, int(ctx.DeviceSession.RX1DROffset))
@@ -594,8 +605,8 @@ func setTXInfoForRX1(ctx *dataContext) error {
 		return errors.Wrap(err, "get max-payload size error")
 	}
 
-	ctx.DownlinkFrames = append(ctx.DownlinkFrames, downlinkFrame{
-		DownlinkFrame: gw.DownlinkFrame{
+	ctx.DownlinkFrameItems = append(ctx.DownlinkFrameItems, downlinkFrameItem{
+		DownlinkFrameItem: gw.DownlinkFrameItem{
 			TxInfo: &txInfo,
 		},
 		RemainingPayloadSize: plSize.N,
@@ -610,21 +621,15 @@ func setImmediately(ctx *dataContext) error {
 }
 
 func setTXInfoForRX2(ctx *dataContext) error {
-	rxInfo, err := dwngateway.SelectDownlinkGateway(gatewayPreferMinMargin, ctx.DeviceSession.DR, ctx.DeviceGatewayRXInfo)
-	if err != nil {
-		return err
-	}
-
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: rxInfo.GatewayID[:],
-		Board:     rxInfo.Board,
-		Antenna:   rxInfo.Antenna,
+		Board:     ctx.DownlinkGateway.Board,
+		Antenna:   ctx.DownlinkGateway.Antenna,
 		Frequency: uint32(ctx.DeviceSession.RX2Frequency),
-		Context:   rxInfo.Context,
+		Context:   ctx.DownlinkGateway.Context,
 	}
 
 	// get data-rate
-	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, int(ctx.DeviceSession.RX2DR), band.Band())
+	err := helpers.SetDownlinkTXInfoDataRate(&txInfo, int(ctx.DeviceSession.RX2DR), band.Band())
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
@@ -663,8 +668,8 @@ func setTXInfoForRX2(ctx *dataContext) error {
 		return errors.Wrap(err, "get max-payload size error")
 	}
 
-	ctx.DownlinkFrames = append(ctx.DownlinkFrames, downlinkFrame{
-		DownlinkFrame: gw.DownlinkFrame{
+	ctx.DownlinkFrameItems = append(ctx.DownlinkFrameItems, downlinkFrameItem{
+		DownlinkFrameItem: gw.DownlinkFrameItem{
 			TxInfo: &txInfo,
 		},
 		RemainingPayloadSize: plSize.N,
@@ -674,21 +679,15 @@ func setTXInfoForRX2(ctx *dataContext) error {
 }
 
 func setTXInfoForClassB(ctx *dataContext) error {
-	rxInfo, err := dwngateway.SelectDownlinkGateway(gatewayPreferMinMargin, ctx.DeviceSession.DR, ctx.DeviceGatewayRXInfo)
-	if err != nil {
-		return err
-	}
-
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: rxInfo.GatewayID[:],
-		Board:     rxInfo.Board,
-		Antenna:   rxInfo.Antenna,
+		Board:     ctx.DownlinkGateway.Board,
+		Antenna:   ctx.DownlinkGateway.Antenna,
 		Frequency: uint32(ctx.DeviceSession.PingSlotFrequency),
-		Context:   rxInfo.Context,
+		Context:   ctx.DownlinkGateway.Context,
 	}
 
 	// get data-rate
-	err = helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.DeviceSession.PingSlotDR, band.Band())
+	err := helpers.SetDownlinkTXInfoDataRate(&txInfo, ctx.DeviceSession.PingSlotDR, band.Band())
 	if err != nil {
 		return errors.Wrap(err, "set downlink tx-info data-rate error")
 	}
@@ -706,8 +705,8 @@ func setTXInfoForClassB(ctx *dataContext) error {
 		return errors.Wrap(err, "get max-payload size error")
 	}
 
-	ctx.DownlinkFrames = append(ctx.DownlinkFrames, downlinkFrame{
-		DownlinkFrame: gw.DownlinkFrame{
+	ctx.DownlinkFrameItems = append(ctx.DownlinkFrameItems, downlinkFrameItem{
+		DownlinkFrameItem: gw.DownlinkFrameItem{
 			TxInfo: &txInfo,
 		},
 		RemainingPayloadSize: plSize.N,
@@ -727,8 +726,8 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 	// the first downlink opportunity will be used to decide the
 	// max payload size
 	var remainingPayloadSize int
-	if len(ctx.DownlinkFrames) > 0 {
-		remainingPayloadSize = ctx.DownlinkFrames[0].RemainingPayloadSize
+	if len(ctx.DownlinkFrameItems) > 0 {
+		remainingPayloadSize = ctx.DownlinkFrameItems[0].RemainingPayloadSize
 	}
 
 	qi, err := storage.GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(ctx.ctx, storage.DB(), ctx.DeviceSession.DevEUI, remainingPayloadSize, fCnt, ctx.DeviceSession.RoutingProfileID)
@@ -743,8 +742,8 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 	ctx.Data = qi.FRMPayload
 	ctx.FPort = qi.FPort
 
-	for i := range ctx.DownlinkFrames {
-		ctx.DownlinkFrames[i].RemainingPayloadSize = ctx.DownlinkFrames[i].RemainingPayloadSize - len(ctx.Data)
+	for i := range ctx.DownlinkFrameItems {
+		ctx.DownlinkFrameItems[i].RemainingPayloadSize = ctx.DownlinkFrameItems[i].RemainingPayloadSize - len(ctx.Data)
 	}
 
 	items, err := storage.GetDeviceQueueItemsForDevEUI(ctx.ctx, storage.DB(), ctx.DeviceSession.DevEUI)
@@ -764,9 +763,9 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 	}
 
 	// Update TXInfo with Class-B scheduling info
-	if ctx.RXPacket == nil && qi.EmitAtTimeSinceGPSEpoch != nil && len(ctx.DownlinkFrames) == 1 {
-		ctx.DownlinkFrames[0].DownlinkFrame.TxInfo.Timing = gw.DownlinkTiming_GPS_EPOCH
-		ctx.DownlinkFrames[0].DownlinkFrame.TxInfo.TimingInfo = &gw.DownlinkTXInfo_GpsEpochTimingInfo{
+	if ctx.RXPacket == nil && qi.EmitAtTimeSinceGPSEpoch != nil && len(ctx.DownlinkFrameItems) == 1 {
+		ctx.DownlinkFrameItems[0].DownlinkFrameItem.TxInfo.Timing = gw.DownlinkTiming_GPS_EPOCH
+		ctx.DownlinkFrameItems[0].DownlinkFrameItem.TxInfo.TimingInfo = &gw.DownlinkTXInfo_GpsEpochTimingInfo{
 			GpsEpochTimingInfo: &gw.GPSEpochTimingInfo{
 				TimeSinceGpsEpoch: ptypes.DurationProto(*qi.EmitAtTimeSinceGPSEpoch),
 			},
@@ -778,7 +777,7 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 			if err != nil {
 				return errors.Wrap(err, "get ping-slot frequency error")
 			}
-			ctx.DownlinkFrames[0].DownlinkFrame.TxInfo.Frequency = uint32(freq)
+			ctx.DownlinkFrameItems[0].DownlinkFrameItem.TxInfo.Frequency = uint32(freq)
 		}
 	}
 
@@ -870,8 +869,8 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 		ctx.MACCommands = filterIncompatibleMACCommands(ctx.MACCommands)
 
 		var remainingPayloadSize, remainingMACCommandSize int
-		if len(ctx.DownlinkFrames) > 0 {
-			remainingPayloadSize = ctx.DownlinkFrames[0].RemainingPayloadSize
+		if len(ctx.DownlinkFrameItems) > 0 {
+			remainingPayloadSize = ctx.DownlinkFrameItems[0].RemainingPayloadSize
 		}
 
 		if ctx.FPort > 0 {
@@ -1019,7 +1018,7 @@ func setPHYPayloads(ctx *dataContext) error {
 		ctx.DeviceSession.AFCntDown++
 	}
 
-	for i := range ctx.DownlinkFrames {
+	for i := range ctx.DownlinkFrameItems {
 		// LoRaWAN MAC payload
 		macPL := &lorawan.MACPayload{
 			FHDR: lorawan.FHDR{
@@ -1051,11 +1050,11 @@ func setPHYPayloads(ctx *dataContext) error {
 				return errors.Wrap(err, "get mac-command block size")
 			}
 
-			if ctx.DownlinkFrames[i].RemainingPayloadSize-s < 0 {
+			if ctx.DownlinkFrameItems[i].RemainingPayloadSize-s < 0 {
 				break
 			}
 
-			ctx.DownlinkFrames[i].RemainingPayloadSize = ctx.DownlinkFrames[i].RemainingPayloadSize - s
+			ctx.DownlinkFrameItems[i].RemainingPayloadSize = ctx.DownlinkFrameItems[i].RemainingPayloadSize - s
 			macCommandSize += s
 
 			for k := range ctx.MACCommands[j].MACCommands {
@@ -1111,19 +1110,20 @@ func setPHYPayloads(ctx *dataContext) error {
 			return errors.Wrap(err, "marshal binary error")
 		}
 
-		ctx.DownlinkFrames[i].DownlinkFrame.PhyPayload = b
+		ctx.DownlinkFrameItems[i].DownlinkFrameItem.PhyPayload = b
+		ctx.DownlinkFrame.Items = append(ctx.DownlinkFrame.Items, &ctx.DownlinkFrameItems[i].DownlinkFrameItem)
 	}
 
 	return nil
 }
 
 func sendDownlinkFrame(ctx *dataContext) error {
-	if len(ctx.DownlinkFrames) == 0 {
+	if len(ctx.DownlinkFrameItems) == 0 {
 		return nil
 	}
 
 	// send the packet to the gateway
-	if err := gateway.Backend().SendTXPacket(ctx.DownlinkFrames[0].DownlinkFrame); err != nil {
+	if err := gateway.Backend().SendTXPacket(ctx.DownlinkFrame); err != nil {
 		return errors.Wrap(err, "send downlink-frame to gateway error")
 	}
 
@@ -1205,7 +1205,7 @@ func checkLastDownlinkTimestamp(ctx *dataContext) error {
 	return nil
 }
 
-func saveFrames(ctx *dataContext) error {
+func saveDownlinkFrame(ctx *dataContext) error {
 	var fCnt uint32
 	if ctx.DeviceSession.GetMACVersion() == lorawan.LoRaWAN1_0 || ctx.FPort == 0 {
 		fCnt = ctx.DeviceSession.NFCntDown
@@ -1215,21 +1215,17 @@ func saveFrames(ctx *dataContext) error {
 		ctx.DeviceSession.AFCntDown++
 	}
 
-	df := storage.DownlinkFrames{
+	df := storage.DownlinkFrame{
 		DevEui:           ctx.DeviceSession.DevEUI[:],
 		RoutingProfileId: ctx.DeviceSession.RoutingProfileID.Bytes(),
 		FCnt:             fCnt,
 		EncryptedFopts:   ctx.DeviceSession.GetMACVersion() != lorawan.LoRaWAN1_0,
 		NwkSEncKey:       ctx.DeviceSession.NwkSEncKey[:],
+		DownlinkFrame:    &ctx.DownlinkFrame,
 	}
 
-	for i := range ctx.DownlinkFrames {
-		df.Token = ctx.DownlinkFrames[i].DownlinkFrame.Token
-		df.DownlinkFrames = append(df.DownlinkFrames, &ctx.DownlinkFrames[i].DownlinkFrame)
-	}
-
-	if err := storage.SaveDownlinkFrames(ctx.ctx, df); err != nil {
-		return errors.Wrap(err, "save downlink-frames error")
+	if err := storage.SaveDownlinkFrame(ctx.ctx, df); err != nil {
+		return errors.Wrap(err, "save downlink-frame error")
 	}
 
 	return nil

@@ -159,12 +159,12 @@ func logRejoinRequestFramesCollected(ctx *rejoinContext) error {
 		gatewayIDs = append(gatewayIDs, helpers.GetGatewayID(p).String())
 	}
 
-	uplinkFrameSet, err := framelog.CreateUplinkFrameSet(ctx.RXPacket)
+	uplinkFrameLog, err := framelog.CreateUplinkFrameLog(ctx.RXPacket)
 	if err != nil {
 		return errors.Wrap(err, "create uplink frame-set error")
 	}
 
-	if err := framelog.LogUplinkFrameForDevEUI(ctx.ctx, ctx.DevEUI, uplinkFrameSet); err != nil {
+	if err := framelog.LogUplinkFrameForDevEUI(ctx.ctx, ctx.DevEUI, uplinkFrameLog); err != nil {
 		log.WithError(err).Error("log uplink frame for device error")
 	}
 

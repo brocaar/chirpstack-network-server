@@ -104,7 +104,8 @@ type Config struct {
 			}
 
 			Backend struct {
-				Type string `mapstructure:"type"`
+				Type                 string `mapstructure:"type"`
+				MultiDownlinkFeature string `mapstructure:"multi_downlink_feature"`
 
 				MQTT struct {
 					Server               string        `mapstructure:"server"`

@@ -86,9 +86,12 @@ func (ts *BackendTestSuite) TestDownlinkCommand() {
 	assert := require.New(ts.T())
 
 	pl := gw.DownlinkFrame{
-		PhyPayload: []byte{0x01, 0x02, 0x03, 0x04},
-		TxInfo: &gw.DownlinkTXInfo{
-			GatewayId: ts.gatewayID[:],
+		GatewayId: ts.gatewayID[:],
+		Items: []*gw.DownlinkFrameItem{
+			{
+				PhyPayload: []byte{0x01, 0x02, 0x03, 0x04},
+				TxInfo:     &gw.DownlinkTXInfo{},
+			},
 		},
 	}
 	assert.NoError(ts.backend.SendTXPacket(pl))

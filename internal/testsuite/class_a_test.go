@@ -594,8 +594,7 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 					Data:            []byte{1, 2, 3, 4},
 					ConfirmedUplink: true,
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -665,8 +664,7 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 					RxInfo:          []*gw.UplinkRXInfo{&ts.RXInfo},
 					ConfirmedUplink: true,
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -882,8 +880,7 @@ func (ts *ClassATestSuite) TestLW10RXDelay() {
 					RxInfo:          []*gw.UplinkRXInfo{&ts.RXInfo},
 					ConfirmedUplink: true,
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1081,8 +1078,7 @@ func (ts *ClassATestSuite) TestLW10MACCommands() {
 			Assert: []Assertion{
 				AssertFCntUp(11),
 				AssertNFCntDown(6),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1157,8 +1153,7 @@ func (ts *ClassATestSuite) TestLW10MACCommands() {
 			Assert: []Assertion{
 				AssertFCntUp(11),
 				AssertNFCntDown(6),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1224,8 +1219,7 @@ func (ts *ClassATestSuite) TestLW10MACCommands() {
 				MIC: lorawan.MIC{0xb6, 0x20, 0xd2, 0x14},
 			},
 			Assert: []Assertion{
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1400,8 +1394,7 @@ func (ts *ClassATestSuite) TestLW10MACCommandsDisabled() {
 				MIC: lorawan.MIC{0x7a, 0x98, 0x98, 0xdc},
 			},
 			Assert: []Assertion{
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1688,8 +1681,7 @@ func (ts *ClassATestSuite) TestLW11DeviceQueue() {
 					TxInfo:  &ts.TXInfo,
 					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1764,8 +1756,7 @@ func (ts *ClassATestSuite) TestLW11DeviceQueue() {
 					TxInfo:  &ts.TXInfo,
 					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1867,8 +1858,7 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 					TxInfo:  &ts.TXInfo,
 					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -1944,8 +1934,7 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 					TxInfo:  &ts.TXInfo,
 					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -2021,8 +2010,7 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 					TxInfo:  &ts.TXInfo,
 					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -2147,8 +2135,7 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 					TxInfo:  &ts.TXInfo,
 					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
 				}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -2238,8 +2225,7 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 			Assert: []Assertion{
 				AssertFCntUp(11),
 				AssertNFCntDown(6),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -2437,8 +2423,7 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 			Assert: []Assertion{
 				AssertFCntUp(11),
 				AssertNFCntDown(6),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -2500,8 +2485,7 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 			Assert: []Assertion{
 				AssertFCntUp(11),
 				AssertNFCntDown(6),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -2652,8 +2636,7 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 				AssertNFCntDown(6),
 				AssertEnabledUplinkChannels([]int{0, 1, 2, 3, 4, 5, 6, 7}),
 				AssertMACCommandErrorCount(lorawan.LinkADRAns, 1),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -2728,8 +2711,7 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 				AssertFCntUp(11),
 				AssertNFCntDown(6),
 				AssertEnabledUplinkChannels([]int{0, 1, 2, 3, 4, 5, 6, 7}),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -2838,8 +2820,7 @@ func (ts *ClassATestSuite) TestLW10DeviceStatusRequest() {
 			Assert: []Assertion{
 				AssertFCntUp(11),
 				AssertNFCntDown(6),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.RXInfo.GatewayId,
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -3046,8 +3027,7 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 			Assert: []Assertion{
 				AssertFCntUp(11),
 				AssertNFCntDown(5),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -3119,8 +3099,7 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 			Assert: []Assertion{
 				AssertFCntUp(11),
 				AssertNFCntDown(5),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  869525000,
 					Power:      27,
 					Modulation: common.Modulation_LORA,
@@ -3194,8 +3173,7 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 			Assert: []Assertion{
 				AssertFCntUp(11),
 				AssertNFCntDown(5),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  869525000,
 					Power:      27,
 					Modulation: common.Modulation_LORA,
@@ -3266,8 +3244,7 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 			Assert: []Assertion{
 				AssertFCntUp(11),
 				AssertNFCntDown(5),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -3304,8 +3281,7 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 					},
 					MIC: lorawan.MIC{0xc3, 0xe2, 0xfc, 0x50},
 				}),
-				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -3342,8 +3318,7 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 					},
 					MIC: lorawan.MIC{0xc3, 0xe2, 0xfc, 0x50},
 				}),
-				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					Frequency:  869525000,
 					Power:      27,
 					Modulation: common.Modulation_LORA,
@@ -3414,8 +3389,7 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 			Assert: []Assertion{
 				AssertFCntUp(11),
 				AssertNFCntDown(5),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -3452,8 +3426,7 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 					},
 					MIC: lorawan.MIC{0x6e, 0xc6, 0xc2, 0x7c},
 				}),
-				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -3534,8 +3507,7 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 			Assert: []Assertion{
 				AssertFCntUp(11),
 				AssertNFCntDown(5),
-				AssertDownlinkFrame(gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -3577,8 +3549,7 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 					},
 					MIC: lorawan.MIC{0x17, 0x4e, 0xc6, 0x6e},
 				}),
-				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					Frequency:  868100000,
 					Power:      14,
 					Modulation: common.Modulation_LORA,
@@ -3620,8 +3591,7 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 					},
 					MIC: lorawan.MIC{0x17, 0x4e, 0xc6, 0x6e},
 				}),
-				AssertDownlinkFrameSaved(ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					GatewayId:  ts.Gateway.GatewayID[:],
+				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
 					Frequency:  869525000,
 					Power:      27,
 					Modulation: common.Modulation_LORA,

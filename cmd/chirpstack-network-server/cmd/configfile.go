@@ -411,12 +411,12 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
     # after a preceeding downlink tx (per device).
     downlink_lock_duration="{{ .NetworkServer.Scheduler.ClassC.DownlinkLockDuration }}"
 
-	# Multicast gateway delay.
-	#
-	# In case of a multi-gateway multicast downlink, this delay will added to
-	# the transmission time of each downlink to avoid collisions between overlapping
-	# gateways.
-	multicast_gateway_delay="{{ .NetworkServer.Scheduler.ClassC.MulticastGatewayDelay }}"
+    # Multicast gateway delay.
+    #
+    # In case of a multi-gateway multicast downlink, this delay will added to
+    # the transmission time of each downlink to avoid collisions between overlapping
+    # gateways.
+    multicast_gateway_delay="{{ .NetworkServer.Scheduler.ClassC.MulticastGatewayDelay }}"
 
 
   # Network-server API
@@ -452,6 +452,28 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
     #  * gcp_pub_sub
     #  * azure_iot_hub
     type="{{ .NetworkServer.Gateway.Backend.Type }}"
+
+    # Multi-downlink feature flag.
+    #
+    # This controls the new multi downlink feature, in which the Chirpstack
+    # Network Server will send the downlink parameters for all possible
+    # receive windows to the ChirpStack Gateway Bridge, avoiding an additional
+    # roundtrip in case of a retry (e.g second receive window).
+    #
+    # Valid options are:
+    #  * hybrid     (default)
+    #  * multi_only (will become the default in next major release)
+    #  * legacy
+    #
+    # hybrid: Will send a downlink command in both the new (multi) format
+    # as the old format to the ChirpStack Gateway Bridge. Use this when
+    # not all ChirpStack Gateway Bridge instances are v3.9+.
+    #
+    # multi_only: Will send a downlink command only in the new (multi) format.
+    # This will not work with ChirpStack Gateway Bridge versions less than v3.9.
+    #
+    # legacy: Will send a downlink command only in the old format.
+    multi_downlink_feature="{{ .NetworkServer.Gateway.Backend.MultiDownlinkFeature }}"
 
 
     # MQTT gateway backend settings.

@@ -16,7 +16,6 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
-	"github.com/brocaar/chirpstack-network-server/internal/framelog"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
@@ -28,13 +27,11 @@ var errAbort = errors.New("")
 type multicastContext struct {
 	ctx context.Context
 
-	Token              uint16
 	DownlinkFrame      gw.DownlinkFrame
 	DB                 sqlx.Ext
 	MulticastGroup     storage.MulticastGroup
 	MulticastQueueItem storage.MulticastQueueItem
-	TXInfo             gw.DownlinkTXInfo
-	PHYPayload         lorawan.PHYPayload
+	DownlinkGateway    storage.DeviceGatewayRXInfo
 }
 
 var multicastTasks = []func(*multicastContext) error{
@@ -75,6 +72,9 @@ func HandleScheduleNextQueueItem(ctx context.Context, db sqlx.Ext, mg storage.Mu
 		ctx:            ctx,
 		DB:             db,
 		MulticastGroup: mg,
+		DownlinkFrame: gw.DownlinkFrame{
+			Items: make([]*gw.DownlinkFrameItem, 1),
+		},
 	}
 
 	for _, t := range multicastTasks {
@@ -95,6 +95,9 @@ func HandleScheduleQueueItem(ctx context.Context, db sqlx.Ext, qi storage.Multic
 		ctx:                ctx,
 		DB:                 db,
 		MulticastQueueItem: qi,
+		DownlinkFrame: gw.DownlinkFrame{
+			Items: make([]*gw.DownlinkFrameItem, 1),
+		},
 	}
 
 	for _, t := range multicastTasks {
@@ -125,7 +128,17 @@ func setToken(ctx *multicastContext) error {
 	if err != nil {
 		return errors.Wrap(err, "read random error")
 	}
-	ctx.Token = binary.BigEndian.Uint16(b)
+
+	var downID uuid.UUID
+	if ctxID := ctx.ctx.Value(logging.ContextIDKey); ctxID != nil {
+		if id, ok := ctxID.(uuid.UUID); ok {
+			downID = id
+		}
+	}
+
+	ctx.DownlinkFrame.Token = uint32(binary.BigEndian.Uint16(b))
+	ctx.DownlinkFrame.DownlinkId = downID[:]
+
 	return nil
 }
 
@@ -159,8 +172,9 @@ func validatePayloadSize(ctx *multicastContext) error {
 }
 
 func setTXInfo(ctx *multicastContext) error {
+	ctx.DownlinkFrame.GatewayId = ctx.MulticastQueueItem.GatewayID[:]
+
 	txInfo := gw.DownlinkTXInfo{
-		GatewayId: ctx.MulticastQueueItem.GatewayID[:],
 		Frequency: uint32(ctx.MulticastGroup.Frequency),
 	}
 
@@ -188,13 +202,15 @@ func setTXInfo(ctx *multicastContext) error {
 		txInfo.Power = int32(band.Band().GetDownlinkTXPower(ctx.MulticastGroup.Frequency))
 	}
 
-	ctx.TXInfo = txInfo
+	ctx.DownlinkFrame.Items[0] = &gw.DownlinkFrameItem{
+		TxInfo: &txInfo,
+	}
 
 	return nil
 }
 
 func setPHYPayload(ctx *multicastContext) error {
-	ctx.PHYPayload = lorawan.PHYPayload{
+	phy := lorawan.PHYPayload{
 		MHDR: lorawan.MHDR{
 			MType: lorawan.UnconfirmedDataDown,
 			Major: lorawan.LoRaWANR1,
@@ -211,52 +227,35 @@ func setPHYPayload(ctx *multicastContext) error {
 
 	// using LoRaWAN1_0 vs LoRaWAN1_1 only makes a difference when setting the
 	// confirmed frame-counter
-	if err := ctx.PHYPayload.SetDownlinkDataMIC(lorawan.LoRaWAN1_1, 0, ctx.MulticastGroup.MCNwkSKey); err != nil {
+	if err := phy.SetDownlinkDataMIC(lorawan.LoRaWAN1_1, 0, ctx.MulticastGroup.MCNwkSKey); err != nil {
 		return errors.Wrap(err, "set downlink data mic error")
 	}
+
+	phyB, err := phy.MarshalBinary()
+	if err != nil {
+		return errors.Wrap(err, "marshal phypayload error")
+	}
+	ctx.DownlinkFrame.Items[0].PhyPayload = phyB
 
 	return nil
 }
 
 func sendDownlinkData(ctx *multicastContext) error {
-	phyB, err := ctx.PHYPayload.MarshalBinary()
-	if err != nil {
-		return errors.Wrap(err, "marshal phypayload error")
-	}
-
-	var downID uuid.UUID
-	if ctxID := ctx.ctx.Value(logging.ContextIDKey); ctxID != nil {
-		if id, ok := ctxID.(uuid.UUID); ok {
-			downID = id
-		}
-	}
-
-	ctx.DownlinkFrame = gw.DownlinkFrame{
-		Token:      uint32(ctx.Token),
-		DownlinkId: downID[:],
-		TxInfo:     &ctx.TXInfo,
-		PhyPayload: phyB,
-	}
-
 	if err := gateway.Backend().SendTXPacket(ctx.DownlinkFrame); err != nil {
 		return errors.Wrap(err, "send downlink frame to gateway error")
-	}
-
-	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, ctx.DownlinkFrame); err != nil {
-		log.WithError(err).Error("log downlink frame for gateway error")
 	}
 
 	return nil
 }
 
 func saveDownlinkFrame(ctx *multicastContext) error {
-	df := storage.DownlinkFrames{
+	df := storage.DownlinkFrame{
 		MulticastGroupId: ctx.MulticastGroup.ID[:],
-		Token:            uint32(ctx.Token),
-		DownlinkFrames:   []*gw.DownlinkFrame{&ctx.DownlinkFrame},
+		Token:            uint32(ctx.DownlinkFrame.Token),
+		DownlinkFrame:    &ctx.DownlinkFrame,
 	}
 
-	if err := storage.SaveDownlinkFrames(ctx.ctx, df); err != nil {
+	if err := storage.SaveDownlinkFrame(ctx.ctx, df); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
 	}
 

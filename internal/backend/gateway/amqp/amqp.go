@@ -36,6 +36,7 @@ type Backend struct {
 
 	gatewayMarshalerMux sync.RWMutex
 	gatewayMarshaler    map[lorawan.EUI64]marshaler.Type
+	downMode            string
 }
 
 // NewBackend creates a new Backend.
@@ -50,6 +51,7 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 		uplinkFrameChan:   make(chan gw.UplinkFrame),
 		gatewayStatsChan:  make(chan gw.GatewayStats),
 		downlinkTXAckChan: make(chan gw.DownlinkTXAck),
+		downMode:          c.NetworkServer.Gateway.Backend.MultiDownlinkFeature,
 	}
 
 	log.Info("gateway/amqp: connecting to AMQP server")
@@ -73,13 +75,13 @@ func NewBackend(c config.Config) (gateway.Gateway, error) {
 }
 
 func (b *Backend) SendTXPacket(pl gw.DownlinkFrame) error {
-	if pl.TxInfo == nil {
-		return errors.New("tx_info must not be nil")
-	}
-
-	gatewayID := helpers.GetGatewayID(pl.TxInfo)
+	gatewayID := helpers.GetGatewayID(&pl)
 	downID := helpers.GetDownlinkID(&pl)
 	t := b.getGatewayMarshaler(gatewayID)
+
+	if err := gateway.UpdateDownlinkFrame(b.downMode, &pl); err != nil {
+		return errors.Wrap(err, "set downlink compatibility mode error")
+	}
 
 	bb, err := marshaler.MarshalDownlinkFrame(t, pl)
 	if err != nil {

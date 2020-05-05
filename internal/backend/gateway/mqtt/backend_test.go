@@ -135,18 +135,82 @@ func (ts *BackendTestSuite) TestSendDownlinkFrame() {
 	token.Wait()
 	assert.NoError(token.Error())
 
-	downlinkFrame := gw.DownlinkFrame{
-		PhyPayload: []byte{1, 2, 3, 4},
-		TxInfo: &gw.DownlinkTXInfo{
-			GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
-		},
-	}
-	assert.NoError(ts.backend.SendTXPacket(downlinkFrame))
-	downlinkFrame.TxInfo.XXX_sizecache = 0
-	downlinkFrame.XXX_sizecache = 0
+	ts.T().Run("hybrid", func(t *testing.T) {
+		assert := require.New(t)
+		ts.backend.(*Backend).downMode = "hybrid"
 
-	downlinkReceived := <-downlinkFrameChan
-	assert.EqualValues(downlinkFrame, downlinkReceived)
+		assert.NoError(ts.backend.SendTXPacket(gw.DownlinkFrame{
+			GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Items: []*gw.DownlinkFrameItem{
+				{
+					PhyPayload: []byte{1, 2, 3},
+					TxInfo:     &gw.DownlinkTXInfo{},
+				},
+			},
+		}))
+
+		downlink := <-downlinkFrameChan
+		proto.Equal(&downlink, &gw.DownlinkFrame{
+			GatewayId:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			PhyPayload: []byte{1, 2, 3},
+			TxInfo: &gw.DownlinkTXInfo{
+				GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			},
+			Items: []*gw.DownlinkFrameItem{
+				{
+					PhyPayload: []byte{1, 2, 3},
+				},
+			},
+		})
+	})
+
+	ts.T().Run("multi_only", func(t *testing.T) {
+		assert := require.New(t)
+		ts.backend.(*Backend).downMode = "multi_only"
+
+		assert.NoError(ts.backend.SendTXPacket(gw.DownlinkFrame{
+			GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Items: []*gw.DownlinkFrameItem{
+				{
+					PhyPayload: []byte{1, 2, 3},
+					TxInfo:     &gw.DownlinkTXInfo{},
+				},
+			},
+		}))
+
+		downlink := <-downlinkFrameChan
+		proto.Equal(&downlink, &gw.DownlinkFrame{
+			GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Items: []*gw.DownlinkFrameItem{
+				{
+					PhyPayload: []byte{1, 2, 3},
+				},
+			},
+		})
+	})
+
+	ts.T().Run("legacy", func(t *testing.T) {
+		assert := require.New(t)
+		ts.backend.(*Backend).downMode = "legacy"
+
+		assert.NoError(ts.backend.SendTXPacket(gw.DownlinkFrame{
+			GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			Items: []*gw.DownlinkFrameItem{
+				{
+					PhyPayload: []byte{1, 2, 3},
+					TxInfo:     &gw.DownlinkTXInfo{},
+				},
+			},
+		}))
+
+		downlink := <-downlinkFrameChan
+		proto.Equal(&downlink, &gw.DownlinkFrame{
+			PhyPayload: []byte{1, 2, 3},
+			TxInfo: &gw.DownlinkTXInfo{
+				GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			},
+		})
+	})
 }
 
 func (ts *BackendTestSuite) TestSendGatewayConfiguration() {

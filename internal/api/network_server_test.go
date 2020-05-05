@@ -84,10 +84,9 @@ func TestNetworkServerAPI(t *testing.T) {
 			}()
 
 			Convey("When logging a downlink gateway frame", func() {
-				So(framelog.LogDownlinkFrameForGateway(context.Background(), gw.DownlinkFrame{
-					TxInfo: &gw.DownlinkTXInfo{
-						GatewayId: mac[:],
-					},
+				So(framelog.LogDownlinkFrameForGateway(context.Background(), ns.DownlinkFrameLog{
+					GatewayId: mac[:],
+					TxInfo:    &gw.DownlinkTXInfo{},
 				}), ShouldBeNil)
 
 				Convey("Then the frame-log was received by the client", func() {
@@ -98,7 +97,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			})
 
 			Convey("When logging an uplink gateway frame", func() {
-				So(framelog.LogUplinkFrameForGateways(context.Background(), gw.UplinkFrameSet{
+				So(framelog.LogUplinkFrameForGateways(context.Background(), ns.UplinkFrameLog{
 					RxInfo: []*gw.UplinkRXInfo{
 						{
 							GatewayId: mac[:],
@@ -136,7 +135,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			}()
 
 			Convey("When logging a downlink device frame", func() {
-				So(framelog.LogDownlinkFrameForDevEUI(context.Background(), devEUI, gw.DownlinkFrame{}), ShouldBeNil)
+				So(framelog.LogDownlinkFrameForDevEUI(context.Background(), devEUI, ns.DownlinkFrameLog{}), ShouldBeNil)
 
 				Convey("Then the frame-log was received by the client", func() {
 					resp := <-respChan
@@ -146,7 +145,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			})
 
 			Convey("When logging an uplink device frame", func() {
-				So(framelog.LogUplinkFrameForDevEUI(context.Background(), devEUI, gw.UplinkFrameSet{}), ShouldBeNil)
+				So(framelog.LogUplinkFrameForDevEUI(context.Background(), devEUI, ns.UplinkFrameLog{}), ShouldBeNil)
 
 				Convey("Then the frame-log was received by the client", func() {
 					resp := <-respChan

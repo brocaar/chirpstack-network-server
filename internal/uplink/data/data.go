@@ -175,12 +175,12 @@ func getDeviceSessionForPHYPayload(ctx *dataContext) error {
 }
 
 func logUplinkFrame(ctx *dataContext) error {
-	uplinkFrameSet, err := framelog.CreateUplinkFrameSet(ctx.RXPacket)
+	uplinkFrameLog, err := framelog.CreateUplinkFrameLog(ctx.RXPacket)
 	if err != nil {
 		return errors.Wrap(err, "create uplink frame-log error")
 	}
 
-	if err := framelog.LogUplinkFrameForDevEUI(ctx.ctx, ctx.DeviceSession.DevEUI, uplinkFrameSet); err != nil {
+	if err := framelog.LogUplinkFrameForDevEUI(ctx.ctx, ctx.DeviceSession.DevEUI, uplinkFrameLog); err != nil {
 		log.WithError(err).Error("log uplink frame for device error")
 	}
 

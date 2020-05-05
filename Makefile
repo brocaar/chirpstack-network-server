@@ -39,7 +39,7 @@ api:
 	@echo "Fetching Protobuf API files"
 	@rm -rf /tmp/chirpstack-api
 	@git clone https://github.com/brocaar/chirpstack-api.git /tmp/chirpstack-api
-	@git --git-dir=/tmp/chirpstack-api/.git --work-tree=/tmp/chirpstack-api checkout $(API_VERSION)
+	@git --git-dir=/tmp/chirpstack-api/.git --work-tree=/tmp/chirpstack-api checkout go/$(API_VERSION)
 
 	@echo "Generating API code from .proto files"
 	go generate internal/storage/device_session.go

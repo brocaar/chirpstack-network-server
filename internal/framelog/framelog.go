@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
+	"github.com/brocaar/chirpstack-api/go/v3/ns"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
@@ -23,21 +24,21 @@ const (
 
 // FrameLog contains either an uplink or downlink frame.
 type FrameLog struct {
-	UplinkFrame   *gw.UplinkFrameSet
-	DownlinkFrame *gw.DownlinkFrame
+	UplinkFrame   *ns.UplinkFrameLog
+	DownlinkFrame *ns.DownlinkFrameLog
 }
 
 // LogUplinkFrameForGateways logs the given frame to all the gateway pub-sub keys.
-func LogUplinkFrameForGateways(ctx context.Context, uplinkFrameSet gw.UplinkFrameSet) error {
+func LogUplinkFrameForGateways(ctx context.Context, frame ns.UplinkFrameLog) error {
 	pipe := storage.RedisClient().Pipeline()
 
-	for _, rx := range uplinkFrameSet.RxInfo {
+	for _, rx := range frame.RxInfo {
 		var id lorawan.EUI64
 		copy(id[:], rx.GatewayId)
 
 		frameLog := gw.UplinkFrameSet{
-			PhyPayload: uplinkFrameSet.PhyPayload,
-			TxInfo:     uplinkFrameSet.TxInfo,
+			PhyPayload: frame.PhyPayload,
+			TxInfo:     frame.TxInfo,
 			RxInfo:     []*gw.UplinkRXInfo{rx},
 		}
 
@@ -59,9 +60,9 @@ func LogUplinkFrameForGateways(ctx context.Context, uplinkFrameSet gw.UplinkFram
 }
 
 // LogDownlinkFrameForGateway logs the given frame to the gateway pub-sub key.
-func LogDownlinkFrameForGateway(ctx context.Context, frame gw.DownlinkFrame) error {
+func LogDownlinkFrameForGateway(ctx context.Context, frame ns.DownlinkFrameLog) error {
 	var id lorawan.EUI64
-	copy(id[:], frame.TxInfo.GatewayId)
+	copy(id[:], frame.GatewayId)
 
 	key := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, id)
 
@@ -78,7 +79,7 @@ func LogDownlinkFrameForGateway(ctx context.Context, frame gw.DownlinkFrame) err
 }
 
 // LogDownlinkFrameForDevEUI logs the given frame to the device pub-sub key.
-func LogDownlinkFrameForDevEUI(ctx context.Context, devEUI lorawan.EUI64, frame gw.DownlinkFrame) error {
+func LogDownlinkFrameForDevEUI(ctx context.Context, devEUI lorawan.EUI64, frame ns.DownlinkFrameLog) error {
 	key := fmt.Sprintf(deviceFrameLogDownlinkPubSubKeyTempl, devEUI)
 
 	b, err := proto.Marshal(&frame)
@@ -95,7 +96,7 @@ func LogDownlinkFrameForDevEUI(ctx context.Context, devEUI lorawan.EUI64, frame 
 }
 
 // LogUplinkFrameForDevEUI logs the given frame to the pub-sub key of the given DevEUI.
-func LogUplinkFrameForDevEUI(ctx context.Context, devEUI lorawan.EUI64, frame gw.UplinkFrameSet) error {
+func LogUplinkFrameForDevEUI(ctx context.Context, devEUI lorawan.EUI64, frame ns.UplinkFrameLog) error {
 	b, err := proto.Marshal(&frame)
 	if err != nil {
 		return errors.Wrap(err, "marshal uplink frame error")
@@ -160,14 +161,14 @@ func redisMessageToFrameLog(msg *redis.Message, uplinkKey, downlinkKey string) (
 	var fl FrameLog
 
 	if msg.Channel == uplinkKey {
-		fl.UplinkFrame = &gw.UplinkFrameSet{}
+		fl.UplinkFrame = &ns.UplinkFrameLog{}
 		if err := proto.Unmarshal([]byte(msg.Payload), fl.UplinkFrame); err != nil {
 			return fl, errors.Wrap(err, "unmarshal uplink frame-set error")
 		}
 	}
 
 	if msg.Channel == downlinkKey {
-		fl.DownlinkFrame = &gw.DownlinkFrame{}
+		fl.DownlinkFrame = &ns.DownlinkFrameLog{}
 		if err := proto.Unmarshal([]byte(msg.Payload), fl.DownlinkFrame); err != nil {
 			return fl, errors.Wrap(err, "unmarshal downlink frame error")
 		}

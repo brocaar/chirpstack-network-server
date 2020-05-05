@@ -5,7 +5,7 @@ package storage;
 import "gw/gw.proto";
 
 
-message DownlinkFrames {
+message DownlinkFrame {
     // Token.
     uint32 token = 1;
 
@@ -16,7 +16,7 @@ message DownlinkFrames {
     bytes multicast_group_id = 3;
 
     // Downlink frames.
-    repeated gw.DownlinkFrame downlink_frames = 4;
+    gw.DownlinkFrame downlink_frame = 4;
 
     // Routing Profile ID.
     bytes routing_profile_id = 5;

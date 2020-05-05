@@ -13,6 +13,7 @@ import (
 
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
+	"github.com/brocaar/chirpstack-api/go/v3/ns"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/controller"
 	gwbackend "github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
@@ -194,7 +195,7 @@ func handleCollectedUplink(ctx context.Context, uplinkFrame gw.UplinkFrame, rxPa
 	}
 
 	// log the frame for each receiving gateway.
-	if err := framelog.LogUplinkFrameForGateways(ctx, gw.UplinkFrameSet{
+	if err := framelog.LogUplinkFrameForGateways(ctx, ns.UplinkFrameLog{
 		PhyPayload: uplinkFrame.PhyPayload,
 		TxInfo:     rxPacket.TXInfo,
 		RxInfo:     rxPacket.RXInfoSet,

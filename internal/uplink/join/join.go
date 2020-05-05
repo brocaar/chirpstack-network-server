@@ -113,12 +113,12 @@ func setContextFromJoinRequestPHYPayload(ctx *joinContext) error {
 }
 
 func logJoinRequestFramesCollected(ctx *joinContext) error {
-	uplinkFrameSet, err := framelog.CreateUplinkFrameSet(ctx.RXPacket)
+	uplinkFrameLog, err := framelog.CreateUplinkFrameLog(ctx.RXPacket)
 	if err != nil {
 		return errors.Wrap(err, "create uplink frame-set error")
 	}
 
-	if err := framelog.LogUplinkFrameForDevEUI(ctx.ctx, ctx.JoinRequestPayload.DevEUI, uplinkFrameSet); err != nil {
+	if err := framelog.LogUplinkFrameForDevEUI(ctx.ctx, ctx.JoinRequestPayload.DevEUI, uplinkFrameLog); err != nil {
 		log.WithFields(log.Fields{
 			"ctx_id": ctx.ctx.Value("join_ctx"),
 		}).WithError(err).Error("log uplink frame for device error")

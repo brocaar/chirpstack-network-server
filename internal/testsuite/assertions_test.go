@@ -50,15 +50,18 @@ func AssertMACCommandErrorCount(cid lorawan.CID, count int) Assertion {
 	}
 }
 
-// AssertDownlinkFrame asserts the downlink frame.
-func AssertDownlinkFrame(txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Assertion {
+// AssertDownlinkFrame asserts the first downlink frame.
+func AssertDownlinkFrame(gatewayID lorawan.EUI64, txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
 		downlinkFrame := <-ts.GWBackend.TXPacketChan
 		assert.NotEqual(0, downlinkFrame.Token)
 		lastToken = downlinkFrame.Token
 
-		if !proto.Equal(&txInfo, downlinkFrame.TxInfo) {
-			assert.Equal(txInfo, downlinkFrame.TxInfo)
+		assert.True(len(downlinkFrame.Items) != 0)
+		assert.Equal(gatewayID[:], downlinkFrame.GatewayId)
+
+		if !proto.Equal(&txInfo, downlinkFrame.Items[0].TxInfo) {
+			assert.Equal(txInfo, downlinkFrame.Items[0].TxInfo)
 		}
 
 		switch phy.MHDR.MType {
@@ -70,7 +73,7 @@ func AssertDownlinkFrame(txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Asser
 		}
 
 		var downPHY lorawan.PHYPayload
-		assert.NoError(downPHY.UnmarshalBinary(downlinkFrame.PhyPayload))
+		assert.NoError(downPHY.UnmarshalBinary(downlinkFrame.Items[0].PhyPayload))
 		switch downPHY.MHDR.MType {
 		case lorawan.UnconfirmedDataDown, lorawan.ConfirmedDataDown:
 			assert.NoError(downPHY.DecodeFOptsToMACCommands())
@@ -88,25 +91,27 @@ func AssertDownlinkFrame(txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Asser
 	}
 }
 
-func AssertDownlinkFrameSaved(devEUI lorawan.EUI64, mcGroupID uuid.UUID, txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Assertion {
+func AssertDownlinkFrameSaved(gatewayID lorawan.EUI64, devEUI lorawan.EUI64, mcGroupID uuid.UUID, txInfo gw.DownlinkTXInfo, phy lorawan.PHYPayload) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		frames, err := storage.GetDownlinkFrames(context.Background(), uint16(lastToken))
+		df, err := storage.GetDownlinkFrame(context.Background(), uint16(lastToken))
 		assert.NoError(err)
 
-		assert.True(len(frames.DownlinkFrames) > 0, "empty downlink-frames")
+		assert.True(len(df.DownlinkFrame.Items) > 0, "empty downlink-frames")
+
+		assert.Equal(gatewayID[:], df.DownlinkFrame.GatewayId)
 
 		// if DevEUI is given, validate it
 		var euiNil lorawan.EUI64
 		if devEUI != euiNil {
-			assert.Equal(devEUI[:], frames.DevEui)
+			assert.Equal(devEUI[:], df.DevEui)
 		}
 
 		// if mc group id is given, validate it
 		if mcGroupID != uuid.Nil {
-			assert.Equal(mcGroupID[:], frames.MulticastGroupId)
+			assert.Equal(mcGroupID[:], df.MulticastGroupId)
 		}
 
-		downlinkFrame := frames.DownlinkFrames[0]
+		downlinkFrame := df.DownlinkFrame.Items[0]
 
 		if !proto.Equal(&txInfo, downlinkFrame.TxInfo) {
 			assert.Equal(txInfo, *downlinkFrame.TxInfo)
@@ -132,8 +137,8 @@ func AssertDownlinkFrameSaved(devEUI lorawan.EUI64, mcGroupID uuid.UUID, txInfo 
 		assert.Equal(phy, downPHY)
 
 		// pop the frame that we have been validating, so that we can validate the next one
-		frames.DownlinkFrames = frames.DownlinkFrames[1:]
-		assert.NoError(storage.SaveDownlinkFrames(context.Background(), frames))
+		df.DownlinkFrame.Items = df.DownlinkFrame.Items[1:]
+		assert.NoError(storage.SaveDownlinkFrame(context.Background(), df))
 	}
 }
 
@@ -143,7 +148,7 @@ func AssertNoDownlinkFrame(assert *require.Assertions, ts *IntegrationTestSuite)
 }
 
 func AssertNoDownlinkFrameSaved(assert *require.Assertions, ts *IntegrationTestSuite) {
-	_, err := storage.GetDownlinkFrames(context.Background(), uint16(lastToken))
+	_, err := storage.GetDownlinkFrame(context.Background(), uint16(lastToken))
 	assert.Equal(storage.ErrDoesNotExist, err)
 }
 
