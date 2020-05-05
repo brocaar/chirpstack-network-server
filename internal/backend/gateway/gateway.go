@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
+	"github.com/golang/protobuf/proto"
 )
 
 var backend Gateway
@@ -39,11 +40,11 @@ func UpdateDownlinkFrame(mode string, df *gw.DownlinkFrame) error {
 	switch mode {
 	case "hybrid":
 		df.PhyPayload = df.Items[0].PhyPayload
-		df.TxInfo = df.Items[0].TxInfo
+		df.TxInfo = proto.Clone(df.Items[0].TxInfo).(*gw.DownlinkTXInfo)
 		df.TxInfo.GatewayId = df.GatewayId
 	case "legacy":
 		df.PhyPayload = df.Items[0].PhyPayload
-		df.TxInfo = df.Items[0].TxInfo
+		df.TxInfo = proto.Clone(df.Items[0].TxInfo).(*gw.DownlinkTXInfo)
 		df.TxInfo.GatewayId = df.GatewayId
 		df.Items = nil
 	case "multi_only":
