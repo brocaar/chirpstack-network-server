@@ -254,9 +254,10 @@ func sendJoinAcceptResponse(ctx *joinContext) error {
 
 func saveDownlinkFrame(ctx *joinContext) error {
 	df := storage.DownlinkFrame{
-		DevEui:        ctx.DeviceSession.DevEUI[:],
-		Token:         ctx.DownlinkFrame.Token,
-		DownlinkFrame: &ctx.DownlinkFrame,
+		DevEui:           ctx.DeviceSession.DevEUI[:],
+		Token:            ctx.DownlinkFrame.Token,
+		RoutingProfileId: ctx.DeviceSession.RoutingProfileID.Bytes(),
+		DownlinkFrame:    &ctx.DownlinkFrame,
 	}
 
 	if err := storage.SaveDownlinkFrame(ctx.ctx, df); err != nil {

@@ -1217,6 +1217,7 @@ func saveDownlinkFrame(ctx *dataContext) error {
 
 	df := storage.DownlinkFrame{
 		DevEui:           ctx.DeviceSession.DevEUI[:],
+		Token:            ctx.DownlinkFrame.Token,
 		RoutingProfileId: ctx.DeviceSession.RoutingProfileID.Bytes(),
 		FCnt:             fCnt,
 		EncryptedFopts:   ctx.DeviceSession.GetMACVersion() != lorawan.LoRaWAN1_0,
