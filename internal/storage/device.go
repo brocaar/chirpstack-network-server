@@ -33,6 +33,7 @@ type Device struct {
 	SkipFCntCheck     bool          `db:"skip_fcnt_check"`
 	ReferenceAltitude float64       `db:"reference_altitude"`
 	Mode              DeviceMode    `db:"mode"`
+	IsDisabled        bool          `db:"is_disabled"`
 }
 
 // DeviceActivation defines the device-activation for a LoRaWAN device.
@@ -65,8 +66,9 @@ func CreateDevice(ctx context.Context, db sqlx.Execer, d *Device) error {
 			routing_profile_id,
 			skip_fcnt_check,
 			reference_altitude,
-			mode
-		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			mode,
+			is_disabled
+		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
 		d.DevEUI[:],
 		d.CreatedAt,
 		d.UpdatedAt,
@@ -76,6 +78,7 @@ func CreateDevice(ctx context.Context, db sqlx.Execer, d *Device) error {
 		d.SkipFCntCheck,
 		d.ReferenceAltitude,
 		d.Mode,
+		d.IsDisabled,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -111,7 +114,8 @@ func UpdateDevice(ctx context.Context, db sqlx.Execer, d *Device) error {
 			routing_profile_id = $5,
 			skip_fcnt_check = $6,
 			reference_altitude = $7,
-			mode = $8
+			mode = $8,
+			is_disabled = $9
 		where
 			dev_eui = $1`,
 		d.DevEUI[:],
@@ -122,6 +126,7 @@ func UpdateDevice(ctx context.Context, db sqlx.Execer, d *Device) error {
 		d.SkipFCntCheck,
 		d.ReferenceAltitude,
 		d.Mode,
+		d.IsDisabled,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")

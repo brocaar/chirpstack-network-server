@@ -371,6 +371,58 @@ func (ts *ClassATestSuite) TestLW10RelaxFrameCounter() {
 	}
 }
 
+func (ts *ClassATestSuite) TestLW10UplinkDeviceDisabled() {
+	ts.CreateDeviceSession(storage.DeviceSession{
+		MACVersion:            "1.0.2",
+		JoinEUI:               lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
+		DevAddr:               lorawan.DevAddr{1, 2, 3, 4},
+		FNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		SNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		NwkSEncKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		FCntUp:                8,
+		NFCntDown:             5,
+		EnabledUplinkChannels: []int{0, 1, 2},
+		RX2Frequency:          869525000,
+		IsDisabled:            true,
+	})
+
+	var fPortOne uint8 = 1
+
+	tests := []ClassATest{
+		{
+			Name:          "uplink is ignored",
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort:      &fPortOne,
+					FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+				},
+				MIC: lorawan.MIC{104, 147, 35, 121},
+			},
+			Assert: []Assertion{
+				AssertFCntUp(8),
+				AssertNFCntDown(5),
+			},
+		},
+	}
+
+	for _, tst := range tests {
+		ts.T().Run(tst.Name, func(t *testing.T) {
+			ts.AssertClassATest(t, tst)
+		})
+	}
+}
+
 func (ts *ClassATestSuite) TestLW10Uplink() {
 	ts.CreateDeviceSession(storage.DeviceSession{
 		MACVersion:            "1.0.2",

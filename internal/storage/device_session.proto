@@ -181,6 +181,9 @@ message DeviceSessionPB {
 
     // Mac-command error counter.
     map<uint32, uint32> mac_command_error_count = 50;
+
+    // Device is disabled.
+    bool is_disabled = 51;
 }
 
 

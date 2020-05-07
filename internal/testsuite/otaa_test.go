@@ -551,6 +551,19 @@ func (ts *OTAATestSuite) TestLW10() {
 				AssertDeviceMode(storage.DeviceModeC),
 			},
 		},
+		{
+			Name: "device disabled",
+			BeforeFunc: func(*OTAATest) error {
+				ts.Device.IsDisabled = true
+				return storage.UpdateDevice(context.Background(), storage.DB(), ts.Device)
+			},
+			RXInfo:     rxInfo,
+			TXInfo:     txInfo,
+			PHYPayload: jrPayload,
+			Assert: []Assertion{
+				AssertNoDownlinkFrame,
+			},
+		},
 	}
 
 	for _, tst := range tests {
@@ -569,6 +582,9 @@ func (ts *OTAATestSuite) TestLW11() {
 	ts.DeviceProfile.SupportsClassC = false
 	ts.DeviceProfile.MACVersion = "1.1.0"
 	assert.NoError(storage.UpdateDeviceProfile(context.Background(), storage.DB(), ts.DeviceProfile))
+
+	ts.Device.IsDisabled = false
+	assert.NoError(storage.UpdateDevice(context.Background(), storage.DB(), ts.Device))
 
 	rxInfo := gw.UplinkRXInfo{
 		GatewayId: ts.Gateway.GatewayID[:],

@@ -406,6 +406,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 			RoutingProfileId:  rp.ID.Bytes(),
 			SkipFCntCheck:     true,
 			ReferenceAltitude: 5.6,
+			IsDisabled:        true,
 		}
 
 		_, err := ts.api.CreateDevice(context.Background(), &ns.CreateDeviceRequest{
@@ -762,6 +763,8 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 			assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp2))
 
 			d.RoutingProfileId = rp2.ID.Bytes()
+			d.IsDisabled = false
+
 			_, err := ts.api.UpdateDevice(context.Background(), &ns.UpdateDeviceRequest{
 				Device: d,
 			})

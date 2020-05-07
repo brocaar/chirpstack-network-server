@@ -43,7 +43,7 @@ api:
 
 	@echo "Generating API code from .proto files"
 	go generate internal/storage/device_session.go
-	go generate internal/storage/downlink_frames.go
+	go generate internal/storage/downlink_frame.go
 
 statics:
 	@echo "Generating static files"

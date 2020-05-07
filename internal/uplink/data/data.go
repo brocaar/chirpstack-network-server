@@ -31,9 +31,13 @@ import (
 
 const applicationClientTimeout = time.Second
 
+// ErrAbort is used to abort the flow without error
+var ErrAbort = errors.New("nothing to do")
+
 var tasks = []func(*dataContext) error{
 	setContextFromDataPHYPayload,
 	getDeviceSessionForPHYPayload,
+	abortOnDeviceIsDisabled,
 	decryptFOptsMACCommands,
 	decryptFRMPayloadMACCommands,
 	logUplinkFrame,
@@ -91,6 +95,10 @@ func Handle(ctx context.Context, rxPacket models.RXPacket) error {
 
 	for _, t := range tasks {
 		if err := t(&dctx); err != nil {
+			if err == ErrAbort {
+				return nil
+			}
+
 			return err
 		}
 	}
@@ -171,6 +179,13 @@ func getDeviceSessionForPHYPayload(ctx *dataContext) error {
 	}
 
 	ctx.DeviceSession = ds
+	return nil
+}
+
+func abortOnDeviceIsDisabled(ctx *dataContext) error {
+	if ctx.DeviceSession.IsDisabled {
+		return ErrAbort
+	}
 	return nil
 }
 

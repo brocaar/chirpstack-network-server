@@ -27,10 +27,14 @@ import (
 	loraband "github.com/brocaar/lorawan/band"
 )
 
+// ErrAbort is used to abort the flow without error
+var ErrAbort = errors.New("nothing to do")
+
 var tasks = []func(*rejoinContext) error{
 	setContextFromRejoinRequestPHY,
 	logRejoinRequestFramesCollected,
 	getDeviceAndProfiles,
+	abortOnDeviceIsDisabled,
 	forRejoinType([]lorawan.JoinType{lorawan.RejoinRequestType0, lorawan.RejoinRequestType2},
 		getDeviceSession,
 		validateRejoinCounter0,
@@ -111,6 +115,9 @@ func Handle(ctx context.Context, rxPacket models.RXPacket) error {
 
 	for _, t := range tasks {
 		if err := t(&rjctx); err != nil {
+			if err == ErrAbort {
+				return nil
+			}
 			return err
 		}
 	}
@@ -201,6 +208,13 @@ func getDeviceAndProfiles(ctx *rejoinContext) error {
 		return errors.New("device does not support join")
 	}
 
+	return nil
+}
+
+func abortOnDeviceIsDisabled(ctx *rejoinContext) error {
+	if ctx.Device.IsDisabled {
+		return ErrAbort
+	}
 	return nil
 }
 

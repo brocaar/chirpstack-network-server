@@ -33,6 +33,7 @@ func (ts *StorageTestSuite) TestDevice() {
 			SkipFCntCheck:     true,
 			ReferenceAltitude: 5.6,
 			Mode:              DeviceModeB,
+			IsDisabled:        false,
 		}
 
 		assert.Nil(CreateDevice(context.Background(), ts.Tx(), &d))
@@ -67,6 +68,7 @@ func (ts *StorageTestSuite) TestDevice() {
 			d.SkipFCntCheck = false
 			d.ReferenceAltitude = 6.7
 			d.Mode = DeviceModeC
+			d.IsDisabled = true
 
 			assert.Nil(UpdateDevice(ctx, ts.Tx(), &d))
 			d.UpdatedAt = d.UpdatedAt.Round(time.Second).UTC()

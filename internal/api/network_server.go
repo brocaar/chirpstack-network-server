@@ -524,6 +524,7 @@ func (n *NetworkServerAPI) CreateDevice(ctx context.Context, req *ns.CreateDevic
 		RoutingProfileID:  rpID,
 		SkipFCntCheck:     req.Device.SkipFCntCheck,
 		ReferenceAltitude: req.Device.ReferenceAltitude,
+		IsDisabled:        req.Device.IsDisabled,
 	}
 	if err := storage.CreateDevice(ctx, storage.DB(), &d); err != nil {
 		return nil, errToRPCError(err)
@@ -550,6 +551,7 @@ func (n *NetworkServerAPI) GetDevice(ctx context.Context, req *ns.GetDeviceReque
 			ServiceProfileId:  d.ServiceProfileID[:],
 			RoutingProfileId:  d.RoutingProfileID[:],
 			ReferenceAltitude: d.ReferenceAltitude,
+			IsDisabled:        d.IsDisabled,
 		},
 	}
 
@@ -590,6 +592,7 @@ func (n *NetworkServerAPI) UpdateDevice(ctx context.Context, req *ns.UpdateDevic
 	d.RoutingProfileID = rpID
 	d.SkipFCntCheck = req.Device.SkipFCntCheck
 	d.ReferenceAltitude = req.Device.ReferenceAltitude
+	d.IsDisabled = req.Device.IsDisabled
 
 	if err := storage.UpdateDevice(ctx, storage.DB(), &d); err != nil {
 		return nil, errToRPCError(err)

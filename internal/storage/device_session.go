@@ -178,6 +178,9 @@ type DeviceSession struct {
 
 	// Delayed mac-commands.
 	MACCommandErrorCount map[lorawan.CID]int
+
+	// Device is disabled.
+	IsDisabled bool
 }
 
 // AppendUplinkHistory appends an UplinkHistory item and makes sure the list
@@ -693,6 +696,8 @@ func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
 		UplinkMaxEirpIndex:      uint32(d.UplinkMaxEIRPIndex),
 
 		MacCommandErrorCount: make(map[uint32]uint32),
+
+		IsDisabled: d.IsDisabled,
 	}
 
 	if d.AppSKeyEvelope != nil {
@@ -793,6 +798,8 @@ func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
 		UplinkMaxEIRPIndex:     uint8(d.UplinkMaxEirpIndex),
 
 		MACCommandErrorCount: make(map[lorawan.CID]int),
+
+		IsDisabled: d.IsDisabled,
 	}
 
 	if d.LastDeviceStatusRequestTimeUnixNs > 0 {
