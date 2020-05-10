@@ -569,6 +569,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 					NbTrans:               1,
 					MACVersion:            "1.0.2",
 					MACCommandErrorCount:  make(map[lorawan.CID]int),
+					IsDisabled:            true,
 				}, ds)
 			})
 
@@ -775,6 +776,20 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 			})
 			assert.NoError(err)
 			assert.Equal(d, getResp.Device)
+
+			ds, err := storage.GetDeviceSession(context.Background(), devEUI)
+			assert.NoError(err)
+			assert.False(ds.IsDisabled)
+
+			d.IsDisabled = true
+			_, err = ts.api.UpdateDevice(context.Background(), &ns.UpdateDeviceRequest{
+				Device: d,
+			})
+			assert.NoError(err)
+
+			ds, err = storage.GetDeviceSession(context.Background(), devEUI)
+			assert.NoError(err)
+			assert.True(ds.IsDisabled)
 		})
 
 		t.Run("Delete", func(t *testing.T) {

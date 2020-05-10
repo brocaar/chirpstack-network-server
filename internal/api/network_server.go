@@ -594,7 +594,23 @@ func (n *NetworkServerAPI) UpdateDevice(ctx context.Context, req *ns.UpdateDevic
 	d.ReferenceAltitude = req.Device.ReferenceAltitude
 	d.IsDisabled = req.Device.IsDisabled
 
-	if err := storage.UpdateDevice(ctx, storage.DB(), &d); err != nil {
+	err = storage.Transaction(func(tx sqlx.Ext) error {
+		if err := storage.UpdateDevice(ctx, tx, &d); err != nil {
+			return err
+		}
+
+		// if there is a device-session, set the is disabled field
+		ds, err := storage.GetDeviceSession(ctx, devEUI)
+		if err == nil {
+			ds.IsDisabled = req.Device.IsDisabled
+			return storage.SaveDeviceSession(ctx, ds)
+		} else if err != storage.ErrDoesNotExist {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
 		return nil, errToRPCError(err)
 	}
 
@@ -668,6 +684,8 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 		RXWindow: storage.RX1,
 
 		MACVersion: dp.MACVersion,
+
+		IsDisabled: d.IsDisabled,
 	}
 
 	// The device is never set to DeviceModeB because the device first needs to
