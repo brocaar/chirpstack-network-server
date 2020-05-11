@@ -744,14 +744,20 @@ resolve_join_eui=false
 resolve_domain_suffix=".joineuis.lora-alliance.org"
 
 
-  # Join-server certificates.
+  # Per Join Server configuration.
   #
   # Example:
-  # [[join_server.certificates]]
+  # [[join_server.servers]]
   # # JoinEUI.
   # #
   # # The JoinEUI of the joinserver to to use the certificates for.
   # join_eui="0102030405060708"
+
+  # # Server (optional).
+  # #
+  # # The endpoint to the Join Server. If set, the DNS lookup will not be used
+  # # for the JoinEUI associated with this server.
+  # server="https://example.com:1234/join/endpoint"
 
   # # CA certificate (optional).
   # #
@@ -775,7 +781,7 @@ resolve_domain_suffix=".joineuis.lora-alliance.org"
   # This join-server will be used when resolving the JoinEUI is set to false
   # or as a fallback when resolving the JoinEUI fails.
   [join_server.default]
-  # hostname:port of the default join-server
+  # Default server endpoint.
   #
   # This API is provided by ChirpStack Application Server.
   server="http://localhost:8003"

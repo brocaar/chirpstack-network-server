@@ -23,18 +23,19 @@ func Setup(c config.Config) error {
 		return errors.Wrap(err, "joinserver: create default client error")
 	}
 
-	var certificates []certificate
-	for _, cert := range conf.Certificates {
+	var servers []server
+	for _, s := range conf.Servers {
 		var eui lorawan.EUI64
-		if err := eui.UnmarshalText([]byte(cert.JoinEUI)); err != nil {
+		if err := eui.UnmarshalText([]byte(s.JoinEUI)); err != nil {
 			return errors.Wrap(err, "joinserver: unmarshal JoinEUI error")
 		}
 
-		certificates = append(certificates, certificate{
+		servers = append(servers, server{
+			server:  s.Server,
 			joinEUI: eui,
-			caCert:  cert.CACert,
-			tlsCert: cert.TLSCert,
-			tlsKey:  cert.TLSKey,
+			caCert:  s.CACert,
+			tlsCert: s.TLSCert,
+			tlsKey:  s.TLSKey,
 		})
 	}
 
@@ -43,7 +44,7 @@ func Setup(c config.Config) error {
 		resolveJoinEUI:      conf.ResolveJoinEUI,
 		resolveDomainSuffix: conf.ResolveDomainSuffix,
 		clients:             make(map[lorawan.EUI64]poolClient),
-		certificates:        certificates,
+		servers:             servers,
 	}
 
 	return nil

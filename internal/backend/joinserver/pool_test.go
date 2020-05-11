@@ -65,6 +65,37 @@ func (ts *PoolTestSuite) TestAToServer() {
 	}
 }
 
+func (ts *PoolTestSuite) TestGetClient() {
+	pool := GetPool().(*pool)
+	pool.resolveJoinEUI = false
+	pool.defaultClient = &client{}
+
+	joinEUI := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
+
+	ts.T().Run("Return default client", func(t *testing.T) {
+		assert := require.New(t)
+
+		c := pool.getClient(joinEUI)
+		assert.Equal(pool.defaultClient, c)
+	})
+
+	ts.T().Run("Return pre-configured server", func(t *testing.T) {
+		assert := require.New(t)
+
+		pool.servers = []server{
+			{
+				server:  "http://localhost:12345/foo",
+				joinEUI: joinEUI,
+			},
+		}
+
+		c := pool.getClient(joinEUI)
+		assert.NotEqual(pool.defaultClient, c)
+
+		assert.Equal("http://localhost:12345/foo", c.(*client).server)
+	})
+}
+
 func TestPool(t *testing.T) {
 	suite.Run(t, new(PoolTestSuite))
 }

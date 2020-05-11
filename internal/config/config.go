@@ -157,12 +157,13 @@ type Config struct {
 		ResolveJoinEUI      bool   `mapstructure:"resolve_join_eui"`
 		ResolveDomainSuffix string `mapstructure:"resolve_domain_suffix"`
 
-		Certificates []struct {
+		Servers []struct {
+			Server  string `mapstructure:"server"`
 			JoinEUI string `mapstructure:"join_eui"`
 			CACert  string `mapstructure:"ca_cert"`
 			TLSCert string `mapstructure:"tls_cert"`
 			TLSKey  string `mapstructure:"tls_key"`
-		} `mapstructure:"certificates"`
+		} `mapstructure:"servers"`
 
 		Default struct {
 			Server  string `mapstructure:"server"`

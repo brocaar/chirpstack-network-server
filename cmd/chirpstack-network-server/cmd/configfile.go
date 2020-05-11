@@ -694,14 +694,20 @@ resolve_join_eui={{ .JoinServer.ResolveJoinEUI }}
 resolve_domain_suffix="{{ .JoinServer.ResolveDomainSuffix }}"
 
 
-  # Join-server certificates.
+  # Per Join Server configuration.
   #
   # Example:
-  # [[join_server.certificates]]
+  # [[join_server.servers]]
   # # JoinEUI.
   # #
   # # The JoinEUI of the joinserver to to use the certificates for.
   # join_eui="0102030405060708"
+
+  # # Server (optional).
+  # #
+  # # The endpoint to the Join Server. If set, the DNS lookup will not be used
+  # # for the JoinEUI associated with this server.
+  # server="https://example.com:1234/join/endpoint"
 
   # # CA certificate (optional).
   # #
@@ -718,8 +724,9 @@ resolve_domain_suffix="{{ .JoinServer.ResolveDomainSuffix }}"
   # #
   # # Set this to enable client-certificate authentication with the join-server.
   # tls_key="/path/to/tls_key.pem"
-  {{ range $index, $element := .JoinServer.Certificates }}
-  [[join_server.certificates]]
+  {{ range $index, $element := .JoinServer.Servers }}
+  [[join_server.servers]]
+  server="{{ $element.Server }}"
   join_eui="{{ $element.JoinEUI }}"
   ca_cert="{{ $element.CACert }}"
   tls_cert="{{ $element.TLSCert }}"
@@ -731,7 +738,7 @@ resolve_domain_suffix="{{ .JoinServer.ResolveDomainSuffix }}"
   # This join-server will be used when resolving the JoinEUI is set to false
   # or as a fallback when resolving the JoinEUI fails.
   [join_server.default]
-  # hostname:port of the default join-server
+  # Default server endpoint.
   #
   # This API is provided by ChirpStack Application Server.
   server="{{ .JoinServer.Default.Server }}"

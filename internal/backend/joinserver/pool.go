@@ -12,6 +12,9 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
+// ErrServerNotFound indicates that no server is configured for the given JoinEUI.
+var ErrServerNotFound = errors.New("server not found")
+
 // Pool defines the join-server client pool.
 type Pool interface {
 	Get(joinEUI lorawan.EUI64) (Client, error)
@@ -26,11 +29,12 @@ type pool struct {
 	defaultClient       Client
 	resolveJoinEUI      bool
 	clients             map[lorawan.EUI64]poolClient
-	certificates        []certificate
+	servers             []server
 	resolveDomainSuffix string
 }
 
-type certificate struct {
+type server struct {
+	server  string
 	joinEUI lorawan.EUI64
 	caCert  string
 	tlsCert string
@@ -39,10 +43,7 @@ type certificate struct {
 
 // Get returns the join-server client for the given joinEUI.
 func (p *pool) Get(joinEUI lorawan.EUI64) (Client, error) {
-	if !p.resolveJoinEUI {
-		return p.defaultClient, nil
-	}
-
+	// return from cache
 	p.RLock()
 	pc, ok := p.clients[joinEUI]
 	p.RUnlock()
@@ -50,41 +51,47 @@ func (p *pool) Get(joinEUI lorawan.EUI64) (Client, error) {
 		return pc.client, nil
 	}
 
-	client, err := p.resolveJoinServer(joinEUI)
-	if err != nil {
-		log.WithField("join_eui", joinEUI).WithError(err).Warning("resolving JoinEUI failed, using default join-server")
-		return p.defaultClient, nil
+	client := p.getClient(joinEUI)
+	if client != p.defaultClient {
+		p.Lock()
+		p.clients[joinEUI] = poolClient{client: client}
+		p.Unlock()
 	}
-
-	p.Lock()
-	p.clients[joinEUI] = poolClient{client: client}
-	p.Unlock()
 
 	return client, nil
 }
 
-func (p *pool) resolveJoinServer(joinEUI lorawan.EUI64) (Client, error) {
-	// resolve the join-server EUI to an url (using DNS)
-	server, err := p.resolveJoinEUIToJoinServerURL(joinEUI)
-	if err != nil {
-		return nil, errors.Wrap(err, "resolve joineui to join-server url error")
-	}
+func (p *pool) getClient(joinEUI lorawan.EUI64) Client {
+	var err error
+	s := p.getServer(joinEUI)
 
-	log.WithFields(log.Fields{
-		"join_eui": joinEUI,
-		"server":   server,
-	}).Debug("resolved joineui to join-server")
-
-	var caCert, tlsCert, tlsKey string
-	for _, cert := range p.certificates {
-		if cert.joinEUI == joinEUI {
-			caCert = cert.caCert
-			tlsCert = cert.tlsCert
-			tlsKey = cert.tlsKey
+	// if the server endpoint is empty and resolve JoinEUI is enabled, try to get it from DNS
+	if s.server == "" && p.resolveJoinEUI {
+		s.server, err = p.resolveJoinEUIToJoinServerURL(joinEUI)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"join_eui": joinEUI,
+			}).WithError(err).Warning("resolving JoinEUI failed, returning default join-server client")
+			return p.defaultClient
 		}
 	}
 
-	return NewClient(server, caCert, tlsCert, tlsKey)
+	// if the server endpoint is set, return the client
+	if s.server != "" {
+		c, err := NewClient(s.server, s.caCert, s.tlsCert, s.tlsKey)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"join_eui": joinEUI,
+				"server":   s.server,
+			}).WithError(err).Error("creating join-server client failed, returning default join-server client")
+			return p.defaultClient
+		}
+
+		return c
+	}
+
+	// in any other case, return the default client
+	return p.defaultClient
 }
 
 func (p *pool) resolveJoinEUIToJoinServerURL(joinEUI lorawan.EUI64) (string, error) {
@@ -117,4 +124,14 @@ func (p *pool) joinEUIToServer(joinEUI lorawan.EUI64) string {
 	}
 
 	return strings.Join(nibbles, ".") + p.resolveDomainSuffix
+}
+
+func (p *pool) getServer(joinEUI lorawan.EUI64) server {
+	for _, s := range p.servers {
+		if s.joinEUI == joinEUI {
+			return s
+		}
+	}
+
+	return server{}
 }
