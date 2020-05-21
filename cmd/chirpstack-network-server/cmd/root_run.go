@@ -19,7 +19,7 @@ import (
 
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
 	"github.com/brocaar/chirpstack-network-server/internal/adr"
-	"github.com/brocaar/chirpstack-network-server/internal/api"
+	"github.com/brocaar/chirpstack-network-server/internal/api/ns"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/controller"
 	gwbackend "github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
@@ -61,7 +61,7 @@ func run(cmd *cobra.Command, args []string) error {
 		fixV2RedisCache,
 		flushGatewayCache,
 		migrateToClusterKeys,
-		setupAPI,
+		setupNetworkServerAPI,
 		startLoRaServer(server),
 		startStatsServer(gwStats),
 		startQueueScheduler,
@@ -275,9 +275,9 @@ func setupDownlink() error {
 	return nil
 }
 
-func setupAPI() error {
-	if err := api.Setup(config.C); err != nil {
-		return errors.Wrap(err, "setup api error")
+func setupNetworkServerAPI() error {
+	if err := ns.Setup(config.C); err != nil {
+		return errors.Wrap(err, "setup network-server api error")
 	}
 
 	return nil

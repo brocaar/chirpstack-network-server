@@ -11,7 +11,7 @@ import (
 	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/ns"
-	"github.com/brocaar/chirpstack-network-server/internal/api"
+	nsapi "github.com/brocaar/chirpstack-network-server/internal/api/ns"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/controller"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
@@ -185,7 +185,7 @@ func (ts *IntegrationTestSuite) FlushClients() {
 	ts.NCClient = test.NewNetworkControllerClient()
 	controller.SetClient(ts.NCClient)
 
-	ts.NSAPI = api.NewNetworkServerAPI()
+	ts.NSAPI = nsapi.NewNetworkServerAPI()
 }
 
 // CreateDeviceSession creates the given device-session.
