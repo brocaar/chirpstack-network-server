@@ -146,13 +146,6 @@ type Config struct {
 		} `mapstructure:"gateway"`
 	} `mapstructure:"network_server"`
 
-	GeolocationServer struct {
-		Server  string `mapstructure:"server"`
-		CACert  string `mapstructure:"ca_cert"`
-		TLSCert string `mapstructure:"tls_cert"`
-		TLSKey  string `mapstructure:"tls_key"`
-	} `mapstructure:"geolocation_server"`
-
 	JoinServer struct {
 		ResolveJoinEUI      bool   `mapstructure:"resolve_join_eui"`
 		ResolveDomainSuffix string `mapstructure:"resolve_domain_suffix"`

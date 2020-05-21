@@ -346,28 +346,26 @@ func (n *NetworkServerAPI) CreateDeviceProfile(ctx context.Context, req *ns.Crea
 	}
 
 	dp := storage.DeviceProfile{
-		ID:                  dpID,
-		SupportsClassB:      req.DeviceProfile.SupportsClassB,
-		ClassBTimeout:       int(req.DeviceProfile.ClassBTimeout),
-		PingSlotPeriod:      int(req.DeviceProfile.PingSlotPeriod),
-		PingSlotDR:          int(req.DeviceProfile.PingSlotDr),
-		PingSlotFreq:        int(req.DeviceProfile.PingSlotFreq),
-		SupportsClassC:      req.DeviceProfile.SupportsClassC,
-		ClassCTimeout:       int(req.DeviceProfile.ClassCTimeout),
-		MACVersion:          req.DeviceProfile.MacVersion,
-		RegParamsRevision:   req.DeviceProfile.RegParamsRevision,
-		RXDelay1:            int(req.DeviceProfile.RxDelay_1),
-		RXDROffset1:         int(req.DeviceProfile.RxDrOffset_1),
-		RXDataRate2:         int(req.DeviceProfile.RxDatarate_2),
-		RXFreq2:             int(req.DeviceProfile.RxFreq_2),
-		FactoryPresetFreqs:  factoryPresetFreqs,
-		MaxEIRP:             int(req.DeviceProfile.MaxEirp),
-		MaxDutyCycle:        int(req.DeviceProfile.MaxDutyCycle),
-		SupportsJoin:        req.DeviceProfile.SupportsJoin,
-		Supports32bitFCnt:   req.DeviceProfile.Supports_32BitFCnt,
-		RFRegion:            band.Band().Name(),
-		GeolocBufferTTL:     int(req.DeviceProfile.GeolocBufferTtl),
-		GeolocMinBufferSize: int(req.DeviceProfile.GeolocMinBufferSize),
+		ID:                 dpID,
+		SupportsClassB:     req.DeviceProfile.SupportsClassB,
+		ClassBTimeout:      int(req.DeviceProfile.ClassBTimeout),
+		PingSlotPeriod:     int(req.DeviceProfile.PingSlotPeriod),
+		PingSlotDR:         int(req.DeviceProfile.PingSlotDr),
+		PingSlotFreq:       int(req.DeviceProfile.PingSlotFreq),
+		SupportsClassC:     req.DeviceProfile.SupportsClassC,
+		ClassCTimeout:      int(req.DeviceProfile.ClassCTimeout),
+		MACVersion:         req.DeviceProfile.MacVersion,
+		RegParamsRevision:  req.DeviceProfile.RegParamsRevision,
+		RXDelay1:           int(req.DeviceProfile.RxDelay_1),
+		RXDROffset1:        int(req.DeviceProfile.RxDrOffset_1),
+		RXDataRate2:        int(req.DeviceProfile.RxDatarate_2),
+		RXFreq2:            int(req.DeviceProfile.RxFreq_2),
+		FactoryPresetFreqs: factoryPresetFreqs,
+		MaxEIRP:            int(req.DeviceProfile.MaxEirp),
+		MaxDutyCycle:       int(req.DeviceProfile.MaxDutyCycle),
+		SupportsJoin:       req.DeviceProfile.SupportsJoin,
+		Supports32bitFCnt:  req.DeviceProfile.Supports_32BitFCnt,
+		RFRegion:           band.Band().Name(),
 	}
 
 	if err := storage.CreateDeviceProfile(ctx, storage.DB(), &dp); err != nil {
@@ -396,28 +394,26 @@ func (n *NetworkServerAPI) GetDeviceProfile(ctx context.Context, req *ns.GetDevi
 
 	resp := ns.GetDeviceProfileResponse{
 		DeviceProfile: &ns.DeviceProfile{
-			Id:                  dp.ID.Bytes(),
-			SupportsClassB:      dp.SupportsClassB,
-			ClassBTimeout:       uint32(dp.ClassBTimeout),
-			PingSlotPeriod:      uint32(dp.PingSlotPeriod),
-			PingSlotDr:          uint32(dp.PingSlotDR),
-			PingSlotFreq:        uint32(dp.PingSlotFreq),
-			SupportsClassC:      dp.SupportsClassC,
-			ClassCTimeout:       uint32(dp.ClassCTimeout),
-			MacVersion:          dp.MACVersion,
-			RegParamsRevision:   dp.RegParamsRevision,
-			RxDelay_1:           uint32(dp.RXDelay1),
-			RxDrOffset_1:        uint32(dp.RXDROffset1),
-			RxDatarate_2:        uint32(dp.RXDataRate2),
-			RxFreq_2:            uint32(dp.RXFreq2),
-			FactoryPresetFreqs:  factoryPresetFreqs,
-			MaxEirp:             uint32(dp.MaxEIRP),
-			MaxDutyCycle:        uint32(dp.MaxDutyCycle),
-			SupportsJoin:        dp.SupportsJoin,
-			RfRegion:            string(dp.RFRegion),
-			Supports_32BitFCnt:  dp.Supports32bitFCnt,
-			GeolocBufferTtl:     uint32(dp.GeolocBufferTTL),
-			GeolocMinBufferSize: uint32(dp.GeolocMinBufferSize),
+			Id:                 dp.ID.Bytes(),
+			SupportsClassB:     dp.SupportsClassB,
+			ClassBTimeout:      uint32(dp.ClassBTimeout),
+			PingSlotPeriod:     uint32(dp.PingSlotPeriod),
+			PingSlotDr:         uint32(dp.PingSlotDR),
+			PingSlotFreq:       uint32(dp.PingSlotFreq),
+			SupportsClassC:     dp.SupportsClassC,
+			ClassCTimeout:      uint32(dp.ClassCTimeout),
+			MacVersion:         dp.MACVersion,
+			RegParamsRevision:  dp.RegParamsRevision,
+			RxDelay_1:          uint32(dp.RXDelay1),
+			RxDrOffset_1:       uint32(dp.RXDROffset1),
+			RxDatarate_2:       uint32(dp.RXDataRate2),
+			RxFreq_2:           uint32(dp.RXFreq2),
+			FactoryPresetFreqs: factoryPresetFreqs,
+			MaxEirp:            uint32(dp.MaxEIRP),
+			MaxDutyCycle:       uint32(dp.MaxDutyCycle),
+			SupportsJoin:       dp.SupportsJoin,
+			RfRegion:           string(dp.RFRegion),
+			Supports_32BitFCnt: dp.Supports32bitFCnt,
 		},
 	}
 
@@ -473,8 +469,6 @@ func (n *NetworkServerAPI) UpdateDeviceProfile(ctx context.Context, req *ns.Upda
 	dp.SupportsJoin = req.DeviceProfile.SupportsJoin
 	dp.Supports32bitFCnt = req.DeviceProfile.Supports_32BitFCnt
 	dp.RFRegion = band.Band().Name()
-	dp.GeolocBufferTTL = int(req.DeviceProfile.GeolocBufferTtl)
-	dp.GeolocMinBufferSize = int(req.DeviceProfile.GeolocMinBufferSize)
 
 	if err := storage.FlushDeviceProfileCache(ctx, dp.ID); err != nil {
 		return nil, errToRPCError(err)

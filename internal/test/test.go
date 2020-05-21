@@ -13,7 +13,6 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/brocaar/chirpstack-api/go/v3/as"
-	"github.com/brocaar/chirpstack-api/go/v3/geo"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
 	"github.com/brocaar/chirpstack-network-server/internal/api/client/asclient"
@@ -313,32 +312,4 @@ func (t *NetworkControllerClient) HandleUplinkMACCommand(ctx context.Context, in
 func (t *NetworkControllerClient) HandleRejectedUplinkFrameSet(ctx context.Context, in *nc.HandleRejectedUplinkFrameSetRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	t.HandleRejectedUplinkFrameSetChan <- *in
 	return &empty.Empty{}, nil
-}
-
-// GeolocationClient is a geolocation client for testing.
-type GeolocationClient struct {
-	ResolveTDOAChan               chan geo.ResolveTDOARequest
-	ResolveMultiFrameTDOAChan     chan geo.ResolveMultiFrameTDOARequest
-	ResolveTDOAResponse           geo.ResolveTDOAResponse
-	ResolveMultiFrameTDOAResponse geo.ResolveMultiFrameTDOAResponse
-}
-
-// NewGeolocationClient creates a new GeolocationClient.
-func NewGeolocationClient() *GeolocationClient {
-	return &GeolocationClient{
-		ResolveTDOAChan:           make(chan geo.ResolveTDOARequest, 100),
-		ResolveMultiFrameTDOAChan: make(chan geo.ResolveMultiFrameTDOARequest, 100),
-	}
-}
-
-// ResolveTDOA method.
-func (g *GeolocationClient) ResolveTDOA(ctx context.Context, in *geo.ResolveTDOARequest, opts ...grpc.CallOption) (*geo.ResolveTDOAResponse, error) {
-	g.ResolveTDOAChan <- *in
-	return &g.ResolveTDOAResponse, nil
-}
-
-// ResolveMultiFrameTDOA method.
-func (g *GeolocationClient) ResolveMultiFrameTDOA(ctx context.Context, in *geo.ResolveMultiFrameTDOARequest, opts ...grpc.CallOption) (*geo.ResolveMultiFrameTDOAResponse, error) {
-	g.ResolveMultiFrameTDOAChan <- *in
-	return &g.ResolveMultiFrameTDOAResponse, nil
 }

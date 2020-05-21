@@ -17,7 +17,6 @@ import (
 	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/brocaar/chirpstack-api/go/v3/geo"
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
 	"github.com/brocaar/chirpstack-network-server/internal/adr"
 	"github.com/brocaar/chirpstack-network-server/internal/api"
@@ -28,7 +27,6 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/azureiothub"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/gcppubsub"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/mqtt"
-	"github.com/brocaar/chirpstack-network-server/internal/backend/geolocationserver"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/joinserver"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
@@ -56,7 +54,6 @@ func run(cmd *cobra.Command, args []string) error {
 		setGatewayBackend,
 		setupApplicationServer,
 		setupADR,
-		setupGeolocationServer,
 		setupJoinServer,
 		setupNetworkController,
 		setupUplink,
@@ -223,41 +220,6 @@ func setupApplicationServer() error {
 	if err := applicationserver.Setup(); err != nil {
 		return errors.Wrap(err, "application-server setup error")
 	}
-	return nil
-}
-
-func setupGeolocationServer() error {
-	// TODO: move setup to gelolocation.Setup
-	if config.C.GeolocationServer.Server == "" {
-		log.Info("no geolocation-server configured")
-		return nil
-	}
-
-	log.WithFields(log.Fields{
-		"server":   config.C.GeolocationServer.Server,
-		"ca_cert":  config.C.GeolocationServer.CACert,
-		"tls_cert": config.C.GeolocationServer.TLSCert,
-		"tls_key":  config.C.GeolocationServer.TLSKey,
-	}).Info("connecting to geolocation-server")
-
-	dialOptions := []grpc.DialOption{
-		grpc.WithBalancerName(roundrobin.Name),
-	}
-	if config.C.GeolocationServer.TLSCert != "" && config.C.GeolocationServer.TLSKey != "" {
-		dialOptions = append(dialOptions, grpc.WithTransportCredentials(
-			mustGetTransportCredentials(config.C.GeolocationServer.TLSCert, config.C.GeolocationServer.TLSKey, config.C.GeolocationServer.CACert, false),
-		))
-	} else {
-		dialOptions = append(dialOptions, grpc.WithInsecure())
-	}
-
-	geoConn, err := grpc.Dial(config.C.GeolocationServer.Server, dialOptions...)
-	if err != nil {
-		return errors.Wrap(err, "geolocation-server dial error")
-	}
-
-	geolocationserver.SetClient(geo.NewGeolocationServerServiceClient(geoConn))
-
 	return nil
 }
 

@@ -625,26 +625,6 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
     commands_connection_string="{{ .NetworkServer.Gateway.Backend.AzureIoTHub.CommandsConnectionString }}"
 
 
-  # Geolocation settings.
-  #
-  # When set, ChirpStack Network Server will use the configured geolocation server to
-  # resolve the location of the devices.
-  [geolocation_server]
-  # Server.
-  #
-  # The hostname:ip of the geolocation service (optional).
-  server="{{ .GeolocationServer.Server }}"
-
-  # CA certificate used by the API client (optional).
-  ca_cert="{{ .GeolocationServer.CACert}}"
-
-  # TLS certificate used by the API client (optional).
-  tls_cert="{{ .GeolocationServer.TLSCert }}"
-
-  # TLS key used by the API client (optional).
-  tls_key="{{ .GeolocationServer.TLSKey }}"
-
-
   # Monitoring settings.
   #
   # Note that this replaces the metrics configuration. If a metrics section is

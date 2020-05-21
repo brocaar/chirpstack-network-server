@@ -675,26 +675,6 @@ get_downlink_data_delay="100ms"
     commands_connection_string=""
 
 
-  # Geolocation settings.
-  #
-  # When set, ChirpStack Network Server will use the configured geolocation server to
-  # resolve the location of the devices.
-  [geolocation_server]
-  # Server.
-  #
-  # The hostname:ip of the geolocation service (optional).
-  server=""
-
-  # CA certificate used by the API client (optional).
-  ca_cert=""
-
-  # TLS certificate used by the API client (optional).
-  tls_cert=""
-
-  # TLS key used by the API client (optional).
-  tls_key=""
-
-
   # Monitoring settings.
   #
   # Note that this replaces the metrics configuration. If a metrics section is

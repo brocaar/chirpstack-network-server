@@ -2,29 +2,24 @@ package testsuite
 
 import (
 	"context"
-	"sync"
 	"testing"
-	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/brocaar/chirpstack-api/go/v3/common"
-	"github.com/brocaar/chirpstack-api/go/v3/geo"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/ns"
 	"github.com/brocaar/chirpstack-network-server/internal/api"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/controller"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
-	"github.com/brocaar/chirpstack-network-server/internal/backend/geolocationserver"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/joinserver"
 	jstest "github.com/brocaar/chirpstack-network-server/internal/backend/joinserver/testclient"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/downlink"
 	"github.com/brocaar/chirpstack-network-server/internal/downlink/ack"
-	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/chirpstack-network-server/internal/uplink"
@@ -135,21 +130,6 @@ type DownlinkTXAckTest struct {
 	ExpectedError error
 }
 
-// GeolocationTest is the structure for a geolocation test.
-type GeolocationTest struct {
-	Name                          string
-	BeforeFunc                    func(*GeolocationTest) error
-	NwkGeoLoc                     bool
-	RXInfo                        []*gw.UplinkRXInfo
-	GeolocBufferTTL               time.Duration
-	GeolocMinBufferSize           int
-	GeolocBufferItems             []*geo.FrameRXInfo
-	ResolveTDOAResponse           geo.ResolveTDOAResponse
-	ResolveMultiFrameTDOAResponse geo.ResolveMultiFrameTDOAResponse
-
-	Assert []Assertion
-}
-
 // IntegrationTestSuite provides a test-suite for integration-testing
 // uplink scenarios.
 type IntegrationTestSuite struct {
@@ -159,7 +139,6 @@ type IntegrationTestSuite struct {
 	ASClient  *test.ApplicationClient
 	JSClient  *jstest.JoinServerClient
 	GWBackend *test.GatewayBackend
-	GeoClient *test.GeolocationClient
 	NCClient  *test.NetworkControllerClient
 	NSAPI     ns.NetworkServerServiceServer
 
@@ -205,9 +184,6 @@ func (ts *IntegrationTestSuite) FlushClients() {
 
 	ts.NCClient = test.NewNetworkControllerClient()
 	controller.SetClient(ts.NCClient)
-
-	ts.GeoClient = test.NewGeolocationClient()
-	geolocationserver.SetClient(ts.GeoClient)
 
 	ts.NSAPI = api.NewNetworkServerAPI()
 }
@@ -679,57 +655,6 @@ func (ts *IntegrationTestSuite) AssertDownlinkTXAckTest(t *testing.T, tst Downli
 	for _, a := range tst.Assert {
 		a(assert, ts)
 	}
-}
-
-// AssertGeolocationTest asserts the given geolocation test.
-func (ts *IntegrationTestSuite) AssertGeolocationTest(t *testing.T, fCnt uint32, tst GeolocationTest) {
-	assert := require.New(t)
-
-	storage.RedisClient().FlushAll()
-
-	ts.FlushClients()
-	ts.initConfig()
-
-	if tst.BeforeFunc != nil {
-		assert.NoError(tst.BeforeFunc(&tst))
-	}
-
-	ts.DeviceSession.FCntUp = uint32(fCnt)
-	assert.NoError(storage.SaveDeviceSession(context.Background(), *ts.DeviceSession))
-
-	ts.GeoClient.ResolveTDOAResponse = tst.ResolveTDOAResponse
-	ts.GeoClient.ResolveMultiFrameTDOAResponse = tst.ResolveMultiFrameTDOAResponse
-
-	ts.ServiceProfile.NwkGeoLoc = tst.NwkGeoLoc
-	assert.NoError(storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile))
-
-	ts.DeviceProfile.GeolocBufferTTL = int(tst.GeolocBufferTTL / time.Second)
-	ts.DeviceProfile.GeolocMinBufferSize = tst.GeolocMinBufferSize
-	assert.NoError(storage.UpdateDeviceProfile(context.Background(), storage.DB(), ts.DeviceProfile))
-
-	storage.SaveGeolocBuffer(context.Background(), ts.Device.DevEUI, tst.GeolocBufferItems, tst.GeolocBufferTTL)
-
-	txInfo := gw.UplinkTXInfo{
-		Frequency: 868100000,
-	}
-	assert.NoError(helpers.SetUplinkTXInfoDataRate(&txInfo, 3, band.Band()))
-
-	var wg sync.WaitGroup
-	for j := range tst.RXInfo {
-		uf := ts.GetUplinkFrameForFRMPayload(*tst.RXInfo[j], txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})
-		wg.Add(1)
-		go func(assert *require.Assertions, uf gw.UplinkFrame) {
-			err := uplink.HandleUplinkFrame(context.Background(), uf)
-			assert.NoError(err)
-			wg.Done()
-		}(assert, uf)
-	}
-
-	// run assertions
-	for _, a := range tst.Assert {
-		a(assert, ts)
-	}
-	wg.Wait()
 }
 
 func (ts *IntegrationTestSuite) initConfig() {
