@@ -22,6 +22,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/maccommand"
 	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/internal/roaming"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
@@ -33,6 +34,7 @@ var ErrAbort = errors.New("nothing to do")
 
 var tasks = []func(*dataContext) error{
 	setContextFromDataPHYPayload,
+	handlePassiveRoamingDevice,
 	getDeviceSessionForPHYPayload,
 	abortOnDeviceIsDisabled,
 	decryptFOptsMACCommands,
@@ -111,26 +113,26 @@ func setContextFromDataPHYPayload(ctx *dataContext) error {
 	return nil
 }
 
+func handlePassiveRoamingDevice(ctx *dataContext) error {
+	if roaming.IsRoamingDevAddr(ctx.MACPayload.FHDR.DevAddr) {
+		log.WithFields(log.Fields{
+			"dev_addr": ctx.MACPayload.FHDR.DevAddr,
+			"ctx_id":   ctx.ctx.Value(logging.ContextIDKey),
+		}).Info("uplink/data: devaddr does not match netid, assuming roaming device")
+
+		roaming.HandlePassiveRoamingUplink(ctx.ctx, ctx.RXPacket, ctx.MACPayload)
+
+		// the flow stops here
+		return ErrAbort
+	}
+
+	return nil
+}
+
 func getDeviceSessionForPHYPayload(ctx *dataContext) error {
-	var txCh int
-	for _, defaultChannel := range []bool{true, false} {
-		i, err := band.Band().GetUplinkChannelIndex(int(ctx.RXPacket.TXInfo.Frequency), defaultChannel)
-		if err != nil {
-			continue
-		}
-
-		c, err := band.Band().GetUplinkChannel(i)
-		if err != nil {
-			return errors.Wrap(err, "get channel error")
-		}
-
-		// there could be multiple channels using the same frequency, but with different data-rates.
-		// eg EU868:
-		//  channel 1 (868.3 DR 0-5)
-		//  channel x (868.3 DR 6)
-		if c.MinDR <= ctx.RXPacket.DR && c.MaxDR >= ctx.RXPacket.DR {
-			txCh = i
-		}
+	txCh, err := band.Band().GetUplinkChannelIndexForFrequencyDR(int(ctx.RXPacket.TXInfo.Frequency), ctx.RXPacket.DR)
+	if err != nil {
+		return errors.Wrap(err, "get channel error")
 	}
 
 	ds, err := storage.GetDeviceSessionForPHYPayload(ctx.ctx, ctx.RXPacket.PHYPayload, ctx.RXPacket.DR, txCh)

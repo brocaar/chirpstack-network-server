@@ -155,10 +155,12 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 			RXInfo:        ts.RXInfo,
 			PHYPayload:    jrPHY,
 			JoinServerRejoinAnsPayload: backend.RejoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaPHYBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaPHYBytes),
 				SNwkSIntKey: &backend.KeyEnvelope{
 					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
 				},
@@ -269,10 +271,12 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 			RXInfo:        ts.RXInfo,
 			PHYPayload:    jrPHY,
 			JoinServerRejoinAnsPayload: backend.RejoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaPHYBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaPHYBytes),
 				SNwkSIntKey: &backend.KeyEnvelope{
 					KEKLabel: "010203",
 					AESKey:   []byte{246, 176, 184, 31, 61, 48, 41, 18, 85, 145, 192, 176, 184, 141, 118, 201, 59, 72, 172, 164, 4, 22, 133, 211},
@@ -455,10 +459,12 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 			RXInfo:        ts.RXInfo,
 			PHYPayload:    jrPHY,
 			JoinServerRejoinAnsPayload: backend.RejoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				SNwkSIntKey: &backend.KeyEnvelope{
 					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
 				},
@@ -554,10 +560,12 @@ func (ts *RejoinTestSuite) TestRejoinType2() {
 			RXInfo:        ts.RXInfo,
 			PHYPayload:    jrPHY,
 			JoinServerRejoinAnsPayload: backend.RejoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				SNwkSIntKey: &backend.KeyEnvelope{
 					KEKLabel: "010203",
 					AESKey:   []byte{246, 176, 184, 31, 61, 48, 41, 18, 85, 145, 192, 176, 184, 141, 118, 201, 59, 72, 172, 164, 4, 22, 133, 211},

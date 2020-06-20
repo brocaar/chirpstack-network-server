@@ -20,6 +20,7 @@ import (
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
 	"github.com/brocaar/chirpstack-network-server/internal/adr"
 	"github.com/brocaar/chirpstack-network-server/internal/api/ns"
+	roamingapi "github.com/brocaar/chirpstack-network-server/internal/api/roaming"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/controller"
 	gwbackend "github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
@@ -34,6 +35,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/migrations/code"
 	"github.com/brocaar/chirpstack-network-server/internal/monitoring"
+	"github.com/brocaar/chirpstack-network-server/internal/roaming"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/uplink"
 )
@@ -62,6 +64,7 @@ func run(cmd *cobra.Command, args []string) error {
 		flushGatewayCache,
 		migrateToClusterKeys,
 		setupNetworkServerAPI,
+		setupRoaming,
 		startLoRaServer(server),
 		startStatsServer(gwStats),
 		startQueueScheduler,
@@ -278,6 +281,18 @@ func setupDownlink() error {
 func setupNetworkServerAPI() error {
 	if err := ns.Setup(config.C); err != nil {
 		return errors.Wrap(err, "setup network-server api error")
+	}
+
+	return nil
+}
+
+func setupRoaming() error {
+	if err := roamingapi.Setup(config.C); err != nil {
+		return errors.Wrap(err, "setup roaming api error")
+	}
+
+	if err := roaming.Setup(config.C); err != nil {
+		return errors.Wrap(err, "setup roaming error")
 	}
 
 	return nil

@@ -183,10 +183,12 @@ func (ts *OTAATestSuite) TestLW10() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -348,10 +350,12 @@ func (ts *OTAATestSuite) TestLW10() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -467,10 +471,12 @@ func (ts *OTAATestSuite) TestLW10() {
 			PHYPayload:    jrPayload,
 			ExtraChannels: []int{868600000, 868700000, 868800000},
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -516,10 +522,12 @@ func (ts *OTAATestSuite) TestLW10() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -539,10 +547,12 @@ func (ts *OTAATestSuite) TestLW10() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -653,10 +663,12 @@ func (ts *OTAATestSuite) TestLW11() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				SNwkSIntKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -801,10 +813,12 @@ func (ts *OTAATestSuite) TestLW11() {
 			RXInfo:     rxInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				SNwkSIntKey: &backend.KeyEnvelope{
 					KEKLabel: "010203",
 					AESKey:   []byte{246, 176, 184, 31, 61, 48, 41, 18, 85, 145, 192, 176, 184, 141, 118, 201, 59, 72, 172, 164, 4, 22, 133, 211},
@@ -946,10 +960,12 @@ func (ts *OTAATestSuite) TestLW11() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -969,10 +985,12 @@ func (ts *OTAATestSuite) TestLW11() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},

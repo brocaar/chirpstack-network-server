@@ -173,6 +173,37 @@ type Config struct {
 		} `mapstructure:"kek"`
 	} `mapstructure:"join_server"`
 
+	Roaming struct {
+		ResolveNetIDDomainSuffix string `mapstructure:"resolve_net_id_domain_suffix"`
+
+		API struct {
+			Bind    string `mapstructure:"bind"`
+			CACert  string `mapstructure:"ca_cert"`
+			TLSCert string `mapstructure:"tls_cert"`
+			TLSKey  string `mapstructure:"tls_key"`
+		} `mapstructure:"api"`
+
+		Servers []struct {
+			NetID                  lorawan.NetID
+			NetIDString            string        `mapstructure:"net_id"`
+			CheckMIC               bool          `mapstructure:"check_mic"`
+			PassiveRoaming         bool          `mapstructure:"passive_roaming"`
+			PassiveRoamingLifetime time.Duration `mapstructure:"passive_roaming_lifetime"`
+			PassiveRoamingKEKLabel string        `mapstructure:"passive_roaming_kek_label"`
+			Server                 string        `mapstructure:"server"`
+			CACert                 string        `mapstructure:"ca_cert"`
+			TLSCert                string        `mapstructure:"tls_cert"`
+			TLSKey                 string        `mapstructure:"tls_key"`
+		} `mapstructure:"servers"`
+
+		KEK struct {
+			Set []struct {
+				Label string `mapstructure:"label"`
+				KEK   string `mapstructure:"kek"`
+			} `mapstructure:"set"`
+		} `mapstructure:"kek"`
+	} `mapstructure:"roaming"`
+
 	NetworkController struct {
 		Client nc.NetworkControllerServiceClient `mapstructure:"client"`
 

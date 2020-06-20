@@ -1,4 +1,4 @@
-//go:generate protoc -I=/tmp/chirpstack-api/protobuf -I=. --go_out=. device_session.proto
+//go:generate protoc -I=/protobuf/src -I=/tmp/chirpstack-api/protobuf -I=. --go_out=. device_session.proto
 
 package storage
 
@@ -292,15 +292,15 @@ func GetRandomDevAddr(netID lorawan.NetID) (lorawan.DevAddr, error) {
 // * In case of a re-transmission, the returned frame-counter equals
 //   DeviceSession.FCntUp - 1, as the FCntUp value holds the next expected
 //   frame-counter, not the FCntUp which was last seen.
-func GetFullFCntUp(s DeviceSession, fCntUp uint32) uint32 {
+func GetFullFCntUp(nextExpectedFullFCnt, truncatedFCntUp uint32) uint32 {
 	// Handle re-transmission.
 	// Note: the s.FCntUp value holds the next expected uplink frame-counter,
 	// therefore this function returns sFCntUp - 1 in case of a re-transmission.
-	if fCntUp == uint32(uint16(s.FCntUp%(1<<16))-1) {
-		return s.FCntUp - 1
+	if truncatedFCntUp == uint32(uint16(nextExpectedFullFCnt%(1<<16))-1) {
+		return nextExpectedFullFCnt - 1
 	}
-	gap := uint32(uint16(fCntUp) - uint16(s.FCntUp%(1<<16)))
-	return s.FCntUp + gap
+	gap := uint32(uint16(truncatedFCntUp) - uint16(nextExpectedFullFCnt%(1<<16)))
+	return nextExpectedFullFCnt + gap
 }
 
 // SaveDeviceSession saves the device-session. In case it doesn't exist yet
@@ -407,11 +407,12 @@ func GetDeviceSessionsForDevAddr(ctx context.Context, devAddr lorawan.DevAddr) (
 		s, err := GetDeviceSession(ctx, devEUI)
 		if err != nil {
 			// TODO: in case not found, remove the DevEUI from the list
-			log.WithFields(log.Fields{
+			log.WithError(err).WithFields(log.Fields{
 				"dev_addr": devAddr,
 				"dev_eui":  devEUI,
 				"ctx_id":   ctx.Value(logging.ContextIDKey),
-			}).Warningf("get device-sessions for dev_addr error: %s", err)
+			}).Warning("get device-session for devaddr error")
+			continue
 		}
 
 		// It is possible that the "main" device-session maps to a different
@@ -476,7 +477,7 @@ func GetDeviceSessionForPHYPayload(ctx context.Context, phy lorawan.PHYPayload, 
 		macPL.FHDR.FCnt = originalFCnt
 
 		// get the full frame-counter (from 16bit to 32bit)
-		fullFCnt := GetFullFCntUp(ds, macPL.FHDR.FCnt)
+		fullFCnt := GetFullFCntUp(ds.FCntUp, macPL.FHDR.FCnt)
 
 		// Check both the full frame-counter and the received frame-counter
 		// truncated to the 16LSB.
