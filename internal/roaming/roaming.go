@@ -113,7 +113,7 @@ func GetPassiveRoamingLifetime(netID lorawan.NetID) time.Duration {
 func GetKEKKey(label string) ([]byte, error) {
 	kek, ok := keks[label]
 	if !ok {
-		return nil, fmt.Errorf("kek label '%' is not configured", label)
+		return nil, fmt.Errorf("kek label '%s' is not configured", label)
 	}
 	return kek, nil
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -70,7 +71,7 @@ func HandlePassiveRoamingUplink(ctx context.Context, rxPacket models.RXPacket, m
 		}
 
 		// forward data
-		if err := xmitData(ctx, client, rxPacket, macPL); err != nil {
+		if err := xmitDataUplink(ctx, client, rxPacket, macPL); err != nil {
 			log.WithError(err).WithFields(log.Fields{
 				"net_id":                            rs.NetID,
 				"dev_addr":                          macPL.FHDR.DevAddr,
@@ -91,7 +92,7 @@ func HandlePassiveRoamingUplink(ctx context.Context, rxPacket models.RXPacket, m
 	}
 }
 
-func xmitData(ctx context.Context, client backend.Client, rxPacket models.RXPacket, macPL *lorawan.MACPayload) error {
+func xmitDataUplink(ctx context.Context, client backend.Client, rxPacket models.RXPacket, macPL *lorawan.MACPayload) error {
 	phyB, err := rxPacket.PHYPayload.MarshalBinary()
 	if err != nil {
 		return errors.Wrap(err, "marshal phypayload error")
@@ -119,6 +120,11 @@ func xmitData(ctx context.Context, client backend.Client, rxPacket models.RXPack
 			lon = &loc.Longitude
 		}
 
+		b, err := proto.Marshal(rxInfo)
+		if err != nil {
+			return errors.Wrap(err, "marshal protobuf error")
+		}
+
 		rssi := int(rxInfo.Rssi)
 		req.ULMetaData.GWInfo = append(req.ULMetaData.GWInfo, backend.GWInfoElement{
 			ID:        backend.HEXBytes(rxInfo.GatewayId),
@@ -128,6 +134,7 @@ func xmitData(ctx context.Context, client backend.Client, rxPacket models.RXPack
 			Lat:       lat,
 			Lon:       lon,
 			DLAllowed: true,
+			ULToken:   backend.HEXBytes(b),
 		})
 	}
 

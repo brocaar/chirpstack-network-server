@@ -5,7 +5,6 @@ go 1.14
 require (
 	cloud.google.com/go v0.44.3
 	github.com/Azure/azure-amqp-common-go v1.1.4
-	github.com/Azure/azure-amqp-common-go/v2 v2.1.0
 	github.com/Azure/azure-service-bus-go v0.9.1
 	github.com/NickBall/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5
 	github.com/brocaar/chirpstack-api/go/v3 v3.6.1
