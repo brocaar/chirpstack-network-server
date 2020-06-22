@@ -44,7 +44,7 @@ func HandlePassiveRoamingUplink(ctx context.Context, rxPacket models.RXPacket, m
 					continue
 				}
 
-				if err := storage.SavePassiveRoamingDeviceSession(ctx, sess); err != nil {
+				if err := storage.SavePassiveRoamingDeviceSession(ctx, &sess); err != nil {
 					log.WithError(err).WithFields(log.Fields{
 						"ctx_id": ctx.Value(logging.ContextIDKey),
 					}).Error("roaming: save passive-roaming session error")

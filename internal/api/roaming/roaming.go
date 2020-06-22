@@ -26,6 +26,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/roaming"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/uplink/data"
+	"github.com/brocaar/chirpstack-network-server/internal/uplink/join"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
 )
@@ -190,6 +191,21 @@ func (a *API) handlePRStartReq(ctx context.Context, w http.ResponseWriter, baseP
 		return
 	}
 
+	// phypayload
+	var phy lorawan.PHYPayload
+	if err := phy.UnmarshalBinary(pl.PHYPayload[:]); err != nil {
+		a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.MalformedRequest, fmt.Sprintf("unmarshal phypayload error: %s", err)))
+		return
+	}
+
+	if phy.MHDR.MType == lorawan.JoinRequest {
+		a.handlePRStartReqJoin(ctx, w, basePL, pl, phy)
+	} else {
+		a.handlePRStartReqData(ctx, w, basePL, pl, phy)
+	}
+}
+
+func (a *API) handlePRStartReqData(ctx context.Context, w http.ResponseWriter, basePL backend.BasePayload, pl backend.PRStartReqPayload, phy lorawan.PHYPayload) {
 	// decode requester netid
 	var netID lorawan.NetID
 	if err := netID.UnmarshalText([]byte(basePL.SenderID)); err != nil {
@@ -213,13 +229,6 @@ func (a *API) handlePRStartReq(ctx context.Context, w http.ResponseWriter, baseP
 	ch, err := band.Band().GetUplinkChannelIndexForFrequencyDR(freq, dr)
 	if err != nil {
 		a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.MalformedRequest, fmt.Sprintf("get channel error: %s", err)))
-		return
-	}
-
-	// phypayload
-	var phy lorawan.PHYPayload
-	if err := phy.UnmarshalBinary(pl.PHYPayload[:]); err != nil {
-		a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.MalformedRequest, fmt.Sprintf("unmarshal phypayload error: %s", err)))
 		return
 	}
 
@@ -277,6 +286,43 @@ func (a *API) handlePRStartReq(ctx context.Context, w http.ResponseWriter, baseP
 	}
 
 	a.writeResponse(ctx, w, ans)
+}
+
+func (a *API) handlePRStartReqJoin(ctx context.Context, w http.ResponseWriter, basePL backend.BasePayload, pl backend.PRStartReqPayload, phy lorawan.PHYPayload) {
+	rxInfo, err := roaming.ULMetaDataToRXInfo(pl.ULMetaData)
+	if err != nil {
+		a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.MalformedRequest, fmt.Sprintf("uplink meta-data to rxinfo error: %s", err)))
+		return
+	}
+
+	txInfo, err := roaming.ULMetaDataToTXInfo(pl.ULMetaData)
+	if err != nil {
+		a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.MalformedRequest, fmt.Sprintf("uplink meta-data to txinfo error: %s", err)))
+		return
+	}
+
+	rxPacket := models.RXPacket{
+		PHYPayload: phy,
+		TXInfo:     txInfo,
+		RXInfoSet:  rxInfo,
+	}
+	if pl.ULMetaData.DataRate != nil {
+		rxPacket.DR = *pl.ULMetaData.DataRate
+	}
+
+	ans, err := join.HandleStartPR(ctx, pl, rxPacket)
+	if err != nil {
+		switch errors.Cause(err) {
+		default:
+			a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.Other, fmt.Sprintf("handle otaa error: %s", err)))
+		}
+
+	} else {
+		pl := a.getBasePayloadResult(basePL, backend.Success, "")
+		ans.BasePayload = pl.BasePayload
+		ans.Result = pl.Result
+		a.writeResponse(ctx, w, ans)
+	}
 }
 
 func (a *API) handlePRStopReq(ctx context.Context, w http.ResponseWriter, pl []byte) {

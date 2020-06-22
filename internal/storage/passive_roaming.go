@@ -36,7 +36,14 @@ type PassiveRoamingDeviceSession struct {
 }
 
 // SavePassiveRoamingDeviceSession saves the passive-roaming device-session.
-func SavePassiveRoamingDeviceSession(ctx context.Context, ds PassiveRoamingDeviceSession) error {
+func SavePassiveRoamingDeviceSession(ctx context.Context, ds *PassiveRoamingDeviceSession) error {
+	id, err := uuid.NewV4()
+	if err != nil {
+		return errors.Wrap(err, "new uuid v4 error")
+	}
+
+	ds.SessionID = id
+
 	devAddrKey := fmt.Sprintf(prDevAddrKeyTempl, ds.DevAddr)
 	devEUIKey := fmt.Sprintf(prDevEUIKeyTempl, ds.DevEUI)
 	sessKey := fmt.Sprintf(prDeviceSessionKeyTempl, ds.SessionID)
@@ -206,7 +213,7 @@ func GetPassiveRoamingDeviceSession(ctx context.Context, id uuid.UUID) (PassiveR
 	return passiveRoamingDeviceSessionFromPB(dsPB)
 }
 
-func passiveRoamingDeviceSessionToPB(ds PassiveRoamingDeviceSession) (PassiveRoamingDeviceSessionPB, error) {
+func passiveRoamingDeviceSessionToPB(ds *PassiveRoamingDeviceSession) (PassiveRoamingDeviceSessionPB, error) {
 	timePB, err := ptypes.TimestampProto(ds.Lifetime)
 	if err != nil {
 		return PassiveRoamingDeviceSessionPB{}, errors.Wrap(err, "timestamp proto error")

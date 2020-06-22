@@ -1,6 +1,10 @@
 package roaming
 
 import (
+	"time"
+
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/chirpstack-api/go/v3/common"
@@ -57,6 +61,54 @@ func ULMetaDataToRXInfo(ulMetaData backend.ULMetaData) ([]*gw.UplinkRXInfo, erro
 		}
 
 		out = append(out, &rxInfo)
+	}
+
+	return out, nil
+}
+
+func RecvTimeFromRXInfo(rxInfo []*gw.UplinkRXInfo) backend.ISO8601Time {
+	for _, r := range rxInfo {
+		if r.Time != nil {
+			t, err := ptypes.Timestamp(r.Time)
+			if err != nil {
+				continue
+			}
+
+			return backend.ISO8601Time(t)
+		}
+	}
+
+	return backend.ISO8601Time(time.Now())
+}
+
+func RXInfoToGWInfo(rxInfo []*gw.UplinkRXInfo) ([]backend.GWInfoElement, error) {
+	var out []backend.GWInfoElement
+	for i := range rxInfo {
+		rssi := int(rxInfo[i].Rssi)
+		var lat, lon *float64
+
+		if loc := rxInfo[i].Location; loc != nil {
+			lat = &loc.Latitude
+			lon = &loc.Longitude
+		}
+
+		b, err := proto.Marshal(rxInfo[i])
+		if err != nil {
+			return nil, errors.Wrap(err, "marshal rxinfo error")
+		}
+
+		e := backend.GWInfoElement{
+			ID:        backend.HEXBytes(rxInfo[i].GatewayId),
+			RFRegion:  band.Band().Name(),
+			RSSI:      &rssi,
+			SNR:       &rxInfo[i].LoraSnr,
+			Lat:       lat,
+			Lon:       lon,
+			ULToken:   backend.HEXBytes(b),
+			DLAllowed: true,
+		}
+
+		out = append(out, e)
 	}
 
 	return out, nil
