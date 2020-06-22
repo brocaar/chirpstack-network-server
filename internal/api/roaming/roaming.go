@@ -8,46 +8,24 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"sort"
 	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/chirpstack-api/go/v3/gw"
-	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
-	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	downdata "github.com/brocaar/chirpstack-network-server/internal/downlink/data"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/models"
 	"github.com/brocaar/chirpstack-network-server/internal/roaming"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
-	"github.com/brocaar/chirpstack-network-server/internal/uplink/data"
+	updata "github.com/brocaar/chirpstack-network-server/internal/uplink/data"
 	"github.com/brocaar/chirpstack-network-server/internal/uplink/join"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
 )
-
-type bySignal []*gw.UplinkRXInfo
-
-func (s bySignal) Len() int {
-	return len(s)
-}
-
-func (s bySignal) Swap(i, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-
-func (s bySignal) Less(i, j int) bool {
-	if s[i].LoraSnr == s[j].LoraSnr {
-		return s[i].Rssi > s[j].Rssi
-	}
-
-	return s[i].LoraSnr > s[j].LoraSnr
-}
 
 // Setup configures the roaming API.
 func Setup(c config.Config) error {
@@ -250,7 +228,7 @@ func (a *API) handlePRStartReqData(ctx context.Context, w http.ResponseWriter, b
 	lifetime := int(roaming.GetPassiveRoamingLifetime(netID) / time.Second)
 
 	// sess keys
-	kekLabel := roaming.GetPassiveRaomingKEKLabel(netID)
+	kekLabel := roaming.GetPassiveRoamingKEKLabel(netID)
 	var kekKey []byte
 	if kekLabel != "" {
 		kekKey, err = roaming.GetKEKKey(kekLabel)
@@ -310,7 +288,7 @@ func (a *API) handlePRStartReqJoin(ctx context.Context, w http.ResponseWriter, b
 		rxPacket.DR = *pl.ULMetaData.DataRate
 	}
 
-	ans, err := join.HandleStartPR(ctx, pl, rxPacket)
+	ans, err := join.HandleStartPRHNS(ctx, pl, rxPacket)
 	if err != nil {
 		switch errors.Cause(err) {
 		default:
@@ -342,142 +320,22 @@ func (a *API) handleXmitDataReq(ctx context.Context, w http.ResponseWriter, base
 
 	if len(pl.PHYPayload[:]) != 0 && pl.ULMetaData != nil {
 		// Passive Roaming uplink
-		a.handleXmitDataReqPRUplink(ctx, w, basePL, pl)
+		if err := updata.HandleRoamingHNS(ctx, pl); err != nil {
+			a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.Other, err.Error()))
+			return
+		}
 	} else if len(pl.PHYPayload[:]) != 0 && pl.DLMetaData != nil {
 		// Passive Roaming downlink
-		a.handleXmitDataReqPRDownlink(ctx, w, basePL, pl)
+		if err := downdata.HandleRoamingFNS(ctx, pl); err != nil {
+			a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.Other, err.Error()))
+			return
+		}
 	} else {
 		a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.MalformedRequest, "unexpected payload"))
 		return
 	}
 
 	a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.Success, ""))
-}
-
-func (a *API) handleXmitDataReqPRUplink(ctx context.Context, w http.ResponseWriter, basePL backend.BasePayload, pl backend.XmitDataReqPayload) {
-	// Decode PHYPayload
-	var phy lorawan.PHYPayload
-	if err := phy.UnmarshalBinary(pl.PHYPayload[:]); err != nil {
-		a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.Other, fmt.Sprintf("unmarshal phypayload error: %s", err)))
-		return
-	}
-
-	// Convert ULMetaData to UplinkRXInfo and UplinkTXInfo
-	txInfo, err := roaming.ULMetaDataToTXInfo(*pl.ULMetaData)
-	if err != nil {
-		a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.Other, fmt.Sprintf("ul meta-data to txinfo error: %s", err)))
-		return
-	}
-	rxInfo, err := roaming.ULMetaDataToRXInfo(*pl.ULMetaData)
-	if err != nil {
-		a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.Other, fmt.Sprintf("ul meta-data to rxinfo error: %s", err)))
-		return
-	}
-
-	// Construct RXPacket
-	rxPacket := models.RXPacket{
-		PHYPayload:         phy,
-		TXInfo:             txInfo,
-		RXInfoSet:          rxInfo,
-		XmitDataReqPayload: &pl,
-	}
-	if pl.ULMetaData.DataRate != nil {
-		rxPacket.DR = *pl.ULMetaData.DataRate
-	}
-
-	// Start the uplink data flow
-	if err := data.Handle(ctx, rxPacket); err != nil {
-		a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.Other, fmt.Sprintf("handle uplink error: %s", err)))
-		return
-	}
-}
-
-func (a *API) handleXmitDataReqPRDownlink(ctx context.Context, w http.ResponseWriter, basePL backend.BasePayload, pl backend.XmitDataReqPayload) {
-	// Retrieve RXInfo from DLMetaData
-	rxInfo, err := roaming.DLMetaDataToUplinkRXInfoSet(*pl.DLMetaData)
-	if err != nil {
-		a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.MalformedRequest, fmt.Sprintf("get uplink rxinfo set error: %s", err)))
-		return
-	}
-
-	if len(rxInfo) == 0 {
-		a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.MalformedRequest, "GWInfo must not be empty"))
-		return
-	}
-
-	sort.Sort(bySignal(rxInfo))
-
-	var downID uuid.UUID
-	if ctxID := ctx.Value(logging.ContextIDKey); ctxID != nil {
-		if id, ok := ctxID.(uuid.UUID); ok {
-			downID = id
-		}
-	}
-
-	downlink := gw.DownlinkFrame{
-		GatewayId:  rxInfo[0].GatewayId,
-		DownlinkId: downID[:],
-		Items:      []*gw.DownlinkFrameItem{},
-	}
-
-	if pl.DLMetaData.DLFreq1 != nil && pl.DLMetaData.DataRate1 != nil && pl.DLMetaData.RXDelay1 != nil {
-		item := gw.DownlinkFrameItem{
-			PhyPayload: pl.PHYPayload[:],
-			TxInfo: &gw.DownlinkTXInfo{
-				Frequency: uint32(*pl.DLMetaData.DLFreq1 * 1000000),
-				Board:     rxInfo[0].Board,
-				Antenna:   rxInfo[0].Antenna,
-				Context:   rxInfo[0].Context,
-				Timing:    gw.DownlinkTiming_DELAY,
-				TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
-					DelayTimingInfo: &gw.DelayTimingInfo{
-						Delay: ptypes.DurationProto(time.Duration(*pl.DLMetaData.RXDelay1) * time.Second),
-					},
-				},
-			},
-		}
-
-		item.TxInfo.Power = int32(band.Band().GetDownlinkTXPower(int(item.TxInfo.Frequency)))
-
-		if err := helpers.SetDownlinkTXInfoDataRate(item.TxInfo, *pl.DLMetaData.DataRate1, band.Band()); err != nil {
-			a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.Other, fmt.Sprintf("set downlink txinfo data-rate error: %s", err)))
-			return
-		}
-
-		downlink.Items = append(downlink.Items, &item)
-	}
-
-	if pl.DLMetaData.DLFreq2 != nil && pl.DLMetaData.DataRate2 != nil && pl.DLMetaData.RXDelay1 != nil {
-		item := gw.DownlinkFrameItem{
-			PhyPayload: pl.PHYPayload[:],
-			TxInfo: &gw.DownlinkTXInfo{
-				Frequency: uint32(*pl.DLMetaData.DLFreq2 * 1000000),
-				Board:     rxInfo[0].Board,
-				Antenna:   rxInfo[0].Antenna,
-				Context:   rxInfo[0].Context,
-				Timing:    gw.DownlinkTiming_DELAY,
-				TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
-					DelayTimingInfo: &gw.DelayTimingInfo{
-						Delay: ptypes.DurationProto(time.Duration(*pl.DLMetaData.RXDelay1+1) * time.Second),
-					},
-				},
-			},
-		}
-
-		item.TxInfo.Power = int32(band.Band().GetDownlinkTXPower(int(item.TxInfo.Frequency)))
-
-		if err := helpers.SetDownlinkTXInfoDataRate(item.TxInfo, *pl.DLMetaData.DataRate2, band.Band()); err != nil {
-			a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.Other, fmt.Sprintf("set downlink txinfo data-rate error: %s", err)))
-			return
-		}
-
-		downlink.Items = append(downlink.Items, &item)
-	}
-
-	if err := gateway.Backend().SendTXPacket(downlink); err != nil {
-		a.writeResponse(ctx, w, a.getBasePayloadResult(basePL, backend.Other, fmt.Sprintf("send downlink-frame to gateway error: %s", err)))
-		return
-	}
 }
 
 func (a *API) getBasePayloadResult(basePLReq backend.BasePayload, resCode backend.ResultCode, resDesc string) backend.BasePayloadResult {

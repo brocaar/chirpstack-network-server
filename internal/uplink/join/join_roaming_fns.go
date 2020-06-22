@@ -15,7 +15,7 @@ import (
 	"github.com/brocaar/lorawan/backend"
 )
 
-type requestStartPRContext struct {
+type startPRFNSContext struct {
 	ctx                context.Context
 	rxPacket           models.RXPacket
 	joinRequestPayload *lorawan.JoinRequestPayload
@@ -23,9 +23,9 @@ type requestStartPRContext struct {
 	nsClient           backend.Client
 }
 
-// RequestStartPR initiates the passive-roaming OTAA.
-func RequestStartPR(ctx context.Context, rxPacket models.RXPacket, jrPL *lorawan.JoinRequestPayload) error {
-	cctx := requestStartPRContext{
+// StartPRFNS initiates the passive-roaming OTAA as a fNS.
+func StartPRFNS(ctx context.Context, rxPacket models.RXPacket, jrPL *lorawan.JoinRequestPayload) error {
+	cctx := startPRFNSContext{
 		ctx:                ctx,
 		rxPacket:           rxPacket,
 		joinRequestPayload: jrPL,
@@ -44,7 +44,7 @@ func RequestStartPR(ctx context.Context, rxPacket models.RXPacket, jrPL *lorawan
 	return nil
 }
 
-func (ctx *requestStartPRContext) getHomeNetID() error {
+func (ctx *startPRFNSContext) getHomeNetID() error {
 	/*
 		jsClient, err := joinserver.GetClientForJoinEUI(ctx.joinRequestPayload.JoinEUI)
 		if err != nil {
@@ -72,7 +72,7 @@ func (ctx *requestStartPRContext) getHomeNetID() error {
 	return nil
 }
 
-func (ctx *requestStartPRContext) getNSClient() error {
+func (ctx *startPRFNSContext) getNSClient() error {
 	client, err := roaming.GetClientForNetID(ctx.homeNetID)
 	if err != nil {
 		if err == roaming.ErrNoAgreement {
@@ -89,7 +89,7 @@ func (ctx *requestStartPRContext) getNSClient() error {
 	return nil
 }
 
-func (ctx *requestStartPRContext) startRoaming() error {
+func (ctx *startPRFNSContext) startRoaming() error {
 	phyB, err := ctx.rxPacket.PHYPayload.MarshalBinary()
 	if err != nil {
 		return errors.Wrap(err, "marshal phypayload error")

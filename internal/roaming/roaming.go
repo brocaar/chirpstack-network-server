@@ -118,12 +118,26 @@ func GetKEKKey(label string) ([]byte, error) {
 	return kek, nil
 }
 
-// GetPassiveRaomingKEKLabel returns the KEK label for the given NetID or an empty string.
-func GetPassiveRaomingKEKLabel(netID lorawan.NetID) string {
+// GetPassiveRoamingKEKLabel returns the KEK label for the given NetID or an empty string.
+func GetPassiveRoamingKEKLabel(netID lorawan.NetID) string {
 	for _, a := range agreements {
 		if a.netID == netID {
 			return a.passiveRoamingKEKLabel
 		}
 	}
 	return ""
+}
+
+// GetNetIDsForDevAddr returns the NetIDs matching the given DevAddr.
+func GetNetIDsForDevAddr(devAddr lorawan.DevAddr) []lorawan.NetID {
+	var out []lorawan.NetID
+
+	for i := range agreements {
+		a := agreements[i]
+		if devAddr.IsNetID(a.netID) && a.passiveRoaming {
+			out = append(out, a.netID)
+		}
+	}
+
+	return out
 }

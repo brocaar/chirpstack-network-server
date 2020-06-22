@@ -120,7 +120,12 @@ func handlePassiveRoamingDevice(ctx *dataContext) error {
 			"ctx_id":   ctx.ctx.Value(logging.ContextIDKey),
 		}).Info("uplink/data: devaddr does not match netid, assuming roaming device")
 
-		roaming.HandlePassiveRoamingUplink(ctx.ctx, ctx.RXPacket, ctx.MACPayload)
+		if err := HandleRoamingFNS(ctx.ctx, ctx.RXPacket, ctx.MACPayload); err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"dev_addr": ctx.MACPayload.FHDR.DevAddr,
+				"ctx_id":   ctx.ctx.Value(logging.ContextIDKey),
+			}).Error("uplink/data: handling passive-roaming error")
+		}
 
 		// the flow stops here
 		return ErrAbort
