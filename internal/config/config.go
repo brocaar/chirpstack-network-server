@@ -187,6 +187,8 @@ type Config struct {
 			NetID                  lorawan.NetID
 			NetIDString            string        `mapstructure:"net_id"`
 			CheckMIC               bool          `mapstructure:"check_mic"`
+			Async                  bool          `mapstructure:"async"`
+			AsyncTimeout           time.Duration `mapstructure:"async_timeout"`
 			PassiveRoaming         bool          `mapstructure:"passive_roaming"`
 			PassiveRoamingLifetime time.Duration `mapstructure:"passive_roaming_lifetime"`
 			PassiveRoamingKEKLabel string        `mapstructure:"passive_roaming_kek_label"`

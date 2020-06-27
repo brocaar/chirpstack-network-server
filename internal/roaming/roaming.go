@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
 )
@@ -47,16 +49,26 @@ func Setup(c config.Config) error {
 		log.WithFields(log.Fields{
 			"net_id":          server.NetID,
 			"passive_roaming": server.PassiveRoaming,
+			"check_mic":       server.CheckMIC,
 			"server":          server.Server,
+			"async":           server.Async,
+			"async_timeout":   server.AsyncTimeout,
 		}).Info("roaming: configuring roaming agreement")
 
+		var redisClient redis.UniversalClient
+		if server.Async {
+			redisClient = storage.RedisClient()
+		}
+
 		client, err := backend.NewClient(backend.ClientConfig{
-			SenderID:   netID.String(),
-			ReceiverID: server.NetID.String(),
-			Server:     server.Server,
-			CACert:     server.CACert,
-			TLSCert:    server.TLSCert,
-			TLSKey:     server.TLSKey,
+			SenderID:     netID.String(),
+			ReceiverID:   server.NetID.String(),
+			Server:       server.Server,
+			CACert:       server.CACert,
+			TLSCert:      server.TLSCert,
+			TLSKey:       server.TLSKey,
+			AsyncTimeout: server.AsyncTimeout,
+			RedisClient:  redisClient,
 		})
 		if err != nil {
 			return errors.Wrapf(err, "new roaming client error for netid: %s", server.NetID)

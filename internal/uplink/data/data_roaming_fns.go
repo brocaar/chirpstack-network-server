@@ -39,6 +39,7 @@ func HandleRoamingFNS(ctx context.Context, rxPacket models.RXPacket, macPL *lora
 		cctx.getPassiveRoamingDeviceSessions,
 		cctx.startPassiveRoamingSessions,
 		cctx.forwardUplinkMessageForSessions,
+		cctx.saveSessions,
 	} {
 		if err := f(); err != nil {
 			return err
@@ -65,6 +66,11 @@ func (ctx *roamingDataContext) startPassiveRoamingSessions() error {
 	if len(ctx.prDeviceSessions) != 0 {
 		return nil
 	}
+
+	log.WithFields(log.Fields{
+		"ctx_id":   ctx.ctx.Value(logging.ContextIDKey),
+		"dev_addr": ctx.macPayload.FHDR.DevAddr,
+	}).Info("uplink/data: starting passive-roaming sessions with matching netids")
 
 	netIDMatches := roaming.GetNetIDsForDevAddr(ctx.macPayload.FHDR.DevAddr)
 	for _, netID := range netIDMatches {
@@ -120,6 +126,22 @@ func (ctx *roamingDataContext) forwardUplinkMessageForSessions() error {
 	return nil
 }
 
+func (ctx *roamingDataContext) saveSessions() error {
+	for _, ds := range ctx.prDeviceSessions {
+		ds.FCntUp = ctx.macPayload.FHDR.FCnt + 1
+
+		if err := storage.SavePassiveRoamingDeviceSession(ctx.ctx, &ds); err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"passive_roaming_device_session_id": ds.SessionID,
+				"ctx_id":                            ctx.ctx.Value(logging.ContextIDKey),
+				"dev_eui":                           ds.DevEUI,
+			}).Error("uplink/data: save passive-roaming device-session error")
+		}
+	}
+
+	return nil
+}
+
 func (ctx *roamingDataContext) startPassiveRoamingSession(netID lorawan.NetID) (storage.PassiveRoamingDeviceSession, error) {
 	var out storage.PassiveRoamingDeviceSession
 
@@ -145,6 +167,12 @@ func (ctx *roamingDataContext) startPassiveRoamingSession(netID lorawan.NetID) (
 			GWCnt:    &gwCnt,
 		},
 	}
+
+	log.WithFields(log.Fields{
+		"ctx_id":   ctx.ctx.Value(logging.ContextIDKey),
+		"dev_addr": ctx.macPayload.FHDR.DevAddr,
+		"net_id":   netID,
+	}).Info("uplink/data: starting passive-roaming session")
 
 	resp, err := client.PRStartReq(ctx.ctx, req)
 	if err != nil {
