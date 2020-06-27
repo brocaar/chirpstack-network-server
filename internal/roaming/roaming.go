@@ -50,7 +50,14 @@ func Setup(c config.Config) error {
 			"server":          server.Server,
 		}).Info("roaming: configuring roaming agreement")
 
-		client, err := backend.NewClient(netID.String(), server.NetID.String(), server.Server, server.CACert, server.TLSCert, server.TLSKey)
+		client, err := backend.NewClient(backend.ClientConfig{
+			SenderID:   netID.String(),
+			ReceiverID: server.NetID.String(),
+			Server:     server.Server,
+			CACert:     server.CACert,
+			TLSCert:    server.TLSCert,
+			TLSKey:     server.TLSKey,
+		})
 		if err != nil {
 			return errors.Wrapf(err, "new roaming client error for netid: %s", server.NetID)
 		}

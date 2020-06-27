@@ -32,7 +32,14 @@ func Setup(c config.Config) error {
 
 	var err error
 	var joinEUI lorawan.EUI64
-	defaultClient, err = backend.NewClient(c.NetworkServer.NetID.String(), joinEUI.String(), conf.Default.Server, conf.Default.CACert, conf.Default.TLSCert, conf.Default.TLSKey)
+	defaultClient, err = backend.NewClient(backend.ClientConfig{
+		SenderID:   c.NetworkServer.NetID.String(),
+		ReceiverID: joinEUI.String(),
+		Server:     conf.Default.Server,
+		CACert:     conf.Default.CACert,
+		TLSCert:    conf.Default.TLSCert,
+		TLSKey:     conf.Default.TLSKey,
+	})
 	if err != nil {
 		return errors.Wrap(err, "joinserver: configure default client error")
 	}
@@ -47,7 +54,14 @@ func Setup(c config.Config) error {
 			s.Server = joinEUIToServer(joinEUI, conf.ResolveDomainSuffix)
 		}
 
-		client, err := backend.NewClient(c.NetworkServer.NetID.String(), joinEUI.String(), s.Server, s.CACert, s.TLSCert, s.TLSKey)
+		client, err := backend.NewClient(backend.ClientConfig{
+			SenderID:   c.NetworkServer.NetID.String(),
+			ReceiverID: joinEUI.String(),
+			Server:     s.Server,
+			CACert:     s.CACert,
+			TLSCert:    s.TLSCert,
+			TLSKey:     s.TLSKey,
+		})
 		if err != nil {
 			return errors.Wrap(err, "new backend client error")
 		}

@@ -11,10 +11,10 @@ require (
 	github.com/brocaar/lorawan v0.0.0-20200622123851-72a7d640c297
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/elazarl/go-bindata-assetfs v1.0.0
-	github.com/go-redis/redis/v7 v7.2.0
+	github.com/go-redis/redis/v7 v7.4.0
 	github.com/gobuffalo/packr v1.22.0 // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible
-	github.com/golang/protobuf v1.4.1
+	github.com/golang/protobuf v1.4.2
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/goreleaser/goreleaser v0.106.0
 	github.com/goreleaser/nfpm v0.11.0
@@ -38,14 +38,15 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/ziutek/mymysql v1.5.4 // indirect
 	golang.org/x/lint v0.0.0-20190409202823-959b441ac422
-	golang.org/x/net v0.0.0-20200219183655-46282727080f
-	golang.org/x/sys v0.0.0-20200219091948-cb0a6d8edb6c // indirect
+	golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7
 	golang.org/x/tools v0.0.0-20190708203411-c8855242db9c
 	gonum.org/v1/gonum v0.0.0-20190115205657-1b07048b32c6
 	gonum.org/v1/netlib v0.0.0-20190219113230-9992c5f5eae4 // indirect
 	google.golang.org/api v0.9.0
-	google.golang.org/grpc v1.28.0
+	google.golang.org/grpc v1.29.1
 	google.golang.org/protobuf v1.24.0 // indirect
 	gopkg.in/gorp.v1 v1.7.2 // indirect
 	pack.ag/amqp v0.12.1
 )
+
+replace github.com/brocaar/lorawan => ../lorawan

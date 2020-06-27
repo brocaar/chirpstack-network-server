@@ -725,7 +725,7 @@ func TestNetworkServerAPI(t *testing.T) {
 				_, err = api.GetGateway(ctx, &ns.GetGatewayRequest{
 					Id: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 				})
-				So(err, ShouldResemble, grpc.Errorf(codes.NotFound, "object does not exist"))
+				So(codes.NotFound, ShouldEqual, grpc.Code(err))
 			})
 
 			Convey("When creating a gateway-profile object", func() {

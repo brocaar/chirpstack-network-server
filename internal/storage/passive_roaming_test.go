@@ -29,7 +29,7 @@ func (ts *StorageTestSuite) TestPassiveRoaming() {
 			FCntUp:      10,
 		}
 
-		assert.NoError(SavePassiveRoamingDeviceSession(context.Background(), ds))
+		assert.NoError(SavePassiveRoamingDeviceSession(context.Background(), &ds))
 
 		ts.T().Run("Get IDs for DevAddr", func(t *testing.T) {
 			assert := require.New(t)
@@ -296,7 +296,7 @@ func (ts *StorageTestSuite) TestPassiveRoaming() {
 				assert.NoError(RedisClient().FlushAll().Err())
 
 				for _, s := range tst.storedSessions {
-					assert.NoError(SavePassiveRoamingDeviceSession(context.Background(), s))
+					assert.NoError(SavePassiveRoamingDeviceSession(context.Background(), &s))
 				}
 
 				sessions, err := GetPassiveRoamingDeviceSessionsForPHYPayload(context.Background(), tst.phyPayload)

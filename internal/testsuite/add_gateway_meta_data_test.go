@@ -178,7 +178,6 @@ func (ts *AddGatewayMetaDataTestSuite) TestAddGatewayMetaData() {
 			case gw.FineTimestampType_PLAIN:
 				tsInfo := rxItem.GetPlainFineTimestamp()
 				tsInfo.XXX_sizecache = 0
-				tsInfo.Time.XXX_sizecache = 0
 				assert.Equal(test.ExpectedFineTimestamp, tsInfo)
 			}
 		})
