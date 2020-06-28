@@ -74,11 +74,11 @@ func RecvTimeFromRXInfo(rxInfo []*gw.UplinkRXInfo) backend.ISO8601Time {
 				continue
 			}
 
-			return backend.ISO8601Time(t)
+			return backend.ISO8601Time(t.UTC())
 		}
 	}
 
-	return backend.ISO8601Time(time.Now())
+	return backend.ISO8601Time(time.Now().UTC())
 }
 
 func RXInfoToGWInfo(rxInfo []*gw.UplinkRXInfo) ([]backend.GWInfoElement, error) {
@@ -99,7 +99,6 @@ func RXInfoToGWInfo(rxInfo []*gw.UplinkRXInfo) ([]backend.GWInfoElement, error) 
 
 		e := backend.GWInfoElement{
 			ID:        backend.HEXBytes(rxInfo[i].GatewayId),
-			RFRegion:  band.Band().Name(),
 			RSSI:      &rssi,
 			SNR:       &rxInfo[i].LoraSnr,
 			Lat:       lat,

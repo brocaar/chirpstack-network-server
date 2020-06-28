@@ -354,28 +354,35 @@ func (a *API) handlePRStartReqData(ctx context.Context, basePL backend.BasePaylo
 
 	// lifetime
 	lifetime := int(roaming.GetPassiveRoamingLifetime(netID) / time.Second)
-
-	// sess keys
-	kekLabel := roaming.GetPassiveRoamingKEKLabel(netID)
-	var kekKey []byte
-	if kekLabel != "" {
-		kekKey, err = roaming.GetKEKKey(kekLabel)
-		if err != nil {
-			return nil, errors.Wrap(err, "get kek key error")
-		}
-	}
 	var fNwkSIntKey *backend.KeyEnvelope
 	var nwkSKey *backend.KeyEnvelope
 
-	if ds.GetMACVersion() == lorawan.LoRaWAN1_0 {
-		nwkSKey, err = backend.NewKeyEnvelope(kekLabel, kekKey, ds.NwkSEncKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "new key envelope error")
+	if lifetime != 0 {
+		// sess keys
+		kekLabel := roaming.GetPassiveRoamingKEKLabel(netID)
+		var kekKey []byte
+		if kekLabel != "" {
+			kekKey, err = roaming.GetKEKKey(kekLabel)
+			if err != nil {
+				return nil, errors.Wrap(err, "get kek key error")
+			}
+		}
+
+		if ds.GetMACVersion() == lorawan.LoRaWAN1_0 {
+			nwkSKey, err = backend.NewKeyEnvelope(kekLabel, kekKey, ds.NwkSEncKey)
+			if err != nil {
+				return nil, errors.Wrap(err, "new key envelope error")
+			}
+		} else {
+			fNwkSIntKey, err = backend.NewKeyEnvelope(kekLabel, kekKey, ds.FNwkSIntKey)
+			if err != nil {
+				return nil, errors.Wrap(err, "new key envelope error")
+			}
 		}
 	} else {
-		fNwkSIntKey, err = backend.NewKeyEnvelope(kekLabel, kekKey, ds.FNwkSIntKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "new key envelope error")
+		// In case of stateless, the payload is directly handled
+		if err := updata.HandleRoamingHNS(ctx, pl.PHYPayload[:], pl.BasePayload, pl.ULMetaData); err != nil {
+			return nil, errors.Wrap(err, "handle passive-roaming uplink error")
 		}
 	}
 
@@ -477,7 +484,7 @@ func (a *API) handleXmitDataReq(ctx context.Context, basePL backend.BasePayload,
 
 	if len(pl.PHYPayload[:]) != 0 && pl.ULMetaData != nil {
 		// Passive Roaming uplink
-		if err := updata.HandleRoamingHNS(ctx, pl); err != nil {
+		if err := updata.HandleRoamingHNS(ctx, pl.PHYPayload[:], pl.BasePayload, *pl.ULMetaData); err != nil {
 			return nil, errors.Wrap(err, "handle passive-roaming uplink error")
 		}
 	} else if len(pl.PHYPayload[:]) != 0 && pl.DLMetaData != nil {

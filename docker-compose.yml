@@ -7,7 +7,6 @@ services:
     command: make serve
     volumes:
       - ./:/chirpstack-network-server
-      - ../lorawan:/lorawan
     links:
       - postgres
       - redis

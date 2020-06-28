@@ -12,32 +12,35 @@ import (
 )
 
 // HandleRoamingHNS handles an uplink as a hNS.
-func HandleRoamingHNS(ctx context.Context, pl backend.XmitDataReqPayload) error {
+func HandleRoamingHNS(ctx context.Context, phyPayload []byte, basePL backend.BasePayload, ulMetaData backend.ULMetaData) error {
 	// decode PHYPayload
 	var phy lorawan.PHYPayload
-	if err := phy.UnmarshalBinary(pl.PHYPayload[:]); err != nil {
+	if err := phy.UnmarshalBinary(phyPayload); err != nil {
 		return errors.Wrap(err, "unmarshal phypayload error")
 	}
 
 	// convert ULMetaData to UplinkRXInfo and UplinkTXInfo
-	txInfo, err := roaming.ULMetaDataToTXInfo(*pl.ULMetaData)
+	txInfo, err := roaming.ULMetaDataToTXInfo(ulMetaData)
 	if err != nil {
 		return errors.Wrap(err, "up meta-data to txinfo error")
 	}
-	rxInfo, err := roaming.ULMetaDataToRXInfo(*pl.ULMetaData)
+	rxInfo, err := roaming.ULMetaDataToRXInfo(ulMetaData)
 	if err != nil {
 		return errors.Wrap(err, "ul meta-data to rxinfo error")
 	}
 
 	// Construct RXPacket
 	rxPacket := models.RXPacket{
-		PHYPayload:         phy,
-		TXInfo:             txInfo,
-		RXInfoSet:          rxInfo,
-		XmitDataReqPayload: &pl,
+		PHYPayload: phy,
+		TXInfo:     txInfo,
+		RXInfoSet:  rxInfo,
+		RoamingMetaData: &models.RoamingMetaData{
+			BasePayload: basePL,
+			ULMetaData:  ulMetaData,
+		},
 	}
-	if pl.ULMetaData.DataRate != nil {
-		rxPacket.DR = *pl.ULMetaData.DataRate
+	if ulMetaData.DataRate != nil {
+		rxPacket.DR = *ulMetaData.DataRate
 	}
 
 	// Start the uplink data flow

@@ -47,12 +47,13 @@ func Setup(c config.Config) error {
 		}
 
 		log.WithFields(log.Fields{
-			"net_id":          server.NetID,
-			"passive_roaming": server.PassiveRoaming,
-			"check_mic":       server.CheckMIC,
-			"server":          server.Server,
-			"async":           server.Async,
-			"async_timeout":   server.AsyncTimeout,
+			"net_id":                   server.NetID,
+			"passive_roaming":          server.PassiveRoaming,
+			"passive_roaming_lifetime": server.PassiveRoamingLifetime,
+			"check_mic":                server.CheckMIC,
+			"server":                   server.Server,
+			"async":                    server.Async,
+			"async_timeout":            server.AsyncTimeout,
 		}).Info("roaming: configuring roaming agreement")
 
 		var redisClient redis.UniversalClient

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -84,7 +83,12 @@ func (ctx *roamingDataContext) startPassiveRoamingSessions() error {
 			continue
 		}
 
-		ctx.prDeviceSessions = append(ctx.prDeviceSessions, ds)
+		// No need to store the device-session or call XmitDataReq when
+		// lifetime is not set (stateless passive-roaming).
+		var nullTime time.Time
+		if ds.Lifetime != nullTime {
+			ctx.prDeviceSessions = append(ctx.prDeviceSessions, ds)
+		}
 	}
 
 	return nil
@@ -157,14 +161,20 @@ func (ctx *roamingDataContext) startPassiveRoamingSession(netID lorawan.NetID) (
 
 	ulFreq := float64(ctx.rxPacket.TXInfo.Frequency) / 1000000
 	gwCnt := len(ctx.rxPacket.RXInfoSet)
+	gwInfo, err := roaming.RXInfoToGWInfo(ctx.rxPacket.RXInfoSet)
+	if err != nil {
+		return out, errors.Wrap(err, "rxinfo to gwinfo error")
+	}
 
 	req := backend.PRStartReqPayload{
 		PHYPayload: backend.HEXBytes(phyB),
 		ULMetaData: backend.ULMetaData{
 			DataRate: &ctx.rxPacket.DR,
 			ULFreq:   &ulFreq,
+			RecvTime: roaming.RecvTimeFromRXInfo(ctx.rxPacket.RXInfoSet),
 			RFRegion: band.Band().Name(),
 			GWCnt:    &gwCnt,
+			GWInfo:   gwInfo,
 		},
 	}
 
@@ -196,9 +206,8 @@ func (ctx *roamingDataContext) startPassiveRoamingSession(netID lorawan.NetID) (
 	}
 
 	// Lifetime
-	out.Lifetime = time.Now()
-	if lifetime := resp.Lifetime; lifetime != nil {
-		out.Lifetime.Add(time.Duration(*lifetime) * time.Second)
+	if lifetime := resp.Lifetime; lifetime != nil && *lifetime != 0 {
+		out.Lifetime = time.Now().Add(time.Duration(*lifetime) * time.Second)
 	}
 
 	// FNwkSIntKey (LoRaWAN 1.1)
@@ -259,39 +268,20 @@ func (ctx *roamingDataContext) xmitDataUplink(client backend.Client) error {
 	req := backend.XmitDataReqPayload{
 		PHYPayload: backend.HEXBytes(phyB),
 		ULMetaData: &backend.ULMetaData{
+			DevAddr:  &ctx.macPayload.FHDR.DevAddr,
 			DataRate: &ctx.rxPacket.DR,
 			ULFreq:   &ulFreq,
+			RecvTime: roaming.RecvTimeFromRXInfo(ctx.rxPacket.RXInfoSet),
 			RFRegion: band.Band().Name(),
 			GWCnt:    &gwCnt,
 		},
 	}
 
-	for i := range ctx.rxPacket.RXInfoSet {
-		rxInfo := ctx.rxPacket.RXInfoSet[i]
-		var lat, lon *float64
-
-		if loc := rxInfo.GetLocation(); loc != nil {
-			lat = &loc.Latitude
-			lon = &loc.Longitude
-		}
-
-		b, err := proto.Marshal(rxInfo)
-		if err != nil {
-			return errors.Wrap(err, "marshal protobuf error")
-		}
-
-		rssi := int(rxInfo.Rssi)
-		req.ULMetaData.GWInfo = append(req.ULMetaData.GWInfo, backend.GWInfoElement{
-			ID:        backend.HEXBytes(rxInfo.GatewayId),
-			RFRegion:  band.Band().Name(),
-			RSSI:      &rssi,
-			SNR:       &rxInfo.LoraSnr,
-			Lat:       lat,
-			Lon:       lon,
-			DLAllowed: true,
-			ULToken:   backend.HEXBytes(b),
-		})
+	gwInfo, err := roaming.RXInfoToGWInfo(ctx.rxPacket.RXInfoSet)
+	if err != nil {
+		return errors.Wrap(err, "rxinfo to gwinfo error")
 	}
+	req.ULMetaData.GWInfo = gwInfo
 
 	resp, err := client.XmitDataReq(ctx.ctx, req)
 	if err != nil {

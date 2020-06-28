@@ -289,7 +289,7 @@ func forClass(mode storage.DeviceMode, tasks ...func(*dataContext) error) func(*
 
 func isRoaming(r bool, tasks ...func(*dataContext) error) func(*dataContext) error {
 	return func(ctx *dataContext) error {
-		if r == (ctx.RXPacket.XmitDataReqPayload != nil) {
+		if r == (ctx.RXPacket.RoamingMetaData != nil) {
 			for _, f := range tasks {
 				if err := f(ctx); err != nil {
 					return err
@@ -1157,7 +1157,7 @@ func sendDownlinkFrame(ctx *dataContext) error {
 
 func sendDownlinkFramePassiveRoaming(ctx *dataContext) error {
 	var netID lorawan.NetID
-	if err := netID.UnmarshalText([]byte(ctx.RXPacket.XmitDataReqPayload.BasePayload.SenderID)); err != nil {
+	if err := netID.UnmarshalText([]byte(ctx.RXPacket.RoamingMetaData.BasePayload.SenderID)); err != nil {
 		return errors.Wrap(err, "decode senderid error")
 	}
 
@@ -1173,7 +1173,7 @@ func sendDownlinkFramePassiveRoaming(ctx *dataContext) error {
 		DLMetaData: &backend.DLMetaData{
 			ClassMode:  &classMode,
 			DevEUI:     &ctx.DeviceSession.DevEUI,
-			FNSULToken: ctx.RXPacket.XmitDataReqPayload.ULMetaData.FNSULToken,
+			FNSULToken: ctx.RXPacket.RoamingMetaData.ULMetaData.FNSULToken,
 		},
 	}
 
@@ -1204,8 +1204,8 @@ func sendDownlinkFramePassiveRoaming(ctx *dataContext) error {
 	rxDelay1 := int(ctx.DeviceSession.RXDelay)
 	req.DLMetaData.RXDelay1 = &rxDelay1
 
-	for i := range ctx.RXPacket.XmitDataReqPayload.ULMetaData.GWInfo {
-		gwInfo := ctx.RXPacket.XmitDataReqPayload.ULMetaData.GWInfo[i]
+	for i := range ctx.RXPacket.RoamingMetaData.ULMetaData.GWInfo {
+		gwInfo := ctx.RXPacket.RoamingMetaData.ULMetaData.GWInfo[i]
 		if !gwInfo.DLAllowed {
 			continue
 		}
@@ -1268,9 +1268,9 @@ func setDeviceGatewayRXInfo(ctx *dataContext) error {
 		for i := range ctx.RXPacket.RXInfoSet {
 			// In case of roaming, check if this gateway can be used for sending
 			// downlinks.
-			if ctx.RXPacket.XmitDataReqPayload != nil {
+			if ctx.RXPacket.RoamingMetaData != nil {
 				var downlink bool
-				for _, gwInfo := range ctx.RXPacket.XmitDataReqPayload.ULMetaData.GWInfo {
+				for _, gwInfo := range ctx.RXPacket.RoamingMetaData.ULMetaData.GWInfo {
 					if bytes.Equal(gwInfo.ID[:], ctx.RXPacket.RXInfoSet[i].GatewayId) && gwInfo.DLAllowed {
 						downlink = true
 					}

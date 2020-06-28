@@ -20,7 +20,12 @@ type RXPacket struct {
 	// RXInfoSet holds all the RX meta-data elements of the receiving gateways.
 	RXInfoSet []*gw.UplinkRXInfo
 
-	// XmitDataReqPayload holds the uplink xmit data request payload in case
-	// the uplink was received through a roaming network-server.
-	XmitDataReqPayload *backend.XmitDataReqPayload
+	// RoamingMetaData holds the meta-data in case of a roaming device.
+	RoamingMetaData *RoamingMetaData
+}
+
+// RoamingMetaData holds the Backend Interfaces roaming meta-data.
+type RoamingMetaData struct {
+	BasePayload backend.BasePayload
+	ULMetaData  backend.ULMetaData
 }
