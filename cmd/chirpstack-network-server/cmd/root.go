@@ -76,6 +76,7 @@ func init() {
 	viper.SetDefault("network_server.scheduler.class_c.downlink_lock_duration", 2*time.Second)
 	viper.SetDefault("network_server.scheduler.class_c.multicast_gateway_delay", 2*time.Second)
 
+	viper.SetDefault("network_server.gateway.client_cert_lifetime", time.Hour*24*365)
 	viper.SetDefault("network_server.gateway.backend.mqtt.event_topic", "gateway/+/event/+")
 	viper.SetDefault("network_server.gateway.backend.mqtt.command_topic_template", "gateway/{{ .GatewayID }}/command/{{ .CommandType }}")
 	viper.SetDefault("network_server.gateway.backend.mqtt.clean_session", true)

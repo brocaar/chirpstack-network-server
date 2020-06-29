@@ -40,7 +40,6 @@ import (
 
 func run(cmd *cobra.Command, args []string) error {
 	var server = new(uplink.Server)
-	var gwStats = new(gateway.StatsHandler)
 
 	tasks := []func() error{
 		setLogLevel,
@@ -62,8 +61,8 @@ func run(cmd *cobra.Command, args []string) error {
 		flushGatewayCache,
 		migrateToClusterKeys,
 		setupAPI,
+		setupGateways,
 		startLoRaServer(server),
-		startStatsServer(gwStats),
 		startQueueScheduler,
 	}
 
@@ -82,7 +81,7 @@ func run(cmd *cobra.Command, args []string) error {
 		if err := server.Stop(); err != nil {
 			log.Fatal(err)
 		}
-		if err := gwStats.Stop(); err != nil {
+		if err := gateway.Stop(); err != nil {
 			log.Fatal(err)
 		}
 		exitChan <- struct{}{}
@@ -290,14 +289,11 @@ func startLoRaServer(server *uplink.Server) func() error {
 	}
 }
 
-func startStatsServer(gwStats *gateway.StatsHandler) func() error {
-	return func() error {
-		*gwStats = *gateway.NewStatsHandler()
-		if err := gwStats.Start(); err != nil {
-			log.Fatal(err)
-		}
-		return nil
+func setupGateways() error {
+	if err := gateway.Setup(config.C); err != nil {
+		return errors.Wrap(err, "setup gateway error")
 	}
+	return nil
 }
 
 func startQueueScheduler() error {
