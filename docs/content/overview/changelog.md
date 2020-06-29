@@ -50,6 +50,15 @@ this integration has been moved to [ChirpStack Application Server](https://www.c
 **Note:** This will deprecate [ChirpStack Geolocation Server](https://www.chirpstack.io/geolocation-server/)
 as v3.11 will provide a per-application configurable LoRa Cloud integration.
 
+#### Gateway client-certificates
+
+This makes it possible to generate per-gateway client-certificates which can
+be used to implement gateway authentication and authorization. For example a
+MQTT broker can be configured to validate the client-certificate against
+a pre-configured CA certificate and if valid it can use the CommonName of the
+certificate (which contains the gateway ID) to authorize publish / subscribe
+to certain topics.
+
 ### Improvements
 
 * Expose to Application Server if received uplink was confirmed or unconfirmed.
