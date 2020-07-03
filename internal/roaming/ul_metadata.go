@@ -86,10 +86,16 @@ func RXInfoToGWInfo(rxInfo []*gw.UplinkRXInfo) ([]backend.GWInfoElement, error) 
 	for i := range rxInfo {
 		rssi := int(rxInfo[i].Rssi)
 		var lat, lon *float64
+		var fineRecvTime *int
 
 		if loc := rxInfo[i].Location; loc != nil {
 			lat = &loc.Latitude
 			lon = &loc.Longitude
+		}
+
+		if fineTS := rxInfo[i].GetPlainFineTimestamp(); fineTS != nil {
+			nanos := int(fineTS.GetTime().GetNanos())
+			fineRecvTime = &nanos
 		}
 
 		b, err := proto.Marshal(rxInfo[i])
@@ -98,13 +104,14 @@ func RXInfoToGWInfo(rxInfo []*gw.UplinkRXInfo) ([]backend.GWInfoElement, error) 
 		}
 
 		e := backend.GWInfoElement{
-			ID:        backend.HEXBytes(rxInfo[i].GatewayId),
-			RSSI:      &rssi,
-			SNR:       &rxInfo[i].LoraSnr,
-			Lat:       lat,
-			Lon:       lon,
-			ULToken:   backend.HEXBytes(b),
-			DLAllowed: true,
+			ID:           backend.HEXBytes(rxInfo[i].GatewayId),
+			FineRecvTime: fineRecvTime,
+			RSSI:         &rssi,
+			SNR:          &rxInfo[i].LoraSnr,
+			Lat:          lat,
+			Lon:          lon,
+			ULToken:      backend.HEXBytes(b),
+			DLAllowed:    true,
 		}
 
 		out = append(out, e)
