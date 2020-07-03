@@ -38,6 +38,7 @@ func (ts *StorageTestSuite) TestGateway() {
 					FineTimestampKey: &aesKey,
 				},
 			},
+			TLSCert: []byte{1, 2, 3},
 		}
 		assert.NoError(CreateGateway(context.Background(), ts.Tx(), &gw))
 
@@ -95,6 +96,7 @@ func (ts *StorageTestSuite) TestGateway() {
 					FPGAID: &fpgaID,
 				},
 			}
+			gw.TLSCert = []byte{4, 5, 6}
 
 			assert.NoError(UpdateGateway(context.Background(), ts.Tx(), &gw))
 			gw.UpdatedAt = gw.UpdatedAt.Round(time.Millisecond).UTC()

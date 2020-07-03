@@ -6,15 +6,18 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
+	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/ns"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 	"github.com/brocaar/chirpstack-network-server/internal/downlink/data/classb"
+	"github.com/brocaar/chirpstack-network-server/internal/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/gps"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
@@ -804,6 +807,250 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 				DevEui: devEUI[:],
 			})
 			assert.Error(err)
+			assert.Equal(codes.NotFound, grpc.Code(err))
+		})
+	})
+}
+
+func (ts *NetworkServerAPITestSuite) TestGateway() {
+	assert := require.New(ts.T())
+
+	rp := storage.RoutingProfile{
+		ASID: "localhost:1234",
+	}
+	assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp))
+
+	ts.T().Run("Create", func(t *testing.T) {
+		assert := require.New(t)
+
+		req := ns.CreateGatewayRequest{
+			Gateway: &ns.Gateway{
+				Id:               []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				RoutingProfileId: rp.ID[:],
+				Location: &common.Location{
+					Latitude:  1.1234,
+					Longitude: 1.1235,
+					Altitude:  15.5,
+				},
+				Boards: []*ns.GatewayBoard{
+					{
+						FpgaId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+					},
+					{
+						FineTimestampKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+					},
+				},
+			},
+		}
+		_, err := ts.api.CreateGateway(context.Background(), &req)
+		assert.NoError(err)
+
+		t.Run("Get", func(t *testing.T) {
+			assert := require.New(t)
+
+			resp, err := ts.api.GetGateway(context.Background(), &ns.GetGatewayRequest{Id: req.Gateway.Id})
+			assert.NoError(err)
+			if !proto.Equal(req.Gateway, resp.Gateway) {
+				assert.Equal(req.Gateway, resp.Gateway)
+			}
+
+			assert.NotEqual("", resp.CreatedAt.String())
+			assert.NotEqual("", resp.UpdatedAt.String())
+			assert.Nil(resp.LastSeenAt)
+		})
+
+		t.Run("Update", func(t *testing.T) {
+			assert := require.New(t)
+
+			req := ns.UpdateGatewayRequest{
+				Gateway: &ns.Gateway{
+					Id:               []byte{1, 2, 3, 4, 5, 6, 7, 8},
+					RoutingProfileId: rp.ID[:],
+					Location: &common.Location{
+						Latitude:  1.1235,
+						Longitude: 1.1236,
+						Altitude:  15.7,
+					},
+					Boards: []*ns.GatewayBoard{
+						{
+							FineTimestampKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+						},
+						{
+							FpgaId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+						},
+					},
+				},
+			}
+			_, err := ts.api.UpdateGateway(context.Background(), &req)
+			assert.NoError(err)
+
+			resp, err := ts.api.GetGateway(context.Background(), &ns.GetGatewayRequest{Id: req.Gateway.Id})
+			assert.NoError(err)
+			if !proto.Equal(req.Gateway, resp.Gateway) {
+				assert.Equal(req.Gateway, resp.Gateway)
+			}
+			assert.NotEqual("", resp.CreatedAt.String())
+			assert.NotEqual("", resp.UpdatedAt.String())
+			assert.Nil(resp.LastSeenAt)
+		})
+
+		t.Run("GenerateGatewayClientCertificate", func(t *testing.T) {
+			assert := require.New(t)
+			gatewayID := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
+
+			config := test.GetConfig()
+			config.NetworkServer.Gateway.CACert = "../test/ca_cert.pem"
+			config.NetworkServer.Gateway.CAKey = "../test/ca_private.pem"
+			config.NetworkServer.Gateway.ClientCertLifetime = time.Hour
+			assert.NoError(gateway.Setup(config))
+
+			gw, err := storage.GetGateway(context.Background(), storage.DB(), gatewayID)
+			assert.NoError(err)
+			assert.Len(gw.TLSCert, 0)
+
+			resp, err := ts.api.GenerateGatewayClientCertificate(context.Background(), &ns.GenerateGatewayClientCertificateRequest{
+				Id: gatewayID[:],
+			})
+			assert.NoError(err)
+			assert.NotEqual(0, len(resp.TlsCert))
+			assert.NotEqual(0, len(resp.TlsKey))
+
+			gw, err = storage.GetGateway(context.Background(), storage.DB(), gatewayID)
+			assert.NoError(err)
+			assert.NotEqual(0, len(gw.TLSCert))
+		})
+
+		t.Run("CreateGatewayProfile", func(t *testing.T) {
+			assert := require.New(t)
+
+			req := ns.CreateGatewayProfileRequest{
+				GatewayProfile: &ns.GatewayProfile{
+					Channels: []uint32{0, 1, 2},
+					ExtraChannels: []*ns.GatewayProfileExtraChannel{
+						{
+							Modulation:       common.Modulation_LORA,
+							Frequency:        868700000,
+							Bandwidth:        125,
+							SpreadingFactors: []uint32{10, 11, 12},
+						},
+						{
+							Modulation: common.Modulation_FSK,
+							Frequency:  868900000,
+							Bandwidth:  125,
+							Bitrate:    50000,
+						},
+					},
+				},
+			}
+			createResp, err := ts.api.CreateGatewayProfile(context.Background(), &req)
+			assert.NoError(err)
+			assert.Len(createResp.Id, 16)
+			assert.NotEqual(uuid.Nil[:], createResp.Id)
+
+			t.Run("Get", func(t *testing.T) {
+				assert := require.New(t)
+
+				req.GatewayProfile.Id = createResp.Id
+
+				getResp, err := ts.api.GetGatewayProfile(context.Background(), &ns.GetGatewayProfileRequest{
+					Id: createResp.Id,
+				})
+				assert.NoError(err)
+				assert.Equal(&ns.GatewayProfile{
+					Id:       createResp.Id,
+					Channels: []uint32{0, 1, 2},
+					ExtraChannels: []*ns.GatewayProfileExtraChannel{
+						{
+							Modulation:       common.Modulation_LORA,
+							Frequency:        868700000,
+							Bandwidth:        125,
+							SpreadingFactors: []uint32{10, 11, 12},
+						},
+						{
+							Modulation: common.Modulation_FSK,
+							Frequency:  868900000,
+							Bandwidth:  125,
+							Bitrate:    50000,
+						},
+					},
+				}, getResp.GatewayProfile)
+			})
+
+			t.Run("Update", func(t *testing.T) {
+				assert := require.New(t)
+
+				updateReq := ns.UpdateGatewayProfileRequest{
+					GatewayProfile: &ns.GatewayProfile{
+						Id:       createResp.Id,
+						Channels: []uint32{0, 1},
+						ExtraChannels: []*ns.GatewayProfileExtraChannel{
+							{
+								Modulation: common.Modulation_FSK,
+								Frequency:  868900000,
+								Bandwidth:  125,
+								Bitrate:    50000,
+							},
+							{
+								Modulation:       common.Modulation_LORA,
+								Frequency:        868700000,
+								Bandwidth:        125,
+								SpreadingFactors: []uint32{10, 11, 12},
+							},
+						},
+					},
+				}
+				_, err := ts.api.UpdateGatewayProfile(context.Background(), &updateReq)
+				assert.NoError(err)
+
+				resp, err := ts.api.GetGatewayProfile(context.Background(), &ns.GetGatewayProfileRequest{
+					Id: createResp.Id,
+				})
+				assert.NoError(err)
+				assert.Equal(&ns.GatewayProfile{
+					Id:       createResp.Id,
+					Channels: []uint32{0, 1},
+					ExtraChannels: []*ns.GatewayProfileExtraChannel{
+						{
+							Modulation: common.Modulation_FSK,
+							Frequency:  868900000,
+							Bandwidth:  125,
+							Bitrate:    50000,
+						},
+						{
+							Modulation:       common.Modulation_LORA,
+							Frequency:        868700000,
+							Bandwidth:        125,
+							SpreadingFactors: []uint32{10, 11, 12},
+						},
+					},
+				}, resp.GatewayProfile)
+			})
+
+			t.Run("Delete", func(t *testing.T) {
+				assert := require.New(t)
+
+				_, err := ts.api.DeleteGatewayProfile(context.Background(), &ns.DeleteGatewayProfileRequest{
+					Id: createResp.Id,
+				})
+				assert.NoError(err)
+
+				_, err = ts.api.DeleteGatewayProfile(context.Background(), &ns.DeleteGatewayProfileRequest{
+					Id: createResp.Id,
+				})
+				assert.Equal(codes.NotFound, grpc.Code(err))
+			})
+		})
+
+		t.Run("Delete", func(t *testing.T) {
+			assert := require.New(t)
+			_, err := ts.api.DeleteGateway(context.Background(), &ns.DeleteGatewayRequest{
+				Id: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			})
+			assert.NoError(err)
+
+			_, err = ts.api.GetGateway(context.Background(), &ns.GetGatewayRequest{
+				Id: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+			})
 			assert.Equal(codes.NotFound, grpc.Code(err))
 		})
 	})

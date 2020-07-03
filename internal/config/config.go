@@ -103,6 +103,10 @@ type Config struct {
 				Timezone string
 			}
 
+			CACert             string        `mapstructure:"ca_cert"`
+			CAKey              string        `mapstructure:"ca_key"`
+			ClientCertLifetime time.Duration `mapstructure:"client_cert_lifetime"`
+
 			Backend struct {
 				Type                 string `mapstructure:"type"`
 				MultiDownlinkFeature string `mapstructure:"multi_downlink_feature"`

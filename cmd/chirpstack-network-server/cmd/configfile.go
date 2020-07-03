@@ -437,6 +437,23 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   tls_key="{{ .NetworkServer.API.TLSKey }}"
 
 
+  # Gateway settings.
+  [network_server.gateway]
+  # CA certificate and key file (optional).
+  #
+  # When setting the CA certificate and key file options, ChirpStack Network Server
+  # will generate client certificates which can be used by the gateway for
+  # authentication and authorization. The Common Name of the certificate will
+  # be set to the Gateway ID.
+  ca_cert="{{ .NetworkServer.Gateway.CACert }}"
+  ca_key="{{ .NetworkServer.Gateway.CAKey }}"
+
+  # Certificate lifetime.
+  #
+  # This defines how long (after generating) the certificate remains valid.
+  client_cert_lifetime="{{ .NetworkServer.Gateway.ClientCertLifetime }}"
+
+
   # Backend defines the gateway backend settings.
   #
   # The gateway backend handles the communication with the gateway(s) part of

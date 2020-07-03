@@ -20,6 +20,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/downlink/multicast"
 	proprietarydown "github.com/brocaar/chirpstack-network-server/internal/downlink/proprietary"
 	"github.com/brocaar/chirpstack-network-server/internal/framelog"
+	"github.com/brocaar/chirpstack-network-server/internal/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/gps"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
@@ -1014,6 +1015,37 @@ func (n *NetworkServerAPI) DeleteGateway(ctx context.Context, req *ns.DeleteGate
 	}
 
 	return &empty.Empty{}, nil
+}
+
+// GenerateGatewayClientCertificate returns a TLS certificate for gateway authentication / authorization.
+func (c *NetworkServerAPI) GenerateGatewayClientCertificate(ctx context.Context, req *ns.GenerateGatewayClientCertificateRequest) (*ns.GenerateGatewayClientCertificateResponse, error) {
+	var id lorawan.EUI64
+	copy(id[:], req.Id)
+
+	var cert, key []byte
+
+	err := storage.Transaction(func(tx sqlx.Ext) error {
+		gw, err := storage.GetGateway(ctx, tx, id)
+		if err != nil {
+			return err
+		}
+
+		cert, key, err = gateway.GenerateClientCertificate(id)
+		if err != nil {
+			return err
+		}
+
+		gw.TLSCert = cert
+		return storage.UpdateGateway(ctx, tx, &gw)
+	})
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
+	return &ns.GenerateGatewayClientCertificateResponse{
+		TlsCert: cert,
+		TlsKey:  key,
+	}, nil
 }
 
 // GetGatewayStats returns stats of an existing gateway.

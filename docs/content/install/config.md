@@ -487,6 +487,23 @@ get_downlink_data_delay="100ms"
   tls_key=""
 
 
+  # Gateway settings.
+  [network_server.gateway]
+  # CA certificate and key file (optional).
+  #
+  # When setting the CA certificate and key file options, ChirpStack Network Server
+  # will generate client certificates which can be used by the gateway for
+  # authentication and authorization. The Common Name of the certificate will
+  # be set to the Gateway ID.
+  ca_cert=""
+  ca_key=""
+
+  # Certificate lifetime.
+  #
+  # This defines how long (after generating) the certificate remains valid.
+  client_cert_lifetime="8760h0m0s"
+
+
   # Backend defines the gateway backend settings.
   #
   # The gateway backend handles the communication with the gateway(s) part of

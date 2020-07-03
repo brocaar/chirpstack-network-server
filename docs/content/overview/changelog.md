@@ -9,6 +9,60 @@ description: Lists the changes per ChirpStack Network Server release, including 
 ---
 # Changelog
 
+## v3.10.0
+
+### Features
+
+#### Multi-downlink commands and ACKs
+
+With this feature, ChirpStack Network Server will send all downlink opportunities
+(e.g. RX1 and RX2) at once to the gateway, reducing the number of roundtrip in 
+case of failures. Previously ChirpStack Network Server would send the
+next downlink opportunity on a received nACK. In case of a retry, this saves one
+roundtrip reducing the risk of a failed downlink due to network latency. The
+gateway will always send at most one downlink.
+
+**Note:** This feature requires ChirpStack Gateway Bridge v3.9 or later, but is
+backwards compatible with previous versions, in which case ChirpStack Network
+Server will fallback into the old behavior. This backwards compatibility has some
+overhead, which can be controlled by the `multi_downlink_feature` configuration
+variable.
+
+#### Disable device
+
+This feature makes it possible to (temporarily) disable a device, in which case
+uplinks are ignored.
+
+#### Join Server integration
+
+The Join Server integration has been updated, so that it is no longer required
+to rely on DNS resolving of the Join Server. It is now possible to configure
+a per JoinEUI endpoint of the Join Server.
+
+#### Geolocation cleanup
+
+This removes the Geolocation Server integration (relying on [LoRa Cloud](https://www.loracloud.com/))
+from ChirpStack Network Server. The reason for this is that there are various 
+options for geolocation, some of them relying on the decrypted FRMPayload,
+e.g. in case of Wifi and GNSS sniffing. To provide one unified integration,
+this integration has been moved to [ChirpStack Application Server](https://www.chirpstack.io/application-server/).
+
+**Note:** This will deprecate [ChirpStack Geolocation Server](https://www.chirpstack.io/geolocation-server/)
+as v3.11 will provide a per-application configurable LoRa Cloud integration.
+
+#### Gateway client-certificates
+
+This makes it possible to generate per-gateway client-certificates which can
+be used to implement gateway authentication and authorization. For example a
+MQTT broker can be configured to validate the client-certificate against
+a pre-configured CA certificate and if valid it can use the CommonName of the
+certificate (which contains the gateway ID) to authorize publish / subscribe
+to certain topics.
+
+### Improvements
+
+* Expose to Application Server if received uplink was confirmed or unconfirmed.
+
 ## v3.9.0
 
 ### Features

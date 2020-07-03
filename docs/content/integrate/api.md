@@ -11,13 +11,13 @@ description: Instructions how to use the API provided by ChirpStack Network Serv
 
 The ChirpStack Network Server components are using [gRPC](http://www.grpc.io) for
 inter-component communication. The definitions of these interfaces can be
-found in the form of `.proto` files in the [API](https://github.com/brocaar/chirpstack-network-server/tree/master/api)
+found in the form of `.proto` files in the [API](https://github.com/brocaar/chirpstack-api/tree/master/protobuf)
 folder of the source repository:
 
-* [api/as/as.proto](https://github.com/brocaar/chirpstack-network-server/blob/master/api/as/as.proto): Application Server interface
-* [api/geo/geo.proto](https://github.com/brocaar/chirpstack-network-server/blob/master/api/geo/geo.proto): Geolocation Server interface
-* [api/ns/ns.proto](https://github.com/brocaar/chirpstack-network-server/blob/master/api/ns/ns.proto): Network Server interface
-* [api/nc/nc.proto](https://github.com/brocaar/chirpstack-network-server/blob/master/api/nc/nc.proto): Network Controller interface
+* [api/as/as.proto](https://github.com/brocaar/chirpstack-api/blob/master/protobuf/as/as.proto): Application Server interface
+* [api/geo/geo.proto](https://github.com/brocaar/chirpstack-api/blob/master/protobuf/geo/geo.proto): Geolocation Server interface
+* [api/ns/ns.proto](https://github.com/brocaar/chirpstack-api/blob/master/protobuf/ns/ns.proto): Network Server interface
+* [api/nc/nc.proto](https://github.com/brocaar/chirpstack-api/blob/master/protobuf/nc/nc.proto): Network Controller interface
 
 ## Client / server stubs
 

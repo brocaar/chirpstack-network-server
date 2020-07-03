@@ -57,6 +57,7 @@ type Gateway struct {
 	LastSeenAt       *time.Time     `db:"last_seen_at"`
 	Location         GPSPoint       `db:"location"`
 	Altitude         float64        `db:"altitude"`
+	TLSCert          []byte         `db:"tls_cert"`
 	GatewayProfileID *uuid.UUID     `db:"gateway_profile_id"`
 	Boards           []GatewayBoard `db:"-"`
 }
@@ -83,8 +84,9 @@ func CreateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 			location,
 			altitude,
 			gateway_profile_id,
-			routing_profile_id
-		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			routing_profile_id,
+			tls_cert
+		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
 		gw.GatewayID[:],
 		gw.CreatedAt,
 		gw.UpdatedAt,
@@ -94,6 +96,7 @@ func CreateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 		gw.Altitude,
 		gw.GatewayProfileID,
 		gw.RoutingProfileID,
+		gw.TLSCert,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -249,7 +252,8 @@ func UpdateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 			location = $5,
 			altitude = $6,
 			gateway_profile_id = $7,
-			routing_profile_id = $8
+			routing_profile_id = $8,
+			tls_cert = $9
 		where gateway_id = $1`,
 		gw.GatewayID[:],
 		gw.UpdatedAt,
@@ -259,6 +263,7 @@ func UpdateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 		gw.Altitude,
 		gw.GatewayProfileID,
 		gw.RoutingProfileID,
+		gw.TLSCert,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")
