@@ -170,10 +170,7 @@ type Config struct {
 		} `mapstructure:"default"`
 
 		KEK struct {
-			Set []struct {
-				Label string `mapstructure:"label"`
-				KEK   string `mapstructure:"kek"`
-			} `mapstructure:"set"`
+			Set []KEK `mapstructure:"set"`
 		} `mapstructure:"kek"`
 	} `mapstructure:"join_server"`
 
@@ -187,26 +184,10 @@ type Config struct {
 			TLSKey  string `mapstructure:"tls_key"`
 		} `mapstructure:"api"`
 
-		Servers []struct {
-			NetID                  lorawan.NetID
-			NetIDString            string        `mapstructure:"net_id"`
-			CheckMIC               bool          `mapstructure:"check_mic"`
-			Async                  bool          `mapstructure:"async"`
-			AsyncTimeout           time.Duration `mapstructure:"async_timeout"`
-			PassiveRoaming         bool          `mapstructure:"passive_roaming"`
-			PassiveRoamingLifetime time.Duration `mapstructure:"passive_roaming_lifetime"`
-			PassiveRoamingKEKLabel string        `mapstructure:"passive_roaming_kek_label"`
-			Server                 string        `mapstructure:"server"`
-			CACert                 string        `mapstructure:"ca_cert"`
-			TLSCert                string        `mapstructure:"tls_cert"`
-			TLSKey                 string        `mapstructure:"tls_key"`
-		} `mapstructure:"servers"`
+		Servers []RoamingServer `mapstructure:"servers"`
 
 		KEK struct {
-			Set []struct {
-				Label string `mapstructure:"label"`
-				KEK   string `mapstructure:"kek"`
-			} `mapstructure:"set"`
+			Set []KEK `mapstructure:"set"`
 		} `mapstructure:"kek"`
 	} `mapstructure:"roaming"`
 
@@ -235,6 +216,26 @@ type Config struct {
 		PrometheusAPITimingHistogram bool   `mapstructure:"prometheus_api_timing_histogram"`
 		HealthcheckEndpoint          bool   `mapstructure:"healthcheck_endpoint"`
 	} `mapstructure:"monitoring"`
+}
+
+type RoamingServer struct {
+	NetID                  lorawan.NetID
+	NetIDString            string        `mapstructure:"net_id"`
+	CheckMIC               bool          `mapstructure:"check_mic"`
+	Async                  bool          `mapstructure:"async"`
+	AsyncTimeout           time.Duration `mapstructure:"async_timeout"`
+	PassiveRoaming         bool          `mapstructure:"passive_roaming"`
+	PassiveRoamingLifetime time.Duration `mapstructure:"passive_roaming_lifetime"`
+	PassiveRoamingKEKLabel string        `mapstructure:"passive_roaming_kek_label"`
+	Server                 string        `mapstructure:"server"`
+	CACert                 string        `mapstructure:"ca_cert"`
+	TLSCert                string        `mapstructure:"tls_cert"`
+	TLSKey                 string        `mapstructure:"tls_key"`
+}
+
+type KEK struct {
+	Label string `mapstructure:"label"`
+	KEK   string `mapstructure:"kek"`
 }
 
 // SpreadFactorToRequiredSNRTable contains the required SNR to demodulate a

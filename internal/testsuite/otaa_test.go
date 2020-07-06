@@ -16,6 +16,7 @@ import (
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
@@ -798,10 +799,7 @@ func (ts *OTAATestSuite) TestLW11() {
 			Name: "join-request accepted (session-keys encrypted with KEK) (rx1 + rx2)",
 			BeforeFunc: func(*OTAATest) error {
 				conf := test.GetConfig()
-				conf.JoinServer.KEK.Set = []struct {
-					Label string `mapstructure:"label"`
-					KEK   string `mapstructure:"kek"`
-				}{
+				conf.JoinServer.KEK.Set = []config.KEK{
 					{
 						Label: "010203",
 						KEK:   "00000000000000000000000000000000",
