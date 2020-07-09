@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"io/ioutil"
 	"log"
 	"math/big"
 	"time"
@@ -18,9 +19,9 @@ import (
 )
 
 // GenerateClientCertificate returns a client-certificate for the given gateway ID.
-func GenerateClientCertificate(gatewayID lorawan.EUI64) ([]byte, []byte, error) {
+func GenerateClientCertificate(gatewayID lorawan.EUI64) ([]byte, []byte, []byte, error) {
 	if caCert == "" || caKey == "" {
-		return nil, nil, errors.New("no ca certificate or ca key configured")
+		return nil, nil, nil, errors.New("no ca certificate or ca key configured")
 	}
 
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
@@ -29,13 +30,19 @@ func GenerateClientCertificate(gatewayID lorawan.EUI64) ([]byte, []byte, error) 
 		log.Fatalf("Failed to generate serial number: %v", err)
 	}
 
+	caCertB, err := ioutil.ReadFile(caCert)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "read ca cert file error")
+	}
+
 	caKeyPair, err := tls.LoadX509KeyPair(caCert, caKey)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "load ca key-pair error")
+		return nil, nil, nil, errors.Wrap(err, "load ca key-pair error")
 	}
+
 	caCert, err := x509.ParseCertificate(caKeyPair.Certificate[0])
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "parse certificate error")
+		return nil, nil, nil, errors.Wrap(err, "parse certificate error")
 	}
 
 	cert := &x509.Certificate{
@@ -51,15 +58,21 @@ func GenerateClientCertificate(gatewayID lorawan.EUI64) ([]byte, []byte, error) 
 
 	certPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "generate key error")
+		return nil, nil, nil, errors.Wrap(err, "generate key error")
 
 	}
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, cert, caCert, &certPrivKey.PublicKey, caKeyPair.PrivateKey)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "create certificate error")
+		return nil, nil, nil, errors.Wrap(err, "create certificate error")
 
 	}
+
+	caPEM := new(bytes.Buffer)
+	pem.Encode(caPEM, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: caKeyPair.Certificate[0],
+	})
 
 	certPEM := new(bytes.Buffer)
 	pem.Encode(certPEM, &pem.Block{
@@ -73,5 +86,5 @@ func GenerateClientCertificate(gatewayID lorawan.EUI64) ([]byte, []byte, error) 
 		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
 	})
 
-	return certPEM.Bytes(), certPrivKeyPEM.Bytes(), nil
+	return caCertB, certPEM.Bytes(), certPrivKeyPEM.Bytes(), nil
 }
