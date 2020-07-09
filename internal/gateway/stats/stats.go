@@ -18,6 +18,8 @@ import (
 	loraband "github.com/brocaar/lorawan/band"
 )
 
+var ErrAbort = errors.New("abort")
+
 type statsContext struct {
 	ctx          context.Context
 	gateway      storage.Gateway
@@ -40,6 +42,9 @@ func Handle(ctx context.Context, stats gw.GatewayStats) error {
 
 	for _, t := range tasks {
 		if err := t(&sctx); err != nil {
+			if err == ErrAbort {
+				return nil
+			}
 			return err
 		}
 	}
@@ -51,7 +56,15 @@ func getGateway(ctx *statsContext) error {
 	gatewayID := helpers.GetGatewayID(&ctx.gatewayStats)
 	gw, err := storage.GetAndCacheGateway(ctx.ctx, storage.DB(), gatewayID)
 	if err != nil {
-		return errors.Wrap(err, "get gateway error")
+		if errors.Cause(err) == storage.ErrDoesNotExist {
+			log.WithFields(log.Fields{
+				"ctx_id":     ctx.ctx.Value(logging.ContextIDKey),
+				"gateway_id": gatewayID,
+			}).Warning("gateway/stats: stats received by unknown gateway")
+			return ErrAbort
+		} else {
+			return errors.Wrap(err, "get gateway error")
+		}
 	}
 
 	ctx.gateway = gw
