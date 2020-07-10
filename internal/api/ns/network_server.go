@@ -1022,7 +1022,7 @@ func (c *NetworkServerAPI) GenerateGatewayClientCertificate(ctx context.Context,
 	var id lorawan.EUI64
 	copy(id[:], req.Id)
 
-	var cert, key []byte
+	var ca, cert, key []byte
 
 	err := storage.Transaction(func(tx sqlx.Ext) error {
 		gw, err := storage.GetGateway(ctx, tx, id)
@@ -1030,7 +1030,7 @@ func (c *NetworkServerAPI) GenerateGatewayClientCertificate(ctx context.Context,
 			return err
 		}
 
-		cert, key, err = gateway.GenerateClientCertificate(id)
+		ca, cert, key, err = gateway.GenerateClientCertificate(id)
 		if err != nil {
 			return err
 		}
@@ -1045,6 +1045,7 @@ func (c *NetworkServerAPI) GenerateGatewayClientCertificate(ctx context.Context,
 	return &ns.GenerateGatewayClientCertificateResponse{
 		TlsCert: cert,
 		TlsKey:  key,
+		CaCert:  ca,
 	}, nil
 }
 

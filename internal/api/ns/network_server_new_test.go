@@ -2,6 +2,7 @@ package ns
 
 import (
 	"context"
+	"io/ioutil"
 	"testing"
 	"time"
 
@@ -914,6 +915,10 @@ func (ts *NetworkServerAPITestSuite) TestGateway() {
 			assert.NoError(err)
 			assert.NotEqual(0, len(resp.TlsCert))
 			assert.NotEqual(0, len(resp.TlsKey))
+
+			b, err := ioutil.ReadFile(config.NetworkServer.Gateway.CACert)
+			assert.NoError(err)
+			assert.Equal(string(b), string(resp.CaCert))
 
 			gw, err = storage.GetGateway(context.Background(), storage.DB(), gatewayID)
 			assert.NoError(err)

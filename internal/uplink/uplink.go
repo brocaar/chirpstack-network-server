@@ -178,6 +178,14 @@ func collectUplinkFrames(ctx context.Context, uplinkFrame gw.UplinkFrame) error 
 }
 
 func handleCollectedUplink(ctx context.Context, uplinkFrame gw.UplinkFrame, rxPacket models.RXPacket) error {
+	// update the gateway meta-data
+	rxPacket.RXInfoSet = gateway.UpdateMetaDataInRxInfoSet(ctx, storage.DB(), rxPacket.RXInfoSet)
+
+	// Return if the RXInfoSet is empty.
+	if len(rxPacket.RXInfoSet) == 0 {
+		return nil
+	}
+
 	var uplinkIDs []uuid.UUID
 	for _, p := range rxPacket.RXInfoSet {
 		uplinkIDs = append(uplinkIDs, helpers.GetUplinkID(p))
@@ -188,11 +196,6 @@ func handleCollectedUplink(ctx context.Context, uplinkFrame gw.UplinkFrame, rxPa
 		"mtype":      rxPacket.PHYPayload.MHDR.MType,
 		"ctx_id":     ctx.Value(logging.ContextIDKey),
 	}).Info("uplink: frame(s) collected")
-
-	// update the gateway meta-data
-	if err := gateway.UpdateMetaDataInRxInfoSet(ctx, storage.DB(), rxPacket.RXInfoSet); err != nil {
-		log.WithError(err).Error("uplink: update gateway meta-data in rx-info set error")
-	}
 
 	// log the frame for each receiving gateway.
 	if err := framelog.LogUplinkFrameForGateways(ctx, ns.UplinkFrameLog{

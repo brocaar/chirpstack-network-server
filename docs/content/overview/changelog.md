@@ -62,6 +62,16 @@ to certain topics.
 ### Improvements
 
 * Expose to Application Server if received uplink was confirmed or unconfirmed.
+* Improve error handling and ignore uplink when uplink is received through unknown gateway.
+
+### Upgrading
+
+**Important note:**
+
+This version improves the error handling when an uplink is received through an
+unknown gateway. Previously this was logged as an error, this has changed to a
+warning. Uplinks received through unknown gateways will be ignored. Make sure
+that all gateways in your network are configured in ChirpStack!
 
 ## v3.9.0
 
