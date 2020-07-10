@@ -42,6 +42,15 @@ type PassiveRoamingFNSTestSuite struct {
 	txInfo gw.UplinkTXInfo
 }
 
+func (ts *PassiveRoamingFNSTestSuite) SetupTest() {
+	ts.IntegrationTestSuite.SetupTest()
+
+	ts.hnsRequest = nil
+	ts.hnsResponse = nil
+	ts.jsRequest = nil
+	ts.jsResponse = nil
+}
+
 func (ts *PassiveRoamingFNSTestSuite) SetupSuite() {
 	ts.IntegrationTestSuite.SetupSuite()
 
@@ -185,9 +194,10 @@ func (ts *PassiveRoamingFNSTestSuite) TestJoinRequest() {
 	}
 	prStartAnsB, err := json.Marshal(prStartAns)
 	assert.NoError(err)
-	ts.hnsResponse = [][]byte{prStartAnsB}
 
 	ts.T().Run("passive-roaming start", func(t *testing.T) {
+		assert := require.New(t)
+
 		ts.jsResponse = [][]byte{homeNSAnsB}
 		ts.hnsResponse = [][]byte{prStartAnsB}
 
@@ -306,7 +316,101 @@ func (ts *PassiveRoamingFNSTestSuite) TestJoinRequest() {
 }
 
 func (ts *PassiveRoamingFNSTestSuite) TestDataStateless() {
+	assert := require.New(ts.T())
 
+	dataRate1 := 1
+	ulFreq := 868.1
+	gwCnt := 1
+
+	// uplink phypayload
+	devAddr := lorawan.DevAddr{1, 2, 3, 4}
+	devAddr.SetAddrPrefix(lorawan.NetID{6, 6, 6})
+	phy := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.UnconfirmedDataUp,
+			Major: lorawan.LoRaWANR1,
+		},
+		MACPayload: &lorawan.MACPayload{
+			FHDR: lorawan.FHDR{
+				DevAddr: devAddr,
+				FCnt:    10,
+			},
+		},
+	}
+	phyB, err := phy.MarshalBinary()
+	assert.NoError(err)
+
+	// hNS PRStartAns
+	prStartAns := backend.PRStartAnsPayload{
+		BasePayloadResult: backend.BasePayloadResult{
+			Result: backend.Result{
+				ResultCode: backend.Success,
+			},
+		},
+	}
+	prStartAnsB, err := json.Marshal(prStartAns)
+	assert.NoError(err)
+
+	// ulToken
+	ulTokenB, err := proto.Marshal(&ts.rxInfo)
+	assert.NoError(err)
+
+	ts.T().Run("passive-roaming start", func(t *testing.T) {
+		assert := require.New(t)
+
+		ts.hnsResponse = [][]byte{prStartAnsB}
+
+		// "send" uplink
+		assert.NoError(uplink.HandleUplinkFrame(context.Background(), gw.UplinkFrame{
+			RxInfo:     &ts.rxInfo,
+			TxInfo:     &ts.txInfo,
+			PhyPayload: phyB,
+		}))
+
+		// validate hNS PRStartReq
+		rssi := 6
+		snr := float64(7)
+		lat := float64(1)
+		lon := float64(2)
+		var prStartReq backend.PRStartReqPayload
+		assert.NoError(json.Unmarshal(ts.hnsRequest[0], &prStartReq))
+		assert.NotEqual(0, prStartReq.TransactionID)
+		prStartReq.TransactionID = 0
+		var nilTime time.Time
+		assert.False(time.Time(prStartReq.ULMetaData.RecvTime).Equal(nilTime))
+		prStartReq.ULMetaData.RecvTime = backend.ISO8601Time(nilTime)
+		assert.Equal(backend.PRStartReqPayload{
+			BasePayload: backend.BasePayload{
+				ProtocolVersion: "1.0",
+				SenderID:        "030201",
+				ReceiverID:      "060606",
+				MessageType:     backend.PRStartReq,
+			},
+			PHYPayload: backend.HEXBytes(phyB),
+			ULMetaData: backend.ULMetaData{
+				DataRate: &dataRate1,
+				RFRegion: "EU868",
+				ULFreq:   &ulFreq,
+				GWCnt:    &gwCnt,
+				GWInfo: []backend.GWInfoElement{
+					{
+						ID:        backend.HEXBytes(ts.Gateway.GatewayID[:]),
+						RSSI:      &rssi,
+						SNR:       &snr,
+						Lat:       &lat,
+						Lon:       &lon,
+						ULToken:   backend.HEXBytes(ulTokenB),
+						DLAllowed: true,
+					},
+				},
+			},
+		}, prStartReq)
+
+		// validate no session has been stored
+		sess, err := storage.GetPassiveRoamingDeviceSessionsForDevAddr(context.Background(), devAddr)
+		assert.NoError(err)
+		assert.Len(sess, 0)
+	})
 }
 
 func (ts *PassiveRoamingFNSTestSuite) TestDataStatefull() {
