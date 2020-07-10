@@ -20,9 +20,14 @@ type serverItem struct {
 }
 
 var (
-	defaultClient backend.Client
-	servers       []serverItem
-	keks          map[string][]byte
+	servers []serverItem
+	keks    map[string][]byte
+
+	netID          lorawan.NetID
+	defaultServer  string
+	defaultCACert  string
+	defaultTLSCert string
+	defaultTLSKey  string
 )
 
 // Setup sets up the joinserver backend.
@@ -30,19 +35,11 @@ func Setup(c config.Config) error {
 	conf := c.JoinServer
 	keks = make(map[string][]byte)
 
-	var err error
-	var joinEUI lorawan.EUI64
-	defaultClient, err = backend.NewClient(backend.ClientConfig{
-		SenderID:   c.NetworkServer.NetID.String(),
-		ReceiverID: joinEUI.String(),
-		Server:     conf.Default.Server,
-		CACert:     conf.Default.CACert,
-		TLSCert:    conf.Default.TLSCert,
-		TLSKey:     conf.Default.TLSKey,
-	})
-	if err != nil {
-		return errors.Wrap(err, "joinserver: configure default client error")
-	}
+	netID = c.NetworkServer.NetID
+	defaultServer = c.JoinServer.Default.Server
+	defaultCACert = c.JoinServer.Default.CACert
+	defaultTLSCert = c.JoinServer.Default.TLSCert
+	defaultTLSKey = c.JoinServer.Default.TLSKey
 
 	for _, s := range conf.Servers {
 		var joinEUI lorawan.EUI64
@@ -135,6 +132,18 @@ func GetClientForJoinEUI(joinEUI lorawan.EUI64) (backend.Client, error) {
 		if s.joinEUI == joinEUI {
 			return s.client, nil
 		}
+	}
+
+	defaultClient, err := backend.NewClient(backend.ClientConfig{
+		SenderID:   netID.String(),
+		ReceiverID: joinEUI.String(),
+		Server:     defaultServer,
+		CACert:     defaultCACert,
+		TLSCert:    defaultTLSCert,
+		TLSKey:     defaultTLSKey,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "joinserver: new default client error")
 	}
 
 	return defaultClient, nil
