@@ -386,6 +386,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 			868100000,
 			868300000,
 			868500000,
+			867100000,
 		},
 		RXDelay1:       3,
 		RXDROffset1:    2,
@@ -465,6 +466,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 
 		t.Run("Activate", func(t *testing.T) {
 			assert := require.New(t)
+			assert.NoError(band.Band().AddChannel(867100000, 0, 5))
 
 			devEUI := [8]byte{1, 2, 3, 4, 5, 6, 7, 8}
 			devAddr := [4]byte{6, 2, 3, 4}
@@ -560,20 +562,26 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 					NFCntDown:             11,
 					AFCntDown:             12,
 					SkipFCntValidation:    true,
-					EnabledUplinkChannels: band.Band().GetEnabledUplinkChannelIndices(),
-					ChannelFrequencies:    []int{868100000, 868300000, 868500000},
-					ExtraUplinkChannels:   map[int]loraband.Channel{},
-					RXDelay:               3,
-					RX1DROffset:           2,
-					RX2DR:                 5,
-					RX2Frequency:          868900000,
-					PingSlotNb:            128,
-					PingSlotDR:            5,
-					PingSlotFrequency:     868100000,
-					NbTrans:               1,
-					MACVersion:            "1.0.2",
-					MACCommandErrorCount:  make(map[lorawan.CID]int),
-					IsDisabled:            true,
+					EnabledUplinkChannels: []int{0, 1, 2, 3},
+					ChannelFrequencies:    []int{868100000, 868300000, 868500000, 867100000},
+					ExtraUplinkChannels: map[int]loraband.Channel{
+						3: loraband.Channel{
+							Frequency: 867100000,
+							MinDR:     0,
+							MaxDR:     5,
+						},
+					},
+					RXDelay:              3,
+					RX1DROffset:          2,
+					RX2DR:                5,
+					RX2Frequency:         868900000,
+					PingSlotNb:           128,
+					PingSlotDR:           5,
+					PingSlotFrequency:    868100000,
+					NbTrans:              1,
+					MACVersion:           "1.0.2",
+					MACCommandErrorCount: make(map[lorawan.CID]int),
+					IsDisabled:           true,
 				}, ds)
 			})
 
