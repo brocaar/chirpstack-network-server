@@ -57,6 +57,11 @@ func (ctx *roamingDataContext) getPassiveRoamingDeviceSessions() error {
 		}).Error("uplink/data: get passive-roaming device-sessions error")
 	}
 
+	for i := range ctx.prDeviceSessions {
+		// increment frame-counter
+		ctx.prDeviceSessions[i].FCntUp = ctx.macPayload.FHDR.FCnt + 1
+	}
+
 	return nil
 }
 
@@ -132,8 +137,6 @@ func (ctx *roamingDataContext) forwardUplinkMessageForSessions() error {
 
 func (ctx *roamingDataContext) saveSessions() error {
 	for _, ds := range ctx.prDeviceSessions {
-		ds.FCntUp = ctx.macPayload.FHDR.FCnt + 1
-
 		if err := storage.SavePassiveRoamingDeviceSession(ctx.ctx, &ds); err != nil {
 			log.WithError(err).WithFields(log.Fields{
 				"passive_roaming_device_session_id": ds.SessionID,
@@ -250,7 +253,7 @@ func (ctx *roamingDataContext) startPassiveRoamingSession(netID lorawan.NetID) (
 
 	// FCntUp
 	if fCntUp := resp.FCntUp; fCntUp != nil {
-		out.FCntUp = *fCntUp
+		out.FCntUp = *fCntUp + 1
 	}
 
 	return out, nil

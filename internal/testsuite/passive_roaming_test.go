@@ -21,6 +21,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/uplink"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
+	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/require"
@@ -195,7 +196,7 @@ func (ts *PassiveRoamingFNSTestSuite) TestJoinRequest() {
 	prStartAnsB, err := json.Marshal(prStartAns)
 	assert.NoError(err)
 
-	ts.T().Run("passive-roaming start", func(t *testing.T) {
+	ts.T().Run("success", func(t *testing.T) {
 		assert := require.New(t)
 
 		ts.jsResponse = [][]byte{homeNSAnsB}
@@ -355,7 +356,7 @@ func (ts *PassiveRoamingFNSTestSuite) TestDataStateless() {
 	ulTokenB, err := proto.Marshal(&ts.rxInfo)
 	assert.NoError(err)
 
-	ts.T().Run("passive-roaming start", func(t *testing.T) {
+	ts.T().Run("success", func(t *testing.T) {
 		assert := require.New(t)
 
 		ts.hnsResponse = [][]byte{prStartAnsB}
@@ -414,7 +415,131 @@ func (ts *PassiveRoamingFNSTestSuite) TestDataStateless() {
 }
 
 func (ts *PassiveRoamingFNSTestSuite) TestDataStatefull() {
+	assert := require.New(ts.T())
 
+	dataRate1 := 1
+	ulFreq := 868.1
+	gwCnt := 1
+	lifetime := 300
+	fCntUp := uint32(32)
+	devEUI := lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1}
+
+	// uplink phypayload
+	devAddr := lorawan.DevAddr{1, 2, 3, 4}
+	devAddr.SetAddrPrefix(lorawan.NetID{6, 6, 6})
+	phy := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.UnconfirmedDataUp,
+			Major: lorawan.LoRaWANR1,
+		},
+		MACPayload: &lorawan.MACPayload{
+			FHDR: lorawan.FHDR{
+				DevAddr: devAddr,
+				FCnt:    10,
+			},
+		},
+	}
+	phyB, err := phy.MarshalBinary()
+	assert.NoError(err)
+
+	// ulToken
+	ulTokenB, err := proto.Marshal(&ts.rxInfo)
+	assert.NoError(err)
+
+	// hNS PRStartAns
+	prStartAns := backend.PRStartAnsPayload{
+		BasePayloadResult: backend.BasePayloadResult{
+			Result: backend.Result{
+				ResultCode: backend.Success,
+			},
+		},
+		Lifetime: &lifetime,
+		NwkSKey: &backend.KeyEnvelope{
+			AESKey: backend.HEXBytes{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+		},
+		DevEUI: &devEUI,
+		FCntUp: &fCntUp,
+	}
+	prStartAnsB, err := json.Marshal(prStartAns)
+	assert.NoError(err)
+
+	// nNS XmitDataAns
+	xmitDataAns := backend.XmitDataAnsPayload{
+		BasePayloadResult: backend.BasePayloadResult{
+			Result: backend.Result{
+				ResultCode: backend.Success,
+			},
+		},
+	}
+	xmitDataAnsB, err := json.Marshal(xmitDataAns)
+	assert.NoError(err)
+
+	ts.T().Run("success", func(t *testing.T) {
+		assert := require.New(t)
+
+		ts.hnsResponse = [][]byte{prStartAnsB, xmitDataAnsB}
+
+		// "send" uplink
+		assert.NoError(uplink.HandleUplinkFrame(context.Background(), gw.UplinkFrame{
+			RxInfo:     &ts.rxInfo,
+			TxInfo:     &ts.txInfo,
+			PhyPayload: phyB,
+		}))
+
+		// validate hNS PRStartReq
+		rssi := 6
+		snr := float64(7)
+		lat := float64(1)
+		lon := float64(2)
+		var prStartReq backend.PRStartReqPayload
+		assert.NoError(json.Unmarshal(ts.hnsRequest[0], &prStartReq))
+		assert.NotEqual(0, prStartReq.TransactionID)
+		prStartReq.TransactionID = 0
+		var nilTime time.Time
+		assert.False(time.Time(prStartReq.ULMetaData.RecvTime).Equal(nilTime))
+		prStartReq.ULMetaData.RecvTime = backend.ISO8601Time(nilTime)
+		assert.Equal(backend.PRStartReqPayload{
+			BasePayload: backend.BasePayload{
+				ProtocolVersion: "1.0",
+				SenderID:        "030201",
+				ReceiverID:      "060606",
+				MessageType:     backend.PRStartReq,
+			},
+			PHYPayload: backend.HEXBytes(phyB),
+			ULMetaData: backend.ULMetaData{
+				DataRate: &dataRate1,
+				RFRegion: "EU868",
+				ULFreq:   &ulFreq,
+				GWCnt:    &gwCnt,
+				GWInfo: []backend.GWInfoElement{
+					{
+						ID:        backend.HEXBytes(ts.Gateway.GatewayID[:]),
+						RSSI:      &rssi,
+						SNR:       &snr,
+						Lat:       &lat,
+						Lon:       &lon,
+						ULToken:   backend.HEXBytes(ulTokenB),
+						DLAllowed: true,
+					},
+				},
+			},
+		}, prStartReq)
+
+		// validate session has been stored
+		sess, err := storage.GetPassiveRoamingDeviceSessionsForDevAddr(context.Background(), devAddr)
+		assert.NoError(err)
+		assert.Len(sess, 1)
+		sess[0].SessionID = uuid.Nil
+		assert.True(sess[0].Lifetime.Sub(time.Now()) > (4 * time.Minute))
+		sess[0].Lifetime = time.Time{}
+		assert.Equal(storage.PassiveRoamingDeviceSession{
+			NetID:       lorawan.NetID{6, 6, 6},
+			DevAddr:     devAddr,
+			DevEUI:      devEUI,
+			FNwkSIntKey: lorawan.AES128Key{1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8},
+			FCntUp:      33,
+		}, sess[0])
+	})
 }
 
 func (ts *PassiveRoamingFNSTestSuite) TestDownlink() {
