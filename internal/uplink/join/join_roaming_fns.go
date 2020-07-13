@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/chirpstack-network-server/internal/backend/joinserver"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	dlroaming "github.com/brocaar/chirpstack-network-server/internal/downlink/roaming"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
@@ -46,27 +45,32 @@ func StartPRFNS(ctx context.Context, rxPacket models.RXPacket, jrPL *lorawan.Joi
 }
 
 func (ctx *startPRFNSContext) getHomeNetID() error {
-	jsClient, err := joinserver.GetClientForJoinEUI(ctx.joinRequestPayload.JoinEUI)
-	if err != nil {
-		return errors.Wrap(err, "get js client for joineui error")
-	}
+	// TODO: for testing only
+	ctx.homeNetID = lorawan.NetID{0, 0, 0}
 
-	nsReq := backend.HomeNSReqPayload{
-		DevEUI: ctx.joinRequestPayload.DevEUI,
-	}
-	nsAns, err := jsClient.HomeNSReq(ctx.ctx, nsReq)
-	if err != nil {
-		return errors.Wrap(err, "request home netid error")
-	}
+	/*
+		jsClient, err := joinserver.GetClientForJoinEUI(ctx.joinRequestPayload.JoinEUI)
+		if err != nil {
+			return errors.Wrap(err, "get js client for joineui error")
+		}
 
-	log.WithFields(log.Fields{
-		"ctx_id":   ctx.ctx.Value(logging.ContextIDKey),
-		"net_id":   nsAns.HNetID,
-		"join_eui": ctx.joinRequestPayload.JoinEUI,
-		"dev_eui":  ctx.joinRequestPayload.DevEUI,
-	}).Info("uplink/join: resolved joineui to netid")
+		nsReq := backend.HomeNSReqPayload{
+			DevEUI: ctx.joinRequestPayload.DevEUI,
+		}
+		nsAns, err := jsClient.HomeNSReq(ctx.ctx, nsReq)
+		if err != nil {
+			return errors.Wrap(err, "request home netid error")
+		}
 
-	ctx.homeNetID = nsAns.HNetID
+		log.WithFields(log.Fields{
+			"ctx_id":   ctx.ctx.Value(logging.ContextIDKey),
+			"net_id":   nsAns.HNetID,
+			"join_eui": ctx.joinRequestPayload.JoinEUI,
+			"dev_eui":  ctx.joinRequestPayload.DevEUI,
+		}).Info("uplink/join: resolved joineui to netid")
+
+		ctx.homeNetID = nsAns.HNetID
+	*/
 
 	return nil
 }

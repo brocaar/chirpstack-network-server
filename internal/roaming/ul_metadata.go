@@ -69,6 +69,7 @@ func ULMetaDataToRXInfo(ulMetaData backend.ULMetaData) ([]*gw.UplinkRXInfo, erro
 				return nil, errors.Wrap(err, "timestamp proto error")
 			}
 
+			rxInfo.FineTimestampType = gw.FineTimestampType_PLAIN
 			rxInfo.FineTimestamp = &gw.UplinkRXInfo_PlainFineTimestamp{
 				PlainFineTimestamp: &gw.PlainFineTimestamp{
 					Time: tsProto,
