@@ -14,7 +14,7 @@ WORKDIR $PROJECT_PATH
 RUN make dev-requirements
 RUN make
 
-FROM alpine:latest AS production
+FROM alpine:3.11.2 AS production
 
 RUN apk --no-cache add ca-certificates tzdata
 COPY --from=development /chirpstack-network-server/build/chirpstack-network-server /usr/bin/chirpstack-network-server
