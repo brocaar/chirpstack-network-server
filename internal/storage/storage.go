@@ -28,27 +28,31 @@ func Setup(c config.Config) error {
 	schedulerInterval = c.NetworkServer.Scheduler.SchedulerInterval
 
 	log.Info("storage: setting up Redis client")
-	opt, err := redis.ParseURL(c.Redis.URL)
-	if err != nil {
-		return errors.Wrap(err, "parse redis url error")
+	if len(c.Redis.Servers) == 0 {
+		return errors.New("at least one redis server must be configured")
 	}
-	opt.PoolSize = c.Redis.PoolSize
+
 	if c.Redis.Cluster {
 		redisClient = redis.NewClusterClient(&redis.ClusterOptions{
-			Addrs:    []string{opt.Addr},
-			PoolSize: opt.PoolSize,
-			Password: opt.Password,
+			Addrs:    c.Redis.Servers,
+			PoolSize: c.Redis.PoolSize,
+			Password: c.Redis.Password,
 		})
 	} else if c.Redis.MasterName != "" {
 		redisClient = redis.NewFailoverClient(&redis.FailoverOptions{
 			MasterName:       c.Redis.MasterName,
-			SentinelAddrs:    []string{opt.Addr},
-			SentinelPassword: opt.Password,
-			DB:               opt.DB,
-			PoolSize:         opt.PoolSize,
+			SentinelAddrs:    c.Redis.Servers,
+			SentinelPassword: c.Redis.Password,
+			DB:               c.Redis.Database,
+			PoolSize:         c.Redis.PoolSize,
 		})
 	} else {
-		redisClient = redis.NewClient(opt)
+		redisClient = redis.NewClient(&redis.Options{
+			Addr:     c.Redis.Servers[0],
+			DB:       c.Redis.Database,
+			Password: c.Redis.Password,
+			PoolSize: c.Redis.PoolSize,
+		})
 	}
 
 	log.Info("storage: connecting to PostgreSQL")

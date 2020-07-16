@@ -21,7 +21,7 @@ services:
       - GW_SERVER_JWT_SECRET=verysecret
       - POSTGRES_DSN=postgres://chirpstack_ns:chirpstack_ns@postgres/chirpstack_ns?sslmode=disable
       - TEST_POSTGRES_DSN=postgres://chirpstack_ns:chirpstack_ns@postgres/chirpstack_ns?sslmode=disable
-      - TEST_REDIS_URL=redis://redis:6379
+      - TEST_REDIS_SERVERS=redis:6379
       - TEST_MQTT_SERVER=tcp://mosquitto:1883
       - TEST_RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
 
