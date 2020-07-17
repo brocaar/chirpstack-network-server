@@ -265,6 +265,23 @@ func (s *DeviceSession) ResetToBootParameters(dp DeviceProfile) {
 	if dp.PingSlotPeriod != 0 {
 		s.PingSlotNb = (1 << 12) / dp.PingSlotPeriod
 	}
+
+	if len(dp.FactoryPresetFreqs) > len(s.EnabledUplinkChannels) {
+		for _, f := range dp.FactoryPresetFreqs[len(s.EnabledUplinkChannels):] {
+			i, err := band.Band().GetUplinkChannelIndex(int(f), false)
+			if err != nil {
+				continue
+			}
+
+			s.EnabledUplinkChannels = append(s.EnabledUplinkChannels, i)
+
+			c, err := band.Band().GetUplinkChannel(i)
+			if err != nil {
+				continue
+			}
+			s.ExtraUplinkChannels[i] = c
+		}
+	}
 }
 
 // GetRandomDevAddr returns a random DevAddr, prefixed with NwkID based on the
