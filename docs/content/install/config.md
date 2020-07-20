@@ -154,7 +154,6 @@ password=""
 # By default, this can be a number between 0-15.
 database=0
 
-
 # Redis Cluster.
 #
 # Set this to true when the provided URLs are pointing to a Redis Cluster

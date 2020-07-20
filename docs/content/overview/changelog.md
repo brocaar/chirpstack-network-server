@@ -63,6 +63,8 @@ to certain topics.
 
 * Expose to Application Server if received uplink was confirmed or unconfirmed.
 * Improve error handling and ignore uplink when uplink is received through unknown gateway.
+* Avoid downlink mac-commands for ABP devices when factory frequencies have been correctly setup and are in sync with network channels.
+* Support multiple Redis addresses for clustering. ([#491](https://github.com/brocaar/chirpstack-network-server/pull/491))
 
 ### Upgrading
 
