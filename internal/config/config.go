@@ -26,10 +26,13 @@ type Config struct {
 	} `mapstructure:"postgresql"`
 
 	Redis struct {
-		URL        string `mapstructure:"url"`
-		Cluster    bool   `mapstructure:"cluster"`
-		MasterName string `mapstructure:"master_name"`
-		PoolSize   int    `mapstructure:"pool_size"`
+		URL        string   `mapstructure:"url"` // deprecated
+		Servers    []string `mapstructure:"servers"`
+		Cluster    bool     `mapstructure:"cluster"`
+		MasterName string   `mapstructure:"master_name"`
+		PoolSize   int      `mapstructure:"pool_size"`
+		Password   string   `mapstructure:"password"`
+		Database   int      `mapstructure:"database"`
 	} `mapstructure:"redis"`
 
 	NetworkServer struct {

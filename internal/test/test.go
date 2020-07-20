@@ -2,6 +2,7 @@ package test
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -39,7 +40,7 @@ func GetConfig() config.Config {
 		panic(err)
 	}
 
-	c.Redis.URL = "redis://localhost:6379/1"
+	c.Redis.Servers = []string{"localhost:6379"}
 	c.PostgreSQL.DSN = "postgres://localhost/chirpstack_ns_test?sslmode=disable"
 
 	c.NetworkServer.NetID = lorawan.NetID{3, 2, 1}
@@ -65,8 +66,8 @@ func GetConfig() config.Config {
 	c.NetworkServer.Gateway.Backend.AMQP.EventRoutingKey = "gateway.*.event.*"
 	c.NetworkServer.Gateway.Backend.AMQP.CommandRoutingKeyTemplate = "gateway.{{ .GatewayID }}.command.{{ .CommandType }}"
 
-	if v := os.Getenv("TEST_REDIS_URL"); v != "" {
-		c.Redis.URL = v
+	if v := os.Getenv("TEST_REDIS_SERVERS"); v != "" {
+		c.Redis.Servers = strings.Split(v, ",")
 	}
 	if v := os.Getenv("TEST_POSTGRES_DSN"); v != "" {
 		c.PostgreSQL.DSN = v

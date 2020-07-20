@@ -136,27 +136,40 @@ max_idle_connections=2
 #
 # Please note that Redis 2.6.0+ is required.
 [redis]
-# Redis url (e.g. redis://user:password@hostname/0)
+
+# Server address or addresses.
 #
-# For more information about the Redis URL format, see:
-# https://www.iana.org/assignments/uri-schemes/prov/redis
-url="redis://localhost:6379"
+# Set multiple addresses when connecting to a cluster.
+servers=[
+  "localhost:6379",
+]
+
+# Password.
+#
+# Set the password when connecting to Redis requires password authentication.
+password=""
+
+# Database index.
+#
+# By default, this can be a number between 0-15.
+database=0
+
 
 # Redis Cluster.
 #
-# Set this to true when the provided URL is pointing to a Redis Cluster
+# Set this to true when the provided URLs are pointing to a Redis Cluster
 # instance.
 cluster=false
 
-# The master name.
+# Master name.
 #
-# Set the master name when the provided URL is pointing to a Redis Sentinel
+# Set the master name when the provided URLs are pointing to a Redis Sentinel
 # instance.
 master_name=""
 
 # Connection pool size.
 #
-# Default is 10 connections per every CPU.
+# Default (when set to 0) is 10 connections per every CPU.
 pool_size=0
 
 

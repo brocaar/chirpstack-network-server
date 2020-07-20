@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/go-redis/redis/v7"
 	"io/ioutil"
 	"os"
 	"reflect"
@@ -38,7 +39,7 @@ func init() {
 	viper.BindPFlag("general.log_level", rootCmd.PersistentFlags().Lookup("log-level"))
 
 	// default values
-	viper.SetDefault("redis.url", "redis://localhost:6379")
+	viper.SetDefault("redis.servers", []string{"localhost:6379"})
 
 	viper.SetDefault("postgresql.dsn", "postgres://localhost/chirpstack_ns?sslmode=disable")
 	viper.SetDefault("postgresql.automigrate", true)
@@ -164,6 +165,17 @@ func initConfig() {
 
 	if err := config.C.NetworkServer.NetID.UnmarshalText([]byte(config.C.NetworkServer.NetIDString)); err != nil {
 		log.WithError(err).Fatal("decode net_id error")
+	}
+
+	if config.C.Redis.URL != "" {
+		opt, err := redis.ParseURL(config.C.Redis.URL)
+		if err != nil {
+			log.WithError(err).Fatal("redis url error")
+		}
+
+		config.C.Redis.Servers = []string{opt.Addr}
+		config.C.Redis.Database = opt.DB
+		config.C.Redis.Password = opt.Password
 	}
 }
 
