@@ -9,7 +9,7 @@ and the scheduling of downlink data transmissions.
 
 ## Architecture
 
-![architecture](https://www.chirpstack.io/img/graphs/architecture.png)
+![architecture](https://www.chirpstack.ios/static/img/graphs/architecture.dot.png)
 
 ### Component links
 

@@ -12,7 +12,6 @@ clean:
 	@echo "Cleaning up workspace"
 	@rm -rf build
 	@rm -rf dist
-	@rm -rf docs/public
 
 test: statics
 	@echo "Running tests"
