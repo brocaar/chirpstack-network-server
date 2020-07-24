@@ -2,6 +2,7 @@ syntax  = "proto3";
 
 package storage;
 
+import "google/protobuf/timestamp.proto";
 import "common/common.proto";
 
 message DeviceSessionPBChannel {
@@ -216,4 +217,35 @@ message DeviceGatewayRXInfoPB {
 
     // Gateway specific context.
     bytes context = 6;
+}
+
+message PassiveRoamingDeviceSessionPB {
+    // Session ID (UUID).
+    // Unfortunately we can not use the DevEUI as unique identifier
+    // as the PRStartAns DevEUI field is optional.
+    bytes session_id = 1;
+
+    // NetID of the hNS.
+    bytes net_id = 2;
+    
+    // DevAddr of the device.
+    bytes dev_addr = 3;
+
+    // DevEUI of the device (optional).
+    bytes dev_eui = 4;
+
+    // LoRaWAN 1.1 frame.
+    bool lorawan_1_1 = 5;
+
+    // LoRaWAN 1.0 NwkSKey / LoRaWAN 1.1 FNwkSIntKey.
+    bytes f_nwk_s_int_key = 6;
+
+    // Lifetime.
+    google.protobuf.Timestamp lifetime = 7;
+
+    // Uplink frame-counter.
+    uint32 f_cnt_up = 8;
+
+    // Validate MIC.
+    bool validate_mic = 9;
 }

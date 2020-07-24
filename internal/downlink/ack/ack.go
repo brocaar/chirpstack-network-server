@@ -143,7 +143,8 @@ func getDownlinkFrame(ctx *ackContext) error {
 	// get the downlink frame using the token
 	ctx.DownlinkFrame, err = storage.GetDownlinkFrame(ctx.ctx, ctx.Token)
 	if err != nil {
-		return errors.Wrap(err, "get downlink-frame error")
+		// return errors.Wrap(err, "get downlink-frame error")
+		return errAbort
 	}
 
 	// items defines the multiple downlink opportunities (e.g. rx1 and rx2)

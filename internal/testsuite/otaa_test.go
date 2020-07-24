@@ -16,6 +16,7 @@ import (
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
@@ -183,10 +184,12 @@ func (ts *OTAATestSuite) TestLW10() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -348,10 +351,12 @@ func (ts *OTAATestSuite) TestLW10() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -467,10 +472,12 @@ func (ts *OTAATestSuite) TestLW10() {
 			PHYPayload:    jrPayload,
 			ExtraChannels: []int{868600000, 868700000, 868800000},
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -516,10 +523,12 @@ func (ts *OTAATestSuite) TestLW10() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -539,10 +548,12 @@ func (ts *OTAATestSuite) TestLW10() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -653,10 +664,12 @@ func (ts *OTAATestSuite) TestLW11() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				SNwkSIntKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -786,10 +799,7 @@ func (ts *OTAATestSuite) TestLW11() {
 			Name: "join-request accepted (session-keys encrypted with KEK) (rx1 + rx2)",
 			BeforeFunc: func(*OTAATest) error {
 				conf := test.GetConfig()
-				conf.JoinServer.KEK.Set = []struct {
-					Label string `mapstructure:"label"`
-					KEK   string `mapstructure:"kek"`
-				}{
+				conf.JoinServer.KEK.Set = []config.KEK{
 					{
 						Label: "010203",
 						KEK:   "00000000000000000000000000000000",
@@ -801,10 +811,12 @@ func (ts *OTAATestSuite) TestLW11() {
 			RXInfo:     rxInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				SNwkSIntKey: &backend.KeyEnvelope{
 					KEKLabel: "010203",
 					AESKey:   []byte{246, 176, 184, 31, 61, 48, 41, 18, 85, 145, 192, 176, 184, 141, 118, 201, 59, 72, 172, 164, 4, 22, 133, 211},
@@ -946,10 +958,12 @@ func (ts *OTAATestSuite) TestLW11() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},
@@ -969,10 +983,12 @@ func (ts *OTAATestSuite) TestLW11() {
 			TXInfo:     txInfo,
 			PHYPayload: jrPayload,
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
-				PHYPayload: backend.HEXBytes(jaBytes),
-				Result: backend.Result{
-					ResultCode: backend.Success,
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
 				},
+				PHYPayload: backend.HEXBytes(jaBytes),
 				NwkSKey: &backend.KeyEnvelope{
 					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 				},

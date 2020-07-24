@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -173,13 +174,10 @@ func (ts *AddGatewayMetaDataTestSuite) TestAddGatewayMetaData() {
 			switch rxItem.FineTimestampType {
 			case gw.FineTimestampType_ENCRYPTED:
 				tsInfo := rxItem.GetEncryptedFineTimestamp()
-				tsInfo.XXX_sizecache = 0
-				assert.Equal(test.ExpectedFineTimestamp, tsInfo)
+				assert.True(proto.Equal(test.ExpectedFineTimestamp.(*gw.EncryptedFineTimestamp), tsInfo))
 			case gw.FineTimestampType_PLAIN:
 				tsInfo := rxItem.GetPlainFineTimestamp()
-				tsInfo.XXX_sizecache = 0
-				tsInfo.Time.XXX_sizecache = 0
-				assert.Equal(test.ExpectedFineTimestamp, tsInfo)
+				assert.True(proto.Equal(test.ExpectedFineTimestamp.(*gw.PlainFineTimestamp), tsInfo))
 			}
 		})
 	}

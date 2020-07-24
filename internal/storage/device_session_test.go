@@ -352,7 +352,7 @@ func TestGetFullFCntUp(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		out := GetFullFCntUp(DeviceSession{FCntUp: test.ServerFCnt}, test.DeviceFCnt)
+		out := GetFullFCntUp(test.ServerFCnt, test.DeviceFCnt)
 		assert.Equalf(test.FullFCnt, out, "Test %d: expected %d, got %d", i, test.FullFCnt, out)
 	}
 }

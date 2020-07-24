@@ -1,4 +1,4 @@
-package api
+package ns
 
 import (
 	"github.com/pkg/errors"

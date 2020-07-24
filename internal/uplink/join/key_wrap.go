@@ -1,10 +1,8 @@
 package join
 
 import (
-	"crypto/aes"
 	"fmt"
 
-	keywrap "github.com/NickBall/go-aes-key-wrap"
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/lorawan"
@@ -13,28 +11,21 @@ import (
 
 // unwrapNSKeyEnveope returns the decrypted key from the given KeyEnvelope.
 func unwrapNSKeyEnvelope(ke *backend.KeyEnvelope) (lorawan.AES128Key, error) {
-	var key lorawan.AES128Key
-
 	if ke.KEKLabel == "" {
+		var key lorawan.AES128Key
 		copy(key[:], ke.AESKey[:])
 		return key, nil
 	}
 
 	kek, ok := keks[ke.KEKLabel]
 	if !ok {
-		return key, fmt.Errorf("unknown kek label: %s", ke.KEKLabel)
+		return lorawan.AES128Key{}, fmt.Errorf("unknown kek label: %s", ke.KEKLabel)
 	}
 
-	block, err := aes.NewCipher(kek)
+	key, err := ke.Unwrap(kek)
 	if err != nil {
-		return key, errors.Wrap(err, "new cipher error")
+		return lorawan.AES128Key{}, errors.Wrap(err, "unwrap error")
 	}
 
-	b, err := keywrap.Unwrap(block, ke.AESKey[:])
-	if err != nil {
-		return key, errors.Wrap(err, "unwrap key error")
-	}
-
-	copy(key[:], b)
 	return key, nil
 }

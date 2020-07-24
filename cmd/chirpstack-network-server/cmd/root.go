@@ -3,13 +3,13 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/go-redis/redis/v7"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -163,8 +163,16 @@ func initConfig() {
 		log.WithError(err).Fatal("unmarshal config error")
 	}
 
+	// decode netid
 	if err := config.C.NetworkServer.NetID.UnmarshalText([]byte(config.C.NetworkServer.NetIDString)); err != nil {
 		log.WithError(err).Fatal("decode net_id error")
+	}
+
+	// decode roaming netids
+	for i := range config.C.Roaming.Servers {
+		if err := config.C.Roaming.Servers[i].NetID.UnmarshalText([]byte(config.C.Roaming.Servers[i].NetIDString)); err != nil {
+			log.WithError(err).Fatal("decode roaming net_id error")
+		}
 	}
 
 	if config.C.Redis.URL != "" {

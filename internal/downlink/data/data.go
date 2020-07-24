@@ -1,6 +1,7 @@
 package data
 
 import (
+	"bytes"
 	"context"
 	"encoding/binary"
 	"time"
@@ -21,8 +22,10 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/maccommand"
 	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/internal/roaming"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
+	"github.com/brocaar/lorawan/backend"
 	loraband "github.com/brocaar/lorawan/band"
 	"github.com/brocaar/lorawan/sensitivity"
 )
@@ -109,7 +112,12 @@ var responseTasks = []func(*dataContext) error{
 	setMACCommandsSet,
 	stopOnNothingToSend,
 	setPHYPayloads,
-	sendDownlinkFrame,
+	isRoaming(false,
+		sendDownlinkFrame,
+	),
+	isRoaming(true,
+		sendDownlinkFramePassiveRoaming,
+	),
 	saveDeviceSession,
 	saveDownlinkFrame,
 }
@@ -272,6 +280,20 @@ func forClass(mode storage.DeviceMode, tasks ...func(*dataContext) error) func(*
 		for _, f := range tasks {
 			if err := f(ctx); err != nil {
 				return err
+			}
+		}
+
+		return nil
+	}
+}
+
+func isRoaming(r bool, tasks ...func(*dataContext) error) func(*dataContext) error {
+	return func(ctx *dataContext) error {
+		if r == (ctx.RXPacket.RoamingMetaData != nil) {
+			for _, f := range tasks {
+				if err := f(ctx); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -1133,6 +1155,88 @@ func sendDownlinkFrame(ctx *dataContext) error {
 	return nil
 }
 
+func sendDownlinkFramePassiveRoaming(ctx *dataContext) error {
+	var netID lorawan.NetID
+	if err := netID.UnmarshalText([]byte(ctx.RXPacket.RoamingMetaData.BasePayload.SenderID)); err != nil {
+		return errors.Wrap(err, "decode senderid error")
+	}
+
+	client, err := roaming.GetClientForNetID(netID)
+	if err != nil {
+		return errors.Wrap(err, "get roaming client error")
+	}
+
+	classMode := "A"
+
+	req := backend.XmitDataReqPayload{
+		PHYPayload: backend.HEXBytes(ctx.DownlinkFrame.Items[0].PhyPayload),
+		DLMetaData: &backend.DLMetaData{
+			ClassMode:  &classMode,
+			DevEUI:     &ctx.DeviceSession.DevEUI,
+			FNSULToken: ctx.RXPacket.RoamingMetaData.ULMetaData.FNSULToken,
+		},
+	}
+
+	// DLFreq1
+	dlFreq1, err := band.Band().GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
+	if err != nil {
+		return errors.Wrap(err, "get rx1 frequency error")
+	}
+	dlFreq1Mhz := float64(dlFreq1) / 1000000
+	req.DLMetaData.DLFreq1 = &dlFreq1Mhz
+
+	// DLFreq2
+	dlFreq2Mhz := float64(ctx.DeviceSession.RX2Frequency) / 1000000
+	req.DLMetaData.DLFreq2 = &dlFreq2Mhz
+
+	// DataRate1
+	rx1DR, err := band.Band().GetRX1DataRateIndex(ctx.DeviceSession.DR, int(ctx.DeviceSession.RX1DROffset))
+	if err != nil {
+		return errors.Wrap(err, "get rx1 data-rate index error")
+	}
+	req.DLMetaData.DataRate1 = &rx1DR
+
+	// DataRate2
+	rx2DR := int(ctx.DeviceSession.RX2DR)
+	req.DLMetaData.DataRate2 = &rx2DR
+
+	// RXDelay1
+	rxDelay1 := int(ctx.DeviceSession.RXDelay)
+	req.DLMetaData.RXDelay1 = &rxDelay1
+
+	for i := range ctx.RXPacket.RoamingMetaData.ULMetaData.GWInfo {
+		gwInfo := ctx.RXPacket.RoamingMetaData.ULMetaData.GWInfo[i]
+		if !gwInfo.DLAllowed {
+			continue
+		}
+
+		req.DLMetaData.GWInfo = append(req.DLMetaData.GWInfo, backend.GWInfoElement{
+			ULToken: gwInfo.ULToken,
+		})
+	}
+
+	go func() {
+		logFields := log.Fields{
+			"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+			"net_id":  netID,
+			"dev_eui": ctx.DeviceSession.DevEUI,
+		}
+		resp, err := client.XmitDataReq(ctx.ctx, req)
+		if err != nil {
+			log.WithFields(logFields).WithError(err).Error("downlink/data: XmitDataReq failed")
+			return
+		}
+		if resp.Result.ResultCode != backend.Success {
+			log.WithFields(logFields).Errorf("expected: %s, got: %s (%s)", backend.Success, resp.Result.ResultCode, resp.Result.Description)
+			return
+		}
+
+		log.WithFields(logFields).Info("downlink/data: forwarded downlink using passive-roaming")
+	}()
+
+	return nil
+}
+
 func saveDeviceSession(ctx *dataContext) error {
 	if err := storage.SaveDeviceSession(ctx.ctx, ctx.DeviceSession); err != nil {
 		return errors.Wrap(err, "save device-session error")
@@ -1162,6 +1266,21 @@ func setDeviceGatewayRXInfo(ctx *dataContext) error {
 	if ctx.RXPacket != nil {
 		// Class-A response.
 		for i := range ctx.RXPacket.RXInfoSet {
+			// In case of roaming, check if this gateway can be used for sending
+			// downlinks.
+			if ctx.RXPacket.RoamingMetaData != nil {
+				var downlink bool
+				for _, gwInfo := range ctx.RXPacket.RoamingMetaData.ULMetaData.GWInfo {
+					if bytes.Equal(gwInfo.ID[:], ctx.RXPacket.RXInfoSet[i].GatewayId) && gwInfo.DLAllowed {
+						downlink = true
+					}
+				}
+
+				if !downlink {
+					continue
+				}
+			}
+
 			ctx.DeviceGatewayRXInfo = append(ctx.DeviceGatewayRXInfo, storage.DeviceGatewayRXInfo{
 				GatewayID: helpers.GetGatewayID(ctx.RXPacket.RXInfoSet[i]),
 				RSSI:      int(ctx.RXPacket.RXInfoSet[i].Rssi),

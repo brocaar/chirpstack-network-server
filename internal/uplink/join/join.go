@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -17,11 +18,12 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/backend/joinserver"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
-	joindown "github.com/brocaar/chirpstack-network-server/internal/downlink/join"
+	"github.com/brocaar/chirpstack-network-server/internal/downlink/join"
 	"github.com/brocaar/chirpstack-network-server/internal/framelog"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/internal/roaming"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
@@ -30,22 +32,6 @@ import (
 
 // ErrAbort is used to abort the flow without error
 var ErrAbort = errors.New("nothing to do")
-
-var tasks = []func(*joinContext) error{
-	setContextFromJoinRequestPHYPayload,
-	logJoinRequestFramesCollected,
-	getDeviceAndDeviceProfile,
-	abortOnDeviceIsDisabled,
-	validateNonce,
-	getRandomDevAddr,
-	getJoinAcceptFromAS,
-	sendUplinkMetaDataToNetworkController,
-	flushDeviceQueue,
-	createDeviceSession,
-	createDeviceActivation,
-	setDeviceMode,
-	sendJoinAcceptDownlink,
-}
 
 type joinContext struct {
 	ctx context.Context
@@ -59,6 +45,9 @@ type joinContext struct {
 	CFList             []uint32
 	JoinAnsPayload     backend.JoinAnsPayload
 	DeviceSession      storage.DeviceSession
+
+	PRStartReqPayload *backend.PRStartReqPayload
+	PRStartAnsPayload *backend.PRStartAnsPayload
 }
 
 var (
@@ -97,11 +86,28 @@ func Handle(ctx context.Context, rxPacket models.RXPacket) error {
 		RXPacket: rxPacket,
 	}
 
-	for _, t := range tasks {
-		if err := t(&jctx); err != nil {
+	for _, f := range []func() error{
+		jctx.setContextFromJoinRequestPHYPayload,
+		jctx.logJoinRequestFramesCollected,
+		jctx.getDeviceOrTryRoaming,
+		jctx.getDeviceProfile,
+		jctx.getServiceProfile,
+		jctx.abortOnDeviceIsDisabled,
+		jctx.validateNonce,
+		jctx.getRandomDevAddr,
+		jctx.getJoinAcceptFromAS,
+		jctx.sendUplinkMetaDataToNetworkController,
+		jctx.flushDeviceQueue,
+		jctx.createDeviceSession,
+		jctx.createDeviceActivation,
+		jctx.setDeviceMode,
+		jctx.sendJoinAcceptDownlink,
+	} {
+		if err := f(); err != nil {
 			if err == ErrAbort {
 				return nil
 			}
+
 			return err
 		}
 	}
@@ -109,7 +115,7 @@ func Handle(ctx context.Context, rxPacket models.RXPacket) error {
 	return nil
 }
 
-func setContextFromJoinRequestPHYPayload(ctx *joinContext) error {
+func (ctx *joinContext) setContextFromJoinRequestPHYPayload() error {
 	jrPL, ok := ctx.RXPacket.PHYPayload.MACPayload.(*lorawan.JoinRequestPayload)
 	if !ok {
 		return fmt.Errorf("expected *lorawan.JoinRequestPayload, got: %T", ctx.RXPacket.PHYPayload.MACPayload)
@@ -119,7 +125,7 @@ func setContextFromJoinRequestPHYPayload(ctx *joinContext) error {
 	return nil
 }
 
-func logJoinRequestFramesCollected(ctx *joinContext) error {
+func (ctx *joinContext) logJoinRequestFramesCollected() error {
 	uplinkFrameLog, err := framelog.CreateUplinkFrameLog(ctx.RXPacket)
 	if err != nil {
 		return errors.Wrap(err, "create uplink frame-set error")
@@ -134,22 +140,33 @@ func logJoinRequestFramesCollected(ctx *joinContext) error {
 	return nil
 }
 
-func getDeviceAndDeviceProfile(ctx *joinContext) error {
+func (ctx *joinContext) getDeviceOrTryRoaming() error {
 	var err error
-
 	ctx.Device, err = storage.GetDevice(ctx.ctx, storage.DB(), ctx.JoinRequestPayload.DevEUI)
 	if err != nil {
+		if errors.Cause(err) == storage.ErrDoesNotExist {
+			log.WithFields(log.Fields{
+				"ctx_id":   ctx.ctx.Value(logging.ContextIDKey),
+				"dev_eui":  ctx.JoinRequestPayload.DevEUI,
+				"join_eui": ctx.JoinRequestPayload.JoinEUI,
+			}).Info("uplink/join: unknown device, try passive-roaming activation")
+
+			if err := StartPRFNS(ctx.ctx, ctx.RXPacket, ctx.JoinRequestPayload); err != nil {
+				return err
+			}
+
+			return ErrAbort
+		}
 		return errors.Wrap(err, "get device error")
 	}
+	return nil
+}
 
+func (ctx *joinContext) getDeviceProfile() error {
+	var err error
 	ctx.DeviceProfile, err = storage.GetDeviceProfile(ctx.ctx, storage.DB(), ctx.Device.DeviceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get device-profile error")
-	}
-
-	ctx.ServiceProfile, err = storage.GetServiceProfile(ctx.ctx, storage.DB(), ctx.Device.ServiceProfileID)
-	if err != nil {
-		return errors.Wrap(err, "get service-profile error")
 	}
 
 	if !ctx.DeviceProfile.SupportsJoin {
@@ -159,14 +176,23 @@ func getDeviceAndDeviceProfile(ctx *joinContext) error {
 	return nil
 }
 
-func abortOnDeviceIsDisabled(ctx *joinContext) error {
+func (ctx *joinContext) getServiceProfile() error {
+	var err error
+	ctx.ServiceProfile, err = storage.GetServiceProfile(ctx.ctx, storage.DB(), ctx.Device.ServiceProfileID)
+	if err != nil {
+		return errors.Wrap(err, "get service-profile error")
+	}
+	return nil
+}
+
+func (ctx *joinContext) abortOnDeviceIsDisabled() error {
 	if ctx.Device.IsDisabled {
 		return ErrAbort
 	}
 	return nil
 }
 
-func validateNonce(ctx *joinContext) error {
+func (ctx *joinContext) validateNonce() error {
 	// validate that the nonce has not been used yet
 	err := storage.ValidateDevNonce(
 		ctx.ctx,
@@ -204,7 +230,7 @@ func validateNonce(ctx *joinContext) error {
 	return nil
 }
 
-func getRandomDevAddr(ctx *joinContext) error {
+func (ctx *joinContext) getRandomDevAddr() error {
 	devAddr, err := storage.GetRandomDevAddr(netID)
 	if err != nil {
 		return errors.Wrap(err, "get random DevAddr error")
@@ -214,7 +240,7 @@ func getRandomDevAddr(ctx *joinContext) error {
 	return nil
 }
 
-func getJoinAcceptFromAS(ctx *joinContext) error {
+func (ctx *joinContext) getJoinAcceptFromAS() error {
 	b, err := ctx.RXPacket.PHYPayload.MarshalBinary()
 	if err != nil {
 		return errors.Wrap(err, "PHYPayload marshal binary error")
@@ -299,7 +325,7 @@ func getJoinAcceptFromAS(ctx *joinContext) error {
 	return nil
 }
 
-func sendUplinkMetaDataToNetworkController(ctx *joinContext) error {
+func (ctx *joinContext) sendUplinkMetaDataToNetworkController() error {
 	if controller.Client() == nil {
 		return nil
 	}
@@ -336,14 +362,14 @@ func sendUplinkMetaDataToNetworkController(ctx *joinContext) error {
 	return nil
 }
 
-func flushDeviceQueue(ctx *joinContext) error {
+func (ctx *joinContext) flushDeviceQueue() error {
 	if err := storage.FlushDeviceQueueForDevEUI(ctx.ctx, storage.DB(), ctx.Device.DevEUI); err != nil {
 		return errors.Wrap(err, "flush device-queue error")
 	}
 	return nil
 }
 
-func createDeviceSession(ctx *joinContext) error {
+func (ctx *joinContext) createDeviceSession() error {
 	ds := storage.DeviceSession{
 		DeviceProfileID:  ctx.Device.DeviceProfileID,
 		ServiceProfileID: ctx.Device.ServiceProfileID,
@@ -462,7 +488,7 @@ func createDeviceSession(ctx *joinContext) error {
 	return nil
 }
 
-func createDeviceActivation(ctx *joinContext) error {
+func (ctx *joinContext) createDeviceActivation() error {
 	da := storage.DeviceActivation{
 		DevEUI:      ctx.DeviceSession.DevEUI,
 		JoinEUI:     ctx.DeviceSession.JoinEUI,
@@ -481,7 +507,7 @@ func createDeviceActivation(ctx *joinContext) error {
 	return nil
 }
 
-func setDeviceMode(ctx *joinContext) error {
+func (ctx *joinContext) setDeviceMode() error {
 	// The device is never set to DeviceModeB because the device first needs to
 	// aquire a Class-B beacon lock and will signal this to the network-server.
 	if ctx.DeviceProfile.SupportsClassC {
@@ -495,14 +521,91 @@ func setDeviceMode(ctx *joinContext) error {
 	return nil
 }
 
-func sendJoinAcceptDownlink(ctx *joinContext) error {
+func (ctx *joinContext) sendJoinAcceptDownlink() error {
 	var phy lorawan.PHYPayload
 	if err := phy.UnmarshalBinary(ctx.JoinAnsPayload.PHYPayload[:]); err != nil {
 		return errors.Wrap(err, "unmarshal downlink phypayload error")
 	}
 
-	if err := joindown.Handle(ctx.ctx, ctx.DeviceSession, ctx.RXPacket, phy); err != nil {
+	if err := join.Handle(ctx.ctx, ctx.DeviceSession, ctx.RXPacket, phy); err != nil {
 		return errors.Wrap(err, "run join-response flow error")
+	}
+
+	return nil
+}
+
+func (ctx *joinContext) setPRStartAnsPayload() error {
+	var netID lorawan.NetID
+	err := netID.UnmarshalText([]byte(ctx.PRStartReqPayload.BasePayload.SenderID))
+	if err != nil {
+		return errors.Wrap(err, "decode netid error")
+	}
+
+	lifetime := int(roaming.GetPassiveRoamingLifetime(netID) / time.Second)
+	fCntUp := uint32(0)
+
+	// sess keys
+	kekLabel := roaming.GetPassiveRoamingKEKLabel(netID)
+	var kekKey []byte
+	if kekLabel != "" {
+		kekKey, err = roaming.GetKEKKey(kekLabel)
+		if err != nil {
+			return errors.Wrap(err, "get kek key error")
+		}
+	}
+	var fNwkSIntKey *backend.KeyEnvelope
+	var nwkSKey *backend.KeyEnvelope
+
+	if ctx.DeviceSession.GetMACVersion() == lorawan.LoRaWAN1_0 {
+		nwkSKey, err = backend.NewKeyEnvelope(kekLabel, kekKey, ctx.DeviceSession.NwkSEncKey)
+		if err != nil {
+			return errors.Wrap(err, "new key envelope error")
+		}
+	} else {
+		fNwkSIntKey, err = backend.NewKeyEnvelope(kekLabel, kekKey, ctx.DeviceSession.FNwkSIntKey)
+		if err != nil {
+			return errors.Wrap(err, "new key envelope error")
+		}
+	}
+
+	classA := "A"
+	rxDelay1 := int(band.Band().GetDefaults().JoinAcceptDelay1 / time.Second)
+	rx1DR, err := band.Band().GetRX1DataRateIndex(ctx.RXPacket.DR, 0)
+	if err != nil {
+		return errors.Wrap(err, "get rx1 data-rate error")
+	}
+	rx2DR := band.Band().GetDefaults().RX2DataRate
+	dlFreq1, err := band.Band().GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
+	if err != nil {
+		return errors.Wrap(err, "get rx1 frequency error")
+	}
+	dlFreq1Mhz := float64(dlFreq1) / 1000000
+	dlFreq2Mhz := float64(band.Band().GetDefaults().RX2Frequency) / 1000000
+
+	ctx.PRStartAnsPayload = &backend.PRStartAnsPayload{
+		PHYPayload:  ctx.JoinAnsPayload.PHYPayload,
+		DevEUI:      &ctx.Device.DevEUI,
+		Lifetime:    &lifetime,
+		FNwkSIntKey: fNwkSIntKey,
+		NwkSKey:     nwkSKey,
+		FCntUp:      &fCntUp,
+		DLMetaData: &backend.DLMetaData{
+			DevEUI:     &ctx.DeviceSession.DevEUI,
+			DLFreq1:    &dlFreq1Mhz,
+			DLFreq2:    &dlFreq2Mhz,
+			RXDelay1:   &rxDelay1,
+			ClassMode:  &classA,
+			DataRate1:  &rx1DR,
+			DataRate2:  &rx2DR,
+			FNSULToken: ctx.PRStartReqPayload.ULMetaData.FNSULToken,
+		},
+	}
+
+	for i := range ctx.PRStartReqPayload.ULMetaData.GWInfo {
+		gwInfo := ctx.PRStartReqPayload.ULMetaData.GWInfo[i]
+		ctx.PRStartAnsPayload.DLMetaData.GWInfo = append(ctx.PRStartAnsPayload.DLMetaData.GWInfo, backend.GWInfoElement{
+			ULToken: gwInfo.ULToken,
+		})
 	}
 
 	return nil

@@ -1,4 +1,4 @@
-package api
+package ns
 
 import (
 	"context"
@@ -908,8 +908,8 @@ func (ts *NetworkServerAPITestSuite) TestGateway() {
 			gatewayID := lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
 
 			config := test.GetConfig()
-			config.NetworkServer.Gateway.CACert = "../test/ca_cert.pem"
-			config.NetworkServer.Gateway.CAKey = "../test/ca_private.pem"
+			config.NetworkServer.Gateway.CACert = "../../test/ca_cert.pem"
+			config.NetworkServer.Gateway.CAKey = "../../test/ca_private.pem"
 			config.NetworkServer.Gateway.ClientCertLifetime = time.Hour
 			assert.NoError(gateway.Setup(config))
 

@@ -795,6 +795,117 @@ resolve_domain_suffix="{{ .JoinServer.ResolveDomainSuffix }}"
 
   # tls key used by the network-controller client (optional)
   tls_key="{{ .NetworkController.TLSKey }}"
+
+
+# Roaming settings (experimental).
+[roaming]
+
+# Resolve NetID domain suffix.
+#
+# This configures the domain suffix used for resolving a Network Server
+# using its NetID.
+resolve_netid_domain_suffix="{{ .Roaming.ResolveNetIDDomainSuffix }}"
+
+  # Roaming API settings.
+  [roaming.api]
+  # Interface to bind the API to (ip:port).
+  bind="{{ .Roaming.API.Bind }}"
+
+  # CA certificate (optional).
+  #
+  # When configured, this is used for client-certificate validation.
+  ca_cert="{{ .Roaming.API.CACert }}"
+
+  # TLS certificate (optional).
+  #
+  # When configured, this is used to secure the API interface using TLS.
+  # This must be configured together with the tls_key.
+  tls_cert="{{ .Roaming.API.TLSCert }}"
+
+  # TLS key (optional).
+  tls_key="{{ .Roaming.API.TLSKey }}"
+
+  # Per roaming-agreement server configuration.
+  #
+  # Example:
+  # [[roaming.servers]]
+  # # NetID of the roaming server.
+  # net_id="010203"
+
+  # # MIC must be validated.
+  # check_mic=true
+
+  # # Use the async API scheme.
+  # async=false
+
+  # # Async request timeout.
+  # async_timeout="1s"
+  #
+  # # Allow passive-roaming.
+  # passive_roaming=true
+  #
+  # # Passive-roaming session lifetime.
+  # #
+  # # When set to 0s, the passive-roaming will be stateless.
+  # passive_roaming_lifetime="24h"
+  #
+  # # Passive-roaming KEK label (optional).
+  # #
+  # # When set, the session-keys will be encrypted using the given KEK when these
+  # # are exchanged.
+  # passive_roaming_kek_label=""
+  #
+  # # Server (optional).
+  # #
+  # # When set, this will bypass the DNS resolving of the Network Server.
+  # server="htts://example.com:1234"
+  #
+  # # CA certificate (optional).
+  # #
+  # # When configured, this is used to validate the server certificate.
+  # ca_cert=""
+  #
+  # # TLS client certificate (optional).
+  # #
+  # # When configured, this will be used to authenticate the client.
+  # # This mist be configured together with the tls_key.
+  # tls_cert=""
+  #
+  # TLS key for client certificate (optional).
+  # tls_key=""
+  {{ range $index, $element := .Roaming.Servers }}
+  [[roaming.servers]]
+  net_id="{{ $element.NetIDString }}"
+  check_mic={{ $element.CheckMIC }}
+  async={{ $element.Async }}
+  async_timeout="{{ $element.AsyncTimeout }}"
+  passive_roaming={{ $element.PassiveRoaming }}
+  passive_roaming_lifetime="{{ $element.PassiveRoamingLifetime }}"
+  passive_roaming_kek_label="{{ $element.PassiveRoamingKEKLabel }}"
+  server="{{ $element.Server }}"
+  ca_cert="{{ $element.CACert }}"
+  tls_cert="{{ $element.TLSCert }}"
+  tls_key="{{ $element.TLSKey }}"
+  {{ end }}
+
+  # Roaming KEK set.
+  #
+  # These KEKs (Key Encryption Keys) are used to encrypt / decrypt session-keys
+  # that are exchanged during the start of a roaming session.
+  # Please refer to the LoRaWAN Backend Interface specification
+  # 'Key Transport Security' section for more information.
+  #
+  # Example (the [roaming.kek.set] can ber repeated);
+  # [[roaming.kek.set]]
+  # # KEK label.
+  # label="kek-label"
+  #
+  # # Key Encryption Key.
+  # kek="01020304050607080102030405060708"
+  {{ range $index, $element := .Roaming.KEK.Set }}
+  label="{{ $element.Label }}"
+  kek="{{ $element.KEK }}"
+  {{ end }}
 `
 
 var configCmd = &cobra.Command{
