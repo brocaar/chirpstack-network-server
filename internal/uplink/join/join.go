@@ -585,6 +585,7 @@ func (ctx *joinContext) setPRStartAnsPayload() error {
 	ctx.PRStartAnsPayload = &backend.PRStartAnsPayload{
 		PHYPayload:  ctx.JoinAnsPayload.PHYPayload,
 		DevEUI:      &ctx.Device.DevEUI,
+		DevAddr:     &ctx.DevAddr,
 		Lifetime:    &lifetime,
 		FNwkSIntKey: fNwkSIntKey,
 		NwkSKey:     nwkSKey,

@@ -832,9 +832,6 @@ resolve_netid_domain_suffix="{{ .Roaming.ResolveNetIDDomainSuffix }}"
   # # NetID of the roaming server.
   # net_id="010203"
 
-  # # MIC must be validated.
-  # check_mic=true
-
   # # Use the async API scheme.
   # async=false
 
@@ -876,7 +873,6 @@ resolve_netid_domain_suffix="{{ .Roaming.ResolveNetIDDomainSuffix }}"
   {{ range $index, $element := .Roaming.Servers }}
   [[roaming.servers]]
   net_id="{{ $element.NetIDString }}"
-  check_mic={{ $element.CheckMIC }}
   async={{ $element.Async }}
   async_timeout="{{ $element.AsyncTimeout }}"
   passive_roaming={{ $element.PassiveRoaming }}
@@ -887,6 +883,25 @@ resolve_netid_domain_suffix="{{ .Roaming.ResolveNetIDDomainSuffix }}"
   tls_cert="{{ $element.TLSCert }}"
   tls_key="{{ $element.TLSKey }}"
   {{ end }}
+
+  # Default roaming server.
+  #
+  # When this is configured and non of the configured servers are matching the
+  # NetID, then the default roaming server will be used. The same configuration
+  # parameters apply as to each roaming server, except that no NetID needs to
+  # be set.
+  [roaming.default]
+  enabled={{ .Roaming.Default.Enabled }}
+  server="{{ .Roaming.Default.Server }}"
+  async={{ .Roaming.Default.Async }}
+  async_timeout="{{ .Roaming.Default.AsyncTimeout }}"
+  passive_roaming={{ .Roaming.Default.PassiveRoaming }}
+  passive_roaming_lifetime="{{ .Roaming.Default.PassiveRoamingLifetime }}"
+  passive_roaming_kek_label="{{ .Roaming.Default.PassiveRoamingKEKLabel }}"
+  ca_cert="{{ .Roaming.Default.CACert }}"
+  tls_cert="{{ .Roaming.Default.TLSCert }}"
+  tls_key="{{ .Roaming.Default.TLSKey }}"
+
 
   # Roaming KEK set.
   #

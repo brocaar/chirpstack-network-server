@@ -187,7 +187,8 @@ type Config struct {
 			TLSKey  string `mapstructure:"tls_key"`
 		} `mapstructure:"api"`
 
-		Servers []RoamingServer `mapstructure:"servers"`
+		Servers []RoamingServer      `mapstructure:"servers"`
+		Default DefaultRoamingServer `mapstructure:"default"`
 
 		KEK struct {
 			Set []KEK `mapstructure:"set"`
@@ -224,7 +225,19 @@ type Config struct {
 type RoamingServer struct {
 	NetID                  lorawan.NetID
 	NetIDString            string        `mapstructure:"net_id"`
-	CheckMIC               bool          `mapstructure:"check_mic"`
+	Async                  bool          `mapstructure:"async"`
+	AsyncTimeout           time.Duration `mapstructure:"async_timeout"`
+	PassiveRoaming         bool          `mapstructure:"passive_roaming"`
+	PassiveRoamingLifetime time.Duration `mapstructure:"passive_roaming_lifetime"`
+	PassiveRoamingKEKLabel string        `mapstructure:"passive_roaming_kek_label"`
+	Server                 string        `mapstructure:"server"`
+	CACert                 string        `mapstructure:"ca_cert"`
+	TLSCert                string        `mapstructure:"tls_cert"`
+	TLSKey                 string        `mapstructure:"tls_key"`
+}
+
+type DefaultRoamingServer struct {
+	Enabled                bool          `mapstructure:"enabled"`
 	Async                  bool          `mapstructure:"async"`
 	AsyncTimeout           time.Duration `mapstructure:"async_timeout"`
 	PassiveRoaming         bool          `mapstructure:"passive_roaming"`

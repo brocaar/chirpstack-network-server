@@ -115,7 +115,6 @@ func (ts *PassiveRoamingFNSTestSuite) SetupSuite() {
 	conf.Roaming.Servers = []config.RoamingServer{
 		{
 			NetID:                  lorawan.NetID{6, 6, 6},
-			CheckMIC:               true,
 			Async:                  false,
 			PassiveRoaming:         true,
 			PassiveRoamingLifetime: time.Minute,
@@ -713,7 +712,6 @@ func (ts *PassiveRoamingSNSTestSuite) SetupSuite() {
 	conf.Roaming.Servers = []config.RoamingServer{
 		{
 			NetID:                  lorawan.NetID{6, 6, 6},
-			CheckMIC:               true,
 			Async:                  false,
 			PassiveRoaming:         true,
 			PassiveRoamingLifetime: time.Minute,
@@ -745,7 +743,6 @@ func (ts *PassiveRoamingSNSTestSuite) TestPRStartReqStateless() {
 	conf.Roaming.Servers = []config.RoamingServer{
 		{
 			NetID:                  lorawan.NetID{6, 6, 6},
-			CheckMIC:               true,
 			Async:                  false,
 			PassiveRoaming:         true,
 			PassiveRoamingLifetime: 0,
@@ -861,7 +858,6 @@ func (ts *PassiveRoamingSNSTestSuite) TestPRStartReqStatefull() {
 	conf.Roaming.Servers = []config.RoamingServer{
 		{
 			NetID:                  lorawan.NetID{6, 6, 6},
-			CheckMIC:               true,
 			Async:                  false,
 			PassiveRoaming:         true,
 			PassiveRoamingLifetime: time.Minute,
@@ -953,7 +949,6 @@ func (ts *PassiveRoamingSNSTestSuite) TestXmitDataReqUplinkNoDownlink() {
 	conf.Roaming.Servers = []config.RoamingServer{
 		{
 			NetID:                  lorawan.NetID{6, 6, 6},
-			CheckMIC:               true,
 			Async:                  false,
 			PassiveRoaming:         true,
 			PassiveRoamingLifetime: time.Minute,
@@ -1071,7 +1066,6 @@ func (ts *PassiveRoamingSNSTestSuite) TestXmitDataReqUplinkDownlink() {
 	conf.Roaming.Servers = []config.RoamingServer{
 		{
 			NetID:                  lorawan.NetID{6, 6, 6},
-			CheckMIC:               true,
 			Async:                  false,
 			PassiveRoaming:         true,
 			PassiveRoamingLifetime: time.Minute,

@@ -2,7 +2,9 @@ package join
 
 import (
 	"context"
+	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -12,6 +14,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/models"
 	"github.com/brocaar/chirpstack-network-server/internal/roaming"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
 )
@@ -22,6 +25,7 @@ type startPRFNSContext struct {
 	joinRequestPayload *lorawan.JoinRequestPayload
 	homeNetID          lorawan.NetID
 	nsClient           backend.Client
+	prStartAns         backend.PRStartAnsPayload
 }
 
 // StartPRFNS initiates the passive-roaming OTAA as a fNS.
@@ -36,6 +40,7 @@ func StartPRFNS(ctx context.Context, rxPacket models.RXPacket, jrPL *lorawan.Joi
 		cctx.getHomeNetID,
 		cctx.getNSClient,
 		cctx.startRoaming,
+		cctx.saveRoamingSession,
 	} {
 		if err := f(); err != nil {
 			return err
@@ -115,17 +120,80 @@ func (ctx *startPRFNSContext) startRoaming() error {
 		},
 	}
 
-	jrAns, err := ctx.nsClient.PRStartReq(ctx.ctx, prReq)
+	ctx.prStartAns, err = ctx.nsClient.PRStartReq(ctx.ctx, prReq)
 	if err != nil {
 		return errors.Wrap(err, "PRStartReq error")
 	}
 
-	if jrAns.DLMetaData == nil {
+	if ctx.prStartAns.DLMetaData == nil {
 		return errors.New("DLMetaData must not be nil")
 	}
 
-	if err := dlroaming.EmitPRDownlink(ctx.ctx, ctx.rxPacket, jrAns.PHYPayload, *jrAns.DLMetaData); err != nil {
+	if err := dlroaming.EmitPRDownlink(ctx.ctx, ctx.rxPacket, ctx.prStartAns.PHYPayload, *ctx.prStartAns.DLMetaData); err != nil {
 		return errors.Wrap(err, "send passive-roaming downlink error")
+	}
+
+	return nil
+}
+
+func (ctx *startPRFNSContext) saveRoamingSession() error {
+	if ctx.prStartAns.DevAddr == nil || ctx.prStartAns.Lifetime == nil || *ctx.prStartAns.Lifetime == 0 {
+		return nil
+	}
+
+	id, err := uuid.NewV4()
+	if err != nil {
+		return errors.Wrap(err, "get new uuid error")
+	}
+
+	sess := storage.PassiveRoamingDeviceSession{
+		SessionID: id,
+		NetID:     ctx.homeNetID,
+		DevEUI:    ctx.joinRequestPayload.DevEUI,
+		DevAddr:   *ctx.prStartAns.DevAddr,
+		Lifetime:  time.Now().Add(time.Duration(*ctx.prStartAns.Lifetime) * time.Second),
+	}
+
+	// FNwkSIntKey (LoRaWAN 1.1)
+	if fNwkSIntKey := ctx.prStartAns.FNwkSIntKey; fNwkSIntKey != nil {
+		sess.LoRaWAN11 = true
+
+		if fNwkSIntKey.KEKLabel != "" {
+			kek, err := roaming.GetKEKKey(fNwkSIntKey.KEKLabel)
+			if err != nil {
+				return errors.Wrap(err, "get kek error")
+			}
+
+			key, err := fNwkSIntKey.Unwrap(kek)
+			if err != nil {
+				return errors.Wrap(err, "unwrap FNwkSIntKey with kek error")
+			}
+			sess.FNwkSIntKey = key
+		} else {
+			copy(sess.FNwkSIntKey[:], fNwkSIntKey.AESKey[:])
+		}
+	}
+
+	// NwkSKey (LoRaWAN 1.0)
+	if nwkSKey := ctx.prStartAns.NwkSKey; nwkSKey != nil {
+		if nwkSKey.KEKLabel != "" {
+			kek, err := roaming.GetKEKKey(nwkSKey.KEKLabel)
+			if err != nil {
+				return errors.Wrap(err, "get kek error")
+			}
+
+			key, err := nwkSKey.Unwrap(kek)
+			if err != nil {
+				return errors.Wrap(err, "unwrap NwkSKey with kek error")
+			}
+			sess.FNwkSIntKey = key
+		} else {
+			copy(sess.FNwkSIntKey[:], nwkSKey.AESKey[:])
+		}
+	}
+
+	if err := storage.SavePassiveRoamingDeviceSession(ctx.ctx, &sess); err != nil {
+		return errors.Wrap(err, "save passive-roaming device-session error")
 	}
 
 	return nil

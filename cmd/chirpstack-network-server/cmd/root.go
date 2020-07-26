@@ -90,6 +90,8 @@ func init() {
 	viper.SetDefault("join_server.resolve_domain_suffix", ".joineuis.lora-alliance.org")
 	viper.SetDefault("join_server.default.server", "http://localhost:8003")
 
+	viper.SetDefault("roaming.resolve_netid_domain_suffix", ".netids.lora-alliance.org")
+
 	viper.SetDefault("network_server.gateway.backend.gcp_pub_sub.uplink_retention_duration", time.Hour*24)
 
 	viper.SetDefault("metrics.timezone", "Local")
