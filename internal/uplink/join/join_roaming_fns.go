@@ -87,6 +87,8 @@ func (ctx *startPRFNSContext) getNSClient() error {
 			}).Warning("uplink/join: no roaming agreement for netid")
 			return ErrAbort
 		}
+
+		return errors.Wrap(err, "get client for netid error")
 	}
 
 	ctx.nsClient = client
