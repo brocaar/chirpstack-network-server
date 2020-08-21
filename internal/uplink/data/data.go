@@ -657,7 +657,7 @@ func handleUplinkMACCommands(ctx context.Context, ds *storage.DeviceSession, dp 
 
 	for _, cid := range cids {
 		switch cid {
-		case lorawan.RXTimingSetupAns:
+		case lorawan.RXTimingSetupAns, lorawan.RXParamSetupAns:
 			// From the specs:
 			// The RXTimingSetupAns command should be added in the FOpt field of all uplinks until a
 			// class A downlink is received by the end-device.
