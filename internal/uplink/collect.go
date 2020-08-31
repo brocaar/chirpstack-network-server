@@ -19,8 +19,8 @@ import (
 
 // Templates used for generating Redis keys
 const (
-	CollectKeyTempl     = "lora:ns:rx:collect:%s"
-	CollectLockKeyTempl = "lora:ns:rx:collect:%s:lock"
+	CollectKeyTempl     = "lora:ns:rx:collect:%s:%s"
+	CollectLockKeyTempl = "lora:ns:rx:collect:%s:%s:lock"
 )
 
 // collectAndCallOnce collects the package, sleeps the configured duraction and
@@ -33,8 +33,14 @@ const (
 // unique set per gateway MAC and packet MIC.
 func collectAndCallOnce(rxPacket gw.UplinkFrame, callback func(packet models.RXPacket) error) error {
 	phyKey := hex.EncodeToString(rxPacket.PhyPayload)
-	key := fmt.Sprintf(CollectKeyTempl, phyKey)
-	lockKey := fmt.Sprintf(CollectLockKeyTempl, phyKey)
+	txInfoB, err := proto.Marshal(rxPacket.TxInfo)
+	if err != nil {
+		return errors.Wrap(err, "marshal protobuf error")
+	}
+	txInfoHEX := hex.EncodeToString(txInfoB)
+
+	key := fmt.Sprintf(CollectKeyTempl, txInfoHEX, phyKey)
+	lockKey := fmt.Sprintf(CollectLockKeyTempl, txInfoHEX, phyKey)
 
 	// this way we can set a really low DeduplicationDelay for testing, without
 	// the risk that the set already expired in redis on read
