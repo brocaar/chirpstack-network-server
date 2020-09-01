@@ -18,8 +18,11 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 )
 
-var cfgFile string
-var version string
+var (
+	cfgFile    string
+	cpuprofile string
+	version    string
+)
 
 var rootCmd = &cobra.Command{
 	Use:   "chirpstack-network-server",
@@ -34,6 +37,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "path to configuration file (optional)")
+	rootCmd.PersistentFlags().StringVarP(&cpuprofile, "cpu-profile", "", "", "write cpu profile to file (optional)")
 	rootCmd.PersistentFlags().Int("log-level", 4, "debug=5, info=4, error=2, fatal=1, panic=0")
 
 	viper.BindPFlag("general.log_level", rootCmd.PersistentFlags().Lookup("log-level"))
@@ -109,6 +113,7 @@ func init() {
 // Execute executes the root command.
 func Execute(v string) {
 	version = v
+
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}

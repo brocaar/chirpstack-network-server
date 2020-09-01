@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"runtime/pprof"
 	"syscall"
 
 	"github.com/jmoiron/sqlx"
@@ -42,6 +43,19 @@ import (
 
 func run(cmd *cobra.Command, args []string) error {
 	var server = new(uplink.Server)
+
+	if cpuprofile != "" {
+		f, err := os.Create(cpuprofile)
+		if err != nil {
+			return errors.Wrap(err, "could not create cpu profile file")
+		}
+		defer f.Close()
+
+		if err := pprof.StartCPUProfile(f); err != nil {
+			return errors.Wrap(err, "could not start cpu profile")
+		}
+		defer pprof.StopCPUProfile()
+	}
 
 	tasks := []func() error{
 		setLogLevel,
