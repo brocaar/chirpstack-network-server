@@ -8,6 +8,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -938,7 +939,8 @@ func (ts *NetworkServerAPITestSuite) TestGateway() {
 
 			req := ns.CreateGatewayProfileRequest{
 				GatewayProfile: &ns.GatewayProfile{
-					Channels: []uint32{0, 1, 2},
+					Channels:      []uint32{0, 1, 2},
+					StatsInterval: ptypes.DurationProto(time.Second * 30),
 					ExtraChannels: []*ns.GatewayProfileExtraChannel{
 						{
 							Modulation:       common.Modulation_LORA,
@@ -970,8 +972,9 @@ func (ts *NetworkServerAPITestSuite) TestGateway() {
 				})
 				assert.NoError(err)
 				assert.Equal(&ns.GatewayProfile{
-					Id:       createResp.Id,
-					Channels: []uint32{0, 1, 2},
+					Id:            createResp.Id,
+					Channels:      []uint32{0, 1, 2},
+					StatsInterval: ptypes.DurationProto(time.Second * 30),
 					ExtraChannels: []*ns.GatewayProfileExtraChannel{
 						{
 							Modulation:       common.Modulation_LORA,
@@ -994,8 +997,9 @@ func (ts *NetworkServerAPITestSuite) TestGateway() {
 
 				updateReq := ns.UpdateGatewayProfileRequest{
 					GatewayProfile: &ns.GatewayProfile{
-						Id:       createResp.Id,
-						Channels: []uint32{0, 1},
+						Id:            createResp.Id,
+						Channels:      []uint32{0, 1},
+						StatsInterval: ptypes.DurationProto(time.Minute * 30),
 						ExtraChannels: []*ns.GatewayProfileExtraChannel{
 							{
 								Modulation: common.Modulation_FSK,
@@ -1020,8 +1024,9 @@ func (ts *NetworkServerAPITestSuite) TestGateway() {
 				})
 				assert.NoError(err)
 				assert.Equal(&ns.GatewayProfile{
-					Id:       createResp.Id,
-					Channels: []uint32{0, 1},
+					Id:            createResp.Id,
+					Channels:      []uint32{0, 1},
+					StatsInterval: ptypes.DurationProto(time.Minute * 30),
 					ExtraChannels: []*ns.GatewayProfileExtraChannel{
 						{
 							Modulation: common.Modulation_FSK,

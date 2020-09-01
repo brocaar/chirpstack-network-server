@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/brocaar/chirpstack-network-server/internal/logging"
 )
 
 // Modulations
@@ -34,6 +35,7 @@ type GatewayProfile struct {
 	CreatedAt     time.Time      `db:"created_at"`
 	UpdatedAt     time.Time      `db:"updated_at"`
 	Channels      []int64        `db:"channels"`
+	StatsInterval time.Duration  `db:"stats_interval"`
 	ExtraChannels []ExtraChannel `db:"-"`
 }
 
@@ -63,12 +65,14 @@ func CreateGatewayProfile(ctx context.Context, db sqlx.Execer, c *GatewayProfile
 			gateway_profile_id,
 			created_at,
 			updated_at,
-			channels
-		) values ($1, $2, $3, $4)`,
+			channels,
+			stats_interval
+		) values ($1, $2, $3, $4, $5)`,
 		c.ID,
 		c.CreatedAt,
 		c.UpdatedAt,
 		pq.Array(c.Channels),
+		c.StatsInterval,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -113,7 +117,8 @@ func GetGatewayProfile(ctx context.Context, db sqlx.Queryer, id uuid.UUID) (Gate
 			gateway_profile_id,
 			created_at,
 			updated_at,
-			channels
+			channels,
+			stats_interval
 		from gateway_profile
 		where
 			gateway_profile_id = $1`,
@@ -123,6 +128,7 @@ func GetGatewayProfile(ctx context.Context, db sqlx.Queryer, id uuid.UUID) (Gate
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		pq.Array(&c.Channels),
+		&c.StatsInterval,
 	)
 	if err != nil {
 		return c, handlePSQLError(err, "select error")
@@ -173,12 +179,14 @@ func UpdateGatewayProfile(ctx context.Context, db sqlx.Execer, c *GatewayProfile
 		update gateway_profile
 		set
 			updated_at = $2,
-			channels = $3
+			channels = $3,
+			stats_interval = $4
 		where
 			gateway_profile_id = $1`,
 		c.ID,
 		c.UpdatedAt,
 		pq.Array(c.Channels),
+		c.StatsInterval,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")

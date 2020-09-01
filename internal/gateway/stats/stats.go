@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -119,8 +120,9 @@ func handleGatewayConfigurationUpdate(ctx *statsContext) error {
 	}
 
 	configPacket := gw.GatewayConfiguration{
-		GatewayId: ctx.gateway.GatewayID[:],
-		Version:   gwProfile.GetVersion(),
+		GatewayId:     ctx.gateway.GatewayID[:],
+		StatsInterval: ptypes.DurationProto(gwProfile.StatsInterval),
+		Version:       gwProfile.GetVersion(),
 	}
 
 	for _, i := range gwProfile.Channels {

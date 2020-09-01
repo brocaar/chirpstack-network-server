@@ -5,82 +5,83 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/smartystreets/goconvey/convey"
-
-	"github.com/brocaar/chirpstack-network-server/internal/test"
+	"github.com/stretchr/testify/require"
 )
 
-func TestGatewayProfile(t *testing.T) {
-	conf := test.GetConfig()
-	if err := Setup(conf); err != nil {
-		t.Fatal(err)
-	}
+func (ts *StorageTestSuite) TestGatewayProfile() {
+	ts.T().Run("Create", func(t *testing.T) {
+		assert := require.New(t)
 
-	Convey("Given a clean database", t, func() {
-		test.MustResetDB(DB().DB)
+		gp := GatewayProfile{
+			Channels:      []int64{0, 1, 2},
+			StatsInterval: time.Second * 30,
+			ExtraChannels: []ExtraChannel{
+				{
+					Modulation:       ModulationLoRa,
+					Frequency:        868700000,
+					Bandwidth:        125,
+					SpreadingFactors: []int64{10, 11, 12},
+				},
+				{
+					Modulation: ModulationLoRa,
+					Frequency:  868900000,
+					Bandwidth:  125,
+					Bitrate:    50000,
+				},
+			},
+		}
+		assert.NoError(CreateGatewayProfile(context.Background(), ts.Tx(), &gp))
+		gp.CreatedAt = gp.CreatedAt.UTC().Truncate(time.Millisecond)
+		gp.UpdatedAt = gp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
-		Convey("When creating gateway profile", func() {
-			gc := GatewayProfile{
-				Channels: []int64{0, 1, 2},
-				ExtraChannels: []ExtraChannel{
-					{
-						Modulation:       ModulationLoRa,
-						Frequency:        868700000,
-						Bandwidth:        125,
-						SpreadingFactors: []int64{10, 11, 12},
-					},
-					{
-						Modulation: ModulationLoRa,
-						Frequency:  868900000,
-						Bandwidth:  125,
-						Bitrate:    50000,
-					},
+		t.Run("Get", func(t *testing.T) {
+			assert := require.New(t)
+
+			gpGet, err := GetGatewayProfile(context.Background(), ts.Tx(), gp.ID)
+			assert.NoError(err)
+
+			gpGet.CreatedAt = gpGet.CreatedAt.UTC().Truncate(time.Millisecond)
+			gpGet.UpdatedAt = gpGet.UpdatedAt.UTC().Truncate(time.Millisecond)
+			assert.Equal(gp, gpGet)
+		})
+
+		t.Run("Update", func(t *testing.T) {
+			assert := require.New(t)
+
+			gp.Channels = []int64{0, 1}
+			gp.StatsInterval = time.Minute * 30
+			gp.ExtraChannels = []ExtraChannel{
+				{
+					Modulation: ModulationLoRa,
+					Frequency:  868900000,
+					Bandwidth:  125,
+					Bitrate:    50000,
+				},
+				{
+					Modulation:       ModulationLoRa,
+					Frequency:        868700000,
+					Bandwidth:        125,
+					SpreadingFactors: []int64{10, 11, 12},
 				},
 			}
-			So(CreateGatewayProfile(context.Background(), DB(), &gc), ShouldBeNil)
-			gc.CreatedAt = gc.CreatedAt.UTC().Truncate(time.Millisecond)
-			gc.UpdatedAt = gc.UpdatedAt.UTC().Truncate(time.Millisecond)
 
-			Convey("Then it can be retrieved", func() {
-				gc2, err := GetGatewayProfile(context.Background(), DB(), gc.ID)
-				So(err, ShouldBeNil)
+			assert.NoError(UpdateGatewayProfile(context.Background(), ts.Tx(), &gp))
+			gp.UpdatedAt = gp.UpdatedAt.UTC().Truncate(time.Millisecond)
 
-				gc2.CreatedAt = gc2.CreatedAt.UTC().Truncate(time.Millisecond)
-				gc2.UpdatedAt = gc2.UpdatedAt.UTC().Truncate(time.Millisecond)
-				So(gc2, ShouldResemble, gc)
-			})
+			gpGet, err := GetGatewayProfile(context.Background(), ts.Tx(), gp.ID)
+			assert.NoError(err)
 
-			Convey("Then it can be deleted", func() {
-				So(DeleteGatewayProfile(context.Background(), DB(), gc.ID), ShouldBeNil)
-				_, err := GetGatewayProfile(context.Background(), DB(), gc.ID)
-				So(err, ShouldEqual, ErrDoesNotExist)
-			})
+			gpGet.CreatedAt = gpGet.CreatedAt.UTC().Truncate(time.Millisecond)
+			gpGet.UpdatedAt = gpGet.UpdatedAt.UTC().Truncate(time.Millisecond)
+			assert.Equal(gp, gpGet)
+		})
 
-			Convey("Then it can be updated", func() {
-				gc.Channels = []int64{0, 1}
-				gc.ExtraChannels = []ExtraChannel{
-					{
-						Modulation: ModulationLoRa,
-						Frequency:  868900000,
-						Bandwidth:  125,
-						Bitrate:    50000,
-					},
-					{
-						Modulation:       ModulationLoRa,
-						Frequency:        868700000,
-						Bandwidth:        125,
-						SpreadingFactors: []int64{10, 11, 12},
-					},
-				}
-				So(UpdateGatewayProfile(context.Background(), DB(), &gc), ShouldBeNil)
-				gc.UpdatedAt = gc.UpdatedAt.UTC().Truncate(time.Millisecond)
+		t.Run("Delete", func(t *testing.T) {
+			assert := require.New(t)
 
-				gc2, err := GetGatewayProfile(context.Background(), DB(), gc.ID)
-				So(err, ShouldBeNil)
-				gc2.CreatedAt = gc2.CreatedAt.UTC().Truncate(time.Millisecond)
-				gc2.UpdatedAt = gc2.UpdatedAt.UTC().Truncate(time.Millisecond)
-				So(gc2, ShouldResemble, gc)
-			})
+			assert.NoError(DeleteGatewayProfile(context.Background(), ts.Tx(), gp.ID))
+			_, err := GetGatewayProfile(context.Background(), ts.Tx(), gp.ID)
+			assert.Equal(ErrDoesNotExist, err)
 		})
 	})
 }

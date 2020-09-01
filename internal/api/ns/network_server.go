@@ -1176,6 +1176,15 @@ func (n *NetworkServerAPI) CreateGatewayProfile(ctx context.Context, req *ns.Cre
 		ID: gpID,
 	}
 
+	if req.GatewayProfile.StatsInterval != nil {
+		statsInterval, err := ptypes.Duration(req.GatewayProfile.StatsInterval)
+		if err != nil {
+			return nil, grpc.Errorf(codes.InvalidArgument, "stats_interval: %s", err)
+		}
+
+		gc.StatsInterval = statsInterval
+	}
+
 	for _, c := range req.GatewayProfile.Channels {
 		gc.Channels = append(gc.Channels, int64(c))
 	}
@@ -1223,7 +1232,8 @@ func (n *NetworkServerAPI) GetGatewayProfile(ctx context.Context, req *ns.GetGat
 
 	out := ns.GetGatewayProfileResponse{
 		GatewayProfile: &ns.GatewayProfile{
-			Id: gc.ID.Bytes(),
+			Id:            gc.ID.Bytes(),
+			StatsInterval: ptypes.DurationProto(gc.StatsInterval),
 		},
 	}
 
@@ -1277,6 +1287,15 @@ func (n *NetworkServerAPI) UpdateGatewayProfile(ctx context.Context, req *ns.Upd
 	gc, err := storage.GetGatewayProfile(ctx, storage.DB(), gpID)
 	if err != nil {
 		return nil, errToRPCError(err)
+	}
+
+	gc.StatsInterval = 0
+	if req.GatewayProfile.StatsInterval != nil {
+		statsInterval, err := ptypes.Duration(req.GatewayProfile.StatsInterval)
+		if err != nil {
+			return nil, grpc.Errorf(codes.InvalidArgument, "stats_interval: %s", err)
+		}
+		gc.StatsInterval = statsInterval
 	}
 
 	gc.Channels = []int64{}

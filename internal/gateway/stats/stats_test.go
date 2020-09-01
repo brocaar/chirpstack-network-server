@@ -68,7 +68,8 @@ func (ts *GatewayConfigurationTestSuite) TestUpdate() {
 		assert := require.New(t)
 
 		gp := storage.GatewayProfile{
-			Channels: []int64{0, 1, 2},
+			Channels:      []int64{0, 1, 2},
+			StatsInterval: time.Second * 30,
 			ExtraChannels: []storage.ExtraChannel{
 				{
 					Modulation:       string(band.LoRaModulation),
@@ -102,8 +103,9 @@ func (ts *GatewayConfigurationTestSuite) TestUpdate() {
 
 		gwConfig := <-ts.backend.GatewayConfigPacketChan
 		assert.Equal(gw.GatewayConfiguration{
-			Version:   gp.GetVersion(),
-			GatewayId: ts.gateway.GatewayID[:],
+			Version:       gp.GetVersion(),
+			GatewayId:     ts.gateway.GatewayID[:],
+			StatsInterval: ptypes.DurationProto(time.Second * 30),
 			Channels: []*gw.ChannelConfiguration{
 				{
 					Frequency:  868100000,
