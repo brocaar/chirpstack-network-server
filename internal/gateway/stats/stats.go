@@ -110,6 +110,13 @@ func handleGatewayConfigurationUpdate(ctx *statsContext) error {
 		return errors.Wrap(err, "get gateway-profile error")
 	}
 
+	if ctx.gatewayStats.GetMetaData()["concentratord_version"] == "" {
+		log.WithFields(log.Fields{
+			"gateway_id": ctx.gateway.GatewayID,
+		}).Debug("gatway does not support configuration updates")
+		return nil
+	}
+
 	if gwProfile.GetVersion() == ctx.gatewayStats.ConfigVersion || gwProfile.GetVersion() == ctx.gatewayStats.GetMetaData()["config_version"] {
 		log.WithFields(log.Fields{
 			"gateway_id": ctx.gateway.GatewayID,

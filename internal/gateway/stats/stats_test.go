@@ -96,69 +96,89 @@ func (ts *GatewayConfigurationTestSuite) TestUpdate() {
 		ts.gateway.GatewayProfileID = &gp.ID
 		assert.NoError(storage.UpdateGateway(context.Background(), storage.DB(), &ts.gateway))
 
-		assert.NoError(Handle(context.Background(), gw.GatewayStats{
-			GatewayId:     ts.gateway.GatewayID[:],
-			ConfigVersion: "1.2.3",
-		}))
+		t.Run("No Concentratord", func(t *testing.T) {
+			assert := require.New(t)
 
-		gwConfig := <-ts.backend.GatewayConfigPacketChan
-		assert.Equal(gw.GatewayConfiguration{
-			Version:       gp.GetVersion(),
-			GatewayId:     ts.gateway.GatewayID[:],
-			StatsInterval: ptypes.DurationProto(time.Second * 30),
-			Channels: []*gw.ChannelConfiguration{
-				{
-					Frequency:  868100000,
-					Modulation: common.Modulation_LORA,
-					ModulationConfig: &gw.ChannelConfiguration_LoraModulationConfig{
-						LoraModulationConfig: &gw.LoRaModulationConfig{
-							Bandwidth:        125,
-							SpreadingFactors: []uint32{7, 8, 9, 10, 11, 12},
+			assert.NoError(Handle(context.Background(), gw.GatewayStats{
+				GatewayId:     ts.gateway.GatewayID[:],
+				ConfigVersion: "1.2.3",
+				MetaData:      map[string]string{},
+			}))
+
+			assert.Len(ts.backend.GatewayConfigPacketChan, 0)
+		})
+
+		t.Run("Concentratord", func(t *testing.T) {
+			assert := require.New(t)
+
+			assert.NoError(Handle(context.Background(), gw.GatewayStats{
+				GatewayId:     ts.gateway.GatewayID[:],
+				ConfigVersion: "1.2.3",
+				MetaData: map[string]string{
+					"concentratord_version": "3.3.0",
+				},
+			}))
+
+			gwConfig := <-ts.backend.GatewayConfigPacketChan
+			assert.Equal(gw.GatewayConfiguration{
+				Version:       gp.GetVersion(),
+				GatewayId:     ts.gateway.GatewayID[:],
+				StatsInterval: ptypes.DurationProto(time.Second * 30),
+				Channels: []*gw.ChannelConfiguration{
+					{
+						Frequency:  868100000,
+						Modulation: common.Modulation_LORA,
+						ModulationConfig: &gw.ChannelConfiguration_LoraModulationConfig{
+							LoraModulationConfig: &gw.LoRaModulationConfig{
+								Bandwidth:        125,
+								SpreadingFactors: []uint32{7, 8, 9, 10, 11, 12},
+							},
+						},
+					},
+					{
+						Frequency:  868300000,
+						Modulation: common.Modulation_LORA,
+						ModulationConfig: &gw.ChannelConfiguration_LoraModulationConfig{
+							LoraModulationConfig: &gw.LoRaModulationConfig{
+								Bandwidth:        125,
+								SpreadingFactors: []uint32{7, 8, 9, 10, 11, 12},
+							},
+						},
+					},
+					{
+						Frequency:  868500000,
+						Modulation: common.Modulation_LORA,
+						ModulationConfig: &gw.ChannelConfiguration_LoraModulationConfig{
+							LoraModulationConfig: &gw.LoRaModulationConfig{
+								Bandwidth:        125,
+								SpreadingFactors: []uint32{7, 8, 9, 10, 11, 12},
+							},
+						},
+					},
+					{
+						Frequency:  867100000,
+						Modulation: common.Modulation_LORA,
+						ModulationConfig: &gw.ChannelConfiguration_LoraModulationConfig{
+							LoraModulationConfig: &gw.LoRaModulationConfig{
+								Bandwidth:        125,
+								SpreadingFactors: []uint32{7, 8, 9, 10, 11, 12},
+							},
+						},
+					},
+					{
+						Frequency:  868800000,
+						Modulation: common.Modulation_FSK,
+						ModulationConfig: &gw.ChannelConfiguration_FskModulationConfig{
+							FskModulationConfig: &gw.FSKModulationConfig{
+								Bandwidth: 125,
+								Bitrate:   50000,
+							},
 						},
 					},
 				},
-				{
-					Frequency:  868300000,
-					Modulation: common.Modulation_LORA,
-					ModulationConfig: &gw.ChannelConfiguration_LoraModulationConfig{
-						LoraModulationConfig: &gw.LoRaModulationConfig{
-							Bandwidth:        125,
-							SpreadingFactors: []uint32{7, 8, 9, 10, 11, 12},
-						},
-					},
-				},
-				{
-					Frequency:  868500000,
-					Modulation: common.Modulation_LORA,
-					ModulationConfig: &gw.ChannelConfiguration_LoraModulationConfig{
-						LoraModulationConfig: &gw.LoRaModulationConfig{
-							Bandwidth:        125,
-							SpreadingFactors: []uint32{7, 8, 9, 10, 11, 12},
-						},
-					},
-				},
-				{
-					Frequency:  867100000,
-					Modulation: common.Modulation_LORA,
-					ModulationConfig: &gw.ChannelConfiguration_LoraModulationConfig{
-						LoraModulationConfig: &gw.LoRaModulationConfig{
-							Bandwidth:        125,
-							SpreadingFactors: []uint32{7, 8, 9, 10, 11, 12},
-						},
-					},
-				},
-				{
-					Frequency:  868800000,
-					Modulation: common.Modulation_FSK,
-					ModulationConfig: &gw.ChannelConfiguration_FskModulationConfig{
-						FskModulationConfig: &gw.FSKModulationConfig{
-							Bandwidth: 125,
-							Bitrate:   50000,
-						},
-					},
-				},
-			},
-		}, gwConfig)
+			}, gwConfig)
+		})
+
 	})
 }
 
