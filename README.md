@@ -31,9 +31,9 @@ and the scheduling of downlink data transmissions.
 
 ## Sponsors
 
-[![CableLabs](https://www.chirpstack.io/img/sponsors/cablelabs.png)](https://www.cablelabs.com/)
-[![SIDNFonds](https://www.chirpstack.io/img/sponsors/sidn_fonds.png)](https://www.sidnfonds.nl/)
-[![acklio](https://www.chirpstack.io/img/sponsors/acklio.png)](http://www.ackl.io/)
+[![CableLabs](https://www.chirpstack.io/static/img/sponsors/cablelabs.png)](https://www.cablelabs.com/)
+[![SIDNFonds](https://www.chirpstack.io/static/img/sponsors/sidn_fonds.png)](https://www.sidnfonds.nl/)
+[![acklio](https://www.chirpstack.io/static/img/sponsors/acklio.png)](http://www.ackl.io/)
 
 ## License
 
