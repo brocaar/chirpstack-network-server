@@ -23,7 +23,7 @@ const (
 	CollectLockKeyTempl = "lora:ns:rx:collect:%s:%s:lock"
 )
 
-// collectAndCallOnce collects the package, sleeps the configured duraction and
+// collectAndCallOnce collects the package, sleeps the configured duration and
 // calls the callback only once with a slice of packets, sorted by signal
 // strength (strongest at index 0). This method exists since multiple gateways
 // are able to receive the same packet, but the packet needs to processed
