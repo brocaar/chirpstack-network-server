@@ -264,7 +264,7 @@ func (ctx *joinContext) getJoinAcceptFromAS() error {
 
 	// note about the OptNeg field:
 	// it must only be set to true for devices != 1.0.x as it will indicate to
-	// the join-server and device how to derrive the session-keys and how to
+	// the join-server and device how to derive the session-keys and how to
 	// sign the join-accept message
 
 	joinReqPL := backend.JoinReqPayload{
