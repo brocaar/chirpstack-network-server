@@ -90,6 +90,7 @@ func Setup(c config.Config) error {
 		}
 
 		client, err := backend.NewClient(backend.ClientConfig{
+			Logger:       log.StandardLogger(),
 			SenderID:     netID.String(),
 			ReceiverID:   server.NetID.String(),
 			Server:       server.Server,
@@ -165,6 +166,7 @@ func GetClientForNetID(clientNetID lorawan.NetID) (backend.Client, error) {
 		}
 
 		client, err := backend.NewClient(backend.ClientConfig{
+			Logger:       log.StandardLogger(),
 			SenderID:     netID.String(),
 			ReceiverID:   clientNetID.String(),
 			Server:       server,
