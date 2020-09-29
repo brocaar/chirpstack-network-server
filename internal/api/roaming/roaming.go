@@ -172,15 +172,6 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if client.IsAsync() {
-		newCtx := context.Background()
-		newCtx = context.WithValue(newCtx, logging.ContextIDKey, ctx.Value(logging.ContextIDKey))
-
-		go a.handleAsync(newCtx, client, basePL, b)
-	} else {
-		a.handleSync(ctx, client, w, basePL, b)
-	}
-
 	log.WithFields(log.Fields{
 		"ctx_id":         ctx.Value(logging.ContextIDKey),
 		"message_type":   basePL.MessageType,
@@ -191,6 +182,14 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}).Info("roaming: api request received")
 
 	// handle request
+	if client.IsAsync() {
+		newCtx := context.Background()
+		newCtx = context.WithValue(newCtx, logging.ContextIDKey, ctx.Value(logging.ContextIDKey))
+
+		go a.handleAsync(newCtx, client, basePL, b)
+	} else {
+		a.handleSync(ctx, client, w, basePL, b)
+	}
 }
 
 func (a *API) handleAsync(ctx context.Context, client backend.Client, basePL backend.BasePayload, b []byte) {
