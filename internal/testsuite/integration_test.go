@@ -2,6 +2,10 @@ package testsuite
 
 import (
 	"context"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/gofrs/uuid"
@@ -16,7 +20,6 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/backend/controller"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/joinserver"
-	jstest "github.com/brocaar/chirpstack-network-server/internal/backend/joinserver/testclient"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/downlink"
 	"github.com/brocaar/chirpstack-network-server/internal/downlink/ack"
@@ -53,16 +56,15 @@ type MulticastTest struct {
 
 // OTAATest is the structure for an OTAA test.
 type OTAATest struct {
-	Name                          string
-	BeforeFunc                    func(*OTAATest) error
-	TXInfo                        gw.UplinkTXInfo
-	RXInfo                        gw.UplinkRXInfo
-	PHYPayload                    lorawan.PHYPayload
-	JoinServerJoinAnsPayload      backend.JoinAnsPayload
-	JoinServerJoinAnsPayloadError error
-	ExtraChannels                 []int
-	DeviceActivations             []storage.DeviceActivation
-	DeviceQueueItems              []storage.DeviceQueueItem
+	Name                     string
+	BeforeFunc               func(*OTAATest) error
+	TXInfo                   gw.UplinkTXInfo
+	RXInfo                   gw.UplinkRXInfo
+	PHYPayload               lorawan.PHYPayload
+	JoinServerJoinAnsPayload backend.JoinAnsPayload
+	ExtraChannels            []int
+	DeviceActivations        []storage.DeviceActivation
+	DeviceQueueItems         []storage.DeviceQueueItem
 
 	ExpectedError error
 	Assert        []Assertion
@@ -137,7 +139,6 @@ type IntegrationTestSuite struct {
 
 	// mocked interfaces
 	ASClient  *test.ApplicationClient
-	JSClient  *jstest.JoinServerClient
 	GWBackend *test.GatewayBackend
 	NCClient  *test.NetworkControllerClient
 	NSAPI     ns.NetworkServerServiceServer
@@ -154,6 +155,22 @@ type IntegrationTestSuite struct {
 	DeviceSession  *storage.DeviceSession
 	Gateway        *storage.Gateway
 	MulticastGroup *storage.MulticastGroup
+
+	backendAPIServer   *httptest.Server
+	backendAPIRequest  chan []byte
+	backendAPIResponse backend.Answer
+}
+
+func (ts *IntegrationTestSuite) backendAPIHandler(w http.ResponseWriter, r *http.Request) {
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	ts.backendAPIRequest <- b
+
+	b, _ = json.Marshal(ts.backendAPIResponse)
+	w.Write(b)
 }
 
 func (ts *IntegrationTestSuite) SetupSuite() {
@@ -161,6 +178,11 @@ func (ts *IntegrationTestSuite) SetupSuite() {
 	conf := test.GetConfig()
 	assert.NoError(storage.Setup(conf))
 	test.MustResetDB(storage.DB().DB)
+
+	ts.backendAPIServer = httptest.NewServer(http.HandlerFunc(ts.backendAPIHandler))
+
+	conf.JoinServer.Default.Server = ts.backendAPIServer.URL
+	assert.NoError(joinserver.Setup(conf))
 }
 
 // SetupTest initializes the test-suite before running each test.
@@ -176,9 +198,6 @@ func (ts *IntegrationTestSuite) FlushClients() {
 	ts.ASClient = test.NewApplicationClient()
 	applicationserver.SetPool(test.NewApplicationServerPool(ts.ASClient))
 
-	ts.JSClient = jstest.NewJoinServerClient()
-	joinserver.SetPool(jstest.NewJoinServerPool(ts.JSClient))
-
 	ts.GWBackend = test.NewGatewayBackend()
 	gateway.SetBackend(ts.GWBackend)
 
@@ -186,6 +205,9 @@ func (ts *IntegrationTestSuite) FlushClients() {
 	controller.SetClient(ts.NCClient)
 
 	ts.NSAPI = nsapi.NewNetworkServerAPI()
+
+	ts.backendAPIRequest = make(chan []byte, 1)
+	ts.backendAPIResponse = nil
 }
 
 // CreateDeviceSession creates the given device-session.
@@ -450,8 +472,7 @@ func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 	}
 
 	// set mocks
-	ts.JSClient.JoinAnsPayload = tst.JoinServerJoinAnsPayload
-	ts.JSClient.JoinReqError = tst.JoinServerJoinAnsPayloadError
+	ts.backendAPIResponse = tst.JoinServerJoinAnsPayload
 
 	// create device-activations
 	assert.NoError(storage.DeleteDeviceActivationsForDevice(context.Background(), storage.DB(), ts.Device.DevEUI))
@@ -503,8 +524,7 @@ func (ts *IntegrationTestSuite) AssertRejoinTest(t *testing.T, tst RejoinTest) {
 	ts.CreateDeviceSession(tst.DeviceSession)
 
 	// set mocks
-	ts.JSClient.RejoinAnsPayload = tst.JoinServerRejoinAnsPayload
-	ts.JSClient.RejoinReqError = tst.JoinServerRejoinAnsPayloadError
+	ts.backendAPIResponse = tst.JoinServerRejoinAnsPayload
 
 	phyB, err := tst.PHYPayload.MarshalBinary()
 	assert.NoError(err)

@@ -388,15 +388,6 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 			PHYPayload:    jrPHY,
 			ExpectedError: errors.New("invalid RJcount0"),
 		},
-		{
-			Name:                            "join-server returns error",
-			DeviceSession:                   *ts.DeviceSession,
-			TXInfo:                          ts.TXInfo,
-			RXInfo:                          ts.RXInfo,
-			PHYPayload:                      jrPHY,
-			JoinServerRejoinAnsPayloadError: errors.New("boom"),
-			ExpectedError:                   errors.New("rejoin-request to join-server error: boom"),
-		},
 	}
 
 	for _, tst := range tests {
@@ -404,6 +395,9 @@ func (ts *RejoinTestSuite) TestRejoinType0() {
 			ts.AssertRejoinTest(t, tst)
 		})
 	}
+
+	// make sure we set the RejoinCount0 back to 0
+	ts.DeviceSession.RejoinCount0 = 0
 }
 
 func (ts *RejoinTestSuite) TestRejoinType2() {

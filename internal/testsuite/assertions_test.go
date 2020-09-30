@@ -3,6 +3,7 @@ package testsuite
 import (
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -186,7 +187,9 @@ func AssertDeviceMode(mode storage.DeviceMode) Assertion {
 // AssertJSJoinReq asserts the given join-server JoinReq.
 func AssertJSJoinReqPayload(pl backend.JoinReqPayload) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		req := <-ts.JSClient.JoinReqPayloadChan
+		var req backend.JoinReqPayload
+		assert.NoError(json.Unmarshal(<-ts.backendAPIRequest, &req))
+
 		assert.NotEqual("", req.TransactionID)
 		req.BasePayload.TransactionID = 0
 
@@ -200,7 +203,9 @@ func AssertJSJoinReqPayload(pl backend.JoinReqPayload) Assertion {
 // AsssertJSRejoinReq asserts the given join-server RejoinReq.
 func AssertJSRejoinReqPayload(pl backend.RejoinReqPayload) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		req := <-ts.JSClient.RejoinReqPayloadChan
+		var req backend.RejoinReqPayload
+		assert.NoError(json.Unmarshal(<-ts.backendAPIRequest, &req))
+
 		assert.NotEqual("", req.TransactionID)
 		req.BasePayload.TransactionID = 0
 

@@ -138,21 +138,6 @@ func (ts *OTAATestSuite) TestLW10() {
 
 	tests := []OTAATest{
 		{
-			Name:                          "join-server returns an error",
-			RXInfo:                        rxInfo,
-			TXInfo:                        txInfo,
-			PHYPayload:                    jrPayload,
-			JoinServerJoinAnsPayloadError: errors.New("invalid deveui"),
-			ExpectedError:                 errors.New("join-request to join-server error: invalid deveui"),
-			Assert: []Assertion{
-				AssertASHandleErrorRequest(as.HandleErrorRequest{
-					DevEui: ts.Device.DevEUI[:],
-					Type:   as.ErrorType_OTAA,
-					Error:  "join-server returned error: invalid deveui",
-				}),
-			},
-		},
-		{
 			Name:       "device already activated with dev-nonce",
 			RXInfo:     rxInfo,
 			TXInfo:     txInfo,

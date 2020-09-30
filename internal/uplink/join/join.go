@@ -288,7 +288,7 @@ func (ctx *joinContext) getJoinAcceptFromAS() error {
 		CFList:  backend.HEXBytes(cFListB),
 	}
 
-	jsClient, err := joinserver.GetPool().Get(ctx.JoinRequestPayload.JoinEUI)
+	jsClient, err := joinserver.GetClientForJoinEUI(ctx.JoinRequestPayload.JoinEUI)
 	if err != nil {
 		return errors.Wrap(err, "get join-server client error")
 	}

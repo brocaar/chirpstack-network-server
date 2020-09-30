@@ -6,13 +6,12 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
 )
-
-var p Pool
 
 type serverItem struct {
 	joinEUI lorawan.EUI64
@@ -52,6 +51,7 @@ func Setup(c config.Config) error {
 		}
 
 		client, err := backend.NewClient(backend.ClientConfig{
+			Logger:     log.StandardLogger(),
 			SenderID:   c.NetworkServer.NetID.String(),
 			ReceiverID: joinEUI.String(),
 			Server:     s.Server,
@@ -78,52 +78,7 @@ func Setup(c config.Config) error {
 		keks[k.Label] = kek
 	}
 
-	/// TODO: cleanup the old pool and client in favor of the backend.Client.
-	defaultClient, err := NewClient(
-		conf.Default.Server,
-		conf.Default.CACert,
-		conf.Default.TLSCert,
-		conf.Default.TLSKey,
-	)
-	if err != nil {
-		return errors.Wrap(err, "joinserver: create default client error")
-	}
-
-	var servers []server
-	for _, s := range conf.Servers {
-		var eui lorawan.EUI64
-		if err := eui.UnmarshalText([]byte(s.JoinEUI)); err != nil {
-			return errors.Wrap(err, "joinserver: unmarshal JoinEUI error")
-		}
-
-		servers = append(servers, server{
-			server:  s.Server,
-			joinEUI: eui,
-			caCert:  s.CACert,
-			tlsCert: s.TLSCert,
-			tlsKey:  s.TLSKey,
-		})
-	}
-
-	p = &pool{
-		defaultClient:       defaultClient,
-		resolveJoinEUI:      conf.ResolveJoinEUI,
-		resolveDomainSuffix: conf.ResolveDomainSuffix,
-		clients:             make(map[lorawan.EUI64]poolClient),
-		servers:             servers,
-	}
-
 	return nil
-}
-
-// GetPool returns the joinserver pool.
-func GetPool() Pool {
-	return p
-}
-
-// SetPool sets the given join-server pool.
-func SetPool(pp Pool) {
-	p = pp
 }
 
 // GetClientForJoinEUI returns the backend client for the given JoinEUI.
@@ -135,6 +90,7 @@ func GetClientForJoinEUI(joinEUI lorawan.EUI64) (backend.Client, error) {
 	}
 
 	defaultClient, err := backend.NewClient(backend.ClientConfig{
+		Logger:     log.StandardLogger(),
 		SenderID:   netID.String(),
 		ReceiverID: joinEUI.String(),
 		Server:     defaultServer,

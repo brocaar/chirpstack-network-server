@@ -315,7 +315,7 @@ func getRejoinAcceptFromJS(ctx *rejoinContext) error {
 		}
 	}
 
-	jsClient, err := joinserver.GetPool().Get(ctx.DeviceSession.JoinEUI)
+	jsClient, err := joinserver.GetClientForJoinEUI(ctx.DeviceSession.JoinEUI)
 	if err != nil {
 		return errors.Wrap(err, "get join-server client error")
 	}
