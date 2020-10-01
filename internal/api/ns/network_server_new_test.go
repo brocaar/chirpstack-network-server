@@ -928,6 +928,7 @@ func (ts *NetworkServerAPITestSuite) TestGateway() {
 			b, err := ioutil.ReadFile(config.NetworkServer.Gateway.CACert)
 			assert.NoError(err)
 			assert.Equal(string(b), string(resp.CaCert))
+			assert.NotNil(resp.ExpiresAt)
 
 			gw, err = storage.GetGateway(context.Background(), storage.DB(), gatewayID)
 			assert.NoError(err)

@@ -1023,6 +1023,7 @@ func (c *NetworkServerAPI) GenerateGatewayClientCertificate(ctx context.Context,
 	copy(id[:], req.Id)
 
 	var ca, cert, key []byte
+	var expiresAt time.Time
 
 	err := storage.Transaction(func(tx sqlx.Ext) error {
 		gw, err := storage.GetGateway(ctx, tx, id)
@@ -1030,7 +1031,7 @@ func (c *NetworkServerAPI) GenerateGatewayClientCertificate(ctx context.Context,
 			return err
 		}
 
-		ca, cert, key, err = gateway.GenerateClientCertificate(id)
+		expiresAt, ca, cert, key, err = gateway.GenerateClientCertificate(id)
 		if err != nil {
 			return err
 		}
@@ -1042,10 +1043,16 @@ func (c *NetworkServerAPI) GenerateGatewayClientCertificate(ctx context.Context,
 		return nil, errToRPCError(err)
 	}
 
+	expiresAtPB, err := ptypes.TimestampProto(expiresAt)
+	if err != nil {
+		return nil, errToRPCError(err)
+	}
+
 	return &ns.GenerateGatewayClientCertificateResponse{
-		TlsCert: cert,
-		TlsKey:  key,
-		CaCert:  ca,
+		TlsCert:   cert,
+		TlsKey:    key,
+		CaCert:    ca,
+		ExpiresAt: expiresAtPB,
 	}, nil
 }
 

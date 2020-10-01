@@ -19,9 +19,9 @@ import (
 )
 
 // GenerateClientCertificate returns a client-certificate for the given gateway ID.
-func GenerateClientCertificate(gatewayID lorawan.EUI64) ([]byte, []byte, []byte, error) {
+func GenerateClientCertificate(gatewayID lorawan.EUI64) (time.Time, []byte, []byte, []byte, error) {
 	if caCert == "" || caKey == "" {
-		return nil, nil, nil, errors.New("no ca certificate or ca key configured")
+		return time.Time{}, nil, nil, nil, errors.New("no ca certificate or ca key configured")
 	}
 
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
@@ -32,18 +32,20 @@ func GenerateClientCertificate(gatewayID lorawan.EUI64) ([]byte, []byte, []byte,
 
 	caCertB, err := ioutil.ReadFile(caCert)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "read ca cert file error")
+		return time.Time{}, nil, nil, nil, errors.Wrap(err, "read ca cert file error")
 	}
 
 	caKeyPair, err := tls.LoadX509KeyPair(caCert, caKey)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "load ca key-pair error")
+		return time.Time{}, nil, nil, nil, errors.Wrap(err, "load ca key-pair error")
 	}
 
 	caCert, err := x509.ParseCertificate(caKeyPair.Certificate[0])
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "parse certificate error")
+		return time.Time{}, nil, nil, nil, errors.Wrap(err, "parse certificate error")
 	}
+
+	expiresAt := time.Now().Add(tlsLifetime)
 
 	cert := &x509.Certificate{
 		SerialNumber: serialNumber,
@@ -51,20 +53,20 @@ func GenerateClientCertificate(gatewayID lorawan.EUI64) ([]byte, []byte, []byte,
 			CommonName: gatewayID.String(),
 		},
 		NotBefore:   time.Now(),
-		NotAfter:    time.Now().Add(tlsLifetime),
+		NotAfter:    expiresAt,
 		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		KeyUsage:    x509.KeyUsageDigitalSignature,
 	}
 
 	certPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "generate key error")
+		return time.Time{}, nil, nil, nil, errors.Wrap(err, "generate key error")
 
 	}
 
 	certBytes, err := x509.CreateCertificate(rand.Reader, cert, caCert, &certPrivKey.PublicKey, caKeyPair.PrivateKey)
 	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "create certificate error")
+		return time.Time{}, nil, nil, nil, errors.Wrap(err, "create certificate error")
 
 	}
 
@@ -86,5 +88,5 @@ func GenerateClientCertificate(gatewayID lorawan.EUI64) ([]byte, []byte, []byte,
 		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
 	})
 
-	return caCertB, certPEM.Bytes(), certPrivKeyPEM.Bytes(), nil
+	return expiresAt, caCertB, certPEM.Bytes(), certPrivKeyPEM.Bytes(), nil
 }
