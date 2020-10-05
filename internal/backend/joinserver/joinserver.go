@@ -3,6 +3,8 @@ package joinserver
 import (
 	"encoding/hex"
 	"fmt"
+	"net"
+	"net/url"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -22,11 +24,13 @@ var (
 	servers []serverItem
 	keks    map[string][]byte
 
-	netID          lorawan.NetID
-	defaultServer  string
-	defaultCACert  string
-	defaultTLSCert string
-	defaultTLSKey  string
+	netID               lorawan.NetID
+	resolveJoinEUI      bool
+	resolveDomainSuffix string
+	defaultServer       string
+	defaultCACert       string
+	defaultTLSCert      string
+	defaultTLSKey       string
 )
 
 // Setup sets up the joinserver backend.
@@ -39,6 +43,8 @@ func Setup(c config.Config) error {
 	defaultCACert = c.JoinServer.Default.CACert
 	defaultTLSCert = c.JoinServer.Default.TLSCert
 	defaultTLSKey = c.JoinServer.Default.TLSKey
+	resolveJoinEUI = c.JoinServer.ResolveJoinEUI
+	resolveDomainSuffix = c.JoinServer.ResolveDomainSuffix
 
 	for _, s := range conf.Servers {
 		var joinEUI lorawan.EUI64
@@ -47,7 +53,7 @@ func Setup(c config.Config) error {
 		}
 
 		if s.Server == "" {
-			s.Server = joinEUIToServer(joinEUI, conf.ResolveDomainSuffix)
+			s.Server = joinEUIToServer(joinEUI, resolveDomainSuffix)
 		}
 
 		client, err := backend.NewClient(backend.ClientConfig{
@@ -83,12 +89,58 @@ func Setup(c config.Config) error {
 
 // GetClientForJoinEUI returns the backend client for the given JoinEUI.
 func GetClientForJoinEUI(joinEUI lorawan.EUI64) (backend.Client, error) {
+	// Pre-configured join-servers.
 	for _, s := range servers {
 		if s.joinEUI == joinEUI {
 			return s.client, nil
 		}
 	}
 
+	// If DNS resolving is enabled, try to resolve the join-server through DNS.
+	if resolveJoinEUI {
+		client, err := resolveClient(joinEUI)
+		if err == nil {
+			return client, nil
+		}
+
+		log.WithFields(log.Fields{
+			"join_eui": joinEUI,
+		}).Warning("joinserver: resolving JoinEUI failed, returning default join-server client")
+	}
+
+	// Default join-server.
+	return getDefaultClient(joinEUI)
+}
+
+func resolveClient(joinEUI lorawan.EUI64) (backend.Client, error) {
+	server := joinEUIToServer(joinEUI, resolveDomainSuffix)
+	serverParsed, err := url.Parse(server)
+	if err != nil {
+		return nil, errors.Wrap(err, "parse url error")
+	}
+
+	_, err = net.LookupIP(serverParsed.Host)
+	if err != nil {
+		return nil, errors.Wrap(err, "lookup ip error")
+	}
+
+	client, err := backend.NewClient(backend.ClientConfig{
+		Logger:     log.StandardLogger(),
+		SenderID:   netID.String(),
+		ReceiverID: joinEUI.String(),
+		Server:     server,
+		CACert:     defaultCACert,
+		TLSCert:    defaultTLSCert,
+		TLSKey:     defaultTLSKey,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "joinserver: new client error")
+	}
+
+	return client, nil
+}
+
+func getDefaultClient(joinEUI lorawan.EUI64) (backend.Client, error) {
 	defaultClient, err := backend.NewClient(backend.ClientConfig{
 		Logger:     log.StandardLogger(),
 		SenderID:   netID.String(),
