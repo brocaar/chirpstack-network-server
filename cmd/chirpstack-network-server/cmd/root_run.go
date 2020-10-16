@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/resolver"
 
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
 	"github.com/brocaar/chirpstack-network-server/internal/adr"
@@ -60,6 +61,7 @@ func run(cmd *cobra.Command, args []string) error {
 	tasks := []func() error{
 		setLogLevel,
 		setSyslog,
+		setGRPCResolver,
 		setupBand,
 		setRXParameters,
 		printStartMessage,
@@ -109,6 +111,11 @@ func run(cmd *cobra.Command, args []string) error {
 		log.WithField("signal", s).Info("signal received, stopping immediately")
 	}
 
+	return nil
+}
+
+func setGRPCResolver() error {
+	resolver.SetDefaultScheme(config.C.General.GRPCDefaultResolverScheme)
 	return nil
 }
 

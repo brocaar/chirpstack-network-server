@@ -14,8 +14,9 @@ var Version string
 // Config defines the configuration structure.
 type Config struct {
 	General struct {
-		LogLevel    int  `mapstructure:"log_level"`
-		LogToSyslog bool `mapstructure:"log_to_syslog"`
+		LogLevel                  int    `mapstructure:"log_level"`
+		LogToSyslog               bool   `mapstructure:"log_to_syslog"`
+		GRPCDefaultResolverScheme string `mapstructure:"grpc_default_resolver_scheme"`
 	} `mapstructure:"general"`
 
 	PostgreSQL struct {

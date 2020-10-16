@@ -43,6 +43,7 @@ func init() {
 	viper.BindPFlag("general.log_level", rootCmd.PersistentFlags().Lookup("log-level"))
 
 	// default values
+	viper.SetDefault("general.grpc_default_resolver_scheme", "passthrough")
 	viper.SetDefault("redis.servers", []string{"localhost:6379"})
 
 	viper.SetDefault("postgresql.dsn", "postgres://localhost/chirpstack_ns?sslmode=disable")

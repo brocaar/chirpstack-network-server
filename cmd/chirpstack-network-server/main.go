@@ -3,7 +3,6 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/grpclog"
-	"google.golang.org/grpc/resolver"
 
 	"github.com/brocaar/chirpstack-network-server/cmd/chirpstack-network-server/cmd"
 )
@@ -51,10 +50,6 @@ func (gl *grpcLogger) Infof(format string, args ...interface{}) {
 
 func init() {
 	grpclog.SetLoggerV2(&grpcLogger{log.StandardLogger()})
-
-	// the default is passthrough, see:
-	// https://github.com/grpc/grpc-go/issues/1783
-	resolver.SetDefaultScheme("dns")
 }
 
 var version string // set by the compiler

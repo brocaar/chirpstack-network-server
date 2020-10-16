@@ -22,6 +22,11 @@ log_level={{ .General.LogLevel }}
 # When set to true, log messages are being written to syslog.
 log_to_syslog={{ .General.LogToSyslog }}
 
+# gRPC default resolver scheme.
+#
+# Set this to "dns" for enabling dns round-robin load balancing.
+grpc_default_resolver_scheme="{{ .General.GRPCDefaultResolverScheme }}"
+
 
 # PostgreSQL settings.
 #
