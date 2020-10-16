@@ -43,7 +43,7 @@ func setupNew(c config.Config) error {
 
 	if c.Monitoring.HealthcheckEndpoint {
 		log.WithFields(log.Fields{
-			"endpoint": "/healthcheck",
+			"endpoint": "/health",
 		}).Info("monitoring: registering healthcheck endpoint")
 		mux.HandleFunc("/health", healthCheckHandlerFunc)
 	}
