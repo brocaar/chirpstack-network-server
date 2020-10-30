@@ -121,6 +121,12 @@ master_name="{{ .Redis.MasterName }}"
 # Default (when set to 0) is 10 connections per every CPU.
 pool_size={{ .Redis.PoolSize }}
 
+# TLS enabled.
+#
+# Note: this will enable TLS, but it will not validate the certificate
+# used by the server.
+tls_enabled={{ .Redis.TLSEnabled }}
+
 
 # Network-server settings.
 [network_server]

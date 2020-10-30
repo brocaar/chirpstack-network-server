@@ -34,6 +34,7 @@ type Config struct {
 		PoolSize   int      `mapstructure:"pool_size"`
 		Password   string   `mapstructure:"password"`
 		Database   int      `mapstructure:"database"`
+		TLSEnabled bool     `mapstructure:"tls_enabled"`
 	} `mapstructure:"redis"`
 
 	NetworkServer struct {

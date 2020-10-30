@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"crypto/tls"
 	"time"
 
 	"github.com/go-redis/redis/v7"
@@ -32,11 +33,19 @@ func Setup(c config.Config) error {
 		return errors.New("at least one redis server must be configured")
 	}
 
+	var tlsConfig *tls.Config
+	if c.Redis.TLSEnabled {
+		tlsConfig = &tls.Config{
+			InsecureSkipVerify: true,
+		}
+	}
+
 	if c.Redis.Cluster {
 		redisClient = redis.NewClusterClient(&redis.ClusterOptions{
-			Addrs:    c.Redis.Servers,
-			PoolSize: c.Redis.PoolSize,
-			Password: c.Redis.Password,
+			Addrs:     c.Redis.Servers,
+			PoolSize:  c.Redis.PoolSize,
+			Password:  c.Redis.Password,
+			TLSConfig: tlsConfig,
 		})
 	} else if c.Redis.MasterName != "" {
 		redisClient = redis.NewFailoverClient(&redis.FailoverOptions{
@@ -45,13 +54,15 @@ func Setup(c config.Config) error {
 			SentinelPassword: c.Redis.Password,
 			DB:               c.Redis.Database,
 			PoolSize:         c.Redis.PoolSize,
+			TLSConfig:        tlsConfig,
 		})
 	} else {
 		redisClient = redis.NewClient(&redis.Options{
-			Addr:     c.Redis.Servers[0],
-			DB:       c.Redis.Database,
-			Password: c.Redis.Password,
-			PoolSize: c.Redis.PoolSize,
+			Addr:      c.Redis.Servers[0],
+			DB:        c.Redis.Database,
+			Password:  c.Redis.Password,
+			PoolSize:  c.Redis.PoolSize,
+			TLSConfig: tlsConfig,
 		})
 	}
 
