@@ -176,6 +176,18 @@ func collectUplinkFrames(ctx context.Context, uplinkFrame gw.UplinkFrame) error 
 		return err
 	})
 }
+func runHandlerWithMetric(err error, mt lorawan.MType) error {
+	start := time.Now()
+	mts := mt.String()
+	if err != nil {
+		uplinkFrameObserver(mts + "Err").Observe(time.Since(start).Seconds())
+		return err
+	}
+
+	uplinkFrameObserver(mts).Observe(time.Since(start).Seconds())
+
+	return err
+}
 
 func handleCollectedUplink(ctx context.Context, uplinkFrame gw.UplinkFrame, rxPacket models.RXPacket) error {
 	// update the gateway meta-data
@@ -211,13 +223,13 @@ func handleCollectedUplink(ctx context.Context, uplinkFrame gw.UplinkFrame, rxPa
 	// handle the frame based on message-type
 	switch rxPacket.PHYPayload.MHDR.MType {
 	case lorawan.JoinRequest:
-		return join.Handle(ctx, rxPacket)
+		return runHandlerWithMetric(join.Handle(ctx, rxPacket), lorawan.JoinRequest)
 	case lorawan.RejoinRequest:
-		return rejoin.Handle(ctx, rxPacket)
+		return runHandlerWithMetric(rejoin.Handle(ctx, rxPacket), lorawan.RejoinRequest)
 	case lorawan.UnconfirmedDataUp, lorawan.ConfirmedDataUp:
-		return data.Handle(ctx, rxPacket)
+		return runHandlerWithMetric(data.Handle(ctx, rxPacket), lorawan.UnconfirmedDataUp)
 	case lorawan.Proprietary:
-		return proprietary.Handle(ctx, rxPacket)
+		return runHandlerWithMetric(proprietary.Handle(ctx, rxPacket), lorawan.Proprietary)
 	default:
 		return nil
 	}
