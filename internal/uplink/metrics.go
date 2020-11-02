@@ -6,12 +6,12 @@ import (
 )
 
 var (
-	uc = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "uplink_histogram",
-		Help: "The distribution of handled uplink frames by the Server (per message type).",
+	uc = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "uplink_counter",
+		Help: "The number of handled uplink frames by the Server (per message type).",
 	}, []string{"mType"})
 )
 
-func uplinkFrameObserver(e string) prometheus.Observer {
+func uplinkFrameCounter(e string) prometheus.Counter {
 	return uc.With(prometheus.Labels{"mType": e})
 }

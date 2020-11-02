@@ -177,14 +177,13 @@ func collectUplinkFrames(ctx context.Context, uplinkFrame gw.UplinkFrame) error 
 	})
 }
 func runHandlerWithMetric(err error, mt lorawan.MType) error {
-	start := time.Now()
 	mts := mt.String()
 	if err != nil {
-		uplinkFrameObserver(mts + "Err").Observe(time.Since(start).Seconds())
+		uplinkFrameCounter(mts + "Err").Inc()
 		return err
 	}
 
-	uplinkFrameObserver(mts).Observe(time.Since(start).Seconds())
+	uplinkFrameCounter(mts).Inc()
 
 	return err
 }
