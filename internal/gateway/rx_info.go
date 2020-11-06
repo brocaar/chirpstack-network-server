@@ -35,11 +35,13 @@ func UpdateMetaDataInRxInfoSet(ctx context.Context, db sqlx.Queryer, rxInfoSet [
 		g, err := storage.GetAndCacheGateway(ctx, db, id)
 		if err != nil {
 			if errors.Cause(err) == storage.ErrDoesNotExist {
+				uplinkUnknownGateway(id.String()).Inc()
 				log.WithFields(log.Fields{
 					"ctx_id":     ctx.Value(logging.ContextIDKey),
 					"gateway_id": id,
 				}).Warning("uplink received by unknown gateway")
 			} else {
+				getGatewayFailed(id.String()).Inc()
 				log.WithFields(log.Fields{
 					"ctx_id":     ctx.Value(logging.ContextIDKey),
 					"gateway_id": id,

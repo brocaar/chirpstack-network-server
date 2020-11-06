@@ -111,6 +111,7 @@ func HandleUplinkFrames(wg *sync.WaitGroup) {
 			ctx = context.WithValue(ctx, logging.ContextIDKey, ctxID)
 
 			if err := HandleUplinkFrame(ctx, uplinkFrame); err != nil {
+				uplinkFrameErrorCount().Inc()
 				log.WithFields(log.Fields{
 					"ctx_id": ctxID,
 				}).WithError(err).Error("uplink: processing uplink frame error")

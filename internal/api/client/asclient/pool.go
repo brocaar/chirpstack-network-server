@@ -9,6 +9,7 @@ import (
 	"time"
 
 	grpc_logrus "github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -89,11 +90,13 @@ func (p *pool) createClient(hostname string, caCert, tlsCert, tlsKey []byte) (*g
 
 	asOpts := []grpc.DialOption{
 		grpc.WithBlock(),
-		grpc.WithUnaryInterceptor(
+		grpc.WithChainUnaryInterceptor(
 			logging.UnaryClientCtxIDInterceptor,
+			grpc_prometheus.UnaryClientInterceptor,
 		),
-		grpc.WithStreamInterceptor(
+		grpc.WithChainStreamInterceptor(
 			grpc_logrus.StreamClientInterceptor(logrusEntry, logrusOpts...),
+			grpc_prometheus.StreamClientInterceptor,
 		),
 		grpc.WithBalancerName(roundrobin.Name),
 	}

@@ -424,6 +424,7 @@ func GetDeviceSessionsForDevAddr(ctx context.Context, devAddr lorawan.DevAddr) (
 		s, err := GetDeviceSession(ctx, devEUI)
 		if err != nil {
 			// TODO: in case not found, remove the DevEUI from the list
+			getDeviceSessionDevAddrFailed(devEUI.String(), devAddr.String()).Inc()
 			log.WithError(err).WithFields(log.Fields{
 				"dev_addr": devAddr,
 				"dev_eui":  devEUI,
@@ -486,6 +487,7 @@ func GetDeviceSessionForPHYPayload(ctx context.Context, phy lorawan.PHYPayload, 
 		return DeviceSession{}, err
 	}
 	if len(deviceSessions) == 0 {
+		deviceSessionNotExist().Inc()
 		return DeviceSession{}, ErrDoesNotExist
 	}
 
@@ -507,6 +509,7 @@ func GetDeviceSessionForPHYPayload(ctx context.Context, phy lorawan.PHYPayload, 
 			micOK, err = phy.ValidateUplinkDataMIC(ds.GetMACVersion(), ds.ConfFCnt, uint8(txDR), uint8(txCh), ds.FNwkSIntKey, ds.SNwkSIntKey)
 			if err != nil {
 				// this is not related to a bad MIC, but is a software error
+				micValidationFailed(ds.DevEUI.String()).Inc()
 				return DeviceSession{}, errors.Wrap(err, "validate mic error")
 			}
 
@@ -526,9 +529,11 @@ func GetDeviceSessionForPHYPayload(ctx context.Context, phy lorawan.PHYPayload, 
 				return ds, nil
 			} else if macPL.FHDR.FCnt == (ds.FCntUp - 1) {
 				// re-transmission, the frame-counter did not increment
+				frameCounterNotIncrement(ds.DevEUI.String()).Inc()
 				return ds, ErrFrameCounterRetransmission
 			} else {
 				// frame-counter reset or roll-over happened
+				frameCounterReset(ds.DevEUI.String()).Inc()
 				return ds, ErrFrameCounterReset
 			}
 		}
@@ -538,6 +543,7 @@ func GetDeviceSessionForPHYPayload(ctx context.Context, phy lorawan.PHYPayload, 
 	// device-session matching the uplink DevAddr, but it could still provide
 	// value to forward the MIC error to the AS in the Routing Profile of the
 	// device-session.
+	invalidMIC(deviceSessions[0].DevEUI.String()).Inc()
 	return deviceSessions[0], ErrInvalidMIC
 }
 

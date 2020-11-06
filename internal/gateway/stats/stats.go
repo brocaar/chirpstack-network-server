@@ -58,6 +58,7 @@ func getGateway(ctx *statsContext) error {
 	gw, err := storage.GetAndCacheGateway(ctx.ctx, storage.DB(), gatewayID)
 	if err != nil {
 		if errors.Cause(err) == storage.ErrDoesNotExist {
+			statsUnknownGateway(gatewayID.String()).Inc()
 			log.WithFields(log.Fields{
 				"ctx_id":     ctx.ctx.Value(logging.ContextIDKey),
 				"gateway_id": gatewayID,

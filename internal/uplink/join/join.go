@@ -157,7 +157,8 @@ func (ctx *joinContext) getDeviceOrTryRoaming() error {
 
 			return ErrAbort
 		}
-		return errors.Wrap(err, "get device error")
+		getDeviceNotExist(ctx.JoinRequestPayload.DevEUI.String()).Inc()
+		return errors.Wrap(err, "get device error: deveui "+ctx.JoinRequestPayload.DevEUI.String())
 	}
 	return nil
 }
@@ -223,7 +224,7 @@ func (ctx *joinContext) validateNonce() error {
 				}).Error("uplink/join: as.HandleError error")
 			}
 		}
-
+		validateDevNonce(ctx.JoinRequestPayload.DevEUI.String()).Inc()
 		return returnErr
 	}
 

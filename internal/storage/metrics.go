@@ -8,6 +8,8 @@ import (
 
 	"github.com/go-redis/redis/v7"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 // AggregationInterval defines the aggregation type.
@@ -138,4 +140,60 @@ func GetMetrics(ctx context.Context, agg AggregationInterval, name string, start
 	}
 
 	return out, nil
+}
+
+const (
+	deveui  = "deveui"
+	devaddr = "devaddr"
+)
+
+var (
+	fc = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "frame_counter_not_increment_count",
+		Help: "The number of uplinks where the frame counter did not increment (per deveui).",
+	}, []string{deveui})
+	fcr = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "frame_counter_reset_count",
+		Help: "The number of uplinks where the frame counter was reset or rolled over (per deveui).",
+	}, []string{deveui})
+	mic = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "validate_mic_failed_count",
+		Help: "The number of uplinks where the mic validation failed (per deveui).",
+	}, []string{deveui})
+	imic = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "invalid_mic_count",
+		Help: "The number of uplinks where the mic validation failed (per deveui).",
+	}, []string{deveui})
+	dsne = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "device_session_not_exist",
+		Help: "The number of uplinks where the device session did not exist.",
+	})
+	dsg = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "get_device_session_devaddr_error_count",
+		Help: "The number of uplinks where looking up the device session by devaddr failed (per deveui, devaddr).",
+	}, []string{deveui, devaddr})
+)
+
+func frameCounterNotIncrement(d string) prometheus.Counter {
+	return fc.With(prometheus.Labels{deveui: d})
+}
+
+func frameCounterReset(d string) prometheus.Counter {
+	return fcr.With(prometheus.Labels{deveui: d})
+}
+
+func micValidationFailed(d string) prometheus.Counter {
+	return mic.With(prometheus.Labels{deveui: d})
+}
+
+func invalidMIC(d string) prometheus.Counter {
+	return imic.With(prometheus.Labels{deveui: d})
+}
+
+func deviceSessionNotExist() prometheus.Counter {
+	return dsne
+}
+
+func getDeviceSessionDevAddrFailed(d, a string) prometheus.Counter {
+	return dsg.With(prometheus.Labels{deveui: d, devaddr: a})
 }
