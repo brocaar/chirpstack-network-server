@@ -4,6 +4,7 @@ import (
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
+	"github.com/gofrs/uuid"
 )
 
 // RXPacket contains a received PHYPayload together with its RX metadata.
@@ -19,6 +20,12 @@ type RXPacket struct {
 
 	// RXInfoSet holds all the RX meta-data elements of the receiving gateways.
 	RXInfoSet []*gw.UplinkRXInfo
+
+	// GatewayIsPrivate holds if the Gateway ID is private.
+	GatewayIsPrivate map[lorawan.EUI64]bool
+
+	// GatewayServiceProfile holds the Gateway ID to service-profile ID mapping.
+	GatewayServiceProfile map[lorawan.EUI64]uuid.UUID
 
 	// RoamingMetaData holds the meta-data in case of a roaming device.
 	RoamingMetaData *RoamingMetaData

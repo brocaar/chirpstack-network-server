@@ -16,23 +16,24 @@ import (
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/internal/models"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 
-// UpdateMetaDataInRxInfoSet updates the gateway meta-data in the
-// given rx-info set. It will:
+// UpdateMetaDataInRXPacket updates the gateway meta-data in the
+// given RXPacket. It will:
 //   - add the gateway location
 //   - set the FPGA id if available
 //   - decrypt the fine-timestamp (if available and AES key is set)
-func UpdateMetaDataInRxInfoSet(ctx context.Context, db sqlx.Queryer, rxInfoSet []*gw.UplinkRXInfo) []*gw.UplinkRXInfo {
-	var out []*gw.UplinkRXInfo
+func UpdateMetaDataInRXPacket(ctx context.Context, db sqlx.Queryer, rxPacket *models.RXPacket) error {
+	var rxInfoSet []*gw.UplinkRXInfo
 
-	for i := range rxInfoSet {
-		rxInfo := rxInfoSet[i]
+	for i := range rxPacket.RXInfoSet {
+		rxInfo := rxPacket.RXInfoSet[i]
 
 		id := helpers.GetGatewayID(rxInfo)
-		g, err := storage.GetAndCacheGateway(ctx, db, id)
+		g, err := storage.GetAndCacheGatewayMeta(ctx, db, id)
 		if err != nil {
 			if errors.Cause(err) == storage.ErrDoesNotExist {
 				log.WithFields(log.Fields{
@@ -94,10 +95,16 @@ func UpdateMetaDataInRxInfoSet(ctx context.Context, db sqlx.Queryer, rxInfoSet [
 			}
 		}
 
-		out = append(out, rxInfo)
+		rxInfoSet = append(rxInfoSet, rxInfo)
+		rxPacket.GatewayIsPrivate[g.GatewayID] = g.IsPrivate
+		if g.ServiceProfileID != nil {
+			rxPacket.GatewayServiceProfile[g.GatewayID] = *g.ServiceProfileID
+		}
 	}
 
-	return out
+	rxPacket.RXInfoSet = rxInfoSet
+
+	return nil
 }
 
 func decryptFineTimestamp(key lorawan.AES128Key, rxTime time.Time, ts gw.EncryptedFineTimestamp) (gw.PlainFineTimestamp, error) {

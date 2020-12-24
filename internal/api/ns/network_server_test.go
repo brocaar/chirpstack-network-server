@@ -176,6 +176,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					NwkGeoLoc:              true,
 					TargetPer:              1,
 					MinGwDiversity:         7,
+					GwsPrivate:             true,
 				},
 			})
 			So(err, ShouldBeNil)
@@ -208,6 +209,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					NwkGeoLoc:              true,
 					TargetPer:              1,
 					MinGwDiversity:         7,
+					GwsPrivate:             true,
 				})
 			})
 
@@ -234,6 +236,7 @@ func TestNetworkServerAPI(t *testing.T) {
 						NwkGeoLoc:              false,
 						TargetPer:              2,
 						MinGwDiversity:         8,
+						GwsPrivate:             false,
 					},
 				})
 				So(err, ShouldBeNil)
@@ -263,6 +266,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					NwkGeoLoc:              false,
 					TargetPer:              2,
 					MinGwDiversity:         8,
+					GwsPrivate:             false,
 				})
 			})
 

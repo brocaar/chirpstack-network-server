@@ -189,8 +189,16 @@ func runHandlerWithMetric(err error, mt lorawan.MType) error {
 }
 
 func handleCollectedUplink(ctx context.Context, uplinkFrame gw.UplinkFrame, rxPacket models.RXPacket) error {
-	// update the gateway meta-data
-	rxPacket.RXInfoSet = gateway.UpdateMetaDataInRxInfoSet(ctx, storage.DB(), rxPacket.RXInfoSet)
+	// Update the gateway meta-data.
+	// This sets the location information from the database, decrypts the
+	// fine-timestamp when it is available and retrieves the service-profile
+	// information of the gateways.
+	// Note: this is done after de-duplication as a single uplink might be
+	// received multiple times in case of multiple NS instances and depending
+	// the MQTT broker (e.g. if it supports consumer groups).
+	if err := gateway.UpdateMetaDataInRXPacket(ctx, storage.DB(), &rxPacket); err != nil {
+		return errors.Wrap(err, "update RXPacket meta-data error")
+	}
 
 	// Return if the RXInfoSet is empty.
 	if len(rxPacket.RXInfoSet) == 0 {

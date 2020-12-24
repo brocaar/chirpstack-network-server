@@ -159,8 +159,8 @@ func (ts *AddGatewayMetaDataTestSuite) TestAddGatewayMetaData() {
 
 			ts.Gateway.Location = test.Location
 			ts.Gateway.Altitude = test.Altitude
+
 			assert.NoError(storage.UpdateGateway(context.Background(), storage.DB(), ts.Gateway))
-			assert.NoError(storage.FlushGatewayCache(context.Background(), ts.Gateway.GatewayID))
 
 			assert.Nil(uplink.HandleUplinkFrame(context.Background(), ts.GetUplinkFrameForFRMPayload(rxInfo, txInfo, lorawan.UnconfirmedDataUp, 10, []byte{1, 2, 3, 4})))
 

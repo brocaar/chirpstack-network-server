@@ -58,6 +58,7 @@ type MulticastTest struct {
 type OTAATest struct {
 	Name                     string
 	BeforeFunc               func(*OTAATest) error
+	AfterFunc                func(*OTAATest) error
 	TXInfo                   gw.UplinkTXInfo
 	RXInfo                   gw.UplinkRXInfo
 	PHYPayload               lorawan.PHYPayload
@@ -74,6 +75,7 @@ type OTAATest struct {
 type RejoinTest struct {
 	Name                            string
 	BeforeFunc                      func(*RejoinTest) error
+	AfterFunc                       func(*RejoinTest) error
 	TXInfo                          gw.UplinkTXInfo
 	RXInfo                          gw.UplinkRXInfo
 	PHYPayload                      lorawan.PHYPayload
@@ -320,6 +322,14 @@ func (ts *IntegrationTestSuite) CreateGateway(gw storage.Gateway) {
 		gw.RoutingProfileID = ts.RoutingProfile.ID
 	}
 
+	if gw.ServiceProfileID == nil {
+		if ts.ServiceProfile == nil {
+			ts.CreateServiceProfile(storage.ServiceProfile{})
+		}
+
+		gw.ServiceProfileID = &ts.ServiceProfile.ID
+	}
+
 	ts.Require().Nil(storage.CreateGateway(context.Background(), storage.DB(), &gw))
 	ts.Gateway = &gw
 }
@@ -508,6 +518,10 @@ func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 	for _, a := range tst.Assert {
 		a(assert, ts)
 	}
+
+	if tst.AfterFunc != nil {
+		assert.NoError(tst.AfterFunc(&tst))
+	}
 }
 
 // AssertRejoinTest asserts the given rejoin test.
@@ -515,6 +529,7 @@ func (ts *IntegrationTestSuite) AssertRejoinTest(t *testing.T, tst RejoinTest) {
 	assert := require.New(t)
 
 	storage.RedisClient().FlushAll()
+	ts.FlushClients()
 
 	if tst.BeforeFunc != nil {
 		assert.NoError(tst.BeforeFunc(&tst))
@@ -547,6 +562,10 @@ func (ts *IntegrationTestSuite) AssertRejoinTest(t *testing.T, tst RejoinTest) {
 	// run assertions
 	for _, a := range tst.Assert {
 		a(assert, ts)
+	}
+
+	if tst.AfterFunc != nil {
+		assert.NoError(tst.AfterFunc(&tst))
 	}
 }
 

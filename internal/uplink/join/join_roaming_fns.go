@@ -11,6 +11,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/backend/joinserver"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	dlroaming "github.com/brocaar/chirpstack-network-server/internal/downlink/roaming"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/models"
 	"github.com/brocaar/chirpstack-network-server/internal/roaming"
@@ -37,14 +38,34 @@ func StartPRFNS(ctx context.Context, rxPacket models.RXPacket, jrPL *lorawan.Joi
 	}
 
 	for _, f := range []func() error{
+		cctx.filterRxInfoByPublicOnly,
 		cctx.getHomeNetID,
 		cctx.getNSClient,
 		cctx.startRoaming,
 		cctx.saveRoamingSession,
 	} {
 		if err := f(); err != nil {
+			if err == ErrAbort {
+				return nil
+			}
+
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (ctx *startPRFNSContext) filterRxInfoByPublicOnly() error {
+	err := helpers.FilterRxInfoByPublicOnly(&ctx.rxPacket)
+	if err != nil {
+		if err == helpers.ErrNoElements {
+			log.WithFields(log.Fields{
+				"ctx_id": ctx.ctx.Value(logging.ContextIDKey),
+			}).Warning("uplink/join: none of the receiving gateways are public")
+			return ErrAbort
+		}
+		return err
 	}
 
 	return nil

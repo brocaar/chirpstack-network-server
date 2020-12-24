@@ -423,6 +423,146 @@ func (ts *ClassATestSuite) TestLW10UplinkDeviceDisabled() {
 	}
 }
 
+func (ts *ClassATestSuite) TestGatewayFiltering() {
+	ts.CreateDeviceSession(storage.DeviceSession{
+		MACVersion:            "1.0.2",
+		JoinEUI:               lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
+		DevAddr:               lorawan.DevAddr{1, 2, 3, 4},
+		FNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		SNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		NwkSEncKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		FCntUp:                8,
+		NFCntDown:             5,
+		EnabledUplinkChannels: []int{0, 1, 2},
+		RX2Frequency:          869525000,
+	})
+
+	var fPortOne uint8 = 1
+
+	tests := []ClassATest{
+		{
+			Name:          "public gateway",
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort: &fPortOne,
+				},
+				MIC: lorawan.MIC{160, 195, 68, 8},
+			},
+			Assert: []Assertion{
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
+					DevEui:  ts.Device.DevEUI[:],
+					JoinEui: ts.DeviceSession.JoinEUI[:],
+					FCnt:    10,
+					FPort:   1,
+					Dr:      0,
+					TxInfo:  &ts.TXInfo,
+					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
+				}),
+			},
+		},
+		{
+			Name: "private gateway - same service-profile",
+			BeforeFunc: func(tst *ClassATest) error {
+				ts.ServiceProfile.GwsPrivate = true
+				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
+			},
+			AfterFunc: func(tst *ClassATest) error {
+				ts.ServiceProfile.GwsPrivate = false
+				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
+			},
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort: &fPortOne,
+				},
+				MIC: lorawan.MIC{160, 195, 68, 8},
+			},
+			Assert: []Assertion{
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
+					DevEui:  ts.Device.DevEUI[:],
+					JoinEui: ts.DeviceSession.JoinEUI[:],
+					FCnt:    10,
+					FPort:   1,
+					Dr:      0,
+					TxInfo:  &ts.TXInfo,
+					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
+				}),
+			},
+		},
+		{
+			Name: "private gateway - different service-profile",
+			BeforeFunc: func(tst *ClassATest) error {
+				sp := storage.ServiceProfile{
+					GwsPrivate: true,
+				}
+				if err := storage.CreateServiceProfile(context.Background(), storage.DB(), &sp); err != nil {
+					return err
+				}
+
+				ts.Gateway.ServiceProfileID = &sp.ID
+				return storage.UpdateGateway(context.Background(), storage.DB(), ts.Gateway)
+			},
+			AfterFunc: func(tst *ClassATest) error {
+				ts.Gateway.ServiceProfileID = &ts.ServiceProfile.ID
+				return storage.UpdateGateway(context.Background(), storage.DB(), ts.Gateway)
+			},
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort: &fPortOne,
+				},
+				MIC: lorawan.MIC{160, 195, 68, 8},
+			},
+			Assert: []Assertion{
+				// uplink is rejected because of filtering
+				AssertFCntUp(8),
+				AssertNFCntDown(5),
+			},
+		},
+	}
+
+	for _, tst := range tests {
+		ts.T().Run(tst.Name, func(t *testing.T) {
+			ts.AssertClassATest(t, tst)
+		})
+	}
+}
+
 func (ts *ClassATestSuite) TestLW10Uplink() {
 	ts.CreateDeviceSession(storage.DeviceSession{
 		MACVersion:            "1.0.2",

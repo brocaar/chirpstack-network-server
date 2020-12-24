@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -105,6 +106,8 @@ func collectAndCallOnce(rxPacket gw.UplinkFrame, callback func(packet models.RXP
 
 		out.TXInfo = uplinkFrame.TxInfo
 		out.RXInfoSet = append(out.RXInfoSet, uplinkFrame.RxInfo)
+		out.GatewayIsPrivate = make(map[lorawan.EUI64]bool)
+		out.GatewayServiceProfile = make(map[lorawan.EUI64]uuid.UUID)
 	}
 
 	return callback(out)

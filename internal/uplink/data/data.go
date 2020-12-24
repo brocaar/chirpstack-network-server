@@ -37,11 +37,12 @@ var tasks = []func(*dataContext) error{
 	handlePassiveRoamingDevice,
 	getDeviceSessionForPHYPayload,
 	abortOnDeviceIsDisabled,
+	getDeviceProfile,
+	getServiceProfile,
+	filterRxInfoByServiceProfile,
 	decryptFOptsMACCommands,
 	decryptFRMPayloadMACCommands,
 	logUplinkFrame,
-	getDeviceProfile,
-	getServiceProfile,
 	getApplicationServerClientForDataUp,
 	setADR,
 	setUplinkDataRate,
@@ -221,6 +222,22 @@ func getServiceProfile(ctx *dataContext) error {
 		return errors.Wrap(err, "get service-profile error")
 	}
 	ctx.ServiceProfile = sp
+
+	return nil
+}
+
+func filterRxInfoByServiceProfile(ctx *dataContext) error {
+	err := helpers.FilterRxInfoByServiceProfileID(ctx.DeviceSession.ServiceProfileID, &ctx.RXPacket)
+	if err != nil {
+		if err == helpers.ErrNoElements {
+			log.WithFields(log.Fields{
+				"dev_eui": ctx.DeviceSession.DevEUI,
+				"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+			}).Warning("uplink/data: none of the receiving gateways are public or have the same service-profile")
+			return ErrAbort
+		}
+		return err
+	}
 
 	return nil
 }

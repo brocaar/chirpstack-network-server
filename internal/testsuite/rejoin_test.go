@@ -1,6 +1,7 @@
 package testsuite
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -99,6 +100,210 @@ func (ts *RejoinTestSuite) SetupTest() {
 	band.Band().AddChannel(867300000, 0, 5)
 	band.Band().AddChannel(867500000, 0, 5)
 
+}
+
+func (ts *RejoinTestSuite) TestGatewayFiltering() {
+	assert := require.New(ts.T())
+
+	cFList := lorawan.CFList{
+		CFListType: lorawan.CFListChannel,
+		Payload: &lorawan.CFListChannelPayload{
+			Channels: [5]uint32{
+				867100000,
+				867300000,
+				867500000,
+			},
+		},
+	}
+	cFListB, err := cFList.MarshalBinary()
+	assert.NoError(err)
+
+	jrPHY := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.RejoinRequest,
+			Major: lorawan.LoRaWANR1,
+		},
+		MACPayload: &lorawan.RejoinRequestType02Payload{
+			RejoinType: lorawan.RejoinRequestType0,
+			NetID:      lorawan.NetID{3, 2, 1},
+			DevEUI:     ts.Device.DevEUI,
+			RJCount0:   123,
+		},
+	}
+	assert.NoError(jrPHY.SetUplinkJoinMIC(ts.DeviceSession.SNwkSIntKey))
+	jrPHYBytes, err := jrPHY.MarshalBinary()
+	assert.NoError(err)
+
+	jaPHY := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.JoinAccept,
+			Major: lorawan.LoRaWANR1,
+		},
+		MACPayload: &lorawan.JoinAcceptPayload{},
+	}
+	assert.NoError(jaPHY.EncryptJoinAcceptPayload(ts.JoinAcceptKey))
+	jaPHYBytes, err := jaPHY.MarshalBinary()
+	assert.NoError(err)
+	assert.NoError(jaPHY.DecryptJoinAcceptPayload(ts.JoinAcceptKey))
+
+	tests := []RejoinTest{
+		{
+			Name:          "public gateway",
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload:    jrPHY,
+			JoinServerRejoinAnsPayload: backend.RejoinAnsPayload{
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
+				},
+				PHYPayload: backend.HEXBytes(jaPHYBytes),
+				SNwkSIntKey: &backend.KeyEnvelope{
+					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
+				},
+				FNwkSIntKey: &backend.KeyEnvelope{
+					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+				},
+				NwkSEncKey: &backend.KeyEnvelope{
+					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
+				},
+				AppSKey: &backend.KeyEnvelope{
+					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4},
+				},
+			},
+			Assert: []Assertion{
+				AssertJSRejoinReqPayload(backend.RejoinReqPayload{
+					BasePayload: backend.BasePayload{
+						ProtocolVersion: backend.ProtocolVersion1_0,
+						SenderID:        "030201",
+						ReceiverID:      "0807060504030201",
+						MessageType:     backend.RejoinReq,
+					},
+					MACVersion: "1.1.0",
+					PHYPayload: backend.HEXBytes(jrPHYBytes),
+					DevEUI:     ts.Device.DevEUI,
+					DLSettings: lorawan.DLSettings{
+						OptNeg:      true,
+						RX2DataRate: 3,
+						RX1DROffset: 2,
+					},
+					RxDelay: 1,
+					CFList:  cFListB,
+				}),
+			},
+		},
+		{
+			Name: "private gateway - same service-profile",
+			BeforeFunc: func(tst *RejoinTest) error {
+				ts.ServiceProfile.GwsPrivate = true
+				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
+			},
+			AfterFunc: func(tst *RejoinTest) error {
+				ts.ServiceProfile.GwsPrivate = false
+				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
+			},
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload:    jrPHY,
+			JoinServerRejoinAnsPayload: backend.RejoinAnsPayload{
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
+				},
+				PHYPayload: backend.HEXBytes(jaPHYBytes),
+				SNwkSIntKey: &backend.KeyEnvelope{
+					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
+				},
+				FNwkSIntKey: &backend.KeyEnvelope{
+					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+				},
+				NwkSEncKey: &backend.KeyEnvelope{
+					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
+				},
+				AppSKey: &backend.KeyEnvelope{
+					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4},
+				},
+			},
+			Assert: []Assertion{
+				AssertJSRejoinReqPayload(backend.RejoinReqPayload{
+					BasePayload: backend.BasePayload{
+						ProtocolVersion: backend.ProtocolVersion1_0,
+						SenderID:        "030201",
+						ReceiverID:      "0807060504030201",
+						MessageType:     backend.RejoinReq,
+					},
+					MACVersion: "1.1.0",
+					PHYPayload: backend.HEXBytes(jrPHYBytes),
+					DevEUI:     ts.Device.DevEUI,
+					DLSettings: lorawan.DLSettings{
+						OptNeg:      true,
+						RX2DataRate: 3,
+						RX1DROffset: 2,
+					},
+					RxDelay: 1,
+					CFList:  cFListB,
+				}),
+			},
+		},
+		{
+			Name: "private gateway - different service-profile",
+			BeforeFunc: func(tst *RejoinTest) error {
+				sp := storage.ServiceProfile{
+					GwsPrivate: true,
+				}
+				if err := storage.CreateServiceProfile(context.Background(), storage.DB(), &sp); err != nil {
+					return err
+				}
+
+				ts.Gateway.ServiceProfileID = &sp.ID
+				return storage.UpdateGateway(context.Background(), storage.DB(), ts.Gateway)
+			},
+			AfterFunc: func(tst *RejoinTest) error {
+				ts.Gateway.ServiceProfileID = &ts.ServiceProfile.ID
+				return storage.UpdateGateway(context.Background(), storage.DB(), ts.Gateway)
+			},
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload:    jrPHY,
+			JoinServerRejoinAnsPayload: backend.RejoinAnsPayload{
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
+				},
+				PHYPayload: backend.HEXBytes(jaPHYBytes),
+				SNwkSIntKey: &backend.KeyEnvelope{
+					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
+				},
+				FNwkSIntKey: &backend.KeyEnvelope{
+					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+				},
+				NwkSEncKey: &backend.KeyEnvelope{
+					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3},
+				},
+				AppSKey: &backend.KeyEnvelope{
+					AESKey: []byte{2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4},
+				},
+			},
+			Assert: []Assertion{
+				AssertNoDownlinkFrame,
+			},
+		},
+	}
+
+	for _, tst := range tests {
+		ts.T().Run(tst.Name, func(t *testing.T) {
+			ts.AssertRejoinTest(t, tst)
+		})
+	}
+
+	// make sure we set the RejoinCount0 back to 0
+	ts.DeviceSession.RejoinCount0 = 0
 }
 
 func (ts *RejoinTestSuite) TestRejoinType0() {

@@ -43,6 +43,7 @@ func TestServiceProfile(t *testing.T) {
 				NwkGeoLoc:              true,
 				TargetPER:              1,
 				MinGWDiversity:         8,
+				GwsPrivate:             false,
 			}
 
 			So(CreateServiceProfile(context.Background(), DB(), &sp), ShouldBeNil)
@@ -78,6 +79,7 @@ func TestServiceProfile(t *testing.T) {
 				sp.NwkGeoLoc = false
 				sp.TargetPER = 2
 				sp.MinGWDiversity = 9
+				sp.GwsPrivate = true
 
 				So(UpdateServiceProfile(context.Background(), DB(), &sp), ShouldBeNil)
 				sp.UpdatedAt = sp.UpdatedAt.UTC().Truncate(time.Millisecond)

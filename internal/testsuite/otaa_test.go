@@ -54,6 +54,213 @@ func (ts *OTAATestSuite) SetupSuite() {
 	})
 }
 
+func (ts *OTAATestSuite) TestGatewayFiltering() {
+	assert := require.New(ts.T())
+
+	conf := test.GetConfig()
+
+	ts.DeviceProfile.MACVersion = "1.0.2"
+	assert.NoError(storage.UpdateDeviceProfile(context.Background(), storage.DB(), ts.DeviceProfile))
+
+	rxInfo := gw.UplinkRXInfo{
+		GatewayId: ts.Gateway.GatewayID[:],
+		Context:   []byte{1, 2, 3, 4},
+		Location:  &common.Location{},
+	}
+
+	txInfo := gw.UplinkTXInfo{
+		Frequency: 868100000,
+	}
+	assert.NoError(helpers.SetUplinkTXInfoDataRate(&txInfo, 0, band.Band()))
+
+	jrPayload := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.JoinRequest,
+			Major: lorawan.LoRaWANR1,
+		},
+		MACPayload: &lorawan.JoinRequestPayload{
+			JoinEUI:  lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+			DevEUI:   ts.Device.DevEUI,
+			DevNonce: 258,
+		},
+	}
+	assert.NoError(jrPayload.SetUplinkJoinMIC(ts.JoinAcceptKey))
+
+	jaPayload := lorawan.JoinAcceptPayload{
+		JoinNonce: 197121,
+		HomeNetID: conf.NetworkServer.NetID,
+		DLSettings: lorawan.DLSettings{
+			RX2DataRate: 2,
+			RX1DROffset: 1,
+		},
+		DevAddr: [4]byte{1, 2, 3, 4},
+		RXDelay: 3,
+		CFList: &lorawan.CFList{
+			CFListType: lorawan.CFListChannel,
+			Payload: &lorawan.CFListChannelPayload{
+				Channels: [5]uint32{
+					100,
+					200,
+					300,
+					400,
+					500,
+				},
+			},
+		},
+	}
+	jaPHY := lorawan.PHYPayload{
+		MHDR: lorawan.MHDR{
+			MType: lorawan.JoinAccept,
+			Major: lorawan.LoRaWANR1,
+		},
+		MACPayload: &jaPayload,
+	}
+	assert.NoError(jaPHY.SetDownlinkJoinMIC(lorawan.JoinRequestType, lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}, lorawan.DevNonce(258), ts.JoinAcceptKey))
+	assert.NoError(jaPHY.EncryptJoinAcceptPayload(ts.JoinAcceptKey))
+	jaBytes, err := jaPHY.MarshalBinary()
+	assert.NoError(err)
+	assert.NoError(jaPHY.DecryptJoinAcceptPayload(ts.JoinAcceptKey))
+
+	tests := []OTAATest{
+		{
+			Name:       "public gateway",
+			RXInfo:     rxInfo,
+			TXInfo:     txInfo,
+			PHYPayload: jrPayload,
+			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
+				},
+				PHYPayload: backend.HEXBytes(jaBytes),
+				NwkSKey: &backend.KeyEnvelope{
+					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				},
+				AppSKey: &backend.KeyEnvelope{
+					AESKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+				},
+			},
+			Assert: []Assertion{
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
+					Frequency:  txInfo.Frequency,
+					Power:      14,
+					Modulation: common.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+					Context: []byte{1, 2, 3, 4},
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(5 * time.Second),
+						},
+					},
+				}, jaPHY),
+			},
+		},
+		{
+			Name: "private gateway - same service-profile",
+			BeforeFunc: func(tst *OTAATest) error {
+				ts.ServiceProfile.GwsPrivate = true
+				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
+			},
+			AfterFunc: func(tst *OTAATest) error {
+				ts.ServiceProfile.GwsPrivate = false
+				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
+			},
+			RXInfo:     rxInfo,
+			TXInfo:     txInfo,
+			PHYPayload: jrPayload,
+			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
+				},
+				PHYPayload: backend.HEXBytes(jaBytes),
+				NwkSKey: &backend.KeyEnvelope{
+					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				},
+				AppSKey: &backend.KeyEnvelope{
+					AESKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+				},
+			},
+			Assert: []Assertion{
+				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
+					Frequency:  txInfo.Frequency,
+					Power:      14,
+					Modulation: common.Modulation_LORA,
+					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
+						LoraModulationInfo: &gw.LoRaModulationInfo{
+							Bandwidth:             125,
+							SpreadingFactor:       12,
+							CodeRate:              "4/5",
+							PolarizationInversion: true,
+						},
+					},
+					Context: []byte{1, 2, 3, 4},
+					Timing:  gw.DownlinkTiming_DELAY,
+					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
+						DelayTimingInfo: &gw.DelayTimingInfo{
+							Delay: ptypes.DurationProto(5 * time.Second),
+						},
+					},
+				}, jaPHY),
+			},
+		},
+		{
+			Name: "private gateway - different service-profile",
+			BeforeFunc: func(tst *OTAATest) error {
+				sp := storage.ServiceProfile{
+					GwsPrivate: true,
+				}
+				if err := storage.CreateServiceProfile(context.Background(), storage.DB(), &sp); err != nil {
+					return err
+				}
+
+				ts.Gateway.ServiceProfileID = &sp.ID
+				return storage.UpdateGateway(context.Background(), storage.DB(), ts.Gateway)
+			},
+			AfterFunc: func(tst *OTAATest) error {
+				ts.Gateway.ServiceProfileID = &ts.ServiceProfile.ID
+				return storage.UpdateGateway(context.Background(), storage.DB(), ts.Gateway)
+			},
+			RXInfo:     rxInfo,
+			TXInfo:     txInfo,
+			PHYPayload: jrPayload,
+			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
+				BasePayloadResult: backend.BasePayloadResult{
+					Result: backend.Result{
+						ResultCode: backend.Success,
+					},
+				},
+				PHYPayload: backend.HEXBytes(jaBytes),
+				NwkSKey: &backend.KeyEnvelope{
+					AESKey: []byte{16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+				},
+				AppSKey: &backend.KeyEnvelope{
+					AESKey: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+				},
+			},
+			Assert: []Assertion{
+				AssertNoDownlinkFrame,
+			},
+		},
+	}
+
+	for _, tst := range tests {
+		ts.T().Run(tst.Name, func(t *testing.T) {
+			ts.AssertOTAATest(t, tst)
+		})
+	}
+}
+
 func (ts *OTAATestSuite) TestLW10() {
 	assert := require.New(ts.T())
 

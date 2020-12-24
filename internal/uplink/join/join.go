@@ -92,6 +92,7 @@ func Handle(ctx context.Context, rxPacket models.RXPacket) error {
 		jctx.getDeviceOrTryRoaming,
 		jctx.getDeviceProfile,
 		jctx.getServiceProfile,
+		jctx.filterRxInfoByServiceProfile,
 		jctx.abortOnDeviceIsDisabled,
 		jctx.validateNonce,
 		jctx.getRandomDevAddr,
@@ -182,6 +183,22 @@ func (ctx *joinContext) getServiceProfile() error {
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
+	return nil
+}
+
+func (ctx *joinContext) filterRxInfoByServiceProfile() error {
+	err := helpers.FilterRxInfoByServiceProfileID(ctx.Device.ServiceProfileID, &ctx.RXPacket)
+	if err != nil {
+		if err == helpers.ErrNoElements {
+			log.WithFields(log.Fields{
+				"dev_eui": ctx.Device.DevEUI,
+				"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+			}).Warning("uplink/join: none of the receiving gateways are public or have the same service-profile")
+			return ErrAbort
+		}
+		return err
+	}
+
 	return nil
 }
 

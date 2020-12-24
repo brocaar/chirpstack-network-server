@@ -202,6 +202,28 @@ func (ts *PassiveRoamingFNSTestSuite) TestJoinRequest() {
 	prStartAnsB, err := json.Marshal(prStartAns)
 	assert.NoError(err)
 
+	ts.T().Run("private gateway", func(t *testing.T) {
+		assert := require.New(t)
+		ts.ServiceProfile.GwsPrivate = true
+		assert.NoError(storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile))
+
+		// "send" uplink
+		assert.NoError(uplink.HandleUplinkFrame(context.Background(), gw.UplinkFrame{
+			RxInfo:     &ts.rxInfo,
+			TxInfo:     &ts.txInfo,
+			PhyPayload: phyB,
+		}))
+
+		// no requests are made
+		assert.Len(ts.jsRequest, 0)
+
+		ts.ServiceProfile.GwsPrivate = false
+		assert.NoError(storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile))
+
+		// Make sure that the de-duplication lock is flushed
+		storage.RedisClient().FlushAll()
+	})
+
 	ts.T().Run("success", func(t *testing.T) {
 		assert := require.New(t)
 
@@ -361,6 +383,28 @@ func (ts *PassiveRoamingFNSTestSuite) TestDataStateless() {
 	// ulToken
 	ulTokenB, err := proto.Marshal(&ts.rxInfo)
 	assert.NoError(err)
+
+	ts.T().Run("private gateway", func(t *testing.T) {
+		assert := require.New(t)
+		ts.ServiceProfile.GwsPrivate = true
+		assert.NoError(storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile))
+
+		// "send" uplink
+		assert.NoError(uplink.HandleUplinkFrame(context.Background(), gw.UplinkFrame{
+			RxInfo:     &ts.rxInfo,
+			TxInfo:     &ts.txInfo,
+			PhyPayload: phyB,
+		}))
+
+		// no requests are made
+		assert.Len(ts.hnsRequest, 0)
+
+		ts.ServiceProfile.GwsPrivate = false
+		assert.NoError(storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile))
+
+		// Make sure that the de-duplication lock is flushed
+		storage.RedisClient().FlushAll()
+	})
 
 	ts.T().Run("success", func(t *testing.T) {
 		assert := require.New(t)

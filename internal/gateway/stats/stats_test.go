@@ -35,6 +35,7 @@ func (ts *GatewayConfigurationTestSuite) SetupSuite() {
 	conf := test.GetConfig()
 	assert.NoError(storage.Setup(conf))
 	test.MustResetDB(storage.DB().DB)
+	storage.RedisClient().FlushAll()
 
 	rp := storage.RoutingProfile{}
 	assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp))
@@ -198,6 +199,7 @@ func (ts *GatewayStatsTestSuite) SetupSuite() {
 	conf := test.GetConfig()
 	assert.NoError(storage.Setup(conf))
 	test.MustResetDB(storage.DB().DB)
+	storage.RedisClient().FlushAll()
 
 	rp := storage.RoutingProfile{}
 	assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp))

@@ -2,7 +2,6 @@ package stats
 
 import (
 	"context"
-	"time"
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
@@ -16,6 +15,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
 )
 
@@ -23,21 +23,25 @@ var ErrAbort = errors.New("abort")
 
 type statsContext struct {
 	ctx          context.Context
-	gateway      storage.Gateway
+	gatewayID    lorawan.EUI64
 	gatewayStats gw.GatewayStats
+	gatewayMeta  storage.GatewayMeta
 }
 
 var tasks = []func(*statsContext) error{
-	getGateway,
 	updateGatewayState,
+	getGatewayMeta,
 	handleGatewayConfigurationUpdate,
 	forwardGatewayStats,
 }
 
 // Handle handles the gateway stats
 func Handle(ctx context.Context, stats gw.GatewayStats) error {
+	gatewayID := helpers.GetGatewayID(&stats)
+
 	sctx := statsContext{
 		ctx:          ctx,
+		gatewayID:    gatewayID,
 		gatewayStats: stats,
 	}
 
@@ -53,73 +57,60 @@ func Handle(ctx context.Context, stats gw.GatewayStats) error {
 	return nil
 }
 
-func getGateway(ctx *statsContext) error {
-	gatewayID := helpers.GetGatewayID(&ctx.gatewayStats)
-	gw, err := storage.GetAndCacheGateway(ctx.ctx, storage.DB(), gatewayID)
-	if err != nil {
-		if errors.Cause(err) == storage.ErrDoesNotExist {
-			log.WithFields(log.Fields{
-				"ctx_id":     ctx.ctx.Value(logging.ContextIDKey),
-				"gateway_id": gatewayID,
-			}).Warning("gateway/stats: stats received by unknown gateway")
-			return ErrAbort
-		} else {
-			return errors.Wrap(err, "get gateway error")
-		}
+func updateGatewayState(ctx *statsContext) error {
+	if err := storage.UpdateGatewayState(
+		ctx.ctx,
+		storage.DB(),
+		ctx.gatewayID,
+		ctx.gatewayStats.GetLocation().GetLatitude(),
+		ctx.gatewayStats.GetLocation().GetLongitude(),
+		ctx.gatewayStats.GetLocation().GetAltitude(),
+	); err != nil {
+		return errors.Wrap(err, "update gateway state error")
 	}
 
-	ctx.gateway = gw
 	return nil
 }
 
-func updateGatewayState(ctx *statsContext) error {
-	now := time.Now()
-	if ctx.gateway.FirstSeenAt == nil {
-		ctx.gateway.FirstSeenAt = &now
-	}
-	ctx.gateway.LastSeenAt = &now
+func getGatewayMeta(ctx *statsContext) error {
 
-	if ctx.gatewayStats.Location != nil {
-		ctx.gateway.Location.Latitude = ctx.gatewayStats.Location.Latitude
-		ctx.gateway.Location.Longitude = ctx.gatewayStats.Location.Longitude
-		ctx.gateway.Altitude = ctx.gatewayStats.Location.Altitude
+	gw, err := storage.GetAndCacheGatewayMeta(ctx.ctx, storage.DB(), ctx.gatewayID)
+	if err != nil {
+		return errors.Wrap(err, "get gateway meta error")
 	}
-
-	if err := storage.UpdateGateway(ctx.ctx, storage.DB(), &ctx.gateway); err != nil {
-		return errors.Wrap(err, "update gateway error")
-	}
-
-	if err := storage.FlushGatewayCache(ctx.ctx, ctx.gateway.GatewayID); err != nil {
-		return errors.Wrap(err, "flush gateway cache error")
-	}
+	ctx.gatewayMeta = gw
 
 	return nil
 }
 
 func handleGatewayConfigurationUpdate(ctx *statsContext) error {
-	if ctx.gateway.GatewayProfileID == nil {
+	// no gateway-profile configured
+	if ctx.gatewayMeta.GatewayProfileID == nil {
 		log.WithFields(log.Fields{
-			"gateway_id": ctx.gateway.GatewayID,
+			"gateway_id": ctx.gatewayMeta.GatewayID,
 			"ctx_id":     ctx.ctx.Value(logging.ContextIDKey),
 		}).Debug("gateway-profile is not set, skipping configuration update")
 		return nil
 	}
 
-	gwProfile, err := storage.GetGatewayProfile(ctx.ctx, storage.DB(), *ctx.gateway.GatewayProfileID)
-	if err != nil {
-		return errors.Wrap(err, "get gateway-profile error")
-	}
-
+	// not using concentratord
 	if ctx.gatewayStats.GetMetaData()["concentratord_version"] == "" {
 		log.WithFields(log.Fields{
-			"gateway_id": ctx.gateway.GatewayID,
+			"gateway_id": ctx.gatewayMeta.GatewayID,
 		}).Debug("gatway does not support configuration updates")
 		return nil
 	}
 
+	// get gateway-profile
+	gwProfile, err := storage.GetGatewayProfile(ctx.ctx, storage.DB(), *ctx.gatewayMeta.GatewayProfileID)
+	if err != nil {
+		return errors.Wrap(err, "get gateway-profile error")
+	}
+
+	// compare gateway-profile config version with stats config version
 	if gwProfile.GetVersion() == ctx.gatewayStats.ConfigVersion || gwProfile.GetVersion() == ctx.gatewayStats.GetMetaData()["config_version"] {
 		log.WithFields(log.Fields{
-			"gateway_id": ctx.gateway.GatewayID,
+			"gateway_id": ctx.gatewayMeta.GatewayID,
 			"version":    ctx.gatewayStats.ConfigVersion,
 			"ctx_id":     ctx.ctx.Value(logging.ContextIDKey),
 		}).Debug("gateway configuration is up-to-date")
@@ -127,7 +118,7 @@ func handleGatewayConfigurationUpdate(ctx *statsContext) error {
 	}
 
 	configPacket := gw.GatewayConfiguration{
-		GatewayId:     ctx.gateway.GatewayID[:],
+		GatewayId:     ctx.gatewayMeta.GatewayID[:],
 		StatsInterval: ptypes.DurationProto(gwProfile.StatsInterval),
 		Version:       gwProfile.GetVersion(),
 	}
@@ -204,7 +195,7 @@ func handleGatewayConfigurationUpdate(ctx *statsContext) error {
 }
 
 func forwardGatewayStats(ctx *statsContext) error {
-	rp, err := storage.GetRoutingProfile(ctx.ctx, storage.DB(), ctx.gateway.RoutingProfileID)
+	rp, err := storage.GetRoutingProfile(ctx.ctx, storage.DB(), ctx.gatewayMeta.RoutingProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get routing-profile error")
 	}

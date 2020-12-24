@@ -22,7 +22,7 @@ import (
 
 // template used for generating Redis keys
 const (
-	gatewayKeyTempl = "lora:ns:gw:%s"
+	gatewayMetaKeyTempl = "lora:ns:gw:meta:%s"
 )
 
 // GPSPoint contains a GPS point.
@@ -51,6 +51,8 @@ func (l *GPSPoint) Scan(src interface{}) error {
 type Gateway struct {
 	GatewayID        lorawan.EUI64  `db:"gateway_id"`
 	RoutingProfileID uuid.UUID      `db:"routing_profile_id"`
+	ServiceProfileID *uuid.UUID     `db:"service_profile_id"`
+	GatewayProfileID *uuid.UUID     `db:"gateway_profile_id"`
 	CreatedAt        time.Time      `db:"created_at"`
 	UpdatedAt        time.Time      `db:"updated_at"`
 	FirstSeenAt      *time.Time     `db:"first_seen_at"`
@@ -58,7 +60,6 @@ type Gateway struct {
 	Location         GPSPoint       `db:"location"`
 	Altitude         float64        `db:"altitude"`
 	TLSCert          []byte         `db:"tls_cert"`
-	GatewayProfileID *uuid.UUID     `db:"gateway_profile_id"`
 	Boards           []GatewayBoard `db:"-"`
 }
 
@@ -66,6 +67,19 @@ type Gateway struct {
 type GatewayBoard struct {
 	FPGAID           *lorawan.EUI64     `db:"fpga_id"`
 	FineTimestampKey *lorawan.AES128Key `db:"fine_timestamp_key"`
+}
+
+// GatewayMeta represents the gateway meta-data.
+// This is used for adding additional context to received uplinks.
+type GatewayMeta struct {
+	GatewayID        lorawan.EUI64  `db:"gateway_id"`
+	RoutingProfileID uuid.UUID      `db:"routing_profile_id"`
+	GatewayProfileID *uuid.UUID     `db:"gateway_profile_id"`
+	ServiceProfileID *uuid.UUID     `db:"service_profile_id"`
+	Location         GPSPoint       `db:"location"`
+	Altitude         float64        `db:"altitude"`
+	IsPrivate        bool           `db:"is_private"`
+	Boards           []GatewayBoard `db:"-"`
 }
 
 // CreateGateway creates the given gateway.
@@ -85,8 +99,9 @@ func CreateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 			altitude,
 			gateway_profile_id,
 			routing_profile_id,
-			tls_cert
-		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+			tls_cert,
+			service_profile_id
+		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
 		gw.GatewayID[:],
 		gw.CreatedAt,
 		gw.UpdatedAt,
@@ -97,6 +112,7 @@ func CreateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 		gw.GatewayProfileID,
 		gw.RoutingProfileID,
 		gw.TLSCert,
+		gw.ServiceProfileID,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -123,32 +139,32 @@ func CreateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 	log.WithFields(log.Fields{
 		"gateway_id": gw.GatewayID,
 		"ctx_id":     ctx.Value(logging.ContextIDKey),
-	}).Info("gateway created")
+	}).Info("storage: gateway created")
 	return nil
 }
 
-// CreateGatewayCache caches the given gateway in Redis.
+// CreateGatewayMetaCache caches the given gateway meta in Redis.
 // The TTL of the gateway is the same as that of the device-sessions.
-func CreateGatewayCache(ctx context.Context, gw Gateway) error {
-	key := fmt.Sprintf(gatewayKeyTempl, gw.GatewayID)
+func CreateGatewayMetaCache(ctx context.Context, gw GatewayMeta) error {
+	key := fmt.Sprintf(gatewayMetaKeyTempl, gw.GatewayID)
 
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(gw); err != nil {
-		return errors.Wrap(err, "gob encode gateway error")
+		return errors.Wrap(err, "gob encode gateway meta error")
 	}
 
 	err := RedisClient().Set(key, buf.Bytes(), deviceSessionTTL).Err()
 	if err != nil {
-		return errors.Wrap(err, "set gateway error")
+		return errors.Wrap(err, "set gateway meta error")
 	}
 
 	return nil
 }
 
-// GetGatewayCache returns a cached gateway.
-func GetGatewayCache(ctx context.Context, gatewayID lorawan.EUI64) (Gateway, error) {
-	var gw Gateway
-	key := fmt.Sprintf(gatewayKeyTempl, gatewayID)
+// GetGatewayMetaCache returns a cached gateway meta.
+func GetGatewayMetaCache(ctx context.Context, gatewayID lorawan.EUI64) (GatewayMeta, error) {
+	var gw GatewayMeta
+	key := fmt.Sprintf(gatewayMetaKeyTempl, gatewayID)
 
 	val, err := RedisClient().Get(key).Bytes()
 	if err != nil {
@@ -166,9 +182,9 @@ func GetGatewayCache(ctx context.Context, gatewayID lorawan.EUI64) (Gateway, err
 	return gw, nil
 }
 
-// FlushGatewayCache deletes a cached gateway.
-func FlushGatewayCache(ctx context.Context, gatewayID lorawan.EUI64) error {
-	key := fmt.Sprintf(gatewayKeyTempl, gatewayID)
+// FlushGatewayMetaCache flushes the gateway meta cache.
+func FlushGatewayMetaCache(ctx context.Context, gatewayID lorawan.EUI64) error {
+	key := fmt.Sprintf(gatewayMetaKeyTempl, gatewayID)
 
 	err := RedisClient().Del(key).Err()
 	if err != nil {
@@ -178,11 +194,11 @@ func FlushGatewayCache(ctx context.Context, gatewayID lorawan.EUI64) error {
 	return nil
 }
 
-// GetAndCacheGateway returns a gateway from the cache in case it is available.
-// In case the gateway is not cached, it will be retrieved from the database
+// GetAndCacheGatewayMeta returns a gateway meta from the cache in case it is available.
+// In case the gateway meta is not cached, it will be retrieved from the database
 // and then cached.
-func GetAndCacheGateway(ctx context.Context, db sqlx.Queryer, gatewayID lorawan.EUI64) (Gateway, error) {
-	gw, err := GetGatewayCache(ctx, gatewayID)
+func GetAndCacheGatewayMeta(ctx context.Context, db sqlx.Queryer, gatewayID lorawan.EUI64) (GatewayMeta, error) {
+	gw, err := GetGatewayMetaCache(ctx, gatewayID)
 	if err == nil {
 		return gw, nil
 	}
@@ -191,21 +207,21 @@ func GetAndCacheGateway(ctx context.Context, db sqlx.Queryer, gatewayID lorawan.
 		log.WithFields(log.Fields{
 			"ctx_id":     ctx.Value(logging.ContextIDKey),
 			"gateway_id": gatewayID,
-		}).WithError(err).Error("get gateway cache error")
+		}).WithError(err).Error("storage: get gateway meta cache error")
 		// we don't return the error as we can still fall-back onto db retrieval
 	}
 
-	gw, err = GetGateway(ctx, db, gatewayID)
+	gw, err = GetGatewayMeta(ctx, db, gatewayID)
 	if err != nil {
 		return gw, errors.Wrap(err, "get gateway error")
 	}
 
-	err = CreateGatewayCache(ctx, gw)
+	err = CreateGatewayMetaCache(ctx, gw)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"ctx_id":     ctx.Value(logging.ContextIDKey),
 			"gateway_id": gatewayID,
-		}).WithError(err).Error("create gateway cache error")
+		}).WithError(err).Error("storage: create gateway meta cache error")
 	}
 
 	return gw, nil
@@ -253,7 +269,8 @@ func UpdateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 			altitude = $6,
 			gateway_profile_id = $7,
 			routing_profile_id = $8,
-			tls_cert = $9
+			tls_cert = $9,
+			service_profile_id = $10
 		where gateway_id = $1`,
 		gw.GatewayID[:],
 		gw.UpdatedAt,
@@ -264,6 +281,7 @@ func UpdateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 		gw.GatewayProfileID,
 		gw.RoutingProfileID,
 		gw.TLSCert,
+		gw.ServiceProfileID,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")
@@ -302,10 +320,65 @@ func UpdateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 		}
 	}
 
+	if err := FlushGatewayMetaCache(ctx, gw.GatewayID); err != nil {
+		return errors.Wrap(err, "flush gateway cache error")
+	}
+
 	log.WithFields(log.Fields{
 		"gateway_id": gw.GatewayID,
 		"ctx_id":     ctx.Value(logging.ContextIDKey),
-	}).Info("gateway updated")
+	}).Info("storage: gateway updated")
+	return nil
+}
+
+// UpdateGatewayState updates the location of the gateway and last seen ts.
+func UpdateGatewayState(ctx context.Context, db sqlx.Execer, id lorawan.EUI64, lat, lon, alt float64) error {
+	var loc *GPSPoint
+	var altt *float64
+
+	if lat != 0 && lon != 0 && alt != 0 {
+		loc = &GPSPoint{
+			Latitude:  lat,
+			Longitude: lon,
+		}
+		altt = &alt
+	}
+
+	now := time.Now()
+
+	// * only update first_seen_at when the current value is NULL
+	// * only update the location when the given value is not NULL
+	// * only update the altitude when the given value is not NULL
+	res, err := db.Exec(`
+		update gateway set
+			first_seen_at = coalesce(first_seen_at, $2),
+			last_seen_at = $3,
+			location = coalesce($4, location),
+			altitude = coalesce($5, altitude)
+		where
+			gateway_id = $1`,
+		id,
+		now,
+		now,
+		loc,
+		altt,
+	)
+	if err != nil {
+		return handlePSQLError(err, "update error")
+	}
+	ra, err := res.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "get rows affected error")
+	}
+	if ra == 0 {
+		return ErrDoesNotExist
+	}
+
+	log.WithFields(log.Fields{
+		"gateway_id": id,
+		"ctx_id":     ctx.Value(logging.ContextIDKey),
+	}).Info("storage: gateway state updated")
+
 	return nil
 }
 
@@ -322,10 +395,15 @@ func DeleteGateway(ctx context.Context, db sqlx.Execer, id lorawan.EUI64) error 
 	if ra == 0 {
 		return ErrDoesNotExist
 	}
+
+	if err := FlushGatewayMetaCache(ctx, id); err != nil {
+		return errors.Wrap(err, "flush gateway cache error")
+	}
+
 	log.WithFields(log.Fields{
 		"gateway_id": id,
 		"ctx_id":     ctx.Value(logging.ContextIDKey),
-	}).Info("gateway deleted")
+	}).Info("storage: gateway deleted")
 	return nil
 }
 
@@ -352,4 +430,47 @@ func GetGatewaysForIDs(ctx context.Context, db sqlx.Queryer, ids []lorawan.EUI64
 	}
 
 	return out, nil
+}
+
+// GetGatewayMeta returns the GatewayMeta object for the given gateway ID.
+func GetGatewayMeta(ctx context.Context, db sqlx.Queryer, id lorawan.EUI64) (GatewayMeta, error) {
+	var gw GatewayMeta
+	err := sqlx.Get(db, &gw, `
+		select
+			g.gateway_id,
+			g.location,
+			g.altitude,
+			g.service_profile_id,
+			g.gateway_profile_id,
+			g.routing_profile_id,
+			coalesce(sp.gws_private, false) as is_private
+		from
+			gateway g
+		left join service_profile sp
+			on g.service_profile_id = sp.service_profile_id
+		where
+			g.gateway_id = $1`,
+		id,
+	)
+	if err != nil {
+		return gw, handlePSQLError(err, "select error")
+	}
+
+	err = sqlx.Select(db, &gw.Boards, `
+		select
+			fpga_id,
+			fine_timestamp_key
+		from
+			gateway_board
+		where
+			gateway_id = $1
+		order by
+			id`,
+		id,
+	)
+	if err != nil {
+		return gw, handlePSQLError(err, "select error")
+	}
+
+	return gw, nil
 }

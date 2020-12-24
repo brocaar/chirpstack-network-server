@@ -54,6 +54,7 @@ type ServiceProfile struct {
 	NwkGeoLoc              bool       `db:"nwk_geo_loc"`
 	TargetPER              int        `db:"target_per"` // Example: 10 indicates 10%
 	MinGWDiversity         int        `db:"min_gw_diversity"`
+	GwsPrivate             bool       `db:"gws_private"`
 }
 
 // CreateServiceProfile creates the given service-profile.
@@ -95,8 +96,9 @@ func CreateServiceProfile(ctx context.Context, db sqlx.Execer, sp *ServiceProfil
 			ra_allowed,
 			nwk_geo_loc,
 			target_per,
-			min_gw_diversity
-		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
+			min_gw_diversity,
+			gws_private
+		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)`,
 		sp.CreatedAt,
 		sp.UpdatedAt,
 		sp.ID,
@@ -119,6 +121,7 @@ func CreateServiceProfile(ctx context.Context, db sqlx.Execer, sp *ServiceProfil
 		sp.NwkGeoLoc,
 		sp.TargetPER,
 		sp.MinGWDiversity,
+		sp.GwsPrivate,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -255,7 +258,8 @@ func UpdateServiceProfile(ctx context.Context, db sqlx.Execer, sp *ServiceProfil
 			ra_allowed = $18,
 			nwk_geo_loc = $19,
 			target_per = $20,
-			min_gw_diversity = $21
+			min_gw_diversity = $21,
+			gws_private = $22
 		where
 			service_profile_id = $1`,
 		sp.ID,
@@ -279,6 +283,7 @@ func UpdateServiceProfile(ctx context.Context, db sqlx.Execer, sp *ServiceProfil
 		sp.NwkGeoLoc,
 		sp.TargetPER,
 		sp.MinGWDiversity,
+		sp.GwsPrivate,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")

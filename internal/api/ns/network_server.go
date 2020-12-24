@@ -71,6 +71,7 @@ func (n *NetworkServerAPI) CreateServiceProfile(ctx context.Context, req *ns.Cre
 		NwkGeoLoc:              req.ServiceProfile.NwkGeoLoc,
 		TargetPER:              int(req.ServiceProfile.TargetPer),
 		MinGWDiversity:         int(req.ServiceProfile.MinGwDiversity),
+		GwsPrivate:             req.ServiceProfile.GwsPrivate,
 	}
 
 	switch req.ServiceProfile.UlRatePolicy {
@@ -126,6 +127,7 @@ func (n *NetworkServerAPI) GetServiceProfile(ctx context.Context, req *ns.GetSer
 			NwkGeoLoc:              sp.NwkGeoLoc,
 			TargetPer:              uint32(sp.TargetPER),
 			MinGwDiversity:         uint32(sp.MinGWDiversity),
+			GwsPrivate:             sp.GwsPrivate,
 		},
 	}
 
@@ -187,6 +189,7 @@ func (n *NetworkServerAPI) UpdateServiceProfile(ctx context.Context, req *ns.Upd
 	sp.NwkGeoLoc = req.ServiceProfile.NwkGeoLoc
 	sp.TargetPER = int(req.ServiceProfile.TargetPer)
 	sp.MinGWDiversity = int(req.ServiceProfile.MinGwDiversity)
+	sp.GwsPrivate = req.ServiceProfile.GwsPrivate
 
 	switch req.ServiceProfile.UlRatePolicy {
 	case ns.RatePolicy_MARK:
@@ -842,6 +845,13 @@ func (n *NetworkServerAPI) CreateGateway(ctx context.Context, req *ns.CreateGate
 		gw.GatewayProfileID = &gpID
 	}
 
+	// Service-profile ID.
+	if b := req.Gateway.ServiceProfileId; len(b) != 0 {
+		var spID uuid.UUID
+		copy(spID[:], b)
+		gw.ServiceProfileID = &spID
+	}
+
 	// Routing Profile ID.
 	copy(gw.RoutingProfileID[:], req.Gateway.RoutingProfileId)
 
@@ -905,6 +915,10 @@ func (n *NetworkServerAPI) GetGateway(ctx context.Context, req *ns.GetGatewayReq
 		resp.Gateway.GatewayProfileId = gw.GatewayProfileID.Bytes()
 	}
 
+	if gw.ServiceProfileID != nil {
+		resp.Gateway.ServiceProfileId = gw.ServiceProfileID.Bytes()
+	}
+
 	if gw.FirstSeenAt != nil {
 		resp.FirstSeenAt, _ = ptypes.TimestampProto(*gw.FirstSeenAt)
 	}
@@ -959,6 +973,15 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 		gw.GatewayProfileID = nil
 	}
 
+	// Service-profile ID.
+	if b := req.Gateway.ServiceProfileId; len(b) != 0 {
+		var spID uuid.UUID
+		copy(spID[:], b)
+		gw.ServiceProfileID = &spID
+	} else {
+		gw.ServiceProfileID = nil
+	}
+
 	gw.Location = storage.GPSPoint{
 		Latitude:  req.Gateway.Location.Latitude,
 		Longitude: req.Gateway.Location.Longitude,
@@ -984,10 +1007,6 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 		gw.Boards = append(gw.Boards, gwBoard)
 	}
 
-	if err = storage.FlushGatewayCache(ctx, gw.GatewayID); err != nil {
-		return nil, errToRPCError(err)
-	}
-
 	err = storage.Transaction(func(tx sqlx.Ext) error {
 		if err = storage.UpdateGateway(ctx, tx, &gw); err != nil {
 			return errToRPCError(err)
@@ -1005,10 +1024,6 @@ func (n *NetworkServerAPI) UpdateGateway(ctx context.Context, req *ns.UpdateGate
 func (n *NetworkServerAPI) DeleteGateway(ctx context.Context, req *ns.DeleteGatewayRequest) (*empty.Empty, error) {
 	var id lorawan.EUI64
 	copy(id[:], req.Id)
-
-	if err := storage.FlushGatewayCache(ctx, id); err != nil {
-		return nil, errToRPCError(err)
-	}
 
 	if err := storage.DeleteGateway(ctx, storage.DB(), id); err != nil {
 		return nil, errToRPCError(err)

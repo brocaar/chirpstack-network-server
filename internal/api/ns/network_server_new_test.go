@@ -830,6 +830,9 @@ func (ts *NetworkServerAPITestSuite) TestGateway() {
 	}
 	assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp))
 
+	sp := storage.ServiceProfile{}
+	assert.NoError(storage.CreateServiceProfile(context.Background(), storage.DB(), &sp))
+
 	ts.T().Run("Create", func(t *testing.T) {
 		assert := require.New(t)
 
@@ -837,6 +840,7 @@ func (ts *NetworkServerAPITestSuite) TestGateway() {
 			Gateway: &ns.Gateway{
 				Id:               []byte{1, 2, 3, 4, 5, 6, 7, 8},
 				RoutingProfileId: rp.ID[:],
+				ServiceProfileId: sp.ID[:],
 				Location: &common.Location{
 					Latitude:  1.1234,
 					Longitude: 1.1235,
@@ -872,10 +876,14 @@ func (ts *NetworkServerAPITestSuite) TestGateway() {
 		t.Run("Update", func(t *testing.T) {
 			assert := require.New(t)
 
+			newSP := storage.ServiceProfile{}
+			assert.NoError(storage.CreateServiceProfile(context.Background(), storage.DB(), &newSP))
+
 			req := ns.UpdateGatewayRequest{
 				Gateway: &ns.Gateway{
 					Id:               []byte{1, 2, 3, 4, 5, 6, 7, 8},
 					RoutingProfileId: rp.ID[:],
+					ServiceProfileId: newSP.ID[:],
 					Location: &common.Location{
 						Latitude:  1.1235,
 						Longitude: 1.1236,

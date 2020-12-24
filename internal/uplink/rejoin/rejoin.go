@@ -35,6 +35,7 @@ var tasks = []func(*rejoinContext) error{
 	logRejoinRequestFramesCollected,
 	getDeviceAndProfiles,
 	abortOnDeviceIsDisabled,
+	filterRxInfoByServiceProfile,
 	forRejoinType([]lorawan.JoinType{lorawan.RejoinRequestType0, lorawan.RejoinRequestType2},
 		getDeviceSession,
 		validateRejoinCounter0,
@@ -215,6 +216,22 @@ func abortOnDeviceIsDisabled(ctx *rejoinContext) error {
 	if ctx.Device.IsDisabled {
 		return ErrAbort
 	}
+	return nil
+}
+
+func filterRxInfoByServiceProfile(ctx *rejoinContext) error {
+	err := helpers.FilterRxInfoByServiceProfileID(ctx.Device.ServiceProfileID, &ctx.RXPacket)
+	if err != nil {
+		if err == helpers.ErrNoElements {
+			log.WithFields(log.Fields{
+				"dev_eui": ctx.DeviceSession.DevEUI,
+				"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+			}).Warning("uplink/rejoin: none of the receiving gateways are public or have the same service-profile")
+			return ErrAbort
+		}
+		return err
+	}
+
 	return nil
 }
 

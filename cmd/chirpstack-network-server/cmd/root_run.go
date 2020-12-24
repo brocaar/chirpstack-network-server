@@ -76,7 +76,6 @@ func run(cmd *cobra.Command, args []string) error {
 		setupUplink,
 		setupDownlink,
 		fixV2RedisCache,
-		flushGatewayCache,
 		migrateToClusterKeys,
 		setupNetworkServerAPI,
 		setupRoaming,
@@ -381,12 +380,6 @@ func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCer
 func fixV2RedisCache() error {
 	return code.Migrate("v1_to_v2_flush_profiles_cache", func(db sqlx.Ext) error {
 		return code.FlushProfilesCache(db)
-	})
-}
-
-func flushGatewayCache() error {
-	return code.Migrate("stats_migration_flush_gw_cache", func(db sqlx.Ext) error {
-		return code.FlushGatewayCache(db)
 	})
 }
 

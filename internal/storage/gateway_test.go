@@ -17,6 +17,11 @@ func (ts *StorageTestSuite) TestGateway() {
 	}
 	assert.NoError(CreateRoutingProfile(context.Background(), ts.Tx(), &rp))
 
+	sp := ServiceProfile{
+		GwsPrivate: true,
+	}
+	assert.NoError(CreateServiceProfile(context.Background(), ts.Tx(), &sp))
+
 	ts.T().Run("Create", func(t *testing.T) {
 		assert := require.New(t)
 
@@ -26,6 +31,7 @@ func (ts *StorageTestSuite) TestGateway() {
 		gw := Gateway{
 			GatewayID:        lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
 			RoutingProfileID: rp.ID,
+			ServiceProfileID: &sp.ID,
 			Location: GPSPoint{
 				Latitude:  1.123,
 				Longitude: 2.123,
@@ -57,17 +63,40 @@ func (ts *StorageTestSuite) TestGateway() {
 			assert.Equal(gw, gwGet)
 		})
 
+		t.Run("GetMeta", func(t *testing.T) {
+			assert := require.New(t)
+
+			gwGet, err := GetGatewayMeta(context.Background(), ts.Tx(), gw.GatewayID)
+			assert.NoError(err)
+			assert.Equal(GatewayMeta{
+				GatewayID:        gw.GatewayID,
+				Location:         gw.Location,
+				Altitude:         gw.Altitude,
+				RoutingProfileID: rp.ID,
+				ServiceProfileID: &sp.ID,
+				IsPrivate:        true,
+				Boards: []GatewayBoard{
+					{
+						FPGAID: &fpgaID,
+					},
+					{
+						FineTimestampKey: &aesKey,
+					},
+				},
+			}, gwGet)
+		})
+
 		t.Run("Test cache", func(t *testing.T) {
-			gwGet, err := GetAndCacheGateway(context.Background(), ts.Tx(), gw.GatewayID)
+			gwGet, err := GetAndCacheGatewayMeta(context.Background(), ts.Tx(), gw.GatewayID)
 			assert.NoError(err)
 			assert.Equal(gw.GatewayID, gwGet.GatewayID)
 
-			gwGet, err = GetGatewayCache(context.Background(), gw.GatewayID)
+			gwGet, err = GetGatewayMetaCache(context.Background(), gw.GatewayID)
 			assert.NoError(err)
 			assert.Equal(gw.GatewayID, gwGet.GatewayID)
 
-			assert.NoError(FlushGatewayCache(context.Background(), gw.GatewayID))
-			_, err = GetGatewayCache(context.Background(), gw.GatewayID)
+			assert.NoError(FlushGatewayMetaCache(context.Background(), gw.GatewayID))
+			_, err = GetGatewayMetaCache(context.Background(), gw.GatewayID)
 			assert.Equal(ErrDoesNotExist, err)
 		})
 
@@ -81,6 +110,7 @@ func (ts *StorageTestSuite) TestGateway() {
 			assert.NoError(CreateGatewayProfile(context.Background(), ts.Tx(), &gp))
 
 			gw.GatewayProfileID = &gp.ID
+			gw.ServiceProfileID = nil
 			gw.FirstSeenAt = &now
 			gw.LastSeenAt = &now
 			gw.Location = GPSPoint{
@@ -113,6 +143,20 @@ func (ts *StorageTestSuite) TestGateway() {
 			gwGet.LastSeenAt = &now
 
 			assert.Equal(gw, gwGet)
+		})
+
+		t.Run("UpdateState", func(t *testing.T) {
+			assert := require.New(t)
+
+			assert.NoError(UpdateGatewayState(context.Background(), ts.Tx(), gw.GatewayID, 1.111, 2.222, 3.333))
+			gwGet, err := GetGateway(context.Background(), ts.Tx(), gw.GatewayID)
+			assert.NoError(err)
+
+			assert.Equal(GPSPoint{
+				Latitude:  1.111,
+				Longitude: 2.222,
+			}, gwGet.Location)
+			assert.Equal(3.333, gwGet.Altitude)
 		})
 
 		t.Run("Delete", func(t *testing.T) {

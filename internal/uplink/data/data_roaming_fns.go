@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-network-server/internal/band"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/models"
 	"github.com/brocaar/chirpstack-network-server/internal/roaming"
@@ -35,14 +36,34 @@ func HandleRoamingFNS(ctx context.Context, rxPacket models.RXPacket, macPL *lora
 	}
 
 	for _, f := range []func() error{
+		cctx.filterRxInfoByPublicOnly,
 		cctx.getPassiveRoamingDeviceSessions,
 		cctx.startPassiveRoamingSessions,
 		cctx.forwardUplinkMessageForSessions,
 		cctx.saveSessions,
 	} {
 		if err := f(); err != nil {
+			if err == ErrAbort {
+				return nil
+			}
+
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (ctx *roamingDataContext) filterRxInfoByPublicOnly() error {
+	err := helpers.FilterRxInfoByPublicOnly(&ctx.rxPacket)
+	if err != nil {
+		if err == helpers.ErrNoElements {
+			log.WithFields(log.Fields{
+				"ctx_id": ctx.ctx.Value(logging.ContextIDKey),
+			}).Warning("uplink/data: none of the receiving gateways are public")
+			return ErrAbort
+		}
+		return err
 	}
 
 	return nil
