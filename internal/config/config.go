@@ -112,6 +112,8 @@ type Config struct {
 			CAKey              string        `mapstructure:"ca_key"`
 			ClientCertLifetime time.Duration `mapstructure:"client_cert_lifetime"`
 
+			ForceGwsPrivate bool `mapstructure:"force_gws_private"`
+
 			Backend struct {
 				Type                 string `mapstructure:"type"`
 				MultiDownlinkFeature string `mapstructure:"multi_downlink_feature"`
@@ -279,3 +281,8 @@ var ClassBEnqueueMargin = time.Second * 5
 // MulticastClassCInterval defines the interval between the gateway scheduling
 // for Class-C multicast.
 var MulticastClassCInterval = time.Second
+
+// Get returns the configuration.
+func Get() *Config {
+	return &C
+}

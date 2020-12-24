@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
 	"github.com/brocaar/chirpstack-network-server/internal/models"
 	"github.com/brocaar/lorawan"
 	"github.com/gofrs/uuid"
@@ -12,10 +13,11 @@ import (
 
 func TestFilterRxInfoByPublicOnly(t *testing.T) {
 	tests := []struct {
-		name          string
-		in            models.RXPacket
-		expected      models.RXPacket
-		expectedError error
+		name            string
+		forceGwsPrivate bool
+		in              models.RXPacket
+		expected        models.RXPacket
+		expectedError   error
 	}{
 		{
 			name: "one public gateway",
@@ -80,10 +82,28 @@ func TestFilterRxInfoByPublicOnly(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:            "one public gateway with gws forced to private",
+			forceGwsPrivate: true,
+			in: models.RXPacket{
+				RXInfoSet: []*gw.UplinkRXInfo{
+					{
+						GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+					},
+				},
+				GatewayIsPrivate: map[lorawan.EUI64]bool{
+					lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}: false,
+				},
+			},
+			expectedError: ErrNoElements,
+		},
 	}
 
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
+			conf := config.Get()
+			conf.NetworkServer.Gateway.ForceGwsPrivate = tst.forceGwsPrivate
+
 			assert := require.New(t)
 			err := FilterRxInfoByPublicOnly(&tst.in)
 			assert.Equal(tst.expectedError, err)
@@ -102,6 +122,7 @@ func TestFilterRxInfoByServiceProfileID(t *testing.T) {
 
 	tests := []struct {
 		name             string
+		forceGwsPrivate  bool
 		serviceProfileID uuid.UUID
 		in               models.RXPacket
 		expected         models.RXPacket
@@ -130,6 +151,22 @@ func TestFilterRxInfoByServiceProfileID(t *testing.T) {
 					lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}: false,
 				},
 			},
+		},
+		{
+			name:             "one public gateway - gws forced to private",
+			forceGwsPrivate:  true,
+			serviceProfileID: serviceProfileID1,
+			in: models.RXPacket{
+				RXInfoSet: []*gw.UplinkRXInfo{
+					{
+						GatewayId: []byte{1, 2, 3, 4, 5, 6, 7, 8},
+					},
+				},
+				GatewayIsPrivate: map[lorawan.EUI64]bool{
+					lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}: false,
+				},
+			},
+			expectedError: ErrNoElements,
 		},
 		{
 			name:             "one private gateway, not matching service-profile id",
@@ -216,6 +253,9 @@ func TestFilterRxInfoByServiceProfileID(t *testing.T) {
 
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
+			conf := config.Get()
+			conf.NetworkServer.Gateway.ForceGwsPrivate = tst.forceGwsPrivate
+
 			assert := require.New(t)
 			err := FilterRxInfoByServiceProfileID(tst.serviceProfileID, &tst.in)
 			assert.Equal(tst.expectedError, err)

@@ -476,6 +476,14 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # This defines how long (after generating) the certificate remains valid.
   client_cert_lifetime="{{ .NetworkServer.Gateway.ClientCertLifetime }}"
 
+  # Force gateways as private.
+  #
+  # This overrides the behavior of the gws_private flag in the service-profile
+  # when this setting is set to true. When set to true, the gateway and device
+  # must be under the same service-profile (thus a gateway-profile must be
+  # assigned to the gateway).
+  force_gws_private={{ .NetworkServer.Gateway.ForceGwsPrivate }}
+
 
   # Backend defines the gateway backend settings.
   #
