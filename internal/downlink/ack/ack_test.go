@@ -121,6 +121,7 @@ func TestDownlinkAck(t *testing.T) {
 			HandleTxAckRequest: &as.HandleTxAckRequest{
 				DevEui: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 				FCnt:   10,
+				TxInfo: &txInfo1,
 			},
 		},
 		{
@@ -241,6 +242,7 @@ func TestDownlinkAck(t *testing.T) {
 			HandleTxAckRequest: &as.HandleTxAckRequest{
 				DevEui: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 				FCnt:   10,
+				TxInfo: &txInfo1,
 			},
 		},
 		{
@@ -320,6 +322,7 @@ func TestDownlinkAck(t *testing.T) {
 			HandleTxAckRequest: &as.HandleTxAckRequest{
 				DevEui: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 				FCnt:   10,
+				TxInfo: &txInfo1,
 			},
 		},
 		{
@@ -366,6 +369,7 @@ func TestDownlinkAck(t *testing.T) {
 			HandleTxAckRequest: &as.HandleTxAckRequest{
 				DevEui: []byte{1, 2, 3, 4, 5, 6, 7, 8},
 				FCnt:   10,
+				TxInfo: &txInfo2,
 			},
 		},
 		{
