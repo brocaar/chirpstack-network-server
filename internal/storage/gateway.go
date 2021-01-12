@@ -194,6 +194,38 @@ func FlushGatewayMetaCache(ctx context.Context, gatewayID lorawan.EUI64) error {
 	return nil
 }
 
+// FlushGatewayMetaCacheForServiceProfile flushes the gateway meta-cache for
+// gateways using the given service-profile ID.
+func FlushGatewayMetaCacheForServiceProfile(ctx context.Context, db sqlx.Queryer, serviceProfileID uuid.UUID) error {
+	var gwIDs []lorawan.EUI64
+
+	err := sqlx.Select(db, &gwIDs, `
+		select
+			g.gateway_id
+		from
+			gateway g
+		where
+			g.service_profile_id = $1`,
+		serviceProfileID,
+	)
+	if err != nil {
+		return handlePSQLError(err, "select error")
+	}
+
+	for _, gwID := range gwIDs {
+		if err := FlushGatewayMetaCache(ctx, gwID); err != nil {
+			return errors.Wrap(err, "flush gateway meta cache error")
+		}
+	}
+
+	log.WithFields(log.Fields{
+		"ctx_id":             ctx.Value(logging.ContextIDKey),
+		"service_profile_id": serviceProfileID,
+	}).Info("storage: gateway meta cache flushed for service-profile id")
+
+	return nil
+}
+
 // GetAndCacheGatewayMeta returns a gateway meta from the cache in case it is available.
 // In case the gateway meta is not cached, it will be retrieved from the database
 // and then cached.

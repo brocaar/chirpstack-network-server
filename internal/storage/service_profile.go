@@ -185,6 +185,13 @@ func FlushServiceProfileCache(ctx context.Context, id uuid.UUID) error {
 	if err != nil {
 		return errors.Wrap(err, "delete error")
 	}
+
+	// As the gateway meta cache is joining the service-profile, this cache
+	// must also be flushed.
+	if err := FlushGatewayMetaCacheForServiceProfile(ctx, DB(), id); err != nil {
+		return errors.Wrap(err, "flush gateway meta cache for service-profile id error")
+	}
+
 	return nil
 }
 
