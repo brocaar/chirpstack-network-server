@@ -88,11 +88,11 @@ func Handle(ctx context.Context, rxPacket models.RXPacket) error {
 
 	for _, f := range []func() error{
 		jctx.setContextFromJoinRequestPHYPayload,
-		jctx.logJoinRequestFramesCollected,
 		jctx.getDeviceOrTryRoaming,
 		jctx.getDeviceProfile,
 		jctx.getServiceProfile,
 		jctx.filterRxInfoByServiceProfile,
+		jctx.logJoinRequestFramesCollected,
 		jctx.abortOnDeviceIsDisabled,
 		jctx.validateNonce,
 		jctx.getRandomDevAddr,
