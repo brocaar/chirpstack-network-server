@@ -45,6 +45,7 @@ type DeviceProfile struct {
 	SupportsJoin       bool      `db:"supports_join"`
 	RFRegion           string    `db:"rf_region"`
 	Supports32bitFCnt  bool      `db:"supports_32bit_fcnt"`
+	ADRAlgorithmID     string    `db:"adr_algorithm_id"`
 }
 
 // CreateDeviceProfile creates the given device-profile.
@@ -86,8 +87,9 @@ func CreateDeviceProfile(ctx context.Context, db sqlx.Execer, dp *DeviceProfile)
             max_duty_cycle,
             supports_join,
             rf_region,
-            supports_32bit_fcnt
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)`,
+            supports_32bit_fcnt,
+			adr_algorithm_id
+        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)`,
 		dp.CreatedAt,
 		dp.UpdatedAt,
 		dp.ID,
@@ -110,6 +112,7 @@ func CreateDeviceProfile(ctx context.Context, db sqlx.Execer, dp *DeviceProfile)
 		dp.SupportsJoin,
 		dp.RFRegion,
 		dp.Supports32bitFCnt,
+		dp.ADRAlgorithmID,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -233,7 +236,8 @@ func GetDeviceProfile(ctx context.Context, db sqlx.Queryer, id uuid.UUID) (Devic
             max_duty_cycle,
             supports_join,
             rf_region,
-            supports_32bit_fcnt
+            supports_32bit_fcnt,
+			adr_algorithm_id
         from device_profile
         where
             device_profile_id = $1
@@ -264,6 +268,7 @@ func GetDeviceProfile(ctx context.Context, db sqlx.Queryer, id uuid.UUID) (Devic
 		&dp.SupportsJoin,
 		&dp.RFRegion,
 		&dp.Supports32bitFCnt,
+		&dp.ADRAlgorithmID,
 	)
 	if err != nil {
 		return dp, handlePSQLError(err, "select error")
@@ -302,7 +307,8 @@ func UpdateDeviceProfile(ctx context.Context, db sqlx.Execer, dp *DeviceProfile)
             max_duty_cycle = $18,
             supports_join = $19,
             rf_region = $20,
-            supports_32bit_fcnt = $21
+            supports_32bit_fcnt = $21,
+			adr_algorithm_id = $22
         where
             device_profile_id = $1`,
 		dp.ID,
@@ -326,6 +332,7 @@ func UpdateDeviceProfile(ctx context.Context, db sqlx.Execer, dp *DeviceProfile)
 		dp.SupportsJoin,
 		dp.RFRegion,
 		dp.Supports32bitFCnt,
+		dp.ADRAlgorithmID,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")

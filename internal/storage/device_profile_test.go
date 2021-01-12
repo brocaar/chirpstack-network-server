@@ -43,6 +43,7 @@ func TestDeviceProfile(t *testing.T) {
 				SupportsJoin:       true,
 				RFRegion:           "EU868",
 				Supports32bitFCnt:  true,
+				ADRAlgorithmID:     "default",
 			}
 
 			So(CreateDeviceProfile(context.Background(), DB(), &dp), ShouldBeNil)
@@ -104,6 +105,7 @@ func TestDeviceProfile(t *testing.T) {
 				dp.SupportsJoin = false
 				dp.RFRegion = "US902"
 				dp.Supports32bitFCnt = false
+				dp.ADRAlgorithmID = "new_algorithm"
 
 				So(UpdateDeviceProfile(context.Background(), DB(), &dp), ShouldBeNil)
 				dp.UpdatedAt = dp.UpdatedAt.UTC().Truncate(time.Millisecond)

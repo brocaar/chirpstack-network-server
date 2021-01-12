@@ -53,20 +53,21 @@ type Config struct {
 		} `mapstructure:"band"`
 
 		NetworkSettings struct {
-			InstallationMargin      float64 `mapstructure:"installation_margin"`
-			RXWindow                int     `mapstructure:"rx_window"`
-			RX1Delay                int     `mapstructure:"rx1_delay"`
-			RX1DROffset             int     `mapstructure:"rx1_dr_offset"`
-			RX2DR                   int     `mapstructure:"rx2_dr"`
-			RX2Frequency            int     `mapstructure:"rx2_frequency"`
-			RX2PreferOnRX1DRLt      int     `mapstructure:"rx2_prefer_on_rx1_dr_lt"`
-			RX2PreferOnLinkBudget   bool    `mapstructure:"rx2_prefer_on_link_budget"`
-			GatewayPreferMinMargin  float64 `mapstructure:"gateway_prefer_min_margin"`
-			DownlinkTXPower         int     `mapstructure:"downlink_tx_power"`
-			EnabledUplinkChannels   []int   `mapstructure:"enabled_uplink_channels"`
-			DisableMACCommands      bool    `mapstructure:"disable_mac_commands"`
-			DisableADR              bool    `mapstructure:"disable_adr"`
-			MaxMACCommandErrorCount int     `mapstructure:"max_mac_command_error_count"`
+			InstallationMargin      float64  `mapstructure:"installation_margin"`
+			RXWindow                int      `mapstructure:"rx_window"`
+			RX1Delay                int      `mapstructure:"rx1_delay"`
+			RX1DROffset             int      `mapstructure:"rx1_dr_offset"`
+			RX2DR                   int      `mapstructure:"rx2_dr"`
+			RX2Frequency            int      `mapstructure:"rx2_frequency"`
+			RX2PreferOnRX1DRLt      int      `mapstructure:"rx2_prefer_on_rx1_dr_lt"`
+			RX2PreferOnLinkBudget   bool     `mapstructure:"rx2_prefer_on_link_budget"`
+			GatewayPreferMinMargin  float64  `mapstructure:"gateway_prefer_min_margin"`
+			DownlinkTXPower         int      `mapstructure:"downlink_tx_power"`
+			EnabledUplinkChannels   []int    `mapstructure:"enabled_uplink_channels"`
+			DisableMACCommands      bool     `mapstructure:"disable_mac_commands"`
+			DisableADR              bool     `mapstructure:"disable_adr"`
+			MaxMACCommandErrorCount int      `mapstructure:"max_mac_command_error_count"`
+			ADRPlugins              []string `mapstructure:"adr_plugins"`
 
 			ExtraChannels []struct {
 				Frequency int `mapstructure:"frequency"`

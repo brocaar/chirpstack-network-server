@@ -24,3 +24,6 @@ coverage.out
 /build/
 /internal/migrations/migrations_gen.go
 /docs/public/
+
+# examples
+/examples/adr-plugin/adr-plugin

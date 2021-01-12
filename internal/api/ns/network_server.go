@@ -14,6 +14,7 @@ import (
 
 	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/ns"
+	"github.com/brocaar/chirpstack-network-server/internal/adr"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 	"github.com/brocaar/chirpstack-network-server/internal/downlink/data/classb"
@@ -370,6 +371,7 @@ func (n *NetworkServerAPI) CreateDeviceProfile(ctx context.Context, req *ns.Crea
 		SupportsJoin:       req.DeviceProfile.SupportsJoin,
 		Supports32bitFCnt:  req.DeviceProfile.Supports_32BitFCnt,
 		RFRegion:           band.Band().Name(),
+		ADRAlgorithmID:     req.DeviceProfile.AdrAlgorithmId,
 	}
 
 	if err := storage.CreateDeviceProfile(ctx, storage.DB(), &dp); err != nil {
@@ -418,6 +420,7 @@ func (n *NetworkServerAPI) GetDeviceProfile(ctx context.Context, req *ns.GetDevi
 			SupportsJoin:       dp.SupportsJoin,
 			RfRegion:           string(dp.RFRegion),
 			Supports_32BitFCnt: dp.Supports32bitFCnt,
+			AdrAlgorithmId:     dp.ADRAlgorithmID,
 		},
 	}
 
@@ -473,6 +476,7 @@ func (n *NetworkServerAPI) UpdateDeviceProfile(ctx context.Context, req *ns.Upda
 	dp.SupportsJoin = req.DeviceProfile.SupportsJoin
 	dp.Supports32bitFCnt = req.DeviceProfile.Supports_32BitFCnt
 	dp.RFRegion = band.Band().Name()
+	dp.ADRAlgorithmID = req.DeviceProfile.AdrAlgorithmId
 
 	if err := storage.FlushDeviceProfileCache(ctx, dp.ID); err != nil {
 		return nil, errToRPCError(err)
@@ -1790,4 +1794,18 @@ func (n *NetworkServerAPI) GetVersion(ctx context.Context, req *empty.Empty) (*n
 		Region:  region,
 		Version: config.Version,
 	}, nil
+}
+
+// GetADRAlgorithms returns the available ADR algorithms.
+func (n *NetworkServerAPI) GetADRAlgorithms(ctx context.Context, req *empty.Empty) (*ns.GetADRAlgorithmsResponse, error) {
+	var resp ns.GetADRAlgorithmsResponse
+
+	for k, v := range adr.GetADRAlgorithms() {
+		resp.AdrAlgorithms = append(resp.AdrAlgorithms, &ns.ADRAlgorithm{
+			Id:   k,
+			Name: v,
+		})
+	}
+
+	return &resp, nil
 }

@@ -341,6 +341,13 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # enabled_uplink_channels=[8, 9, 10, 11, 12, 13, 14, 15, 65]
   enabled_uplink_channels=[{{ range $index, $element := .NetworkServer.NetworkSettings.EnabledUplinkChannels }}{{ if $index }}, {{ end }}{{ $element }}{{ end }}]
 
+  # ADR plugins.
+  #
+  # By default, the 'default' ADR algorithm is available. The number of available
+  # ADR algorithms can be extended through plugins. This setting can be configured
+  # to a list of one or multiple plugins.
+  adr_plugins=[]
+
 
   # Extra channel configuration.
   #

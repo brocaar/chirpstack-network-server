@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"fmt"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -12,6 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
+	adrr "github.com/brocaar/chirpstack-network-server/adr"
 	"github.com/brocaar/chirpstack-network-server/internal/adr"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
@@ -982,25 +984,120 @@ func requestChannelMaskReconfiguration(ctx *dataContext) error {
 }
 
 func requestADRChange(ctx *dataContext) error {
-	var linkADRReq *storage.MACCommandBlock
-	for i := range ctx.MACCommands {
-		if ctx.MACCommands[i].CID == lorawan.LinkADRReq {
-			linkADRReq = &ctx.MACCommands[i]
+	conf := config.Get()
+
+	var maxTxPowerIndex int
+	var requiredSNRforDR float32
+	var uplinkHistory []adrr.UplinkMetaData
+
+	// maxTxPowerIndex
+	for i := 0; ; i++ {
+		offset, err := band.Band().GetTXPowerOffset(i)
+		if err != nil {
+			break
+		}
+		if offset != 0 {
+			maxTxPowerIndex = i
 		}
 	}
 
-	blocks, err := adr.HandleADR(ctx.ctx, ctx.ServiceProfile, ctx.DeviceSession, linkADRReq)
+	// requiredSNRforDR
+	dr, err := band.Band().GetDataRate(ctx.DeviceSession.DR)
 	if err != nil {
-		log.WithError(err).WithFields(log.Fields{
-			"dev_eui": ctx.DeviceSession.DevEUI,
-			"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
-		}).Warning("handle adr error")
-		return nil
+		return errors.Wrap(err, "get data-rate error")
+	}
+	requiredSNRforDR = float32(config.SpreadFactorToRequiredSNRTable[dr.SpreadFactor])
+
+	// uplink history
+	for _, uh := range ctx.DeviceSession.UplinkHistory {
+		uplinkHistory = append(uplinkHistory, adrr.UplinkMetaData{
+			FCnt:         uh.FCnt,
+			MaxSNR:       float32(uh.MaxSNR),
+			TXPowerIndex: uh.TXPowerIndex,
+			GatewayCount: uh.GatewayCount,
+		})
 	}
 
-	if linkADRReq == nil {
-		ctx.MACCommands = append(ctx.MACCommands, blocks...)
+	handleReq := adrr.HandleRequest{
+		DevEUI:             ctx.DeviceSession.DevEUI,
+		ADR:                ctx.DeviceSession.ADR,
+		DR:                 ctx.DeviceSession.DR,
+		TxPowerIndex:       ctx.DeviceSession.TXPowerIndex,
+		NbTrans:            int(ctx.DeviceSession.NbTrans),
+		MaxTxPowerIndex:    maxTxPowerIndex,
+		RequiredSNRForDR:   requiredSNRforDR,
+		InstallationMargin: float32(conf.NetworkServer.NetworkSettings.InstallationMargin),
+		MinDR:              ctx.ServiceProfile.DRMin,
+		MaxDR:              ctx.ServiceProfile.DRMax,
+		UplinkHistory:      uplinkHistory,
 	}
+
+	handler := adr.GetHandler(ctx.DeviceProfile.ADRAlgorithmID)
+	handleResp, err := handler.Handle(handleReq)
+	if err != nil {
+		return errors.Wrap(err, "handle adr error")
+	}
+
+	// The response values are different than the request values, thus we must
+	// send a LinkADRReq to the device.
+	if handleResp.DR != handleReq.DR || handleResp.TxPowerIndex != handleReq.TxPowerIndex || handleResp.NbTrans != handleReq.NbTrans {
+		var linkADRReq *storage.MACCommandBlock
+		for i := range ctx.MACCommands {
+			if ctx.MACCommands[i].CID == lorawan.LinkADRReq {
+				linkADRReq = &ctx.MACCommands[i]
+			}
+		}
+
+		if linkADRReq != nil {
+			// There is already a pending LinkADRReq. Note that the LinkADRReq is also
+			// used for setting the channel-mask. Set ADR parameters to the last
+			// mac-command in the block.
+
+			lastMAC := linkADRReq.MACCommands[len(linkADRReq.MACCommands)-1]
+			lastMACPl, ok := lastMAC.Payload.(*lorawan.LinkADRReqPayload)
+			if !ok {
+				return fmt.Errorf("expected *lorawan.LinkADRReqPayload, got: %T", lastMAC.Payload)
+			}
+
+			lastMACPl.DataRate = uint8(handleResp.DR)
+			lastMACPl.TXPower = uint8(handleResp.TxPowerIndex)
+			lastMACPl.Redundancy.NbRep = uint8(handleResp.NbTrans)
+		} else {
+			var chMask lorawan.ChMask
+			chMaskCntl := -1
+			for _, c := range ctx.DeviceSession.EnabledUplinkChannels {
+				if chMaskCntl != c/16 {
+					if chMaskCntl == -1 {
+						// set the chMaskCntl
+						chMaskCntl = c / 16
+					} else {
+						// break the loop as we only need to send one block of channels
+						break
+					}
+				}
+				chMask[c%16] = true
+			}
+
+			ctx.MACCommands = append(ctx.MACCommands, storage.MACCommandBlock{
+				CID: lorawan.LinkADRReq,
+				MACCommands: []lorawan.MACCommand{
+					{
+						CID: lorawan.LinkADRReq,
+						Payload: &lorawan.LinkADRReqPayload{
+							DataRate: uint8(handleResp.DR),
+							TXPower:  uint8(handleResp.TxPowerIndex),
+							ChMask:   chMask,
+							Redundancy: lorawan.Redundancy{
+								ChMaskCntl: uint8(chMaskCntl),
+								NbRep:      uint8(handleResp.NbTrans),
+							},
+						},
+					},
+				},
+			})
+		}
+	}
+
 	return nil
 }
 

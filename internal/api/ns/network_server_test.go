@@ -369,6 +369,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					MaxDutyCycle:       1,
 					SupportsJoin:       true,
 					Supports_32BitFCnt: true,
+					AdrAlgorithmId:     "default",
 				},
 			})
 			So(err, ShouldBeNil)
@@ -401,6 +402,7 @@ func TestNetworkServerAPI(t *testing.T) {
 					SupportsJoin:       true,
 					RfRegion:           "EU868", // set by the api
 					Supports_32BitFCnt: true,
+					AdrAlgorithmId:     "default",
 				})
 			})
 		})

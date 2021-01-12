@@ -1083,6 +1083,22 @@ func (ts *NetworkServerAPITestSuite) TestGateway() {
 	})
 }
 
+func (ts *NetworkServerAPITestSuite) TestADR() {
+	ts.T().Run("GetADRAlgorithms", func(t *testing.T) {
+		assert := require.New(t)
+		resp, err := ts.api.GetADRAlgorithms(context.Background(), nil)
+		assert.NoError(err)
+		assert.Equal(&ns.GetADRAlgorithmsResponse{
+			AdrAlgorithms: []*ns.ADRAlgorithm{
+				{
+					Id:   "default",
+					Name: "Default ADR algorithm",
+				},
+			},
+		}, resp)
+	})
+}
+
 func TestNetworkServerAPINew(t *testing.T) {
 	suite.Run(t, new(NetworkServerAPITestSuite))
 }
