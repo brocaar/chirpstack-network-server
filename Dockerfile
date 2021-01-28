@@ -18,4 +18,5 @@ FROM alpine:3.11.2 AS production
 
 RUN apk --no-cache add ca-certificates tzdata
 COPY --from=development /chirpstack-network-server/build/chirpstack-network-server /usr/bin/chirpstack-network-server
+USER nobody:nogroup
 ENTRYPOINT ["/usr/bin/chirpstack-network-server"]
