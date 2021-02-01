@@ -1019,7 +1019,10 @@ func requestADRChange(ctx *dataContext) error {
 	}
 
 	handleReq := adrr.HandleRequest{
+		Region:             band.Band().Name(),
 		DevEUI:             ctx.DeviceSession.DevEUI,
+		MACVersion:         ctx.DeviceSession.MACVersion,
+		RegParamsRevision:  ctx.DeviceProfile.RegParamsRevision,
 		ADR:                ctx.DeviceSession.ADR,
 		DR:                 ctx.DeviceSession.DR,
 		TxPowerIndex:       ctx.DeviceSession.TXPowerIndex,

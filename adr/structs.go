@@ -23,8 +23,17 @@ type Handler interface {
 
 // HandleRequest implements the ADR handle request.
 type HandleRequest struct {
+	// Region.
+	Region string
+
 	// DevEUI of the device.
 	DevEUI lorawan.EUI64
+
+	// MAC version of the device.
+	MACVersion string
+
+	// Regional parameter revision.
+	RegParamsRevision string
 
 	// ADR defines if the device has ADR enabled.
 	ADR bool
