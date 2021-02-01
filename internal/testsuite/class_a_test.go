@@ -2954,6 +2954,44 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 				}),
 			},
 		},
+		{
+			Name: "adr backoff triggered",
+			BeforeFunc: func(tst *ClassATest) error {
+				// before this uplink, it was DR5, ts.TXInfo is DR0.
+				tst.DeviceSession.DR = 5
+				tst.DeviceSession.TXPowerIndex = 3
+				tst.DeviceSession.UplinkHistory = []storage.UplinkHistory{
+					{FCnt: 9, MaxSNR: 3.3, TXPowerIndex: 3, GatewayCount: 1},
+				}
+				return nil
+			},
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+						FCtrl: lorawan.FCtrl{
+							ADR: true,
+						},
+					},
+				},
+				MIC: lorawan.MIC{187, 243, 244, 117},
+			},
+			Assert: []Assertion{
+				AssertDeviceSessionDR(0),
+				AssertDeviceSessionTXPowerIndex(0),
+				AssertDeviceSessionUplinkHistory([]storage.UplinkHistory{
+					{FCnt: 10, MaxSNR: 7, TXPowerIndex: 0, GatewayCount: 1},
+				}),
+			},
+		},
 	}
 
 	for _, tst := range tests {

@@ -234,6 +234,36 @@ func AssertDeviceSession(ds storage.DeviceSession) Assertion {
 	}
 }
 
+// AssertDeviceSessionDR asserts the given DR.
+func AssertDeviceSessionDR(dr int) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		sess, err := storage.GetDeviceSession(context.Background(), ts.Device.DevEUI)
+		assert.NoError(err)
+
+		assert.Equal(dr, sess.DR)
+	}
+}
+
+// AssertDeviceSessionTXPowerIndex asserts the given TX Power index.
+func AssertDeviceSessionTXPowerIndex(txPowerIndex int) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		sess, err := storage.GetDeviceSession(context.Background(), ts.Device.DevEUI)
+		assert.NoError(err)
+
+		assert.Equal(txPowerIndex, sess.TXPowerIndex)
+	}
+}
+
+// AssertDeviceSessionUplinkHistory asserts the given UplinkHistory.
+func AssertDeviceSessionUplinkHistory(uh []storage.UplinkHistory) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		sess, err := storage.GetDeviceSession(context.Background(), ts.Device.DevEUI)
+		assert.NoError(err)
+
+		assert.Equal(uh, sess.UplinkHistory)
+	}
+}
+
 // AssertDeviceActivation asserts the given device-activation.
 func AssertDeviceActivation(da storage.DeviceActivation) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {

@@ -250,10 +250,12 @@ func setADR(ctx *dataContext) error {
 func setUplinkDataRate(ctx *dataContext) error {
 	// The node changed its data-rate. Possibly the node did also reset its
 	// tx-power to max power. Because of this, we need to reset the tx-power
-	// at the network-server side too.
+	// and the uplink history at the network-server side too.
 	if ctx.DeviceSession.DR != ctx.RXPacket.DR {
 		ctx.DeviceSession.TXPowerIndex = 0
+		ctx.DeviceSession.UplinkHistory = []storage.UplinkHistory{}
 	}
+
 	ctx.DeviceSession.DR = ctx.RXPacket.DR
 
 	return nil
