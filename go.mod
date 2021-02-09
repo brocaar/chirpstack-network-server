@@ -1,6 +1,6 @@
 module github.com/brocaar/chirpstack-network-server
 
-go 1.14
+go 1.15
 
 require (
 	cloud.google.com/go v0.44.3
@@ -8,7 +8,7 @@ require (
 	github.com/Azure/azure-service-bus-go v0.9.1
 	github.com/NickBall/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5
 	github.com/brocaar/chirpstack-api/go/v3 v3.9.3
-	github.com/brocaar/lorawan v0.0.0-20201005112600-f8b6d95ca5b5
+	github.com/brocaar/lorawan v0.0.0-20201030140234-f23da2d4a303
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/go-redis/redis/v7 v7.4.0
