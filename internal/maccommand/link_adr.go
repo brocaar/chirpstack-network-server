@@ -53,6 +53,10 @@ func handleLinkADRAns(ctx context.Context, ds *storage.DeviceSession, block stor
 	adrReq := linkADRPayloads[len(linkADRPayloads)-1]
 
 	if channelMaskACK && dataRateACK && powerACK {
+		// The device acked all request (channel-mask, data-rate and power),
+		// in this case we update the device-session with all the requested
+		// modifcations.
+
 		// reset the error counter
 		delete(ds.MACCommandErrorCount, lorawan.LinkADRAns)
 
@@ -74,6 +78,39 @@ func handleLinkADRAns(ctx context.Context, ds *storage.DeviceSession, block stor
 			"enabled_channels": chans,
 			"ctx_id":           ctx.Value(logging.ContextIDKey),
 		}).Info("link_adr request acknowledged")
+
+	} else if !ds.ADR && channelMaskACK {
+		// In case the device has ADR disabled, at least it must acknowledge the
+		// channel-mask. It does not have to acknowledge the other parameters.
+		// See 4.3.1.1 of LoRaWAN 1.0.4 specs.
+
+		// reset the error counter
+		delete(ds.MACCommandErrorCount, lorawan.LinkADRAns)
+
+		chans, err := band.Band().GetEnabledUplinkChannelIndicesForLinkADRReqPayloads(ds.EnabledUplinkChannels, linkADRPayloads)
+		if err != nil {
+			return nil, errors.Wrap(err, "get enalbed channels for link_adr_req payloads error")
+		}
+
+		ds.EnabledUplinkChannels = chans
+		ds.NbTrans = adrReq.Redundancy.NbRep // It is assumed that this is accepted, as there is no explicit status bit for this?
+
+		if dataRateACK {
+			ds.DR = int(adrReq.DataRate)
+		}
+
+		if powerACK {
+			ds.TXPowerIndex = int(adrReq.TXPower)
+		}
+
+		log.WithFields(log.Fields{
+			"dev_eui":          ds.DevEUI,
+			"tx_power_idx":     ds.TXPowerIndex,
+			"dr":               adrReq.DataRate,
+			"nb_trans":         adrReq.Redundancy.NbRep,
+			"enabled_channels": chans,
+			"ctx_id":           ctx.Value(logging.ContextIDKey),
+		}).Info("link_adr request acknowledged (device has ADR disabled)")
 
 	} else {
 		// increase the error counter

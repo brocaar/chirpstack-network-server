@@ -30,6 +30,7 @@ func TestLinkADR(t *testing.T) {
 			{
 				Name: "pending request and positive ACK updates tx-power, nbtrans and channels",
 				DeviceSession: storage.DeviceSession{
+					ADR:                   true,
 					EnabledUplinkChannels: []int{0, 1},
 					MACCommandErrorCount: map[lorawan.CID]int{
 						lorawan.LinkADRReq: 1,
@@ -49,6 +50,7 @@ func TestLinkADR(t *testing.T) {
 					PowerACK:       true,
 				},
 				ExpectedDeviceSession: storage.DeviceSession{
+					ADR:                   true,
 					EnabledUplinkChannels: []int{0, 1, 2},
 					TXPowerIndex:          3,
 					NbTrans:               2,
@@ -59,6 +61,7 @@ func TestLinkADR(t *testing.T) {
 			{
 				Name: "pending request and negative tx-power ack decrements the max allowed tx-power index",
 				DeviceSession: storage.DeviceSession{
+					ADR:                   true,
 					EnabledUplinkChannels: []int{0, 1},
 					MACCommandErrorCount:  map[lorawan.CID]int{},
 				},
@@ -76,6 +79,7 @@ func TestLinkADR(t *testing.T) {
 					PowerACK:       false,
 				},
 				ExpectedDeviceSession: storage.DeviceSession{
+					ADR:                      true,
 					EnabledUplinkChannels:    []int{0, 1},
 					MaxSupportedTXPowerIndex: 2,
 					MACCommandErrorCount: map[lorawan.CID]int{
@@ -86,6 +90,7 @@ func TestLinkADR(t *testing.T) {
 			{
 				Name: "pending request and negative tx-power ack on tx-power 0 sets (min) tx-power to 1",
 				DeviceSession: storage.DeviceSession{
+					ADR:                   true,
 					EnabledUplinkChannels: []int{0, 1},
 					MACCommandErrorCount:  map[lorawan.CID]int{},
 				},
@@ -103,6 +108,7 @@ func TestLinkADR(t *testing.T) {
 					PowerACK:       false,
 				},
 				ExpectedDeviceSession: storage.DeviceSession{
+					ADR:                      true,
 					EnabledUplinkChannels:    []int{0, 1},
 					TXPowerIndex:             1,
 					MinSupportedTXPowerIndex: 1,
@@ -114,6 +120,7 @@ func TestLinkADR(t *testing.T) {
 			{
 				Name: "nothing pending and positive ACK returns an error",
 				DeviceSession: storage.DeviceSession{
+					ADR:                   true,
 					EnabledUplinkChannels: []int{0, 1},
 					MACCommandErrorCount:  map[lorawan.CID]int{},
 				},
@@ -124,7 +131,39 @@ func TestLinkADR(t *testing.T) {
 				},
 				ExpectedError: errors.New("expected pending mac-command"),
 				ExpectedDeviceSession: storage.DeviceSession{
+					ADR:                   true,
 					EnabledUplinkChannels: []int{0, 1},
+					MACCommandErrorCount:  map[lorawan.CID]int{},
+				},
+			},
+			{
+				Name: "adr disabled, only DR acknowledged",
+				DeviceSession: storage.DeviceSession{
+					ADR:                   false,
+					EnabledUplinkChannels: []int{0, 1},
+					TXPowerIndex:          1,
+					DR:                    3,
+					MACCommandErrorCount:  map[lorawan.CID]int{},
+				},
+				LinkADRReqPayload: &lorawan.LinkADRReqPayload{
+					ChMask:   lorawan.ChMask{true, true, true},
+					DataRate: 5,
+					TXPower:  3,
+					Redundancy: lorawan.Redundancy{
+						NbRep: 2,
+					},
+				},
+				LinkADRAnsPayload: lorawan.LinkADRAnsPayload{
+					ChannelMaskACK: true,
+					DataRateACK:    false,
+					PowerACK:       false,
+				},
+				ExpectedDeviceSession: storage.DeviceSession{
+					ADR:                   false,
+					EnabledUplinkChannels: []int{0, 1, 2},
+					TXPowerIndex:          1,
+					DR:                    3,
+					NbTrans:               2,
 					MACCommandErrorCount:  map[lorawan.CID]int{},
 				},
 			},
