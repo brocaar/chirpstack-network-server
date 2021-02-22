@@ -991,13 +991,17 @@ func requestADRChange(ctx *dataContext) error {
 	var uplinkHistory []adrr.UplinkMetaData
 
 	// maxTxPowerIndex
-	for i := 0; ; i++ {
-		offset, err := band.Band().GetTXPowerOffset(i)
-		if err != nil {
-			break
-		}
-		if offset != 0 {
-			maxTxPowerIndex = i
+	if ctx.DeviceSession.MaxSupportedTXPowerIndex != 0 {
+		maxTxPowerIndex = ctx.DeviceSession.MaxSupportedTXPowerIndex
+	} else {
+		for i := 0; ; i++ {
+			offset, err := band.Band().GetTXPowerOffset(i)
+			if err != nil {
+				break
+			}
+			if offset != 0 {
+				maxTxPowerIndex = i
+			}
 		}
 	}
 

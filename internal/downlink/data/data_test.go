@@ -380,6 +380,46 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			},
 		},
 		{
+			Name: "trigger adr request change + MaxSupportedTXPowerIndex",
+			DataContext: dataContext{
+				ServiceProfile: storage.ServiceProfile{
+					DRMax: 5,
+				},
+				DeviceSession: storage.DeviceSession{
+					ADR: true,
+					DR:  0,
+					UplinkHistory: []storage.UplinkHistory{
+						{FCnt: 0, MaxSNR: 5, TXPowerIndex: 0, GatewayCount: 1},
+					},
+					RX2Frequency:             869525000,
+					MaxSupportedTXPowerIndex: 2,
+				},
+				DownlinkFrameItems: []downlinkFrameItem{
+					{
+						RemainingPayloadSize: 200,
+					},
+				},
+			},
+			ExpectedMACCommands: []storage.MACCommandBlock{
+				{
+					CID: lorawan.LinkADRReq,
+					MACCommands: storage.MACCommands{
+						{
+							CID: lorawan.LinkADRReq,
+							Payload: &lorawan.LinkADRReqPayload{
+								DataRate: 5,
+								TXPower:  2,
+								ChMask:   [16]bool{true, true, true},
+								Redundancy: lorawan.Redundancy{
+									NbRep: 1,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			Name: "request device-status",
 			DataContext: dataContext{
 				ServiceProfile: storage.ServiceProfile{
