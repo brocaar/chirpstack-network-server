@@ -36,7 +36,7 @@ services:
     image: redis:3.0.7-alpine
 
   mosquitto:
-    image: ansi/mosquitto
+    image: eclipse-mosquitto:1.6
 
   rabbitmq:
     image: rabbitmq:3-alpine
