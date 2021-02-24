@@ -26,14 +26,14 @@ services:
       - TEST_RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
 
   postgres:
-    image: postgres:9.5
+    image: postgres:13-alpine
     environment:
       - POSTGRES_PASSWORD=chirpstack_ns
       - POSTGRES_USER=chirpstack_ns
       - POSTGRES_DB=chirpstack_ns
 
   redis:
-    image: redis:3.0.7-alpine
+    image: redis:6-alpine
 
   mosquitto:
     image: eclipse-mosquitto:1.6
