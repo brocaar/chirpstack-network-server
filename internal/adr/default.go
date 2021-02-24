@@ -46,7 +46,7 @@ func (h *DefaultHandler) Handle(req adr.HandleRequest) (adr.HandleResponse, erro
 	// In case of negative steps the ADR algorithm will increase the TxPower
 	// if possible. To avoid up / down / up / down TxPower changes, wait until
 	// we have at least the required number of uplink history elements.
-	if nStep < 0 && len(req.UplinkHistory) != h.requiredHistoryCount() {
+	if nStep < 0 && h.getHistoryCount(req) != h.requiredHistoryCount() {
 		return resp, nil
 	}
 
@@ -72,6 +72,17 @@ func (h *DefaultHandler) getMaxSNR(req adr.HandleRequest) float32 {
 		}
 	}
 	return snrM
+}
+
+// getHistoryCount returns the history count with equal TxPowerIndex.
+func (h *DefaultHandler) getHistoryCount(req adr.HandleRequest) int {
+	var count int
+	for _, uh := range req.UplinkHistory {
+		if req.TxPowerIndex == uh.TXPowerIndex {
+			count++
+		}
+	}
+	return count
 }
 
 func (h *DefaultHandler) requiredHistoryCount() int {
