@@ -29,6 +29,14 @@ func (b *StorageTestSuite) SetupTest() {
 		panic(err)
 	}
 	b.tx = tx
+
+	if err := MigrateDown(DB().DB); err != nil {
+		panic(err)
+	}
+	if err := MigrateUp(DB().DB); err != nil {
+		panic(err)
+	}
+
 	RedisClient().FlushAll()
 }
 

@@ -1,0 +1,2 @@
+ALTER TABLE IF EXISTS gateway
+    DROP COLUMN IF EXISTS tls_cert;

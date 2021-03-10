@@ -1,0 +1,4 @@
+DROP INDEX IF EXISTS idx_device_mode;
+
+ALTER TABLE IF EXISTS device
+    DROP COLUMN IF EXISTS mode;

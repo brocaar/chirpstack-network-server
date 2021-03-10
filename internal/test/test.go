@@ -6,13 +6,11 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-
-	migrate "github.com/rubenv/sql-migrate"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
-	"github.com/brocaar/chirpstack-network-server/internal/migrations"
+	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
 )
@@ -81,17 +79,12 @@ func GetConfig() config.Config {
 	return c
 }
 
-// MustResetDB re-applies all database migrations.
+//MustResetDB re-applies all database migrations.
 func MustResetDB(db *sqlx.DB) {
-	m := &migrate.AssetMigrationSource{
-		Asset:    migrations.Asset,
-		AssetDir: migrations.AssetDir,
-		Dir:      "",
-	}
-	if _, err := migrate.Exec(db.DB, "postgres", m, migrate.Down); err != nil {
+	if err := storage.MigrateDown(db); err != nil {
 		log.Fatal(err)
 	}
-	if _, err := migrate.Exec(db.DB, "postgres", m, migrate.Up); err != nil {
+	if err := storage.MigrateUp(db); err != nil {
 		log.Fatal(err)
 	}
 }
