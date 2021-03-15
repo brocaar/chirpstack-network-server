@@ -267,8 +267,10 @@ func sendTxAckToApplicationServer(ctx *ackContext) error {
 	// send async to as
 	go func(ctx *ackContext, asClient as.ApplicationServerServiceClient) {
 		_, err := asClient.HandleTxAck(ctx.ctx, &as.HandleTxAckRequest{
-			DevEui: ctx.DownlinkFrame.DevEui,
-			FCnt:   ctx.MACPayload.FHDR.FCnt,
+			DevEui:    ctx.DownlinkFrame.DevEui,
+			FCnt:      ctx.MACPayload.FHDR.FCnt,
+			GatewayId: ctx.DownlinkFrame.DownlinkFrame.GatewayId,
+			TxInfo:    ctx.DownlinkFrameItem.TxInfo,
 		})
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
