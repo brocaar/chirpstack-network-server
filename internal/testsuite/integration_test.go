@@ -179,7 +179,8 @@ func (ts *IntegrationTestSuite) SetupSuite() {
 	assert := require.New(ts.T())
 	conf := test.GetConfig()
 	assert.NoError(storage.Setup(conf))
-	test.MustResetDB(storage.DB().DB)
+	assert.NoError(storage.MigrateDown(storage.DB().DB))
+	assert.NoError(storage.MigrateUp(storage.DB().DB))
 
 	ts.backendAPIServer = httptest.NewServer(http.HandlerFunc(ts.backendAPIHandler))
 

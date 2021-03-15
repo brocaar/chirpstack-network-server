@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/brocaar/chirpstack-network-server/internal/test"
@@ -15,12 +16,11 @@ type StorageTestSuite struct {
 }
 
 func (b *StorageTestSuite) SetupSuite() {
+	assert := require.New(b.T())
 	conf := test.GetConfig()
-	if err := Setup(conf); err != nil {
-		panic(err)
-	}
-
-	test.MustResetDB(DB().DB)
+	assert.NoError(Setup(conf))
+	assert.NoError(MigrateDown(DB().DB))
+	assert.NoError(MigrateUp(DB().DB))
 }
 
 func (b *StorageTestSuite) SetupTest() {

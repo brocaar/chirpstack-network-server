@@ -361,7 +361,8 @@ func TestGetDevEUIsWithClassBOrCDeviceQueueItems(t *testing.T) {
 	}
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(DB().DB)
+		So(MigrateDown(DB().DB), ShouldBeNil)
+		So(MigrateUp(DB().DB), ShouldBeNil)
 
 		Convey("Given a service-, class-b device- and routing-profile and two, SchedulerInterval setting", func() {
 			sp := ServiceProfile{}

@@ -5,12 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jmoiron/sqlx"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	loraband "github.com/brocaar/lorawan/band"
 )
@@ -77,14 +75,4 @@ func GetConfig() config.Config {
 	}
 
 	return c
-}
-
-//MustResetDB re-applies all database migrations.
-func MustResetDB(db *sqlx.DB) {
-	if err := storage.MigrateDown(db); err != nil {
-		log.Fatal(err)
-	}
-	if err := storage.MigrateUp(db); err != nil {
-		log.Fatal(err)
-	}
 }

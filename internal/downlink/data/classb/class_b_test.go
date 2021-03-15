@@ -134,7 +134,8 @@ func TestScheduleDeviceQueueToPingSlotsForDevEUI(t *testing.T) {
 	}
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(storage.DB().DB)
+		So(storage.MigrateDown(storage.DB().DB), ShouldBeNil)
+		So(storage.MigrateUp(storage.DB().DB), ShouldBeNil)
 
 		Convey("Given a device, device-session and three queue items", func() {
 			sp := storage.ServiceProfile{}
