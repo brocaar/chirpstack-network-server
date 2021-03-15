@@ -2,7 +2,6 @@ package ack
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/golang/protobuf/proto"
@@ -91,8 +90,9 @@ func TestDownlinkAck(t *testing.T) {
 		{
 			Name: "Legacy ack",
 			DownlinkTxAck: gw.DownlinkTXAck{
-				Token: 1234,
-				Error: "",
+				Token:     1234,
+				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
+				Error:     "",
 			},
 			DownlinkFrameBefore: &storage.DownlinkFrame{
 				Token:            1234,
@@ -101,7 +101,8 @@ func TestDownlinkAck(t *testing.T) {
 				FCnt:             uint32(10),
 				NwkSEncKey:       nwkSKey[:],
 				DownlinkFrame: &gw.DownlinkFrame{
-					Token: 1234,
+					Token:     1234,
+					GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 					Items: []*gw.DownlinkFrameItem{
 						{
 							TxInfo:     &txInfo1,
@@ -112,6 +113,7 @@ func TestDownlinkAck(t *testing.T) {
 			},
 			HandleDownlinkMetaDataRequest: &nc.HandleDownlinkMetaDataRequest{
 				DevEui:                      []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				GatewayId:                   []byte{8, 7, 6, 5, 4, 3, 2, 1},
 				TxInfo:                      &txInfo1,
 				PhyPayloadByteCount:         17,
 				MacCommandByteCount:         1,
@@ -119,8 +121,10 @@ func TestDownlinkAck(t *testing.T) {
 				MessageType:                 nc.MType_UNCONFIRMED_DATA_DOWN,
 			},
 			HandleTxAckRequest: &as.HandleTxAckRequest{
-				DevEui: []byte{1, 2, 3, 4, 5, 6, 7, 8},
-				FCnt:   10,
+				DevEui:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				FCnt:      10,
+				TxInfo:    &txInfo1,
+				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 			},
 		},
 		{
@@ -207,7 +211,8 @@ func TestDownlinkAck(t *testing.T) {
 		{
 			Name: "Single item ack",
 			DownlinkTxAck: gw.DownlinkTXAck{
-				Token: 1234,
+				Token:     1234,
+				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 				Items: []*gw.DownlinkTXAckItem{
 					{
 						Status: gw.TxAckStatus_OK,
@@ -221,7 +226,8 @@ func TestDownlinkAck(t *testing.T) {
 				FCnt:             uint32(10),
 				NwkSEncKey:       nwkSKey[:],
 				DownlinkFrame: &gw.DownlinkFrame{
-					Token: 1234,
+					Token:     1234,
+					GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 					Items: []*gw.DownlinkFrameItem{
 						{
 							TxInfo:     &txInfo1,
@@ -233,14 +239,17 @@ func TestDownlinkAck(t *testing.T) {
 			HandleDownlinkMetaDataRequest: &nc.HandleDownlinkMetaDataRequest{
 				DevEui:                      []byte{1, 2, 3, 4, 5, 6, 7, 8},
 				TxInfo:                      &txInfo1,
+				GatewayId:                   []byte{8, 7, 6, 5, 4, 3, 2, 1},
 				PhyPayloadByteCount:         17,
 				MacCommandByteCount:         1,
 				ApplicationPayloadByteCount: 3,
 				MessageType:                 nc.MType_UNCONFIRMED_DATA_DOWN,
 			},
 			HandleTxAckRequest: &as.HandleTxAckRequest{
-				DevEui: []byte{1, 2, 3, 4, 5, 6, 7, 8},
-				FCnt:   10,
+				DevEui:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				FCnt:      10,
+				TxInfo:    &txInfo1,
+				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 			},
 		},
 		{
@@ -279,7 +288,8 @@ func TestDownlinkAck(t *testing.T) {
 		{
 			Name: "Two items ack ok + ignored",
 			DownlinkTxAck: gw.DownlinkTXAck{
-				Token: 1234,
+				Token:     1234,
+				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 				Items: []*gw.DownlinkTXAckItem{
 					{
 						Status: gw.TxAckStatus_OK,
@@ -296,7 +306,8 @@ func TestDownlinkAck(t *testing.T) {
 				FCnt:             uint32(10),
 				NwkSEncKey:       nwkSKey[:],
 				DownlinkFrame: &gw.DownlinkFrame{
-					Token: 1234,
+					Token:     1234,
+					GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 					Items: []*gw.DownlinkFrameItem{
 						{
 							TxInfo:     &txInfo1,
@@ -311,6 +322,7 @@ func TestDownlinkAck(t *testing.T) {
 			},
 			HandleDownlinkMetaDataRequest: &nc.HandleDownlinkMetaDataRequest{
 				DevEui:                      []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				GatewayId:                   []byte{8, 7, 6, 5, 4, 3, 2, 1},
 				TxInfo:                      &txInfo1,
 				PhyPayloadByteCount:         17,
 				MacCommandByteCount:         1,
@@ -318,8 +330,10 @@ func TestDownlinkAck(t *testing.T) {
 				MessageType:                 nc.MType_UNCONFIRMED_DATA_DOWN,
 			},
 			HandleTxAckRequest: &as.HandleTxAckRequest{
-				DevEui: []byte{1, 2, 3, 4, 5, 6, 7, 8},
-				FCnt:   10,
+				DevEui:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				FCnt:      10,
+				TxInfo:    &txInfo1,
+				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 			},
 		},
 		{
@@ -342,7 +356,8 @@ func TestDownlinkAck(t *testing.T) {
 				FCnt:             uint32(10),
 				NwkSEncKey:       nwkSKey[:],
 				DownlinkFrame: &gw.DownlinkFrame{
-					Token: 1234,
+					Token:     1234,
+					GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 					Items: []*gw.DownlinkFrameItem{
 						{
 							TxInfo:     &txInfo1,
@@ -357,6 +372,7 @@ func TestDownlinkAck(t *testing.T) {
 			},
 			HandleDownlinkMetaDataRequest: &nc.HandleDownlinkMetaDataRequest{
 				DevEui:                      []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				GatewayId:                   []byte{8, 7, 6, 5, 4, 3, 2, 1},
 				TxInfo:                      &txInfo2,
 				PhyPayloadByteCount:         17,
 				MacCommandByteCount:         1,
@@ -364,8 +380,10 @@ func TestDownlinkAck(t *testing.T) {
 				MessageType:                 nc.MType_UNCONFIRMED_DATA_DOWN,
 			},
 			HandleTxAckRequest: &as.HandleTxAckRequest{
-				DevEui: []byte{1, 2, 3, 4, 5, 6, 7, 8},
-				FCnt:   10,
+				DevEui:    []byte{1, 2, 3, 4, 5, 6, 7, 8},
+				FCnt:      10,
+				TxInfo:    &txInfo2,
+				GatewayId: []byte{8, 7, 6, 5, 4, 3, 2, 1},
 			},
 		},
 		{
@@ -445,9 +463,7 @@ func TestDownlinkAck(t *testing.T) {
 
 			// validate error req
 			if tst.HandleErrorRequest != nil {
-				fmt.Println("AA")
 				asReq := <-asClient.HandleErrorChan
-				fmt.Println("BB")
 				assert.Equal(*tst.HandleErrorRequest, asReq)
 			}
 
