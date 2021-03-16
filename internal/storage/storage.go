@@ -2,6 +2,7 @@ package storage
 
 import (
 	"crypto/tls"
+	"fmt"
 	"time"
 
 	"github.com/go-redis/redis/v7"
@@ -121,4 +122,9 @@ func Transaction(f func(tx sqlx.Ext) error) error {
 		return errors.Wrap(err, "storage: transaction commit error")
 	}
 	return nil
+}
+
+// GetRedisKey returns the Redis key given a template and parameters.
+func GetRedisKey(tmpl string, params ...interface{}) string {
+	return fmt.Sprintf(tmpl, params...)
 }
