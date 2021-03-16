@@ -16,11 +16,14 @@ type MigrateTestSuite struct {
 }
 
 func (b *MigrateTestSuite) SetupSuite() {
+	assert := require.New(b.T())
 	conf := test.GetConfig()
 	if err := storage.Setup(conf); err != nil {
 		panic(err)
 	}
-	test.MustResetDB(storage.DB().DB)
+	assert.NoError(storage.Setup(conf))
+	assert.NoError(storage.MigrateDown(storage.DB().DB))
+	assert.NoError(storage.MigrateUp(storage.DB().DB))
 }
 
 func (ts *MigrateTestSuite) TestMigrate() {

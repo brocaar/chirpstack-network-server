@@ -16,16 +16,27 @@ type FlushProfilesCacheTestSuite struct {
 }
 
 func (b *FlushProfilesCacheTestSuite) SetupSuite() {
+	assert := require.New(b.T())
 	conf := test.GetConfig()
 	if err := storage.Setup(conf); err != nil {
 		panic(err)
 	}
 
-	test.MustResetDB(storage.DB().DB)
+	assert.NoError(storage.Setup(conf))
+	assert.NoError(storage.MigrateDown(storage.DB().DB))
+	assert.NoError(storage.MigrateUp(storage.DB().DB))
 }
 
 func (b *FlushProfilesCacheTestSuite) SetupTest() {
-	test.MustResetDB(storage.DB().DB)
+	assert := require.New(b.T())
+	conf := test.GetConfig()
+	if err := storage.Setup(conf); err != nil {
+		panic(err)
+	}
+
+	assert.NoError(storage.Setup(conf))
+	assert.NoError(storage.MigrateDown(storage.DB().DB))
+	assert.NoError(storage.MigrateUp(storage.DB().DB))
 }
 
 func (ts *FlushProfilesCacheTestSuite) TestFlushProfilesCache() {
