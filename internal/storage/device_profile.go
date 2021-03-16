@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
-	"fmt"
 	"time"
 
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
@@ -129,7 +128,7 @@ func CreateDeviceProfile(ctx context.Context, db sqlx.Execer, dp *DeviceProfile)
 // CreateDeviceProfileCache caches the given device-profile in Redis.
 // The TTL of the device-profile is the same as that of the device-sessions.
 func CreateDeviceProfileCache(ctx context.Context, dp DeviceProfile) error {
-	key := fmt.Sprintf(DeviceProfileKeyTempl, dp.ID)
+	key := GetRedisKey(DeviceProfileKeyTempl, dp.ID)
 
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(dp); err != nil {
@@ -147,7 +146,7 @@ func CreateDeviceProfileCache(ctx context.Context, dp DeviceProfile) error {
 // GetDeviceProfileCache returns a cached device-profile.
 func GetDeviceProfileCache(ctx context.Context, id uuid.UUID) (DeviceProfile, error) {
 	var dp DeviceProfile
-	key := fmt.Sprintf(DeviceProfileKeyTempl, id)
+	key := GetRedisKey(DeviceProfileKeyTempl, id)
 
 	val, err := RedisClient().Get(key).Bytes()
 	if err != nil {
@@ -167,7 +166,7 @@ func GetDeviceProfileCache(ctx context.Context, id uuid.UUID) (DeviceProfile, er
 
 // FlushDeviceProfileCache deletes a cached device-profile.
 func FlushDeviceProfileCache(ctx context.Context, id uuid.UUID) error {
-	key := fmt.Sprintf(DeviceProfileKeyTempl, id)
+	key := GetRedisKey(DeviceProfileKeyTempl, id)
 
 	err := RedisClient().Del(key).Err()
 	if err != nil {

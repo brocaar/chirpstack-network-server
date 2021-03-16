@@ -57,9 +57,9 @@ func SavePassiveRoamingDeviceSession(ctx context.Context, ds *PassiveRoamingDevi
 		ds.SessionID = id
 	}
 
-	devAddrKey := fmt.Sprintf(prDevAddrKeyTempl, ds.DevAddr)
-	devEUIKey := fmt.Sprintf(prDevEUIKeyTempl, ds.DevEUI)
-	sessKey := fmt.Sprintf(prDeviceSessionKeyTempl, ds.SessionID)
+	devAddrKey := GetRedisKey(prDevAddrKeyTempl, ds.DevAddr)
+	devEUIKey := GetRedisKey(prDevEUIKeyTempl, ds.DevEUI)
+	sessKey := GetRedisKey(prDeviceSessionKeyTempl, ds.SessionID)
 
 	dsPB, err := passiveRoamingDeviceSessionToPB(ds)
 	if err != nil {
@@ -186,7 +186,7 @@ func GetPassiveRoamingDeviceSessionsForDevAddr(ctx context.Context, devAddr lora
 // GetPassiveRoamingIDsForDevAddr returns the passive-roaming session IDs for
 // the given DevAddr.
 func GetPassiveRoamingIDsForDevAddr(ctx context.Context, devAddr lorawan.DevAddr) ([]uuid.UUID, error) {
-	key := fmt.Sprintf(prDevAddrKeyTempl, devAddr)
+	key := GetRedisKey(prDevAddrKeyTempl, devAddr)
 
 	val, err := RedisClient().SMembers(key).Result()
 	if err != nil {
@@ -208,7 +208,7 @@ func GetPassiveRoamingIDsForDevAddr(ctx context.Context, devAddr lorawan.DevAddr
 
 // GetPassiveRoamingDeviceSession returns the passive-roaming device-session.
 func GetPassiveRoamingDeviceSession(ctx context.Context, id uuid.UUID) (PassiveRoamingDeviceSession, error) {
-	key := fmt.Sprintf(prDeviceSessionKeyTempl, id)
+	key := GetRedisKey(prDeviceSessionKeyTempl, id)
 	var dsPB PassiveRoamingDeviceSessionPB
 
 	val, err := RedisClient().Get(key).Bytes()

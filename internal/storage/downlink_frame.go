@@ -4,7 +4,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/go-redis/redis/v7"
@@ -20,7 +19,7 @@ const downlinkFrameKeyTempl = "lora:ns:frame:%d"
 
 // SaveDownlinkFrame saves the given downlink-frame.
 func SaveDownlinkFrame(ctx context.Context, frame DownlinkFrame) error {
-	key := fmt.Sprintf(downlinkFrameKeyTempl, frame.Token)
+	key := GetRedisKey(downlinkFrameKeyTempl, frame.Token)
 
 	b, err := proto.Marshal(&frame)
 	if err != nil {
@@ -42,7 +41,7 @@ func SaveDownlinkFrame(ctx context.Context, frame DownlinkFrame) error {
 
 // GetDownlinkFrame returns the downlink-frame matching the given token.
 func GetDownlinkFrame(ctx context.Context, token uint16) (DownlinkFrame, error) {
-	key := fmt.Sprintf(downlinkFrameKeyTempl, token)
+	key := GetRedisKey(downlinkFrameKeyTempl, token)
 
 	val, err := RedisClient().Get(key).Bytes()
 	if err != nil {

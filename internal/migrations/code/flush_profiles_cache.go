@@ -1,8 +1,6 @@
 package code
 
 import (
-	"fmt"
-
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -31,7 +29,7 @@ func FlushProfilesCache(db sqlx.Queryer) error {
 	}
 
 	for _, id := range uuids {
-		keys = append(keys, fmt.Sprintf(storage.DeviceProfileKeyTempl, id))
+		keys = append(keys, storage.GetRedisKey(storage.DeviceProfileKeyTempl, id))
 	}
 
 	if len(keys) != 0 {
@@ -54,7 +52,7 @@ func FlushProfilesCache(db sqlx.Queryer) error {
 
 	keys = nil
 	for _, id := range uuids {
-		keys = append(keys, fmt.Sprintf(storage.ServiceProfileKeyTempl, id))
+		keys = append(keys, storage.GetRedisKey(storage.ServiceProfileKeyTempl, id))
 	}
 
 	if len(keys) != 0 {

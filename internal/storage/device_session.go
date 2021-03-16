@@ -323,8 +323,8 @@ func GetFullFCntUp(nextExpectedFullFCnt, truncatedFCntUp uint32) uint32 {
 // SaveDeviceSession saves the device-session. In case it doesn't exist yet
 // it will be created.
 func SaveDeviceSession(ctx context.Context, s DeviceSession) error {
-	devAddrKey := fmt.Sprintf(devAddrKeyTempl, s.DevAddr)
-	devSessKey := fmt.Sprintf(deviceSessionKeyTempl, s.DevEUI)
+	devAddrKey := GetRedisKey(devAddrKeyTempl, s.DevAddr)
+	devSessKey := GetRedisKey(deviceSessionKeyTempl, s.DevEUI)
 
 	dsPB := deviceSessionToPB(s)
 	b, err := proto.Marshal(&dsPB)
@@ -345,7 +345,7 @@ func SaveDeviceSession(ctx context.Context, s DeviceSession) error {
 	}
 
 	if s.PendingRejoinDeviceSession != nil {
-		pendingDevAddrKey := fmt.Sprintf(devAddrKeyTempl, s.PendingRejoinDeviceSession.DevAddr)
+		pendingDevAddrKey := GetRedisKey(devAddrKeyTempl, s.PendingRejoinDeviceSession.DevAddr)
 
 		pipe = RedisClient().TxPipeline()
 		pipe.SAdd(pendingDevAddrKey, s.DevEUI[:])
@@ -371,7 +371,7 @@ func SaveDeviceSession(ctx context.Context, s DeviceSession) error {
 
 // GetDeviceSession returns the device-session for the given DevEUI.
 func GetDeviceSession(ctx context.Context, devEUI lorawan.EUI64) (DeviceSession, error) {
-	key := fmt.Sprintf(deviceSessionKeyTempl, devEUI)
+	key := GetRedisKey(deviceSessionKeyTempl, devEUI)
 	var dsPB DeviceSessionPB
 
 	val, err := RedisClient().Get(key).Bytes()
@@ -392,7 +392,7 @@ func GetDeviceSession(ctx context.Context, devEUI lorawan.EUI64) (DeviceSession,
 
 // DeleteDeviceSession deletes the device-session matching the given DevEUI.
 func DeleteDeviceSession(ctx context.Context, devEUI lorawan.EUI64) error {
-	key := fmt.Sprintf(deviceSessionKeyTempl, devEUI)
+	key := GetRedisKey(deviceSessionKeyTempl, devEUI)
 
 	val, err := RedisClient().Del(key).Result()
 	if err != nil {
@@ -451,7 +451,7 @@ func GetDeviceSessionsForDevAddr(ctx context.Context, devAddr lorawan.DevAddr) (
 
 // GetDevEUIsForDevAddr returns the DevEUIs that are using the given DevAddr.
 func GetDevEUIsForDevAddr(ctx context.Context, devAddr lorawan.DevAddr) ([]lorawan.EUI64, error) {
-	key := fmt.Sprintf(devAddrKeyTempl, devAddr)
+	key := GetRedisKey(devAddrKeyTempl, devAddr)
 
 	val, err := RedisClient().SMembers(key).Result()
 	if err != nil {
@@ -543,7 +543,7 @@ func GetDeviceSessionForPHYPayload(ctx context.Context, phy lorawan.PHYPayload, 
 
 // DeviceSessionExists returns a bool indicating if a device session exist.
 func DeviceSessionExists(ctx context.Context, devEUI lorawan.EUI64) (bool, error) {
-	key := fmt.Sprintf(deviceSessionKeyTempl, devEUI)
+	key := GetRedisKey(deviceSessionKeyTempl, devEUI)
 
 	r, err := RedisClient().Exists(key).Result()
 	if err != nil {
@@ -557,7 +557,7 @@ func DeviceSessionExists(ctx context.Context, devEUI lorawan.EUI64) (bool, error
 
 // SaveDeviceGatewayRXInfoSet saves the given DeviceGatewayRXInfoSet.
 func SaveDeviceGatewayRXInfoSet(ctx context.Context, rxInfoSet DeviceGatewayRXInfoSet) error {
-	key := fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, rxInfoSet.DevEUI)
+	key := GetRedisKey(deviceGatewayRXInfoSetKeyTempl, rxInfoSet.DevEUI)
 
 	rxInfoSetPB := deviceGatewayRXInfoSetToPB(rxInfoSet)
 	b, err := proto.Marshal(&rxInfoSetPB)
@@ -581,7 +581,7 @@ func SaveDeviceGatewayRXInfoSet(ctx context.Context, rxInfoSet DeviceGatewayRXIn
 // DeleteDeviceGatewayRXInfoSet deletes the device gateway rx-info meta-data
 // for the given Device EUI.
 func DeleteDeviceGatewayRXInfoSet(ctx context.Context, devEUI lorawan.EUI64) error {
-	key := fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, devEUI)
+	key := GetRedisKey(deviceGatewayRXInfoSetKeyTempl, devEUI)
 
 	val, err := RedisClient().Del(key).Result()
 	if err != nil {
@@ -602,7 +602,7 @@ func DeleteDeviceGatewayRXInfoSet(ctx context.Context, devEUI lorawan.EUI64) err
 // Device EUI.
 func GetDeviceGatewayRXInfoSet(ctx context.Context, devEUI lorawan.EUI64) (DeviceGatewayRXInfoSet, error) {
 	var rxInfoSetPB DeviceGatewayRXInfoSetPB
-	key := fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, devEUI)
+	key := GetRedisKey(deviceGatewayRXInfoSetKeyTempl, devEUI)
 
 	val, err := RedisClient().Get(key).Bytes()
 	if err != nil {
@@ -629,7 +629,7 @@ func GetDeviceGatewayRXInfoSetForDevEUIs(ctx context.Context, devEUIs []lorawan.
 
 	var keys []string
 	for _, d := range devEUIs {
-		keys = append(keys, fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, d))
+		keys = append(keys, GetRedisKey(deviceGatewayRXInfoSetKeyTempl, d))
 	}
 
 	bs, err := RedisClient().MGet(keys...).Result()

@@ -2,7 +2,6 @@ package uplink
 
 import (
 	"encoding/hex"
-	"fmt"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -40,8 +39,8 @@ func collectAndCallOnce(rxPacket gw.UplinkFrame, callback func(packet models.RXP
 	}
 	txInfoHEX := hex.EncodeToString(txInfoB)
 
-	key := fmt.Sprintf(CollectKeyTempl, txInfoHEX, phyKey)
-	lockKey := fmt.Sprintf(CollectLockKeyTempl, txInfoHEX, phyKey)
+	key := storage.GetRedisKey(CollectKeyTempl, txInfoHEX, phyKey)
+	lockKey := storage.GetRedisKey(CollectLockKeyTempl, txInfoHEX, phyKey)
 
 	// this way we can set a really low DeduplicationDelay for testing, without
 	// the risk that the set already expired in redis on read
