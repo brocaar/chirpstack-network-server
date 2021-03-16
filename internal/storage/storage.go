@@ -22,12 +22,16 @@ var deviceSessionTTL time.Duration
 // scheduler runs.
 var schedulerInterval time.Duration
 
+// keyPrefix for Redis.
+var keyPrefix string
+
 // Setup configures the storage backend.
 func Setup(c config.Config) error {
 	log.Info("storage: setting up storage module")
 
 	deviceSessionTTL = c.NetworkServer.DeviceSessionTTL
 	schedulerInterval = c.NetworkServer.Scheduler.SchedulerInterval
+	keyPrefix = c.Redis.KeyPrefix
 
 	log.Info("storage: setting up Redis client")
 	if len(c.Redis.Servers) == 0 {
@@ -126,5 +130,5 @@ func Transaction(f func(tx sqlx.Ext) error) error {
 
 // GetRedisKey returns the Redis key given a template and parameters.
 func GetRedisKey(tmpl string, params ...interface{}) string {
-	return fmt.Sprintf(tmpl, params...)
+	return keyPrefix + fmt.Sprintf(tmpl, params...)
 }
