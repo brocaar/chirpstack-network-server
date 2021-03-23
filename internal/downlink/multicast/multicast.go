@@ -37,7 +37,6 @@ type multicastContext struct {
 var multicastTasks = []func(*multicastContext) error{
 	getMulticastGroup,
 	setToken,
-	removeQueueItem,
 	validatePayloadSize,
 	setTXInfo,
 	setPHYPayload,
@@ -61,30 +60,6 @@ func Setup(conf config.Config) error {
 	schedulerInterval = conf.NetworkServer.Scheduler.SchedulerInterval
 	installationMargin = conf.NetworkServer.NetworkSettings.InstallationMargin
 	downlinkTXPower = conf.NetworkServer.NetworkSettings.DownlinkTXPower
-
-	return nil
-}
-
-// HandleScheduleNextQueueItem handles the scheduling of the next queue-item
-// for the given multicast-group.
-func HandleScheduleNextQueueItem(ctx context.Context, db sqlx.Ext, mg storage.MulticastGroup) error {
-	nqctx := multicastContext{
-		ctx:            ctx,
-		DB:             db,
-		MulticastGroup: mg,
-		DownlinkFrame: gw.DownlinkFrame{
-			Items: make([]*gw.DownlinkFrameItem, 1),
-		},
-	}
-
-	for _, t := range multicastTasks {
-		if err := t(&nqctx); err != nil {
-			if err == errAbort {
-				return nil
-			}
-			return err
-		}
-	}
 
 	return nil
 }
@@ -142,14 +117,6 @@ func setToken(ctx *multicastContext) error {
 	return nil
 }
 
-func removeQueueItem(ctx *multicastContext) error {
-	if err := storage.DeleteMulticastQueueItem(ctx.ctx, ctx.DB, ctx.MulticastQueueItem.ID); err != nil {
-		return errors.Wrap(err, "delete multicast queue-item error")
-	}
-
-	return nil
-}
-
 func validatePayloadSize(ctx *multicastContext) error {
 	maxSize, err := band.Band().GetMaxPayloadSizeForDataRateIndex("", "", ctx.MulticastGroup.DR)
 	if err != nil {
@@ -163,7 +130,11 @@ func validatePayloadSize(ctx *multicastContext) error {
 			"max_frm_payload_size": maxSize.N,
 			"frm_payload_size":     len(ctx.MulticastQueueItem.FRMPayload),
 			"ctx_id":               ctx.ctx.Value(logging.ContextIDKey),
-		}).Error("payload exceeds max size for data-rate")
+		}).Error("payload exceeds max size for data-rate, discarding")
+
+		if err := storage.DeleteMulticastQueueItem(ctx.ctx, ctx.DB, ctx.MulticastQueueItem.ID); err != nil {
+			return errors.Wrap(err, "delete multicast-queue item error")
+		}
 
 		return errAbort
 	}
@@ -250,12 +221,13 @@ func sendDownlinkData(ctx *multicastContext) error {
 
 func saveDownlinkFrame(ctx *multicastContext) error {
 	df := storage.DownlinkFrame{
-		MulticastGroupId: ctx.MulticastGroup.ID[:],
-		Token:            uint32(ctx.DownlinkFrame.Token),
-		DownlinkFrame:    &ctx.DownlinkFrame,
+		MulticastGroupId:     ctx.MulticastGroup.ID[:],
+		MulticastQueueItemId: ctx.MulticastQueueItem.ID,
+		Token:                uint32(ctx.DownlinkFrame.Token),
+		DownlinkFrame:        &ctx.DownlinkFrame,
 	}
 
-	if err := storage.SaveDownlinkFrame(ctx.ctx, df); err != nil {
+	if err := storage.SaveDownlinkFrame(ctx.ctx, &df); err != nil {
 		return errors.Wrap(err, "save downlink-frames error")
 	}
 

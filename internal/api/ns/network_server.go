@@ -17,12 +17,10 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/adr"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
-	"github.com/brocaar/chirpstack-network-server/internal/downlink/data/classb"
 	"github.com/brocaar/chirpstack-network-server/internal/downlink/multicast"
 	proprietarydown "github.com/brocaar/chirpstack-network-server/internal/downlink/proprietary"
 	"github.com/brocaar/chirpstack-network-server/internal/framelog"
 	"github.com/brocaar/chirpstack-network-server/internal/gateway"
-	"github.com/brocaar/chirpstack-network-server/internal/gps"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
@@ -540,7 +538,7 @@ func (n *NetworkServerAPI) GetDevice(ctx context.Context, req *ns.GetDeviceReque
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.DevEui)
 
-	d, err := storage.GetDevice(ctx, storage.DB(), devEUI)
+	d, err := storage.GetDevice(ctx, storage.DB(), devEUI, false)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -584,7 +582,7 @@ func (n *NetworkServerAPI) UpdateDevice(ctx context.Context, req *ns.UpdateDevic
 	copy(rpID[:], req.Device.RoutingProfileId)
 	copy(spID[:], req.Device.ServiceProfileId)
 
-	d, err := storage.GetDevice(ctx, storage.DB(), devEUI)
+	d, err := storage.GetDevice(ctx, storage.DB(), devEUI, false)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -658,7 +656,7 @@ func (n *NetworkServerAPI) ActivateDevice(ctx context.Context, req *ns.ActivateD
 	copy(fNwkSIntKey[:], req.DeviceActivation.FNwkSIntKey)
 	copy(nwkSEncKey[:], req.DeviceActivation.NwkSEncKey)
 
-	d, err := storage.GetDevice(ctx, storage.DB(), devEUI)
+	d, err := storage.GetDevice(ctx, storage.DB(), devEUI, false)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1382,7 +1380,7 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 	var devEUI lorawan.EUI64
 	copy(devEUI[:], req.Item.DevEui)
 
-	d, err := storage.GetDevice(ctx, storage.DB(), devEUI)
+	d, err := storage.GetDevice(ctx, storage.DB(), devEUI, false)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1413,35 +1411,7 @@ func (n *NetworkServerAPI) CreateDeviceQueueItem(ctx context.Context, req *ns.Cr
 		Confirmed:  req.Item.Confirmed,
 	}
 
-	// When the device is operating in Class-B and has a beacon lock, calculate
-	// the next ping-slot.
-	if dp.SupportsClassB {
-		// check if device is currently active and is operating in Class-B mode
-		if err == nil && ds.BeaconLocked {
-			scheduleAfterGPSEpochTS, err := storage.GetMaxEmitAtTimeSinceGPSEpochForDevEUI(ctx, storage.DB(), d.DevEUI)
-			if err != nil {
-				return nil, errToRPCError(err)
-			}
-
-			if scheduleAfterGPSEpochTS == 0 {
-				scheduleAfterGPSEpochTS = gps.Time(time.Now()).TimeSinceGPSEpoch()
-			}
-
-			// take some margin into account
-			scheduleAfterGPSEpochTS += classBScheduleMargin
-
-			gpsEpochTS, err := classb.GetNextPingSlotAfter(scheduleAfterGPSEpochTS, ds.DevAddr, ds.PingSlotNb)
-			if err != nil {
-				return nil, errToRPCError(err)
-			}
-
-			timeoutTime := time.Time(gps.NewFromTimeSinceGPSEpoch(gpsEpochTS)).Add(time.Second * time.Duration(dp.ClassBTimeout))
-			qi.EmitAtTimeSinceGPSEpoch = &gpsEpochTS
-			qi.TimeoutAfter = &timeoutTime
-		}
-	}
-
-	err = storage.CreateDeviceQueueItem(ctx, storage.DB(), &qi)
+	err = storage.CreateDeviceQueueItem(ctx, storage.DB(), &qi, dp, ds)
 	if err != nil {
 		return nil, errToRPCError(err)
 	}

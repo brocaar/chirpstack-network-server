@@ -138,7 +138,7 @@ func (ts *DeviceModeIndTestSuite) TestDeviceModeInd() {
 			assert.Len(block, 1)
 			assert.Equal(tst.ExpectedMACCommandBlock, block[0])
 
-			d, err := storage.GetDevice(ctx, storage.DB(), ts.device.DevEUI)
+			d, err := storage.GetDevice(ctx, storage.DB(), ts.device.DevEUI, false)
 			assert.NoError(err)
 			assert.Equal(tst.ExpectedDeviceMode, d.Mode)
 		})

@@ -18,10 +18,10 @@ const downlinkFrameTTL = time.Second * 10
 const downlinkFrameKeyTempl = "lora:ns:frame:%d"
 
 // SaveDownlinkFrame saves the given downlink-frame.
-func SaveDownlinkFrame(ctx context.Context, frame DownlinkFrame) error {
+func SaveDownlinkFrame(ctx context.Context, frame *DownlinkFrame) error {
 	key := GetRedisKey(downlinkFrameKeyTempl, frame.Token)
 
-	b, err := proto.Marshal(&frame)
+	b, err := proto.Marshal(frame)
 	if err != nil {
 		return errors.Wrap(err, "marshal proto error")
 	}
@@ -40,22 +40,22 @@ func SaveDownlinkFrame(ctx context.Context, frame DownlinkFrame) error {
 }
 
 // GetDownlinkFrame returns the downlink-frame matching the given token.
-func GetDownlinkFrame(ctx context.Context, token uint16) (DownlinkFrame, error) {
+func GetDownlinkFrame(ctx context.Context, token uint16) (*DownlinkFrame, error) {
 	key := GetRedisKey(downlinkFrameKeyTempl, token)
 
 	val, err := RedisClient().Get(key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
-			return DownlinkFrame{}, ErrDoesNotExist
+			return nil, ErrDoesNotExist
 		}
-		return DownlinkFrame{}, errors.Wrap(err, "get downlink-frame error")
+		return nil, errors.Wrap(err, "get downlink-frame error")
 	}
 
 	var df DownlinkFrame
 	err = proto.Unmarshal(val, &df)
 	if err != nil {
-		return df, errors.Wrap(err, "protobuf unmarshal error")
+		return nil, errors.Wrap(err, "protobuf unmarshal error")
 	}
 
-	return df, nil
+	return &df, nil
 }

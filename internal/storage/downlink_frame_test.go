@@ -24,14 +24,14 @@ func (ts *StorageTestSuite) TestDownlinkFrame() {
 
 	ts.T().Run("Save", func(t *testing.T) {
 		assert := require.New(t)
-		assert.NoError(SaveDownlinkFrame(context.Background(), df))
+		assert.NoError(SaveDownlinkFrame(context.Background(), &df))
 
 		t.Run("Get", func(t *testing.T) {
 			assert := require.New(t)
 
 			dfGet, err := GetDownlinkFrame(context.Background(), 1234)
 			assert.NoError(err)
-			assert.True(proto.Equal(&df, &dfGet))
+			assert.True(proto.Equal(&df, dfGet))
 		})
 	})
 }

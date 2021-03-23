@@ -7,7 +7,7 @@ require (
 	github.com/Azure/azure-amqp-common-go v1.1.4
 	github.com/Azure/azure-service-bus-go v0.9.1
 	github.com/NickBall/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5
-	github.com/brocaar/chirpstack-api/go/v3 v3.9.4
+	github.com/brocaar/chirpstack-api/go/v3 v3.9.5
 	github.com/brocaar/lorawan v0.0.0-20201030140234-f23da2d4a303
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/elazarl/go-bindata-assetfs v1.0.0
@@ -45,7 +45,7 @@ require (
 	gonum.org/v1/netlib v0.0.0-20190219113230-9992c5f5eae4 // indirect
 	google.golang.org/api v0.9.0
 	google.golang.org/grpc v1.29.1
-	google.golang.org/protobuf v1.24.0 // indirect
+	google.golang.org/protobuf v1.24.0
 	gopkg.in/gorp.v1 v1.7.2 // indirect
 	pack.ag/amqp v0.12.1
 )

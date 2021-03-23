@@ -327,7 +327,7 @@ func SaveDeviceSession(ctx context.Context, s DeviceSession) error {
 	devSessKey := GetRedisKey(deviceSessionKeyTempl, s.DevEUI)
 
 	dsPB := deviceSessionToPB(s)
-	b, err := proto.Marshal(&dsPB)
+	b, err := proto.Marshal(dsPB)
 	if err != nil {
 		return errors.Wrap(err, "protobuf encode error")
 	}
@@ -387,7 +387,7 @@ func GetDeviceSession(ctx context.Context, devEUI lorawan.EUI64) (DeviceSession,
 		return DeviceSession{}, errors.Wrap(err, "unmarshal protobuf error")
 	}
 
-	return deviceSessionFromPB(dsPB), nil
+	return deviceSessionFromPB(&dsPB), nil
 }
 
 // DeleteDeviceSession deletes the device-session matching the given DevEUI.
@@ -560,7 +560,7 @@ func SaveDeviceGatewayRXInfoSet(ctx context.Context, rxInfoSet DeviceGatewayRXIn
 	key := GetRedisKey(deviceGatewayRXInfoSetKeyTempl, rxInfoSet.DevEUI)
 
 	rxInfoSetPB := deviceGatewayRXInfoSetToPB(rxInfoSet)
-	b, err := proto.Marshal(&rxInfoSetPB)
+	b, err := proto.Marshal(rxInfoSetPB)
 	if err != nil {
 		return errors.Wrap(err, "protobuf encode error")
 	}
@@ -617,7 +617,7 @@ func GetDeviceGatewayRXInfoSet(ctx context.Context, devEUI lorawan.EUI64) (Devic
 		return DeviceGatewayRXInfoSet{}, errors.Wrap(err, "protobuf unmarshal error")
 	}
 
-	return deviceGatewayRXInfoSetFromPB(rxInfoSetPB), nil
+	return deviceGatewayRXInfoSetFromPB(&rxInfoSetPB), nil
 }
 
 // GetDeviceGatewayRXInfoSetForDevEUIs returns the DeviceGatewayRXInfoSet
@@ -653,13 +653,13 @@ func GetDeviceGatewayRXInfoSetForDevEUIs(ctx context.Context, devEUIs []lorawan.
 			continue
 		}
 
-		out = append(out, deviceGatewayRXInfoSetFromPB(rxInfoSetPB))
+		out = append(out, deviceGatewayRXInfoSetFromPB(&rxInfoSetPB))
 	}
 
 	return out, nil
 }
 
-func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
+func deviceSessionToPB(d DeviceSession) *DeviceSessionPB {
 	out := DeviceSessionPB{
 		MacVersion: d.MACVersion,
 
@@ -752,7 +752,7 @@ func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
 
 	if d.PendingRejoinDeviceSession != nil {
 		dsPB := deviceSessionToPB(*d.PendingRejoinDeviceSession)
-		b, err := proto.Marshal(&dsPB)
+		b, err := proto.Marshal(dsPB)
 		if err != nil {
 			log.WithField("dev_eui", d.DevEUI).WithError(err).Error("protobuf encode error")
 		}
@@ -764,10 +764,10 @@ func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
 		out.MacCommandErrorCount[uint32(k)] = uint32(v)
 	}
 
-	return out
+	return &out
 }
 
-func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
+func deviceSessionFromPB(d *DeviceSessionPB) DeviceSession {
 	dpID, _ := uuid.FromString(d.DeviceProfileId)
 	rpID, _ := uuid.FromString(d.RoutingProfileId)
 	spID, _ := uuid.FromString(d.ServiceProfileId)
@@ -872,7 +872,7 @@ func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
 		if err := proto.Unmarshal(d.PendingRejoinDeviceSession, &dsPB); err != nil {
 			log.WithField("dev_eui", out.DevEUI).WithError(err).Error("decode pending rejoin device-session error")
 		} else {
-			ds := deviceSessionFromPB(dsPB)
+			ds := deviceSessionFromPB(&dsPB)
 			out.PendingRejoinDeviceSession = &ds
 		}
 	}
@@ -884,7 +884,7 @@ func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
 	return out
 }
 
-func deviceGatewayRXInfoSetToPB(d DeviceGatewayRXInfoSet) DeviceGatewayRXInfoSetPB {
+func deviceGatewayRXInfoSetToPB(d DeviceGatewayRXInfoSet) *DeviceGatewayRXInfoSetPB {
 	out := DeviceGatewayRXInfoSetPB{
 		DevEui: d.DevEUI[:],
 		Dr:     uint32(d.DR),
@@ -901,10 +901,10 @@ func deviceGatewayRXInfoSetToPB(d DeviceGatewayRXInfoSet) DeviceGatewayRXInfoSet
 		})
 	}
 
-	return out
+	return &out
 }
 
-func deviceGatewayRXInfoSetFromPB(d DeviceGatewayRXInfoSetPB) DeviceGatewayRXInfoSet {
+func deviceGatewayRXInfoSetFromPB(d *DeviceGatewayRXInfoSetPB) DeviceGatewayRXInfoSet {
 	out := DeviceGatewayRXInfoSet{
 		DR: int(d.Dr),
 	}

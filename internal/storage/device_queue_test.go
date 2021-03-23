@@ -6,11 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/require"
 
-	"github.com/brocaar/chirpstack-api/go/v3/as"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
 	"github.com/brocaar/chirpstack-network-server/internal/gps"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
@@ -52,6 +50,7 @@ func (ts *StorageTestSuite) TestDeviceQueue() {
 	sp := ServiceProfile{}
 	dp := DeviceProfile{}
 	rp := RoutingProfile{}
+	ds := DeviceSession{}
 
 	assert.Nil(CreateServiceProfile(context.Background(), ts.Tx(), &sp))
 	assert.Nil(CreateDeviceProfile(context.Background(), ts.Tx(), &dp))
@@ -99,7 +98,7 @@ func (ts *StorageTestSuite) TestDeviceQueue() {
 			},
 		}
 		for i := range items {
-			assert.NoError(CreateDeviceQueueItem(context.Background(), ts.Tx(), &items[i]))
+			assert.NoError(CreateDeviceQueueItem(context.Background(), ts.Tx(), &items[i], dp, ds))
 			items[i].CreatedAt = items[i].UpdatedAt.UTC().Round(time.Millisecond)
 			items[i].UpdatedAt = items[i].UpdatedAt.UTC().Round(time.Millisecond)
 		}
@@ -143,9 +142,10 @@ func (ts *StorageTestSuite) TestDeviceQueue() {
 		t.Run("GetNextDeviceQueueItemForDevEUI", func(t *testing.T) {
 			assert := require.New(t)
 
-			qi, err := GetNextDeviceQueueItemForDevEUI(context.Background(), ts.Tx(), d.DevEUI)
+			qi, more, err := GetNextDeviceQueueItemForDevEUI(context.Background(), ts.Tx(), d.DevEUI)
 			assert.NoError(err)
 			assert.EqualValues(1, qi.FCnt)
+			assert.True(more)
 		})
 
 		t.Run("First item in queue is pending and timeout in future", func(t *testing.T) {
@@ -156,7 +156,7 @@ func (ts *StorageTestSuite) TestDeviceQueue() {
 			items[0].TimeoutAfter = &tss
 			assert.NoError(UpdateDeviceQueueItem(context.Background(), ts.Tx(), &items[0]))
 
-			_, err := GetNextDeviceQueueItemForDevEUI(context.Background(), ts.Tx(), d.DevEUI)
+			_, _, err := GetNextDeviceQueueItemForDevEUI(context.Background(), ts.Tx(), d.DevEUI)
 			assert.Equal(err, ErrDoesNotExist)
 		})
 
@@ -165,6 +165,7 @@ func (ts *StorageTestSuite) TestDeviceQueue() {
 
 			items[0].IsPending = true
 			items[0].TimeoutAfter = &inOneHour
+			items[0].RetryAfter = &inOneHour
 			assert.NoError(UpdateDeviceQueueItem(context.Background(), ts.Tx(), &items[0]))
 			items[0].UpdatedAt = items[0].UpdatedAt.UTC().Round(time.Millisecond)
 
@@ -174,6 +175,8 @@ func (ts *StorageTestSuite) TestDeviceQueue() {
 			qi.UpdatedAt = qi.UpdatedAt.UTC().Round(time.Millisecond)
 			assert.True(qi.TimeoutAfter.Equal(inOneHour))
 			qi.TimeoutAfter = &inOneHour
+			assert.True(qi.RetryAfter.Equal(inOneHour))
+			qi.RetryAfter = &inOneHour
 			assert.Equal(items[0], qi)
 		})
 
@@ -195,154 +198,30 @@ func (ts *StorageTestSuite) TestDeviceQueue() {
 			assert.Len(items, 0)
 		})
 
-		t.Run("When testing GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt", func(t *testing.T) {
+		t.Run("Create for Class-B", func(t *testing.T) {
+			assert := require.New(t)
 
-			tests := []struct {
-				Name          string
-				FCnt          uint32
-				MaxFRMPayload int
+			dp.SupportsClassB = true
+			ds.BeaconLocked = true
+			ds.PingSlotNb = 1
 
-				ExpectedDeviceQueueItemFCnt uint32
-				ExpectedHandleError         []as.HandleErrorRequest
-				ExpectedHandleDownlinkACK   []as.HandleDownlinkACKRequest
-				ExpectedError               error
-			}{
-				{
-					Name:                        "nACK + first item from the queue (timeout)",
-					FCnt:                        100,
-					MaxFRMPayload:               7,
-					ExpectedDeviceQueueItemFCnt: 101,
-					ExpectedHandleDownlinkACK: []as.HandleDownlinkACKRequest{
-						{DevEui: d.DevEUI[:], FCnt: 100, Acknowledged: false},
-					},
-				},
-				{
-					Name:                        "nACK + first item discarded (payload size)",
-					FCnt:                        100,
-					MaxFRMPayload:               6,
-					ExpectedDeviceQueueItemFCnt: 102,
-					ExpectedHandleError: []as.HandleErrorRequest{
-						{DevEui: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 101},
-					},
-					ExpectedHandleDownlinkACK: []as.HandleDownlinkACKRequest{
-						{DevEui: d.DevEUI[:], FCnt: 100, Acknowledged: false},
-					},
-				},
-				{
-					Name:                        "nACK + first two items discarded (payload size)",
-					FCnt:                        100,
-					MaxFRMPayload:               5,
-					ExpectedDeviceQueueItemFCnt: 103,
-					ExpectedHandleError: []as.HandleErrorRequest{
-						{DevEui: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 101},
-						{DevEui: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 102},
-					},
-					ExpectedHandleDownlinkACK: []as.HandleDownlinkACKRequest{
-						{DevEui: d.DevEUI[:], FCnt: 100, Acknowledged: false},
-					},
-				},
-				{
-					Name:          "nACK + all items discarded (payload size)",
-					FCnt:          101,
-					MaxFRMPayload: 3,
-					ExpectedHandleError: []as.HandleErrorRequest{
-						{DevEui: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 101},
-						{DevEui: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 102},
-						{DevEui: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 103},
-						{DevEui: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_SIZE, Error: "payload exceeds max payload size", FCnt: 104},
-					},
-					ExpectedHandleDownlinkACK: []as.HandleDownlinkACKRequest{
-						{DevEui: d.DevEUI[:], FCnt: 100, Acknowledged: false},
-					},
-					ExpectedError: ErrDoesNotExist,
-				},
-				{
-					Name:                        "nACK + first item discarded (fCnt)",
-					FCnt:                        102,
-					MaxFRMPayload:               7,
-					ExpectedDeviceQueueItemFCnt: 102,
-					ExpectedHandleError: []as.HandleErrorRequest{
-						{DevEui: d.DevEUI[:], Type: as.ErrorType_DEVICE_QUEUE_ITEM_FCNT, Error: "invalid frame-counter", FCnt: 101},
-					},
-					ExpectedHandleDownlinkACK: []as.HandleDownlinkACKRequest{
-						{DevEui: d.DevEUI[:], FCnt: 100, Acknowledged: false},
-					},
-				},
+			qi := DeviceQueueItem{
+				DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:     d.DevEUI,
+				FRMPayload: []byte{1, 2, 3},
+				FCnt:       1,
+				FPort:      10,
 			}
+			assert.NoError(CreateDeviceQueueItem(context.Background(), ts.Tx(), &qi, dp, ds))
 
-			for _, test := range tests {
-				t.Run(test.Name, func(t *testing.T) {
-					assert := require.New(t)
-					oneMinuteAgo := time.Now().Add(-time.Minute)
+			qiGet, more, err := GetNextDeviceQueueItemForDevEUI(context.Background(), ts.Tx(), d.DevEUI)
+			assert.NoError(err)
+			assert.False(more)
 
-					// each test we want to test against a fresh queue
-					items := []DeviceQueueItem{
-						{
-							DevAddr:      lorawan.DevAddr{1, 2, 3, 4},
-							DevEUI:       d.DevEUI,
-							FCnt:         100,
-							FPort:        1,
-							FRMPayload:   []byte{1, 2, 3, 4, 5, 6, 7},
-							IsPending:    true,
-							TimeoutAfter: &oneMinuteAgo,
-						},
-						{
-							DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
-							DevEUI:     d.DevEUI,
-							FCnt:       101,
-							FPort:      1,
-							FRMPayload: []byte{1, 2, 3, 4, 5, 6, 7},
-						},
-						{
-							DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
-							DevEUI:     d.DevEUI,
-							FCnt:       102,
-							FPort:      2,
-							FRMPayload: []byte{1, 2, 3, 4, 5, 6},
-						},
-						{
-							DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
-							DevEUI:     d.DevEUI,
-							FCnt:       103,
-							FPort:      3,
-							FRMPayload: []byte{1, 2, 3, 4, 5},
-						},
-						{
-							DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
-							DevEUI:     d.DevEUI,
-							FCnt:       104,
-							FPort:      4,
-							FRMPayload: []byte{1, 2, 3, 4},
-						},
-					}
-					for i := range items {
-						assert.NoError(CreateDeviceQueueItem(context.Background(), ts.Tx(), &items[i]))
-					}
-
-					qi, err := GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(context.Background(), ts.Tx(), d.DevEUI, test.MaxFRMPayload, test.FCnt, rp.ID)
-					if test.ExpectedError == nil {
-						assert.Equal(test.ExpectedDeviceQueueItemFCnt, qi.FCnt)
-						assert.NoError(err)
-					} else {
-						assert.Equal(test.ExpectedError, errors.Cause(err))
-					}
-
-					assert.Equal(len(test.ExpectedHandleError), len(asClient.HandleErrorChan))
-					for _, err := range test.ExpectedHandleError {
-						req := <-asClient.HandleErrorChan
-						assert.Equal(err, req)
-					}
-
-					assert.Equal(len(test.ExpectedHandleDownlinkACK), len(asClient.HandleDownlinkACKChan))
-					for _, ack := range test.ExpectedHandleDownlinkACK {
-						req := <-asClient.HandleDownlinkACKChan
-						assert.Equal(ack, req)
-					}
-
-					assert.NoError(FlushDeviceQueueForDevEUI(context.Background(), ts.Tx(), d.DevEUI))
-				})
-			}
+			// For class-b, the EmitAtTimeSinceGPSEpoch must be set.
+			assert.NotNil(qiGet.EmitAtTimeSinceGPSEpoch)
 		})
+
 	})
 }
 
@@ -487,6 +366,7 @@ func TestGetDevEUIsWithClassBOrCDeviceQueueItems(t *testing.T) {
 			}
 
 			inOneMinute := time.Now().Add(time.Minute)
+			oneMinuteAgo := time.Now().Add(-time.Minute)
 
 			tests := []getDeviceQueueItemsTestCase{
 				{
@@ -510,6 +390,30 @@ func TestGetDevEUIsWithClassBOrCDeviceQueueItems(t *testing.T) {
 					},
 					ExpectedDevEUIs: [][]lorawan.EUI64{
 						nil,
+						nil,
+					},
+				},
+				{
+					Name:         "single queue item with retry_after in the future",
+					GetCallCount: 2,
+					GetCount:     1,
+					QueueItems: []DeviceQueueItem{
+						{DevEUI: devices[0].DevEUI, FCnt: 1, FPort: 1, FRMPayload: []byte{1, 2, 3}, RetryAfter: &inOneMinute},
+					},
+					ExpectedDevEUIs: [][]lorawan.EUI64{
+						nil,
+						nil,
+					},
+				},
+				{
+					Name:         "single queue item with retry_after in the past",
+					GetCallCount: 2,
+					GetCount:     1,
+					QueueItems: []DeviceQueueItem{
+						{DevEUI: devices[0].DevEUI, FCnt: 1, FPort: 1, FRMPayload: []byte{1, 2, 3}, RetryAfter: &oneMinuteAgo},
+					},
+					ExpectedDevEUIs: [][]lorawan.EUI64{
+						{devices[0].DevEUI},
 						nil,
 					},
 				},
@@ -572,7 +476,7 @@ func runGetDeviceQueueItemsTests(tests []getDeviceQueueItemsTestCase) {
 			}()
 
 			for i := range test.QueueItems {
-				So(CreateDeviceQueueItem(context.Background(), DB(), &test.QueueItems[i]), ShouldBeNil)
+				So(CreateDeviceQueueItem(context.Background(), DB(), &test.QueueItems[i], DeviceProfile{}, DeviceSession{}), ShouldBeNil)
 			}
 
 			for i := 0; i < test.GetCallCount; i++ {

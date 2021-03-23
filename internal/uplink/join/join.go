@@ -143,7 +143,7 @@ func (ctx *joinContext) logJoinRequestFramesCollected() error {
 
 func (ctx *joinContext) getDeviceOrTryRoaming() error {
 	var err error
-	ctx.Device, err = storage.GetDevice(ctx.ctx, storage.DB(), ctx.JoinRequestPayload.DevEUI)
+	ctx.Device, err = storage.GetDevice(ctx.ctx, storage.DB(), ctx.JoinRequestPayload.DevEUI, false)
 	if err != nil {
 		if errors.Cause(err) == storage.ErrDoesNotExist {
 			log.WithFields(log.Fields{

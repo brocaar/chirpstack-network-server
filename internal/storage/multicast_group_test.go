@@ -163,6 +163,26 @@ func (ts *StorageTestSuite) TestMulticastQueue() {
 			assert.Equal(gps2, d)
 		})
 
+		t.Run("Update", func(t *testing.T) {
+			assert := require.New(t)
+
+			now := time.Now().Truncate(time.Millisecond)
+			qi1.RetryAfter = &now
+			assert.NoError(UpdateMulticastQueueItem(context.Background(), ts.Tx(), &qi1))
+			qi1.CreatedAt = qi1.CreatedAt.UTC().Truncate(time.Millisecond)
+			qi1.UpdatedAt = qi1.UpdatedAt.UTC().Truncate(time.Millisecond)
+
+			qi, err := GetMulticastQueueItem(context.Background(), ts.Tx(), qi1.ID)
+			assert.NoError(err)
+
+			qi.CreatedAt = qi.CreatedAt.UTC().Truncate(time.Millisecond)
+			qi.UpdatedAt = qi.UpdatedAt.UTC().Truncate(time.Millisecond)
+			assert.True(qi.RetryAfter.Equal(now))
+			qi.RetryAfter = &now
+
+			assert.Equal(qi1, qi)
+		})
+
 		t.Run("Delete", func(t *testing.T) {
 			assert := require.New(t)
 

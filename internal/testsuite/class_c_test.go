@@ -96,7 +96,7 @@ func (ts *ClassCTestSuite) TestClassC() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(8),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertDownlinkFrame(gatewayID, txInfo, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -128,7 +128,7 @@ func (ts *ClassCTestSuite) TestClassC() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(8),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertDownlinkFrame(gatewayID, txInfo, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -161,7 +161,7 @@ func (ts *ClassCTestSuite) TestClassC() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(8),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertDownlinkFrame(gatewayID, txInfo, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.ConfirmedDataDown,
@@ -215,7 +215,7 @@ func (ts *ClassCTestSuite) TestClassC() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(8),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertDownlinkFrame(gatewayID, txInfo, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,

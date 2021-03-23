@@ -774,7 +774,7 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
 					DevEui:          ts.Device.DevEUI[:],
 					JoinEui:         ts.DeviceSession.JoinEUI[:],
@@ -845,7 +845,7 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
 					DevEui:          ts.Device.DevEUI[:],
 					JoinEui:         ts.DeviceSession.JoinEUI[:],
@@ -1061,7 +1061,7 @@ func (ts *ClassATestSuite) TestLW10RXDelay() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
 					DevEui:          ts.Device.DevEUI[:],
 					JoinEui:         ts.DeviceSession.JoinEUI[:],
@@ -1269,7 +1269,7 @@ func (ts *ClassATestSuite) TestLW10MACCommands() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
@@ -1344,7 +1344,7 @@ func (ts *ClassATestSuite) TestLW10MACCommands() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
@@ -1631,7 +1631,7 @@ func (ts *ClassATestSuite) TestLW10MACCommandsDisabled() {
 					MIC: lorawan.MIC{0xde, 0xb, 0x5d, 0x4e},
 				}),
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 			},
 		},
 		{
@@ -1863,7 +1863,7 @@ func (ts *ClassATestSuite) TestLW11DeviceQueue() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertAFCntDown(4),
+				AssertAFCntDown(3),
 				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
 					DevEui:  ts.Device.DevEUI[:],
 					JoinEui: ts.DeviceSession.JoinEUI[:],
@@ -1938,7 +1938,7 @@ func (ts *ClassATestSuite) TestLW11DeviceQueue() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertAFCntDown(4),
+				AssertAFCntDown(3),
 				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
 					DevEui:  ts.Device.DevEUI[:],
 					JoinEui: ts.DeviceSession.JoinEUI[:],
@@ -2040,7 +2040,7 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
 					DevEui:  ts.Device.DevEUI[:],
 					JoinEui: ts.DeviceSession.JoinEUI[:],
@@ -2116,7 +2116,7 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
 					DevEui:  ts.Device.DevEUI[:],
 					JoinEui: ts.DeviceSession.JoinEUI[:],
@@ -2192,7 +2192,7 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
 					DevEui:  ts.Device.DevEUI[:],
 					JoinEui: ts.DeviceSession.JoinEUI[:],
@@ -2317,7 +2317,7 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
 					DevEui:  ts.Device.DevEUI[:],
 					JoinEui: ts.DeviceSession.JoinEUI[:],
@@ -2355,17 +2355,18 @@ func (ts *ClassATestSuite) TestLW10DeviceQueue() {
 						FHDR: lorawan.FHDR{
 							DevAddr: ts.DeviceSession.DevAddr,
 							FCnt:    5,
+							FOpts: []lorawan.Payload{
+								&lorawan.MACCommand{
+									CID: lorawan.DevStatusReq,
+								},
+							},
 							FCtrl: lorawan.FCtrl{
 								ADR:      true,
 								FPending: true,
 							},
 						},
-						FPort: &fPortTen,
-						FRMPayload: []lorawan.Payload{
-							&lorawan.DataPayload{Bytes: make([]byte, 51)},
-						},
 					},
-					MIC: lorawan.MIC{0xd1, 0x2f, 0x7c, 0xa8},
+					MIC: lorawan.MIC{0x55, 0xad, 0x58, 0x67},
 				}),
 			},
 		},
@@ -2416,7 +2417,7 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
@@ -2614,7 +2615,7 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
@@ -2676,7 +2677,7 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
@@ -2825,7 +2826,7 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertEnabledUplinkChannels([]int{0, 1, 2, 3, 4, 5, 6, 7}),
 				AssertMACCommandErrorCount(lorawan.LinkADRAns, 1),
 				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
@@ -2901,7 +2902,7 @@ func (ts *ClassATestSuite) TestLW10ADR() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertEnabledUplinkChannels([]int{0, 1, 2, 3, 4, 5, 6, 7}),
 				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
@@ -3049,7 +3050,7 @@ func (ts *ClassATestSuite) TestLW10DeviceStatusRequest() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(11),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  ts.TXInfo.Frequency,
 					Power:      14,
@@ -3692,171 +3693,6 @@ func (ts *ClassATestSuite) TestLW11ReceiveWindowSelection() {
 						FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: make([]byte, 100)}},
 					},
 					MIC: lorawan.MIC{0x6e, 0xc6, 0xc2, 0x7c},
-				}),
-			},
-		},
-		{
-			Name: "unconfirmed uplink with payload (rx1, mac-command stripped as it exceeds rx2 limit)",
-			BeforeFunc: func(tst *ClassATest) error {
-				conf := test.GetConfig()
-				conf.NetworkServer.NetworkSettings.RXWindow = 0
-				downlink.Setup(conf)
-
-				ts.ServiceProfile.DevStatusReqFreq = 1
-				if err := storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile); err != nil {
-					return err
-				}
-
-				return helpers.SetUplinkTXInfoDataRate(&tst.TXInfo, 5, band.Band())
-			},
-			AfterFunc: func(tst *ClassATest) error {
-				ts.ServiceProfile.DevStatusReqFreq = 0
-				return storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile)
-			},
-			DeviceQueueItems: []storage.DeviceQueueItem{
-				{DevEUI: ts.Device.DevEUI, FRMPayload: make([]byte, 51), FPort: 1, FCnt: 4},
-			},
-			DeviceSession: *ts.DeviceSession,
-			TXInfo:        ts.TXInfo,
-			RXInfo:        ts.RXInfo,
-			PHYPayload: lorawan.PHYPayload{
-				MHDR: lorawan.MHDR{
-					MType: lorawan.UnconfirmedDataUp,
-					Major: lorawan.LoRaWANR1,
-				},
-				MACPayload: &lorawan.MACPayload{
-					FHDR: lorawan.FHDR{
-						DevAddr: ts.DeviceSession.DevAddr,
-						FCnt:    10,
-					},
-					FPort:      &fPortOne,
-					FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
-				},
-				MIC: lorawan.MIC{0xd4, 0x59, 0x68, 0x93},
-			},
-			Assert: []Assertion{
-				AssertFCntUp(11),
-				AssertNFCntDown(5),
-				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
-					Frequency:  868100000,
-					Power:      14,
-					Modulation: common.Modulation_LORA,
-					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
-						LoraModulationInfo: &gw.LoRaModulationInfo{
-							Bandwidth:             125,
-							SpreadingFactor:       7,
-							PolarizationInversion: true,
-							CodeRate:              "4/5",
-						},
-					},
-					Context: ts.RXInfo.Context,
-					Timing:  gw.DownlinkTiming_DELAY,
-					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
-						DelayTimingInfo: &gw.DelayTimingInfo{
-							Delay: ptypes.DurationProto(time.Second),
-						},
-					},
-				}, lorawan.PHYPayload{
-					MHDR: lorawan.MHDR{
-						MType: lorawan.UnconfirmedDataDown,
-						Major: lorawan.LoRaWANR1,
-					},
-					MACPayload: &lorawan.MACPayload{
-						FHDR: lorawan.FHDR{
-							DevAddr: ts.DeviceSession.DevAddr,
-							FCnt:    4,
-							FCtrl: lorawan.FCtrl{
-								ADR: true,
-							},
-							FOpts: []lorawan.Payload{
-								&lorawan.MACCommand{
-									CID: 181, // encrypted
-								},
-							},
-						},
-						FPort:      &fPortOne,
-						FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: make([]byte, 51)}},
-					},
-					MIC: lorawan.MIC{0x17, 0x4e, 0xc6, 0x6e},
-				}),
-				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					Frequency:  868100000,
-					Power:      14,
-					Modulation: common.Modulation_LORA,
-					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
-						LoraModulationInfo: &gw.LoRaModulationInfo{
-							Bandwidth:             125,
-							SpreadingFactor:       7,
-							PolarizationInversion: true,
-							CodeRate:              "4/5",
-						},
-					},
-					Context: ts.RXInfo.Context,
-					Timing:  gw.DownlinkTiming_DELAY,
-					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
-						DelayTimingInfo: &gw.DelayTimingInfo{
-							Delay: ptypes.DurationProto(time.Second),
-						},
-					},
-				}, lorawan.PHYPayload{
-					MHDR: lorawan.MHDR{
-						MType: lorawan.UnconfirmedDataDown,
-						Major: lorawan.LoRaWANR1,
-					},
-					MACPayload: &lorawan.MACPayload{
-						FHDR: lorawan.FHDR{
-							DevAddr: ts.DeviceSession.DevAddr,
-							FCnt:    4,
-							FCtrl: lorawan.FCtrl{
-								ADR: true,
-							},
-							FOpts: []lorawan.Payload{
-								&lorawan.MACCommand{
-									CID: 181, // encrypted
-								},
-							},
-						},
-						FPort:      &fPortOne,
-						FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: make([]byte, 51)}},
-					},
-					MIC: lorawan.MIC{0x17, 0x4e, 0xc6, 0x6e},
-				}),
-				AssertDownlinkFrameSaved(ts.Gateway.GatewayID, ts.Device.DevEUI, uuid.Nil, gw.DownlinkTXInfo{
-					Frequency:  869525000,
-					Power:      27,
-					Modulation: common.Modulation_LORA,
-					ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
-						LoraModulationInfo: &gw.LoRaModulationInfo{
-							Bandwidth:             125,
-							SpreadingFactor:       12,
-							PolarizationInversion: true,
-							CodeRate:              "4/5",
-						},
-					},
-					Context: ts.RXInfo.Context,
-					Timing:  gw.DownlinkTiming_DELAY,
-					TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
-						DelayTimingInfo: &gw.DelayTimingInfo{
-							Delay: ptypes.DurationProto(time.Second * 2),
-						},
-					},
-				}, lorawan.PHYPayload{
-					MHDR: lorawan.MHDR{
-						MType: lorawan.UnconfirmedDataDown,
-						Major: lorawan.LoRaWANR1,
-					},
-					MACPayload: &lorawan.MACPayload{
-						FHDR: lorawan.FHDR{
-							DevAddr: ts.DeviceSession.DevAddr,
-							FCnt:    4,
-							FCtrl: lorawan.FCtrl{
-								ADR: true,
-							},
-						},
-						FPort:      &fPortOne,
-						FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: make([]byte, 51)}},
-					},
-					MIC: lorawan.MIC{0x3c, 0xab, 0x49, 0xe9},
 				}),
 			},
 		},

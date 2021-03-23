@@ -499,6 +499,15 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # assigned to the gateway).
   force_gws_private={{ .NetworkServer.Gateway.ForceGwsPrivate }}
 
+  # Downlink timeout.
+  #
+  # This defines the timeout of a downlink command. This timeout is used when
+  # scheduling Class-B, Class-C and multicast downlinks. In case the gateway
+  # did not acknowledge the downlink transmission within the configured timeout,
+  # the network-server will assume the downlink was not transmitted and will
+  # retry the downlink transmission.
+  downlink_timeout="{{ .NetworkServer.Gateway.DownlinkTimeout }}"
+
 
   # Backend defines the gateway backend settings.
   #

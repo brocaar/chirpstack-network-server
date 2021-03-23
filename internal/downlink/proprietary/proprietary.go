@@ -143,7 +143,7 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 
 func saveDownlinkFrames(ctx *proprietaryContext) error {
 	for _, df := range ctx.DownlinkFrames {
-		if err := storage.SaveDownlinkFrame(ctx.ctx, storage.DownlinkFrame{
+		if err := storage.SaveDownlinkFrame(ctx.ctx, &storage.DownlinkFrame{
 			Token:         df.Token,
 			DownlinkFrame: &df,
 		}); err != nil {

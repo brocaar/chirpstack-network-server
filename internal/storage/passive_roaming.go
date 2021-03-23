@@ -66,7 +66,7 @@ func SavePassiveRoamingDeviceSession(ctx context.Context, ds *PassiveRoamingDevi
 		return errors.Wrap(err, "to protobuf error")
 	}
 
-	b, err := proto.Marshal(&dsPB)
+	b, err := proto.Marshal(dsPB)
 	if err != nil {
 		return errors.Wrap(err, "protobuf marshal error")
 	}
@@ -224,16 +224,16 @@ func GetPassiveRoamingDeviceSession(ctx context.Context, id uuid.UUID) (PassiveR
 		return PassiveRoamingDeviceSession{}, errors.Wrap(err, "unmarshal protobuf error")
 	}
 
-	return passiveRoamingDeviceSessionFromPB(dsPB)
+	return passiveRoamingDeviceSessionFromPB(&dsPB)
 }
 
-func passiveRoamingDeviceSessionToPB(ds *PassiveRoamingDeviceSession) (PassiveRoamingDeviceSessionPB, error) {
+func passiveRoamingDeviceSessionToPB(ds *PassiveRoamingDeviceSession) (*PassiveRoamingDeviceSessionPB, error) {
 	timePB, err := ptypes.TimestampProto(ds.Lifetime)
 	if err != nil {
-		return PassiveRoamingDeviceSessionPB{}, errors.Wrap(err, "timestamp proto error")
+		return nil, errors.Wrap(err, "timestamp proto error")
 	}
 
-	return PassiveRoamingDeviceSessionPB{
+	return &PassiveRoamingDeviceSessionPB{
 		SessionId:   ds.SessionID[:],
 		NetId:       ds.NetID[:],
 		DevAddr:     ds.DevAddr[:],
@@ -246,7 +246,7 @@ func passiveRoamingDeviceSessionToPB(ds *PassiveRoamingDeviceSession) (PassiveRo
 	}, nil
 }
 
-func passiveRoamingDeviceSessionFromPB(dsPB PassiveRoamingDeviceSessionPB) (PassiveRoamingDeviceSession, error) {
+func passiveRoamingDeviceSessionFromPB(dsPB *PassiveRoamingDeviceSessionPB) (PassiveRoamingDeviceSession, error) {
 	ts, err := ptypes.Timestamp(dsPB.Lifetime)
 	if err != nil {
 		return PassiveRoamingDeviceSession{}, errors.Wrap(err, "timestamp error")

@@ -3,16 +3,19 @@ package data
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/golang/protobuf/ptypes/duration"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/brocaar/chirpstack-api/go/v3/as"
 	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/gps"
 	"github.com/brocaar/chirpstack-network-server/internal/models"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
@@ -23,10 +26,11 @@ import (
 type GetNextDeviceQueueItemTestSuite struct {
 	suite.Suite
 
-	tx *storage.TxLogger
-
-	ASClient *test.ApplicationClient
-	Device   storage.Device
+	asClient       *test.ApplicationClient
+	device         storage.Device
+	serviceProfile storage.ServiceProfile
+	deviceProfile  storage.DeviceProfile
+	routingProfile storage.RoutingProfile
 }
 
 func (ts *GetNextDeviceQueueItemTestSuite) SetupSuite() {
@@ -35,223 +39,380 @@ func (ts *GetNextDeviceQueueItemTestSuite) SetupSuite() {
 	assert.NoError(storage.Setup(conf))
 	test.MustResetDB(storage.DB().DB)
 
-	ts.ASClient = test.NewApplicationClient()
-	applicationserver.SetPool(test.NewApplicationServerPool(ts.ASClient))
+	ts.asClient = test.NewApplicationClient()
+	applicationserver.SetPool(test.NewApplicationServerPool(ts.asClient))
 
-	sp := storage.ServiceProfile{}
-	assert.NoError(storage.CreateServiceProfile(context.Background(), storage.DB(), &sp))
-
-	dp := storage.DeviceProfile{}
-	assert.NoError(storage.CreateDeviceProfile(context.Background(), storage.DB(), &dp))
-
-	rp := storage.RoutingProfile{}
-	assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp))
-
-	ts.Device = storage.Device{
-		DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
-		ServiceProfileID: sp.ID,
-		DeviceProfileID:  dp.ID,
-		RoutingProfileID: rp.ID,
+	ts.deviceProfile = storage.DeviceProfile{
+		SupportsClassB: true,
+		ClassBTimeout:  60,
 	}
-	assert.NoError(storage.CreateDevice(context.Background(), storage.DB(), &ts.Device))
-}
 
-func (ts *GetNextDeviceQueueItemTestSuite) SetupTest() {
-	assert := require.New(ts.T())
-	var err error
-	ts.tx, err = storage.DB().Beginx()
-	assert.NoError(err)
+	assert.NoError(storage.CreateServiceProfile(context.Background(), storage.DB(), &ts.serviceProfile))
+	assert.NoError(storage.CreateDeviceProfile(context.Background(), storage.DB(), &ts.deviceProfile))
+	assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &ts.routingProfile))
+
+	ts.device = storage.Device{
+		DevEUI:           lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8},
+		ServiceProfileID: ts.serviceProfile.ID,
+		DeviceProfileID:  ts.deviceProfile.ID,
+		RoutingProfileID: ts.routingProfile.ID,
+	}
+	assert.NoError(storage.CreateDevice(context.Background(), storage.DB(), &ts.device))
 }
 
 func (ts *GetNextDeviceQueueItemTestSuite) TestGetNextDeviceQueueItem() {
+	now := time.Now()
+	timeSinceGPSEpochNow := gps.Time(now).TimeSinceGPSEpoch()
+	timeSinceGPSEpochFuture := gps.Time(now.Add(time.Second)).TimeSinceGPSEpoch()
+
 	tests := []struct {
-		Name                        string
-		DeviceQueueItems            []storage.DeviceQueueItem
-		DataContext                 dataContext
-		ExpectedDataContext         dataContext
-		ExpectedNextDeviceQueueItem *storage.DeviceQueueItem
+		name                              string
+		maxPayloadSize                    int
+		deviceSession                     storage.DeviceSession
+		deviceQueueItems                  []storage.DeviceQueueItem
+		reEncryptDeviceQueueItemsResponse as.ReEncryptDeviceQueueItemsResponse
+
+		expectedDeviceQueueItem                  *storage.DeviceQueueItem
+		expectedMoreDeviceQueueItems             bool
+		expectedHandleDownlinkACKRequest         *as.HandleDownlinkACKRequest
+		expectedReEncryptDeviceQueueItemsRequest *as.ReEncryptDeviceQueueItemsRequest
 	}{
 		{
-			Name: "remove all queue items because of frame-counter gap",
-			DeviceQueueItems: []storage.DeviceQueueItem{
+			name:           "empty queue",
+			maxPayloadSize: 100,
+			deviceSession: storage.DeviceSession{
+				DevAddr:          lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:           ts.device.DevEUI,
+				ServiceProfileID: ts.serviceProfile.ID,
+				DeviceProfileID:  ts.deviceProfile.ID,
+				RoutingProfileID: ts.routingProfile.ID,
+				MACVersion:       "1.0.3",
+				NFCntDown:        10,
+			},
+			deviceQueueItems:        nil,
+			expectedDeviceQueueItem: nil,
+		},
+		{
+			name:           "LoRaWAN 1.0 frame-counter",
+			maxPayloadSize: 100,
+			deviceSession: storage.DeviceSession{
+				DevAddr:          lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:           ts.device.DevEUI,
+				ServiceProfileID: ts.serviceProfile.ID,
+				DeviceProfileID:  ts.deviceProfile.ID,
+				RoutingProfileID: ts.routingProfile.ID,
+				MACVersion:       "1.0.3",
+				NFCntDown:        10,
+			},
+			deviceQueueItems: []storage.DeviceQueueItem{
 				{
-					DevEUI:     ts.Device.DevEUI,
-					FRMPayload: []byte{1, 2, 3, 4},
+					DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+					DevEUI:     ts.device.DevEUI,
+					FRMPayload: []byte{1, 2, 3},
 					FCnt:       10,
-					FPort:      1,
+					FPort:      3,
 				},
 				{
-					DevEUI:     ts.Device.DevEUI,
-					FRMPayload: []byte{4, 5, 6, 7},
-					Confirmed:  true,
+					DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+					DevEUI:     ts.device.DevEUI,
+					FRMPayload: []byte{4, 5, 6},
 					FCnt:       11,
-					FPort:      1,
+					FPort:      3,
 				},
 			},
-			DataContext: dataContext{
-				DeviceSession: storage.DeviceSession{
-					RoutingProfileID: ts.Device.RoutingProfileID,
-					DevEUI:           ts.Device.DevEUI,
-					NFCntDown:        12,
+			expectedDeviceQueueItem: &storage.DeviceQueueItem{
+				DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:     ts.device.DevEUI,
+				FRMPayload: []byte{1, 2, 3},
+				FCnt:       10,
+				FPort:      3,
+			},
+			expectedMoreDeviceQueueItems: true,
+		},
+		{
+			name:           "LoRaWAN 1.1 frame-counter",
+			maxPayloadSize: 100,
+			deviceSession: storage.DeviceSession{
+				DevAddr:          lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:           ts.device.DevEUI,
+				ServiceProfileID: ts.serviceProfile.ID,
+				DeviceProfileID:  ts.deviceProfile.ID,
+				RoutingProfileID: ts.routingProfile.ID,
+				MACVersion:       "1.1.0",
+				AFCntDown:        10,
+			},
+			deviceQueueItems: []storage.DeviceQueueItem{
+				{
+					DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+					DevEUI:     ts.device.DevEUI,
+					FRMPayload: []byte{1, 2, 3},
+					FCnt:       10,
+					FPort:      3,
 				},
-				DownlinkFrameItems: []downlinkFrameItem{
-					{
-						RemainingPayloadSize: 242,
-					},
+				{
+					DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+					DevEUI:     ts.device.DevEUI,
+					FRMPayload: []byte{4, 5, 6},
+					FCnt:       11,
+					FPort:      3,
 				},
 			},
-			ExpectedDataContext: dataContext{
-				DeviceSession: storage.DeviceSession{
-					RoutingProfileID: ts.Device.RoutingProfileID,
-					DevEUI:           ts.Device.DevEUI,
-					NFCntDown:        12,
+			expectedDeviceQueueItem: &storage.DeviceQueueItem{
+				DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:     ts.device.DevEUI,
+				FRMPayload: []byte{1, 2, 3},
+				FCnt:       10,
+				FPort:      3,
+			},
+			expectedMoreDeviceQueueItems: true,
+		},
+		{
+			name:           "Payload timed out",
+			maxPayloadSize: 100,
+			deviceSession: storage.DeviceSession{
+				DevAddr:          lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:           ts.device.DevEUI,
+				ServiceProfileID: ts.serviceProfile.ID,
+				DeviceProfileID:  ts.deviceProfile.ID,
+				RoutingProfileID: ts.routingProfile.ID,
+				MACVersion:       "1.0.2",
+				NFCntDown:        10,
+			},
+			deviceQueueItems: []storage.DeviceQueueItem{
+				{
+					DevAddr:      lorawan.DevAddr{1, 2, 3, 4},
+					DevEUI:       ts.device.DevEUI,
+					FRMPayload:   []byte{1, 2, 3},
+					FCnt:         10,
+					FPort:        3,
+					TimeoutAfter: &now,
 				},
-				DownlinkFrameItems: []downlinkFrameItem{
-					{
-						RemainingPayloadSize: 242,
-					},
-				},
+			},
+			expectedDeviceQueueItem: nil,
+			expectedHandleDownlinkACKRequest: &as.HandleDownlinkACKRequest{
+				DevEui:       ts.device.DevEUI[:],
+				FCnt:         10,
+				Acknowledged: false,
 			},
 		},
 		{
-			Name: "first queue item (unconfirmed)",
-			DeviceQueueItems: []storage.DeviceQueueItem{
+			name:           "Frame-counter out-of-sync, re-enqueue",
+			maxPayloadSize: 100,
+			deviceSession: storage.DeviceSession{
+				DevAddr:          lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:           ts.device.DevEUI,
+				ServiceProfileID: ts.serviceProfile.ID,
+				DeviceProfileID:  ts.deviceProfile.ID,
+				RoutingProfileID: ts.routingProfile.ID,
+				MACVersion:       "1.0.2",
+				NFCntDown:        11,
+			},
+			deviceQueueItems: []storage.DeviceQueueItem{
 				{
-					DevEUI:     ts.Device.DevEUI,
-					FRMPayload: []byte{1, 2, 3, 4},
+					DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+					DevEUI:     ts.device.DevEUI,
+					FRMPayload: []byte{1, 2, 3},
 					FCnt:       10,
-					FPort:      1,
+					FPort:      3,
 				},
 				{
-					DevEUI:     ts.Device.DevEUI,
-					FRMPayload: []byte{4, 5, 6, 7},
-					Confirmed:  true,
+					DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+					DevEUI:     ts.device.DevEUI,
+					FRMPayload: []byte{4, 5, 6},
 					FCnt:       11,
-					FPort:      1,
+					FPort:      3,
 				},
 			},
-			DataContext: dataContext{
-				DeviceSession: storage.DeviceSession{
-					RoutingProfileID: ts.Device.RoutingProfileID,
-					DevEUI:           ts.Device.DevEUI,
-					NFCntDown:        10,
-				},
-				DownlinkFrameItems: []downlinkFrameItem{
+			reEncryptDeviceQueueItemsResponse: as.ReEncryptDeviceQueueItemsResponse{
+				Items: []*as.ReEncryptedDeviceQueueItem{
 					{
-						RemainingPayloadSize: 242,
+						FrmPayload: []byte{3, 2, 1},
+						FCnt:       11,
+						FPort:      3,
+					},
+					{
+						FrmPayload: []byte{6, 5, 4},
+						FCnt:       12,
+						FPort:      3,
 					},
 				},
 			},
-			ExpectedDataContext: dataContext{
-				DeviceSession: storage.DeviceSession{
-					RoutingProfileID: ts.Device.RoutingProfileID,
-					DevEUI:           ts.Device.DevEUI,
-					NFCntDown:        10,
-				},
-				Data:     []byte{1, 2, 3, 4},
-				FPort:    1,
-				MoreData: true,
-				DownlinkFrameItems: []downlinkFrameItem{
+			expectedReEncryptDeviceQueueItemsRequest: &as.ReEncryptDeviceQueueItemsRequest{
+				DevEui:    ts.device.DevEUI[:],
+				DevAddr:   []byte{1, 2, 3, 4},
+				FCntStart: 11,
+				Items: []*as.ReEncryptDeviceQueueItem{
 					{
-						RemainingPayloadSize: 242 - 4,
+						FrmPayload: []byte{1, 2, 3},
+						FCnt:       10,
+						FPort:      3,
+					},
+					{
+						FrmPayload: []byte{4, 5, 6},
+						FCnt:       11,
+						FPort:      3,
 					},
 				},
 			},
-			// the seconds item should be returned as the first item
-			// has been popped from the queue
-			ExpectedNextDeviceQueueItem: &storage.DeviceQueueItem{
-				DevEUI:     ts.Device.DevEUI,
-				FRMPayload: []byte{4, 5, 6, 7},
-				FPort:      1,
+			expectedMoreDeviceQueueItems: true,
+			expectedDeviceQueueItem: &storage.DeviceQueueItem{
+				DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:     ts.device.DevEUI,
+				FRMPayload: []byte{3, 2, 1},
 				FCnt:       11,
-				Confirmed:  true,
+				FPort:      3,
 			},
 		},
 		{
-			Name: "second queue item (confirmed)",
-			DeviceQueueItems: []storage.DeviceQueueItem{
+			name:           "First queue item dropped because of max. payload size, second re-synced",
+			maxPayloadSize: 100,
+			deviceSession: storage.DeviceSession{
+				DevAddr:          lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:           ts.device.DevEUI,
+				ServiceProfileID: ts.serviceProfile.ID,
+				DeviceProfileID:  ts.deviceProfile.ID,
+				RoutingProfileID: ts.routingProfile.ID,
+				MACVersion:       "1.0.2",
+				NFCntDown:        10,
+			},
+			deviceQueueItems: []storage.DeviceQueueItem{
 				{
-					DevEUI:     ts.Device.DevEUI,
-					FRMPayload: []byte{1, 2, 3, 4},
+					DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+					DevEUI:     ts.device.DevEUI,
+					FRMPayload: make([]byte, 101),
 					FCnt:       10,
-					FPort:      1,
+					FPort:      3,
 				},
 				{
-					DevEUI:     ts.Device.DevEUI,
-					FRMPayload: []byte{4, 5, 6, 7},
-					Confirmed:  true,
+					DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+					DevEUI:     ts.device.DevEUI,
+					FRMPayload: []byte{4, 5, 6},
 					FCnt:       11,
-					FPort:      1,
+					FPort:      3,
 				},
 			},
-			DataContext: dataContext{
-				DeviceSession: storage.DeviceSession{
-					RoutingProfileID: ts.Device.RoutingProfileID,
-					DevEUI:           ts.Device.DevEUI,
-					NFCntDown:        11, // so the first one is skipped
-				},
-				DownlinkFrameItems: []downlinkFrameItem{
+			reEncryptDeviceQueueItemsResponse: as.ReEncryptDeviceQueueItemsResponse{
+				Items: []*as.ReEncryptedDeviceQueueItem{
 					{
-						RemainingPayloadSize: 242,
+						FrmPayload: []byte{3, 2, 1},
+						FCnt:       10,
+						FPort:      3,
 					},
 				},
 			},
-			ExpectedDataContext: dataContext{
-				DeviceSession: storage.DeviceSession{
-					RoutingProfileID: ts.Device.RoutingProfileID,
-					DevEUI:           ts.Device.DevEUI,
-					NFCntDown:        11,
-					ConfFCnt:         11,
-				},
-				Data:      []byte{4, 5, 6, 7},
-				FPort:     1,
-				Confirmed: true,
-				DownlinkFrameItems: []downlinkFrameItem{
+			expectedReEncryptDeviceQueueItemsRequest: &as.ReEncryptDeviceQueueItemsRequest{
+				DevEui:    ts.device.DevEUI[:],
+				DevAddr:   []byte{1, 2, 3, 4},
+				FCntStart: 10,
+				Items: []*as.ReEncryptDeviceQueueItem{
 					{
-						RemainingPayloadSize: 242 - 4,
+						FrmPayload: []byte{4, 5, 6},
+						FCnt:       11,
+						FPort:      3,
 					},
 				},
 			},
-			// the seconds item should be returned as the first item
-			// has been popped from the queue
-			ExpectedNextDeviceQueueItem: &storage.DeviceQueueItem{
-				DevEUI:     ts.Device.DevEUI,
-				FRMPayload: []byte{4, 5, 6, 7},
-				FPort:      1,
-				FCnt:       11,
-				Confirmed:  true,
-				IsPending:  true,
+			expectedDeviceQueueItem: &storage.DeviceQueueItem{
+				DevAddr:    lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:     ts.device.DevEUI,
+				FRMPayload: []byte{3, 2, 1},
+				FCnt:       10,
+				FPort:      3,
 			},
+		},
+		{
+			name:           "Class-B emit_at_time_since_gps_epoch is in the past",
+			maxPayloadSize: 100,
+			deviceSession: storage.DeviceSession{
+				DevAddr:          lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:           ts.device.DevEUI,
+				ServiceProfileID: ts.serviceProfile.ID,
+				DeviceProfileID:  ts.deviceProfile.ID,
+				RoutingProfileID: ts.routingProfile.ID,
+				MACVersion:       "1.0.3",
+				NFCntDown:        10,
+				BeaconLocked:     true,
+				PingSlotNb:       1,
+			},
+			deviceQueueItems: []storage.DeviceQueueItem{
+				{
+					DevAddr:                 lorawan.DevAddr{1, 2, 3, 4},
+					DevEUI:                  ts.device.DevEUI,
+					FRMPayload:              []byte{1, 2, 3},
+					FCnt:                    10,
+					FPort:                   3,
+					EmitAtTimeSinceGPSEpoch: &timeSinceGPSEpochNow,
+				},
+			},
+			expectedDeviceQueueItem: &storage.DeviceQueueItem{
+				DevAddr:                 lorawan.DevAddr{1, 2, 3, 4},
+				DevEUI:                  ts.device.DevEUI,
+				FRMPayload:              []byte{1, 2, 3},
+				FCnt:                    10,
+				FPort:                   3,
+				EmitAtTimeSinceGPSEpoch: &timeSinceGPSEpochFuture, // we will validate that this value > now
+			},
+			expectedMoreDeviceQueueItems: false,
 		},
 	}
 
 	for _, tst := range tests {
-		ts.T().Run(tst.Name, func(t *testing.T) {
+		ts.T().Run(tst.name, func(t *testing.T) {
 			assert := require.New(t)
-			ctx := context.Background()
-			tst.DataContext.ctx = ctx
 
-			assert.NoError(storage.FlushDeviceQueueForDevEUI(ctx, storage.DB(), ts.Device.DevEUI))
-			for i := range tst.DeviceQueueItems {
-				assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &tst.DeviceQueueItems[i]))
+			// set mock
+			ts.asClient.ReEncryptDeviceQueueItemsResponse = tst.reEncryptDeviceQueueItemsResponse
+
+			// Populate the device-queue
+			assert.NoError(storage.FlushDeviceQueueForDevEUI(context.Background(), storage.DB(), ts.device.DevEUI))
+			for _, item := range tst.deviceQueueItems {
+				assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &item, ts.deviceProfile, tst.deviceSession))
 			}
 
-			assert.NoError(getNextDeviceQueueItem(&tst.DataContext))
+			// setup context
+			ctx := dataContext{
+				ctx:           context.Background(),
+				DB:            storage.DB(),
+				DeviceProfile: ts.deviceProfile,
+				DeviceSession: tst.deviceSession,
+				DownlinkFrameItems: []downlinkFrameItem{
+					{
+						RemainingPayloadSize: tst.maxPayloadSize,
+						DownlinkFrameItem: gw.DownlinkFrameItem{
+							TxInfo: &gw.DownlinkTXInfo{},
+						},
+					},
+				},
+			}
 
-			tst.DataContext.ctx = nil
-			assert.Equal(tst.ExpectedDataContext, tst.DataContext)
+			assert.NoError(getNextDeviceQueueItem(&ctx))
 
-			if tst.ExpectedNextDeviceQueueItem != nil {
-				qi, err := storage.GetNextDeviceQueueItemForDevEUI(context.Background(), storage.DB(), ts.Device.DevEUI)
-				assert.NoError(err)
-				assert.Equal(tst.ExpectedNextDeviceQueueItem.FRMPayload, qi.FRMPayload)
-				assert.Equal(tst.ExpectedNextDeviceQueueItem.FPort, qi.FPort)
-				assert.Equal(tst.ExpectedNextDeviceQueueItem.FCnt, qi.FCnt)
-				assert.Equal(tst.ExpectedNextDeviceQueueItem.IsPending, qi.IsPending)
-				assert.Equal(tst.ExpectedNextDeviceQueueItem.Confirmed, qi.Confirmed)
-				if tst.ExpectedNextDeviceQueueItem.IsPending {
-					assert.NotNil(qi.TimeoutAfter)
+			if tst.expectedDeviceQueueItem == nil {
+				assert.Nil(ctx.DeviceQueueItem)
+			} else {
+				assert.NotNil(ctx.DeviceQueueItem)
+				assert.Equal(tst.expectedDeviceQueueItem.FCnt, ctx.DeviceQueueItem.FCnt)
+				assert.Equal(tst.expectedDeviceQueueItem.FPort, ctx.DeviceQueueItem.FPort)
+				assert.Equal(tst.expectedDeviceQueueItem.FRMPayload, ctx.DeviceQueueItem.FRMPayload)
+
+				if tst.expectedDeviceQueueItem.EmitAtTimeSinceGPSEpoch != nil {
+					assert.NotNil(ctx.DeviceQueueItem.EmitAtTimeSinceGPSEpoch)
+					assert.Greater(int64(*tst.expectedDeviceQueueItem.EmitAtTimeSinceGPSEpoch), int64(timeSinceGPSEpochNow))
+				} else {
+					assert.Nil(ctx.DeviceQueueItem.EmitAtTimeSinceGPSEpoch)
 				}
+
+				assert.Equal(tst.expectedMoreDeviceQueueItems, ctx.MoreDeviceQueueItems)
+			}
+
+			if tst.expectedHandleDownlinkACKRequest != nil {
+				req := <-ts.asClient.HandleDownlinkACKChan
+				assert.Equal(tst.expectedHandleDownlinkACKRequest, &req)
+			}
+
+			if tst.expectedReEncryptDeviceQueueItemsRequest != nil {
+				req := <-ts.asClient.ReEncryptDeviceQueueItemsChan
+				assert.Equal(tst.expectedReEncryptDeviceQueueItemsRequest, &req)
 			}
 		})
 	}
@@ -1562,6 +1723,203 @@ func TestSetDataTXInfo(t *testing.T) {
 			}
 
 			assert.EqualValues(tst.ExpectedDownlinkTXInfo, txInfo)
+		})
+	}
+}
+
+func TestSetPHYPayloads(t *testing.T) {
+	tests := []struct {
+		name                       string
+		downlinkFrameItems         []downlinkFrameItem
+		deviceSession              storage.DeviceSession
+		deviceQueueItem            *storage.DeviceQueueItem
+		macCommandBlocks           []storage.MACCommandBlock
+		expectedDownlinkFrameItems []*gw.DownlinkFrameItem
+	}{
+		{
+			name: "frmpayload for rx1 and rx2",
+			downlinkFrameItems: []downlinkFrameItem{
+				{
+					RemainingPayloadSize: 50,
+				},
+				{
+					RemainingPayloadSize: 50,
+				},
+			},
+			deviceSession: storage.DeviceSession{
+				MACVersion: "1.0.3",
+				NFCntDown:  10,
+			},
+			deviceQueueItem: &storage.DeviceQueueItem{
+				FRMPayload: []byte{1, 2, 3},
+				FCnt:       10,
+				FPort:      20,
+				Confirmed:  true,
+			},
+			expectedDownlinkFrameItems: []*gw.DownlinkFrameItem{
+				{
+					PhyPayload: []byte{0xa0, 0x0, 0x0, 0x0, 0x0, 0x80, 0xa, 0x0, 0x14, 0x1, 0x2, 0x3, 0x30, 0xb5, 0x95, 0x6f},
+				},
+				{
+					PhyPayload: []byte{0xa0, 0x0, 0x0, 0x0, 0x0, 0x80, 0xa, 0x0, 0x14, 0x1, 0x2, 0x3, 0x30, 0xb5, 0x95, 0x6f},
+				},
+			},
+		},
+		{
+			name: "frmpayload for rx1, empty frame for rx2",
+			downlinkFrameItems: []downlinkFrameItem{
+				{
+					RemainingPayloadSize: 50,
+				},
+				{
+					RemainingPayloadSize: 2,
+				},
+			},
+			deviceSession: storage.DeviceSession{
+				MACVersion: "1.0.3",
+				NFCntDown:  10,
+			},
+			deviceQueueItem: &storage.DeviceQueueItem{
+				FRMPayload: []byte{1, 2, 3},
+				FCnt:       10,
+				FPort:      20,
+				Confirmed:  true,
+			},
+			expectedDownlinkFrameItems: []*gw.DownlinkFrameItem{
+				{
+					PhyPayload: []byte{0xa0, 0x0, 0x0, 0x0, 0x0, 0x80, 0xa, 0x0, 0x14, 0x1, 0x2, 0x3, 0x30, 0xb5, 0x95, 0x6f},
+				},
+				{
+					PhyPayload: []byte{0x60, 0x0, 0x0, 0x0, 0x0, 0x90, 0xa, 0x0, 0xaf, 0x79, 0x8a, 0x46},
+				},
+			},
+		},
+		{
+			name: "empty frame for rx1, frmpayload for rx2",
+			downlinkFrameItems: []downlinkFrameItem{
+				{
+					RemainingPayloadSize: 2,
+				},
+				{
+					RemainingPayloadSize: 50,
+				},
+			},
+			deviceSession: storage.DeviceSession{
+				MACVersion: "1.0.3",
+				NFCntDown:  10,
+			},
+			deviceQueueItem: &storage.DeviceQueueItem{
+				FRMPayload: []byte{1, 2, 3},
+				FCnt:       10,
+				FPort:      20,
+				Confirmed:  true,
+			},
+			expectedDownlinkFrameItems: []*gw.DownlinkFrameItem{
+				{
+					PhyPayload: []byte{0x60, 0x0, 0x0, 0x0, 0x0, 0x90, 0xa, 0x0, 0xaf, 0x79, 0x8a, 0x46},
+				},
+				{
+					PhyPayload: []byte{0xa0, 0x0, 0x0, 0x0, 0x0, 0x80, 0xa, 0x0, 0x14, 0x1, 0x2, 0x3, 0x30, 0xb5, 0x95, 0x6f},
+				},
+			},
+		},
+		{
+			name: "mac-commands + frmpayload for rx1, mac-commands for rx2",
+			downlinkFrameItems: []downlinkFrameItem{
+				{
+					RemainingPayloadSize: 10,
+				},
+				{
+					RemainingPayloadSize: 2,
+				},
+			},
+			deviceSession: storage.DeviceSession{
+				MACVersion: "1.0.3",
+				NFCntDown:  10,
+			},
+			deviceQueueItem: &storage.DeviceQueueItem{
+				FRMPayload: []byte{1, 2, 3},
+				FCnt:       10,
+				FPort:      20,
+				Confirmed:  true,
+			},
+			macCommandBlocks: []storage.MACCommandBlock{
+				{
+					CID: lorawan.DevStatusReq,
+					MACCommands: []lorawan.MACCommand{
+						{
+							CID: lorawan.DevStatusReq,
+						},
+					},
+				},
+			},
+			expectedDownlinkFrameItems: []*gw.DownlinkFrameItem{
+				{
+					PhyPayload: []byte{0xa0, 0x0, 0x0, 0x0, 0x0, 0x81, 0xa, 0x0, 0x6, 0x14, 0x1, 0x2, 0x3, 0x93, 0xf2, 0x86, 0x2e},
+				},
+				{
+					PhyPayload: []byte{0x60, 0x0, 0x0, 0x0, 0x0, 0x91, 0xa, 0x0, 0x6, 0x7f, 0xf3, 0x22, 0xff},
+				},
+			},
+		},
+		{
+			name: "mac-commands for rx1 and rx2",
+			downlinkFrameItems: []downlinkFrameItem{
+				{
+					RemainingPayloadSize: 2,
+				},
+				{
+					RemainingPayloadSize: 2,
+				},
+			},
+			deviceSession: storage.DeviceSession{
+				MACVersion: "1.0.3",
+				NFCntDown:  10,
+			},
+			deviceQueueItem: &storage.DeviceQueueItem{
+				FRMPayload: []byte{1, 2, 3},
+				FCnt:       10,
+				FPort:      20,
+				Confirmed:  true,
+			},
+			macCommandBlocks: []storage.MACCommandBlock{
+				{
+					CID: lorawan.DevStatusReq,
+					MACCommands: []lorawan.MACCommand{
+						{
+							CID: lorawan.DevStatusReq,
+						},
+					},
+				},
+			},
+			expectedDownlinkFrameItems: []*gw.DownlinkFrameItem{
+				{
+					PhyPayload: []byte{0x60, 0x0, 0x0, 0x0, 0x0, 0x91, 0xa, 0x0, 0x6, 0x7f, 0xf3, 0x22, 0xff},
+				},
+				{
+					PhyPayload: []byte{0x60, 0x0, 0x0, 0x0, 0x0, 0x91, 0xa, 0x0, 0x6, 0x7f, 0xf3, 0x22, 0xff},
+				},
+			},
+		},
+	}
+
+	for _, tst := range tests {
+		t.Run(tst.name, func(t *testing.T) {
+			assert := require.New(t)
+
+			ctx := dataContext{
+				DownlinkFrameItems: tst.downlinkFrameItems,
+				DeviceSession:      tst.deviceSession,
+				DeviceQueueItem:    tst.deviceQueueItem,
+				MACCommands:        tst.macCommandBlocks,
+			}
+
+			assert.NoError(setPHYPayloads(&ctx))
+			assert.Equal(len(tst.expectedDownlinkFrameItems), len(ctx.DownlinkFrame.Items))
+
+			for i := range tst.expectedDownlinkFrameItems {
+				assert.Equal(tst.expectedDownlinkFrameItems[i], ctx.DownlinkFrame.Items[i])
+			}
 		})
 	}
 }

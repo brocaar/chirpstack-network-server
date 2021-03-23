@@ -42,7 +42,7 @@ func (ts *StorageTestSuite) TestDevice() {
 		d.UpdatedAt = d.UpdatedAt.Round(time.Second).UTC()
 
 		t.Run("Get", func(t *testing.T) {
-			dGet, err := GetDevice(ctx, ts.Tx(), d.DevEUI)
+			dGet, err := GetDevice(ctx, ts.Tx(), d.DevEUI, false)
 			assert.Nil(err)
 
 			dGet.CreatedAt = dGet.CreatedAt.Round(time.Second).UTC()
@@ -73,7 +73,7 @@ func (ts *StorageTestSuite) TestDevice() {
 			assert.Nil(UpdateDevice(ctx, ts.Tx(), &d))
 			d.UpdatedAt = d.UpdatedAt.Round(time.Second).UTC()
 
-			dGet, err := GetDevice(ctx, ts.Tx(), d.DevEUI)
+			dGet, err := GetDevice(ctx, ts.Tx(), d.DevEUI, false)
 			assert.Nil(err)
 
 			dGet.CreatedAt = dGet.CreatedAt.Round(time.Second).UTC()
@@ -87,7 +87,7 @@ func (ts *StorageTestSuite) TestDevice() {
 
 			assert.Nil(DeleteDevice(context.Background(), ts.Tx(), d.DevEUI))
 			assert.Equal(ErrDoesNotExist, DeleteDevice(context.Background(), ts.Tx(), d.DevEUI))
-			_, err := GetDevice(ctx, ts.Tx(), d.DevEUI)
+			_, err := GetDevice(ctx, ts.Tx(), d.DevEUI, false)
 			assert.Equal(ErrDoesNotExist, err)
 		})
 	})

@@ -113,6 +113,7 @@ type Config struct {
 			CACert             string        `mapstructure:"ca_cert"`
 			CAKey              string        `mapstructure:"ca_key"`
 			ClientCertLifetime time.Duration `mapstructure:"client_cert_lifetime"`
+			DownlinkTimeout    time.Duration `mapstructure:"downlink_timeout"`
 
 			ForceGwsPrivate bool `mapstructure:"force_gws_private"`
 

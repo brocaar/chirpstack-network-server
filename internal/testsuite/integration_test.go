@@ -125,10 +125,12 @@ type ClassATest struct {
 
 // DownlinkTXAckTest is the structure for a downlink tx ack test.
 type DownlinkTXAckTest struct {
-	Name          string
-	DevEUI        lorawan.EUI64
-	DownlinkTXAck gw.DownlinkTXAck
-	DownlinkFrame storage.DownlinkFrame
+	Name                string
+	DeviceSession       storage.DeviceSession
+	DownlinkTXAck       *gw.DownlinkTXAck
+	DownlinkFrame       *storage.DownlinkFrame
+	DeviceQueueItems    []storage.DeviceQueueItem
+	MulticastQueueItems []storage.MulticastQueueItem
 
 	Assert        []Assertion
 	ExpectedError error
@@ -418,7 +420,7 @@ func (ts *IntegrationTestSuite) AssertDownlinkTest(t *testing.T, tst DownlinkTes
 	// add device-queue items
 	assert.NoError(storage.FlushDeviceQueueForDevEUI(context.Background(), storage.DB(), tst.DeviceSession.DevEUI))
 	for _, qi := range tst.DeviceQueueItems {
-		assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &qi))
+		assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &qi, *ts.DeviceProfile, tst.DeviceSession))
 	}
 
 	// run queue scheduler
@@ -493,7 +495,7 @@ func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 	// create device-queue items
 	assert.NoError(storage.FlushDeviceQueueForDevEUI(context.Background(), storage.DB(), ts.Device.DevEUI))
 	for _, qi := range tst.DeviceQueueItems {
-		assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &qi))
+		assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &qi, *ts.DeviceProfile, storage.DeviceSession{}))
 	}
 
 	phyB, err := tst.PHYPayload.MarshalBinary()
@@ -585,7 +587,7 @@ func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
 	// add device-queue items
 	assert.NoError(storage.FlushDeviceQueueForDevEUI(context.Background(), storage.DB(), tst.DeviceSession.DevEUI))
 	for _, qi := range tst.DeviceQueueItems {
-		assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &qi))
+		assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &qi, *ts.DeviceProfile, tst.DeviceSession))
 	}
 
 	// set mac-command queue
@@ -677,6 +679,31 @@ func (ts *IntegrationTestSuite) AssertDownlinkTXAckTest(t *testing.T, tst Downli
 	assert := require.New(t)
 	storage.RedisClient().FlushAll()
 
+	// set device-session
+	assert.NoError(storage.SaveDeviceSession(context.Background(), tst.DeviceSession))
+
+	// update multicast-group to reset frame-counter increment
+	assert.NoError(storage.UpdateMulticastGroup(context.Background(), storage.DB(), ts.MulticastGroup))
+
+	// flush & add device-queue items
+	assert.NoError(storage.FlushDeviceQueueForDevEUI(context.Background(), storage.DB(), tst.DeviceSession.DevEUI))
+	for i, qi := range tst.DeviceQueueItems {
+		assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &qi, storage.DeviceProfile{}, storage.DeviceSession{}))
+		if i == 0 {
+			tst.DownlinkFrame.DeviceQueueItemId = qi.ID
+		}
+	}
+
+	// flush & add multicast-queue items
+	assert.NoError(storage.FlushMulticastQueueForMulticastGroup(context.Background(), storage.DB(), ts.MulticastGroup.ID))
+	for i, qi := range tst.MulticastQueueItems {
+		assert.NoError(storage.CreateMulticastQueueItem(context.Background(), storage.DB(), &qi))
+		if i == 0 {
+			tst.DownlinkFrame.MulticastQueueItemId = qi.ID
+		}
+	}
+
+	// save DownlinkFrame object
 	assert.NoError(storage.SaveDownlinkFrame(context.Background(), tst.DownlinkFrame))
 
 	err := ack.HandleDownlinkTXAck(context.Background(), tst.DownlinkTXAck)

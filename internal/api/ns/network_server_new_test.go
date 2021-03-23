@@ -18,9 +18,9 @@ import (
 	"github.com/brocaar/chirpstack-api/go/v3/ns"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
-	"github.com/brocaar/chirpstack-network-server/internal/downlink/data/classb"
 	"github.com/brocaar/chirpstack-network-server/internal/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/gps"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers/classb"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
@@ -762,7 +762,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 						})
 						assert.NoError(err)
 
-						d, err := storage.GetDevice(context.Background(), storage.DB(), devEUI)
+						d, err := storage.GetDevice(context.Background(), storage.DB(), devEUI, false)
 						assert.NoError(err)
 						assert.Equal(tst.ExpectedMode, d.Mode)
 					})
