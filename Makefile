@@ -50,7 +50,6 @@ dev-requirements:
 	go install github.com/golang/protobuf/protoc-gen-go
 	go install github.com/goreleaser/goreleaser
 	go install github.com/goreleaser/nfpm
-	go install github.com/golang-migrate/migrate/v4/cmd/migrate
 
 # shortcuts for development
 
