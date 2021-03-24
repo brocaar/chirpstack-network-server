@@ -20,7 +20,7 @@ func handleDeviceModeInd(ctx context.Context, ds *storage.DeviceSession, block s
 		return nil, fmt.Errorf("expected *lorawan.DeviceModeIntPayload, got: %T", block.MACCommands[0].Payload)
 	}
 
-	d, err := storage.GetDevice(ctx, storage.DB(), ds.DevEUI)
+	d, err := storage.GetDevice(ctx, storage.DB(), ds.DevEUI, false)
 	if err != nil {
 		return nil, errors.Wrap(err, "get device error")
 	}

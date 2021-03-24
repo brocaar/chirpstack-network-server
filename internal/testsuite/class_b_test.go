@@ -66,6 +66,26 @@ func (ts *ClassBTestSuite) SetupTest() {
 func (ts *ClassBTestSuite) TestUplink() {
 	assert := require.New(ts.T())
 
+	// device-session
+	ds := storage.DeviceSession{
+		DeviceProfileID:  ts.Device.DeviceProfileID,
+		ServiceProfileID: ts.Device.ServiceProfileID,
+		RoutingProfileID: ts.Device.RoutingProfileID,
+		DevEUI:           ts.Device.DevEUI,
+		JoinEUI:          lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
+
+		DevAddr:               lorawan.DevAddr{1, 2, 3, 4},
+		FNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		SNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		NwkSEncKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		FCntUp:                8,
+		NFCntDown:             5,
+		EnabledUplinkChannels: []int{0, 1, 2},
+		PingSlotNb:            1,
+		RX2Frequency:          869525000,
+	}
+
+	// queue items
 	queueItems := []storage.DeviceQueueItem{
 		{
 			DevEUI:     ts.Device.DevEUI,
@@ -87,26 +107,7 @@ func (ts *ClassBTestSuite) TestUplink() {
 		},
 	}
 	for i := range queueItems {
-		assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &queueItems[i]))
-	}
-
-	// device-session
-	ds := storage.DeviceSession{
-		DeviceProfileID:  ts.Device.DeviceProfileID,
-		ServiceProfileID: ts.Device.ServiceProfileID,
-		RoutingProfileID: ts.Device.RoutingProfileID,
-		DevEUI:           ts.Device.DevEUI,
-		JoinEUI:          lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
-
-		DevAddr:               lorawan.DevAddr{1, 2, 3, 4},
-		FNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-		SNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-		NwkSEncKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-		FCntUp:                8,
-		NFCntDown:             5,
-		EnabledUplinkChannels: []int{0, 1, 2},
-		PingSlotNb:            1,
-		RX2Frequency:          869525000,
+		assert.NoError(storage.CreateDeviceQueueItem(context.Background(), storage.DB(), &queueItems[i], *ts.DeviceProfile, ds))
 	}
 
 	now := time.Now().UTC().Truncate(time.Millisecond)
@@ -204,7 +205,7 @@ func (ts *ClassBTestSuite) TestUplink() {
 			ds, err := storage.GetDeviceSession(context.Background(), test.DeviceSession.DevEUI)
 			assert.NoError(err)
 
-			d, err := storage.GetDevice(context.Background(), storage.DB(), test.DeviceSession.DevEUI)
+			d, err := storage.GetDevice(context.Background(), storage.DB(), test.DeviceSession.DevEUI, false)
 			assert.NoError(err)
 
 			assert.Equal(test.ExpectedBeaconLocked, ds.BeaconLocked)
@@ -247,7 +248,7 @@ func (ts *ClassBTestSuite) TestDownlink() {
 		RX2Frequency:          869525000,
 	})
 
-	emitTime := gps.Time(time.Now().Add(-10 * time.Second)).TimeSinceGPSEpoch()
+	emitTime := gps.Time(time.Now().Add(time.Second)).TimeSinceGPSEpoch()
 	fPortTen := uint8(10)
 
 	txInfo := gw.DownlinkTXInfo{
@@ -293,7 +294,7 @@ func (ts *ClassBTestSuite) TestDownlink() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(8),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertDownlinkFrame(gatewayID, txInfo, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -325,7 +326,7 @@ func (ts *ClassBTestSuite) TestDownlink() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(8),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertDownlinkFrame(gatewayID, txInfo, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
@@ -366,7 +367,7 @@ func (ts *ClassBTestSuite) TestDownlink() {
 			},
 			Assert: []Assertion{
 				AssertFCntUp(8),
-				AssertNFCntDown(6),
+				AssertNFCntDown(5),
 				AssertDownlinkFrame(gatewayID, txInfoDefaultFreq, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,

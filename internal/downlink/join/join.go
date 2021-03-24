@@ -260,7 +260,7 @@ func saveDownlinkFrame(ctx *joinContext) error {
 		DownlinkFrame:    &ctx.DownlinkFrame,
 	}
 
-	if err := storage.SaveDownlinkFrame(ctx.ctx, df); err != nil {
+	if err := storage.SaveDownlinkFrame(ctx.ctx, &df); err != nil {
 		return errors.Wrap(err, "save downlink-frame error")
 	}
 

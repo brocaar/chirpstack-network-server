@@ -9,17 +9,21 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/ptypes"
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/chirpstack-api/go/v3/as"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	adrr "github.com/brocaar/chirpstack-network-server/adr"
 	"github.com/brocaar/chirpstack-network-server/internal/adr"
+	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
 	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/channels"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 	dwngateway "github.com/brocaar/chirpstack-network-server/internal/downlink/gateway"
+	"github.com/brocaar/chirpstack-network-server/internal/gps"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/chirpstack-network-server/internal/maccommand"
@@ -148,6 +152,7 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	sendDownlinkFrame,
 	saveDeviceSession,
 	saveDownlinkFrame,
+	setDeviceQueueItemRetryAfter,
 }
 
 // Setup configures the package.
@@ -194,6 +199,10 @@ func Setup(conf config.Config) error {
 type dataContext struct {
 	ctx context.Context
 
+	// Database connection or transaction.
+	DB              sqlx.Ext
+	DBInTransaction bool
+
 	// Device mode.
 	DeviceMode storage.DeviceMode
 
@@ -221,20 +230,6 @@ type dataContext struct {
 	// an uplink frame).
 	ACK bool
 
-	// FPort to use for transmission. This must be set to a value != 0 in case
-	// Data is not empty.
-	FPort uint8
-
-	// Confirmed defines if the frame must be send as confirmed-data.
-	Confirmed bool
-
-	// MoreData defines if there is more data pending.
-	MoreData bool
-
-	// Data contains the bytes to send. Note that this requires FPort to be a
-	// value other than 0.
-	Data []byte
-
 	// RXPacket holds the received uplink packet (in case of Class-A downlink).
 	RXPacket *models.RXPacket
 
@@ -244,6 +239,14 @@ type dataContext struct {
 	// MACCommands contains the mac-commands to send (if any). Make sure the
 	// total size fits within the FRMPayload or FOpts.
 	MACCommands []storage.MACCommandBlock
+
+	// DeviceQueueItem contains the possible device-queue item to send to the
+	// device.
+	DeviceQueueItem *storage.DeviceQueueItem
+
+	// MoreDeviceQueueItems defines if there are more items in the queue besides
+	// DeviceQueueItem.
+	MoreDeviceQueueItems bool
 
 	// Downlink frame.
 	DownlinkFrame gw.DownlinkFrame
@@ -263,14 +266,6 @@ type downlinkFrameItem struct {
 	// The remaining payload size which can be used for mac-commands and / or
 	// FRMPayload.
 	RemainingPayloadSize int
-}
-
-func (ctx dataContext) Validate() error {
-	if ctx.FPort == 0 && len(ctx.Data) > 0 {
-		return ErrFPortMustNotBeZero
-	}
-
-	return nil
 }
 
 func forClass(mode storage.DeviceMode, tasks ...func(*dataContext) error) func(*dataContext) error {
@@ -306,13 +301,15 @@ func isRoaming(r bool, tasks ...func(*dataContext) error) func(*dataContext) err
 // HandleResponse handles a downlink response.
 func HandleResponse(ctx context.Context, rxPacket models.RXPacket, sp storage.ServiceProfile, ds storage.DeviceSession, adr, mustSend, ack bool, macCommands []storage.MACCommandBlock) error {
 	rctx := dataContext{
-		ctx:            ctx,
-		ServiceProfile: sp,
-		DeviceSession:  ds,
-		ACK:            ack,
-		MustSend:       mustSend,
-		RXPacket:       &rxPacket,
-		MACCommands:    macCommands,
+		ctx:             ctx,
+		DB:              storage.DB(),
+		DBInTransaction: false,
+		ServiceProfile:  sp,
+		DeviceSession:   ds,
+		ACK:             ack,
+		MustSend:        mustSend,
+		RXPacket:        &rxPacket,
+		MACCommands:     macCommands,
 	}
 
 	for _, t := range responseTasks {
@@ -329,11 +326,13 @@ func HandleResponse(ctx context.Context, rxPacket models.RXPacket, sp storage.Se
 }
 
 // HandleScheduleNextQueueItem handles scheduling the next device-queue item.
-func HandleScheduleNextQueueItem(ctx context.Context, ds storage.DeviceSession, mode storage.DeviceMode) error {
+func HandleScheduleNextQueueItem(ctx context.Context, db sqlx.Ext, ds storage.DeviceSession, mode storage.DeviceMode) error {
 	nqctx := dataContext{
-		ctx:           ctx,
-		DeviceMode:    mode,
-		DeviceSession: ds,
+		ctx:             ctx,
+		DB:              db,
+		DBInTransaction: true, // the scheduler loop is in transaction as it needs to block the device rows
+		DeviceMode:      mode,
+		DeviceSession:   ds,
 	}
 
 	for _, t := range scheduleNextQueueItemTasks {
@@ -740,6 +739,29 @@ func setTXInfoForClassB(ctx *dataContext) error {
 }
 
 func getNextDeviceQueueItem(ctx *dataContext) error {
+	if len(ctx.DownlinkFrameItems) == 0 {
+		return errors.New("DownlinkFrameItems is 0")
+	}
+
+	// In case of the scheduler loop there is already a transaction and we don't
+	// want to start a new transaction as it could create a deadlock.
+	var transactionWrapper func(func(sqlx.Ext) error) error
+	if ctx.DBInTransaction {
+		transactionWrapper = func(f func(sqlx.Ext) error) error {
+			return f(ctx.DB)
+		}
+	} else {
+		transactionWrapper = storage.Transaction
+	}
+
+	// The current time as time since GPS epoch.
+	timeSinceGPSEpochNow := gps.Time(time.Now()).TimeSinceGPSEpoch()
+
+	// We use the first downlink opportunity to determine the max-payload size
+	// for the downlink.
+	maxPayloadSize := ctx.DownlinkFrameItems[0].RemainingPayloadSize
+
+	// Set the expected downlink frame-counter
 	var fCnt uint32
 	if ctx.DeviceSession.GetMACVersion() == lorawan.LoRaWAN1_0 {
 		fCnt = ctx.DeviceSession.NFCntDown
@@ -747,92 +769,227 @@ func getNextDeviceQueueItem(ctx *dataContext) error {
 		fCnt = ctx.DeviceSession.AFCntDown
 	}
 
-	// the first downlink opportunity will be used to decide the
-	// max payload size
-	var remainingPayloadSize int
-	if len(ctx.DownlinkFrameItems) > 0 {
-		remainingPayloadSize = ctx.DownlinkFrameItems[0].RemainingPayloadSize
-	}
+	// It might require a couple of iterations to get the device-queue item.
+	for {
+		qi, more, err := storage.GetNextDeviceQueueItemForDevEUI(ctx.ctx, ctx.DB, ctx.DeviceSession.DevEUI)
+		if err != nil {
+			if errors.Cause(err) == storage.ErrDoesNotExist {
+				// no downlink in queue
+				return nil
+			} else {
+				return errors.Wrap(err, "get next device-queue item error")
+			}
+		}
 
-	qi, err := storage.GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(ctx.ctx, storage.DB(), ctx.DeviceSession.DevEUI, remainingPayloadSize, fCnt, ctx.DeviceSession.RoutingProfileID)
-	if err != nil {
-		if errors.Cause(err) == storage.ErrDoesNotExist {
+		// * The payload FCnt must match the expected FCnt
+		// * The downlink should not have timed out.
+		// * The payload size must not exceed the max. payload size
+		// * The payload emit_at_time_since_gps_epoch must be in the future
+		if qi.FCnt == fCnt && (qi.TimeoutAfter == nil || !qi.TimeoutAfter.Before(time.Now())) && len(qi.FRMPayload) <= maxPayloadSize && (qi.EmitAtTimeSinceGPSEpoch == nil || *qi.EmitAtTimeSinceGPSEpoch > timeSinceGPSEpochNow) {
+			ctx.DeviceQueueItem = &qi
+			ctx.MoreDeviceQueueItems = more
+
+			// Update TXInfo with Class-B scheduling info
+			if ctx.RXPacket == nil && qi.EmitAtTimeSinceGPSEpoch != nil && len(ctx.DownlinkFrameItems) == 1 {
+				ctx.DownlinkFrameItems[0].DownlinkFrameItem.TxInfo.Timing = gw.DownlinkTiming_GPS_EPOCH
+				ctx.DownlinkFrameItems[0].DownlinkFrameItem.TxInfo.TimingInfo = &gw.DownlinkTXInfo_GpsEpochTimingInfo{
+					GpsEpochTimingInfo: &gw.GPSEpochTimingInfo{
+						TimeSinceGpsEpoch: ptypes.DurationProto(*qi.EmitAtTimeSinceGPSEpoch),
+					},
+				}
+
+				if ctx.DeviceSession.PingSlotFrequency == 0 {
+					beaconTime := *qi.EmitAtTimeSinceGPSEpoch - (*qi.EmitAtTimeSinceGPSEpoch % (128 * time.Second))
+					freq, err := band.Band().GetPingSlotFrequency(ctx.DeviceSession.DevAddr, beaconTime)
+					if err != nil {
+						return errors.Wrap(err, "get ping-slot frequency error")
+					}
+					ctx.DownlinkFrameItems[0].DownlinkFrameItem.TxInfo.Frequency = uint32(freq)
+				}
+			}
+
 			return nil
 		}
-		return errors.Wrap(err, "get next device-queue item for max payload error")
-	}
 
-	ctx.Confirmed = qi.Confirmed
-	ctx.Data = qi.FRMPayload
-	ctx.FPort = qi.FPort
+		////
+		// If this point is reached, the downlink queue-item can not be used
+		// because of one of the reasons below.
+		////
 
-	for i := range ctx.DownlinkFrameItems {
-		ctx.DownlinkFrameItems[i].RemainingPayloadSize = ctx.DownlinkFrameItems[i].RemainingPayloadSize - len(ctx.Data)
-	}
-
-	items, err := storage.GetDeviceQueueItemsForDevEUI(ctx.ctx, storage.DB(), ctx.DeviceSession.DevEUI)
-	if err != nil {
-		return errors.Wrap(err, "get device-queue items error")
-	}
-	ctx.MoreData = len(items) > 1 // more than only the current frame
-
-	// Set the device-session fCnt (down). We might have discarded one or
-	// multiple frames (payload size) or the application-server might have
-	// incremented the counter incorrectly. This is important since it is
-	// used for decrypting the payload by the device!!
-	if ctx.DeviceSession.GetMACVersion() == lorawan.LoRaWAN1_0 {
-		ctx.DeviceSession.NFCntDown = qi.FCnt
-	} else {
-		ctx.DeviceSession.AFCntDown = qi.FCnt
-	}
-
-	// Update TXInfo with Class-B scheduling info
-	if ctx.RXPacket == nil && qi.EmitAtTimeSinceGPSEpoch != nil && len(ctx.DownlinkFrameItems) == 1 {
-		ctx.DownlinkFrameItems[0].DownlinkFrameItem.TxInfo.Timing = gw.DownlinkTiming_GPS_EPOCH
-		ctx.DownlinkFrameItems[0].DownlinkFrameItem.TxInfo.TimingInfo = &gw.DownlinkTXInfo_GpsEpochTimingInfo{
-			GpsEpochTimingInfo: &gw.GPSEpochTimingInfo{
-				TimeSinceGpsEpoch: ptypes.DurationProto(*qi.EmitAtTimeSinceGPSEpoch),
-			},
+		rp, err := storage.GetRoutingProfile(ctx.ctx, ctx.DB, ctx.DeviceSession.RoutingProfileID)
+		if err != nil {
+			return errors.Wrap(err, "get routing-profile error")
+		}
+		asClient, err := applicationserver.Pool().Get(rp.ASID, []byte(rp.CACert), []byte(rp.TLSCert), []byte(rp.TLSKey))
+		if err != nil {
+			return errors.Wrap(err, "get application-server client error")
 		}
 
-		if ctx.DeviceSession.PingSlotFrequency == 0 {
-			beaconTime := *qi.EmitAtTimeSinceGPSEpoch - (*qi.EmitAtTimeSinceGPSEpoch % (128 * time.Second))
-			freq, err := band.Band().GetPingSlotFrequency(ctx.DeviceSession.DevAddr, beaconTime)
-			if err != nil {
-				return errors.Wrap(err, "get ping-slot frequency error")
+		// Handle timeout.
+		// We drop the item from the queue and notify the AS.
+		if qi.TimeoutAfter != nil && qi.TimeoutAfter.Before(time.Now()) {
+			if err := storage.DeleteDeviceQueueItem(ctx.ctx, ctx.DB, qi.ID); err != nil {
+				return errors.Wrap(err, "delete device-queue item error")
 			}
-			ctx.DownlinkFrameItems[0].DownlinkFrameItem.TxInfo.Frequency = uint32(freq)
+
+			_, err = asClient.HandleDownlinkACK(ctx.ctx, &as.HandleDownlinkACKRequest{
+				DevEui:       ctx.DeviceSession.DevEUI[:],
+				FCnt:         qi.FCnt,
+				Acknowledged: false,
+			})
+			if err != nil {
+				return errors.Wrap(err, "application-server client error")
+			}
+
+			log.WithFields(log.Fields{
+				"dev_eui":                ctx.DeviceSession.DevEUI,
+				"device_queue_item_fcnt": qi.FCnt,
+			}).Warning("downlink/data: device-queue item discarded because of timeout")
+
+			// Re-run the loop again, to fetch the next queue item.
+			continue
+		}
+
+		// Handle payload size.
+		// In this case, we will drop the device-queue item and report an error
+		// to the AS.
+		if len(qi.FRMPayload) > maxPayloadSize {
+			if err := storage.DeleteDeviceQueueItem(ctx.ctx, ctx.DB, qi.ID); err != nil {
+				return errors.Wrap(err, "delete device-queue item error")
+			}
+
+			log.WithFields(log.Fields{
+				"fcnt":              qi.FCnt,
+				"dev_eui":           ctx.DeviceSession.DevEUI,
+				"max_payload_size":  maxPayloadSize,
+				"item_payload_size": len(qi.FRMPayload),
+				"ctx_id":            ctx.ctx.Value(logging.ContextIDKey),
+			}).Warning("downlink/data: device-queue item discarded as it exceeds the max payload size")
+
+			_, err := asClient.HandleError(ctx.ctx, &as.HandleErrorRequest{
+				DevEui: ctx.DeviceSession.DevEUI[:],
+				Type:   as.ErrorType_DEVICE_QUEUE_ITEM_SIZE,
+				FCnt:   qi.FCnt,
+				Error:  "payload exceeds max payload size",
+			})
+			if err != nil {
+				return errors.Wrap(err, "application-server client error")
+			}
+
+			// Re-run the loop again, to fetch the next queue item.
+			continue
+		}
+
+		// Handle frame-counter sync error.
+		// In this case, the queue-item does not have the expected frame-counter.
+		// We will ask the AS to re-encrypt the device-queue to re-sync with the
+		// expected frame-counters.
+		// Note: we can't do this ourself, as the FCnt is used in the encryption
+		// scheme, and the encryption is within the domain of the AS.
+		if qi.FCnt != fCnt {
+			err := transactionWrapper(func(tx sqlx.Ext) error {
+				// Read the queue.
+				items, err := storage.GetDeviceQueueItemsForDevEUI(ctx.ctx, tx, ctx.DeviceSession.DevEUI)
+				if err != nil {
+					return errors.Wrap(err, "get device-queue items error")
+				}
+
+				// Create the re-encrypt request.
+				req := as.ReEncryptDeviceQueueItemsRequest{
+					DevEui:    ctx.DeviceSession.DevEUI[:],
+					DevAddr:   ctx.DeviceSession.DevAddr[:],
+					FCntStart: fCnt,
+				}
+				for i := range items {
+					req.Items = append(req.Items, &as.ReEncryptDeviceQueueItem{
+						FrmPayload: items[i].FRMPayload,
+						FCnt:       items[i].FCnt,
+						FPort:      uint32(items[i].FPort),
+						Confirmed:  items[i].Confirmed,
+					})
+
+				}
+
+				// Request the AS to re-encrypt the queue items.
+				resp, err := asClient.ReEncryptDeviceQueueItems(ctx.ctx, &req)
+				if err != nil {
+					return errors.Wrap(err, "application-server client error")
+				}
+
+				// Flush the device-queue.
+				err = storage.FlushDeviceQueueForDevEUI(ctx.ctx, tx, ctx.DeviceSession.DevEUI)
+				if err != nil {
+					return errors.Wrap(err, "flush device-queue error")
+				}
+
+				// Enqueue re-encrypted payloads
+				for i := range resp.Items {
+					qi := storage.DeviceQueueItem{
+						DevAddr:    ctx.DeviceSession.DevAddr,
+						DevEUI:     ctx.DeviceSession.DevEUI,
+						FRMPayload: resp.Items[i].FrmPayload,
+						FCnt:       resp.Items[i].FCnt,
+						FPort:      uint8(resp.Items[i].FPort),
+						Confirmed:  resp.Items[i].Confirmed,
+					}
+
+					if err := storage.CreateDeviceQueueItem(ctx.ctx, tx, &qi, ctx.DeviceProfile, ctx.DeviceSession); err != nil {
+						return errors.Wrap(err, "create device-queue item error")
+					}
+				}
+
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+
+			// Re-run the loop again, to fetch the next queue item.
+			continue
+		}
+
+		// Handle emit at GPS epoch in the past.
+		// In this case we are trying to send a Class-B downlink at a GPS epoch time
+		// which has already occured. In this case we need to re-enqueue all downlink
+		// items in order to shift the downlink timing.
+		if qi.EmitAtTimeSinceGPSEpoch != nil && *qi.EmitAtTimeSinceGPSEpoch <= timeSinceGPSEpochNow {
+			err := transactionWrapper(func(tx sqlx.Ext) error {
+				// Read the queue.
+				items, err := storage.GetDeviceQueueItemsForDevEUI(ctx.ctx, tx, ctx.DeviceSession.DevEUI)
+				if err != nil {
+					return errors.Wrap(err, "get device-queue items error")
+				}
+
+				// Flush the device-queue.
+				err = storage.FlushDeviceQueueForDevEUI(ctx.ctx, tx, ctx.DeviceSession.DevEUI)
+				if err != nil {
+					return errors.Wrap(err, "flush device-queue error")
+				}
+
+				for _, qi := range items {
+					qi.ID = 0
+					qi.IsPending = false
+					qi.EmitAtTimeSinceGPSEpoch = nil
+					qi.TimeoutAfter = nil
+					qi.RetryAfter = nil
+
+					// The CreateDeviceQueueItem will take care of adding the Class-B scheduling
+					// timing.
+					if err := storage.CreateDeviceQueueItem(ctx.ctx, tx, &qi, ctx.DeviceProfile, ctx.DeviceSession); err != nil {
+						return errors.Wrap(err, "create device-queue item error")
+					}
+				}
+
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+
+			// Re-run the loop again.
+			continue
 		}
 	}
-
-	if !qi.Confirmed {
-		// delete when not confirmed
-		if err := storage.DeleteDeviceQueueItem(ctx.ctx, storage.DB(), qi.ID); err != nil {
-			return errors.Wrap(err, "delete device-queue item error")
-		}
-	} else {
-		// Set the ConfFCnt to the FCnt of the queue-item.
-		// When we receive an ACK, we need this to validate the MIC.
-		ctx.DeviceSession.ConfFCnt = qi.FCnt
-
-		// mark as pending and set timeout
-		timeout := time.Now()
-		if ctx.DeviceProfile.SupportsClassC {
-			timeout = timeout.Add(time.Duration(ctx.DeviceProfile.ClassCTimeout) * time.Second)
-		}
-		qi.IsPending = true
-
-		// in case of class-b it is already set, we don't want to overwrite it
-		if qi.TimeoutAfter == nil {
-			qi.TimeoutAfter = &timeout
-		}
-
-		if err := storage.UpdateDeviceQueueItem(ctx.ctx, storage.DB(), &qi); err != nil {
-			return errors.Wrap(err, "update device-queue item error")
-		}
-	}
-
-	return nil
 }
 
 func filterIncompatibleMACCommands(macCommands []storage.MACCommandBlock) []storage.MACCommandBlock {
@@ -889,39 +1046,7 @@ func setMACCommands(funcs ...func(*dataContext) error) func(*dataContext) error 
 			}
 		}
 		ctx.MACCommands = filteredMACCommands
-
 		ctx.MACCommands = filterIncompatibleMACCommands(ctx.MACCommands)
-
-		var remainingPayloadSize, remainingMACCommandSize int
-		if len(ctx.DownlinkFrameItems) > 0 {
-			remainingPayloadSize = ctx.DownlinkFrameItems[0].RemainingPayloadSize
-		}
-
-		if ctx.FPort > 0 {
-			if remainingPayloadSize < 15 {
-				remainingMACCommandSize = remainingPayloadSize
-			} else {
-				remainingMACCommandSize = 15
-			}
-		} else {
-			remainingMACCommandSize = remainingPayloadSize
-		}
-
-		for i, block := range ctx.MACCommands {
-			macSize, err := block.Size()
-			if err != nil {
-				return errors.Wrap(err, "get mac-command block size error")
-			}
-
-			remainingMACCommandSize = remainingMACCommandSize - macSize
-
-			// truncate mac-commands when we exceed the max-size
-			if remainingMACCommandSize < 0 {
-				ctx.MACCommands = ctx.MACCommands[0:i]
-				ctx.MoreData = true
-				break
-			}
-		}
 
 		for _, block := range ctx.MACCommands {
 			// set mac-command pending
@@ -1122,60 +1247,44 @@ func getMACCommandsFromQueue(ctx *dataContext) error {
 }
 
 func stopOnNothingToSend(ctx *dataContext) error {
-	if ctx.FPort == 0 && len(ctx.MACCommands) == 0 && !ctx.ACK && !ctx.MustSend {
+	// No device-queue item to send, no mac-commands to send, no ACK to send
+	// in reply to a confirmed-uplink and no requirement to send an empty downlink
+	// (e.g. in case of ADRACKReq).
+	if ctx.DeviceQueueItem == nil && len(ctx.MACCommands) == 0 && !ctx.ACK && !ctx.MustSend {
 		// ErrAbort will not be handled as a real error
 		return ErrAbort
 	}
-
 	return nil
 }
 
+// setPHYPayloads sets the PHYPayload for each downlink opportunity. Please note
+// that mac-commands have priority over application payloads as per LoRaWAN 1.0.4
+// specs. In case a downlink frame-counter will be used for mac-commands only and
+// a device-queue item exists for the same frame-counter, then the getNextDeviceQueueItem
+// function will request the AS to re-encrypt the device-queue item(s) using
+// the new frame-counters.
+// Note that it is possible that the payload is different in case there are
+// multiple receive windows, as each receive window has its own max payload
+// constraint. E.g. the RX1 payload might contain mac-commands + app PL and
+// the RX2 receive window might only contain mac-commands.
+// Therefore the frame-counter will be incremented when the gateway has acknowledged
+// which downlink item will be transmitted (only one will be transmitted),
+// as only then we know which of the frame-counters to increment
+// (AFCntDown vs NFCntDown).
 func setPHYPayloads(ctx *dataContext) error {
-	if err := ctx.Validate(); err != nil {
-		return errors.Wrap(err, "validation error")
-	}
-
-	var fCnt uint32
-	if ctx.DeviceSession.GetMACVersion() == lorawan.LoRaWAN1_0 || ctx.FPort == 0 {
-		fCnt = ctx.DeviceSession.NFCntDown
-		ctx.DeviceSession.NFCntDown++
-	} else {
-		fCnt = ctx.DeviceSession.AFCntDown
-		ctx.DeviceSession.AFCntDown++
-	}
-
 	for i := range ctx.DownlinkFrameItems {
-		// LoRaWAN MAC payload
-		macPL := &lorawan.MACPayload{
-			FHDR: lorawan.FHDR{
-				DevAddr: ctx.DeviceSession.DevAddr,
-				FCtrl: lorawan.FCtrl{
-					ADR:      !disableADR,
-					ACK:      ctx.ACK,
-					FPending: ctx.MoreData,
-				},
-				FCnt: fCnt,
-			},
-		}
-
-		// set application payload
-		if ctx.FPort > 0 {
-			macPL.FPort = &ctx.FPort
-			macPL.FRMPayload = []lorawan.Payload{
-				&lorawan.DataPayload{Bytes: ctx.Data},
-			}
-		}
-
-		// add mac-commands
 		var macCommandSize int
-		var maccommands []lorawan.Payload
+		var macCommands []lorawan.Payload
 
+		// collect all mac-commands up to RemainingPayloadSize bytes.
 		for j := range ctx.MACCommands {
+			// get size of mac-command block
 			s, err := ctx.MACCommands[j].Size()
 			if err != nil {
-				return errors.Wrap(err, "get mac-command block size")
+				return errors.Wrap(err, "get mac-command block size error")
 			}
 
+			// break if it does not fit within the RemainingPayloadSize
 			if ctx.DownlinkFrameItems[i].RemainingPayloadSize-s < 0 {
 				break
 			}
@@ -1184,50 +1293,96 @@ func setPHYPayloads(ctx *dataContext) error {
 			macCommandSize += s
 
 			for k := range ctx.MACCommands[j].MACCommands {
-				maccommands = append(maccommands, &ctx.MACCommands[j].MACCommands[k])
+				macCommands = append(macCommands, &ctx.MACCommands[j].MACCommands[k])
+			}
+
+		}
+
+		// LoRaWAN MHDR
+		mhdr := lorawan.MHDR{
+			MType: lorawan.UnconfirmedDataDown,
+			Major: lorawan.LoRaWANR1,
+		}
+
+		// LoRaWAN MAC payload
+		macPL := lorawan.MACPayload{
+			FHDR: lorawan.FHDR{
+				DevAddr: ctx.DeviceSession.DevAddr,
+				FCnt:    ctx.DeviceSession.NFCntDown,
+				FCtrl: lorawan.FCtrl{
+					ADR:      !disableADR,
+					ACK:      ctx.ACK,
+					FPending: ctx.MoreDeviceQueueItems,
+				},
+			},
+		}
+
+		// In this case mac-commands are sent as FRMPayload. We will not be able to
+		// send a device-queue item in this case.
+		if macCommandSize > 15 {
+			// Set the FPending to true if we were planning to send a downlink
+			// device-queue item.
+			macPL.FHDR.FCtrl.FPending = (ctx.DeviceQueueItem != nil)
+
+			// Set the mac-commands as FRMPayload.
+			macPL.FRMPayload = macCommands
+
+			// MAC-layer FPort.
+			fPort := uint8(0)
+			macPL.FPort = &fPort
+
+			// Network-server FCnt.
+			macPL.FHDR.FCnt = ctx.DeviceSession.NFCntDown
+		}
+
+		// In this case mac-commands are sent using the FOpts field. In case there
+		// is a device-queue item, we will validate if it still fits within the
+		// RemainingPayloadSize.
+		if macCommandSize <= 15 {
+			// Set the mac-commands as FOpts.
+			macPL.FHDR.FOpts = macCommands
+
+			// Test if we still can send a device-queue item.
+			if ctx.DeviceQueueItem != nil && len(ctx.DeviceQueueItem.FRMPayload) <= ctx.DownlinkFrameItems[i].RemainingPayloadSize {
+				// Set the device-queue item.
+				macPL.FPort = &ctx.DeviceQueueItem.FPort
+				macPL.FHDR.FCnt = ctx.DeviceQueueItem.FCnt
+				macPL.FRMPayload = []lorawan.Payload{
+					&lorawan.DataPayload{Bytes: ctx.DeviceQueueItem.FRMPayload},
+				}
+
+				if ctx.DeviceQueueItem.Confirmed {
+					mhdr.MType = lorawan.ConfirmedDataDown
+				}
+
+				ctx.DownlinkFrameItems[i].RemainingPayloadSize = ctx.DownlinkFrameItems[i].RemainingPayloadSize - len(ctx.DeviceQueueItem.FRMPayload)
+			} else if ctx.DeviceQueueItem != nil {
+				macPL.FHDR.FCtrl.FPending = true
 			}
 		}
 
-		if macCommandSize > 15 && ctx.FPort == 0 {
-			macPL.FPort = &ctx.FPort
-			macPL.FRMPayload = maccommands
-		} else if macCommandSize <= 15 {
-			macPL.FHDR.FOpts = maccommands
-		} else {
-			// this should not happen, but log it in case it would
-			log.WithFields(log.Fields{
-				"dev_eui": ctx.DeviceSession.DevEUI,
-				"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
-			}).Error("mac-commands exceeded size!")
-		}
-
+		// Construct LoRaWAN PHYPayload.
 		phy := lorawan.PHYPayload{
-			MHDR: lorawan.MHDR{
-				MType: lorawan.UnconfirmedDataDown,
-				Major: lorawan.LoRaWANR1,
-			},
-			MACPayload: macPL,
-		}
-		if ctx.Confirmed {
-			phy.MHDR.MType = lorawan.ConfirmedDataDown
+			MHDR:       mhdr,
+			MACPayload: &macPL,
 		}
 
-		// encrypt FRMPayload mac-commands
-		if ctx.FPort == 0 {
+		// Encrypt FRMPayload mac-commands.
+		if macPL.FPort != nil && *macPL.FPort == 0 {
 			if err := phy.EncryptFRMPayload(ctx.DeviceSession.NwkSEncKey); err != nil {
 				return errors.Wrap(err, "encrypt frmpayload error")
 			}
 		}
 
-		// encrypt FOpts mac-commands (LoRaWAN 1.1)
+		// Encrypt FOpts mac-commands (LoRaWAN 1.1).
 		if ctx.DeviceSession.GetMACVersion() != lorawan.LoRaWAN1_0 {
 			if err := phy.EncryptFOpts(ctx.DeviceSession.NwkSEncKey); err != nil {
 				return errors.Wrap(err, "encrypt FOpts error")
 			}
 		}
 
-		// set MIC
-		if err := phy.SetDownlinkDataMIC(ctx.DeviceSession.GetMACVersion(), ctx.DeviceSession.FCntUp-1, ctx.DeviceSession.SNwkSIntKey); err != nil {
+		// Set MIC.
+		if err := phy.SetDownlinkDataMIC(ctx.DeviceSession.GetMACVersion(), ctx.DeviceSession.FCntUp, ctx.DeviceSession.SNwkSIntKey); err != nil {
 			return errors.Wrap(err, "set MIC error")
 		}
 
@@ -1350,7 +1505,7 @@ func saveDeviceSession(ctx *dataContext) error {
 
 func getDeviceProfile(ctx *dataContext) error {
 	var err error
-	ctx.DeviceProfile, err = storage.GetAndCacheDeviceProfile(ctx.ctx, storage.DB(), ctx.DeviceSession.DeviceProfileID)
+	ctx.DeviceProfile, err = storage.GetAndCacheDeviceProfile(ctx.ctx, ctx.DB, ctx.DeviceSession.DeviceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get device-profile error")
 	}
@@ -1359,7 +1514,7 @@ func getDeviceProfile(ctx *dataContext) error {
 
 func getServiceProfile(ctx *dataContext) error {
 	var err error
-	ctx.ServiceProfile, err = storage.GetAndCacheServiceProfile(ctx.ctx, storage.DB(), ctx.DeviceSession.ServiceProfileID)
+	ctx.ServiceProfile, err = storage.GetAndCacheServiceProfile(ctx.ctx, ctx.DB, ctx.DeviceSession.ServiceProfileID)
 	if err != nil {
 		return errors.Wrap(err, "get service-profile error")
 	}
@@ -1429,27 +1584,43 @@ func checkLastDownlinkTimestamp(ctx *dataContext) error {
 }
 
 func saveDownlinkFrame(ctx *dataContext) error {
-	var fCnt uint32
-	if ctx.DeviceSession.GetMACVersion() == lorawan.LoRaWAN1_0 || ctx.FPort == 0 {
-		fCnt = ctx.DeviceSession.NFCntDown
-		ctx.DeviceSession.NFCntDown++
-	} else {
-		fCnt = ctx.DeviceSession.AFCntDown
-		ctx.DeviceSession.AFCntDown++
-	}
-
 	df := storage.DownlinkFrame{
 		DevEui:           ctx.DeviceSession.DevEUI[:],
 		Token:            ctx.DownlinkFrame.Token,
 		RoutingProfileId: ctx.DeviceSession.RoutingProfileID.Bytes(),
-		FCnt:             fCnt,
 		EncryptedFopts:   ctx.DeviceSession.GetMACVersion() != lorawan.LoRaWAN1_0,
 		NwkSEncKey:       ctx.DeviceSession.NwkSEncKey[:],
 		DownlinkFrame:    &ctx.DownlinkFrame,
 	}
 
-	if err := storage.SaveDownlinkFrame(ctx.ctx, df); err != nil {
+	if ctx.DeviceQueueItem != nil {
+		df.DeviceQueueItemId = ctx.DeviceQueueItem.ID
+	}
+
+	if err := storage.SaveDownlinkFrame(ctx.ctx, &df); err != nil {
 		return errors.Wrap(err, "save downlink-frame error")
+	}
+
+	return nil
+}
+
+// setDeviceQueueItemRetryAfter sets the retry_after field of the device-queue
+// item. Note that there is no need to call this for Class-A devices, as the
+// downlink is triggered only by an uplink event. The purpose of the retry_after
+// is to avoid that multiple Class-B and C scheduler loops schedule the
+// downlink while waiting for the gateway tx acknowledgement.
+func setDeviceQueueItemRetryAfter(ctx *dataContext) error {
+	if ctx.DeviceQueueItem == nil {
+		return nil
+	}
+
+	conf := config.Get()
+	retryAfter := time.Now().Add(conf.NetworkServer.Gateway.DownlinkTimeout)
+
+	ctx.DeviceQueueItem.RetryAfter = &retryAfter
+
+	if err := storage.UpdateDeviceQueueItem(ctx.ctx, ctx.DB, ctx.DeviceQueueItem); err != nil {
+		return errors.Wrap(err, "update device-queue item error")
 	}
 
 	return nil

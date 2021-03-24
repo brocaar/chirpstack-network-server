@@ -190,7 +190,7 @@ func logRejoinRequestFramesCollected(ctx *rejoinContext) error {
 func getDeviceAndProfiles(ctx *rejoinContext) error {
 	var err error
 
-	ctx.Device, err = storage.GetDevice(ctx.ctx, storage.DB(), ctx.DevEUI)
+	ctx.Device, err = storage.GetDevice(ctx.ctx, storage.DB(), ctx.DevEUI, false)
 	if err != nil {
 		return errors.Wrap(err, "get device error")
 	}

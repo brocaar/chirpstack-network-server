@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/band"
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 	datadown "github.com/brocaar/chirpstack-network-server/internal/downlink/data"
-	"github.com/brocaar/chirpstack-network-server/internal/downlink/data/classb"
 	"github.com/brocaar/chirpstack-network-server/internal/framelog"
 	"github.com/brocaar/chirpstack-network-server/internal/helpers"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
@@ -362,7 +362,7 @@ func setBeaconLocked(ctx *dataContext) error {
 	ctx.DeviceSession.BeaconLocked = ctx.MACPayload.FHDR.FCtrl.ClassB
 
 	if ctx.DeviceSession.BeaconLocked {
-		d, err := storage.GetDevice(ctx.ctx, storage.DB(), ctx.DeviceSession.DevEUI)
+		d, err := storage.GetDevice(ctx.ctx, storage.DB(), ctx.DeviceSession.DevEUI, false)
 		if err != nil {
 			return errors.Wrap(err, "get device")
 		}
@@ -371,8 +371,28 @@ func setBeaconLocked(ctx *dataContext) error {
 			return errors.Wrap(err, "update device error")
 		}
 
-		if err := classb.ScheduleDeviceQueueToPingSlotsForDevEUI(ctx.ctx, storage.DB(), ctx.DeviceProfile, ctx.DeviceSession); err != nil {
-			return errors.Wrap(err, "schedule device-queue to ping-slots error")
+		// Re-create device-queue items.
+		// Note that the CreateDeviceQueueItem function will take care of setting
+		// the Class-B ping-slot timing.
+		if err := storage.Transaction(func(tx sqlx.Ext) error {
+			items, err := storage.GetDeviceQueueItemsForDevEUI(ctx.ctx, tx, ctx.DeviceSession.DevEUI)
+			if err != nil {
+				return errors.Wrap(err, "get device-queue items error")
+			}
+
+			if err := storage.FlushDeviceQueueForDevEUI(ctx.ctx, tx, ctx.DeviceSession.DevEUI); err != nil {
+				return errors.Wrap(err, "flush device-queue for deveui error")
+			}
+
+			for _, item := range items {
+				if err := storage.CreateDeviceQueueItem(ctx.ctx, tx, &item, ctx.DeviceProfile, ctx.DeviceSession); err != nil {
+					return errors.Wrap(err, "create device-queue item error")
+				}
+			}
+
+			return nil
+		}); err != nil {
+			return errors.Wrap(err, "re-create device-queue items error")
 		}
 
 		log.WithFields(log.Fields{
@@ -381,7 +401,7 @@ func setBeaconLocked(ctx *dataContext) error {
 			"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
 		}).Info("device changed mode")
 	} else {
-		d, err := storage.GetDevice(ctx.ctx, storage.DB(), ctx.DeviceSession.DevEUI)
+		d, err := storage.GetDevice(ctx.ctx, storage.DB(), ctx.DeviceSession.DevEUI, false)
 		if err != nil {
 			return errors.Wrap(err, "get device")
 		}

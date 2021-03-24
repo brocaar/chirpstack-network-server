@@ -13,7 +13,6 @@ import (
 	"github.com/brocaar/chirpstack-api/go/v3/as"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
-	"github.com/brocaar/chirpstack-network-server/internal/downlink/ack"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
@@ -24,28 +23,36 @@ var lastToken uint32
 // AssertFCntUp asserts the FCntUp.
 func AssertFCntUp(fCnt uint32) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		assert.Equal(fCnt, ts.DeviceSession.FCntUp)
+		sess, err := storage.GetDeviceSession(context.Background(), ts.Device.DevEUI)
+		assert.NoError(err)
+		assert.Equal(fCnt, sess.FCntUp)
 	}
 }
 
 // AssertNFCntDown asserts the NFCntDown.
 func AssertNFCntDown(fCnt uint32) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		assert.Equal(fCnt, ts.DeviceSession.NFCntDown)
+		sess, err := storage.GetDeviceSession(context.Background(), ts.Device.DevEUI)
+		assert.NoError(err)
+		assert.Equal(fCnt, sess.NFCntDown)
 	}
 }
 
 // AssertAFCntDown asserts the AFCntDown.
 func AssertAFCntDown(fCnt uint32) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		assert.Equal(fCnt, ts.DeviceSession.AFCntDown)
+		sess, err := storage.GetDeviceSession(context.Background(), ts.Device.DevEUI)
+		assert.NoError(err)
+		assert.Equal(fCnt, sess.AFCntDown)
 	}
 }
 
 // AssertMACCommandErrorCount asserts the mac-command error count.
 func AssertMACCommandErrorCount(cid lorawan.CID, count int) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		assert.Equal(count, ts.DeviceSession.MACCommandErrorCount[cid])
+		sess, err := storage.GetDeviceSession(context.Background(), ts.Device.DevEUI)
+		assert.NoError(err)
+		assert.Equal(count, sess.MACCommandErrorCount[cid])
 	}
 }
 
@@ -81,12 +88,6 @@ func AssertDownlinkFrame(gatewayID lorawan.EUI64, txInfo gw.DownlinkTXInfo, phy 
 		}
 
 		assert.Equal(phy, downPHY)
-
-		// ack the downlink transmission
-		assert.NoError(ack.HandleDownlinkTXAck(context.Background(), gw.DownlinkTXAck{
-			GatewayId: txInfo.GatewayId,
-			Token:     downlinkFrame.Token,
-		}))
 	}
 }
 
@@ -163,6 +164,15 @@ func AssertMulticastQueueItems(items []storage.MulticastQueueItem) Assertion {
 	}
 }
 
+// AssertMulticastGroupFCntDown assert the multicast-group downlink frame-counter.
+func AssertMulticastGroupFCntDown(fCntDown uint32) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		mg, err := storage.GetMulticastGroup(context.Background(), storage.DB(), ts.MulticastGroup.ID, false)
+		assert.NoError(err)
+		assert.Equal(fCntDown, mg.FCnt)
+	}
+}
+
 // AssertDeviceQueueItems asserts the device-queue items.
 func AssertDeviceQueueItems(items []storage.DeviceQueueItem) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
@@ -175,10 +185,19 @@ func AssertDeviceQueueItems(items []storage.DeviceQueueItem) Assertion {
 	}
 }
 
+// AssertDeviceQueueItemsFunc asserts the device-queue items with the given func.
+func AssertDeviceQueueItemsFunc(f func(*require.Assertions, []storage.DeviceQueueItem)) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		dqi, err := storage.GetDeviceQueueItemsForDevEUI(context.Background(), storage.DB(), ts.Device.DevEUI)
+		assert.NoError(err)
+		f(assert, dqi)
+	}
+}
+
 // AssertDeviceMode asserts the current device class.
 func AssertDeviceMode(mode storage.DeviceMode) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
-		d, err := storage.GetDevice(context.Background(), storage.DB(), ts.Device.DevEUI)
+		d, err := storage.GetDevice(context.Background(), storage.DB(), ts.Device.DevEUI, false)
 		assert.NoError(err)
 		assert.Equal(mode, d.Mode)
 	}
@@ -377,6 +396,18 @@ func AssertNCHandleDownlinkMetaDataRequest(req nc.HandleDownlinkMetaDataRequest)
 		r := <-ts.NCClient.HandleDownlinkMetaDataChan
 		if !proto.Equal(&r, &req) {
 			assert.Equal(req, r)
+		}
+	}
+}
+
+// AssertNCNoHandleDownlinkMetaDataRequest asserts that no meta-data request was sent.
+func AssertNCNoHandleDownlinkMetaDataRequest() Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		time.Sleep(100 * time.Millisecond)
+		select {
+		case <-ts.NCClient.HandleDownlinkMetaDataChan:
+			assert.Fail("unexpected downlink meta-data request")
+		default:
 		}
 	}
 }

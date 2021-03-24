@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
-	"fmt"
 	"time"
 
 	"github.com/go-redis/redis/v7"
@@ -141,7 +140,7 @@ func CreateServiceProfile(ctx context.Context, db sqlx.Execer, sp *ServiceProfil
 // duration.
 // The TTL of the service-profile is the same as that of the device-sessions.
 func CreateServiceProfileCache(ctx context.Context, sp ServiceProfile) error {
-	key := fmt.Sprintf(ServiceProfileKeyTempl, sp.ID)
+	key := GetRedisKey(ServiceProfileKeyTempl, sp.ID)
 
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(sp); err != nil {
@@ -159,7 +158,7 @@ func CreateServiceProfileCache(ctx context.Context, sp ServiceProfile) error {
 // GetServiceProfileCache returns a cached service-profile.
 func GetServiceProfileCache(ctx context.Context, id uuid.UUID) (ServiceProfile, error) {
 	var sp ServiceProfile
-	key := fmt.Sprintf(ServiceProfileKeyTempl, id)
+	key := GetRedisKey(ServiceProfileKeyTempl, id)
 
 	val, err := RedisClient().Get(key).Bytes()
 	if err != nil {
@@ -179,7 +178,7 @@ func GetServiceProfileCache(ctx context.Context, id uuid.UUID) (ServiceProfile, 
 
 // FlushServiceProfileCache deletes a cached service-profile.
 func FlushServiceProfileCache(ctx context.Context, id uuid.UUID) error {
-	key := fmt.Sprintf(ServiceProfileKeyTempl, id)
+	key := GetRedisKey(ServiceProfileKeyTempl, id)
 
 	err := RedisClient().Del(key).Err()
 	if err != nil {

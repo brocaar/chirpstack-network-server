@@ -2,7 +2,6 @@ package framelog
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-redis/redis/v7"
 	proto "github.com/golang/protobuf/proto"
@@ -47,7 +46,7 @@ func LogUplinkFrameForGateways(ctx context.Context, frame ns.UplinkFrameLog) err
 			return errors.Wrap(err, "marshal uplink frame-set error")
 		}
 
-		key := fmt.Sprintf(gatewayFrameLogUplinkPubSubKeyTempl, id)
+		key := storage.GetRedisKey(gatewayFrameLogUplinkPubSubKeyTempl, id)
 		pipe.Publish(key, b)
 	}
 
@@ -64,7 +63,7 @@ func LogDownlinkFrameForGateway(ctx context.Context, frame ns.DownlinkFrameLog) 
 	var id lorawan.EUI64
 	copy(id[:], frame.GatewayId)
 
-	key := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, id)
+	key := storage.GetRedisKey(gatewayFrameLogDownlinkPubSubKeyTempl, id)
 
 	b, err := proto.Marshal(&frame)
 	if err != nil {
@@ -80,7 +79,7 @@ func LogDownlinkFrameForGateway(ctx context.Context, frame ns.DownlinkFrameLog) 
 
 // LogDownlinkFrameForDevEUI logs the given frame to the device pub-sub key.
 func LogDownlinkFrameForDevEUI(ctx context.Context, devEUI lorawan.EUI64, frame ns.DownlinkFrameLog) error {
-	key := fmt.Sprintf(deviceFrameLogDownlinkPubSubKeyTempl, devEUI)
+	key := storage.GetRedisKey(deviceFrameLogDownlinkPubSubKeyTempl, devEUI)
 
 	b, err := proto.Marshal(&frame)
 	if err != nil {
@@ -102,7 +101,7 @@ func LogUplinkFrameForDevEUI(ctx context.Context, devEUI lorawan.EUI64, frame ns
 		return errors.Wrap(err, "marshal uplink frame error")
 	}
 
-	key := fmt.Sprintf(deviceFrameLogUplinkPubSubKeyTempl, devEUI)
+	key := storage.GetRedisKey(deviceFrameLogUplinkPubSubKeyTempl, devEUI)
 
 	err = storage.RedisClient().Publish(key, b).Err()
 	if err != nil {
@@ -114,16 +113,16 @@ func LogUplinkFrameForDevEUI(ctx context.Context, devEUI lorawan.EUI64, frame ns
 // GetFrameLogForGateway subscribes to the uplink and downlink frame logs
 // for the given gateway and sends this to the given channel.
 func GetFrameLogForGateway(ctx context.Context, gatewayID lorawan.EUI64, frameLogChan chan FrameLog) error {
-	uplinkKey := fmt.Sprintf(gatewayFrameLogUplinkPubSubKeyTempl, gatewayID)
-	downlinkKey := fmt.Sprintf(gatewayFrameLogDownlinkPubSubKeyTempl, gatewayID)
+	uplinkKey := storage.GetRedisKey(gatewayFrameLogUplinkPubSubKeyTempl, gatewayID)
+	downlinkKey := storage.GetRedisKey(gatewayFrameLogDownlinkPubSubKeyTempl, gatewayID)
 	return getFrameLogs(ctx, uplinkKey, downlinkKey, frameLogChan)
 }
 
 // GetFrameLogForDevice subscribes to the uplink and downlink frame logs
 // for the given device and sends this to the given channel.
 func GetFrameLogForDevice(ctx context.Context, devEUI lorawan.EUI64, frameLogChan chan FrameLog) error {
-	uplinkKey := fmt.Sprintf(deviceFrameLogUplinkPubSubKeyTempl, devEUI)
-	downlinkKey := fmt.Sprintf(deviceFrameLogDownlinkPubSubKeyTempl, devEUI)
+	uplinkKey := storage.GetRedisKey(deviceFrameLogUplinkPubSubKeyTempl, devEUI)
+	downlinkKey := storage.GetRedisKey(deviceFrameLogDownlinkPubSubKeyTempl, devEUI)
 	return getFrameLogs(ctx, uplinkKey, downlinkKey, frameLogChan)
 }
 

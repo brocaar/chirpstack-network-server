@@ -146,7 +146,7 @@ func CreateGateway(ctx context.Context, db sqlx.Execer, gw *Gateway) error {
 // CreateGatewayMetaCache caches the given gateway meta in Redis.
 // The TTL of the gateway is the same as that of the device-sessions.
 func CreateGatewayMetaCache(ctx context.Context, gw GatewayMeta) error {
-	key := fmt.Sprintf(gatewayMetaKeyTempl, gw.GatewayID)
+	key := GetRedisKey(gatewayMetaKeyTempl, gw.GatewayID)
 
 	var buf bytes.Buffer
 	if err := gob.NewEncoder(&buf).Encode(gw); err != nil {
@@ -164,7 +164,7 @@ func CreateGatewayMetaCache(ctx context.Context, gw GatewayMeta) error {
 // GetGatewayMetaCache returns a cached gateway meta.
 func GetGatewayMetaCache(ctx context.Context, gatewayID lorawan.EUI64) (GatewayMeta, error) {
 	var gw GatewayMeta
-	key := fmt.Sprintf(gatewayMetaKeyTempl, gatewayID)
+	key := GetRedisKey(gatewayMetaKeyTempl, gatewayID)
 
 	val, err := RedisClient().Get(key).Bytes()
 	if err != nil {
@@ -184,7 +184,7 @@ func GetGatewayMetaCache(ctx context.Context, gatewayID lorawan.EUI64) (GatewayM
 
 // FlushGatewayMetaCache flushes the gateway meta cache.
 func FlushGatewayMetaCache(ctx context.Context, gatewayID lorawan.EUI64) error {
-	key := fmt.Sprintf(gatewayMetaKeyTempl, gatewayID)
+	key := GetRedisKey(gatewayMetaKeyTempl, gatewayID)
 
 	err := RedisClient().Del(key).Err()
 	if err != nil {

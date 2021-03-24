@@ -505,32 +505,6 @@ func (ts *OTAATestSuite) TestLW10() {
 					MessageType:         nc.MType_JOIN_REQUEST,
 					PhyPayloadByteCount: 23,
 				}),
-				AssertNCHandleDownlinkMetaDataRequest(nc.HandleDownlinkMetaDataRequest{
-					DevEui:    ts.Device.DevEUI[:],
-					GatewayId: ts.Gateway.GatewayID[:],
-					TxInfo: &gw.DownlinkTXInfo{
-						Frequency:  txInfo.Frequency,
-						Power:      14,
-						Modulation: common.Modulation_LORA,
-						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
-							LoraModulationInfo: &gw.LoRaModulationInfo{
-								Bandwidth:             125,
-								SpreadingFactor:       12,
-								CodeRate:              "4/5",
-								PolarizationInversion: true,
-							},
-						},
-						Context: []byte{1, 2, 3, 4},
-						Timing:  gw.DownlinkTiming_DELAY,
-						TimingInfo: &gw.DownlinkTXInfo_DelayTimingInfo{
-							DelayTimingInfo: &gw.DelayTimingInfo{
-								Delay: ptypes.DurationProto(5 * time.Second),
-							},
-						},
-					},
-					PhyPayloadByteCount: 33,
-					MessageType:         nc.MType_JOIN_ACCEPT,
-				}),
 			},
 		},
 		{

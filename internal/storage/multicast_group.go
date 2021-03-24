@@ -42,6 +42,7 @@ type MulticastGroup struct {
 type MulticastQueueItem struct {
 	ID                      int64          `db:"id"`
 	CreatedAt               time.Time      `db:"created_at"`
+	UpdatedAt               time.Time      `db:"updated_at"`
 	ScheduleAt              time.Time      `db:"schedule_at"`
 	EmitAtTimeSinceGPSEpoch *time.Duration `db:"emit_at_time_since_gps_epoch"`
 	MulticastGroupID        uuid.UUID      `db:"multicast_group_id"`
@@ -49,6 +50,7 @@ type MulticastQueueItem struct {
 	FCnt                    uint32         `db:"f_cnt"`
 	FPort                   uint8          `db:"f_port"`
 	FRMPayload              []byte         `db:"frm_payload"`
+	RetryAfter              *time.Time     `db:"retry_after"`
 }
 
 // Validate validates the MulticastQueueItem.
@@ -223,23 +225,28 @@ func CreateMulticastQueueItem(ctx context.Context, db sqlx.Queryer, qi *Multicas
 		return err
 	}
 
-	qi.CreatedAt = time.Now()
+	now := time.Now()
+	qi.CreatedAt = now
+	qi.UpdatedAt = now
 
 	err := sqlx.Get(db, &qi.ID, `
 		insert into multicast_queue (
 			created_at,
+			updated_at,
 			schedule_at,
 			emit_at_time_since_gps_epoch,
 			multicast_group_id,
 			gateway_id,
 			f_cnt,
 			f_port,
-			frm_payload
-		) values ($1, $2, $3, $4, $5, $6, $7, $8)
+			frm_payload,
+			retry_after
+		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		returning
 			id
 		`,
 		qi.CreatedAt,
+		qi.UpdatedAt,
 		qi.ScheduleAt,
 		qi.EmitAtTimeSinceGPSEpoch,
 		qi.MulticastGroupID,
@@ -247,6 +254,7 @@ func CreateMulticastQueueItem(ctx context.Context, db sqlx.Queryer, qi *Multicas
 		qi.FCnt,
 		qi.FPort,
 		qi.FRMPayload,
+		qi.RetryAfter,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -259,6 +267,68 @@ func CreateMulticastQueueItem(ctx context.Context, db sqlx.Queryer, qi *Multicas
 		"multicast_group_id": qi.MulticastGroupID,
 		"ctx_id":             ctx.Value(logging.ContextIDKey),
 	}).Info("multicast queue-item created")
+
+	return nil
+}
+
+// GetMulticastQueueItem returns the multicast queue-item for the given ID.
+func GetMulticastQueueItem(ctx context.Context, db sqlx.Queryer, id int64) (MulticastQueueItem, error) {
+	var qi MulticastQueueItem
+	err := sqlx.Get(db, &qi, "select * from multicast_queue where id = $1", id)
+	if err != nil {
+		return qi, handlePSQLError(err, "select error")
+	}
+	return qi, nil
+}
+
+// UpdateMulticastQueueItem updates the given multicast queue-item.
+func UpdateMulticastQueueItem(ctx context.Context, db sqlx.Execer, qi *MulticastQueueItem) error {
+	qi.UpdatedAt = time.Now()
+
+	res, err := db.Exec(`
+		update multicast_queue
+		set
+			updated_at = $2,
+			schedule_at = $3,
+			emit_at_time_since_gps_epoch = $4,
+			multicast_group_id = $5,
+			gateway_id = $6,
+			f_cnt = $7,
+			f_port = $8,
+			frm_payload = $9,
+			retry_after = $10
+		where
+			id = $1`,
+		qi.ID,
+		qi.UpdatedAt,
+		qi.ScheduleAt,
+		qi.EmitAtTimeSinceGPSEpoch,
+		qi.MulticastGroupID,
+		qi.GatewayID,
+		qi.FCnt,
+		qi.FPort,
+		qi.FRMPayload,
+		qi.RetryAfter,
+	)
+	if err != nil {
+		return handlePSQLError(err, "update error")
+	}
+
+	ra, err := res.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "get rows affected error")
+	}
+	if ra == 0 {
+		return ErrDoesNotExist
+	}
+
+	log.WithFields(log.Fields{
+		"id":                 qi.ID,
+		"f_cnt":              qi.FCnt,
+		"gateway_id":         qi.GatewayID,
+		"multicast_group_id": qi.MulticastGroupID,
+		"ctx_id":             ctx.Value(logging.ContextIDKey),
+	}).Info("mutlicast queue-item updated")
 
 	return nil
 }

@@ -127,6 +127,14 @@ pool_size={{ .Redis.PoolSize }}
 # used by the server.
 tls_enabled={{ .Redis.TLSEnabled }}
 
+# Key prefix.
+#
+# A key prefix can be used to avoid key collisions when multiple regions
+# are using the same Redis database and it is not possible to separate
+# keys by database index (e.g. when using Redis Cluster, which does not
+# support multiple databases).
+key_prefix="{{ .Redis.KeyPrefix }}"
+
 
 # Network-server settings.
 [network_server]
@@ -490,6 +498,15 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # must be under the same service-profile (thus a gateway-profile must be
   # assigned to the gateway).
   force_gws_private={{ .NetworkServer.Gateway.ForceGwsPrivate }}
+
+  # Downlink timeout.
+  #
+  # This defines the timeout of a downlink command. This timeout is used when
+  # scheduling Class-B, Class-C and multicast downlinks. In case the gateway
+  # did not acknowledge the downlink transmission within the configured timeout,
+  # the network-server will assume the downlink was not transmitted and will
+  # retry the downlink transmission.
+  downlink_timeout="{{ .NetworkServer.Gateway.DownlinkTimeout }}"
 
 
   # Backend defines the gateway backend settings.

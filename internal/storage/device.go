@@ -93,9 +93,15 @@ func CreateDevice(ctx context.Context, db sqlx.Execer, d *Device) error {
 }
 
 // GetDevice returns the device matching the given DevEUI.
-func GetDevice(ctx context.Context, db sqlx.Queryer, devEUI lorawan.EUI64) (Device, error) {
+func GetDevice(ctx context.Context, db sqlx.Queryer, devEUI lorawan.EUI64, forUpdate bool) (Device, error) {
 	var d Device
-	err := sqlx.Get(db, &d, "select * from device where dev_eui = $1", devEUI[:])
+	var fu string
+
+	if forUpdate {
+		fu = " for update"
+	}
+
+	err := sqlx.Get(db, &d, "select * from device where dev_eui = $1"+fu, devEUI[:])
 	if err != nil {
 		return d, handlePSQLError(err, "select error")
 	}

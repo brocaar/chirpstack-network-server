@@ -11,7 +11,6 @@ import (
 
 	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
-	"github.com/brocaar/chirpstack-api/go/v3/nc"
 	"github.com/brocaar/chirpstack-network-server/internal/gps"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/lorawan"
@@ -86,7 +85,17 @@ func (ts *MulticastTestSuite) TestMulticast() {
 				},
 			},
 			Assert: []Assertion{
-				AssertMulticastQueueItems([]storage.MulticastQueueItem{}),
+				AssertMulticastQueueItems([]storage.MulticastQueueItem{
+					{
+						ScheduleAt:              now,
+						EmitAtTimeSinceGPSEpoch: &nowGPS,
+						MulticastGroupID:        ts.MulticastGroup.ID,
+						GatewayID:               ts.Gateway.GatewayID,
+						FCnt:                    10,
+						FPort:                   2,
+						FRMPayload:              []byte{1, 2, 3, 4},
+					},
+				}),
 				AssertDownlinkFrame(ts.Gateway.GatewayID, gw.DownlinkTXInfo{
 					Frequency:  uint32(ts.MulticastGroup.Frequency),
 					Power:      14,
@@ -120,32 +129,6 @@ func (ts *MulticastTestSuite) TestMulticast() {
 					},
 					MIC: lorawan.MIC{0x8, 0xb5, 0x29, 0xe8},
 				}),
-				AssertNCHandleDownlinkMetaDataRequest(nc.HandleDownlinkMetaDataRequest{
-					MulticastGroupId:            ts.MulticastGroup.ID[:],
-					MessageType:                 nc.MType_UNCONFIRMED_DATA_DOWN,
-					PhyPayloadByteCount:         17,
-					ApplicationPayloadByteCount: 4,
-					GatewayId:                   ts.Gateway.GatewayID[:],
-					TxInfo: &gw.DownlinkTXInfo{
-						Frequency:  uint32(ts.MulticastGroup.Frequency),
-						Power:      14,
-						Modulation: common.Modulation_LORA,
-						ModulationInfo: &gw.DownlinkTXInfo_LoraModulationInfo{
-							LoraModulationInfo: &gw.LoRaModulationInfo{
-								SpreadingFactor:       9,
-								CodeRate:              "4/5",
-								Bandwidth:             125,
-								PolarizationInversion: true,
-							},
-						},
-						Timing: gw.DownlinkTiming_GPS_EPOCH,
-						TimingInfo: &gw.DownlinkTXInfo_GpsEpochTimingInfo{
-							GpsEpochTimingInfo: &gw.GPSEpochTimingInfo{
-								TimeSinceGpsEpoch: ptypes.DurationProto(nowGPS),
-							},
-						},
-					},
-				}),
 			},
 		},
 		{
@@ -173,6 +156,15 @@ func (ts *MulticastTestSuite) TestMulticast() {
 			},
 			Assert: []Assertion{
 				AssertMulticastQueueItems([]storage.MulticastQueueItem{
+					{
+						ScheduleAt:              now,
+						EmitAtTimeSinceGPSEpoch: &nowGPS,
+						MulticastGroupID:        ts.MulticastGroup.ID,
+						GatewayID:               ts.Gateway.GatewayID,
+						FCnt:                    10,
+						FPort:                   2,
+						FRMPayload:              []byte{1, 2, 3, 4},
+					},
 					{
 						ScheduleAt:              now,
 						EmitAtTimeSinceGPSEpoch: &nowGPS,
@@ -219,7 +211,7 @@ func (ts *MulticastTestSuite) TestMulticast() {
 			},
 		},
 		{
-			Name:           "item discarded becayse of payload size",
+			Name:           "item discarded because of payload size",
 			MulticastGroup: *ts.MulticastGroup,
 			MulticastQueueItems: []storage.MulticastQueueItem{
 				{

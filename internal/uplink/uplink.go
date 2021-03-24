@@ -143,7 +143,7 @@ func HandleDownlinkTXAcks(wg *sync.WaitGroup) {
 			ctx := context.Background()
 			ctx = context.WithValue(ctx, logging.ContextIDKey, ctxID)
 
-			if err := ack.HandleDownlinkTXAck(ctx, downlinkTXAck); err != nil {
+			if err := ack.HandleDownlinkTXAck(ctx, &downlinkTXAck); err != nil {
 				log.WithFields(log.Fields{
 					"gateway_id": hex.EncodeToString(downlinkTXAck.GatewayId),
 					"token":      downlinkTXAck.Token,

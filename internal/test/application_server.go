@@ -31,43 +31,47 @@ func NewApplicationServerPool(client *ApplicationClient) asclient.Pool {
 
 // ApplicationClient is an application client for testing.
 type ApplicationClient struct {
-	HandleDataUpErr         error
-	HandleProprietaryUpErr  error
-	HandleDownlinkACKErr    error
-	HandleTxAckError        error
-	SetDeviceStatusError    error
-	SetDeviceLocationErrror error
+	HandleDataUpErr                error
+	HandleProprietaryUpErr         error
+	HandleDownlinkACKErr           error
+	HandleTxAckError               error
+	SetDeviceStatusError           error
+	SetDeviceLocationErrror        error
+	ReEncryptDeviceQueueItemsError error
 
-	HandleDataUpChan        chan as.HandleUplinkDataRequest
-	HandleProprietaryUpChan chan as.HandleProprietaryUplinkRequest
-	HandleErrorChan         chan as.HandleErrorRequest
-	HandleDownlinkACKChan   chan as.HandleDownlinkACKRequest
-	HandleTxAckChan         chan as.HandleTxAckRequest
-	HandleGatewayStatsChan  chan as.HandleGatewayStatsRequest
-	SetDeviceStatusChan     chan as.SetDeviceStatusRequest
-	SetDeviceLocationChan   chan as.SetDeviceLocationRequest
+	HandleDataUpChan              chan as.HandleUplinkDataRequest
+	HandleProprietaryUpChan       chan as.HandleProprietaryUplinkRequest
+	HandleErrorChan               chan as.HandleErrorRequest
+	HandleDownlinkACKChan         chan as.HandleDownlinkACKRequest
+	HandleTxAckChan               chan as.HandleTxAckRequest
+	HandleGatewayStatsChan        chan as.HandleGatewayStatsRequest
+	SetDeviceStatusChan           chan as.SetDeviceStatusRequest
+	SetDeviceLocationChan         chan as.SetDeviceLocationRequest
+	ReEncryptDeviceQueueItemsChan chan as.ReEncryptDeviceQueueItemsRequest
 
-	HandleDataUpResponse        empty.Empty
-	HandleProprietaryUpResponse empty.Empty
-	HandleErrorResponse         empty.Empty
-	HandleDownlinkACKResponse   empty.Empty
-	HandleTxAckResponse         empty.Empty
-	HandleGatewayStatsResponse  empty.Empty
-	SetDeviceStatusResponse     empty.Empty
-	SetDeviceLocationResponse   empty.Empty
+	HandleDataUpResponse              empty.Empty
+	HandleProprietaryUpResponse       empty.Empty
+	HandleErrorResponse               empty.Empty
+	HandleDownlinkACKResponse         empty.Empty
+	HandleTxAckResponse               empty.Empty
+	HandleGatewayStatsResponse        empty.Empty
+	SetDeviceStatusResponse           empty.Empty
+	SetDeviceLocationResponse         empty.Empty
+	ReEncryptDeviceQueueItemsResponse as.ReEncryptDeviceQueueItemsResponse
 }
 
 // NewApplicationClient returns a new ApplicationClient.
 func NewApplicationClient() *ApplicationClient {
 	return &ApplicationClient{
-		HandleDataUpChan:        make(chan as.HandleUplinkDataRequest, 100),
-		HandleProprietaryUpChan: make(chan as.HandleProprietaryUplinkRequest, 100),
-		HandleErrorChan:         make(chan as.HandleErrorRequest, 100),
-		HandleDownlinkACKChan:   make(chan as.HandleDownlinkACKRequest, 100),
-		HandleTxAckChan:         make(chan as.HandleTxAckRequest, 100),
-		HandleGatewayStatsChan:  make(chan as.HandleGatewayStatsRequest, 100),
-		SetDeviceStatusChan:     make(chan as.SetDeviceStatusRequest, 100),
-		SetDeviceLocationChan:   make(chan as.SetDeviceLocationRequest, 100),
+		HandleDataUpChan:              make(chan as.HandleUplinkDataRequest, 100),
+		HandleProprietaryUpChan:       make(chan as.HandleProprietaryUplinkRequest, 100),
+		HandleErrorChan:               make(chan as.HandleErrorRequest, 100),
+		HandleDownlinkACKChan:         make(chan as.HandleDownlinkACKRequest, 100),
+		HandleTxAckChan:               make(chan as.HandleTxAckRequest, 100),
+		HandleGatewayStatsChan:        make(chan as.HandleGatewayStatsRequest, 100),
+		SetDeviceStatusChan:           make(chan as.SetDeviceStatusRequest, 100),
+		SetDeviceLocationChan:         make(chan as.SetDeviceLocationRequest, 100),
+		ReEncryptDeviceQueueItemsChan: make(chan as.ReEncryptDeviceQueueItemsRequest, 100),
 	}
 }
 
@@ -123,4 +127,10 @@ func (t *ApplicationClient) SetDeviceStatus(ctx context.Context, in *as.SetDevic
 func (t *ApplicationClient) SetDeviceLocation(ctx context.Context, in *as.SetDeviceLocationRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
 	t.SetDeviceLocationChan <- *in
 	return &t.SetDeviceLocationResponse, t.SetDeviceLocationErrror
+}
+
+// ReEncryptDeviceQueueItems method.
+func (t *ApplicationClient) ReEncryptDeviceQueueItems(ctx context.Context, in *as.ReEncryptDeviceQueueItemsRequest, opts ...grpc.CallOption) (*as.ReEncryptDeviceQueueItemsResponse, error) {
+	t.ReEncryptDeviceQueueItemsChan <- *in
+	return &t.ReEncryptDeviceQueueItemsResponse, t.ReEncryptDeviceQueueItemsError
 }

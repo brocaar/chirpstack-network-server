@@ -4,16 +4,18 @@ import (
 	"context"
 	"time"
 
-	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/chirpstack-api/go/v3/as"
-	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
 	"github.com/brocaar/chirpstack-network-server/internal/gps"
+	"github.com/brocaar/chirpstack-network-server/internal/helpers/classb"
 	"github.com/brocaar/chirpstack-network-server/internal/logging"
 	"github.com/brocaar/lorawan"
+)
+
+const (
+	classBScheduleMargin = 5 * time.Second
 )
 
 // DeviceQueueItem represents an item in the device queue (downlink).
@@ -30,6 +32,7 @@ type DeviceQueueItem struct {
 	IsPending               bool            `db:"is_pending"`
 	EmitAtTimeSinceGPSEpoch *time.Duration  `db:"emit_at_time_since_gps_epoch"`
 	TimeoutAfter            *time.Time      `db:"timeout_after"`
+	RetryAfter              *time.Time      `db:"retry_after"`
 }
 
 // Validate validates the DeviceQueueItem.
@@ -40,10 +43,42 @@ func (d DeviceQueueItem) Validate() error {
 	return nil
 }
 
-// CreateDeviceQueueItem adds the given item to the device queue.
-func CreateDeviceQueueItem(ctx context.Context, db sqlx.Queryer, qi *DeviceQueueItem) error {
+// CreateDeviceQueueItem adds the given item to the device-queue.
+// In case the device is operating in Class-B, this will schedule the item
+// at the next ping-slot.
+func CreateDeviceQueueItem(ctx context.Context, db sqlx.Queryer, qi *DeviceQueueItem, dp DeviceProfile, ds DeviceSession) error {
 	if err := qi.Validate(); err != nil {
 		return err
+	}
+
+	// If the device is operating in Class-B and has a beacon lock, calculate
+	// the next ping-slot.
+	if qi.TimeoutAfter == nil && qi.EmitAtTimeSinceGPSEpoch == nil && dp.SupportsClassB && ds.BeaconLocked {
+		// If there are other Class-B queue-items, we want to calculate the next
+		// ping-slot after the last queue item.
+		scheduleAfterGPSEpochTS, err := GetMaxEmitAtTimeSinceGPSEpochForDevEUI(ctx, db, qi.DevEUI)
+		if err != nil {
+			return errors.Wrap(err, "get max emit-at time since gps epoch for deveui error")
+		}
+
+		// If no queue-items exist, we start at the current time.
+		if scheduleAfterGPSEpochTS == 0 {
+			scheduleAfterGPSEpochTS = gps.Time(time.Now()).TimeSinceGPSEpoch()
+		}
+
+		// Add some margin.
+		scheduleAfterGPSEpochTS += classBScheduleMargin
+
+		// Calculate the next ping-slot after scheduleAfterGPSEpochTS.
+		gpsEpochTS, err := classb.GetNextPingSlotAfter(scheduleAfterGPSEpochTS, ds.DevAddr, ds.PingSlotNb)
+		if err != nil {
+			return errors.Wrap(err, "get next ping-slot error")
+		}
+
+		// We expect an ACK after Class-B Timeout.
+		timeoutTime := time.Time(gps.NewFromTimeSinceGPSEpoch(gpsEpochTS)).Add(time.Second * time.Duration(dp.ClassBTimeout))
+		qi.EmitAtTimeSinceGPSEpoch = &gpsEpochTS
+		qi.TimeoutAfter = &timeoutTime
 	}
 
 	now := time.Now()
@@ -62,8 +97,9 @@ func CreateDeviceQueueItem(ctx context.Context, db sqlx.Queryer, qi *DeviceQueue
             confirmed,
             emit_at_time_since_gps_epoch,
             is_pending,
-            timeout_after
-        ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            timeout_after,
+			retry_after
+		) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         returning id`,
 		qi.CreatedAt,
 		qi.UpdatedAt,
@@ -76,6 +112,7 @@ func CreateDeviceQueueItem(ctx context.Context, db sqlx.Queryer, qi *DeviceQueue
 		qi.EmitAtTimeSinceGPSEpoch,
 		qi.IsPending,
 		qi.TimeoutAfter,
+		qi.RetryAfter,
 	)
 	if err != nil {
 		return handlePSQLError(err, "insert error")
@@ -116,7 +153,8 @@ func UpdateDeviceQueueItem(ctx context.Context, db sqlx.Execer, qi *DeviceQueueI
             emit_at_time_since_gps_epoch = $8,
             is_pending = $9,
             timeout_after = $10,
-			dev_addr = $11
+			dev_addr = $11,
+			retry_after = $12
         where
             id = $1`,
 		qi.ID,
@@ -130,6 +168,7 @@ func UpdateDeviceQueueItem(ctx context.Context, db sqlx.Execer, qi *DeviceQueueI
 		qi.IsPending,
 		qi.TimeoutAfter,
 		qi.DevAddr[:],
+		qi.RetryAfter,
 	)
 	if err != nil {
 		return handlePSQLError(err, "update error")
@@ -192,10 +231,11 @@ func FlushDeviceQueueForDevEUI(ctx context.Context, db sqlx.Execer, devEUI loraw
 }
 
 // GetNextDeviceQueueItemForDevEUI returns the next device-queue item for the
-// given DevEUI, ordered by f_cnt (note that the f_cnt should never roll over).
-func GetNextDeviceQueueItemForDevEUI(ctx context.Context, db sqlx.Queryer, devEUI lorawan.EUI64) (DeviceQueueItem, error) {
-	var qi DeviceQueueItem
-	err := sqlx.Get(db, &qi, `
+// given DevEUI, ordered by f_cnt and a bool indicating if more items exist in
+// the queue (note that the f_cnt should never roll over).
+func GetNextDeviceQueueItemForDevEUI(ctx context.Context, db sqlx.Queryer, devEUI lorawan.EUI64) (DeviceQueueItem, bool, error) {
+	var items []DeviceQueueItem
+	err := sqlx.Select(db, &items, `
         select
             *
         from
@@ -204,20 +244,27 @@ func GetNextDeviceQueueItemForDevEUI(ctx context.Context, db sqlx.Queryer, devEU
             dev_eui = $1
         order by
             f_cnt
-        limit 1`,
+        limit 2`,
 		devEUI[:],
 	)
 	if err != nil {
-		return qi, handlePSQLError(err, "select error")
+		return DeviceQueueItem{}, false, handlePSQLError(err, "select error")
 	}
+
+	if len(items) == 0 {
+		return DeviceQueueItem{}, false, ErrDoesNotExist
+	}
+
+	// we are interested in the first item
+	qi := items[0]
 
 	// In case the transmission is pending and hasn't timed-out yet, do not
 	// return it.
 	if qi.IsPending && qi.TimeoutAfter != nil && qi.TimeoutAfter.After(time.Now()) {
-		return DeviceQueueItem{}, ErrDoesNotExist
+		return DeviceQueueItem{}, false, ErrDoesNotExist
 	}
 
-	return qi, nil
+	return qi, len(items) > 1, nil
 }
 
 // GetPendingDeviceQueueItemForDevEUI returns the pending device-queue item for the
@@ -288,98 +335,6 @@ func GetDeviceQueueItemCountForDevEUI(ctx context.Context, db sqlx.Queryer, devE
 	return count, nil
 }
 
-// GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt returns the next
-// device-queue for the given DevEUI item respecting:
-// * maxPayloadSize: the maximum payload size
-// * fCnt: the current expected frame-counter
-// In case the payload exceeds the max payload size or when the payload
-// frame-counter is behind the actual frame-counter, the payload will be removed
-// from the queue and the next one will be retrieved. In such a case, the
-// application-server will be notified.
-func GetNextDeviceQueueItemForDevEUIMaxPayloadSizeAndFCnt(ctx context.Context, db sqlx.Ext, devEUI lorawan.EUI64, maxPayloadSize int, fCnt uint32, routingProfileID uuid.UUID) (DeviceQueueItem, error) {
-	for {
-		qi, err := GetNextDeviceQueueItemForDevEUI(ctx, db, devEUI)
-		if err != nil {
-			return DeviceQueueItem{}, errors.Wrap(err, "get next device-queue item error")
-		}
-
-		if qi.FCnt < fCnt || len(qi.FRMPayload) > maxPayloadSize || (qi.TimeoutAfter != nil && qi.TimeoutAfter.Before(time.Now())) {
-			rp, err := GetRoutingProfile(ctx, db, routingProfileID)
-			if err != nil {
-				return DeviceQueueItem{}, errors.Wrap(err, "get routing-profile error")
-			}
-			asClient, err := applicationserver.Pool().Get(rp.ASID, []byte(rp.CACert), []byte(rp.TLSCert), []byte(rp.TLSKey))
-			if err != nil {
-				return DeviceQueueItem{}, errors.Wrap(err, "get application-server client error")
-			}
-
-			if err := DeleteDeviceQueueItem(ctx, db, qi.ID); err != nil {
-				return DeviceQueueItem{}, errors.Wrap(err, "delete device-queue item error")
-			}
-
-			if qi.TimeoutAfter != nil && qi.TimeoutAfter.Before(time.Now()) {
-				// timeout
-				log.WithFields(log.Fields{
-					"dev_eui":                devEUI,
-					"device_queue_item_fcnt": qi.FCnt,
-					"ctx_id":                 ctx.Value(logging.ContextIDKey),
-				}).Warning("device-queue item discarded due to timeout")
-
-				_, err = asClient.HandleDownlinkACK(ctx, &as.HandleDownlinkACKRequest{
-					DevEui:       devEUI[:],
-					FCnt:         qi.FCnt,
-					Acknowledged: false,
-				})
-				if err != nil {
-					return DeviceQueueItem{}, errors.Wrap(err, "application-server client error")
-				}
-			} else if qi.FCnt < fCnt {
-				// handle frame-counter error
-				log.WithFields(log.Fields{
-					"dev_eui":                devEUI,
-					"device_session_fcnt":    fCnt,
-					"device_queue_item_fcnt": qi.FCnt,
-					"ctx_id":                 ctx.Value(logging.ContextIDKey),
-				}).Warning("device-queue item discarded due to invalid fCnt")
-
-				_, err = asClient.HandleError(ctx, &as.HandleErrorRequest{
-					DevEui: devEUI[:],
-					Type:   as.ErrorType_DEVICE_QUEUE_ITEM_FCNT,
-					FCnt:   qi.FCnt,
-					Error:  "invalid frame-counter",
-				})
-				if err != nil {
-					return DeviceQueueItem{}, errors.Wrap(err, "application-server client error")
-				}
-			} else if len(qi.FRMPayload) > maxPayloadSize {
-				// handle max payload size error
-				log.WithFields(log.Fields{
-					"device_queue_item_fcnt":         qi.FCnt,
-					"dev_eui":                        devEUI,
-					"max_payload_size":               maxPayloadSize,
-					"device_queue_item_payload_size": len(qi.FRMPayload),
-					"ctx_id":                         ctx.Value(logging.ContextIDKey),
-				}).Warning("device-queue item discarded as it exceeds the max payload size")
-
-				_, err = asClient.HandleError(ctx, &as.HandleErrorRequest{
-					DevEui: devEUI[:],
-					Type:   as.ErrorType_DEVICE_QUEUE_ITEM_SIZE,
-					FCnt:   qi.FCnt,
-					Error:  "payload exceeds max payload size",
-				})
-				if err != nil {
-					return DeviceQueueItem{}, errors.Wrap(err, "application-server client error")
-				}
-			}
-
-			// try next frame
-			continue
-		}
-
-		return qi, nil
-	}
-}
-
 // GetDevicesWithClassBOrClassCDeviceQueueItems returns a slice of devices that qualify
 // for downlink Class-C transmission.
 // The device records will be locked for update so that multiple instances can
@@ -411,8 +366,7 @@ func GetDevicesWithClassBOrClassCDeviceQueueItems(ctx context.Context, db sqlx.E
                     	)
                     )
             )
-            -- we don't want device with pending queue items that did not yet
-            -- timeout
+			-- exclude device which have one of the following below
             and not exists (
                 select
                     1
@@ -420,8 +374,13 @@ func GetDevicesWithClassBOrClassCDeviceQueueItems(ctx context.Context, db sqlx.E
                     device_queue dq
                 where
                     dq.dev_eui = d.dev_eui
-                    and is_pending = true
-                    and dq.timeout_after > $3 
+					and (
+						-- pending queue-item with timeout_after in the future
+						(dq.is_pending = true and dq.timeout_after > $3)
+
+						-- or retry_after set to a timestamp in the future
+						or (dq.retry_after is not null and dq.retry_after > $3)
+					)
             )
         order by
             d.dev_eui

@@ -323,11 +323,11 @@ func GetFullFCntUp(nextExpectedFullFCnt, truncatedFCntUp uint32) uint32 {
 // SaveDeviceSession saves the device-session. In case it doesn't exist yet
 // it will be created.
 func SaveDeviceSession(ctx context.Context, s DeviceSession) error {
-	devAddrKey := fmt.Sprintf(devAddrKeyTempl, s.DevAddr)
-	devSessKey := fmt.Sprintf(deviceSessionKeyTempl, s.DevEUI)
+	devAddrKey := GetRedisKey(devAddrKeyTempl, s.DevAddr)
+	devSessKey := GetRedisKey(deviceSessionKeyTempl, s.DevEUI)
 
 	dsPB := deviceSessionToPB(s)
-	b, err := proto.Marshal(&dsPB)
+	b, err := proto.Marshal(dsPB)
 	if err != nil {
 		return errors.Wrap(err, "protobuf encode error")
 	}
@@ -345,7 +345,7 @@ func SaveDeviceSession(ctx context.Context, s DeviceSession) error {
 	}
 
 	if s.PendingRejoinDeviceSession != nil {
-		pendingDevAddrKey := fmt.Sprintf(devAddrKeyTempl, s.PendingRejoinDeviceSession.DevAddr)
+		pendingDevAddrKey := GetRedisKey(devAddrKeyTempl, s.PendingRejoinDeviceSession.DevAddr)
 
 		pipe = RedisClient().TxPipeline()
 		pipe.SAdd(pendingDevAddrKey, s.DevEUI[:])
@@ -371,7 +371,7 @@ func SaveDeviceSession(ctx context.Context, s DeviceSession) error {
 
 // GetDeviceSession returns the device-session for the given DevEUI.
 func GetDeviceSession(ctx context.Context, devEUI lorawan.EUI64) (DeviceSession, error) {
-	key := fmt.Sprintf(deviceSessionKeyTempl, devEUI)
+	key := GetRedisKey(deviceSessionKeyTempl, devEUI)
 	var dsPB DeviceSessionPB
 
 	val, err := RedisClient().Get(key).Bytes()
@@ -387,12 +387,12 @@ func GetDeviceSession(ctx context.Context, devEUI lorawan.EUI64) (DeviceSession,
 		return DeviceSession{}, errors.Wrap(err, "unmarshal protobuf error")
 	}
 
-	return deviceSessionFromPB(dsPB), nil
+	return deviceSessionFromPB(&dsPB), nil
 }
 
 // DeleteDeviceSession deletes the device-session matching the given DevEUI.
 func DeleteDeviceSession(ctx context.Context, devEUI lorawan.EUI64) error {
-	key := fmt.Sprintf(deviceSessionKeyTempl, devEUI)
+	key := GetRedisKey(deviceSessionKeyTempl, devEUI)
 
 	val, err := RedisClient().Del(key).Result()
 	if err != nil {
@@ -451,7 +451,7 @@ func GetDeviceSessionsForDevAddr(ctx context.Context, devAddr lorawan.DevAddr) (
 
 // GetDevEUIsForDevAddr returns the DevEUIs that are using the given DevAddr.
 func GetDevEUIsForDevAddr(ctx context.Context, devAddr lorawan.DevAddr) ([]lorawan.EUI64, error) {
-	key := fmt.Sprintf(devAddrKeyTempl, devAddr)
+	key := GetRedisKey(devAddrKeyTempl, devAddr)
 
 	val, err := RedisClient().SMembers(key).Result()
 	if err != nil {
@@ -543,7 +543,7 @@ func GetDeviceSessionForPHYPayload(ctx context.Context, phy lorawan.PHYPayload, 
 
 // DeviceSessionExists returns a bool indicating if a device session exist.
 func DeviceSessionExists(ctx context.Context, devEUI lorawan.EUI64) (bool, error) {
-	key := fmt.Sprintf(deviceSessionKeyTempl, devEUI)
+	key := GetRedisKey(deviceSessionKeyTempl, devEUI)
 
 	r, err := RedisClient().Exists(key).Result()
 	if err != nil {
@@ -557,10 +557,10 @@ func DeviceSessionExists(ctx context.Context, devEUI lorawan.EUI64) (bool, error
 
 // SaveDeviceGatewayRXInfoSet saves the given DeviceGatewayRXInfoSet.
 func SaveDeviceGatewayRXInfoSet(ctx context.Context, rxInfoSet DeviceGatewayRXInfoSet) error {
-	key := fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, rxInfoSet.DevEUI)
+	key := GetRedisKey(deviceGatewayRXInfoSetKeyTempl, rxInfoSet.DevEUI)
 
 	rxInfoSetPB := deviceGatewayRXInfoSetToPB(rxInfoSet)
-	b, err := proto.Marshal(&rxInfoSetPB)
+	b, err := proto.Marshal(rxInfoSetPB)
 	if err != nil {
 		return errors.Wrap(err, "protobuf encode error")
 	}
@@ -581,7 +581,7 @@ func SaveDeviceGatewayRXInfoSet(ctx context.Context, rxInfoSet DeviceGatewayRXIn
 // DeleteDeviceGatewayRXInfoSet deletes the device gateway rx-info meta-data
 // for the given Device EUI.
 func DeleteDeviceGatewayRXInfoSet(ctx context.Context, devEUI lorawan.EUI64) error {
-	key := fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, devEUI)
+	key := GetRedisKey(deviceGatewayRXInfoSetKeyTempl, devEUI)
 
 	val, err := RedisClient().Del(key).Result()
 	if err != nil {
@@ -602,7 +602,7 @@ func DeleteDeviceGatewayRXInfoSet(ctx context.Context, devEUI lorawan.EUI64) err
 // Device EUI.
 func GetDeviceGatewayRXInfoSet(ctx context.Context, devEUI lorawan.EUI64) (DeviceGatewayRXInfoSet, error) {
 	var rxInfoSetPB DeviceGatewayRXInfoSetPB
-	key := fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, devEUI)
+	key := GetRedisKey(deviceGatewayRXInfoSetKeyTempl, devEUI)
 
 	val, err := RedisClient().Get(key).Bytes()
 	if err != nil {
@@ -617,7 +617,7 @@ func GetDeviceGatewayRXInfoSet(ctx context.Context, devEUI lorawan.EUI64) (Devic
 		return DeviceGatewayRXInfoSet{}, errors.Wrap(err, "protobuf unmarshal error")
 	}
 
-	return deviceGatewayRXInfoSetFromPB(rxInfoSetPB), nil
+	return deviceGatewayRXInfoSetFromPB(&rxInfoSetPB), nil
 }
 
 // GetDeviceGatewayRXInfoSetForDevEUIs returns the DeviceGatewayRXInfoSet
@@ -629,7 +629,7 @@ func GetDeviceGatewayRXInfoSetForDevEUIs(ctx context.Context, devEUIs []lorawan.
 
 	var keys []string
 	for _, d := range devEUIs {
-		keys = append(keys, fmt.Sprintf(deviceGatewayRXInfoSetKeyTempl, d))
+		keys = append(keys, GetRedisKey(deviceGatewayRXInfoSetKeyTempl, d))
 	}
 
 	bs, err := RedisClient().MGet(keys...).Result()
@@ -653,13 +653,13 @@ func GetDeviceGatewayRXInfoSetForDevEUIs(ctx context.Context, devEUIs []lorawan.
 			continue
 		}
 
-		out = append(out, deviceGatewayRXInfoSetFromPB(rxInfoSetPB))
+		out = append(out, deviceGatewayRXInfoSetFromPB(&rxInfoSetPB))
 	}
 
 	return out, nil
 }
 
-func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
+func deviceSessionToPB(d DeviceSession) *DeviceSessionPB {
 	out := DeviceSessionPB{
 		MacVersion: d.MACVersion,
 
@@ -752,7 +752,7 @@ func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
 
 	if d.PendingRejoinDeviceSession != nil {
 		dsPB := deviceSessionToPB(*d.PendingRejoinDeviceSession)
-		b, err := proto.Marshal(&dsPB)
+		b, err := proto.Marshal(dsPB)
 		if err != nil {
 			log.WithField("dev_eui", d.DevEUI).WithError(err).Error("protobuf encode error")
 		}
@@ -764,10 +764,10 @@ func deviceSessionToPB(d DeviceSession) DeviceSessionPB {
 		out.MacCommandErrorCount[uint32(k)] = uint32(v)
 	}
 
-	return out
+	return &out
 }
 
-func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
+func deviceSessionFromPB(d *DeviceSessionPB) DeviceSession {
 	dpID, _ := uuid.FromString(d.DeviceProfileId)
 	rpID, _ := uuid.FromString(d.RoutingProfileId)
 	spID, _ := uuid.FromString(d.ServiceProfileId)
@@ -872,7 +872,7 @@ func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
 		if err := proto.Unmarshal(d.PendingRejoinDeviceSession, &dsPB); err != nil {
 			log.WithField("dev_eui", out.DevEUI).WithError(err).Error("decode pending rejoin device-session error")
 		} else {
-			ds := deviceSessionFromPB(dsPB)
+			ds := deviceSessionFromPB(&dsPB)
 			out.PendingRejoinDeviceSession = &ds
 		}
 	}
@@ -884,7 +884,7 @@ func deviceSessionFromPB(d DeviceSessionPB) DeviceSession {
 	return out
 }
 
-func deviceGatewayRXInfoSetToPB(d DeviceGatewayRXInfoSet) DeviceGatewayRXInfoSetPB {
+func deviceGatewayRXInfoSetToPB(d DeviceGatewayRXInfoSet) *DeviceGatewayRXInfoSetPB {
 	out := DeviceGatewayRXInfoSetPB{
 		DevEui: d.DevEUI[:],
 		Dr:     uint32(d.DR),
@@ -901,10 +901,10 @@ func deviceGatewayRXInfoSetToPB(d DeviceGatewayRXInfoSet) DeviceGatewayRXInfoSet
 		})
 	}
 
-	return out
+	return &out
 }
 
-func deviceGatewayRXInfoSetFromPB(d DeviceGatewayRXInfoSetPB) DeviceGatewayRXInfoSet {
+func deviceGatewayRXInfoSetFromPB(d *DeviceGatewayRXInfoSetPB) DeviceGatewayRXInfoSet {
 	out := DeviceGatewayRXInfoSet{
 		DR: int(d.Dr),
 	}
