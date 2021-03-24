@@ -16,6 +16,8 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/internal/migrations/code"
+	codemig "github.com/brocaar/chirpstack-network-server/internal/storage/migrations/code"
 )
 
 // Migrations
@@ -91,6 +93,24 @@ func Setup(c config.Config) error {
 	}
 
 	db = &DBLogger{d}
+
+	if err := code.Migrate(db.DB, "v1_to_v2_flush_profiles_cache", func(db sqlx.Ext) error {
+		return codemig.FlushProfilesCache(db, RedisClient(), DeviceProfileKeyTempl, DeviceProfileKeyTempl)
+	}); err != nil {
+		return err
+	}
+
+	if err := code.Migrate(db.DB, "migrate_to_cluster_keys", func(db sqlx.Ext) error {
+		return codemig.MigrateToClusterKeys(RedisClient())
+	}); err != nil {
+		return err
+	}
+
+	if err := code.Migrate(db.DB, "migrate_to_golang_migrate", func(db sqlx.Ext) error {
+		return codemig.MigrateToGolangMigrate(db)
+	}); err != nil {
+		return err
+	}
 
 	if c.PostgreSQL.Automigrate {
 		if err := MigrateUp(d); err != nil {

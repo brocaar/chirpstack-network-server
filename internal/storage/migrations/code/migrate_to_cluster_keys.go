@@ -6,22 +6,21 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
 )
 
 // MigrateToClusterKeys migrates the keys to Redis Cluster compatible keys.
-func MigrateToClusterKeys() error {
+func MigrateToClusterKeys(redisClient redis.UniversalClient) error {
 
-	keys, err := storage.RedisClient().Keys("lora:ns:metrics:*").Result()
+	keys, err := redisClient.Keys("lora:ns:metrics:*").Result()
 	if err != nil {
 		return errors.Wrap(err, "get keys error")
 	}
 
 	for i, key := range keys {
-		if err := migrateKey(key); err != nil {
+		if err := migrateKey(redisClient, key); err != nil {
 			log.WithError(err).Error("migrations/code: migrate metrics key error")
 		}
 
@@ -36,7 +35,7 @@ func MigrateToClusterKeys() error {
 	return nil
 }
 
-func migrateKey(key string) error {
+func migrateKey(redisClient redis.UniversalClient, key string) error {
 	keyParts := strings.Split(key, ":")
 	if len(keyParts) < 6 {
 		return fmt.Errorf("key %s is invalid", key)
@@ -56,12 +55,12 @@ func migrateKey(key string) error {
 
 	newKey := fmt.Sprintf("lora:ns:metrics:{%s}:%s", strings.Join(keyParts[3:len(keyParts)-2], ":"), strings.Join(keyParts[len(keyParts)-2:], ":"))
 
-	val, err := storage.RedisClient().HGetAll(key).Result()
+	val, err := redisClient.HGetAll(key).Result()
 	if err != nil {
 		return errors.Wrap(err, "hgetall error")
 	}
 
-	pipe := storage.RedisClient().TxPipeline()
+	pipe := redisClient.TxPipeline()
 	for k, v := range val {
 		f, err := strconv.ParseFloat(v, 64)
 		if err != nil {
