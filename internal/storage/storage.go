@@ -98,12 +98,6 @@ func Setup(c config.Config) error {
 
 	db = &DBLogger{d}
 
-	if err := code.Migrate(db.DB, "v1_to_v2_flush_profiles_cache", func(db sqlx.Ext) error {
-		return codemig.FlushProfilesCache(db, RedisClient(), DeviceProfileKeyTempl, DeviceProfileKeyTempl)
-	}); err != nil {
-		return err
-	}
-
 	if err := code.Migrate(db.DB, "migrate_to_cluster_keys", func(db sqlx.Ext) error {
 		return codemig.MigrateToClusterKeys(RedisClient())
 	}); err != nil {
