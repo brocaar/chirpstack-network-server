@@ -31,7 +31,8 @@ func TestNetworkServerAPI(t *testing.T) {
 	config.C.NetworkServer.NetID = [3]byte{1, 2, 3}
 
 	Convey("Given a clean PostgreSQL and Redis database + api instance", t, func() {
-		test.MustResetDB(storage.DB().DB)
+		So(storage.MigrateDown(storage.DB().DB), ShouldBeNil)
+		So(storage.MigrateUp(storage.DB().DB), ShouldBeNil)
 		storage.RedisClient().FlushAll()
 
 		grpcServer := grpc.NewServer()

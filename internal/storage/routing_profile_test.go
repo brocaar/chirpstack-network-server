@@ -18,7 +18,8 @@ func TestRoutingProfile(t *testing.T) {
 	}
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(DB().DB)
+		So(MigrateDown(DB().DB), ShouldBeNil)
+		So(MigrateUp(DB().DB), ShouldBeNil)
 
 		Convey("When creating a routing-profile", func() {
 			rp := RoutingProfile{

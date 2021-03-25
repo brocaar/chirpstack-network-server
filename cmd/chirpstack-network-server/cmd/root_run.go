@@ -10,7 +10,6 @@ import (
 	"runtime/pprof"
 	"syscall"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -35,7 +34,6 @@ import (
 	"github.com/brocaar/chirpstack-network-server/internal/config"
 	"github.com/brocaar/chirpstack-network-server/internal/downlink"
 	"github.com/brocaar/chirpstack-network-server/internal/gateway"
-	"github.com/brocaar/chirpstack-network-server/internal/migrations/code"
 	"github.com/brocaar/chirpstack-network-server/internal/monitoring"
 	"github.com/brocaar/chirpstack-network-server/internal/roaming"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
@@ -75,8 +73,6 @@ func run(cmd *cobra.Command, args []string) error {
 		setupNetworkController,
 		setupUplink,
 		setupDownlink,
-		fixV2RedisCache,
-		migrateToClusterKeys,
 		setupNetworkServerAPI,
 		setupRoaming,
 		setupGateways,
@@ -374,17 +370,5 @@ func mustGetTransportCredentials(tlsCert, tlsKey, caCert string, verifyClientCer
 	return credentials.NewTLS(&tls.Config{
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      caCertPool,
-	})
-}
-
-func fixV2RedisCache() error {
-	return code.Migrate("v1_to_v2_flush_profiles_cache", func(db sqlx.Ext) error {
-		return code.FlushProfilesCache(db)
-	})
-}
-
-func migrateToClusterKeys() error {
-	return code.Migrate("migrate_to_cluster_keys", func(db sqlx.Ext) error {
-		return code.MigrateToClusterKeys()
 	})
 }

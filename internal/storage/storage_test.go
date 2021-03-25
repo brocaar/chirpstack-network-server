@@ -16,12 +16,11 @@ type StorageTestSuite struct {
 }
 
 func (b *StorageTestSuite) SetupSuite() {
+	assert := require.New(b.T())
 	conf := test.GetConfig()
-	if err := Setup(conf); err != nil {
-		panic(err)
-	}
-
-	test.MustResetDB(DB().DB)
+	assert.NoError(Setup(conf))
+	assert.NoError(MigrateDown(DB().DB))
+	assert.NoError(MigrateUp(DB().DB))
 }
 
 func (b *StorageTestSuite) SetupTest() {
@@ -30,6 +29,14 @@ func (b *StorageTestSuite) SetupTest() {
 		panic(err)
 	}
 	b.tx = tx
+
+	if err := MigrateDown(DB().DB); err != nil {
+		panic(err)
+	}
+	if err := MigrateUp(DB().DB); err != nil {
+		panic(err)
+	}
+
 	RedisClient().FlushAll()
 }
 

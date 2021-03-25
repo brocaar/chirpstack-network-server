@@ -25,7 +25,8 @@ func (ts *DeviceModeIndTestSuite) SetupSuite() {
 	conf := test.GetConfig()
 	assert.NoError(storage.Setup(conf))
 
-	test.MustResetDB(storage.DB().DB)
+	assert.NoError(storage.MigrateDown(storage.DB().DB))
+	assert.NoError(storage.MigrateUp(storage.DB().DB))
 
 	rp := storage.RoutingProfile{}
 	assert.NoError(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp))

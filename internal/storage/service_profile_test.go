@@ -19,7 +19,8 @@ func TestServiceProfile(t *testing.T) {
 	ctx := context.Background()
 
 	Convey("Given a clean database", t, func() {
-		test.MustResetDB(DB().DB)
+		So(MigrateDown(DB().DB), ShouldBeNil)
+		So(MigrateUp(DB().DB), ShouldBeNil)
 		RedisClient().FlushAll()
 
 		Convey("When creating a service-profile", func() {
