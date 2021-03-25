@@ -1,5 +1,4 @@
 .PHONY: build clean test package serve update-vendor api
-PKGS := $(shell go list ./... | grep -v /vendor/ | grep -v chirpstack-network-server/api | grep -v /migrations | grep -v /static)
 VERSION := $(shell git describe --always |sed -e "s/^v//")
 API_VERSION := $(shell go list -m -f '{{ .Version }}' github.com/brocaar/chirpstack-api/go/v3 | awk '{n=split($$0, a, "-"); print a[n]}')
 
@@ -16,11 +15,9 @@ clean:
 test:
 	@echo "Running tests"
 	@rm -f coverage.out
-	@for pkg in $(PKGS) ; do \
-		golint $$pkg ; \
-	done
-	@go vet $(PKGS)
-	@go test -p 1 -v -cover $(PKGS) -coverprofile coverage.out
+	@golint ./...
+	@go vet ./...
+	@go test -p 1 -v -cover ./... -coverprofile coverage.out
 
 dist:
 	goreleaser
