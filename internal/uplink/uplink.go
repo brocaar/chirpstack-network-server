@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
 	"github.com/brocaar/chirpstack-api/go/v3/ns"
@@ -216,11 +217,43 @@ func handleCollectedUplink(ctx context.Context, uplinkFrame gw.UplinkFrame, rxPa
 		"ctx_id":     ctx.Value(logging.ContextIDKey),
 	}).Info("uplink: frame(s) collected")
 
+	// Extract MType
+	var protoMType common.MType
+	switch rxPacket.PHYPayload.MHDR.MType {
+	case lorawan.JoinRequest:
+		protoMType = common.MType_JoinRequest
+	case lorawan.RejoinRequest:
+		protoMType = common.MType_RejoinRequest
+	case lorawan.UnconfirmedDataUp:
+		protoMType = common.MType_UnconfirmedDataUp
+	case lorawan.ConfirmedDataUp:
+		protoMType = common.MType_ConfirmedDataUp
+	case lorawan.Proprietary:
+		protoMType = common.MType_Proprietary
+	}
+
+	// Extract DevAddr or DevEUI (if available)
+	var devAddr []byte
+	var devEUI []byte
+	switch v := rxPacket.PHYPayload.MACPayload.(type) {
+	case *lorawan.MACPayload:
+		devAddr = v.FHDR.DevAddr[:]
+	case *lorawan.JoinRequestPayload:
+		devEUI = v.DevEUI[:]
+	case *lorawan.RejoinRequestType02Payload:
+		devEUI = v.DevEUI[:]
+	case *lorawan.RejoinRequestType1Payload:
+		devEUI = v.DevEUI[:]
+	}
+
 	// log the frame for each receiving gateway.
 	if err := framelog.LogUplinkFrameForGateways(ctx, ns.UplinkFrameLog{
 		PhyPayload: uplinkFrame.PhyPayload,
 		TxInfo:     rxPacket.TXInfo,
 		RxInfo:     rxPacket.RXInfoSet,
+		MType:      protoMType,
+		DevAddr:    devAddr,
+		DevEui:     devEUI,
 	}); err != nil {
 		log.WithFields(log.Fields{
 			"ctx_id": ctx.Value(logging.ContextIDKey),

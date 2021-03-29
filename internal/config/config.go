@@ -226,6 +226,8 @@ type Config struct {
 		PrometheusEndpoint           bool   `mapstructure:"prometheus_endpoint"`
 		PrometheusAPITimingHistogram bool   `mapstructure:"prometheus_api_timing_histogram"`
 		HealthcheckEndpoint          bool   `mapstructure:"healthcheck_endpoint"`
+		DeviceFrameLogMaxHistory     int64  `mapstructure:"device_frame_log_max_history"`
+		GatewayFrameLogMaxHistory    int64  `mapstructure:"gateway_frame_log_max_history"`
 	} `mapstructure:"monitoring"`
 }
 
@@ -288,4 +290,9 @@ var MulticastClassCInterval = time.Second
 // Get returns the configuration.
 func Get() *Config {
 	return &C
+}
+
+// Set sets the configuration.
+func Set(c Config) {
+	C = c
 }

@@ -172,6 +172,8 @@ func logRejoinRequestFramesCollected(ctx *rejoinContext) error {
 		return errors.Wrap(err, "create uplink frame-set error")
 	}
 
+	uplinkFrameLog.DevEui = ctx.DevEUI[:]
+
 	if err := framelog.LogUplinkFrameForDevEUI(ctx.ctx, ctx.DevEUI, uplinkFrameLog); err != nil {
 		log.WithError(err).Error("log uplink frame for device error")
 	}

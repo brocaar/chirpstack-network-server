@@ -199,6 +199,9 @@ func logUplinkFrame(ctx *dataContext) error {
 		return errors.Wrap(err, "create uplink frame-log error")
 	}
 
+	uplinkFrameLog.DevAddr = ctx.DeviceSession.DevAddr[:]
+	uplinkFrameLog.DevEui = ctx.DeviceSession.DevEUI[:]
+
 	if err := framelog.LogUplinkFrameForDevEUI(ctx.ctx, ctx.DeviceSession.DevEUI, uplinkFrameLog); err != nil {
 		log.WithError(err).Error("log uplink frame for device error")
 	}

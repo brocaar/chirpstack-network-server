@@ -13,6 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-api/go/v3/as"
+	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
 	"github.com/brocaar/chirpstack-api/go/v3/ns"
@@ -586,6 +587,25 @@ func sendDownlinkMetaDataToNetworkController(ctx *ackContext) error {
 }
 
 func logDownlinkFrame(ctx *ackContext) error {
+	// Extract the MType
+	var protoMType common.MType
+	switch ctx.MHDR.MType {
+	case lorawan.JoinAccept:
+		protoMType = common.MType_JoinAccept
+	case lorawan.UnconfirmedDataDown:
+		protoMType = common.MType_UnconfirmedDataDown
+	case lorawan.ConfirmedDataDown:
+		protoMType = common.MType_ConfirmedDataDown
+	case lorawan.Proprietary:
+		protoMType = common.MType_Proprietary
+	}
+
+	// Extract DevAddr (if available)
+	var devAddr []byte
+	if ctx.MACPayload != nil {
+		devAddr = ctx.MACPayload.FHDR.DevAddr[:]
+	}
+
 	// log for gateway (with encrypted mac-commands)
 	if err := framelog.LogDownlinkFrameForGateway(ctx.ctx, ns.DownlinkFrameLog{
 		PhyPayload: ctx.DownlinkFrameItem.PhyPayload,
@@ -593,10 +613,19 @@ func logDownlinkFrame(ctx *ackContext) error {
 		Token:      ctx.DownlinkFrame.DownlinkFrame.Token,
 		DownlinkId: ctx.DownlinkFrame.DownlinkFrame.DownlinkId,
 		GatewayId:  ctx.DownlinkFrame.DownlinkFrame.GatewayId,
+		MType:      protoMType,
+		DevAddr:    devAddr,
+		DevEui:     ctx.DownlinkFrame.DevEui,
 	}); err != nil {
 		log.WithError(err).WithFields(log.Fields{
 			"ctx_id": ctx.ctx.Value(logging.ContextIDKey),
 		}).Error("log downlink frame for gateway error")
+	}
+
+	// Downlink is not related to a device / DevEUI, e.g. it could be a multicast
+	// or proprietary downlink. Therefore we can't log it for a specific DevEUI.
+	if len(ctx.DownlinkFrame.DevEui) == 0 {
+		return nil
 	}
 
 	var devEUI lorawan.EUI64
@@ -635,6 +664,8 @@ func logDownlinkFrame(ctx *ackContext) error {
 		Token:      ctx.DownlinkFrame.DownlinkFrame.Token,
 		DownlinkId: ctx.DownlinkFrame.DownlinkFrame.DownlinkId,
 		GatewayId:  ctx.DownlinkFrame.DownlinkFrame.GatewayId,
+		MType:      protoMType,
+		DevAddr:    devAddr,
 	}); err != nil {
 		log.WithError(err).WithFields(log.Fields{
 			"ctx_id": ctx.ctx.Value(logging.ContextIDKey),

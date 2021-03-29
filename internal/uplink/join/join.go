@@ -132,6 +132,8 @@ func (ctx *joinContext) logJoinRequestFramesCollected() error {
 		return errors.Wrap(err, "create uplink frame-set error")
 	}
 
+	uplinkFrameLog.DevEui = ctx.JoinRequestPayload.DevEUI[:]
+
 	if err := framelog.LogUplinkFrameForDevEUI(ctx.ctx, ctx.JoinRequestPayload.DevEUI, uplinkFrameLog); err != nil {
 		log.WithFields(log.Fields{
 			"ctx_id": ctx.ctx.Value("join_ctx"),

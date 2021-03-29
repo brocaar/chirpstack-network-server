@@ -729,6 +729,32 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   #   * Ping Redis database
   healthcheck_endpoint={{ .Monitoring.HealthcheckEndpoint }}
 
+  # Device frame-log max history.
+  #
+  # When set to a value > 0, ChirpStack Network Server will log all uplink and
+  # downlink frames associated to a device as a Redis stream for the
+  # consumption by external applications (e.g. for monitoring purposes) Note
+  # that only uplinks passing the MIC and frame-counter tests will be published.
+  # The configured value will be used as approximate amount of frames which
+  # will be kept in the stream.
+  #
+  # The following Redis key is used:
+  # 'lora:ns:device:stream:frame'
+  device_frame_log_max_history={{ .Monitoring.DeviceFrameLogMaxHistory }}
+
+  # Gateway frame-log max history.
+  #
+  # When set to a value > 0, ChirpStack Network Server will log all uplink and
+  # downlink frames received by the gateways as a Redis stream  for the
+  # consumption by external applications (e.g. for monitoring purposes). Note
+  # that all data reported by the gateways will be published.
+  # The configured value will be used as approximate amount of frames which
+  # will be kept in the stream.
+  #
+  # The following Redis key is used:
+  # 'lora:ns:gw:stream:frame'
+  gateway_frame_log_max_history={{ .Monitoring.GatewayFrameLogMaxHistory }}
+
 
 # Join-server settings.
 [join_server]

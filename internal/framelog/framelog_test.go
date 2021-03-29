@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -12,6 +13,7 @@ import (
 	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/ns"
+	"github.com/brocaar/chirpstack-network-server/internal/config"
 	"github.com/brocaar/chirpstack-network-server/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/internal/test"
 	"github.com/brocaar/lorawan"
@@ -27,6 +29,10 @@ type FrameLogTestSuite struct {
 func (ts *FrameLogTestSuite) SetupSuite() {
 	assert := require.New(ts.T())
 	conf := test.GetConfig()
+	conf.Monitoring.DeviceFrameLogMaxHistory = 10
+	conf.Monitoring.GatewayFrameLogMaxHistory = 10
+	config.Set(conf)
+
 	assert.NoError(storage.Setup(conf))
 
 	ts.GatewayID = lorawan.EUI64{1, 2, 3, 4, 5, 6, 7, 8}
@@ -35,6 +41,135 @@ func (ts *FrameLogTestSuite) SetupSuite() {
 
 func (ts *FrameLogTestSuite) SetupTest() {
 	storage.RedisClient().FlushAll()
+}
+
+func (ts *FrameLogTestSuite) TestLogUplinkFrameForGateways() {
+	assert := require.New(ts.T())
+
+	uplinkFrameLog := ns.UplinkFrameLog{
+		PhyPayload: []byte{1, 2, 3, 4},
+		TxInfo: &gw.UplinkTXInfo{
+			Frequency:  868100000,
+			Modulation: common.Modulation_LORA,
+			ModulationInfo: &gw.UplinkTXInfo_LoraModulationInfo{
+				LoraModulationInfo: &gw.LoRaModulationInfo{
+					SpreadingFactor: 7,
+				},
+			},
+		},
+		RxInfo: []*gw.UplinkRXInfo{
+			{
+				GatewayId: ts.GatewayID[:],
+				LoraSnr:   5.5,
+			},
+		},
+		MType:   common.MType_UnconfirmedDataUp,
+		DevAddr: []byte{4, 3, 2, 1},
+		DevEui:  []byte{1, 2, 3, 4, 5, 6, 7, 8},
+	}
+	assert.NoError(LogUplinkFrameForGateways(context.Background(), uplinkFrameLog))
+
+	val := storage.RedisClient().XRead(&redis.XReadArgs{
+		Streams: []string{globalGatewayFrameStreamKey, "0"},
+		Count:   1,
+		Block:   0,
+	}).Val()
+
+	assert.Len(val, 1)
+	assert.Len(val[0].Messages, 1)
+
+	var pl ns.UplinkFrameLog
+	assert.NoError(proto.Unmarshal([]byte(val[0].Messages[0].Values["up"].(string)), &pl))
+	assert.True(proto.Equal(&uplinkFrameLog, &pl))
+}
+
+func (ts *FrameLogTestSuite) TestLogDownlinkFrameForGateway() {
+	assert := require.New(ts.T())
+
+	downlinkFrameLog := ns.DownlinkFrameLog{
+		GatewayId:  ts.GatewayID[:],
+		PhyPayload: []byte{1, 2, 3, 4},
+		TxInfo:     &gw.DownlinkTXInfo{},
+	}
+
+	assert.NoError(LogDownlinkFrameForGateway(context.Background(), downlinkFrameLog))
+
+	val := storage.RedisClient().XRead(&redis.XReadArgs{
+		Streams: []string{globalGatewayFrameStreamKey, "0"},
+		Count:   1,
+		Block:   0,
+	}).Val()
+
+	assert.Len(val, 1)
+	assert.Len(val[0].Messages, 1)
+
+	var pl ns.DownlinkFrameLog
+	assert.NoError(proto.Unmarshal([]byte(val[0].Messages[0].Values["down"].(string)), &pl))
+	assert.True(proto.Equal(&downlinkFrameLog, &pl))
+}
+
+func (ts *FrameLogTestSuite) TestLogUplinkFrameForDevEUI() {
+	assert := require.New(ts.T())
+
+	uplinkFrameLog := ns.UplinkFrameLog{
+		PhyPayload: []byte{1, 2, 3, 4},
+		TxInfo: &gw.UplinkTXInfo{
+			Frequency:  868100000,
+			Modulation: common.Modulation_LORA,
+			ModulationInfo: &gw.UplinkTXInfo_LoraModulationInfo{
+				LoraModulationInfo: &gw.LoRaModulationInfo{
+					SpreadingFactor: 7,
+				},
+			},
+		},
+		RxInfo: []*gw.UplinkRXInfo{
+			{
+				GatewayId: ts.GatewayID[:],
+				LoraSnr:   5.5,
+			},
+		},
+	}
+
+	assert.NoError(LogUplinkFrameForDevEUI(context.Background(), ts.DevEUI, uplinkFrameLog))
+
+	val := storage.RedisClient().XRead(&redis.XReadArgs{
+		Streams: []string{globalDeviceFrameStreamKey, "0"},
+		Count:   1,
+		Block:   0,
+	}).Val()
+
+	assert.Len(val, 1)
+	assert.Len(val[0].Messages, 1)
+
+	var pl ns.UplinkFrameLog
+	assert.NoError(proto.Unmarshal([]byte(val[0].Messages[0].Values["up"].(string)), &pl))
+	assert.True(proto.Equal(&uplinkFrameLog, &pl))
+}
+
+func (ts *FrameLogTestSuite) TestLogDownlinkFrameForDevEUI() {
+	assert := require.New(ts.T())
+
+	downlinkFrameLog := ns.DownlinkFrameLog{
+		PhyPayload: []byte{1, 2, 3, 4},
+		GatewayId:  ts.GatewayID[:],
+		TxInfo:     &gw.DownlinkTXInfo{},
+	}
+
+	assert.NoError(LogDownlinkFrameForDevEUI(context.Background(), ts.DevEUI, downlinkFrameLog))
+
+	val := storage.RedisClient().XRead(&redis.XReadArgs{
+		Streams: []string{globalDeviceFrameStreamKey, "0"},
+		Count:   1,
+		Block:   0,
+	}).Val()
+
+	assert.Len(val, 1)
+	assert.Len(val[0].Messages, 1)
+
+	var pl ns.DownlinkFrameLog
+	assert.NoError(proto.Unmarshal([]byte(val[0].Messages[0].Values["down"].(string)), &pl))
+	assert.True(proto.Equal(&downlinkFrameLog, &pl))
+
 }
 
 func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
