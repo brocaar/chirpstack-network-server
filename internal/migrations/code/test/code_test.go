@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/chirpstack-network-server/internal/migrations/code"
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
-	"github.com/brocaar/chirpstack-network-server/internal/test"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/migrations/code"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/test"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

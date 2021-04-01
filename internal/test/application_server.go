@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/brocaar/chirpstack-api/go/v3/as"
-	"github.com/brocaar/chirpstack-network-server/internal/api/client/asclient"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/api/client/asclient"
 )
 
 // ApplicationServerPool is an application-server pool for testing.

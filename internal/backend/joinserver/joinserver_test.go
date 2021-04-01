@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
-	"github.com/brocaar/chirpstack-network-server/internal/test"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/test"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
 )

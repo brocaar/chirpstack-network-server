@@ -8,9 +8,9 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/chirpstack-network-server/internal/gps"
-	"github.com/brocaar/chirpstack-network-server/internal/helpers/classb"
-	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/gps"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/helpers/classb"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/logging"
 	"github.com/brocaar/lorawan"
 )
 

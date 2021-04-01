@@ -8,7 +8,7 @@ import (
 	"github.com/brocaar/chirpstack-api/go/v3/as"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

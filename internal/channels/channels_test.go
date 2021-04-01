@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
-	"github.com/brocaar/chirpstack-network-server/internal/test"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/test"
 	"github.com/brocaar/lorawan"
 	. "github.com/smartystreets/goconvey/convey"
 )

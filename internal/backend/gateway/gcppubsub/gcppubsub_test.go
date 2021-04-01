@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
-	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway/marshaler"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/backend/gateway/marshaler"
 	"github.com/brocaar/lorawan"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"

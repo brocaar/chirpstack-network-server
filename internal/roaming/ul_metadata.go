@@ -9,8 +9,8 @@ import (
 
 	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
-	"github.com/brocaar/chirpstack-network-server/internal/band"
-	"github.com/brocaar/chirpstack-network-server/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/band"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/helpers"
 	"github.com/brocaar/lorawan/backend"
 )
 

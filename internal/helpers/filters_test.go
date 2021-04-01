@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
-	"github.com/brocaar/chirpstack-network-server/internal/config"
-	"github.com/brocaar/chirpstack-network-server/internal/models"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/config"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/models"
 	"github.com/brocaar/lorawan"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"

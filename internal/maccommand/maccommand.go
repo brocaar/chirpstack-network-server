@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/brocaar/chirpstack-api/go/v3/as"
-	"github.com/brocaar/chirpstack-network-server/internal/models"
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/models"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 

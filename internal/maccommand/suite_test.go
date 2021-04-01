@@ -1,8 +1,8 @@
 package maccommand
 
 import (
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
-	"github.com/brocaar/chirpstack-network-server/internal/test"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/test"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

@@ -10,11 +10,11 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
-	"github.com/brocaar/chirpstack-network-server/internal/backend/gateway"
-	"github.com/brocaar/chirpstack-network-server/internal/band"
-	"github.com/brocaar/chirpstack-network-server/internal/helpers"
-	"github.com/brocaar/chirpstack-network-server/internal/models"
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/backend/gateway"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/band"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/models"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
 	"github.com/brocaar/lorawan/backend"
 )
 

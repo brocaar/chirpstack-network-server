@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/brocaar/chirpstack-network-server/internal/config"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/config"
 )
 
 var (
@@ -29,7 +29,7 @@ var rootCmd = &cobra.Command{
 	Short: "ChirpStack Network Server",
 	Long: `ChirpStack Network Server is an open-source LoRaWAN Network Server, part of the ChirpStack Network Server stack
 	> documentation & support: https://www.chirpstack.io/network-server/
-	> source & copyright information: https://github.com/brocaar/chirpstack-network-server/`,
+	> source & copyright information: https://github.com/brocaar/chirpstack-network-server/v3/`,
 	RunE: run,
 }
 

@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc/credentials"
 
 	"github.com/brocaar/chirpstack-api/go/v3/as"
-	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/logging"
 )
 
 // Pool defines the application-server client pool.

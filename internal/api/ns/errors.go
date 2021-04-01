@@ -5,10 +5,10 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 
-	"github.com/brocaar/chirpstack-network-server/internal/downlink/data"
-	"github.com/brocaar/chirpstack-network-server/internal/downlink/multicast"
-	"github.com/brocaar/chirpstack-network-server/internal/downlink/proprietary"
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/downlink/data"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/downlink/multicast"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/downlink/proprietary"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
 )
 
 var errToCode = map[error]codes.Code{

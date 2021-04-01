@@ -9,10 +9,10 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/chirpstack-network-server/internal/downlink/data"
-	"github.com/brocaar/chirpstack-network-server/internal/downlink/multicast"
-	"github.com/brocaar/chirpstack-network-server/internal/logging"
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/downlink/data"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/downlink/multicast"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
 )
 
 // DeviceQueueSchedulerLoop starts an infinit loop calling the scheduler loop for Class-B

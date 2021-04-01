@@ -1,8 +1,8 @@
 package channels
 
 import (
-	"github.com/brocaar/chirpstack-network-server/internal/band"
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/band"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
 	"github.com/brocaar/lorawan"
 )
 

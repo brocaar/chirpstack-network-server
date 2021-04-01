@@ -9,9 +9,9 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/require"
 
-	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
-	"github.com/brocaar/chirpstack-network-server/internal/gps"
-	"github.com/brocaar/chirpstack-network-server/internal/test"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/backend/applicationserver"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/gps"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/test"
 	"github.com/brocaar/lorawan"
 )
 

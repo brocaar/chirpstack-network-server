@@ -7,8 +7,8 @@ import (
 	"github.com/brocaar/lorawan"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/brocaar/chirpstack-network-server/internal/logging"
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
 )
 
 const servLoRaWANVersionMinor uint8 = 1

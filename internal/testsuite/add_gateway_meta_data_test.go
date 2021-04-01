@@ -12,8 +12,8 @@ import (
 
 	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
-	"github.com/brocaar/chirpstack-network-server/internal/uplink"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/uplink"
 	"github.com/brocaar/lorawan"
 )
 

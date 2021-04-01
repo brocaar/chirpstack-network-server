@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/brocaar/chirpstack-api/go/v3/as"
-	"github.com/brocaar/chirpstack-network-server/internal/backend/applicationserver"
-	"github.com/brocaar/chirpstack-network-server/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/backend/applicationserver"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/logging"
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"

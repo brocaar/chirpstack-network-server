@@ -15,12 +15,12 @@ import (
 	"github.com/brocaar/chirpstack-api/go/v3/common"
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/nc"
-	"github.com/brocaar/chirpstack-network-server/internal/band"
-	"github.com/brocaar/chirpstack-network-server/internal/downlink"
-	"github.com/brocaar/chirpstack-network-server/internal/helpers"
-	"github.com/brocaar/chirpstack-network-server/internal/storage"
-	"github.com/brocaar/chirpstack-network-server/internal/test"
-	"github.com/brocaar/chirpstack-network-server/internal/uplink"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/band"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/downlink"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/helpers"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/test"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/uplink"
 	"github.com/brocaar/lorawan"
 )
 

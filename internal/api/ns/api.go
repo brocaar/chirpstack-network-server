@@ -12,9 +12,9 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/brocaar/chirpstack-api/go/v3/ns"
-	"github.com/brocaar/chirpstack-network-server/internal/config"
-	"github.com/brocaar/chirpstack-network-server/internal/logging"
-	"github.com/brocaar/chirpstack-network-server/internal/tls"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/config"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/logging"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/tls"
 )
 
 func Setup(c config.Config) error {
