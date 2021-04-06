@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc/grpclog"
 
@@ -49,6 +51,10 @@ func (gl *grpcLogger) Infof(format string, args ...interface{}) {
 }
 
 func init() {
+	log.SetFormatter(&log.TextFormatter{
+		TimestampFormat: time.RFC3339Nano,
+	})
+
 	grpclog.SetLoggerV2(&grpcLogger{log.StandardLogger()})
 }
 
