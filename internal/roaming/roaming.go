@@ -44,6 +44,7 @@ var (
 	defaultCACert                 string
 	defaultTLSCert                string
 	defaultTLSKey                 string
+	defaultAuthorization          string
 )
 
 // Setup configures the roaming package.
@@ -63,6 +64,7 @@ func Setup(c config.Config) error {
 	defaultCACert = c.Roaming.Default.CACert
 	defaultTLSCert = c.Roaming.Default.TLSCert
 	defaultTLSKey = c.Roaming.Default.TLSKey
+	defaultAuthorization = c.Roaming.Default.Authorization
 
 	if defaultEnabled {
 		roamingEnabled = true
@@ -90,15 +92,16 @@ func Setup(c config.Config) error {
 		}
 
 		client, err := backend.NewClient(backend.ClientConfig{
-			Logger:       log.StandardLogger(),
-			SenderID:     netID.String(),
-			ReceiverID:   server.NetID.String(),
-			Server:       server.Server,
-			CACert:       server.CACert,
-			TLSCert:      server.TLSCert,
-			TLSKey:       server.TLSKey,
-			AsyncTimeout: server.AsyncTimeout,
-			RedisClient:  redisClient,
+			Logger:        log.StandardLogger(),
+			SenderID:      netID.String(),
+			ReceiverID:    server.NetID.String(),
+			Server:        server.Server,
+			CACert:        server.CACert,
+			TLSCert:       server.TLSCert,
+			TLSKey:        server.TLSKey,
+			Authorization: server.Authorization,
+			AsyncTimeout:  server.AsyncTimeout,
+			RedisClient:   redisClient,
 		})
 		if err != nil {
 			return errors.Wrapf(err, "new roaming client error for netid: %s", server.NetID)

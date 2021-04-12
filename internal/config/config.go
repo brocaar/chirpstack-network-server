@@ -243,6 +243,7 @@ type RoamingServer struct {
 	CACert                 string        `mapstructure:"ca_cert"`
 	TLSCert                string        `mapstructure:"tls_cert"`
 	TLSKey                 string        `mapstructure:"tls_key"`
+	Authorization          string        `mapstructure:"authorization"`
 }
 
 type DefaultRoamingServer struct {
@@ -256,6 +257,7 @@ type DefaultRoamingServer struct {
 	CACert                 string        `mapstructure:"ca_cert"`
 	TLSCert                string        `mapstructure:"tls_cert"`
 	TLSKey                 string        `mapstructure:"tls_key"`
+	Authorization          string        `mapstructure:"authorization"`
 }
 
 type KEK struct {

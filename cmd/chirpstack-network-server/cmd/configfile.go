@@ -951,6 +951,7 @@ resolve_netid_domain_suffix="{{ .Roaming.ResolveNetIDDomainSuffix }}"
   ca_cert="{{ $element.CACert }}"
   tls_cert="{{ $element.TLSCert }}"
   tls_key="{{ $element.TLSKey }}"
+  authorization="{{ $element.Authorization }}"
   {{ end }}
 
   # Default roaming server.
@@ -970,7 +971,7 @@ resolve_netid_domain_suffix="{{ .Roaming.ResolveNetIDDomainSuffix }}"
   ca_cert="{{ .Roaming.Default.CACert }}"
   tls_cert="{{ .Roaming.Default.TLSCert }}"
   tls_key="{{ .Roaming.Default.TLSKey }}"
-
+  authorization="{{ .Roaming.Default.Authorization }}"
 
   # Roaming KEK set.
   #
