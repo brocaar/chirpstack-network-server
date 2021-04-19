@@ -138,6 +138,11 @@ func IsRoamingDevAddr(devAddr lorawan.DevAddr) bool {
 	return roamingEnabled && !devAddr.IsNetID(netID)
 }
 
+// IsRoamingEnabled returns if roaming is enabled.
+func IsRoamingEnabled() bool {
+	return roamingEnabled
+}
+
 // GetClientForNetID returns the API client for the given NetID.
 func GetClientForNetID(clientNetID lorawan.NetID) (backend.Client, error) {
 	for _, a := range agreements {

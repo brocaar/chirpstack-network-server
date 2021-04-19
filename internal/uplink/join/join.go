@@ -147,7 +147,7 @@ func (ctx *joinContext) getDeviceOrTryRoaming() error {
 	var err error
 	ctx.Device, err = storage.GetDevice(ctx.ctx, storage.DB(), ctx.JoinRequestPayload.DevEUI, false)
 	if err != nil {
-		if errors.Cause(err) == storage.ErrDoesNotExist {
+		if errors.Cause(err) == storage.ErrDoesNotExist && roaming.IsRoamingEnabled() {
 			log.WithFields(log.Fields{
 				"ctx_id":   ctx.ctx.Value(logging.ContextIDKey),
 				"dev_eui":  ctx.JoinRequestPayload.DevEUI,
