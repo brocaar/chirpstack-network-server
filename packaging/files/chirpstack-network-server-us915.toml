@@ -70,9 +70,9 @@ net_id="000000"
     # Enable only a given sub-set of channels
     #
     # Use this when ony a sub-set of the by default enabled channels are being
-    # used. For example when only using the first 8 channels of the US band.
+    # used. For example when only using the first 8 channels of the US band + channel 64 (500 kHz).
     # Note: when left blank, all channels will be enabled.
-    enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7]
+    enabled_uplink_channels=[0, 1, 2, 3, 4, 5, 6, 7, 64]
 
 
     # Class B settings
