@@ -241,8 +241,14 @@ func getServiceProfile(ctx *dataContext) error {
 func setDownlinkDeviceLock(ctx *dataContext) error {
 	// there is no need to set the lock for devices that don't support Class-C
 	if ctx.DeviceProfile.SupportsClassC {
+		ttl := band.Band().GetDefaults().ReceiveDelay2
+		if ctx.DeviceSession.RXDelay != 0 {
+			ttl = time.Duration(ctx.DeviceSession.RXDelay) * time.Second
+		}
+		ttl = ttl + classCDownlinkLockDuration
+
 		key := storage.GetRedisKey(downlinkLockKey, ctx.DeviceSession.DevEUI)
-		if err := storage.RedisClient().Set(key, "lock", classCDownlinkLockDuration).Err(); err != nil {
+		if err := storage.RedisClient().Set(key, "lock", ttl).Err(); err != nil {
 			return errors.Wrap(err, "set downlink device lock error")
 		}
 	}
