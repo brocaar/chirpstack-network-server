@@ -894,6 +894,36 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 				}),
 			},
 		},
+		{
+			Name: "uplink of Class-C device sets lock",
+			BeforeFunc: func(*ClassATest) error {
+				ts.DeviceProfile.SupportsClassC = true
+				return storage.UpdateDeviceProfile(context.Background(), storage.DB(), ts.DeviceProfile)
+			},
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfo,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort:      &fPortOne,
+					FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+				},
+				MIC: lorawan.MIC{104, 147, 35, 121},
+			},
+			Assert: []Assertion{
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+				AssertDownlinkDeviceLock(ts.Device.DevEUI),
+			},
+		},
 	}
 
 	for _, tst := range tests {

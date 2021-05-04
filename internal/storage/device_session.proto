@@ -126,9 +126,6 @@ message DeviceSessionPB {
     // Last device-status requested timestamp (Unix ns)
     int64 last_device_status_request_time_unix_ns = 29;
 
-    // Last downlink timestamp (Unix ns).
-    int64 last_downlink_tx_timestamp_unix_ns = 32;
-
     // Class-B beacon is locked.
     bool beacon_locked = 33;
 

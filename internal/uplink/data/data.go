@@ -27,7 +27,10 @@ import (
 	"github.com/brocaar/lorawan"
 )
 
-const applicationClientTimeout = time.Second
+const (
+	applicationClientTimeout = time.Second
+	downlinkLockKey          = "lora:ns:device:%s:down:lock"
+)
 
 // ErrAbort is used to abort the flow without error
 var ErrAbort = errors.New("nothing to do")
@@ -39,6 +42,7 @@ var tasks = []func(*dataContext) error{
 	abortOnDeviceIsDisabled,
 	getDeviceProfile,
 	getServiceProfile,
+	setDownlinkDeviceLock,
 	filterRxInfoByServiceProfile,
 	decryptFOptsMACCommands,
 	decryptFRMPayloadMACCommands,
@@ -60,14 +64,16 @@ var tasks = []func(*dataContext) error{
 }
 
 var (
-	getDownlinkDataDelay time.Duration
-	disableMACCommands   bool
+	getDownlinkDataDelay       time.Duration
+	disableMACCommands         bool
+	classCDownlinkLockDuration time.Duration
 )
 
 // Setup configures the package.
 func Setup(conf config.Config) error {
 	getDownlinkDataDelay = conf.NetworkServer.GetDownlinkDataDelay
 	disableMACCommands = conf.NetworkServer.NetworkSettings.DisableMACCommands
+	classCDownlinkLockDuration = conf.NetworkServer.Scheduler.ClassC.DownlinkLockDuration
 
 	return nil
 }
@@ -225,6 +231,21 @@ func getServiceProfile(ctx *dataContext) error {
 		return errors.Wrap(err, "get service-profile error")
 	}
 	ctx.ServiceProfile = sp
+
+	return nil
+}
+
+// setDownlinkDeviceLock sets a downlink device lock in case of a Class-C
+// device. This to make sure that the Class-C scheduler does not schedule
+// a downlink that might collide with a Class-A receive-window.
+func setDownlinkDeviceLock(ctx *dataContext) error {
+	// there is no need to set the lock for devices that don't support Class-C
+	if ctx.DeviceProfile.SupportsClassC {
+		key := storage.GetRedisKey(downlinkLockKey, ctx.DeviceSession.DevEUI)
+		if err := storage.RedisClient().Set(key, "lock", classCDownlinkLockDuration).Err(); err != nil {
+			return errors.Wrap(err, "set downlink device lock error")
+		}
+	}
 
 	return nil
 }

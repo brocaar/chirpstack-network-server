@@ -34,6 +34,8 @@ func (ts *ClassCTestSuite) SetupTest() {
 		Mode: storage.DeviceModeC,
 	})
 
+	ts.CreateGateway(storage.Gateway{})
+
 	// note that the CreateDeviceSession will automatically set
 	// the device, profiles etc.. :)
 	ds := storage.DeviceSession{
@@ -68,23 +70,6 @@ func (ts *ClassCTestSuite) TestClassC() {
 	}
 	assert.NoError(helpers.SetDownlinkTXInfoDataRate(&txInfo, 5, band.Band()))
 
-	gatewayID := lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2}
-
-	deviceGatewayRXInfoSet := storage.DeviceGatewayRXInfoSet{
-		DevEUI: ts.Device.DevEUI,
-		DR:     0,
-		Items: []storage.DeviceGatewayRXInfo{
-			{
-				GatewayID: lorawan.EUI64{1, 2, 1, 2, 1, 2, 1, 2},
-				RSSI:      -50,
-				LoRaSNR:   -3,
-				Antenna:   2,
-				Board:     1,
-			},
-		},
-	}
-	assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), deviceGatewayRXInfoSet))
-
 	fPortTen := uint8(10)
 
 	tests := []DownlinkTest{
@@ -97,7 +82,7 @@ func (ts *ClassCTestSuite) TestClassC() {
 			Assert: []Assertion{
 				AssertFCntUp(8),
 				AssertNFCntDown(5),
-				AssertDownlinkFrame(gatewayID, txInfo, lorawan.PHYPayload{
+				AssertDownlinkFrame(ts.Gateway.GatewayID, txInfo, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
 						Major: lorawan.LoRaWANR1,
@@ -129,7 +114,7 @@ func (ts *ClassCTestSuite) TestClassC() {
 			Assert: []Assertion{
 				AssertFCntUp(8),
 				AssertNFCntDown(5),
-				AssertDownlinkFrame(gatewayID, txInfo, lorawan.PHYPayload{
+				AssertDownlinkFrame(ts.Gateway.GatewayID, txInfo, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
 						Major: lorawan.LoRaWANR1,
@@ -162,7 +147,7 @@ func (ts *ClassCTestSuite) TestClassC() {
 			Assert: []Assertion{
 				AssertFCntUp(8),
 				AssertNFCntDown(5),
-				AssertDownlinkFrame(gatewayID, txInfo, lorawan.PHYPayload{
+				AssertDownlinkFrame(ts.Gateway.GatewayID, txInfo, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.ConfirmedDataDown,
 						Major: lorawan.LoRaWANR1,
@@ -216,7 +201,7 @@ func (ts *ClassCTestSuite) TestClassC() {
 			Assert: []Assertion{
 				AssertFCntUp(8),
 				AssertNFCntDown(5),
-				AssertDownlinkFrame(gatewayID, txInfo, lorawan.PHYPayload{
+				AssertDownlinkFrame(ts.Gateway.GatewayID, txInfo, lorawan.PHYPayload{
 					MHDR: lorawan.MHDR{
 						MType: lorawan.UnconfirmedDataDown,
 						Major: lorawan.LoRaWANR1,

@@ -414,9 +414,25 @@ func (ts *IntegrationTestSuite) AssertDownlinkTest(t *testing.T, tst DownlinkTes
 	}
 
 	ts.FlushClients()
+	assert.NoError(storage.RedisClient().FlushAll().Err())
 
-	// overwrite device-session to deal with frame-counter increments
 	ts.CreateDeviceSession(tst.DeviceSession)
+
+	// set downlink path
+	deviceGatewayRXInfoSet := storage.DeviceGatewayRXInfoSet{
+		DevEUI: ts.Device.DevEUI,
+		DR:     0,
+		Items: []storage.DeviceGatewayRXInfo{
+			{
+				GatewayID: ts.Gateway.GatewayID,
+				RSSI:      -50,
+				LoRaSNR:   -3,
+				Antenna:   2,
+				Board:     1,
+			},
+		},
+	}
+	assert.NoError(storage.SaveDeviceGatewayRXInfoSet(context.Background(), deviceGatewayRXInfoSet))
 
 	// add device-queue items
 	assert.NoError(storage.FlushDeviceQueueForDevEUI(context.Background(), storage.DB(), tst.DeviceSession.DevEUI))

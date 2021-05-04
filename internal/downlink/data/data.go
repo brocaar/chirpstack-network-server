@@ -36,7 +36,10 @@ import (
 	"github.com/brocaar/lorawan/sensitivity"
 )
 
-const defaultCodeRate = "4/5"
+const (
+	defaultCodeRate = "4/5"
+	downlinkLockKey = "lora:ns:device:%s:down:lock"
+)
 
 type incompatibleCIDMapping struct {
 	CID              lorawan.CID
@@ -131,7 +134,9 @@ var responseTasks = []func(*dataContext) error{
 var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	getDeviceProfile,
 	getServiceProfile,
-	checkLastDownlinkTimestamp,
+	forClass(storage.DeviceModeC,
+		getDownlinkDeviceLock,
+	),
 	setDeviceGatewayRXInfo,
 	selectDownlinkGateway,
 	forClass(storage.DeviceModeC,
@@ -1408,9 +1413,6 @@ func sendDownlinkFrame(ctx *dataContext) error {
 		return errors.Wrap(err, "send downlink-frame to gateway error")
 	}
 
-	// set last downlink tx timestamp
-	ctx.DeviceSession.LastDownlinkTX = time.Now()
-
 	return nil
 }
 
@@ -1567,16 +1569,17 @@ func setDeviceGatewayRXInfo(ctx *dataContext) error {
 	return nil
 }
 
-func checkLastDownlinkTimestamp(ctx *dataContext) error {
-	// in case of Class-C validate that between now and the last downlink
-	// tx timestamp is at least the class-c lock duration
-	if ctx.DeviceProfile.SupportsClassC && time.Now().Sub(ctx.DeviceSession.LastDownlinkTX) < classCDownlinkLockDuration {
-		log.WithFields(log.Fields{
-			"time":                           time.Now(),
-			"last_downlink_tx_time":          ctx.DeviceSession.LastDownlinkTX,
-			"class_c_downlink_lock_duration": classCDownlinkLockDuration,
-			"ctx_id":                         ctx.ctx.Value(logging.ContextIDKey),
-		}).Debug("skip next downlink queue scheduling dueue to class-c downlink lock")
+// getDownlinkDeviceLock acquires a downlink device lock. This is used for Class-C
+// scheduling where the queue items are sent immediately / as soon as possible.
+// This avoids race-conditions when running multiple NS instances.
+func getDownlinkDeviceLock(ctx *dataContext) error {
+	key := storage.GetRedisKey(downlinkLockKey, ctx.DeviceSession.DevEUI)
+	set, err := storage.RedisClient().SetNX(key, "lock", classCDownlinkLockDuration).Result()
+	if err != nil {
+		return errors.Wrap(err, "acquire downlink device lock error")
+	}
+
+	if !set {
 		return ErrAbort
 	}
 

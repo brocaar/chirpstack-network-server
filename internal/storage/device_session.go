@@ -141,9 +141,6 @@ type DeviceSession struct {
 	// request was made.
 	LastDevStatusRequested time.Time
 
-	// LastDownlinkTX contains the timestamp of the last downlink.
-	LastDownlinkTX time.Time
-
 	// Class-B related configuration.
 	BeaconLocked      bool
 	PingSlotNb        int
@@ -696,11 +693,10 @@ func deviceSessionToPB(d DeviceSession) *DeviceSessionPB {
 
 		LastDeviceStatusRequestTimeUnixNs: d.LastDevStatusRequested.UnixNano(),
 
-		LastDownlinkTxTimestampUnixNs: d.LastDownlinkTX.UnixNano(),
-		BeaconLocked:                  d.BeaconLocked,
-		PingSlotNb:                    uint32(d.PingSlotNb),
-		PingSlotDr:                    uint32(d.PingSlotDR),
-		PingSlotFrequency:             uint32(d.PingSlotFrequency),
+		BeaconLocked:      d.BeaconLocked,
+		PingSlotNb:        uint32(d.PingSlotNb),
+		PingSlotDr:        uint32(d.PingSlotDR),
+		PingSlotFrequency: uint32(d.PingSlotFrequency),
 
 		RejoinRequestEnabled:   d.RejoinRequestEnabled,
 		RejoinRequestMaxCountN: uint32(d.RejoinRequestMaxCountN),
@@ -822,10 +818,6 @@ func deviceSessionFromPB(d *DeviceSessionPB) DeviceSession {
 
 	if d.LastDeviceStatusRequestTimeUnixNs > 0 {
 		out.LastDevStatusRequested = time.Unix(0, d.LastDeviceStatusRequestTimeUnixNs)
-	}
-
-	if d.LastDownlinkTxTimestampUnixNs > 0 {
-		out.LastDownlinkTX = time.Unix(0, d.LastDownlinkTxTimestampUnixNs)
 	}
 
 	copy(out.DevAddr[:], d.DevAddr)

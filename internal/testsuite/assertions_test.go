@@ -203,6 +203,15 @@ func AssertDeviceMode(mode storage.DeviceMode) Assertion {
 	}
 }
 
+// AssertDownlinkDeviceLock asserts that a downlink lock for the given device exists.
+func AssertDownlinkDeviceLock(devEUI lorawan.EUI64) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		key := storage.GetRedisKey("lora:ns:device:%s:down:lock", devEUI)
+		err := storage.RedisClient().Get(key).Err()
+		assert.NoError(err)
+	}
+}
+
 // AssertJSJoinReq asserts the given join-server JoinReq.
 func AssertJSJoinReqPayload(pl backend.JoinReqPayload) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
