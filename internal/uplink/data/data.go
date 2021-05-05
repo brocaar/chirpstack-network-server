@@ -73,7 +73,7 @@ var (
 func Setup(conf config.Config) error {
 	getDownlinkDataDelay = conf.NetworkServer.GetDownlinkDataDelay
 	disableMACCommands = conf.NetworkServer.NetworkSettings.DisableMACCommands
-	classCDownlinkLockDuration = conf.NetworkServer.Scheduler.ClassC.DownlinkLockDuration
+	classCDownlinkLockDuration = conf.NetworkServer.Scheduler.ClassC.DeviceDownlinkLockDuration
 
 	return nil
 }

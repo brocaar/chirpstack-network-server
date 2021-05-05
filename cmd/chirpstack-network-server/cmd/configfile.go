@@ -443,11 +443,21 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
 
     # Class-C settings.
     [network_server.scheduler.class_c]
-    # Downlink lock duration
+    # Device downlink lock duration
     #
     # Contains the duration to lock the downlink Class-C transmissions
     # after a preceeding downlink tx (per device).
-    downlink_lock_duration="{{ .NetworkServer.Scheduler.ClassC.DownlinkLockDuration }}"
+    device_downlink_lock_duration="{{ .NetworkServer.Scheduler.ClassC.DeviceDownlinkLockDuration }}"
+
+    # Gateway downlink lock duration.
+    #
+    # Contains the duration to lock the downlink Class-C transmissions
+    # after a preceeding downlink tx (per gateway). As half-duplex gateways
+    # can't receive when transmitting, this value can be used to avoid that
+    # a single gateway will transmit multiple frames directly after each other
+    # and because of that, unable to receive any uplinks.
+    gateway_downlink_lock_duration="{{ .NetworkServer.Scheduler.ClassC.GatewayDownlinkLockDuration }}"
+
 
     # Multicast gateway delay.
     #

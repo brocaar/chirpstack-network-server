@@ -92,8 +92,9 @@ type Config struct {
 			SchedulerInterval time.Duration `mapstructure:"scheduler_interval"`
 
 			ClassC struct {
-				DownlinkLockDuration  time.Duration `mapstructure:"downlink_lock_duration"`
-				MulticastGatewayDelay time.Duration `mapstructure:"multicast_gateway_delay"`
+				GatewayDownlinkLockDuration time.Duration `mapstructure:"gateway_downlink_lock_duration"`
+				DeviceDownlinkLockDuration  time.Duration `mapstructure:"device_downlink_lock_duration"`
+				MulticastGatewayDelay       time.Duration `mapstructure:"multicast_gateway_delay"`
 			} `mapstructure:"class_c"`
 		} `mapstructure:"scheduler"`
 

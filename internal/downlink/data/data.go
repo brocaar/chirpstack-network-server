@@ -37,8 +37,9 @@ import (
 )
 
 const (
-	defaultCodeRate = "4/5"
-	downlinkLockKey = "lora:ns:device:%s:down:lock"
+	defaultCodeRate        = "4/5"
+	deviceDownlinkLockKey  = "lora:ns:device:%s:down:lock"
+	gatewayDownlinkLockKey = "lora:ns:gw:%s:down:lock"
 )
 
 type incompatibleCIDMapping struct {
@@ -84,7 +85,8 @@ var (
 	disableADR bool
 
 	// ClassC
-	classCDownlinkLockDuration time.Duration
+	classCDeviceDownlinkLockDuration  time.Duration
+	classCGatewayDownlinkLockDuration time.Duration
 
 	// Dwell time.
 	uplinkDwellTime400ms   bool
@@ -140,6 +142,7 @@ var scheduleNextQueueItemTasks = []func(*dataContext) error{
 	setDeviceGatewayRXInfo,
 	selectDownlinkGateway,
 	forClass(storage.DeviceModeC,
+		getDownlinkGatewayLock,
 		setImmediately,
 		setTXInfoForRX2,
 	),
@@ -184,7 +187,8 @@ func Setup(conf config.Config) error {
 	disableMACCommands = nsConf.DisableMACCommands
 	disableADR = nsConf.DisableADR
 
-	classCDownlinkLockDuration = conf.NetworkServer.Scheduler.ClassC.DownlinkLockDuration
+	classCDeviceDownlinkLockDuration = conf.NetworkServer.Scheduler.ClassC.DeviceDownlinkLockDuration
+	classCGatewayDownlinkLockDuration = conf.NetworkServer.Scheduler.ClassC.GatewayDownlinkLockDuration
 
 	uplinkDwellTime400ms = conf.NetworkServer.Band.UplinkDwellTime400ms
 	downlinkDwellTime400ms = conf.NetworkServer.Band.DownlinkDwellTime400ms
@@ -1573,13 +1577,39 @@ func setDeviceGatewayRXInfo(ctx *dataContext) error {
 // scheduling where the queue items are sent immediately / as soon as possible.
 // This avoids race-conditions when running multiple NS instances.
 func getDownlinkDeviceLock(ctx *dataContext) error {
-	key := storage.GetRedisKey(downlinkLockKey, ctx.DeviceSession.DevEUI)
-	set, err := storage.RedisClient().SetNX(key, "lock", classCDownlinkLockDuration).Result()
+	key := storage.GetRedisKey(deviceDownlinkLockKey, ctx.DeviceSession.DevEUI)
+	set, err := storage.RedisClient().SetNX(key, "lock", classCDeviceDownlinkLockDuration).Result()
 	if err != nil {
 		return errors.Wrap(err, "acquire downlink device lock error")
 	}
 
 	if !set {
+		// the device is already locked
+		return ErrAbort
+	}
+
+	return nil
+}
+
+// getDownlinkGatewayLock acquires a downlink gateway lock. This can be useful
+// to make sure that half-duplex gateways don't end up sending downlinks continuously
+// and missing uplink responses to transmitted Class-C downlinks.
+func getDownlinkGatewayLock(ctx *dataContext) error {
+	// nothing to do when it is not configured
+	if classCGatewayDownlinkLockDuration == 0 {
+		return nil
+	}
+
+	var id lorawan.EUI64
+	copy(id[:], ctx.DownlinkFrame.GatewayId)
+	key := storage.GetRedisKey(gatewayDownlinkLockKey, id)
+	set, err := storage.RedisClient().SetNX(key, "lock", classCGatewayDownlinkLockDuration).Result()
+	if err != nil {
+		return errors.Wrap(err, "acquire downlink gateway lock error")
+	}
+
+	if !set {
+		// the gateway is already locked
 		return ErrAbort
 	}
 

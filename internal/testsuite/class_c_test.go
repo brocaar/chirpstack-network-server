@@ -102,6 +102,7 @@ func (ts *ClassCTestSuite) TestClassC() {
 						},
 					},
 				}),
+				AssertDownlinkGatewayLock(ts.Gateway.GatewayID),
 			},
 		},
 		{

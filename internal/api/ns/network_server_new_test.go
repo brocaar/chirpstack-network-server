@@ -363,7 +363,7 @@ func (ts *NetworkServerAPITestSuite) TestMulticastQueue() {
 					if i == 0 {
 						continue
 					}
-					lockDuration := config.C.NetworkServer.Scheduler.ClassC.DownlinkLockDuration
+					lockDuration := config.C.NetworkServer.Scheduler.ClassC.DeviceDownlinkLockDuration
 					assert.Equal(scheduleAt, items[i].ScheduleAt.Add(-lockDuration))
 					scheduleAt = items[i].ScheduleAt
 				}

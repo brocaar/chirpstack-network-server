@@ -80,7 +80,7 @@ func init() {
 	viper.SetDefault("network_server.gateway.backend.type", "mqtt")
 
 	viper.SetDefault("network_server.scheduler.scheduler_interval", 1*time.Second)
-	viper.SetDefault("network_server.scheduler.class_c.downlink_lock_duration", 2*time.Second)
+	viper.SetDefault("network_server.scheduler.class_c.device_downlink_lock_duration", 2*time.Second)
 	viper.SetDefault("network_server.scheduler.class_c.multicast_gateway_delay", 2*time.Second)
 
 	viper.SetDefault("network_server.gateway.client_cert_lifetime", time.Hour*24*365)

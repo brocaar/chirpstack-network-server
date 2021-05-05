@@ -212,6 +212,15 @@ func AssertDownlinkDeviceLock(devEUI lorawan.EUI64) Assertion {
 	}
 }
 
+// AssertDownlinkGatewayLock asserts that a downlink lock for the given gateway exists.
+func AssertDownlinkGatewayLock(gatewayID lorawan.EUI64) Assertion {
+	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
+		key := storage.GetRedisKey("lora:ns:gw:%s:down:lock", gatewayID)
+		err := storage.RedisClient().Get(key).Err()
+		assert.NoError(err)
+	}
+}
+
 // AssertJSJoinReq asserts the given join-server JoinReq.
 func AssertJSJoinReqPayload(pl backend.JoinReqPayload) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {

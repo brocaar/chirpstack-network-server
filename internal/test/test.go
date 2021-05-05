@@ -44,7 +44,8 @@ func GetConfig() config.Config {
 	c.NetworkServer.NetworkSettings.MaxMACCommandErrorCount = 3
 
 	c.NetworkServer.Scheduler.SchedulerInterval = time.Second
-	c.NetworkServer.Scheduler.ClassC.DownlinkLockDuration = time.Second * 3
+	c.NetworkServer.Scheduler.ClassC.DeviceDownlinkLockDuration = time.Second * 3
+	c.NetworkServer.Scheduler.ClassC.GatewayDownlinkLockDuration = time.Second * 3
 
 	c.NetworkServer.Gateway.Backend.MultiDownlinkFeature = "multi_only"
 	c.NetworkServer.Gateway.Backend.MQTT.Server = "tcp://127.0.0.1:1883"
