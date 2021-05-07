@@ -88,7 +88,7 @@ func handleNewChannelAns(ctx context.Context, ds *storage.DeviceSession, block s
 			delete(ds.MACCommandErrorCount, lorawan.NewChannelAns)
 
 			ds.ExtraUplinkChannels[int(pendingPL.ChIndex)] = band.Channel{
-				Frequency: int(pendingPL.Freq),
+				Frequency: pendingPL.Freq,
 				MinDR:     int(pendingPL.MinDR),
 				MaxDR:     int(pendingPL.MaxDR),
 			}

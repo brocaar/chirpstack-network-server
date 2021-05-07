@@ -37,7 +37,7 @@ func GetConfig() config.Config {
 	c.NetworkServer.DeduplicationDelay = 5 * time.Millisecond
 	c.NetworkServer.GetDownlinkDataDelay = 5 * time.Millisecond
 
-	c.NetworkServer.NetworkSettings.RX2Frequency = band.Band().GetDefaults().RX2Frequency
+	c.NetworkServer.NetworkSettings.RX2Frequency = int64(band.Band().GetDefaults().RX2Frequency)
 	c.NetworkServer.NetworkSettings.RX2DR = band.Band().GetDefaults().RX2DataRate
 	c.NetworkServer.NetworkSettings.RX1Delay = 0
 	c.NetworkServer.NetworkSettings.DownlinkTXPower = -1

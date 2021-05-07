@@ -29,7 +29,7 @@ type DeviceProfile struct {
 	ClassBTimeout      int       `db:"class_b_timeout"` // Unit: seconds
 	PingSlotPeriod     int       `db:"ping_slot_period"`
 	PingSlotDR         int       `db:"ping_slot_dr"`
-	PingSlotFreq       int       `db:"ping_slot_freq"` // in Hz
+	PingSlotFreq       uint32    `db:"ping_slot_freq"` // in Hz
 	SupportsClassC     bool      `db:"supports_class_c"`
 	ClassCTimeout      int       `db:"class_c_timeout"`     // Unit: seconds
 	MACVersion         string    `db:"mac_version"`         // Example: "1.0.2" [LW102]
@@ -37,8 +37,8 @@ type DeviceProfile struct {
 	RXDelay1           int       `db:"rx_delay_1"`
 	RXDROffset1        int       `db:"rx_dr_offset_1"`
 	RXDataRate2        int       `db:"rx_data_rate_2"`       // Unit: bits-per-second
-	RXFreq2            int       `db:"rx_freq_2"`            // In Hz
-	FactoryPresetFreqs []int     `db:"factory_preset_freqs"` // In Hz
+	RXFreq2            uint32    `db:"rx_freq_2"`            // In Hz
+	FactoryPresetFreqs []uint32  `db:"factory_preset_freqs"` // In Hz
 	MaxEIRP            int       `db:"max_eirp"`             // In dBm
 	MaxDutyCycle       int       `db:"max_duty_cycle"`       // Example: 10 indicates 10%
 	SupportsJoin       bool      `db:"supports_join"`
@@ -274,7 +274,7 @@ func GetDeviceProfile(ctx context.Context, db sqlx.Queryer, id uuid.UUID) (Devic
 	}
 
 	for _, f := range factoryPresetFreqs {
-		dp.FactoryPresetFreqs = append(dp.FactoryPresetFreqs, int(f))
+		dp.FactoryPresetFreqs = append(dp.FactoryPresetFreqs, uint32(f))
 	}
 
 	return dp, nil

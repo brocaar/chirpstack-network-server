@@ -62,7 +62,7 @@ func HandleRoamingFNS(ctx context.Context, pl backend.XmitDataReqPayload) error 
 			},
 		}
 
-		item.TxInfo.Power = int32(band.Band().GetDownlinkTXPower(int(item.TxInfo.Frequency)))
+		item.TxInfo.Power = int32(band.Band().GetDownlinkTXPower(item.TxInfo.Frequency))
 
 		if err := helpers.SetDownlinkTXInfoDataRate(item.TxInfo, *pl.DLMetaData.DataRate1, band.Band()); err != nil {
 			return errors.Wrap(err, "set downlink txinfo data-rate error")
@@ -88,7 +88,7 @@ func HandleRoamingFNS(ctx context.Context, pl backend.XmitDataReqPayload) error 
 			},
 		}
 
-		item.TxInfo.Power = int32(band.Band().GetDownlinkTXPower(int(item.TxInfo.Frequency)))
+		item.TxInfo.Power = int32(band.Band().GetDownlinkTXPower(item.TxInfo.Frequency))
 
 		if err := helpers.SetDownlinkTXInfoDataRate(item.TxInfo, *pl.DLMetaData.DataRate2, band.Band()); err != nil {
 			return errors.Wrap(err, "set downlink txinfo data-rate error")

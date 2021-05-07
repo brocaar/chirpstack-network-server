@@ -60,7 +60,7 @@ var (
 
 	// Class-B
 	classBPingSlotDR        int
-	classBPingSlotFrequency int
+	classBPingSlotFrequency uint32
 
 	// RX window
 	rxWindow              int
@@ -68,7 +68,7 @@ var (
 	rx2PreferOnLinkBudget bool
 
 	// RX2 params
-	rx2Frequency int
+	rx2Frequency uint32
 	rx2DR        int
 
 	// RX1 params
@@ -173,7 +173,7 @@ func Setup(conf config.Config) error {
 	classBPingSlotDR = nsConf.ClassB.PingSlotDR
 	classBPingSlotFrequency = nsConf.ClassB.PingSlotFrequency
 
-	rx2Frequency = nsConf.RX2Frequency
+	rx2Frequency = uint32(nsConf.RX2Frequency)
 	rx2DR = nsConf.RX2DR
 	rx1DROffset = nsConf.RX1DROffset
 	rx1Delay = nsConf.RX1Delay
@@ -510,7 +510,7 @@ func preferRX2LinkBudget(ctx *dataContext) (b bool, err error) {
 	}
 
 	// get RX1 and RX2 freq
-	rx1Freq, err := band.Band().GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.GetFrequency()))
+	rx1Freq, err := band.Band().GetRX1FrequencyForUplinkFrequency(ctx.RXPacket.TXInfo.GetFrequency())
 	if err != nil {
 		return false, errors.Wrap(err, "get rx1 frequency for uplink frequency error")
 	}
@@ -606,11 +606,11 @@ func setTXInfoForRX1(ctx *dataContext) error {
 	}
 
 	// get rx1 frequency
-	freq, err := band.Band().GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
+	freq, err := band.Band().GetRX1FrequencyForUplinkFrequency(ctx.RXPacket.TXInfo.Frequency)
 	if err != nil {
 		return errors.Wrap(err, "get rx1 frequency error")
 	}
-	txInfo.Frequency = uint32(freq)
+	txInfo.Frequency = freq
 
 	// get timestamp
 	delay := band.Band().GetDefaults().ReceiveDelay1
@@ -628,7 +628,7 @@ func setTXInfoForRX1(ctx *dataContext) error {
 	if downlinkTXPower != -1 {
 		txInfo.Power = int32(downlinkTXPower)
 	} else {
-		txInfo.Power = int32(band.Band().GetDownlinkTXPower(int(txInfo.Frequency)))
+		txInfo.Power = int32(band.Band().GetDownlinkTXPower(txInfo.Frequency))
 	}
 
 	// get remaining payload size
@@ -670,7 +670,7 @@ func setTXInfoForRX2(ctx *dataContext) error {
 	if downlinkTXPower != -1 {
 		txInfo.Power = int32(downlinkTXPower)
 	} else {
-		txInfo.Power = int32(band.Band().GetDownlinkTXPower(int(txInfo.Frequency)))
+		txInfo.Power = int32(band.Band().GetDownlinkTXPower(txInfo.Frequency))
 	}
 
 	// get timestamp (when not tx immediately)
@@ -728,7 +728,7 @@ func setTXInfoForClassB(ctx *dataContext) error {
 	if downlinkTXPower != -1 {
 		txInfo.Power = int32(downlinkTXPower)
 	} else {
-		txInfo.Power = int32(band.Band().GetDownlinkTXPower(int(txInfo.Frequency)))
+		txInfo.Power = int32(band.Band().GetDownlinkTXPower(txInfo.Frequency))
 	}
 
 	// get remaining payload size
@@ -1443,7 +1443,7 @@ func sendDownlinkFramePassiveRoaming(ctx *dataContext) error {
 	}
 
 	// DLFreq1
-	dlFreq1, err := band.Band().GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
+	dlFreq1, err := band.Band().GetRX1FrequencyForUplinkFrequency(ctx.RXPacket.TXInfo.Frequency)
 	if err != nil {
 		return errors.Wrap(err, "get rx1 frequency error")
 	}

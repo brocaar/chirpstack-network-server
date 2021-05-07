@@ -103,7 +103,7 @@ type DeviceSession struct {
 	RXDelay      uint8
 	RX1DROffset  uint8
 	RX2DR        uint8
-	RX2Frequency int
+	RX2Frequency uint32
 
 	// TXPowerIndex which the node is using. The possible values are defined
 	// by the lorawan/band package and are region specific. By default it is
@@ -134,7 +134,7 @@ type DeviceSession struct {
 	EnabledChannels       []int                    // deprecated, migrated by GetDeviceSession
 	EnabledUplinkChannels []int                    // channels that are activated on the node
 	ExtraUplinkChannels   map[int]loraband.Channel // extra uplink channels, configured by the user
-	ChannelFrequencies    []int                    // frequency of each channel
+	ChannelFrequencies    []uint32                 // frequency of each channel
 	UplinkHistory         []UplinkHistory          // contains the last 20 transmissions
 
 	// LastDevStatusRequest contains the timestamp when the last device-status
@@ -145,7 +145,7 @@ type DeviceSession struct {
 	BeaconLocked      bool
 	PingSlotNb        int
 	PingSlotDR        int
-	PingSlotFrequency int
+	PingSlotFrequency uint32
 
 	// RejoinRequestEnabled defines if the rejoin-request is enabled on the
 	// device.
@@ -240,9 +240,9 @@ func (s *DeviceSession) ResetToBootParameters(dp DeviceProfile) {
 		return
 	}
 
-	var channelFrequencies []int
+	var channelFrequencies []uint32
 	for _, f := range dp.FactoryPresetFreqs {
-		channelFrequencies = append(channelFrequencies, int(f))
+		channelFrequencies = append(channelFrequencies, f)
 	}
 
 	s.TXPowerIndex = 0
@@ -252,11 +252,11 @@ func (s *DeviceSession) ResetToBootParameters(dp DeviceProfile) {
 	s.RXDelay = uint8(dp.RXDelay1)
 	s.RX1DROffset = uint8(dp.RXDROffset1)
 	s.RX2DR = uint8(dp.RXDataRate2)
-	s.RX2Frequency = int(dp.RXFreq2)
+	s.RX2Frequency = dp.RXFreq2
 	s.EnabledUplinkChannels = band.Band().GetStandardUplinkChannelIndices() // TODO: replace by ServiceProfile.ChannelMask?
 	s.ChannelFrequencies = channelFrequencies
 	s.PingSlotDR = dp.PingSlotDR
-	s.PingSlotFrequency = int(dp.PingSlotFreq)
+	s.PingSlotFrequency = dp.PingSlotFreq
 	s.NbTrans = 1
 
 	if dp.PingSlotPeriod != 0 {
@@ -265,7 +265,7 @@ func (s *DeviceSession) ResetToBootParameters(dp DeviceProfile) {
 
 	if len(dp.FactoryPresetFreqs) > len(s.EnabledUplinkChannels) {
 		for _, f := range dp.FactoryPresetFreqs[len(s.EnabledUplinkChannels):] {
-			i, err := band.Band().GetUplinkChannelIndex(int(f), false)
+			i, err := band.Band().GetUplinkChannelIndex(f, false)
 			if err != nil {
 				continue
 			}
@@ -680,7 +680,7 @@ func deviceSessionToPB(d DeviceSession) *DeviceSessionPB {
 		RxDelay:      uint32(d.RXDelay),
 		Rx1DrOffset:  uint32(d.RX1DROffset),
 		Rx2Dr:        uint32(d.RX2DR),
-		Rx2Frequency: uint32(d.RX2Frequency),
+		Rx2Frequency: d.RX2Frequency,
 		TxPowerIndex: uint32(d.TXPowerIndex),
 
 		Dr:                       uint32(d.DR),
@@ -696,7 +696,7 @@ func deviceSessionToPB(d DeviceSession) *DeviceSessionPB {
 		BeaconLocked:      d.BeaconLocked,
 		PingSlotNb:        uint32(d.PingSlotNb),
 		PingSlotDr:        uint32(d.PingSlotDR),
-		PingSlotFrequency: uint32(d.PingSlotFrequency),
+		PingSlotFrequency: d.PingSlotFrequency,
 
 		RejoinRequestEnabled:   d.RejoinRequestEnabled,
 		RejoinRequestMaxCountN: uint32(d.RejoinRequestMaxCountN),
@@ -727,7 +727,7 @@ func deviceSessionToPB(d DeviceSession) *DeviceSessionPB {
 
 	for i, c := range d.ExtraUplinkChannels {
 		out.ExtraUplinkChannels[uint32(i)] = &DeviceSessionPBChannel{
-			Frequency: uint32(c.Frequency),
+			Frequency: c.Frequency,
 			MinDr:     uint32(c.MinDR),
 			MaxDr:     uint32(c.MaxDR),
 		}
@@ -784,7 +784,7 @@ func deviceSessionFromPB(d *DeviceSessionPB) DeviceSession {
 		RXDelay:      uint8(d.RxDelay),
 		RX1DROffset:  uint8(d.Rx1DrOffset),
 		RX2DR:        uint8(d.Rx2Dr),
-		RX2Frequency: int(d.Rx2Frequency),
+		RX2Frequency: d.Rx2Frequency,
 		TXPowerIndex: int(d.TxPowerIndex),
 
 		DR:                       int(d.Dr),
@@ -798,7 +798,7 @@ func deviceSessionFromPB(d *DeviceSessionPB) DeviceSession {
 		BeaconLocked:      d.BeaconLocked,
 		PingSlotNb:        int(d.PingSlotNb),
 		PingSlotDR:        int(d.PingSlotDr),
-		PingSlotFrequency: int(d.PingSlotFrequency),
+		PingSlotFrequency: d.PingSlotFrequency,
 
 		RejoinRequestEnabled:   d.RejoinRequestEnabled,
 		RejoinRequestMaxCountN: int(d.RejoinRequestMaxCountN),
@@ -840,14 +840,14 @@ func deviceSessionFromPB(d *DeviceSessionPB) DeviceSession {
 
 	for i, c := range d.ExtraUplinkChannels {
 		out.ExtraUplinkChannels[int(i)] = loraband.Channel{
-			Frequency: int(c.Frequency),
+			Frequency: c.Frequency,
 			MinDR:     int(c.MinDr),
 			MaxDR:     int(c.MaxDr),
 		}
 	}
 
 	for _, c := range d.ChannelFrequencies {
-		out.ChannelFrequencies = append(out.ChannelFrequencies, int(c))
+		out.ChannelFrequencies = append(out.ChannelFrequencies, c)
 	}
 
 	for _, h := range d.UplinkAdrHistory {

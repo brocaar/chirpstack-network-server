@@ -142,7 +142,7 @@ func handlePassiveRoamingDevice(ctx *dataContext) error {
 }
 
 func getDeviceSessionForPHYPayload(ctx *dataContext) error {
-	txCh, err := band.Band().GetUplinkChannelIndexForFrequencyDR(int(ctx.RXPacket.TXInfo.Frequency), ctx.RXPacket.DR)
+	txCh, err := band.Band().GetUplinkChannelIndexForFrequencyDR(ctx.RXPacket.TXInfo.Frequency, ctx.RXPacket.DR)
 	if err != nil {
 		return errors.Wrap(err, "get channel error")
 	}

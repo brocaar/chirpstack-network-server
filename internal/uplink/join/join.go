@@ -407,7 +407,7 @@ func (ctx *joinContext) createDeviceSession() error {
 		ExtraUplinkChannels:   make(map[int]loraband.Channel),
 		SkipFCntValidation:    ctx.Device.SkipFCntCheck,
 		PingSlotDR:            ctx.DeviceProfile.PingSlotDR,
-		PingSlotFrequency:     int(ctx.DeviceProfile.PingSlotFreq),
+		PingSlotFrequency:     ctx.DeviceProfile.PingSlotFreq,
 		NbTrans:               1,
 		ReferenceAltitude:     ctx.Device.ReferenceAltitude,
 	}
@@ -468,7 +468,7 @@ func (ctx *joinContext) createDeviceSession() error {
 				continue
 			}
 
-			i, err := band.Band().GetUplinkChannelIndex(int(f), false)
+			i, err := band.Band().GetUplinkChannelIndex(f, false)
 			if err != nil {
 				// if this happens, something is really wrong
 				log.WithError(err).WithFields(log.Fields{
@@ -594,7 +594,7 @@ func (ctx *joinContext) setPRStartAnsPayload() error {
 		return errors.Wrap(err, "get rx1 data-rate error")
 	}
 	rx2DR := band.Band().GetDefaults().RX2DataRate
-	dlFreq1, err := band.Band().GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
+	dlFreq1, err := band.Band().GetRX1FrequencyForUplinkFrequency(ctx.RXPacket.TXInfo.Frequency)
 	if err != nil {
 		return errors.Wrap(err, "get rx1 frequency error")
 	}

@@ -63,7 +63,7 @@ type OTAATest struct {
 	RXInfo                   gw.UplinkRXInfo
 	PHYPayload               lorawan.PHYPayload
 	JoinServerJoinAnsPayload backend.JoinAnsPayload
-	ExtraChannels            []int
+	ExtraChannels            []uint32
 	DeviceActivations        []storage.DeviceActivation
 	DeviceQueueItems         []storage.DeviceQueueItem
 
@@ -345,7 +345,7 @@ func (ts *IntegrationTestSuite) GetUplinkFrameForFRMPayload(rxInfo gw.UplinkRXIn
 	var txChan int
 	var txDR int
 
-	txChan, err = band.Band().GetUplinkChannelIndex(int(txInfo.Frequency), true)
+	txChan, err = band.Band().GetUplinkChannelIndex(txInfo.Frequency, true)
 	ts.Require().Nil(err)
 
 	if txInfo.Modulation == common.Modulation_LORA {

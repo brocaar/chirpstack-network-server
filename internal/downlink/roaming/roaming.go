@@ -113,7 +113,7 @@ func (ctx *emitPRDownlinkContext) setDownlinkFrame() error {
 				},
 			}
 
-			item.TxInfo.Power = int32(band.Band().GetDownlinkTXPower(int(item.TxInfo.Frequency)))
+			item.TxInfo.Power = int32(band.Band().GetDownlinkTXPower(item.TxInfo.Frequency))
 			if err := helpers.SetDownlinkTXInfoDataRate(item.TxInfo, *ctx.dlMetaData.DataRate1, band.Band()); err != nil {
 				return errors.Wrap(err, "set txinfo data-rate error")
 			}
@@ -136,7 +136,7 @@ func (ctx *emitPRDownlinkContext) setDownlinkFrame() error {
 				},
 			}
 
-			item.TxInfo.Power = int32(band.Band().GetDownlinkTXPower(int(item.TxInfo.Frequency)))
+			item.TxInfo.Power = int32(band.Band().GetDownlinkTXPower(item.TxInfo.Frequency))
 			if err := helpers.SetDownlinkTXInfoDataRate(item.TxInfo, *ctx.dlMetaData.DataRate2, band.Band()); err != nil {
 				return errors.Wrap(err, "set txinfo data-rate error")
 			}

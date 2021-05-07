@@ -32,7 +32,7 @@ type MulticastGroup struct {
 	FCnt             uint32             `db:"f_cnt"`
 	GroupType        MulticastGroupType `db:"group_type"`
 	DR               int                `db:"dr"`
-	Frequency        int                `db:"frequency"`
+	Frequency        uint32             `db:"frequency"`
 	PingSlotPeriod   int                `db:"ping_slot_period"`
 	RoutingProfileID uuid.UUID          `db:"routing_profile_id"` // there is no downlink data, but it can be used for future error reporting
 	ServiceProfileID uuid.UUID          `db:"service_profile_id"`

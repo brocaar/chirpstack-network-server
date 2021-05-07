@@ -145,7 +145,7 @@ func setTXInfoForRX1(ctx *joinContext) error {
 	}
 
 	// set frequency
-	freq, err := band.Band().GetRX1FrequencyForUplinkFrequency(int(ctx.RXPacket.TXInfo.Frequency))
+	freq, err := band.Band().GetRX1FrequencyForUplinkFrequency(ctx.RXPacket.TXInfo.Frequency)
 	if err != nil {
 		return errors.Wrap(err, "get rx1 frequency error")
 	}
@@ -155,7 +155,7 @@ func setTXInfoForRX1(ctx *joinContext) error {
 	if downlinkTXPower != -1 {
 		txInfo.Power = int32(downlinkTXPower)
 	} else {
-		txInfo.Power = int32(band.Band().GetDownlinkTXPower(int(txInfo.Frequency)))
+		txInfo.Power = int32(band.Band().GetDownlinkTXPower(txInfo.Frequency))
 	}
 
 	// set timestamp
@@ -178,7 +178,7 @@ func setTXInfoForRX2(ctx *joinContext) error {
 	txInfo := gw.DownlinkTXInfo{
 		Board:     ctx.DownlinkGateway.Board,
 		Antenna:   ctx.DownlinkGateway.Antenna,
-		Frequency: uint32(band.Band().GetDefaults().RX2Frequency),
+		Frequency: band.Band().GetDefaults().RX2Frequency,
 		Context:   ctx.DownlinkGateway.Context,
 	}
 
@@ -192,7 +192,7 @@ func setTXInfoForRX2(ctx *joinContext) error {
 	if downlinkTXPower != -1 {
 		txInfo.Power = int32(downlinkTXPower)
 	} else {
-		txInfo.Power = int32(band.Band().GetDownlinkTXPower(int(txInfo.Frequency)))
+		txInfo.Power = int32(band.Band().GetDownlinkTXPower(txInfo.Frequency))
 	}
 
 	// set timestamp

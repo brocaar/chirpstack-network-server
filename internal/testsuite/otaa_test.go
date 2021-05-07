@@ -636,7 +636,7 @@ func (ts *OTAATestSuite) TestLW10() {
 			RXInfo:        rxInfo,
 			TXInfo:        txInfo,
 			PHYPayload:    jrPayload,
-			ExtraChannels: []int{868600000, 868700000, 868800000},
+			ExtraChannels: []uint32{868600000, 868700000, 868800000},
 			JoinServerJoinAnsPayload: backend.JoinAnsPayload{
 				BasePayloadResult: backend.BasePayloadResult{
 					Result: backend.Result{

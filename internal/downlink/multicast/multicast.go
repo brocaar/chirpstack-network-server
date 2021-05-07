@@ -146,7 +146,7 @@ func setTXInfo(ctx *multicastContext) error {
 	ctx.DownlinkFrame.GatewayId = ctx.MulticastQueueItem.GatewayID[:]
 
 	txInfo := gw.DownlinkTXInfo{
-		Frequency: uint32(ctx.MulticastGroup.Frequency),
+		Frequency: ctx.MulticastGroup.Frequency,
 	}
 
 	if ctx.MulticastQueueItem.EmitAtTimeSinceGPSEpoch == nil {

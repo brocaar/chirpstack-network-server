@@ -31,7 +31,7 @@ type proprietaryContext struct {
 	MIC            lorawan.MIC
 	GatewayMACs    []lorawan.EUI64
 	IPol           bool
-	Frequency      int
+	Frequency      uint32
 	DR             int
 	DownlinkFrames []gw.DownlinkFrame
 }
@@ -48,7 +48,7 @@ func Setup(conf config.Config) error {
 }
 
 // Handle handles a proprietary downlink.
-func Handle(ctx context.Context, macPayload []byte, mic lorawan.MIC, gwMACs []lorawan.EUI64, iPol bool, frequency, dr int) error {
+func Handle(ctx context.Context, macPayload []byte, mic lorawan.MIC, gwMACs []lorawan.EUI64, iPol bool, frequency uint32, dr int) error {
 	pctx := proprietaryContext{
 		ctx:         ctx,
 		MACPayload:  macPayload,
@@ -97,7 +97,7 @@ func sendProprietaryDown(ctx *proprietaryContext) error {
 		token := binary.BigEndian.Uint16(downID[0:2])
 
 		txInfo := gw.DownlinkTXInfo{
-			Frequency: uint32(ctx.Frequency),
+			Frequency: ctx.Frequency,
 			Power:     int32(txPower),
 
 			Timing: gw.DownlinkTiming_IMMEDIATELY,

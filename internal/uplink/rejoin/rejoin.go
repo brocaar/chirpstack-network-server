@@ -410,7 +410,7 @@ func setRejoin0PendingDeviceSession(ctx *rejoinContext) error {
 		ExtraUplinkChannels:   make(map[int]loraband.Channel),
 		SkipFCntValidation:    ctx.Device.SkipFCntCheck,
 		PingSlotDR:            ctx.DeviceProfile.PingSlotDR,
-		PingSlotFrequency:     int(ctx.DeviceProfile.PingSlotFreq),
+		PingSlotFrequency:     ctx.DeviceProfile.PingSlotFreq,
 		NbTrans:               1,
 	}
 
@@ -470,7 +470,7 @@ func setRejoin0PendingDeviceSession(ctx *rejoinContext) error {
 				continue
 			}
 
-			i, err := band.Band().GetUplinkChannelIndex(int(f), false)
+			i, err := band.Band().GetUplinkChannelIndex(f, false)
 			if err != nil {
 				// if this happens, something is really wrong
 				log.WithError(err).WithFields(log.Fields{

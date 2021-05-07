@@ -130,7 +130,7 @@ func setRXParameters() error {
 	}
 
 	if config.C.NetworkServer.NetworkSettings.RX2Frequency == -1 {
-		config.C.NetworkServer.NetworkSettings.RX2Frequency = defaults.RX2Frequency
+		config.C.NetworkServer.NetworkSettings.RX2Frequency = int64(defaults.RX2Frequency)
 	}
 
 	return nil

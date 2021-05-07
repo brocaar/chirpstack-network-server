@@ -386,7 +386,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 	assert.NoError(storage.CreateServiceProfile(context.Background(), storage.DB(), &sp))
 
 	dp := storage.DeviceProfile{
-		FactoryPresetFreqs: []int{
+		FactoryPresetFreqs: []uint32{
 			868100000,
 			868300000,
 			868500000,
@@ -567,7 +567,7 @@ func (ts *NetworkServerAPITestSuite) TestDevice() {
 					AFCntDown:             12,
 					SkipFCntValidation:    true,
 					EnabledUplinkChannels: []int{0, 1, 2, 3},
-					ChannelFrequencies:    []int{868100000, 868300000, 868500000, 867100000},
+					ChannelFrequencies:    []uint32{868100000, 868300000, 868500000, 867100000},
 					ExtraUplinkChannels: map[int]loraband.Channel{
 						3: loraband.Channel{
 							Frequency: 867100000,

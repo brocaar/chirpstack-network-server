@@ -59,7 +59,7 @@ type Config struct {
 			RX1Delay                int      `mapstructure:"rx1_delay"`
 			RX1DROffset             int      `mapstructure:"rx1_dr_offset"`
 			RX2DR                   int      `mapstructure:"rx2_dr"`
-			RX2Frequency            int      `mapstructure:"rx2_frequency"`
+			RX2Frequency            int64    `mapstructure:"rx2_frequency"`
 			RX2PreferOnRX1DRLt      int      `mapstructure:"rx2_prefer_on_rx1_dr_lt"`
 			RX2PreferOnLinkBudget   bool     `mapstructure:"rx2_prefer_on_link_budget"`
 			GatewayPreferMinMargin  float64  `mapstructure:"gateway_prefer_min_margin"`
@@ -71,14 +71,14 @@ type Config struct {
 			ADRPlugins              []string `mapstructure:"adr_plugins"`
 
 			ExtraChannels []struct {
-				Frequency int `mapstructure:"frequency"`
-				MinDR     int `mapstructure:"min_dr"`
-				MaxDR     int `mapstructure:"max_dr"`
+				Frequency uint32 `mapstructure:"frequency"`
+				MinDR     int    `mapstructure:"min_dr"`
+				MaxDR     int    `mapstructure:"max_dr"`
 			} `mapstructure:"extra_channels"`
 
 			ClassB struct {
-				PingSlotDR        int `mapstructure:"ping_slot_dr"`
-				PingSlotFrequency int `mapstructure:"ping_slot_frequency"`
+				PingSlotDR        int    `mapstructure:"ping_slot_dr"`
+				PingSlotFrequency uint32 `mapstructure:"ping_slot_frequency"`
 			} `mapstructure:"class_b"`
 
 			RejoinRequest struct {

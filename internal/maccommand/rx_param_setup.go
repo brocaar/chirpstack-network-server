@@ -14,14 +14,14 @@ import (
 
 // RequestRXParamSetup modifies the RX1 data-rate offset, RX2 frequency and
 // RX2 data-rate.
-func RequestRXParamSetup(rx1DROffset, rx2Frequency, rx2DR int) storage.MACCommandBlock {
+func RequestRXParamSetup(rx1DROffset int, rx2Frequency uint32, rx2DR int) storage.MACCommandBlock {
 	return storage.MACCommandBlock{
 		CID: lorawan.RXParamSetupReq,
 		MACCommands: []lorawan.MACCommand{
 			{
 				CID: lorawan.RXParamSetupReq,
 				Payload: &lorawan.RXParamSetupReqPayload{
-					Frequency: uint32(rx2Frequency),
+					Frequency: rx2Frequency,
 					DLSettings: lorawan.DLSettings{
 						RX2DataRate: uint8(rx2DR),
 						RX1DROffset: uint8(rx1DROffset),
@@ -64,7 +64,7 @@ func handleRXParamSetupAns(ctx context.Context, ds *storage.DeviceSession, block
 	// reset the error counter
 	delete(ds.MACCommandErrorCount, lorawan.RXParamSetupAns)
 
-	ds.RX2Frequency = int(req.Frequency)
+	ds.RX2Frequency = req.Frequency
 	ds.RX2DR = req.DLSettings.RX2DataRate
 	ds.RX1DROffset = req.DLSettings.RX1DROffset
 

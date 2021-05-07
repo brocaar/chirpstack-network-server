@@ -336,9 +336,9 @@ func (a *API) handlePRStartReqData(ctx context.Context, basePL backend.BasePaylo
 	}
 
 	// frequency in hz
-	var freq int
+	var freq uint32
 	if pl.ULMetaData.ULFreq != nil {
-		freq = int(*pl.ULMetaData.ULFreq * 1000000)
+		freq = uint32(*pl.ULMetaData.ULFreq * 1000000)
 	}
 
 	// data-rate

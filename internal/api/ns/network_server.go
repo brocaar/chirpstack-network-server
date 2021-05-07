@@ -343,18 +343,13 @@ func (n *NetworkServerAPI) CreateDeviceProfile(ctx context.Context, req *ns.Crea
 	var dpID uuid.UUID
 	copy(dpID[:], req.DeviceProfile.Id)
 
-	var factoryPresetFreqs []int
-	for _, f := range req.DeviceProfile.FactoryPresetFreqs {
-		factoryPresetFreqs = append(factoryPresetFreqs, int(f))
-	}
-
 	dp := storage.DeviceProfile{
 		ID:                 dpID,
 		SupportsClassB:     req.DeviceProfile.SupportsClassB,
 		ClassBTimeout:      int(req.DeviceProfile.ClassBTimeout),
 		PingSlotPeriod:     int(req.DeviceProfile.PingSlotPeriod),
 		PingSlotDR:         int(req.DeviceProfile.PingSlotDr),
-		PingSlotFreq:       int(req.DeviceProfile.PingSlotFreq),
+		PingSlotFreq:       req.DeviceProfile.PingSlotFreq,
 		SupportsClassC:     req.DeviceProfile.SupportsClassC,
 		ClassCTimeout:      int(req.DeviceProfile.ClassCTimeout),
 		MACVersion:         req.DeviceProfile.MacVersion,
@@ -362,8 +357,8 @@ func (n *NetworkServerAPI) CreateDeviceProfile(ctx context.Context, req *ns.Crea
 		RXDelay1:           int(req.DeviceProfile.RxDelay_1),
 		RXDROffset1:        int(req.DeviceProfile.RxDrOffset_1),
 		RXDataRate2:        int(req.DeviceProfile.RxDatarate_2),
-		RXFreq2:            int(req.DeviceProfile.RxFreq_2),
-		FactoryPresetFreqs: factoryPresetFreqs,
+		RXFreq2:            req.DeviceProfile.RxFreq_2,
+		FactoryPresetFreqs: req.DeviceProfile.FactoryPresetFreqs,
 		MaxEIRP:            int(req.DeviceProfile.MaxEirp),
 		MaxDutyCycle:       int(req.DeviceProfile.MaxDutyCycle),
 		SupportsJoin:       req.DeviceProfile.SupportsJoin,
@@ -450,16 +445,11 @@ func (n *NetworkServerAPI) UpdateDeviceProfile(ctx context.Context, req *ns.Upda
 		return nil, errToRPCError(err)
 	}
 
-	var factoryPresetFreqs []int
-	for _, f := range req.DeviceProfile.FactoryPresetFreqs {
-		factoryPresetFreqs = append(factoryPresetFreqs, int(f))
-	}
-
 	dp.SupportsClassB = req.DeviceProfile.SupportsClassB
 	dp.ClassBTimeout = int(req.DeviceProfile.ClassBTimeout)
 	dp.PingSlotPeriod = int(req.DeviceProfile.PingSlotPeriod)
 	dp.PingSlotDR = int(req.DeviceProfile.PingSlotDr)
-	dp.PingSlotFreq = int(req.DeviceProfile.PingSlotFreq)
+	dp.PingSlotFreq = req.DeviceProfile.PingSlotFreq
 	dp.SupportsClassC = req.DeviceProfile.SupportsClassC
 	dp.ClassCTimeout = int(req.DeviceProfile.ClassCTimeout)
 	dp.MACVersion = req.DeviceProfile.MacVersion
@@ -467,8 +457,8 @@ func (n *NetworkServerAPI) UpdateDeviceProfile(ctx context.Context, req *ns.Upda
 	dp.RXDelay1 = int(req.DeviceProfile.RxDelay_1)
 	dp.RXDROffset1 = int(req.DeviceProfile.RxDrOffset_1)
 	dp.RXDataRate2 = int(req.DeviceProfile.RxDatarate_2)
-	dp.RXFreq2 = int(req.DeviceProfile.RxFreq_2)
-	dp.FactoryPresetFreqs = factoryPresetFreqs
+	dp.RXFreq2 = req.DeviceProfile.RxFreq_2
+	dp.FactoryPresetFreqs = req.DeviceProfile.FactoryPresetFreqs
 	dp.MaxEIRP = int(req.DeviceProfile.MaxEirp)
 	dp.MaxDutyCycle = int(req.DeviceProfile.MaxDutyCycle)
 	dp.SupportsJoin = req.DeviceProfile.SupportsJoin
@@ -811,7 +801,7 @@ func (n *NetworkServerAPI) SendProprietaryPayload(ctx context.Context, req *ns.S
 		gwIDs = append(gwIDs, id)
 	}
 
-	err := proprietarydown.Handle(ctx, req.MacPayload, mic, gwIDs, req.PolarizationInversion, int(req.Frequency), int(req.Dr))
+	err := proprietarydown.Handle(ctx, req.MacPayload, mic, gwIDs, req.PolarizationInversion, req.Frequency, int(req.Dr))
 	if err != nil {
 		return nil, errToRPCError(err)
 	}
@@ -1510,7 +1500,7 @@ func (n *NetworkServerAPI) CreateMulticastGroup(ctx context.Context, req *ns.Cre
 	mg := storage.MulticastGroup{
 		FCnt:           req.MulticastGroup.FCnt,
 		DR:             int(req.MulticastGroup.Dr),
-		Frequency:      int(req.MulticastGroup.Frequency),
+		Frequency:      req.MulticastGroup.Frequency,
 		PingSlotPeriod: int(req.MulticastGroup.PingSlotPeriod),
 	}
 
@@ -1605,7 +1595,7 @@ func (n *NetworkServerAPI) UpdateMulticastGroup(ctx context.Context, req *ns.Upd
 		copy(mg.RoutingProfileID[:], req.MulticastGroup.RoutingProfileId)
 		mg.FCnt = req.MulticastGroup.FCnt
 		mg.DR = int(req.MulticastGroup.Dr)
-		mg.Frequency = int(req.MulticastGroup.Frequency)
+		mg.Frequency = req.MulticastGroup.Frequency
 		mg.PingSlotPeriod = int(req.MulticastGroup.PingSlotPeriod)
 
 		switch req.MulticastGroup.GroupType {

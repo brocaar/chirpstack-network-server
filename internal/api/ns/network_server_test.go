@@ -419,7 +419,7 @@ func TestNetworkServerAPI(t *testing.T) {
 			So(storage.CreateRoutingProfile(context.Background(), storage.DB(), &rp), ShouldBeNil)
 
 			dp := storage.DeviceProfile{
-				FactoryPresetFreqs: []int{
+				FactoryPresetFreqs: []uint32{
 					868100000,
 					868300000,
 					868500000,

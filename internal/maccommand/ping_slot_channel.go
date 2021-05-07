@@ -14,14 +14,14 @@ import (
 
 // RequestPingSlotChannel modifies the frequency and / or the data-rate
 // on which the end-device expects the downlink pings (class-b).
-func RequestPingSlotChannel(devEUI lorawan.EUI64, dr, freq int) storage.MACCommandBlock {
+func RequestPingSlotChannel(devEUI lorawan.EUI64, dr int, freq uint32) storage.MACCommandBlock {
 	return storage.MACCommandBlock{
 		CID: lorawan.PingSlotChannelReq,
 		MACCommands: []lorawan.MACCommand{
 			{
 				CID: lorawan.PingSlotChannelReq,
 				Payload: &lorawan.PingSlotChannelReqPayload{
-					Frequency: uint32(freq),
+					Frequency: freq,
 					DR:        uint8(dr),
 				},
 			},
@@ -61,7 +61,7 @@ func handlePingSlotChannelAns(ctx context.Context, ds *storage.DeviceSession, bl
 	delete(ds.MACCommandErrorCount, lorawan.PingSlotChannelAns)
 
 	ds.PingSlotDR = int(req.DR)
-	ds.PingSlotFrequency = int(req.Frequency)
+	ds.PingSlotFrequency = req.Frequency
 
 	log.WithFields(log.Fields{
 		"dev_eui":           ds.DevEUI,

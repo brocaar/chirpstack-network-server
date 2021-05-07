@@ -38,7 +38,7 @@ func TestDeviceProfile(t *testing.T) {
 				RXDROffset1:        6,
 				RXDataRate2:        7,
 				RXFreq2:            868200000,
-				FactoryPresetFreqs: []int{868400000, 868500000, 868700000},
+				FactoryPresetFreqs: []uint32{868400000, 868500000, 868700000},
 				MaxEIRP:            17,
 				MaxDutyCycle:       10,
 				SupportsJoin:       true,
@@ -100,7 +100,7 @@ func TestDeviceProfile(t *testing.T) {
 				dp.RXDROffset1 = 7
 				dp.RXDataRate2 = 8
 				dp.RXFreq2 = 868300000
-				dp.FactoryPresetFreqs = []int{868400000, 868500000, 868700000}
+				dp.FactoryPresetFreqs = []uint32{868400000, 868500000, 868700000}
 				dp.MaxEIRP = 14
 				dp.MaxDutyCycle = 1
 				dp.SupportsJoin = false
