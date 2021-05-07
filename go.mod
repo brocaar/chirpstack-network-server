@@ -7,8 +7,8 @@ require (
 	github.com/Azure/azure-amqp-common-go v1.1.4
 	github.com/Azure/azure-service-bus-go v0.9.1
 	github.com/NickBall/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5
-	github.com/brocaar/chirpstack-api/go/v3 v3.9.6
-	github.com/brocaar/lorawan v0.0.0-20210416134612-1d6bd6048e7a
+	github.com/brocaar/chirpstack-api/go/v3 v3.9.8
+	github.com/brocaar/lorawan v0.0.0-20210506120432-7405abb3269b
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/go-redis/redis/v7 v7.4.0
 	github.com/gofrs/uuid v3.2.0+incompatible

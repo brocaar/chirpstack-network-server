@@ -189,6 +189,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # * KR920
   # * RU864
   # * US915
+  # * ISM2400 (LoRaWAN 2.4GHz)
   name="{{ .NetworkServer.Band.Name }}"
 
   # Enforce 400ms dwell time.
