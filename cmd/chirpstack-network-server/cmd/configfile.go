@@ -179,7 +179,10 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # LoRaWAN band to use.
   #
   # Valid values are:
-  # * AS923
+  # * AS923    (equal to AS923_1)
+  # * AS923_1  (AS923 with 0 MHz frequency offset)
+  # * AS923_2  (AS923 with -1.80 MHz frequency offset)
+  # * AS923_3  (AS923 with -6.60 MHz frequency offset)
   # * AU915
   # * CN470
   # * CN779
@@ -189,7 +192,7 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # * KR920
   # * RU864
   # * US915
-  # * ISM2400 (LoRaWAN 2.4GHz)
+  # * ISM2400  (LoRaWAN 2.4GHz: https://lora-developers.semtech.com/library/tech-papers-and-guides/physical-layer-proposal-2.4ghz)
   name="{{ .NetworkServer.Band.Name }}"
 
   # Enforce 400ms dwell time.
