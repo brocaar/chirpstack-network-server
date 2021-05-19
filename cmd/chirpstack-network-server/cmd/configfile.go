@@ -755,6 +755,13 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # 'lora:ns:device:stream:frame'
   device_frame_log_max_history={{ .Monitoring.DeviceFrameLogMaxHistory }}
 
+  # Per device frame-log max history.
+  #
+  # Equal to the device_frame_log_max_history, but it has the device DevEUI
+  # in the Redis key. This feature is used by the ChirpStack Application Server
+  # web-interface.
+  per_device_frame_log_max_history={{ .Monitoring.PerDeviceFrameLogMaxHistory }}
+
   # Gateway frame-log max history.
   #
   # When set to a value > 0, ChirpStack Network Server will log all uplink and
@@ -767,6 +774,13 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   # The following Redis key is used:
   # 'lora:ns:gw:stream:frame'
   gateway_frame_log_max_history={{ .Monitoring.GatewayFrameLogMaxHistory }}
+
+  # Per gateway frame-log max history.
+  #
+  # Equal to the gateway_frame_log_max_history, but it has the GatewayID
+  # in the Redis key. This feature is used by the ChirpStack Application Server
+  # web-interface.
+  per_gateway_frame_log_max_history={{ .Monitoring.PerGatewayFrameLogMaxHistory }}
 
 
 # Join-server settings.

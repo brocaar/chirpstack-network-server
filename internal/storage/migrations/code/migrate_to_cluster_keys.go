@@ -1,12 +1,13 @@
 package code
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -14,7 +15,7 @@ import (
 // MigrateToClusterKeys migrates the keys to Redis Cluster compatible keys.
 func MigrateToClusterKeys(redisClient redis.UniversalClient) error {
 
-	keys, err := redisClient.Keys("lora:ns:metrics:*").Result()
+	keys, err := redisClient.Keys(context.Background(), "lora:ns:metrics:*").Result()
 	if err != nil {
 		return errors.Wrap(err, "get keys error")
 	}
@@ -55,7 +56,7 @@ func migrateKey(redisClient redis.UniversalClient, key string) error {
 
 	newKey := fmt.Sprintf("lora:ns:metrics:{%s}:%s", strings.Join(keyParts[3:len(keyParts)-2], ":"), strings.Join(keyParts[len(keyParts)-2:], ":"))
 
-	val, err := redisClient.HGetAll(key).Result()
+	val, err := redisClient.HGetAll(context.Background(), key).Result()
 	if err != nil {
 		return errors.Wrap(err, "hgetall error")
 	}
@@ -67,11 +68,11 @@ func migrateKey(redisClient redis.UniversalClient, key string) error {
 			return errors.Wrap(err, "parse float error")
 		}
 
-		pipe.HIncrByFloat(newKey, k, f)
+		pipe.HIncrByFloat(context.Background(), newKey, k, f)
 	}
-	pipe.PExpire(key, ttl)
+	pipe.PExpire(context.Background(), key, ttl)
 
-	if _, err := pipe.Exec(); err != nil {
+	if _, err := pipe.Exec(context.Background()); err != nil {
 		return errors.Wrap(err, "exec error")
 	}
 

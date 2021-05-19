@@ -21,7 +21,7 @@ func TestDeviceProfile(t *testing.T) {
 	Convey("Given a clean database", t, func() {
 		So(MigrateDown(DB().DB), ShouldBeNil)
 		So(MigrateUp(DB().DB), ShouldBeNil)
-		RedisClient().FlushAll()
+		RedisClient().FlushAll(context.Background())
 
 		Convey("When creating a device-profile", func() {
 			dp := DeviceProfile{

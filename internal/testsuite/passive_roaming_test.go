@@ -221,7 +221,7 @@ func (ts *PassiveRoamingFNSTestSuite) TestJoinRequest() {
 		assert.NoError(storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile))
 
 		// Make sure that the de-duplication lock is flushed
-		storage.RedisClient().FlushAll()
+		storage.RedisClient().FlushAll(context.Background())
 	})
 
 	ts.T().Run("success", func(t *testing.T) {
@@ -403,7 +403,7 @@ func (ts *PassiveRoamingFNSTestSuite) TestDataStateless() {
 		assert.NoError(storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile))
 
 		// Make sure that the de-duplication lock is flushed
-		storage.RedisClient().FlushAll()
+		storage.RedisClient().FlushAll(context.Background())
 	})
 
 	ts.T().Run("success", func(t *testing.T) {

@@ -139,7 +139,7 @@ func (ts *CollectTestSuite) TestDeduplication() {
 	for _, tst := range testTable {
 		ts.T().Run(tst.Name, func(t *testing.T) {
 			assert := require.New(t)
-			storage.RedisClient().FlushAll()
+			storage.RedisClient().FlushAll(context.Background())
 
 			var received int
 			var called int

@@ -248,7 +248,7 @@ func setDownlinkDeviceLock(ctx *dataContext) error {
 		ttl = ttl + classCDownlinkLockDuration
 
 		key := storage.GetRedisKey(downlinkLockKey, ctx.DeviceSession.DevEUI)
-		if err := storage.RedisClient().Set(key, "lock", ttl).Err(); err != nil {
+		if err := storage.RedisClient().Set(ctx.ctx, key, "lock", ttl).Err(); err != nil {
 			return errors.Wrap(err, "set downlink device lock error")
 		}
 	}

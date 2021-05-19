@@ -6,7 +6,7 @@ import (
 	"encoding/gob"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
@@ -147,7 +147,7 @@ func CreateServiceProfileCache(ctx context.Context, sp ServiceProfile) error {
 		return errors.Wrap(err, "gob encode service-profile error")
 	}
 
-	err := RedisClient().Set(key, buf.Bytes(), deviceSessionTTL).Err()
+	err := RedisClient().Set(ctx, key, buf.Bytes(), deviceSessionTTL).Err()
 	if err != nil {
 		return errors.Wrap(err, "set service-profile error")
 	}
@@ -160,7 +160,7 @@ func GetServiceProfileCache(ctx context.Context, id uuid.UUID) (ServiceProfile, 
 	var sp ServiceProfile
 	key := GetRedisKey(ServiceProfileKeyTempl, id)
 
-	val, err := RedisClient().Get(key).Bytes()
+	val, err := RedisClient().Get(ctx, key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
 			return sp, ErrDoesNotExist
@@ -180,7 +180,7 @@ func GetServiceProfileCache(ctx context.Context, id uuid.UUID) (ServiceProfile, 
 func FlushServiceProfileCache(ctx context.Context, id uuid.UUID) error {
 	key := GetRedisKey(ServiceProfileKeyTempl, id)
 
-	err := RedisClient().Del(key).Err()
+	err := RedisClient().Del(ctx, key).Err()
 	if err != nil {
 		return errors.Wrap(err, "delete error")
 	}

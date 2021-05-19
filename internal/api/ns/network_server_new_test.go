@@ -44,7 +44,7 @@ func (ts *NetworkServerAPITestSuite) SetupSuite() {
 }
 
 func (ts *NetworkServerAPITestSuite) SetupTest() {
-	storage.RedisClient().FlushAll()
+	storage.RedisClient().FlushAll(context.Background())
 }
 
 func (ts *NetworkServerAPITestSuite) TestMulticastGroup() {

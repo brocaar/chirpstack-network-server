@@ -1578,7 +1578,7 @@ func setDeviceGatewayRXInfo(ctx *dataContext) error {
 // This avoids race-conditions when running multiple NS instances.
 func getDownlinkDeviceLock(ctx *dataContext) error {
 	key := storage.GetRedisKey(deviceDownlinkLockKey, ctx.DeviceSession.DevEUI)
-	set, err := storage.RedisClient().SetNX(key, "lock", classCDeviceDownlinkLockDuration).Result()
+	set, err := storage.RedisClient().SetNX(ctx.ctx, key, "lock", classCDeviceDownlinkLockDuration).Result()
 	if err != nil {
 		return errors.Wrap(err, "acquire downlink device lock error")
 	}
@@ -1603,7 +1603,7 @@ func getDownlinkGatewayLock(ctx *dataContext) error {
 	var id lorawan.EUI64
 	copy(id[:], ctx.DownlinkFrame.GatewayId)
 	key := storage.GetRedisKey(gatewayDownlinkLockKey, id)
-	set, err := storage.RedisClient().SetNX(key, "lock", classCGatewayDownlinkLockDuration).Result()
+	set, err := storage.RedisClient().SetNX(ctx.ctx, key, "lock", classCGatewayDownlinkLockDuration).Result()
 	if err != nil {
 		return errors.Wrap(err, "acquire downlink gateway lock error")
 	}

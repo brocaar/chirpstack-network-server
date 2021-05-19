@@ -1,6 +1,7 @@
 package uplink
 
 import (
+	"context"
 	"encoding/hex"
 	"time"
 
@@ -119,10 +120,10 @@ func collectAndCallOncePut(key string, ttl time.Duration, rxPacket gw.UplinkFram
 	}
 
 	pipe := storage.RedisClient().TxPipeline()
-	pipe.SAdd(key, b)
-	pipe.PExpire(key, ttl)
+	pipe.SAdd(context.Background(), key, b)
+	pipe.PExpire(context.Background(), key, ttl)
 
-	_, err = pipe.Exec()
+	_, err = pipe.Exec(context.Background())
 	if err != nil {
 		return errors.Wrap(err, "add uplink frame to set error")
 	}
@@ -138,7 +139,7 @@ func collectAndCallOnceLocked(key string, ttl time.Duration) (bool, error) {
 		deduplicationTTL = time.Millisecond * 200
 	}
 
-	set, err := storage.RedisClient().SetNX(key, "lock", ttl).Result()
+	set, err := storage.RedisClient().SetNX(context.Background(), key, "lock", ttl).Result()
 	if err != nil {
 		return false, errors.Wrap(err, "acquire deduplication lock error")
 	}
@@ -150,10 +151,10 @@ func collectAndCallOnceLocked(key string, ttl time.Duration) (bool, error) {
 
 func collectAndCallOnceCollect(key string) ([][]byte, error) {
 	pipe := storage.RedisClient().Pipeline()
-	val := pipe.SMembers(key)
-	pipe.Del(key)
+	val := pipe.SMembers(context.Background(), key)
+	pipe.Del(context.Background(), key)
 
-	if _, err := pipe.Exec(); err != nil {
+	if _, err := pipe.Exec(context.Background()); err != nil {
 		return nil, errors.Wrap(err, "get set members error")
 	}
 

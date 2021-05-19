@@ -207,7 +207,7 @@ func AssertDeviceMode(mode storage.DeviceMode) Assertion {
 func AssertDownlinkDeviceLock(devEUI lorawan.EUI64) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
 		key := storage.GetRedisKey("lora:ns:device:%s:down:lock", devEUI)
-		err := storage.RedisClient().Get(key).Err()
+		err := storage.RedisClient().Get(context.Background(), key).Err()
 		assert.NoError(err)
 	}
 }
@@ -216,7 +216,7 @@ func AssertDownlinkDeviceLock(devEUI lorawan.EUI64) Assertion {
 func AssertDownlinkGatewayLock(gatewayID lorawan.EUI64) Assertion {
 	return func(assert *require.Assertions, ts *IntegrationTestSuite) {
 		key := storage.GetRedisKey("lora:ns:gw:%s:down:lock", gatewayID)
-		err := storage.RedisClient().Get(key).Err()
+		err := storage.RedisClient().Get(context.Background(), key).Err()
 		assert.NoError(err)
 	}
 }

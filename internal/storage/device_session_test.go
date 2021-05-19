@@ -19,7 +19,7 @@ func TestGetRandomDevAddr(t *testing.T) {
 	}
 
 	Convey("Given a Redis database and NetID 010203", t, func() {
-		RedisClient().FlushAll()
+		RedisClient().FlushAll(context.Background())
 		netID := lorawan.NetID{1, 2, 3}
 
 		Convey("When calling getRandomDevAddr many times, it should always return an unique DevAddr", func() {

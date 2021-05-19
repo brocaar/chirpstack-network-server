@@ -229,6 +229,8 @@ type Config struct {
 		HealthcheckEndpoint          bool   `mapstructure:"healthcheck_endpoint"`
 		DeviceFrameLogMaxHistory     int64  `mapstructure:"device_frame_log_max_history"`
 		GatewayFrameLogMaxHistory    int64  `mapstructure:"gateway_frame_log_max_history"`
+		PerDeviceFrameLogMaxHistory  int64  `mapstructure:"per_device_frame_log_max_history"`
+		PerGatewayFrameLogMaxHistory int64  `mapstructure:"per_gateway_frame_log_max_history"`
 	} `mapstructure:"monitoring"`
 }
 

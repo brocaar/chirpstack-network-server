@@ -40,7 +40,7 @@ func TestMACCommand(t *testing.T) {
 		if err := Setup(conf); err != nil {
 			t.Fatal(err)
 		}
-		RedisClient().FlushAll()
+		RedisClient().FlushAll(context.Background())
 
 		Convey("When adding two items to the queue", func() {
 			for _, m := range macCommands {

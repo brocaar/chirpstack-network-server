@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/brocaar/chirpstack-network-server/v3/internal/logging"
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -135,7 +135,7 @@ func CreateDeviceProfileCache(ctx context.Context, dp DeviceProfile) error {
 		return errors.Wrap(err, "gob encode device-profile error")
 	}
 
-	err := RedisClient().Set(key, buf.Bytes(), deviceSessionTTL).Err()
+	err := RedisClient().Set(ctx, key, buf.Bytes(), deviceSessionTTL).Err()
 	if err != nil {
 		return errors.Wrap(err, "set device-profile error")
 	}
@@ -148,7 +148,7 @@ func GetDeviceProfileCache(ctx context.Context, id uuid.UUID) (DeviceProfile, er
 	var dp DeviceProfile
 	key := GetRedisKey(DeviceProfileKeyTempl, id)
 
-	val, err := RedisClient().Get(key).Bytes()
+	val, err := RedisClient().Get(ctx, key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
 			return dp, ErrDoesNotExist
@@ -168,7 +168,7 @@ func GetDeviceProfileCache(ctx context.Context, id uuid.UUID) (DeviceProfile, er
 func FlushDeviceProfileCache(ctx context.Context, id uuid.UUID) error {
 	key := GetRedisKey(DeviceProfileKeyTempl, id)
 
-	err := RedisClient().Del(key).Err()
+	err := RedisClient().Del(ctx, key).Err()
 	if err != nil {
 		return errors.Wrap(err, "delete error")
 	}
