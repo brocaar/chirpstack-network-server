@@ -82,6 +82,8 @@ func (ts *FrameLogTestSuite) TestLogUplinkFrameForGateways() {
 
 	var pl ns.UplinkFrameLog
 	assert.NoError(proto.Unmarshal([]byte(val[0].Messages[0].Values["up"].(string)), &pl))
+	assert.NotNil(pl.PublishedAt)
+	pl.PublishedAt = nil
 	assert.True(proto.Equal(&uplinkFrameLog, &pl))
 }
 
@@ -107,6 +109,8 @@ func (ts *FrameLogTestSuite) TestLogDownlinkFrameForGateway() {
 
 	var pl ns.DownlinkFrameLog
 	assert.NoError(proto.Unmarshal([]byte(val[0].Messages[0].Values["down"].(string)), &pl))
+	assert.NotNil(pl.PublishedAt)
+	pl.PublishedAt = nil
 	assert.True(proto.Equal(&downlinkFrameLog, &pl))
 }
 
@@ -145,6 +149,8 @@ func (ts *FrameLogTestSuite) TestLogUplinkFrameForDevEUI() {
 
 	var pl ns.UplinkFrameLog
 	assert.NoError(proto.Unmarshal([]byte(val[0].Messages[0].Values["up"].(string)), &pl))
+	assert.NotNil(pl.PublishedAt)
+	pl.PublishedAt = nil
 	assert.True(proto.Equal(&uplinkFrameLog, &pl))
 }
 
@@ -170,6 +176,8 @@ func (ts *FrameLogTestSuite) TestLogDownlinkFrameForDevEUI() {
 
 	var pl ns.DownlinkFrameLog
 	assert.NoError(proto.Unmarshal([]byte(val[0].Messages[0].Values["down"].(string)), &pl))
+	assert.NotNil(pl.PublishedAt)
+	pl.PublishedAt = nil
 	assert.True(proto.Equal(&downlinkFrameLog, &pl))
 
 }
@@ -212,6 +220,8 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 		}
 		assert.NoError(LogUplinkFrameForGateways(ctx, uplinkFrameLog))
 		frameLog := <-logChannel
+		assert.NotNil(frameLog.UplinkFrame.PublishedAt)
+		frameLog.UplinkFrame.PublishedAt = nil
 		assert.True(proto.Equal(&uplinkFrameLog, frameLog.UplinkFrame))
 	})
 
@@ -226,9 +236,13 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 		assert.NoError(LogDownlinkFrameForGateway(ctx, downlinkFrameLog))
 		downlinkFrameLog.TxInfo.XXX_sizecache = 0
 
+		pl := <-logChannel
+		assert.NotNil(pl.DownlinkFrame.PublishedAt)
+		pl.DownlinkFrame.PublishedAt = nil
+
 		assert.Equal(FrameLog{
 			DownlinkFrame: &downlinkFrameLog,
-		}, <-logChannel)
+		}, pl)
 	})
 }
 
@@ -272,6 +286,8 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 		assert.NoError(LogUplinkFrameForDevEUI(ctx, ts.DevEUI, uplinkFrameLog))
 
 		frameLog := <-logChannel
+		assert.NotNil(frameLog.UplinkFrame.PublishedAt)
+		frameLog.UplinkFrame.PublishedAt = nil
 		assert.True(proto.Equal(frameLog.UplinkFrame, &uplinkFrameLog))
 	})
 
@@ -287,9 +303,13 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 		assert.NoError(LogDownlinkFrameForDevEUI(ctx, ts.DevEUI, downlinkFrameLog))
 		downlinkFrameLog.TxInfo.XXX_sizecache = 0
 
+		frameLog := <-logChannel
+		assert.NotNil(frameLog.DownlinkFrame.PublishedAt)
+		frameLog.DownlinkFrame.PublishedAt = nil
+
 		assert.Equal(FrameLog{
 			DownlinkFrame: &downlinkFrameLog,
-		}, <-logChannel)
+		}, frameLog)
 	})
 }
 
