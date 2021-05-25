@@ -7,7 +7,7 @@ require (
 	github.com/Azure/azure-amqp-common-go v1.1.4
 	github.com/Azure/azure-service-bus-go v0.9.1
 	github.com/NickBall/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5
-	github.com/brocaar/chirpstack-api/go/v3 v3.9.9-0.20210521095524-410c88057ca8
+	github.com/brocaar/chirpstack-api/go/v3 v3.9.9
 	github.com/brocaar/lorawan v0.0.0-20210518105805-0be70ff6b011
 	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/go-redis/redis/v8 v8.8.3
