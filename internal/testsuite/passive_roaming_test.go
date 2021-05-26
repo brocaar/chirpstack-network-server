@@ -1251,6 +1251,7 @@ func (ts *PassiveRoamingSNSTestSuite) TestXmitDataReqUplinkDownlink() {
 	assert.NoError(err)
 
 	// assert downlink XmitDataReq
+	time.Sleep(50 * time.Millisecond)
 	assert.Len(ts.fnsRequest, 1)
 	var fNSReq backend.XmitDataReqPayload
 	assert.NoError(json.Unmarshal(ts.fnsRequest[0], &fNSReq))
