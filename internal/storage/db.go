@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/jmoiron/sqlx"
 
 	// register postgresql driver

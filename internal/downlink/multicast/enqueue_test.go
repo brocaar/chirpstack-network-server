@@ -43,7 +43,7 @@ func (ts *EnqueueQueueItemTestCase) SetupTest() {
 	var err error
 	ts.tx, err = storage.DB().Beginx()
 	assert.NoError(err)
-	storage.RedisClient().FlushAll()
+	storage.RedisClient().FlushAll(context.Background())
 
 	var sp storage.ServiceProfile
 	var rp storage.RoutingProfile

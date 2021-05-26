@@ -25,15 +25,18 @@ import (
 
 func TestNetworkServerAPI(t *testing.T) {
 	conf := test.GetConfig()
+	conf.NetworkServer.NetID = [3]byte{1, 2, 3}
+	conf.Monitoring.PerDeviceFrameLogMaxHistory = 10
+	conf.Monitoring.PerGatewayFrameLogMaxHistory = 10
+	config.Set(conf)
 	if err := storage.Setup(conf); err != nil {
 		panic(err)
 	}
-	config.C.NetworkServer.NetID = [3]byte{1, 2, 3}
 
 	Convey("Given a clean PostgreSQL and Redis database + api instance", t, func() {
 		So(storage.MigrateDown(storage.DB().DB), ShouldBeNil)
 		So(storage.MigrateUp(storage.DB().DB), ShouldBeNil)
-		storage.RedisClient().FlushAll()
+		storage.RedisClient().FlushAll(context.Background())
 
 		grpcServer := grpc.NewServer()
 		apiServer := NewNetworkServerAPI()

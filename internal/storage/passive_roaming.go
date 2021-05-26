@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/gofrs/uuid"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
@@ -82,15 +82,15 @@ func SavePassiveRoamingDeviceSession(ctx context.Context, ds *PassiveRoamingDevi
 	//    using the MIC validation).
 	//  * We need to be able to stop a passive-roaming session given a DevEUI.
 	pipe := RedisClient().TxPipeline()
-	pipe.SAdd(devAddrKey, ds.SessionID[:])
-	pipe.SAdd(devEUIKey, ds.SessionID[:])
-	pipe.PExpire(devAddrKey, deviceSessionTTL)
-	pipe.PExpire(devEUIKey, deviceSessionTTL)
-	if _, err := pipe.Exec(); err != nil {
+	pipe.SAdd(ctx, devAddrKey, ds.SessionID[:])
+	pipe.SAdd(ctx, devEUIKey, ds.SessionID[:])
+	pipe.PExpire(ctx, devAddrKey, deviceSessionTTL)
+	pipe.PExpire(ctx, devEUIKey, deviceSessionTTL)
+	if _, err := pipe.Exec(ctx); err != nil {
 		return errors.Wrap(err, "exec error")
 	}
 
-	err = RedisClient().Set(sessKey, b, lifetime).Err()
+	err = RedisClient().Set(ctx, sessKey, b, lifetime).Err()
 	if err != nil {
 		return errors.Wrap(err, "set error")
 	}
@@ -188,7 +188,7 @@ func GetPassiveRoamingDeviceSessionsForDevAddr(ctx context.Context, devAddr lora
 func GetPassiveRoamingIDsForDevAddr(ctx context.Context, devAddr lorawan.DevAddr) ([]uuid.UUID, error) {
 	key := GetRedisKey(prDevAddrKeyTempl, devAddr)
 
-	val, err := RedisClient().SMembers(key).Result()
+	val, err := RedisClient().SMembers(ctx, key).Result()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, nil
@@ -211,7 +211,7 @@ func GetPassiveRoamingDeviceSession(ctx context.Context, id uuid.UUID) (PassiveR
 	key := GetRedisKey(prDeviceSessionKeyTempl, id)
 	var dsPB PassiveRoamingDeviceSessionPB
 
-	val, err := RedisClient().Get(key).Bytes()
+	val, err := RedisClient().Get(ctx, key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
 			return PassiveRoamingDeviceSession{}, ErrDoesNotExist

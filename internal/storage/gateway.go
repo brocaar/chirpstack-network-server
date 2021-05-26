@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -153,7 +153,7 @@ func CreateGatewayMetaCache(ctx context.Context, gw GatewayMeta) error {
 		return errors.Wrap(err, "gob encode gateway meta error")
 	}
 
-	err := RedisClient().Set(key, buf.Bytes(), deviceSessionTTL).Err()
+	err := RedisClient().Set(ctx, key, buf.Bytes(), deviceSessionTTL).Err()
 	if err != nil {
 		return errors.Wrap(err, "set gateway meta error")
 	}
@@ -166,7 +166,7 @@ func GetGatewayMetaCache(ctx context.Context, gatewayID lorawan.EUI64) (GatewayM
 	var gw GatewayMeta
 	key := GetRedisKey(gatewayMetaKeyTempl, gatewayID)
 
-	val, err := RedisClient().Get(key).Bytes()
+	val, err := RedisClient().Get(ctx, key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
 			return gw, ErrDoesNotExist
@@ -186,7 +186,7 @@ func GetGatewayMetaCache(ctx context.Context, gatewayID lorawan.EUI64) (GatewayM
 func FlushGatewayMetaCache(ctx context.Context, gatewayID lorawan.EUI64) error {
 	key := GetRedisKey(gatewayMetaKeyTempl, gatewayID)
 
-	err := RedisClient().Del(key).Err()
+	err := RedisClient().Del(ctx, key).Err()
 	if err != nil {
 		return errors.Wrap(err, "delete error")
 	}

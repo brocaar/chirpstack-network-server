@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -106,6 +106,8 @@ func init() {
 	viper.SetDefault("metrics.redis.hour_aggregation_ttl", time.Hour*48)
 	viper.SetDefault("metrics.redis.day_aggregation_ttl", time.Hour*24*90)
 	viper.SetDefault("metrics.redis.month_aggregation_ttl", time.Hour*24*730)
+	viper.SetDefault("monitoring.per_device_frame_log_max_history", 10)
+	viper.SetDefault("monitoring.per_gateway_frame_log_max_history", 10)
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(configCmd)

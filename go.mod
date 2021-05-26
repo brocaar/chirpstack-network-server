@@ -7,10 +7,10 @@ require (
 	github.com/Azure/azure-amqp-common-go v1.1.4
 	github.com/Azure/azure-service-bus-go v0.9.1
 	github.com/NickBall/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5
-	github.com/brocaar/chirpstack-api/go/v3 v3.9.8
-	github.com/brocaar/lorawan v0.0.0-20210512103852-2580b4847fa4
+	github.com/brocaar/chirpstack-api/go/v3 v3.9.9
+	github.com/brocaar/lorawan v0.0.0-20210518105805-0be70ff6b011
 	github.com/eclipse/paho.mqtt.golang v1.2.0
-	github.com/go-redis/redis/v7 v7.4.0
+	github.com/go-redis/redis/v8 v8.8.3
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-migrate/migrate/v4 v4.14.1
@@ -32,9 +32,9 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
 	github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.7.0
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b
-	golang.org/x/net v0.0.0-20201029221708-28c70e62bb1d
+	golang.org/x/net v0.0.0-20201202161906-c7110b5ffcbb
 	golang.org/x/tools v0.0.0-20210106214847-113979e3529a
 	gonum.org/v1/gonum v0.0.0-20190115205657-1b07048b32c6
 	gonum.org/v1/netlib v0.0.0-20190219113230-9992c5f5eae4 // indirect

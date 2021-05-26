@@ -2,6 +2,7 @@ package mqtt
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
@@ -374,7 +375,7 @@ func (b *Backend) getGatewayMarshaler(gatewayID lorawan.EUI64) marshaler.Type {
 // isLocked returns if a lock exists for the given key, if false a lock is
 // acquired.
 func (b *Backend) isLocked(key string) (bool, error) {
-	set, err := storage.RedisClient().SetNX(key, "lock", deduplicationLockTTL).Result()
+	set, err := storage.RedisClient().SetNX(context.Background(), key, "lock", deduplicationLockTTL).Result()
 	if err != nil {
 		return false, errors.Wrap(err, "acquire lock error")
 	}

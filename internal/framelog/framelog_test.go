@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -29,6 +29,8 @@ type FrameLogTestSuite struct {
 func (ts *FrameLogTestSuite) SetupSuite() {
 	assert := require.New(ts.T())
 	conf := test.GetConfig()
+	conf.Monitoring.PerDeviceFrameLogMaxHistory = 10
+	conf.Monitoring.PerGatewayFrameLogMaxHistory = 10
 	conf.Monitoring.DeviceFrameLogMaxHistory = 10
 	conf.Monitoring.GatewayFrameLogMaxHistory = 10
 	config.Set(conf)
@@ -40,7 +42,7 @@ func (ts *FrameLogTestSuite) SetupSuite() {
 }
 
 func (ts *FrameLogTestSuite) SetupTest() {
-	storage.RedisClient().FlushAll()
+	storage.RedisClient().FlushAll(context.Background())
 }
 
 func (ts *FrameLogTestSuite) TestLogUplinkFrameForGateways() {
@@ -69,7 +71,7 @@ func (ts *FrameLogTestSuite) TestLogUplinkFrameForGateways() {
 	}
 	assert.NoError(LogUplinkFrameForGateways(context.Background(), uplinkFrameLog))
 
-	val := storage.RedisClient().XRead(&redis.XReadArgs{
+	val := storage.RedisClient().XRead(context.Background(), &redis.XReadArgs{
 		Streams: []string{globalGatewayFrameStreamKey, "0"},
 		Count:   1,
 		Block:   0,
@@ -80,6 +82,8 @@ func (ts *FrameLogTestSuite) TestLogUplinkFrameForGateways() {
 
 	var pl ns.UplinkFrameLog
 	assert.NoError(proto.Unmarshal([]byte(val[0].Messages[0].Values["up"].(string)), &pl))
+	assert.NotNil(pl.PublishedAt)
+	pl.PublishedAt = nil
 	assert.True(proto.Equal(&uplinkFrameLog, &pl))
 }
 
@@ -94,7 +98,7 @@ func (ts *FrameLogTestSuite) TestLogDownlinkFrameForGateway() {
 
 	assert.NoError(LogDownlinkFrameForGateway(context.Background(), downlinkFrameLog))
 
-	val := storage.RedisClient().XRead(&redis.XReadArgs{
+	val := storage.RedisClient().XRead(context.Background(), &redis.XReadArgs{
 		Streams: []string{globalGatewayFrameStreamKey, "0"},
 		Count:   1,
 		Block:   0,
@@ -105,6 +109,8 @@ func (ts *FrameLogTestSuite) TestLogDownlinkFrameForGateway() {
 
 	var pl ns.DownlinkFrameLog
 	assert.NoError(proto.Unmarshal([]byte(val[0].Messages[0].Values["down"].(string)), &pl))
+	assert.NotNil(pl.PublishedAt)
+	pl.PublishedAt = nil
 	assert.True(proto.Equal(&downlinkFrameLog, &pl))
 }
 
@@ -132,7 +138,7 @@ func (ts *FrameLogTestSuite) TestLogUplinkFrameForDevEUI() {
 
 	assert.NoError(LogUplinkFrameForDevEUI(context.Background(), ts.DevEUI, uplinkFrameLog))
 
-	val := storage.RedisClient().XRead(&redis.XReadArgs{
+	val := storage.RedisClient().XRead(context.Background(), &redis.XReadArgs{
 		Streams: []string{globalDeviceFrameStreamKey, "0"},
 		Count:   1,
 		Block:   0,
@@ -143,6 +149,8 @@ func (ts *FrameLogTestSuite) TestLogUplinkFrameForDevEUI() {
 
 	var pl ns.UplinkFrameLog
 	assert.NoError(proto.Unmarshal([]byte(val[0].Messages[0].Values["up"].(string)), &pl))
+	assert.NotNil(pl.PublishedAt)
+	pl.PublishedAt = nil
 	assert.True(proto.Equal(&uplinkFrameLog, &pl))
 }
 
@@ -157,7 +165,7 @@ func (ts *FrameLogTestSuite) TestLogDownlinkFrameForDevEUI() {
 
 	assert.NoError(LogDownlinkFrameForDevEUI(context.Background(), ts.DevEUI, downlinkFrameLog))
 
-	val := storage.RedisClient().XRead(&redis.XReadArgs{
+	val := storage.RedisClient().XRead(context.Background(), &redis.XReadArgs{
 		Streams: []string{globalDeviceFrameStreamKey, "0"},
 		Count:   1,
 		Block:   0,
@@ -168,6 +176,8 @@ func (ts *FrameLogTestSuite) TestLogDownlinkFrameForDevEUI() {
 
 	var pl ns.DownlinkFrameLog
 	assert.NoError(proto.Unmarshal([]byte(val[0].Messages[0].Values["down"].(string)), &pl))
+	assert.NotNil(pl.PublishedAt)
+	pl.PublishedAt = nil
 	assert.True(proto.Equal(&downlinkFrameLog, &pl))
 
 }
@@ -210,6 +220,8 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 		}
 		assert.NoError(LogUplinkFrameForGateways(ctx, uplinkFrameLog))
 		frameLog := <-logChannel
+		assert.NotNil(frameLog.UplinkFrame.PublishedAt)
+		frameLog.UplinkFrame.PublishedAt = nil
 		assert.True(proto.Equal(&uplinkFrameLog, frameLog.UplinkFrame))
 	})
 
@@ -224,9 +236,13 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForGateway() {
 		assert.NoError(LogDownlinkFrameForGateway(ctx, downlinkFrameLog))
 		downlinkFrameLog.TxInfo.XXX_sizecache = 0
 
+		pl := <-logChannel
+		assert.NotNil(pl.DownlinkFrame.PublishedAt)
+		pl.DownlinkFrame.PublishedAt = nil
+
 		assert.Equal(FrameLog{
 			DownlinkFrame: &downlinkFrameLog,
-		}, <-logChannel)
+		}, pl)
 	})
 }
 
@@ -268,7 +284,10 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 		}
 
 		assert.NoError(LogUplinkFrameForDevEUI(ctx, ts.DevEUI, uplinkFrameLog))
+
 		frameLog := <-logChannel
+		assert.NotNil(frameLog.UplinkFrame.PublishedAt)
+		frameLog.UplinkFrame.PublishedAt = nil
 		assert.True(proto.Equal(frameLog.UplinkFrame, &uplinkFrameLog))
 	})
 
@@ -284,9 +303,13 @@ func (ts *FrameLogTestSuite) TestGetFrameLogForDevice() {
 		assert.NoError(LogDownlinkFrameForDevEUI(ctx, ts.DevEUI, downlinkFrameLog))
 		downlinkFrameLog.TxInfo.XXX_sizecache = 0
 
+		frameLog := <-logChannel
+		assert.NotNil(frameLog.DownlinkFrame.PublishedAt)
+		frameLog.DownlinkFrame.PublishedAt = nil
+
 		assert.Equal(FrameLog{
 			DownlinkFrame: &downlinkFrameLog,
-		}, <-logChannel)
+		}, frameLog)
 	})
 }
 

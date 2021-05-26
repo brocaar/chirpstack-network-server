@@ -293,7 +293,7 @@ func (ts *StorageTestSuite) TestPassiveRoaming() {
 			t.Run(tst.name, func(t *testing.T) {
 
 				assert := require.New(t)
-				assert.NoError(RedisClient().FlushAll().Err())
+				assert.NoError(RedisClient().FlushAll(context.Background()).Err())
 
 				for _, s := range tst.storedSessions {
 					assert.NoError(SavePassiveRoamingDeviceSession(context.Background(), &s))

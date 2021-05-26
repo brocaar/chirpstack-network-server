@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	proto "github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -26,7 +26,7 @@ func SaveDownlinkFrame(ctx context.Context, frame *DownlinkFrame) error {
 		return errors.Wrap(err, "marshal proto error")
 	}
 
-	err = RedisClient().Set(key, b, downlinkFrameTTL).Err()
+	err = RedisClient().Set(ctx, key, b, downlinkFrameTTL).Err()
 	if err != nil {
 		return errors.Wrap(err, "save downlink-frame error")
 	}
@@ -43,7 +43,7 @@ func SaveDownlinkFrame(ctx context.Context, frame *DownlinkFrame) error {
 func GetDownlinkFrame(ctx context.Context, token uint16) (*DownlinkFrame, error) {
 	key := GetRedisKey(downlinkFrameKeyTempl, token)
 
-	val, err := RedisClient().Get(key).Bytes()
+	val, err := RedisClient().Get(ctx, key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
 			return nil, ErrDoesNotExist

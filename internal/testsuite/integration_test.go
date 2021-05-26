@@ -192,7 +192,7 @@ func (ts *IntegrationTestSuite) SetupSuite() {
 
 // SetupTest initializes the test-suite before running each test.
 func (ts *IntegrationTestSuite) SetupTest() {
-	storage.RedisClient().FlushAll()
+	storage.RedisClient().FlushAll(context.Background())
 	ts.initConfig()
 	ts.FlushClients()
 }
@@ -414,7 +414,7 @@ func (ts *IntegrationTestSuite) AssertDownlinkTest(t *testing.T, tst DownlinkTes
 	}
 
 	ts.FlushClients()
-	assert.NoError(storage.RedisClient().FlushAll().Err())
+	assert.NoError(storage.RedisClient().FlushAll(context.Background()).Err())
 
 	ts.CreateDeviceSession(tst.DeviceSession)
 
@@ -487,7 +487,7 @@ func (ts *IntegrationTestSuite) AssertMulticastTest(t *testing.T, tst MulticastT
 func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 	assert := require.New(t)
 
-	storage.RedisClient().FlushAll()
+	storage.RedisClient().FlushAll(context.Background())
 
 	ts.FlushClients()
 	ts.initConfig()
@@ -547,7 +547,7 @@ func (ts *IntegrationTestSuite) AssertOTAATest(t *testing.T, tst OTAATest) {
 func (ts *IntegrationTestSuite) AssertRejoinTest(t *testing.T, tst RejoinTest) {
 	assert := require.New(t)
 
-	storage.RedisClient().FlushAll()
+	storage.RedisClient().FlushAll(context.Background())
 	ts.FlushClients()
 
 	if tst.BeforeFunc != nil {
@@ -592,7 +592,7 @@ func (ts *IntegrationTestSuite) AssertRejoinTest(t *testing.T, tst RejoinTest) {
 func (ts *IntegrationTestSuite) AssertClassATest(t *testing.T, tst ClassATest) {
 	assert := require.New(t)
 
-	storage.RedisClient().FlushAll()
+	storage.RedisClient().FlushAll(context.Background())
 
 	if tst.BeforeFunc != nil {
 		assert.NoError(tst.BeforeFunc(&tst))
@@ -673,7 +673,7 @@ func (ts *IntegrationTestSuite) AssertDownlinkProprietaryTest(t *testing.T, tst 
 func (ts *IntegrationTestSuite) AssertUplinkProprietaryTest(t *testing.T, tst UplinkProprietaryTest) {
 	assert := require.New(t)
 
-	storage.RedisClient().FlushAll()
+	storage.RedisClient().FlushAll(context.Background())
 	ts.FlushClients()
 
 	phyB, err := tst.PHYPayload.MarshalBinary()
@@ -694,7 +694,7 @@ func (ts *IntegrationTestSuite) AssertUplinkProprietaryTest(t *testing.T, tst Up
 // AssertDownlinkTXAckTest asserts the given downlink tx ack test.
 func (ts *IntegrationTestSuite) AssertDownlinkTXAckTest(t *testing.T, tst DownlinkTXAckTest) {
 	assert := require.New(t)
-	storage.RedisClient().FlushAll()
+	storage.RedisClient().FlushAll(context.Background())
 
 	// set device-session
 	assert.NoError(storage.SaveDeviceSession(context.Background(), tst.DeviceSession))

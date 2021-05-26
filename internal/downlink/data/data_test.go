@@ -1037,7 +1037,7 @@ func (ts *SetMACCommandsSetTestSuite) TestSetMACCommandsSet() {
 			assert.NoError(Setup(conf))
 			assert.NoError(band.Setup(conf))
 
-			storage.RedisClient().FlushAll()
+			storage.RedisClient().FlushAll(context.Background())
 
 			if tst.BeforeFunc != nil {
 				assert.NoError(tst.BeforeFunc())

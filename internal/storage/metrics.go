@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 )
 
@@ -109,10 +109,10 @@ func GetMetrics(ctx context.Context, agg AggregationInterval, name string, start
 	pipe := RedisClient().Pipeline()
 	var vals []*redis.StringStringMapCmd
 	for _, k := range keys {
-		vals = append(vals, pipe.HGetAll(k))
+		vals = append(vals, pipe.HGetAll(ctx, k))
 	}
 
-	if _, err := pipe.Exec(); err != nil {
+	if _, err := pipe.Exec(ctx); err != nil {
 		return nil, errors.Wrap(err, "hget error")
 	}
 

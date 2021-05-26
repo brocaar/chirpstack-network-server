@@ -1,6 +1,7 @@
 package mqtt
 
 import (
+	"context"
 	"testing"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
@@ -52,7 +53,7 @@ func (ts *BackendTestSuite) TearDownSuite() {
 }
 
 func (ts *BackendTestSuite) SetupTest() {
-	storage.RedisClient().FlushAll()
+	storage.RedisClient().FlushAll(context.Background())
 }
 
 func (ts *BackendTestSuite) TestUplinkFrame() {

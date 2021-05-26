@@ -1,6 +1,8 @@
 package maccommand
 
 import (
+	"context"
+
 	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
 	"github.com/brocaar/chirpstack-network-server/v3/internal/test"
 	"github.com/stretchr/testify/require"
@@ -18,5 +20,5 @@ func (ts *TestBase) SetupSuite() {
 }
 
 func (ts *TestBase) SetupTest() {
-	storage.RedisClient().FlushAll()
+	storage.RedisClient().FlushAll(context.Background())
 }

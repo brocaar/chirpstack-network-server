@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -37,7 +38,7 @@ func (b *StorageTestSuite) SetupTest() {
 		panic(err)
 	}
 
-	RedisClient().FlushAll()
+	RedisClient().FlushAll(context.Background())
 }
 
 func (b *StorageTestSuite) TearDownTest() {
