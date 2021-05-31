@@ -61,12 +61,15 @@ func EnqueueQueueItem(ctx context.Context, db sqlx.Ext, qi storage.MulticastQueu
 		}
 
 		for _, gatewayID := range gatewayIDs {
-			ts = ts.Add(multicastGatewayDelay)
 			qi.GatewayID = gatewayID
 			qi.ScheduleAt = ts
 			if err = storage.CreateMulticastQueueItem(ctx, db, &qi); err != nil {
 				return errors.Wrap(err, "create multicast queue-item error")
 			}
+
+			// The ts increment is added after scheduling the first item, as we don't
+			// need to increment the first queue item.
+			ts = ts.Add(multicastGatewayDelay)
 		}
 	}
 
