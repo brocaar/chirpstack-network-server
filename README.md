@@ -1,6 +1,6 @@
 # ChirpStack Network Server
 
-[![CircleCI](https://circleci.com/gh/brocaar/chirpstack-network-server.svg?style=svg)](https://circleci.com/gh/brocaar/chirpstack-network-server)
+![Tests](https://github.com/brocaar/chirpstack-network-server/actions/workflows/main.yml/badge.svg?branch=master)
 
 ChirpStack Network Server is an open-source LoRaWAN network-server, part of
 [ChirpStack](https://www.chirpstack.io/). It is responsible for
