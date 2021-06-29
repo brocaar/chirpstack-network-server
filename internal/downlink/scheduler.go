@@ -72,6 +72,15 @@ func ScheduleDeviceQueueBatch(ctx context.Context, size int) error {
 		}
 
 		for _, d := range devices {
+			// create a new context ID, as this value is used as downlink ID. Without
+			// this, all downlink items in this batch will get assigned the same
+			// downlink ID.
+			ctxID, err := uuid.NewV4()
+			if err != nil {
+				log.WithError(err).Error("get new uuid error")
+			}
+			ctx = context.WithValue(ctx, logging.ContextIDKey, ctxID)
+
 			ds, err := storage.GetDeviceSession(ctx, d.DevEUI)
 			if err != nil {
 				log.WithError(err).WithFields(log.Fields{
