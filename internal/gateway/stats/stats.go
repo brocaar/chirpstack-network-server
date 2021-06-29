@@ -142,6 +142,11 @@ func handleGatewayConfigurationUpdate(ctx *statsContext) error {
 				return errors.Wrap(err, "get data-rate error")
 			}
 
+			// skip non-LoRa modulations (e.g. LR-FHSS) and non 125 kHz data-rates
+			if dr.Modulation != loraband.LoRaModulation || dr.Bandwidth != 125 {
+				continue
+			}
+
 			modConfig.SpreadingFactors = append(modConfig.SpreadingFactors, uint32(dr.SpreadFactor))
 			modConfig.Bandwidth = uint32(dr.Bandwidth)
 		}

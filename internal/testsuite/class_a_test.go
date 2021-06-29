@@ -37,8 +37,9 @@ func init() {
 type ClassATestSuite struct {
 	IntegrationTestSuite
 
-	RXInfo gw.UplinkRXInfo
-	TXInfo gw.UplinkTXInfo
+	RXInfo       gw.UplinkRXInfo
+	TXInfo       gw.UplinkTXInfo
+	TXInfoLRFHSS gw.UplinkTXInfo
 }
 
 func (ts *ClassATestSuite) SetupSuite() {
@@ -81,6 +82,11 @@ func (ts *ClassATestSuite) SetupSuite() {
 		Frequency: 868100000,
 	}
 	assert.NoError(helpers.SetUplinkTXInfoDataRate(&ts.TXInfo, 0, band.Band()))
+
+	ts.TXInfoLRFHSS = gw.UplinkTXInfo{
+		Frequency: 868100000,
+	}
+	assert.NoError(helpers.SetUplinkTXInfoDataRate(&ts.TXInfoLRFHSS, 8, band.Band()))
 }
 
 func (ts *ClassATestSuite) TestLW10Errors() {
@@ -617,6 +623,49 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 				AssertNCHandleUplinkMetaDataRequest(nc.HandleUplinkMetaDataRequest{
 					DevEui:                      ts.DeviceSession.DevEUI[:],
 					TxInfo:                      &ts.TXInfo,
+					RxInfo:                      []*gw.UplinkRXInfo{&ts.RXInfo},
+					MessageType:                 nc.MType_UNCONFIRMED_DATA_UP,
+					PhyPayloadByteCount:         17,
+					ApplicationPayloadByteCount: 4,
+				}),
+			},
+		},
+		{
+			Name:          "unconfirmed uplink with payload using LR-FHSS dr",
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfoLRFHSS,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort:      &fPortOne,
+					FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+				},
+				MIC: lorawan.MIC{104, 147, 35, 121},
+			},
+			Assert: []Assertion{
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
+					DevEui:  ts.Device.DevEUI[:],
+					JoinEui: ts.DeviceSession.JoinEUI[:],
+					FCnt:    10,
+					FPort:   1,
+					Dr:      8,
+					TxInfo:  &ts.TXInfoLRFHSS,
+					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
+					Data:    []byte{1, 2, 3, 4},
+				}),
+				AssertNCHandleUplinkMetaDataRequest(nc.HandleUplinkMetaDataRequest{
+					DevEui:                      ts.DeviceSession.DevEUI[:],
+					TxInfo:                      &ts.TXInfoLRFHSS,
 					RxInfo:                      []*gw.UplinkRXInfo{&ts.RXInfo},
 					MessageType:                 nc.MType_UNCONFIRMED_DATA_UP,
 					PhyPayloadByteCount:         17,

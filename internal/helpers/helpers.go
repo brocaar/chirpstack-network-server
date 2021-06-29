@@ -33,6 +33,7 @@ type DataRateGetter interface {
 	GetModulation() common.Modulation
 	GetLoraModulationInfo() *gw.LoRaModulationInfo
 	GetFskModulationInfo() *gw.FSKModulationInfo
+	GetLrFhssModulationInfo() *gw.LRFHSSModulationInfo
 }
 
 // SetDownlinkTXInfoDataRate sets the DownlinkTXInfo data-rate.
@@ -42,6 +43,7 @@ func SetDownlinkTXInfoDataRate(txInfo *gw.DownlinkTXInfo, dr int, b band.Band) e
 		return errors.Wrap(err, "get data-rate error")
 	}
 
+	// note: LR-FHSS is uplink only, no need to handle it here.
 	switch dataRate.Modulation {
 	case band.LoRaModulation:
 		txInfo.Modulation = common.Modulation_LORA
@@ -62,7 +64,7 @@ func SetDownlinkTXInfoDataRate(txInfo *gw.DownlinkTXInfo, dr int, b band.Band) e
 			},
 		}
 	default:
-		return fmt.Errorf("unknown modulation: %s", dataRate.Modulation)
+		return fmt.Errorf("unexpected modulation: %s", dataRate.Modulation)
 	}
 
 	return nil
@@ -91,6 +93,16 @@ func SetUplinkTXInfoDataRate(txInfo *gw.UplinkTXInfo, dr int, b band.Band) error
 		txInfo.ModulationInfo = &gw.UplinkTXInfo_FskModulationInfo{
 			FskModulationInfo: &gw.FSKModulationInfo{
 				Datarate: uint32(dataRate.BitRate),
+			},
+		}
+	case band.LRFHSSModulation:
+		txInfo.Modulation = common.Modulation_LR_FHSS
+
+		txInfo.ModulationInfo = &gw.UplinkTXInfo_LrFhssModulationInfo{
+			LrFhssModulationInfo: &gw.LRFHSSModulationInfo{
+				OperatingChannelWidth: uint32(dataRate.OccupiedChannelWidth),
+				CodeRate:              dataRate.CodingRate,
+				// GridSteps: this value can't be derived from a DR?
 			},
 		}
 	default:
@@ -154,6 +166,14 @@ func GetDataRateIndex(uplink bool, v DataRateGetter, b band.Band) (int, error) {
 		}
 		dr.Modulation = band.FSKModulation
 		dr.BitRate = int(modInfo.Datarate)
+	case common.Modulation_LR_FHSS:
+		modInfo := v.GetLrFhssModulationInfo()
+		if modInfo == nil {
+			return 0, errors.New("lr_fhss_modulation_info must not be nil")
+		}
+		dr.Modulation = band.LRFHSSModulation
+		dr.CodingRate = modInfo.CodeRate
+		dr.OccupiedChannelWidth = int(modInfo.OperatingChannelWidth)
 	default:
 		return 0, fmt.Errorf("unknown modulation: %s", v.GetModulation())
 	}
