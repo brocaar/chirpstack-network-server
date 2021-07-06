@@ -114,7 +114,16 @@ func ScheduleMulticastQueueBatch(ctx context.Context, size int) error {
 		}
 
 		for _, qi := range multicastQueueItems {
-			err := multicast.HandleScheduleQueueItem(ctx, tx, qi)
+			// create a new context ID, as this value is used as downlink ID. Without
+			// this, all downlink items in this batch will get assigned the same
+			// downlink ID.
+			ctxID, err := uuid.NewV4()
+			if err != nil {
+				log.WithError(err).Error("get new uuid error")
+			}
+			ctx = context.WithValue(ctx, logging.ContextIDKey, ctxID)
+
+			err = multicast.HandleScheduleQueueItem(ctx, tx, qi)
 			if err != nil {
 				log.WithFields(log.Fields{
 					"multicast_group_id": qi.MulticastGroupID,
