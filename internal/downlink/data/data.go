@@ -1609,7 +1609,11 @@ func getDownlinkGatewayLock(ctx *dataContext) error {
 	}
 
 	if !set {
-		// the gateway is already locked
+		// the gateway is already locked, remove the device lock (as nothing was sent
+		// for this device) and abort.
+		key := storage.GetRedisKey(deviceDownlinkLockKey, ctx.DeviceSession.DevEUI)
+		_ = storage.RedisClient().Del(ctx.ctx, key).Err()
+
 		return ErrAbort
 	}
 
