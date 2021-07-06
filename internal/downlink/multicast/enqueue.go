@@ -58,6 +58,8 @@ func EnqueueQueueItem(ctx context.Context, db sqlx.Ext, qi storage.MulticastQueu
 
 		if ts.IsZero() {
 			ts = time.Now()
+		} else {
+			ts = ts.Add(multicastGatewayDelay)
 		}
 
 		for _, gatewayID := range gatewayIDs {
