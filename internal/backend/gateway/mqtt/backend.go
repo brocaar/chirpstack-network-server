@@ -273,7 +273,7 @@ func (b *Backend) statsPacketHandler(c paho.Client, msg paho.Message) {
 	// by all the gateways, the first instance receiving the message must lock it,
 	// so that other instances can ignore the same message (from the same gw).
 	// As an unique id, the gw mac is used.
-	key := storage.GetRedisKey("lora:ns:stats:lock:%s", gatewayID)
+	key := storage.GetRedisKey("lora:ns:stats:lock:%s:%s", gatewayID, statsID)
 	if locked, err := b.isLocked(key); err != nil || locked {
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
@@ -312,7 +312,7 @@ func (b *Backend) ackPacketHandler(c paho.Client, msg paho.Message) {
 	// by all the gateways, the first instance receiving the message must lock it,
 	// so that other instances can ignore the same message (from the same gw).
 	// As an unique id, the gw mac is used.
-	key := storage.GetRedisKey("lora:ns:ack:lock:%s", gatewayID)
+	key := storage.GetRedisKey("lora:ns:ack:lock:%s:%s", gatewayID, downlinkID)
 	if locked, err := b.isLocked(key); err != nil || locked {
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{
