@@ -1391,7 +1391,9 @@ func setPHYPayloads(ctx *dataContext) error {
 		}
 
 		// Set MIC.
-		if err := phy.SetDownlinkDataMIC(ctx.DeviceSession.GetMACVersion(), ctx.DeviceSession.FCntUp, ctx.DeviceSession.SNwkSIntKey); err != nil {
+		// If this is an ACK, then FCntUp has already been incremented by one. If
+		// this is not an ACK, then DownlinkDataMIC will zero out ConfFCnt.
+		if err := phy.SetDownlinkDataMIC(ctx.DeviceSession.GetMACVersion(), ctx.DeviceSession.FCntUp - 1, ctx.DeviceSession.SNwkSIntKey); err != nil {
 			return errors.Wrap(err, "set MIC error")
 		}
 
