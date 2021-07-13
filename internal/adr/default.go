@@ -1,6 +1,10 @@
 package adr
 
-import "github.com/brocaar/chirpstack-network-server/v3/adr"
+import (
+	"github.com/brocaar/chirpstack-network-server/v3/adr"
+	"math"
+	"sort"
+)
 
 // DefaultHandler implements the default ADR handler.
 type DefaultHandler struct{}
@@ -37,15 +41,54 @@ func (h *DefaultHandler) Handle(req adr.HandleRequest) (adr.HandleResponse, erro
 
 	// Set the new NbTrans.
 	resp.NbTrans = h.getNbTrans(req.NbTrans, h.getPacketLossPercentage(req))
+	
+	// Get the first and the last FCnt
+	var firstCounter uint32 
+	var lastCounter uint32
+	for i, m := range req.UplinkHistory {
+		if i == 0 {
+			firstCounter = m.FCnt
+		}
+		if i == len(req.UplinkHistory)-1 {
+			lastCounter = m.FCnt
+		}
+	}
 
-	// Calculate the number of 'steps'.
-	snrM := h.getMaxSNR(req)
-	snrMargin := snrM - req.RequiredSNRForDR - req.InstallationMargin
+	// get Alpha and PLR(Packet Loss Ratio)
+	n := float64(len(req.UplinkHistory))
+	s := float64(lastCounter - firstCounter)
+	
+	//s sefr mishod yani size uplinkhistorimon 1 bod
+	var alpha float64
+	if s == 0{
+		return resp, nil
+	} else{
+		PLR := (s - n)/s
+		alpha = 1 - PLR
+	}
+
+	// Calculate OWA SINR
+	var SINR_OWA float64 = 0 
+    sort.Slice(req.UplinkHistory, func(i, j int) bool {
+        return req.UplinkHistory[i].MaxSNR > req.UplinkHistory[j].MaxSNR
+    })
+
+    w := make([]float64, 0)
+    for i := 1; i <= len(req.UplinkHistory); i++ {
+        if i == 1{
+          w = append(w, math.Pow(float64(alpha), float64(n - 1))) 
+         } else {
+        	w = append(w, float64(1 - alpha) * math.Pow(float64(alpha), n - float64(i)))
+        }
+
+        SINR_OWA += w[i-1] * float64(req.UplinkHistory[i-1].MaxSNR)
+
+    }
+
+	// Calculate the number of 'steps'.	
+	snrMargin := float32(SINR_OWA) - req.RequiredSNRForDR - req.InstallationMargin
 	nStep := int(snrMargin / 3)
 
-	// In case of negative steps the ADR algorithm will increase the TxPower
-	// if possible. To avoid up / down / up / down TxPower changes, wait until
-	// we have at least the required number of uplink history elements.
 	if nStep < 0 && h.getHistoryCount(req) != h.requiredHistoryCount() {
 		return resp, nil
 	}
@@ -62,16 +105,6 @@ func (h *DefaultHandler) pktLossRateTable() [][3]int {
 		{2, 3, 3},
 		{3, 3, 3},
 	}
-}
-
-func (h *DefaultHandler) getMaxSNR(req adr.HandleRequest) float32 {
-	var snrM float32 = -999
-	for _, m := range req.UplinkHistory {
-		if m.MaxSNR > snrM {
-			snrM = m.MaxSNR
-		}
-	}
-	return snrM
 }
 
 // getHistoryCount returns the history count with equal TxPowerIndex.
