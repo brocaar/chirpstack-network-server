@@ -2,8 +2,9 @@ package gateway
 
 import (
 	"bytes"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -58,7 +59,7 @@ func GenerateClientCertificate(gatewayID lorawan.EUI64) (time.Time, []byte, []by
 		KeyUsage:    x509.KeyUsageDigitalSignature,
 	}
 
-	certPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	certPrivKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return time.Time{}, nil, nil, nil, errors.Wrap(err, "generate key error")
 
@@ -82,10 +83,15 @@ func GenerateClientCertificate(gatewayID lorawan.EUI64) (time.Time, []byte, []by
 		Bytes: certBytes,
 	})
 
+	b, err := x509.MarshalECPrivateKey(certPrivKey)
+	if err != nil {
+		return time.Time{}, nil, nil, nil, errors.Wrap(err, "create certificate error")
+	}
+
 	certPrivKeyPEM := new(bytes.Buffer)
 	pem.Encode(certPrivKeyPEM, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
+		Type:  "EC PRIVATE KEY",
+		Bytes: b,
 	})
 
 	return expiresAt, caCertB, certPEM.Bytes(), certPrivKeyPEM.Bytes(), nil
