@@ -22,23 +22,20 @@ func TestDefaultHandler(t *testing.T) {
 		assert := require.New(t)
 
 		req := adr.HandleRequest{}
-		for i := uint32(0); i < 20; i++ {
-			if i < 5 {
+		for i := uint32(9); i < 31; i++ {
+			if i < 13 {
 				req.UplinkHistory = append(req.UplinkHistory, adr.UplinkMetaData{
 					FCnt: i,
 				})
 				continue
 			}
 
-			if i < 10 {
-				req.UplinkHistory = append(req.UplinkHistory, adr.UplinkMetaData{
-					FCnt: i + 1,
-				})
+			if i == 13 || i == 19 {
 				continue
 			}
 
 			req.UplinkHistory = append(req.UplinkHistory, adr.UplinkMetaData{
-				FCnt: i + 2,
+				FCnt: i,
 			})
 		}
 
@@ -77,103 +74,13 @@ func TestDefaultHandler(t *testing.T) {
 			expectedDR           int
 		}{
 			{
-				name:                 "nothing to adjust",
-				nStep:                0,
-				txPowerIndex:         1,
-				dr:                   3,
-				maxTxPowerIndex:      5,
-				maxDR:                5,
-				expectedTxPowerIndex: 1,
-				expectedDR:           3,
-			},
-			{
-				name:                 "one step: one step data-rate increase",
-				nStep:                1,
-				txPowerIndex:         1,
-				dr:                   4,
-				maxTxPowerIndex:      5,
-				maxDR:                5,
-				expectedDR:           5,
-				expectedTxPowerIndex: 1,
-			},
-			{
-				name:                 "one step: one step tx-power decrease",
-				nStep:                1,
-				txPowerIndex:         1,
-				dr:                   5,
-				maxTxPowerIndex:      5,
-				maxDR:                5,
-				expectedDR:           5,
-				expectedTxPowerIndex: 2,
-			},
-			{
 				name:                 "two steps: two steps data-rate increase",
 				nStep:                2,
-				txPowerIndex:         1,
-				dr:                   3,
-				maxTxPowerIndex:      5,
-				maxDR:                5,
-				expectedDR:           5,
-				expectedTxPowerIndex: 1,
-			},
-			{
-				name:                 "two steps: one step data-rate increase, one step tx-power decrease",
-				nStep:                2,
-				txPowerIndex:         1,
-				dr:                   4,
-				maxTxPowerIndex:      5,
-				maxDR:                5,
-				expectedDR:           5,
-				expectedTxPowerIndex: 2,
-			},
-			{
-				name:                 "two step tx-power decrease",
-				nStep:                2,
-				txPowerIndex:         1,
-				dr:                   5,
-				maxTxPowerIndex:      5,
-				maxDR:                5,
-				expectedDR:           5,
-				expectedTxPowerIndex: 3,
-			},
-			{
-				name:                 "stwo steps: one step tx-power decrease",
-				nStep:                2,
-				txPowerIndex:         4,
-				dr:                   5,
-				maxTxPowerIndex:      5,
-				maxDR:                5,
-				expectedDR:           5,
-				expectedTxPowerIndex: 5,
-			},
-			{
-				name:                 "one negative step: one step power increase",
-				nStep:                -1,
-				txPowerIndex:         1,
-				dr:                   5,
-				maxTxPowerIndex:      5,
-				maxDR:                5,
-				expectedDR:           5,
-				expectedTxPowerIndex: 0,
-			},
-			{
-				name:                 "one negative step: nothing to do (adr engine will not decrease dr)",
-				nStep:                -1,
 				txPowerIndex:         0,
-				dr:                   4,
+				dr:                   0,
 				maxTxPowerIndex:      5,
 				maxDR:                5,
-				expectedDR:           4,
-				expectedTxPowerIndex: 0,
-			},
-			{
-				name:                 "10 negative steps, should not adjust anything (as we already reached the min tx-power index)",
-				nStep:                -10,
-				txPowerIndex:         0,
-				dr:                   4,
-				maxTxPowerIndex:      5,
-				maxDR:                5,
-				expectedDR:           4,
+				expectedDR:           2,
 				expectedTxPowerIndex: 0,
 			},
 		}
@@ -193,63 +100,12 @@ func TestDefaultHandler(t *testing.T) {
 		assert.Equal(20, h.requiredHistoryCount())
 	})
 
-	t.Run("getMaxSNR", func(t *testing.T) {
-		assert := require.New(t)
-
-		req := adr.HandleRequest{
-			UplinkHistory: []adr.UplinkMetaData{
-				{MaxSNR: 3},
-				{MaxSNR: 4},
-				{MaxSNR: 2},
-			},
-		}
-
-		assert.EqualValues(4, h.getMaxSNR(req))
-	})
-
 	t.Run("Handle", func(t *testing.T) {
 		tests := []struct {
 			name     string
 			request  adr.HandleRequest
 			response adr.HandleResponse
 		}{
-			{
-				name: "max dr exceeded, adr disabled",
-				request: adr.HandleRequest{
-					ADR:             false,
-					DR:              5,
-					TxPowerIndex:    0,
-					NbTrans:         1,
-					MaxDR:           4,
-					MaxTxPowerIndex: 5,
-				},
-				response: adr.HandleResponse{
-					DR:           5,
-					TxPowerIndex: 0,
-					NbTrans:      1,
-				},
-			},
-			{
-				name: "max dr exceeded, decrease dr",
-				request: adr.HandleRequest{
-					ADR:             true,
-					DR:              5,
-					TxPowerIndex:    0,
-					NbTrans:         1,
-					MaxDR:           4,
-					MaxTxPowerIndex: 5,
-					UplinkHistory: []adr.UplinkMetaData{
-						{
-							MaxSNR: 0,
-						},
-					},
-				},
-				response: adr.HandleResponse{
-					DR:           4,
-					TxPowerIndex: 0,
-					NbTrans:      1,
-				},
-			},
 			{
 				name: "increase dr",
 				request: adr.HandleRequest{
@@ -259,17 +115,94 @@ func TestDefaultHandler(t *testing.T) {
 					NbTrans:          1,
 					MaxDR:            5,
 					MaxTxPowerIndex:  5,
-					RequiredSNRForDR: -20,
+					RequiredSNRForDR: 1,
 					UplinkHistory: []adr.UplinkMetaData{
 						{
-							MaxSNR: -15,
+							FCnt: 9,
+							MaxSNR: 1,
+						},
+						{
+							FCnt: 10,
+							MaxSNR: 2,
+						},
+						{
+							FCnt: 11,
+							MaxSNR: 3,
+						},
+						{
+							FCnt: 12,
+							MaxSNR: 5,
+						},
+						{
+							FCnt: 14,
+							MaxSNR: 4,
+						},
+						{
+							FCnt: 15,
+							MaxSNR: 2,
+						},
+						{
+							FCnt: 16,
+							MaxSNR: 3,
+						},
+						{
+							FCnt: 17,
+							MaxSNR: 5,
+						},
+						{
+							FCnt: 18,
+							MaxSNR: 6,
+						},
+						{
+							FCnt: 20,
+							MaxSNR: 2,
+						},
+						{
+							FCnt: 21,
+							MaxSNR: 3,
+						},
+						{
+							FCnt: 22,
+							MaxSNR: 5,
+						},
+						{
+							FCnt: 23,
+							MaxSNR: 4,
+						},
+						{
+							FCnt: 24,
+							MaxSNR: 3,
+						},
+						{
+							FCnt: 25,
+							MaxSNR: 2,
+						},
+						{
+							FCnt: 26,
+							MaxSNR: 1,
+						},
+						{
+							FCnt: 27,
+							MaxSNR: 5,
+						},
+						{
+							FCnt: 28,
+							MaxSNR: 6,
+						},
+						{
+							FCnt: 29,
+							MaxSNR: 7,
+						},
+						{
+							FCnt: 30,
+							MaxSNR: 4,
 						},
 					},
 				},
 				response: adr.HandleResponse{
 					DR:           1,
 					TxPowerIndex: 0,
-					NbTrans:      1,
+					NbTrans:      2,
 				},
 			},
 		}
