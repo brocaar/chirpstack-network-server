@@ -236,6 +236,45 @@ func (ts *GatewayStatsTestSuite) TestStats() {
 		RxPacketsReceivedOk: 9,
 		TxPacketsReceived:   13,
 		TxPacketsEmitted:    10,
+		TxPacketsPerFrequency: map[uint32]uint32{
+			868100000: 10,
+		},
+		RxPacketsPerFrequency: map[uint32]uint32{
+			868300000: 9,
+		},
+		TxPacketsPerModulation: []*gw.PerModulationCount{
+			{
+				Modulation: &gw.Modulation{
+					Parameters: &gw.Modulation_Lora{
+						Lora: &gw.LoRaModulationInfo{
+							Bandwidth:       125,
+							SpreadingFactor: 8,
+							CodeRate:        "4/5",
+						},
+					},
+				},
+				Count: 10,
+			},
+		},
+
+		RxPacketsPerModulation: []*gw.PerModulationCount{
+			{
+				Modulation: &gw.Modulation{
+					Parameters: &gw.Modulation_Lora{
+						Lora: &gw.LoRaModulationInfo{
+							Bandwidth:       125,
+							SpreadingFactor: 10,
+							CodeRate:        "4/5",
+						},
+					},
+				},
+				Count: 9,
+			},
+		},
+		TxPacketsPerStatus: map[string]uint32{
+			"OK":       10,
+			"TOO_LATE": 3,
+		},
 		MetaData: map[string]string{
 			"foo": "bar",
 		},
@@ -253,6 +292,22 @@ func (ts *GatewayStatsTestSuite) TestStats() {
 		RxPacketsReceivedOk: stats.RxPacketsReceivedOk,
 		TxPacketsReceived:   stats.TxPacketsReceived,
 		TxPacketsEmitted:    stats.TxPacketsEmitted,
+		TxPacketsPerFrequency: map[uint32]uint32{
+			868100000: 10,
+		},
+		RxPacketsPerFrequency: map[uint32]uint32{
+			868300000: 9,
+		},
+		TxPacketsPerDr: map[uint32]uint32{
+			4: 10,
+		},
+		RxPacketsPerDr: map[uint32]uint32{
+			2: 9,
+		},
+		TxPacketsPerStatus: map[string]uint32{
+			"OK":       10,
+			"TOO_LATE": 3,
+		},
 		Metadata: map[string]string{
 			"foo": "bar",
 		},

@@ -211,19 +211,65 @@ func forwardGatewayStats(ctx *statsContext) error {
 	}
 
 	_, err = asClient.HandleGatewayStats(ctx.ctx, &as.HandleGatewayStatsRequest{
-		GatewayId:           ctx.gatewayStats.GatewayId,
-		StatsId:             ctx.gatewayStats.StatsId,
-		Time:                ctx.gatewayStats.Time,
-		Location:            ctx.gatewayStats.Location,
-		RxPacketsReceived:   ctx.gatewayStats.RxPacketsReceived,
-		RxPacketsReceivedOk: ctx.gatewayStats.RxPacketsReceivedOk,
-		TxPacketsReceived:   ctx.gatewayStats.TxPacketsReceived,
-		TxPacketsEmitted:    ctx.gatewayStats.TxPacketsEmitted,
-		Metadata:            ctx.gatewayStats.MetaData,
+		GatewayId:             ctx.gatewayStats.GatewayId,
+		StatsId:               ctx.gatewayStats.StatsId,
+		Time:                  ctx.gatewayStats.Time,
+		Location:              ctx.gatewayStats.Location,
+		RxPacketsReceived:     ctx.gatewayStats.RxPacketsReceived,
+		RxPacketsReceivedOk:   ctx.gatewayStats.RxPacketsReceivedOk,
+		TxPacketsReceived:     ctx.gatewayStats.TxPacketsReceived,
+		TxPacketsEmitted:      ctx.gatewayStats.TxPacketsEmitted,
+		Metadata:              ctx.gatewayStats.MetaData,
+		TxPacketsPerFrequency: ctx.gatewayStats.TxPacketsPerFrequency,
+		RxPacketsPerFrequency: ctx.gatewayStats.RxPacketsPerFrequency,
+		TxPacketsPerDr:        perModulationToPerDR(false, ctx.gatewayStats.TxPacketsPerModulation),
+		RxPacketsPerDr:        perModulationToPerDR(true, ctx.gatewayStats.RxPacketsPerModulation),
+		TxPacketsPerStatus:    ctx.gatewayStats.TxPacketsPerStatus,
 	})
 	if err != nil {
 		return errors.Wrap(err, "handle gateway stats error")
 	}
 
 	return nil
+}
+
+func perModulationToPerDR(uplink bool, items []*gw.PerModulationCount) map[uint32]uint32 {
+	out := make(map[uint32]uint32)
+	b := band.Band()
+
+	for _, item := range items {
+		mod := item.GetModulation()
+		var dr loraband.DataRate
+
+		if modParams := mod.GetLora(); modParams != nil {
+			dr = loraband.DataRate{
+				Modulation:   loraband.LoRaModulation,
+				SpreadFactor: int(modParams.SpreadingFactor),
+				Bandwidth:    int(modParams.Bandwidth),
+			}
+		}
+
+		if modParams := mod.GetFsk(); modParams != nil {
+			dr = loraband.DataRate{
+				Modulation: loraband.FSKModulation,
+				BitRate:    int(modParams.Datarate),
+			}
+		}
+
+		if modParams := mod.GetLrFhss(); modParams != nil {
+			dr = loraband.DataRate{
+				Modulation:           loraband.LRFHSSModulation,
+				CodingRate:           modParams.CodeRate,
+				OccupiedChannelWidth: int(modParams.OperatingChannelWidth),
+			}
+		}
+
+		if dr, err := b.GetDataRateIndex(uplink, dr); err == nil {
+			out[uint32(dr)] = out[uint32(dr)] + item.Count
+		} else {
+			log.WithError(err).Error("gateway/stats: convert modulation parameters to data-rate error")
+		}
+	}
+
+	return out
 }
