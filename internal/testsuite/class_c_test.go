@@ -1,7 +1,6 @@
 package testsuite
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -180,51 +179,6 @@ func (ts *ClassCTestSuite) TestClassC() {
 				AssertFCntUp(8),
 				AssertNFCntDown(5),
 				AssertNoDownlinkFrame,
-			},
-		},
-		{
-			Name: "containing mac-commands",
-			BeforeFunc: func(*DownlinkTest) error {
-				ts.ServiceProfile.DevStatusReqFreq = 1
-				if err := storage.UpdateServiceProfile(context.Background(), storage.DB(), ts.ServiceProfile); err != nil {
-					return err
-				}
-				if err := storage.FlushServiceProfileCache(context.Background(), ts.ServiceProfile.ID); err != nil {
-					return err
-				}
-
-				return nil
-			},
-			DeviceSession: *ts.DeviceSession,
-			DeviceQueueItems: []storage.DeviceQueueItem{
-				{DevEUI: ts.DeviceSession.DevEUI, FPort: 10, FCnt: 5, FRMPayload: []byte{5, 4, 3, 2, 1}},
-			},
-			Assert: []Assertion{
-				AssertFCntUp(8),
-				AssertNFCntDown(5),
-				AssertDownlinkFrame(ts.Gateway.GatewayID, txInfo, lorawan.PHYPayload{
-					MHDR: lorawan.MHDR{
-						MType: lorawan.UnconfirmedDataDown,
-						Major: lorawan.LoRaWANR1,
-					},
-					MIC: lorawan.MIC{115, 18, 33, 93},
-					MACPayload: &lorawan.MACPayload{
-						FHDR: lorawan.FHDR{
-							DevAddr: ts.DeviceSession.DevAddr,
-							FCnt:    5,
-							FCtrl: lorawan.FCtrl{
-								ADR: true,
-							},
-							FOpts: []lorawan.Payload{
-								&lorawan.MACCommand{CID: lorawan.CID(6)},
-							},
-						},
-						FPort: &fPortTen,
-						FRMPayload: []lorawan.Payload{
-							&lorawan.DataPayload{Bytes: []byte{5, 4, 3, 2, 1}},
-						},
-					},
-				}),
 			},
 		},
 	}
