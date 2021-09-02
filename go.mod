@@ -22,7 +22,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/go-plugin v1.4.0
 	github.com/jmoiron/sqlx v1.2.0
-	github.com/lib/pq v1.8.0
+	github.com/lib/pq v1.10.2
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.1.0
