@@ -283,8 +283,11 @@ func getDownlinkFrame(ctx *ackContext) error {
 	}
 
 	// TODO: remove len(Items) != 0 check at next major release
-	if len(ctx.DownlinkTXAck.Items) != 0 && len(ctx.DownlinkTXAck.Items) != len(ctx.DownlinkFrame.DownlinkFrame.Items) {
-		return errors.New("length of ack items is not equal to length of downlink items")
+	// Validate that we don't receive more ack items than downlink items that were
+	// sent to the gateway. Receiving less acks is valid, e.g. the gateway might
+	// ack the first item only.
+	if len(ctx.DownlinkTXAck.Items) != 0 && len(ctx.DownlinkTXAck.Items) > len(ctx.DownlinkFrame.DownlinkFrame.Items) {
+		return errors.New("tx ack contains more items than downlink command")
 	}
 
 	// for backwards compatibility
