@@ -68,6 +68,7 @@ func Setup(c config.Config) error {
 			SentinelPassword: c.Redis.Password,
 			DB:               c.Redis.Database,
 			PoolSize:         c.Redis.PoolSize,
+			Password:         c.Redis.Password,
 			TLSConfig:        tlsConfig,
 		})
 	} else {
