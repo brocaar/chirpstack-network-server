@@ -1118,6 +1118,9 @@ func requestChannelMaskReconfiguration(ctx *dataContext) error {
 
 func requestADRChange(ctx *dataContext) error {
 	conf := config.Get()
+	if conf.NetworkServer.NetworkSettings.DisableADR {
+		return nil
+	}
 
 	var maxTxPowerIndex int
 	var requiredSNRforDR float32
