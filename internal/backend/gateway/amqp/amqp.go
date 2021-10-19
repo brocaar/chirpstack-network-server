@@ -277,6 +277,11 @@ func (b *Backend) eventLoop() {
 			// (in the loop).
 			log.WithError(err).Error("gateway/amqp: event loop error")
 			time.Sleep(time.Second)
+
+			// Restore the queue if needed.
+			if err := b.setupQueue(); err != nil {
+				log.WithError(err).Error("gateway/amqp: setup queue error")
+			}
 		}
 	}
 }
