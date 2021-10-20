@@ -180,9 +180,9 @@ get_downlink_data_delay="{{ .NetworkServer.GetDownlinkDataDelay }}"
   #
   # Valid values are:
   # * AS923    (AS923 without frequency offset)
-  # * AS923_2  (AS923 with -1.80 MHz frequency offset)
-  # * AS923_3  (AS923 with -6.60 MHz frequency offset)
-  # * AS923_4  (AS923 with -5.90 MHz frequency offset)
+  # * AS923-2  (AS923 with -1.80 MHz frequency offset)
+  # * AS923-3  (AS923 with -6.60 MHz frequency offset)
+  # * AS923-4  (AS923 with -5.90 MHz frequency offset)
   # * AU915
   # * CN470
   # * CN779
