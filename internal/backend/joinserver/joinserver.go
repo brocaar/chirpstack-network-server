@@ -6,11 +6,14 @@ import (
 	"net"
 	"net/url"
 	"strings"
+	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-network-server/v3/internal/config"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
 	"github.com/brocaar/lorawan"
 	"github.com/brocaar/lorawan/backend"
 )
@@ -31,6 +34,8 @@ var (
 	defaultCACert       string
 	defaultTLSCert      string
 	defaultTLSKey       string
+	defaultRedisClient  redis.UniversalClient
+	defaultAsyncTimeout time.Duration
 )
 
 // Setup sets up the joinserver backend.
@@ -45,6 +50,10 @@ func Setup(c config.Config) error {
 	defaultTLSKey = c.JoinServer.Default.TLSKey
 	resolveJoinEUI = c.JoinServer.ResolveJoinEUI
 	resolveDomainSuffix = c.JoinServer.ResolveDomainSuffix
+	if c.JoinServer.Default.Async {
+		defaultRedisClient = storage.RedisClient()
+	}
+	defaultAsyncTimeout = c.JoinServer.Default.AsyncTimeout
 
 	for _, s := range conf.Servers {
 		var joinEUI lorawan.EUI64
@@ -56,14 +65,22 @@ func Setup(c config.Config) error {
 			s.Server = joinEUIToServer(joinEUI, resolveDomainSuffix)
 		}
 
+		var redisClient redis.UniversalClient
+		if s.Async {
+			redisClient = storage.RedisClient()
+		}
+
+		fmt.Println("FOOOO")
 		client, err := backend.NewClient(backend.ClientConfig{
-			Logger:     log.StandardLogger(),
-			SenderID:   c.NetworkServer.NetID.String(),
-			ReceiverID: joinEUI.String(),
-			Server:     s.Server,
-			CACert:     s.CACert,
-			TLSCert:    s.TLSCert,
-			TLSKey:     s.TLSKey,
+			Logger:       log.StandardLogger(),
+			SenderID:     c.NetworkServer.NetID.String(),
+			ReceiverID:   joinEUI.String(),
+			Server:       s.Server,
+			CACert:       s.CACert,
+			TLSCert:      s.TLSCert,
+			TLSKey:       s.TLSKey,
+			RedisClient:  redisClient,
+			AsyncTimeout: s.AsyncTimeout,
 		})
 		if err != nil {
 			return errors.Wrap(err, "new backend client error")
@@ -125,13 +142,15 @@ func resolveClient(joinEUI lorawan.EUI64) (backend.Client, error) {
 	}
 
 	client, err := backend.NewClient(backend.ClientConfig{
-		Logger:     log.StandardLogger(),
-		SenderID:   netID.String(),
-		ReceiverID: joinEUI.String(),
-		Server:     server,
-		CACert:     defaultCACert,
-		TLSCert:    defaultTLSCert,
-		TLSKey:     defaultTLSKey,
+		Logger:       log.StandardLogger(),
+		SenderID:     netID.String(),
+		ReceiverID:   joinEUI.String(),
+		Server:       server,
+		CACert:       defaultCACert,
+		TLSCert:      defaultTLSCert,
+		TLSKey:       defaultTLSKey,
+		RedisClient:  defaultRedisClient,
+		AsyncTimeout: defaultAsyncTimeout,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "joinserver: new client error")
@@ -142,13 +161,15 @@ func resolveClient(joinEUI lorawan.EUI64) (backend.Client, error) {
 
 func getDefaultClient(joinEUI lorawan.EUI64) (backend.Client, error) {
 	defaultClient, err := backend.NewClient(backend.ClientConfig{
-		Logger:     log.StandardLogger(),
-		SenderID:   netID.String(),
-		ReceiverID: joinEUI.String(),
-		Server:     defaultServer,
-		CACert:     defaultCACert,
-		TLSCert:    defaultTLSCert,
-		TLSKey:     defaultTLSKey,
+		Logger:       log.StandardLogger(),
+		SenderID:     netID.String(),
+		ReceiverID:   joinEUI.String(),
+		Server:       defaultServer,
+		CACert:       defaultCACert,
+		TLSCert:      defaultTLSCert,
+		TLSKey:       defaultTLSKey,
+		RedisClient:  defaultRedisClient,
+		AsyncTimeout: defaultAsyncTimeout,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "joinserver: new default client error")

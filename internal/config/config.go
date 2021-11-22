@@ -166,18 +166,22 @@ type Config struct {
 		ResolveDomainSuffix string `mapstructure:"resolve_domain_suffix"`
 
 		Servers []struct {
-			Server  string `mapstructure:"server"`
-			JoinEUI string `mapstructure:"join_eui"`
-			CACert  string `mapstructure:"ca_cert"`
-			TLSCert string `mapstructure:"tls_cert"`
-			TLSKey  string `mapstructure:"tls_key"`
+			Server       string        `mapstructure:"server"`
+			JoinEUI      string        `mapstructure:"join_eui"`
+			Async        bool          `mapstructure:"async"`
+			AsyncTimeout time.Duration `mapstructure:"async_timeout"`
+			CACert       string        `mapstructure:"ca_cert"`
+			TLSCert      string        `mapstructure:"tls_cert"`
+			TLSKey       string        `mapstructure:"tls_key"`
 		} `mapstructure:"servers"`
 
 		Default struct {
-			Server  string `mapstructure:"server"`
-			CACert  string `mapstructure:"ca_cert"`
-			TLSCert string `mapstructure:"tls_cert"`
-			TLSKey  string `mapstructure:"tls_key"`
+			Server       string        `mapstructure:"server"`
+			Async        bool          `mapstructure:"async"`
+			AsyncTimeout time.Duration `mapstructure:"async_timeout"`
+			CACert       string        `mapstructure:"ca_cert"`
+			TLSCert      string        `mapstructure:"tls_cert"`
+			TLSKey       string        `mapstructure:"tls_key"`
 		} `mapstructure:"default"`
 
 		KEK struct {

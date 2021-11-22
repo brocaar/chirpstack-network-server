@@ -815,6 +815,12 @@ resolve_domain_suffix="{{ .JoinServer.ResolveDomainSuffix }}"
   # # for the JoinEUI associated with this server.
   # server="https://example.com:1234/join/endpoint"
 
+  # # Use the async API scheme.
+  # async=false
+
+  # # Async request timeout.
+  # async_timeout="1s"
+
   # # CA certificate (optional).
   # #
   # # Set this to validate the join-server server certificate (e.g. when the
@@ -834,6 +840,8 @@ resolve_domain_suffix="{{ .JoinServer.ResolveDomainSuffix }}"
   [[join_server.servers]]
   server="{{ $element.Server }}"
   join_eui="{{ $element.JoinEUI }}"
+  async={{ $element.Async }}
+  async_timeout="{{ $element.AsyncTimeout }}"
   ca_cert="{{ $element.CACert }}"
   tls_cert="{{ $element.TLSCert }}"
   tls_key="{{ $element.TLSKey }}"
@@ -848,6 +856,12 @@ resolve_domain_suffix="{{ .JoinServer.ResolveDomainSuffix }}"
   #
   # This API is provided by ChirpStack Application Server.
   server="{{ .JoinServer.Default.Server }}"
+
+  # # Use the async API scheme.
+  async={{ .JoinServer.Default.Async }}
+
+  # # Async request timeout.
+  async_timeout="{{ .JoinServer.Default.AsyncTimeout }}"
 
   # ca certificate used by the default join-server client (optional)
   ca_cert="{{ .JoinServer.Default.CACert }}"

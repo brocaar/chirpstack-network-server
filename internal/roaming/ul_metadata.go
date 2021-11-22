@@ -120,8 +120,13 @@ func RXInfoToGWInfo(rxInfo []*gw.UplinkRXInfo) ([]backend.GWInfoElement, error) 
 			return nil, errors.Wrap(err, "marshal rxinfo error")
 		}
 
+		id := backend.HEXBytes(rxInfo[i].GatewayId)
+		if len(id) == 8 {
+			id = id[4:]
+		}
+
 		e := backend.GWInfoElement{
-			ID:           backend.HEXBytes(rxInfo[i].GatewayId),
+			ID:           id,
 			FineRecvTime: fineRecvTime,
 			RSSI:         &rssi,
 			SNR:          &rxInfo[i].LoraSnr,

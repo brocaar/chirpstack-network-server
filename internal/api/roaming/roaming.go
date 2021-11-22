@@ -14,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/brocaar/chirpstack-network-server/v3/internal/backend/joinserver"
 	"github.com/brocaar/chirpstack-network-server/v3/internal/band"
 	"github.com/brocaar/chirpstack-network-server/v3/internal/config"
 	downdata "github.com/brocaar/chirpstack-network-server/v3/internal/downlink/data"
@@ -139,8 +140,19 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Parse Receiver ID (NetID).
+	var receiverID lorawan.NetID
+	if err := receiverID.UnmarshalText([]byte(basePL.ReceiverID)); err != nil {
+		log.WithFields(log.Fields{
+			"ctx_id":      ctx.Value(logging.ContextIDKey),
+			"receiver_id": basePL.ReceiverID,
+		}).WithError(err).Error("api/roaming: unmarshal ReceiverID as NetID error")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	// validate ReceiverID
-	if basePL.ReceiverID != a.netID.String() {
+	if receiverID.String() != a.netID.String() {
 		log.WithFields(log.Fields{
 			"ctx_id":      ctx.Value(logging.ContextIDKey),
 			"receiver_id": basePL.ReceiverID,
@@ -150,26 +162,52 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get NetID from SenderID
-	var netID lorawan.NetID
-	if err := netID.UnmarshalText([]byte(basePL.SenderID)); err != nil {
-		log.WithFields(log.Fields{
-			"ctx_id":    ctx.Value(logging.ContextIDKey),
-			"sender_id": basePL.SenderID,
-		}).WithError(err).Error("api/roaming: unmarshal SenderID as NetID error")
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
+	var client backend.Client
+	if len(basePL.SenderID) >= 16 {
+		// Parse Sender ID (NetID).
+		var senderID lorawan.EUI64
+		if err := senderID.UnmarshalText([]byte(basePL.SenderID)); err != nil {
+			log.WithFields(log.Fields{
+				"ctx_id":    ctx.Value(logging.ContextIDKey),
+				"sender_id": basePL.SenderID,
+			}).WithError(err).Error("api/roaming: unmarshal SenderID as EUI64 error")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 
-	// Get ClientID for NetID
-	client, err := roaming.GetClientForNetID(netID)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"ctx_id":    ctx.Value(logging.ContextIDKey),
-			"sender_id": basePL.SenderID,
-		}).WithError(err).Error("api/roaming: get client for NetID error")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		// Get ClientID for Sender ID (JoinEUI)
+		client, err = joinserver.GetClientForJoinEUI(senderID)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"ctx_id":    ctx.Value(logging.ContextIDKey),
+				"sender_id": basePL.SenderID,
+			}).WithError(err).Error("api/roaming: get client for JoinEUI error")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// Parse Sender ID (NetID).
+		var senderID lorawan.NetID
+		if err := senderID.UnmarshalText([]byte(basePL.SenderID)); err != nil {
+			log.WithFields(log.Fields{
+				"ctx_id":    ctx.Value(logging.ContextIDKey),
+				"sender_id": basePL.SenderID,
+			}).WithError(err).Error("api/roaming: unmarshal SenderID as NetID error")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		// Get ClientID for Sender ID (NetID)
+		client, err = roaming.GetClientForNetID(senderID)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"ctx_id":    ctx.Value(logging.ContextIDKey),
+				"sender_id": basePL.SenderID,
+			}).WithError(err).Error("api/roaming: get client for NetID error")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 	}
 
 	log.WithFields(log.Fields{
@@ -288,6 +326,8 @@ func (a *API) handleRequest(ctx context.Context, client backend.Client, basePL b
 		ans, err = a.handleXmitDataReq(ctx, basePL, b)
 	case backend.XmitDataAns:
 		err = a.handleXmitDataAns(ctx, client, basePL, b)
+	case backend.HomeNSAns:
+		err = a.handleHomeNSAns(ctx, client, basePL, b)
 	default:
 		ans = a.getBasePayloadResult(basePL, backend.MalformedRequest, fmt.Sprintf("MessageType %s is not expected", basePL.MessageType))
 	}
@@ -472,6 +512,19 @@ func (a *API) handleProfileReq(ctx context.Context, basePL backend.BasePayload, 
 
 func (a *API) handleXmitDataAns(ctx context.Context, client backend.Client, basePL backend.BasePayload, b []byte) error {
 	var pl backend.XmitDataAnsPayload
+	if err := json.Unmarshal(b, &pl); err != nil {
+		return errors.Wrap(err, "unmarshal json error")
+	}
+
+	if err := client.HandleAnswer(ctx, pl); err != nil {
+		return errors.Wrap(err, "handle answer error")
+	}
+
+	return nil
+}
+
+func (a *API) handleHomeNSAns(ctx context.Context, client backend.Client, basePL backend.BasePayload, b []byte) error {
+	var pl backend.HomeNSAnsPayload
 	if err := json.Unmarshal(b, &pl); err != nil {
 		return errors.Wrap(err, "unmarshal json error")
 	}
