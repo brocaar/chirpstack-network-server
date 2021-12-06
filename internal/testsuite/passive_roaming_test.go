@@ -193,7 +193,7 @@ func (ts *PassiveRoamingFNSTestSuite) TestJoinRequest() {
 			DataRate2: &dataRate2,
 			GWInfo: []backend.GWInfoElement{
 				{
-					ID:      backend.HEXBytes(ts.Gateway.GatewayID[:]),
+					ID:      backend.HEXBytes(ts.Gateway.GatewayID[4:]),
 					ULToken: backend.HEXBytes(ulTokenB),
 				},
 			},
@@ -280,7 +280,7 @@ func (ts *PassiveRoamingFNSTestSuite) TestJoinRequest() {
 				GWCnt:    &gwCnt,
 				GWInfo: []backend.GWInfoElement{
 					{
-						ID:        backend.HEXBytes(ts.Gateway.GatewayID[:]),
+						ID:        backend.HEXBytes(ts.Gateway.GatewayID[4:]),
 						RSSI:      &rssi,
 						SNR:       &snr,
 						Lat:       &lat,
@@ -445,7 +445,7 @@ func (ts *PassiveRoamingFNSTestSuite) TestDataStateless() {
 				GWCnt:    &gwCnt,
 				GWInfo: []backend.GWInfoElement{
 					{
-						ID:        backend.HEXBytes(ts.Gateway.GatewayID[:]),
+						ID:        backend.HEXBytes(ts.Gateway.GatewayID[4:]),
 						RSSI:      &rssi,
 						SNR:       &snr,
 						Lat:       &lat,
@@ -563,7 +563,7 @@ func (ts *PassiveRoamingFNSTestSuite) TestDataStatefull() {
 				GWCnt:    &gwCnt,
 				GWInfo: []backend.GWInfoElement{
 					{
-						ID:        backend.HEXBytes(ts.Gateway.GatewayID[:]),
+						ID:        backend.HEXBytes(ts.Gateway.GatewayID[4:]),
 						RSSI:      &rssi,
 						SNR:       &snr,
 						Lat:       &lat,
