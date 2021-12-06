@@ -128,9 +128,12 @@ var responseTasks = []func(*dataContext) error{
 	),
 	isRoaming(true,
 		sendDownlinkFramePassiveRoaming,
+		deleteDeviceQueueItem,
 	),
 	saveDeviceSession,
-	saveDownlinkFrame,
+	isRoaming(false,
+		saveDownlinkFrame,
+	),
 }
 
 var scheduleNextQueueItemTasks = []func(*dataContext) error{
@@ -1484,24 +1487,34 @@ func sendDownlinkFramePassiveRoaming(ctx *dataContext) error {
 		})
 	}
 
-	go func() {
-		logFields := log.Fields{
-			"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
-			"net_id":  netID,
-			"dev_eui": ctx.DeviceSession.DevEUI,
-		}
-		resp, err := client.XmitDataReq(ctx.ctx, req)
-		if err != nil {
-			log.WithFields(logFields).WithError(err).Error("downlink/data: XmitDataReq failed")
-			return
-		}
-		if resp.Result.ResultCode != backend.Success {
-			log.WithFields(logFields).Errorf("expected: %s, got: %s (%s)", backend.Success, resp.Result.ResultCode, resp.Result.Description)
-			return
-		}
+	logFields := log.Fields{
+		"ctx_id":  ctx.ctx.Value(logging.ContextIDKey),
+		"net_id":  netID,
+		"dev_eui": ctx.DeviceSession.DevEUI,
+	}
+	resp, err := client.XmitDataReq(ctx.ctx, req)
+	if err != nil {
+		log.WithFields(logFields).WithError(err).Error("downlink/data: XmitDataReq failed")
+		return ErrAbort
+	}
+	if resp.Result.ResultCode != backend.Success {
+		log.WithFields(logFields).Errorf("expected: %s, got: %s (%s)", backend.Success, resp.Result.ResultCode, resp.Result.Description)
+		return ErrAbort
+	}
 
-		log.WithFields(logFields).Info("downlink/data: forwarded downlink using passive-roaming")
-	}()
+	log.WithFields(logFields).Info("downlink/data: forwarded downlink using passive-roaming")
+
+	return nil
+}
+
+func deleteDeviceQueueItem(ctx *dataContext) error {
+	if ctx.DeviceQueueItem == nil {
+		return nil
+	}
+
+	if err := storage.DeleteDeviceQueueItem(ctx.ctx, storage.DB(), ctx.DeviceQueueItem.ID); err != nil {
+		return errors.Wrap(err, "delete device queue-item error")
+	}
 
 	return nil
 }
