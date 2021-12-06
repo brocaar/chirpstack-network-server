@@ -1,4 +1,4 @@
-FROM golang:1.16-alpine AS development
+FROM golang:1.17-alpine AS development
 
 ENV PROJECT_PATH=/chirpstack-network-server
 ENV PATH=$PATH:$PROJECT_PATH/build
@@ -14,7 +14,7 @@ WORKDIR $PROJECT_PATH
 RUN make dev-requirements
 RUN make
 
-FROM alpine:3.13.2 AS production
+FROM alpine:3.15.0 AS production
 
 RUN apk --no-cache add ca-certificates tzdata
 COPY --from=development /chirpstack-network-server/build/chirpstack-network-server /usr/bin/chirpstack-network-server
