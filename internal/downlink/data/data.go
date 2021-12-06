@@ -22,6 +22,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/v3/internal/band"
 	"github.com/brocaar/chirpstack-network-server/v3/internal/channels"
 	"github.com/brocaar/chirpstack-network-server/v3/internal/config"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/downlink/ack"
 	dwngateway "github.com/brocaar/chirpstack-network-server/v3/internal/downlink/gateway"
 	"github.com/brocaar/chirpstack-network-server/v3/internal/gps"
 	"github.com/brocaar/chirpstack-network-server/v3/internal/helpers"
@@ -128,11 +129,11 @@ var responseTasks = []func(*dataContext) error{
 	),
 	isRoaming(true,
 		sendDownlinkFramePassiveRoaming,
-		deleteDeviceQueueItem,
 	),
 	saveDeviceSession,
-	isRoaming(false,
-		saveDownlinkFrame,
+	saveDownlinkFrame,
+	isRoaming(true,
+		handleRoamingTxAck,
 	),
 }
 
@@ -1507,18 +1508,6 @@ func sendDownlinkFramePassiveRoaming(ctx *dataContext) error {
 	return nil
 }
 
-func deleteDeviceQueueItem(ctx *dataContext) error {
-	if ctx.DeviceQueueItem == nil {
-		return nil
-	}
-
-	if err := storage.DeleteDeviceQueueItem(ctx.ctx, storage.DB(), ctx.DeviceQueueItem.ID); err != nil {
-		return errors.Wrap(err, "delete device queue-item error")
-	}
-
-	return nil
-}
-
 func saveDeviceSession(ctx *dataContext) error {
 	if err := storage.SaveDeviceSession(ctx.ctx, ctx.DeviceSession); err != nil {
 		return errors.Wrap(err, "save device-session error")
@@ -1653,6 +1642,17 @@ func saveDownlinkFrame(ctx *dataContext) error {
 
 	if err := storage.SaveDownlinkFrame(ctx.ctx, &df); err != nil {
 		return errors.Wrap(err, "save downlink-frame error")
+	}
+
+	return nil
+}
+
+func handleRoamingTxAck(ctx *dataContext) error {
+	if err := ack.HandleRoamingTxAck(ctx.ctx, gw.DownlinkTXAck{
+		Token:      ctx.DownlinkFrame.Token,
+		DownlinkId: ctx.DownlinkFrame.DownlinkId,
+	}); err != nil {
+		return errors.Wrap(err, "Handle roaming tx ack")
 	}
 
 	return nil
