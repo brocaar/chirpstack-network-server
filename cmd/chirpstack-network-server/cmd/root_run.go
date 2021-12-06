@@ -86,7 +86,7 @@ func run(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	sigChan := make(chan os.Signal)
+	sigChan := make(chan os.Signal, 1)
 	exitChan := make(chan struct{})
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	log.WithField("signal", <-sigChan).Info("signal received")
