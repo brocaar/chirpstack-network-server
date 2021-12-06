@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/downlink/ack"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -131,6 +132,9 @@ var responseTasks = []func(*dataContext) error{
 	),
 	saveDeviceSession,
 	saveDownlinkFrame,
+	isRoaming(true,
+		notifyXmitDataReqDone,
+	),
 }
 
 var scheduleNextQueueItemTasks = []func(*dataContext) error{
@@ -265,6 +269,8 @@ type dataContext struct {
 
 	// Gateway to use for downlink.
 	DownlinkGateway storage.DeviceGatewayRXInfo
+
+	DownlinkSavedChan chan struct{}
 }
 
 type downlinkFrameItem struct {
@@ -309,15 +315,16 @@ func isRoaming(r bool, tasks ...func(*dataContext) error) func(*dataContext) err
 // HandleResponse handles a downlink response.
 func HandleResponse(ctx context.Context, rxPacket models.RXPacket, sp storage.ServiceProfile, ds storage.DeviceSession, adr, mustSend, ack bool, macCommands []storage.MACCommandBlock) error {
 	rctx := dataContext{
-		ctx:             ctx,
-		DB:              storage.DB(),
-		DBInTransaction: false,
-		ServiceProfile:  sp,
-		DeviceSession:   ds,
-		ACK:             ack,
-		MustSend:        mustSend,
-		RXPacket:        &rxPacket,
-		MACCommands:     macCommands,
+		ctx:               ctx,
+		DB:                storage.DB(),
+		DBInTransaction:   false,
+		ServiceProfile:    sp,
+		DeviceSession:     ds,
+		ACK:               ack,
+		MustSend:          mustSend,
+		RXPacket:          &rxPacket,
+		MACCommands:       macCommands,
+		DownlinkSavedChan: make(chan struct{}),
 	}
 
 	for _, t := range responseTasks {
@@ -1490,7 +1497,16 @@ func sendDownlinkFramePassiveRoaming(ctx *dataContext) error {
 			"net_id":  netID,
 			"dev_eui": ctx.DeviceSession.DevEUI,
 		}
-		resp, err := client.XmitDataReq(ctx.ctx, req)
+
+		reqCtxId, err := uuid.NewV4()
+		if err != nil {
+			log.WithFields(logFields).WithError(err).Error("new uuid for XmitDataReq generation error")
+		}
+		logFields["ctx_id"] = reqCtxId
+
+		reqCtx := context.WithValue(context.Background(), logging.ContextIDKey, reqCtxId)
+
+		resp, err := client.XmitDataReq(reqCtx, req)
 		if err != nil {
 			log.WithFields(logFields).WithError(err).Error("downlink/data: XmitDataReq failed")
 			return
@@ -1499,6 +1515,31 @@ func sendDownlinkFramePassiveRoaming(ctx *dataContext) error {
 			log.WithFields(logFields).Errorf("expected: %s, got: %s (%s)", backend.Success, resp.Result.ResultCode, resp.Result.Description)
 			return
 		}
+
+		roamingPL := ack.RoamingAckPayload{
+			XmitDataAns:   resp,
+			DeviceSession: ctx.DeviceSession,
+			DeviceProfile: ctx.DeviceProfile,
+			DownlinkTXAck: &gw.DownlinkTXAck{
+				Token:      ctx.DownlinkFrame.Token,
+				DownlinkId: ctx.DownlinkFrame.DownlinkId,
+			},
+			DownlinkTXAckStatus: gw.TxAckStatus_OK,
+		}
+
+		go func(ctx context.Context, downlinkSavedChan chan struct{}, payload ack.RoamingAckPayload) {
+			select {
+			case <-downlinkSavedChan:
+				err = ack.HandleDownlinkXmitDataAns(ctx, payload)
+				if err != nil {
+					log.WithFields(logFields).WithError(err).Error("downlink/data: error handling XmitDataAns")
+					return
+				}
+			case <-ctx.Done():
+				log.WithFields(logFields).Errorf("downlink/data: context cancelled while waiting for ack")
+				return
+			}
+		}(reqCtx, ctx.DownlinkSavedChan, roamingPL)
 
 		log.WithFields(logFields).Info("downlink/data: forwarded downlink using passive-roaming")
 	}()
@@ -1671,4 +1712,13 @@ func setDeviceQueueItemRetryAfter(ctx *dataContext) error {
 // with the actual device-session.
 func returnInvalidDeviceClassError(ctx *dataContext) error {
 	return errors.New("the device is in an invalid device-class for this action")
+}
+
+// Make sure we have saved the downlink frame before processing the roaming ack
+func notifyXmitDataReqDone(ctx *dataContext) error {
+	go func() {
+		ctx.DownlinkSavedChan <- struct{}{}
+	}()
+
+	return nil
 }
