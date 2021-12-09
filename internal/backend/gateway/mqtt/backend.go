@@ -203,13 +203,13 @@ func (b *Backend) eventHandler(c paho.Client, msg paho.Message) {
 
 	if strings.HasSuffix(msg.Topic(), "up") {
 		mqttEventCounter("up").Inc()
-		b.rxPacketHandler(c, msg)
+		go b.rxPacketHandler(c, msg)
 	} else if strings.HasSuffix(msg.Topic(), "ack") {
 		mqttEventCounter("ack").Inc()
-		b.ackPacketHandler(c, msg)
+		go b.ackPacketHandler(c, msg)
 	} else if strings.HasSuffix(msg.Topic(), "stats") {
 		mqttEventCounter("stats").Inc()
-		b.statsPacketHandler(c, msg)
+		go b.statsPacketHandler(c, msg)
 	}
 }
 
