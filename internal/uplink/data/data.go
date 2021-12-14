@@ -60,7 +60,12 @@ var tasks = []func(*dataContext) error{
 	syncUplinkFCnt,
 	saveDeviceSession,
 	handleUplinkACK,
-	handleDownlink,
+	isRoaming(false,
+		handleDownlink,
+	),
+	isRoaming(true,
+		handlePassiveRoamingDownlink,
+	),
 }
 
 var (
@@ -89,6 +94,20 @@ type dataContext struct {
 	ApplicationServerClient as.ApplicationServerServiceClient
 	MACCommandResponses     []storage.MACCommandBlock
 	MustSendDownlink        bool
+}
+
+func isRoaming(r bool, tasks ...func(*dataContext) error) func(*dataContext) error {
+	return func(ctx *dataContext) error {
+		if r == (ctx.RXPacket.RoamingMetaData != nil) {
+			for _, f := range tasks {
+				if err := f(ctx); err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	}
 }
 
 // Handle handles an uplink data frame
@@ -690,6 +709,25 @@ func handleDownlink(ctx *dataContext) error {
 	); err != nil {
 		return errors.Wrap(err, "run uplink response flow error")
 	}
+
+	return nil
+}
+
+func handlePassiveRoamingDownlink(dCtx *dataContext) error {
+	newCtx := context.WithValue(context.Background(), logging.ContextIDKey, dCtx.ctx.Value(logging.ContextIDKey))
+	dCtx.ctx = newCtx
+
+	go func() {
+		logFields := log.Fields{
+			"dev_eui": dCtx.DeviceSession.DevEUI,
+			"ctx_id":  dCtx.ctx.Value(logging.ContextIDKey),
+		}
+
+		err := handleDownlink(dCtx)
+		if err != nil {
+			log.WithFields(logFields).WithError(errors.Wrap(err, "failed to handle passive roaming downlink"))
+		}
+	}()
 
 	return nil
 }
