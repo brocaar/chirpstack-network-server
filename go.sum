@@ -86,8 +86,8 @@ github.com/blakesmith/ar v0.0.0-20150311145944-8bd4349a67f2/go.mod h1:PkYb9DJNAw
 github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869/go.mod h1:Ekp36dRnpXw/yCqJaO+ZrUyxD+3VXMFFr56k5XYrpB4=
 github.com/brocaar/chirpstack-api/go/v3 v3.12.4 h1:D0/TJrtckPByXUB399ZQ0wUsp9mB+LNI5AxQp8DWYj0=
 github.com/brocaar/chirpstack-api/go/v3 v3.12.4/go.mod h1:v8AWP19nOJK4rwJsr1+weDfpUc4UNLbRh8Eygn4Oh00=
-github.com/brocaar/lorawan v0.0.0-20211122090658-49524ce5fb5b h1:5cxv6403vkw54cjJMt2hVO5AZ8TdjD7emEWwJD++mYY=
-github.com/brocaar/lorawan v0.0.0-20211122090658-49524ce5fb5b/go.mod h1:Vlf3gOwizqX4y3snWe/i2EqRT83HvYuwBjRu39PevW0=
+github.com/brocaar/lorawan v0.0.0-20211213100234-63df6954a2f3 h1:as8V3iH+RP5ETPyjs8e2q+YF9k8AeR/8E2bmTQL6rug=
+github.com/brocaar/lorawan v0.0.0-20211213100234-63df6954a2f3/go.mod h1:Vlf3gOwizqX4y3snWe/i2EqRT83HvYuwBjRu39PevW0=
 github.com/caarlos0/ctrlc v1.0.0 h1:2DtF8GSIcajgffDFJzyG15vO+1PuBWOMUdFut7NnXhw=
 github.com/caarlos0/ctrlc v1.0.0/go.mod h1:CdXpj4rmq0q/1Eb44M9zi2nKB0QraNKuRGYGrrHhcQw=
 github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e h1:V9a67dfYqPLAvzk5hMQOXYJlZ4SLIXgyKIE+ZiHzgGQ=
