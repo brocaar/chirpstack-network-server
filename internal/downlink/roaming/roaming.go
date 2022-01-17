@@ -2,6 +2,7 @@ package roaming
 
 import (
 	"context"
+	"encoding/binary"
 	"sort"
 	"time"
 
@@ -57,6 +58,7 @@ func EmitPRDownlink(ctx context.Context, rxPacket models.RXPacket, phy []byte, d
 	for _, f := range []func() error{
 		cctx.setDownlinkGateway,
 		cctx.setDownlinkFrame,
+		cctx.saveDownlinkFrame,
 		cctx.sendDownlinkFrame,
 	} {
 		if err := f(); err != nil {
@@ -94,6 +96,7 @@ func (ctx *emitPRDownlinkContext) setDownlinkFrame() error {
 
 	ctx.downlinkFrame = gw.DownlinkFrame{
 		DownlinkId: id[:],
+		Token:      uint32(binary.BigEndian.Uint16(id[0:2])),
 		GatewayId:  ctx.downlinkGateway.GatewayID[:],
 	}
 
@@ -143,6 +146,19 @@ func (ctx *emitPRDownlinkContext) setDownlinkFrame() error {
 
 			ctx.downlinkFrame.Items = append(ctx.downlinkFrame.Items, &item)
 		}
+	}
+
+	return nil
+}
+
+func (ctx *emitPRDownlinkContext) saveDownlinkFrame() error {
+	df := storage.DownlinkFrame{
+		Token:         ctx.downlinkFrame.Token,
+		DownlinkFrame: &ctx.downlinkFrame,
+	}
+
+	if err := storage.SaveDownlinkFrame(ctx.ctx, &df); err != nil {
+		return errors.Wrap(err, "save downlink-frame error")
 	}
 
 	return nil

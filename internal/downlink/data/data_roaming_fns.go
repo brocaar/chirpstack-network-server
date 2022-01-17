@@ -2,6 +2,8 @@ package data
 
 import (
 	"context"
+	"encoding/binary"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
 	"sort"
 	"time"
 
@@ -42,6 +44,7 @@ func HandleRoamingFNS(ctx context.Context, pl backend.XmitDataReqPayload) error 
 	downlink := gw.DownlinkFrame{
 		GatewayId:  rxInfo[0].GatewayId,
 		DownlinkId: downID[:],
+		Token:      uint32(binary.BigEndian.Uint16(downID[0:2])),
 		Items:      []*gw.DownlinkFrameItem{},
 	}
 
@@ -95,6 +98,15 @@ func HandleRoamingFNS(ctx context.Context, pl backend.XmitDataReqPayload) error 
 		}
 
 		downlink.Items = append(downlink.Items, &item)
+	}
+
+	df := storage.DownlinkFrame{
+		Token:         downlink.Token,
+		DownlinkFrame: &downlink,
+	}
+
+	if err := storage.SaveDownlinkFrame(ctx, &df); err != nil {
+		return errors.Wrap(err, "save downlink-frame error")
 	}
 
 	if err := gateway.Backend().SendTXPacket(downlink); err != nil {
