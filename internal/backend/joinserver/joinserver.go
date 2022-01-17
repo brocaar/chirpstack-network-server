@@ -70,7 +70,6 @@ func Setup(c config.Config) error {
 			redisClient = storage.RedisClient()
 		}
 
-		fmt.Println("FOOOO")
 		client, err := backend.NewClient(backend.ClientConfig{
 			Logger:       log.StandardLogger(),
 			SenderID:     c.NetworkServer.NetID.String(),
