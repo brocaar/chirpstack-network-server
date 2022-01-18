@@ -43,3 +43,5 @@ require (
 	google.golang.org/protobuf v1.25.0
 	pack.ag/amqp v0.12.1
 )
+
+replace github.com/brocaar/chirpstack-api/go/v3 => github.com/sagar-patel-sls/chirpstack-api-1/go/v3 v3.12.4-0.20220118060045-d63f79ed0de1
