@@ -2,6 +2,7 @@ package testsuite
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -295,7 +296,7 @@ func (ts *PassiveRoamingFNSTestSuite) TestJoinRequest() {
 		// validate published downlink
 		downlinkFrame := <-ts.GWBackend.TXPacketChan
 		assert.Equal(ts.Gateway.GatewayID[:], downlinkFrame.GetGatewayId())
-		assert.Equal(&gw.DownlinkFrameItem{
+		assert.True(proto.Equal(&gw.DownlinkFrameItem{
 			PhyPayload: []byte{1, 2, 3, 4},
 			TxInfo: &gw.DownlinkTXInfo{
 				Frequency:  868100000,
@@ -317,8 +318,8 @@ func (ts *PassiveRoamingFNSTestSuite) TestJoinRequest() {
 				},
 				Context: []byte{1, 2, 3, 4},
 			},
-		}, downlinkFrame.Items[0])
-		assert.Equal(&gw.DownlinkFrameItem{
+		}, downlinkFrame.Items[0]))
+		assert.True(proto.Equal(&gw.DownlinkFrameItem{
 			PhyPayload: []byte{1, 2, 3, 4},
 			TxInfo: &gw.DownlinkTXInfo{
 				Frequency:  868200000,
@@ -340,7 +341,7 @@ func (ts *PassiveRoamingFNSTestSuite) TestJoinRequest() {
 				},
 				Context: []byte{1, 2, 3, 4},
 			},
-		}, downlinkFrame.Items[1])
+		}, downlinkFrame.Items[1]))
 	})
 }
 
@@ -652,9 +653,11 @@ func (ts *PassiveRoamingFNSTestSuite) TestDownlink() {
 	// check that downlink was sent to the gateway
 	frame := <-ts.GWBackend.TXPacketChan
 	assert.Len(frame.DownlinkId, 16) // just check that the downlink id is set, we can't predict its value
+	token := uint32(binary.BigEndian.Uint16(frame.DownlinkId[0:2]))
 	frame.DownlinkId = nil
-	assert.Equal(gw.DownlinkFrame{
+	assert.True(proto.Equal(&gw.DownlinkFrame{
 		GatewayId: ts.Gateway.GatewayID[:],
+		Token:     token,
 		Items: []*gw.DownlinkFrameItem{
 			{
 				PhyPayload: []byte{1, 2, 3},
@@ -707,7 +710,7 @@ func (ts *PassiveRoamingFNSTestSuite) TestDownlink() {
 				},
 			},
 		},
-	}, frame)
+	}, &frame))
 }
 
 // PassiveRoamingSNSTestSuite contains the tests from the hNS POV.
