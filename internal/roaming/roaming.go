@@ -174,15 +174,16 @@ func GetClientForNetID(clientNetID lorawan.NetID) (backend.Client, error) {
 		}
 
 		client, err := backend.NewClient(backend.ClientConfig{
-			Logger:       log.StandardLogger(),
-			SenderID:     netID.String(),
-			ReceiverID:   clientNetID.String(),
-			Server:       server,
-			CACert:       defaultCACert,
-			TLSCert:      defaultTLSCert,
-			TLSKey:       defaultTLSKey,
-			AsyncTimeout: defaultAsyncTimeout,
-			RedisClient:  redisClient,
+			Logger:        log.StandardLogger(),
+			SenderID:      netID.String(),
+			ReceiverID:    clientNetID.String(),
+			Server:        server,
+			CACert:        defaultCACert,
+			TLSCert:       defaultTLSCert,
+			TLSKey:        defaultTLSKey,
+			Authorization: defaultAuthorization,
+			AsyncTimeout:  defaultAsyncTimeout,
+			RedisClient:   redisClient,
 		})
 		if err != nil {
 			return nil, errors.Wrapf(err, "new roaming client error for netid: %s", clientNetID)
