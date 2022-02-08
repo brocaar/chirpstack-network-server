@@ -55,4 +55,4 @@ serve: build
 	./build/chirpstack-network-server
 
 run-compose-test:
-	docker-compose run --rm networkserver make test
+	docker-compose run --rm chirpstack-network-server make test

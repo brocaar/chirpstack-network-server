@@ -229,7 +229,7 @@ func forConfirmedDownlink(funcs ...func(*ackContext) error) func(*ackContext) er
 func forMACOnlyPayload(funcs ...func(*ackContext) error) func(*ackContext) error {
 	return func(ctx *ackContext) error {
 		// for mac-only payload, the FPort must be nil or it must be set to 0.
-		if ctx.MACPayload == nil || !(ctx.MACPayload.FPort == nil || *ctx.MACPayload.FPort == 0) {
+		if len(ctx.DownlinkFrame.DevEui) == 0 || ctx.MACPayload == nil || !(ctx.MACPayload.FPort == nil || *ctx.MACPayload.FPort == 0) {
 			return nil
 		}
 
