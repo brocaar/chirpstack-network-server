@@ -1774,3 +1774,22 @@ func (n *NetworkServerAPI) GetADRAlgorithms(ctx context.Context, req *empty.Empt
 
 	return &resp, nil
 }
+
+// ClearDeviceNonces deletes the device activation records matching the given DevEUI.
+func (n *NetworkServerAPI) ClearDeviceNonces(ctx context.Context, req *ns.ClearDeviceNoncesRequest) (*empty.Empty, error) {
+	var devEUI lorawan.EUI64
+	copy(devEUI[:], req.DevEui)
+
+	err := storage.Transaction(func(tx sqlx.Ext) error {
+		if err := storage.ClearDeviceNoncesForDevice(ctx, tx, devEUI); err != nil {
+			return errToRPCError(err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &empty.Empty{}, nil
+}

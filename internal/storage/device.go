@@ -286,3 +286,27 @@ func ValidateDevNonce(ctx context.Context, db sqlx.Queryer, joinEUI, devEUI lora
 
 	return nil
 }
+
+// ClearDeviceNoncesForDevice removes the device DevNonce from device-activation for the given
+// DevEUI.
+func ClearDeviceNoncesForDevice(ctx context.Context, db sqlx.Execer, devEUI lorawan.EUI64) error {
+	_, err := db.Exec(`
+		delete
+		from
+			device_activation
+		where
+			id IN (SELECT id from device_activation
+				where dev_eui = $1
+				ORDER BY id DESC
+				OFFSET 20)
+	`, devEUI[:])
+	if err != nil {
+		return handlePSQLError(err, "device devnonce delete error")
+	}
+
+	log.WithFields(log.Fields{
+		"dev_eui": devEUI,
+		"ctx_id":  ctx.Value(logging.ContextIDKey),
+	}).Info("device dev-nonce deleted")
+	return nil
+}
