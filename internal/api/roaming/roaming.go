@@ -589,5 +589,14 @@ func (a *API) getBasePayloadResult(basePLReq backend.BasePayload, resCode backen
 }
 
 func (a *API) errToResultCode(err error) backend.ResultCode {
-	return backend.Other
+	switch {
+	case errors.Is(err, storage.ErrDoesNotExist):
+		return backend.UnknownDevAddr
+	case errors.Is(err, storage.ErrFrameCounterReset),
+		errors.Is(err, storage.ErrFrameCounterRetransmission),
+		errors.Is(err, storage.ErrInvalidMIC):
+		return backend.MICFailed
+	default:
+		return backend.Other
+	}
 }
