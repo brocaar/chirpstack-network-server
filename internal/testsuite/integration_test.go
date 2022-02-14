@@ -742,7 +742,6 @@ func (ts *IntegrationTestSuite) AssertDownlinkTXAckTest(t *testing.T, tst Downli
 
 func (ts *IntegrationTestSuite) initConfig() {
 	conf := test.GetConfig()
-
 	band.Setup(conf)
 	uplink.Setup(conf)
 	downlink.Setup(conf)

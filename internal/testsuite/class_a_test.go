@@ -22,6 +22,7 @@ import (
 	"github.com/brocaar/chirpstack-network-server/v3/internal/test"
 	"github.com/brocaar/chirpstack-network-server/v3/internal/uplink"
 	"github.com/brocaar/lorawan"
+	loraband "github.com/brocaar/lorawan/band"
 )
 
 func init() {
@@ -84,9 +85,9 @@ func (ts *ClassATestSuite) SetupSuite() {
 	assert.NoError(helpers.SetUplinkTXInfoDataRate(&ts.TXInfo, 0, band.Band()))
 
 	ts.TXInfoLRFHSS = gw.UplinkTXInfo{
-		Frequency: 868100000,
+		Frequency: 867300000,
 	}
-	assert.NoError(helpers.SetUplinkTXInfoDataRate(&ts.TXInfoLRFHSS, 8, band.Band()))
+	assert.NoError(helpers.SetUplinkTXInfoDataRate(&ts.TXInfoLRFHSS, 10, band.Band()))
 }
 
 func (ts *ClassATestSuite) TestLW10Errors() {
@@ -631,49 +632,6 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 			},
 		},
 		{
-			Name:          "unconfirmed uplink with payload using LR-FHSS dr",
-			DeviceSession: *ts.DeviceSession,
-			TXInfo:        ts.TXInfoLRFHSS,
-			RXInfo:        ts.RXInfo,
-			PHYPayload: lorawan.PHYPayload{
-				MHDR: lorawan.MHDR{
-					MType: lorawan.UnconfirmedDataUp,
-					Major: lorawan.LoRaWANR1,
-				},
-				MACPayload: &lorawan.MACPayload{
-					FHDR: lorawan.FHDR{
-						DevAddr: ts.DeviceSession.DevAddr,
-						FCnt:    10,
-					},
-					FPort:      &fPortOne,
-					FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
-				},
-				MIC: lorawan.MIC{104, 147, 35, 121},
-			},
-			Assert: []Assertion{
-				AssertFCntUp(11),
-				AssertNFCntDown(5),
-				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
-					DevEui:  ts.Device.DevEUI[:],
-					JoinEui: ts.DeviceSession.JoinEUI[:],
-					FCnt:    10,
-					FPort:   1,
-					Dr:      8,
-					TxInfo:  &ts.TXInfoLRFHSS,
-					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
-					Data:    []byte{1, 2, 3, 4},
-				}),
-				AssertNCHandleUplinkMetaDataRequest(nc.HandleUplinkMetaDataRequest{
-					DevEui:                      ts.DeviceSession.DevEUI[:],
-					TxInfo:                      &ts.TXInfoLRFHSS,
-					RxInfo:                      []*gw.UplinkRXInfo{&ts.RXInfo},
-					MessageType:                 nc.MType_UNCONFIRMED_DATA_UP,
-					PhyPayloadByteCount:         17,
-					ApplicationPayloadByteCount: 4,
-				}),
-			},
-		},
-		{
 			Name: "unconfirmed uplink with payload + AppSKey envelope",
 			BeforeFunc: func(tst *ClassATest) error {
 				tst.DeviceSession.AppSKeyEvelope = &storage.KeyEnvelope{
@@ -971,6 +929,96 @@ func (ts *ClassATestSuite) TestLW10Uplink() {
 				AssertFCntUp(11),
 				AssertNFCntDown(5),
 				AssertDownlinkDeviceLock(ts.Device.DevEUI),
+			},
+		},
+	}
+
+	for _, tst := range tests {
+		ts.T().Run(tst.Name, func(t *testing.T) {
+			ts.AssertClassATest(t, tst)
+		})
+	}
+}
+
+func (ts *ClassATestSuite) TestLR10LRFHSSUplink() {
+	conf := test.GetConfig()
+
+	// Add channel with LR-FHSS data-rate enabled.
+	conf.NetworkServer.NetworkSettings.ExtraChannels = append(conf.NetworkServer.NetworkSettings.ExtraChannels, struct {
+		Frequency uint32 `mapstructure:"frequency"`
+		MinDR     int    `mapstructure:"min_dr"`
+		MaxDR     int    `mapstructure:"max_dr"`
+	}{
+		Frequency: 867300000,
+		MinDR:     10,
+		MaxDR:     11,
+	})
+	band.Setup(conf)
+
+	ts.CreateDeviceSession(storage.DeviceSession{
+		MACVersion:            "1.0.2",
+		JoinEUI:               lorawan.EUI64{8, 7, 6, 5, 4, 3, 2, 1},
+		DevAddr:               lorawan.DevAddr{1, 2, 3, 4},
+		FNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		SNwkSIntKey:           [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		NwkSEncKey:            [16]byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
+		FCntUp:                8,
+		NFCntDown:             5,
+		EnabledUplinkChannels: []int{0, 1, 2, 3},
+		RX2Frequency:          869525000,
+		ExtraUplinkChannels: map[int]loraband.Channel{
+			3: loraband.Channel{
+				Frequency: 867300000,
+				MinDR:     10,
+				MaxDR:     11,
+			},
+		},
+	})
+
+	var fPortOne uint8 = 1
+
+	tests := []ClassATest{
+		{
+			Name:          "unconfirmed uplink with payload using LR-FHSS dr",
+			DeviceSession: *ts.DeviceSession,
+			TXInfo:        ts.TXInfoLRFHSS,
+			RXInfo:        ts.RXInfo,
+			PHYPayload: lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MACPayload: &lorawan.MACPayload{
+					FHDR: lorawan.FHDR{
+						DevAddr: ts.DeviceSession.DevAddr,
+						FCnt:    10,
+					},
+					FPort:      &fPortOne,
+					FRMPayload: []lorawan.Payload{&lorawan.DataPayload{Bytes: []byte{1, 2, 3, 4}}},
+				},
+				MIC: lorawan.MIC{104, 147, 35, 121},
+			},
+			Assert: []Assertion{
+				AssertFCntUp(11),
+				AssertNFCntDown(5),
+				AssertASHandleUplinkDataRequest(as.HandleUplinkDataRequest{
+					DevEui:  ts.Device.DevEUI[:],
+					JoinEui: ts.DeviceSession.JoinEUI[:],
+					FCnt:    10,
+					FPort:   1,
+					Dr:      10,
+					TxInfo:  &ts.TXInfoLRFHSS,
+					RxInfo:  []*gw.UplinkRXInfo{&ts.RXInfo},
+					Data:    []byte{1, 2, 3, 4},
+				}),
+				AssertNCHandleUplinkMetaDataRequest(nc.HandleUplinkMetaDataRequest{
+					DevEui:                      ts.DeviceSession.DevEUI[:],
+					TxInfo:                      &ts.TXInfoLRFHSS,
+					RxInfo:                      []*gw.UplinkRXInfo{&ts.RXInfo},
+					MessageType:                 nc.MType_UNCONFIRMED_DATA_UP,
+					PhyPayloadByteCount:         17,
+					ApplicationPayloadByteCount: 4,
+				}),
 			},
 		},
 	}

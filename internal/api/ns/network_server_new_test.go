@@ -1095,7 +1095,15 @@ func (ts *NetworkServerAPITestSuite) TestADR() {
 			AdrAlgorithms: []*ns.ADRAlgorithm{
 				{
 					Id:   "default",
-					Name: "Default ADR algorithm",
+					Name: "Default ADR algorithm (LoRa only)",
+				},
+				{
+					Id:   "lora_lr_fhss",
+					Name: "LoRa & LR-FHSS ADR algorithm",
+				},
+				{
+					Id:   "lr_fhss",
+					Name: "LR-FHSS only ADR algorithm",
 				},
 			},
 		}, resp)

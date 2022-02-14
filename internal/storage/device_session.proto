@@ -28,6 +28,9 @@ message DeviceSessionPBUplinkADRHistory {
 
     // Number of receiving gateways.
     uint32 gateway_count = 4;
+
+    // Max RSSI (of deduplicated frames received by one or multiple gateways).
+    int32 max_rssi = 5;
 }
 
 message DeviceSessionPB {

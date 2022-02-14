@@ -1,6 +1,10 @@
 package adr
 
-import "github.com/brocaar/chirpstack-network-server/v3/adr"
+import (
+	"github.com/brocaar/chirpstack-network-server/v3/adr"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/band"
+	loraband "github.com/brocaar/lorawan/band"
+)
 
 // DefaultHandler implements the default ADR handler.
 type DefaultHandler struct{}
@@ -12,7 +16,7 @@ func (h *DefaultHandler) ID() (string, error) {
 
 // Name returns the default name.
 func (h *DefaultHandler) Name() (string, error) {
-	return "Default ADR algorithm", nil
+	return "Default ADR algorithm (LoRa only)", nil
 }
 
 // Handle handles the ADR request.
@@ -30,9 +34,31 @@ func (h *DefaultHandler) Handle(req adr.HandleRequest) (adr.HandleResponse, erro
 		return resp, nil
 	}
 
+	// The max DR might be configured to a non LoRa (125kHz) data-rate.
+	// As this algorithm works on LoRa (125kHz) data-rates only, we need to
+	// find the max LoRa (125 kHz) data-rate.
+	maxDR := req.MaxDR
+	maxLoRaDR := 0
+	enabledDRs := band.Band().GetEnabledUplinkDataRates()
+	for _, i := range enabledDRs {
+		dr, err := band.Band().GetDataRate(i)
+		if err != nil {
+			return resp, err
+		}
+
+		if dr.Modulation == loraband.LoRaModulation && dr.Bandwidth == 125 {
+			maxLoRaDR = i
+		}
+	}
+
+	// Reduce to max LoRa DR.
+	if maxDR > maxLoRaDR {
+		maxDR = maxLoRaDR
+	}
+
 	// Lower the DR only if it exceeds the max. allowed DR.
-	if req.DR > req.MaxDR {
-		resp.DR = req.MaxDR
+	if req.DR > maxDR {
+		resp.DR = maxDR
 	}
 
 	// Set the new NbTrans.
@@ -50,7 +76,7 @@ func (h *DefaultHandler) Handle(req adr.HandleRequest) (adr.HandleResponse, erro
 		return resp, nil
 	}
 
-	resp.TxPowerIndex, resp.DR = h.getIdealTxPowerIndexAndDR(nStep, resp.TxPowerIndex, resp.DR, req.MaxTxPowerIndex, req.MaxDR)
+	resp.TxPowerIndex, resp.DR = h.getIdealTxPowerIndexAndDR(nStep, resp.TxPowerIndex, resp.DR, req.MaxTxPowerIndex, maxDR)
 
 	return resp, nil
 }

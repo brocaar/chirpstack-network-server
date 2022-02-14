@@ -63,6 +63,7 @@ type DeviceGatewayRXInfo struct {
 type UplinkHistory struct {
 	FCnt         uint32
 	MaxSNR       float64
+	MaxRSSI      int32
 	TXPowerIndex int
 	GatewayCount int
 }
@@ -743,6 +744,7 @@ func deviceSessionToPB(d DeviceSession) *DeviceSessionPB {
 			MaxSnr:       float32(h.MaxSNR),
 			TxPowerIndex: uint32(h.TXPowerIndex),
 			GatewayCount: uint32(h.GatewayCount),
+			MaxRssi:      h.MaxRSSI,
 		})
 	}
 
@@ -856,6 +858,7 @@ func deviceSessionFromPB(d *DeviceSessionPB) DeviceSession {
 			MaxSNR:       float64(h.MaxSnr),
 			TXPowerIndex: int(h.TxPowerIndex),
 			GatewayCount: int(h.GatewayCount),
+			MaxRSSI:      h.MaxRssi,
 		})
 	}
 

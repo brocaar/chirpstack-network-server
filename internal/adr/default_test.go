@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/brocaar/chirpstack-network-server/v3/adr"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/band"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/test"
 	"github.com/stretchr/testify/require"
 )
 
@@ -275,6 +277,9 @@ func TestDefaultHandler(t *testing.T) {
 		}
 
 		for _, tst := range tests {
+			conf := test.GetConfig()
+			band.Setup(conf)
+
 			t.Run(tst.name, func(t *testing.T) {
 				assert := require.New(t)
 

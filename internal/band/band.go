@@ -20,8 +20,8 @@ func Setup(c config.Config) error {
 	if err != nil {
 		return errors.Wrap(err, "get band config error")
 	}
-	for _, c := range config.C.NetworkServer.NetworkSettings.ExtraChannels {
-		if err := bandConfig.AddChannel(c.Frequency, c.MinDR, c.MaxDR); err != nil {
+	for _, ec := range c.NetworkServer.NetworkSettings.ExtraChannels {
+		if err := bandConfig.AddChannel(ec.Frequency, ec.MinDR, ec.MaxDR); err != nil {
 			return errors.Wrap(err, "add channel error")
 		}
 	}

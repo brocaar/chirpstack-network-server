@@ -83,6 +83,7 @@ type HandleResponse struct {
 type UplinkMetaData struct {
 	FCnt         uint32
 	MaxSNR       float32
+	MaxRSSI      int32
 	TXPowerIndex int
 	GatewayCount int
 }

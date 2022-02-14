@@ -17,16 +17,28 @@ var (
 )
 
 func init() {
-	def := &DefaultHandler{}
-	id, _ := def.ID()
-	name, _ := def.Name()
+	defH := &DefaultHandler{}
+	defID, _ := defH.ID()
+	defName, _ := defH.Name()
+
+	lrFHSSH := &LRFHSSHandler{}
+	lrFHSSID, _ := lrFHSSH.ID()
+	lrFHSSName, _ := lrFHSSH.Name()
+
+	loRaLRFHSSH := &LoRaLRFHSSHandler{}
+	loraLRFHSSID, _ := loRaLRFHSSH.ID()
+	loraLRFHSSName, _ := loRaLRFHSSH.Name()
 
 	handlers = map[string]adr.Handler{
-		id: def,
+		defID:        defH,
+		loraLRFHSSID: loRaLRFHSSH,
+		lrFHSSID:     lrFHSSH,
 	}
 
 	handlerNames = map[string]string{
-		id: name,
+		defID:        defName,
+		loraLRFHSSID: loraLRFHSSName,
+		lrFHSSID:     lrFHSSName,
 	}
 }
 
