@@ -150,6 +150,12 @@ net_id="{{ .NetworkServer.NetID }}"
 # unable to respond to the device within its receive-window.
 deduplication_delay="{{ .NetworkServer.DeduplicationDelay }}"
 
+# For packet de-duplication, ignore what frequency the packet came in on
+# 
+# This is a work around. And a security issue:
+# https://github.com/brocaar/chirpstack-network-server/issues/557#issuecomment-968719234 
+ignore_frequency_for_deduplication="{{ .NetworkServer.IgnoreFrequencyForDeduplication }}"
+
 # Device session expiration.
 #
 # The TTL value defines the time after which a device-session expires

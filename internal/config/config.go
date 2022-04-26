@@ -39,11 +39,12 @@ type Config struct {
 	} `mapstructure:"redis"`
 
 	NetworkServer struct {
-		NetID                lorawan.NetID
-		NetIDString          string        `mapstructure:"net_id"`
-		DeduplicationDelay   time.Duration `mapstructure:"deduplication_delay"`
-		DeviceSessionTTL     time.Duration `mapstructure:"device_session_ttl"`
-		GetDownlinkDataDelay time.Duration `mapstructure:"get_downlink_data_delay"`
+		NetID                           lorawan.NetID
+		NetIDString                     string        `mapstructure:"net_id"`
+		DeduplicationDelay              time.Duration `mapstructure:"deduplication_delay"`
+		IgnoreFrequencyForDeduplication bool          `mapstructure:"ignore_frequency_for_deduplication"`
+		DeviceSessionTTL                time.Duration `mapstructure:"device_session_ttl"`
+		GetDownlinkDataDelay            time.Duration `mapstructure:"get_downlink_data_delay"`
 
 		Band struct {
 			Name                   band.Name `mapstructure:"name"`

@@ -2,6 +2,9 @@ package uplink
 
 import (
 	"context"
+	"encoding/hex"
+	"github.com/golang/protobuf/proto"
+	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
 	"time"
@@ -33,6 +36,39 @@ func (ts *CollectTestSuite) SetupSuite() {
 
 	assert.NoError(storage.Setup(conf))
 	assert.NoError(Setup(conf))
+}
+
+func TestGetKeyWithFrequencySetToZero(t *testing.T) {
+	originalFreq := uint32(868100000)
+
+	uplinkFrame := gw.UplinkFrame{
+		TxInfo: &gw.UplinkTXInfo{
+			Frequency:  originalFreq,
+			Modulation: common.Modulation_LORA,
+			ModulationInfo: &gw.UplinkTXInfo_LoraModulationInfo{
+				LoraModulationInfo: &gw.LoRaModulationInfo{
+					Bandwidth:       125,
+					SpreadingFactor: 7,
+					CodeRate:        "3/4",
+				},
+			},
+		},
+	}
+
+	zeroFreqKey, err := deduplicateOnTXInfoClearingFrequency(uplinkFrame)
+
+	// Original frame freq remains unchanged
+	assert.Equal(t, uplinkFrame.TxInfo.Frequency, originalFreq)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, zeroFreqKey)
+
+	txInfob, err := hex.DecodeString(zeroFreqKey)
+	assert.NoError(t, err)
+
+	var txInfo gw.UplinkTXInfo
+	proto.Unmarshal(txInfob, &txInfo)
+	assert.Equal(t, uint32(0), txInfo.Frequency)
 }
 
 func (ts *CollectTestSuite) TestHandleRejectedUplinkFrameSet() {
@@ -82,11 +118,17 @@ func (ts *CollectTestSuite) TestHandleRejectedUplinkFrameSet() {
 }
 
 func (ts *CollectTestSuite) TestDeduplication() {
+	type Gateways struct {
+		eui64         lorawan.EUI64
+		frequencyUsed uint32
+	}
+
 	testTable := []struct {
-		Name       string
-		PHYPayload lorawan.PHYPayload
-		Gateways   []lorawan.EUI64
-		Count      int
+		Name               string
+		PHYPayload         lorawan.PHYPayload
+		Gateways           []Gateways
+		Count              int
+		IgnoreFreqForDeDup bool
 	}{
 		{
 			"single item expected",
@@ -98,10 +140,14 @@ func (ts *CollectTestSuite) TestDeduplication() {
 				MIC:        [4]byte{1, 2, 3, 4},
 				MACPayload: &lorawan.MACPayload{},
 			},
-			[]lorawan.EUI64{
-				{1, 1, 1, 1, 1, 1, 1, 1},
+			[]Gateways{
+				{
+					eui64:         lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+					frequencyUsed: 868100000,
+				},
 			},
 			1,
+			false,
 		}, {
 			"two items expected",
 			lorawan.PHYPayload{
@@ -112,11 +158,18 @@ func (ts *CollectTestSuite) TestDeduplication() {
 				MIC:        [4]byte{2, 2, 3, 4},
 				MACPayload: &lorawan.MACPayload{},
 			},
-			[]lorawan.EUI64{
-				{2, 1, 1, 1, 1, 1, 1, 1},
-				{2, 2, 2, 2, 2, 2, 2, 2},
+			[]Gateways{
+				{
+					eui64:         lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+					frequencyUsed: 868100000,
+				},
+				{
+					eui64:         lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2},
+					frequencyUsed: 868100000,
+				},
 			},
 			2,
+			false,
 		}, {
 			"two items expected (three collected)",
 			lorawan.PHYPayload{
@@ -127,13 +180,70 @@ func (ts *CollectTestSuite) TestDeduplication() {
 				MIC:        [4]byte{3, 2, 3, 4},
 				MACPayload: &lorawan.MACPayload{},
 			},
-			[]lorawan.EUI64{
-				{3, 1, 1, 1, 1, 1, 1, 1},
-				{3, 2, 2, 2, 2, 2, 2, 2},
-				{3, 2, 2, 2, 2, 2, 2, 2},
+			[]Gateways{
+				{
+					eui64:         lorawan.EUI64{3, 1, 1, 1, 1, 1, 1, 1},
+					frequencyUsed: 868100000,
+				},
+				{
+					eui64:         lorawan.EUI64{3, 2, 2, 2, 2, 2, 2, 2},
+					frequencyUsed: 868100000,
+				},
+				{
+					eui64:         lorawan.EUI64{3, 2, 2, 2, 2, 2, 2, 2},
+					frequencyUsed: 868100000,
+				},
 			},
 			2,
+			false,
 		},
+		{
+			"two items expected (two collected from same gateway, different frequencies, but ignoring that in dedup. Called once only.)",
+			lorawan.PHYPayload{
+				MHDR: lorawan.MHDR{
+					MType: lorawan.UnconfirmedDataUp,
+					Major: lorawan.LoRaWANR1,
+				},
+				MIC:        [4]byte{3, 2, 3, 4},
+				MACPayload: &lorawan.MACPayload{},
+			},
+			[]Gateways{
+				{
+					eui64:         lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+					frequencyUsed: 868100000,
+				},
+				{
+					eui64:         lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+					frequencyUsed: 868300000,
+				},
+			},
+			2,
+			true,
+		},
+		// https://github.com/brocaar/chirpstack-network-server/issues/557#issuecomment-968719234
+		//{
+		//	"The unexpected/expected case. This will call *twice*, and fail",
+		//	lorawan.PHYPayload{
+		//		MHDR: lorawan.MHDR{
+		//			MType: lorawan.UnconfirmedDataUp,
+		//			Major: lorawan.LoRaWANR1,
+		//		},
+		//		MIC:        [4]byte{3, 2, 3, 4},
+		//		MACPayload: &lorawan.MACPayload{},
+		//	},
+		//	[]Gateways{
+		//		{
+		//			eui64:         lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+		//			frequencyUsed: 868100000,
+		//		},
+		//		{
+		//			eui64:         lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1},
+		//			frequencyUsed: 868300000,
+		//		},
+		//	},
+		//	1,
+		//	false,
+		//},
 	}
 
 	for _, tst := range testTable {
@@ -152,7 +262,8 @@ func (ts *CollectTestSuite) TestDeduplication() {
 
 			var wg sync.WaitGroup
 			for i := range tst.Gateways {
-				g := tst.Gateways[i]
+				g := tst.Gateways[i].eui64
+				freq := tst.Gateways[i].frequencyUsed
 				phyB, err := tst.PHYPayload.MarshalBinary()
 				assert.NoError(err)
 
@@ -161,18 +272,21 @@ func (ts *CollectTestSuite) TestDeduplication() {
 					RxInfo: &gw.UplinkRXInfo{
 						GatewayId: g[:],
 					},
-					TxInfo:     &gw.UplinkTXInfo{},
+					TxInfo: &gw.UplinkTXInfo{
+						Frequency: freq,
+					},
 					PhyPayload: phyB,
 				}
 				assert.NoError(helpers.SetUplinkTXInfoDataRate(packet.TxInfo, 0, band.Band()))
 
 				go func(packet gw.UplinkFrame) {
-					assert.NoError(collectAndCallOnce(packet, cb))
+					assert.NoError(collectAndCallOnce(packet, tst.IgnoreFreqForDeDup, cb))
 					wg.Done()
 				}(packet)
 			}
 			wg.Wait()
 
+			// collectAndCallOnce
 			assert.Equal(1, called)
 			assert.Equal(tst.Count, received)
 		})

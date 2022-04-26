@@ -33,7 +33,8 @@ import (
 )
 
 var (
-	deduplicationDelay time.Duration
+	deduplicationDelay              time.Duration
+	ignoreFrequencyForDeduplication bool
 )
 
 // Setup configures the package.
@@ -51,6 +52,11 @@ func Setup(conf config.Config) error {
 	}
 
 	deduplicationDelay = conf.NetworkServer.DeduplicationDelay
+
+	ignoreFrequencyForDeduplication = conf.NetworkServer.IgnoreFrequencyForDeduplication
+	if ignoreFrequencyForDeduplication {
+		log.Warn("Ignoring the frequency of the packets when deduplicating: This introduces a security issue that enables a re-play attack - https://github.com/brocaar/chirpstack-network-server/issues/557#issuecomment-968719234")
+	}
 
 	return nil
 }
@@ -157,7 +163,7 @@ func HandleDownlinkTXAcks(wg *sync.WaitGroup) {
 }
 
 func collectUplinkFrames(ctx context.Context, uplinkFrame gw.UplinkFrame) error {
-	return collectAndCallOnce(uplinkFrame, func(rxPacket models.RXPacket) error {
+	return collectAndCallOnce(uplinkFrame, ignoreFrequencyForDeduplication, func(rxPacket models.RXPacket) error {
 		err := handleCollectedUplink(ctx, uplinkFrame, rxPacket)
 		if err != nil {
 			cause := errors.Cause(err)

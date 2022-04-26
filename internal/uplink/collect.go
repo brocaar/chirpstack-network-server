@@ -32,13 +32,13 @@ const (
 // It is safe to collect the same packet received by the same gateway twice.
 // Since the underlying storage type is a set, the result will always be a
 // unique set per gateway MAC and packet MIC.
-func collectAndCallOnce(rxPacket gw.UplinkFrame, callback func(packet models.RXPacket) error) error {
+func collectAndCallOnce(rxPacket gw.UplinkFrame, ignoreFrequencyForDeduplication bool, callback func(packet models.RXPacket) error) error {
 	phyKey := hex.EncodeToString(rxPacket.PhyPayload)
-	txInfoB, err := proto.Marshal(rxPacket.TxInfo)
+
+	txInfoHEX, err := makeTXInfoHex(rxPacket, ignoreFrequencyForDeduplication)
 	if err != nil {
-		return errors.Wrap(err, "marshal protobuf error")
+		return errors.Wrap(err, "error making txinfoHEX for redis key")
 	}
-	txInfoHEX := hex.EncodeToString(txInfoB)
 
 	key := storage.GetRedisKey(CollectKeyTempl, txInfoHEX, phyKey)
 	lockKey := storage.GetRedisKey(CollectLockKeyTempl, txInfoHEX, phyKey)
@@ -111,6 +111,39 @@ func collectAndCallOnce(rxPacket gw.UplinkFrame, callback func(packet models.RXP
 	}
 
 	return callback(out)
+}
+
+func makeTXInfoHex(rxPacket gw.UplinkFrame, ignoreFrequencyForDeduplication bool) (string, error) {
+	if ignoreFrequencyForDeduplication {
+		return deduplicateOnTXInfoClearingFrequency(rxPacket)
+	} else {
+		return deduplicateOnTXInfo(rxPacket)
+	}
+}
+
+func deduplicateOnTXInfo(rxPacket gw.UplinkFrame) (string, error) {
+	return txInfoHex(rxPacket.TxInfo)
+}
+
+// "The reason why the de-duplication logic includes the frequency in its key is because
+// there was a security issue reported a while ago, which would allow a re-play with a
+// better RSSI / SNR to "steal" the downlink path"
+// - Orne, https://github.com/brocaar/chirpstack-network-server/issues/557#issuecomment-968719234
+//
+// To work around current data loss being experience, we take this chance.
+func deduplicateOnTXInfoClearingFrequency(rxPacket gw.UplinkFrame) (string, error) {
+	cloned := proto.Clone(rxPacket.TxInfo).(*gw.UplinkTXInfo)
+	cloned.Frequency = 0
+
+	return txInfoHex(cloned)
+}
+
+func txInfoHex(uplinkTXInfo *gw.UplinkTXInfo) (string, error) {
+	txInfoB, err := proto.Marshal(uplinkTXInfo)
+	if err != nil {
+		return "", errors.Wrap(err, "marshal protobuf error")
+	}
+	return hex.EncodeToString(txInfoB), nil
 }
 
 func collectAndCallOncePut(key string, ttl time.Duration, rxPacket gw.UplinkFrame) error {
