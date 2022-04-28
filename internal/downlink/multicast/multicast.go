@@ -40,8 +40,8 @@ var multicastTasks = []func(*multicastContext) error{
 	validatePayloadSize,
 	setTXInfo,
 	setPHYPayload,
-	sendDownlinkData,
 	saveDownlinkFrame,
+	sendDownlinkData,
 }
 
 var (

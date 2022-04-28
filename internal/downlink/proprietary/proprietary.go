@@ -20,8 +20,8 @@ import (
 const defaultCodeRate = "4/5"
 
 var tasks = []func(*proprietaryContext) error{
-	sendProprietaryDown,
 	saveDownlinkFrames,
+	sendProprietaryDown,
 }
 
 type proprietaryContext struct {
