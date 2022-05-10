@@ -6,6 +6,7 @@ ENV CGO_ENABLED=0
 ENV GO_EXTRA_BUILD_ARGS="-a -installsuffix cgo"
 
 RUN apk add --no-cache ca-certificates tzdata make git bash protobuf
+RUN git config --global --add safe.directory $PROJECT_PATH
 
 RUN mkdir -p $PROJECT_PATH
 COPY . $PROJECT_PATH
