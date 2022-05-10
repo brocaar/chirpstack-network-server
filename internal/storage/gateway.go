@@ -406,6 +406,10 @@ func UpdateGatewayState(ctx context.Context, db sqlx.Execer, id lorawan.EUI64, l
 		return ErrDoesNotExist
 	}
 
+	if err := FlushGatewayMetaCache(ctx, id); err != nil {
+		return err
+	}
+
 	log.WithFields(log.Fields{
 		"gateway_id": id,
 		"ctx_id":     ctx.Value(logging.ContextIDKey),
