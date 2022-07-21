@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/brocaar/chirpstack-network-server/v3/internal/models"
+	"github.com/brocaar/chirpstack-network-server/v3/internal/storage"
 	"github.com/brocaar/lorawan/backend"
 )
 
@@ -14,6 +15,7 @@ import (
 func HandleStartPRHNS(ctx context.Context, prStartPL backend.PRStartReqPayload, rxPacket models.RXPacket) (backend.PRStartAnsPayload, error) {
 	jctx := joinContext{
 		ctx:               ctx,
+		tx:                storage.DB(),
 		RXPacket:          rxPacket,
 		PRStartReqPayload: &prStartPL,
 	}
