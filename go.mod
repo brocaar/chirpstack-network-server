@@ -8,7 +8,7 @@ require (
 	github.com/Azure/azure-service-bus-go v0.9.1
 	github.com/NickBall/go-aes-key-wrap v0.0.0-20170929221519-1c3aa3e4dfc5
 	github.com/brocaar/chirpstack-api/go/v3 v3.12.5
-	github.com/brocaar/lorawan v0.0.0-20220207095711-d675789e16ab
+	github.com/brocaar/lorawan v0.0.0-20220715134808-3b283dda1534
 	github.com/eclipse/paho.mqtt.golang v1.4.1
 	github.com/go-redis/redis/v8 v8.8.3
 	github.com/gofrs/uuid v3.2.0+incompatible
