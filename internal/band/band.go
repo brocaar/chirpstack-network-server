@@ -10,6 +10,8 @@ import (
 
 var band loraband.Band
 
+var maxLoRaDR int
+
 // Setup sets up the band with the given configuration.
 func Setup(c config.Config) error {
 	dwellTime := lorawan.DwellTimeNoLimit
@@ -26,10 +28,27 @@ func Setup(c config.Config) error {
 		}
 	}
 	band = bandConfig
+
+	maxLoRaDR = 0
+	enabledDRs := band.GetEnabledUplinkDataRates()
+	for _, i := range enabledDRs {
+		dr, err := band.GetDataRate(i)
+		if err != nil {
+			return errors.Wrap(err, "get max lora DR error")
+		}
+
+		if dr.Modulation == loraband.LoRaModulation && dr.Bandwidth == 125 {
+			maxLoRaDR = i
+		}
+	}
 	return nil
 }
 
 // Band returns the configured band.
 func Band() loraband.Band {
 	return band
+}
+
+func MaxLoRaDR() int {
+	return maxLoRaDR
 }

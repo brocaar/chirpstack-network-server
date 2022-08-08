@@ -65,6 +65,9 @@ type HandleRequest struct {
 	// UplinkHistory contains the meta-data of the last uplinks.
 	// Note: this table is for the current data-date only!
 	UplinkHistory []UplinkMetaData
+
+	// MaxLoRaDR value computed based on the configured bands
+	MaxLoRaDR int
 }
 
 // HandleResponse implements the ADR handle response.

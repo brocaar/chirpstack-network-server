@@ -1177,6 +1177,7 @@ func requestADRChange(ctx *dataContext) error {
 		MinDR:              ctx.ServiceProfile.DRMin,
 		MaxDR:              ctx.ServiceProfile.DRMax,
 		UplinkHistory:      uplinkHistory,
+		MaxLoRaDR:			band.MaxLoRaDR(),
 	}
 
 	handler := adr.GetHandler(ctx.DeviceProfile.ADRAlgorithmID)
