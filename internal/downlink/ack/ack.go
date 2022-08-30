@@ -37,6 +37,9 @@ var handleDownlinkTXAckTasks = []func(*ackContext) error{
 		forApplicationPayload(
 			sendErrorToApplicationServerOnLastFrame,
 		),
+		forMACOnlyPayload(
+			sendErrorToApplicationServerOnLastFrame,
+		),
 		forMulticastPayload(
 			// TODO: For now we delete the multicast queue-item. What would be the best
 			// way to retry? Multicast is a bit more complicated as the downlinks are
@@ -498,8 +501,7 @@ func sendTxAckToApplicationServer(ctx *ackContext) error {
 
 func sendErrorToApplicationServerOnLastFrame(ctx *ackContext) error {
 	// Only send an error to the AS on the last possible attempt.
-	// We only want to send error for application payloads.
-	if (len(ctx.DownlinkTXAck.Items) == 0 && len(ctx.DownlinkFrame.DownlinkFrame.Items) >= 2) || ctx.MACPayload == nil || ctx.MACPayload.FPort == nil || *ctx.MACPayload.FPort == 0 {
+	if (len(ctx.DownlinkTXAck.Items) == 0 && len(ctx.DownlinkFrame.DownlinkFrame.Items) >= 2) || ctx.MACPayload == nil {
 		return nil
 	}
 
