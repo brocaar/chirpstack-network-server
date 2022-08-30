@@ -371,7 +371,11 @@ func (ts *DownlinkTXAckTestSuite) TestDownlinkTXAck() {
 				},
 				Assert: []Assertion{
 					AssertNFCntDown(10),
-					AssertASNoHandleErrorRequest(), // no error as this is mac-layer only
+					AssertASHandleErrorRequest(as.HandleErrorRequest{
+						DevEui: ts.Device.DevEUI[:],
+						Type:   as.ErrorType_DATA_DOWN_GATEWAY,
+						Error:  "TX_FREQ",
+					}),
 					AssertASNoHandleTxAckRequest(),
 					AssertNCNoHandleDownlinkMetaDataRequest(),
 				},
