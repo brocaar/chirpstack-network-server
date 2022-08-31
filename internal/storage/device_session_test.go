@@ -356,3 +356,39 @@ func TestGetFullFCntUp(t *testing.T) {
 		assert.Equalf(test.FullFCnt, out, "Test %d: expected %d, got %d", i, test.FullFCnt, out)
 	}
 }
+
+func TestGetDeviceSessionsForDevAddr(t *testing.T) {
+	assert := require.New(t)
+	conf := test.GetConfig()
+	assert.NoError(Setup(conf))
+
+	RedisClient().FlushAll(context.Background())
+
+	devAddr := lorawan.DevAddr{1, 2, 3, 4}
+	devEUI1 := lorawan.EUI64{1, 1, 1, 1, 1, 1, 1, 1}
+	devEUI2 := lorawan.EUI64{2, 2, 2, 2, 2, 2, 2, 2}
+
+	ds := DeviceSession{
+		DevAddr: devAddr,
+		DevEUI:  devEUI1,
+	}
+	assert.NoError(SaveDeviceSession(context.Background(), ds))
+
+	key := GetRedisKey(devAddrKeyTempl, devAddr)
+	assert.NoError(RedisClient().SAdd(context.Background(), key, devEUI2[:]).Err())
+
+	euis, err := GetDevEUIsForDevAddr(context.Background(), devAddr)
+	assert.NoError(err)
+	assert.Len(euis, 2)
+
+	dss, err := GetDeviceSessionsForDevAddr(context.Background(), devAddr)
+	assert.NoError(err)
+	assert.Len(dss, 1)
+
+	// DevEUI2 should be removed from the set, as no device-session exists (anymore)
+	// for this DevEUI.
+	euis, err = GetDevEUIsForDevAddr(context.Background(), devAddr)
+	assert.NoError(err)
+	assert.Equal([]lorawan.EUI64{devEUI1}, euis)
+
+}
