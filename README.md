@@ -7,6 +7,13 @@ ChirpStack Network Server is an open-source LoRaWAN network-server, part of
 handling (and de-duplication) of uplink data received by the gateway(s)
 and the scheduling of downlink data transmissions.
 
+## !!! ChirpStack v4 note !!!
+
+With the release of ChirpStack v4, the source-code has been migrated to
+[https://github.com/chirpstack/chirpstack/](https://github.com/chirpstack/chirpstack/).
+Please refer to the [v3 to v4 migration guide](https://www.chirpstack.io/docs/v3-v4-migration.html)
+for information on how to migrate your ChirpStack v3 instance.
+
 ## Architecture
 
 ![architecture](https://www.chirpstack.io/static/img/graphs/architecture.dot.png)
@@ -28,12 +35,6 @@ and the scheduling of downlink data transmissions.
 * Support
   * [Support forum](https://forum.chirpstack.io)
   * [Bug or feature requests](https://github.com/brocaar/chirpstack-network-server/issues)
-
-## Sponsors
-
-[![CableLabs](https://www.chirpstack.io/static/img/sponsors/cablelabs.png)](https://www.cablelabs.com/)
-[![SIDNFonds](https://www.chirpstack.io/static/img/sponsors/sidn_fonds.png)](https://www.sidnfonds.nl/)
-[![acklio](https://www.chirpstack.io/static/img/sponsors/acklio.png)](http://www.ackl.io/)
 
 ## License
 
