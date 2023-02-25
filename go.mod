@@ -31,8 +31,8 @@ require (
 	github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b
-	golang.org/x/net v0.0.0-20220726230323-06994584191e
-	golang.org/x/tools v0.0.0-20210106214847-113979e3529a
+	golang.org/x/net v0.7.0
+	golang.org/x/tools v0.1.12
 	gonum.org/v1/gonum v0.0.0-20190115205657-1b07048b32c6
 	google.golang.org/api v0.30.0
 	google.golang.org/grpc v1.33.1
@@ -106,12 +106,11 @@ require (
 	go.opentelemetry.io/otel/metric v0.20.0 // indirect
 	go.opentelemetry.io/otel/trace v0.20.0 // indirect
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6 // indirect
-	golang.org/x/mod v0.3.0 // indirect
+	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
-	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	gonum.org/v1/netlib v0.0.0-20190219113230-9992c5f5eae4 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/genproto v0.0.0-20201030142918-24207fddd1c3 // indirect
