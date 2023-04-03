@@ -50,8 +50,8 @@ var handleDownlinkTXAckTasks = []func(*ackContext) error{
 		),
 
 		// Backwards compatibility.
-		sendDownlinkFrame,
 		saveDownlinkFrames,
+		sendDownlinkFrame,
 	),
 	onNoError(
 		// Start a transaction so that we can lock the device record. Without
