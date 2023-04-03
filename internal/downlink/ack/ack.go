@@ -62,6 +62,7 @@ var handleDownlinkTXAckTasks = []func(*ackContext) error{
 		// after the scheduler function has committed its transaction.
 		transaction(
 			forApplicationPayload(
+				lockDevice,
 				getDeviceSession,
 				getDeviceQueueItem,
 				forUnconfirmedDownlink(
