@@ -1266,6 +1266,20 @@ func stopOnNothingToSend(ctx *dataContext) error {
 	// in reply to a confirmed-uplink and no requirement to send an empty downlink
 	// (e.g. in case of ADRACKReq).
 	if ctx.DeviceQueueItem == nil && len(ctx.MACCommands) == 0 && !ctx.ACK && !ctx.MustSend {
+		if ctx.DeviceMode == storage.DeviceModeC {
+			// If we made it this far for a class C device we most certainly own
+			// the device and gateway locks so make sure to release them before returning.
+			key := storage.GetRedisKey(deviceDownlinkLockKey, ctx.DeviceSession.DevEUI)
+			_ = storage.RedisClient().Del(ctx.ctx, key).Err()
+
+			if classCGatewayDownlinkLockDuration != 0 {
+				var id lorawan.EUI64
+				copy(id[:], ctx.DownlinkFrame.GatewayId)
+				key := storage.GetRedisKey(gatewayDownlinkLockKey, id)
+				_ = storage.RedisClient().Del(ctx.ctx, key).Err()
+			}
+		}
+
 		// ErrAbort will not be handled as a real error
 		return ErrAbort
 	}
