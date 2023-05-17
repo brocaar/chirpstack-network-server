@@ -54,29 +54,31 @@ var handleDownlinkTXAckTasks = []func(*ackContext) error{
 		sendDownlinkFrame,
 	),
 	onNoError(
-		// Start a transaction so that we can lock the device record. Without
+		// Try to get device lock in case of application payload.
 		// locking the device this code might cause a race-condition as there
 		// is a possibility that the downlink scheduler function did not yet commit
 		// its transaction. By locking the device object (which is also locked by
 		// the scheduler function), we have a guarantee that this code is executed
 		// after the scheduler function has committed its transaction.
-		transaction(
-			forApplicationPayload(
+		forApplicationPayload(
+			transaction(
 				lockDevice,
-				getDeviceSession,
-				getDeviceQueueItem,
-				forUnconfirmedDownlink(
-					deleteDeviceQueueItem,
-				),
-				forConfirmedDownlink(
-					getDeviceProfile,
-					setDeviceQueueItemPending,
-					setDeviceSessionConfFcnt,
-				),
-				incrementAFCntDown,
-				saveDeviceSession,
-				sendTxAckToApplicationServer,
 			),
+		),
+		forApplicationPayload(
+			getDeviceSession,
+			getDeviceQueueItem,
+			forUnconfirmedDownlink(
+				deleteDeviceQueueItem,
+			),
+			forConfirmedDownlink(
+				getDeviceProfile,
+				setDeviceQueueItemPending,
+				setDeviceSessionConfFcnt,
+			),
+			incrementAFCntDown,
+			saveDeviceSession,
+			sendTxAckToApplicationServer,
 		),
 		forMACOnlyPayload(
 			getDeviceSession,
