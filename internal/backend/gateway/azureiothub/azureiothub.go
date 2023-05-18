@@ -412,7 +412,9 @@ func (b *Backend) publishCommand(fields log.Fields, gatewayID lorawan.EUI64, com
 				return nil
 			}
 
-			if retries > 0 {
+			if retries >= 50 {
+				return errors.Wrap(err, "gateway/azure_iot_hub: maximum retries exceeded")
+			} else if retries > 0 {
 				log.WithError(err).Error("gateway/azure_iot_hub: send cloud to device message error")
 			}
 
