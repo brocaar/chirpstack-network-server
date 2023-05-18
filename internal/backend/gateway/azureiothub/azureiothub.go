@@ -411,6 +411,7 @@ func (b *Backend) publishCommand(fields log.Fields, gatewayID lorawan.EUI64, com
 
 				return nil
 			}
+			// IoT Hub has a limit of 50 C2D enqueued messages and returns an error if that is exceeded.
 
 			if retries >= 50 {
 				return errors.Wrap(err, "gateway/azure_iot_hub: maximum retries exceeded")
