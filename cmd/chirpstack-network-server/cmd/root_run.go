@@ -14,7 +14,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/balancer/roundrobin"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/resolver"
 
@@ -259,7 +258,7 @@ func setupNetworkController() error {
 			"tls-key":  config.C.NetworkController.TLSKey,
 		}).Info("connecting to network-controller")
 		ncDialOptions := []grpc.DialOption{
-			grpc.WithBalancerName(roundrobin.Name),
+			grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy":"round_robin"}`),
 		}
 		if config.C.NetworkController.TLSCert != "" && config.C.NetworkController.TLSKey != "" {
 			ncDialOptions = append(ncDialOptions, grpc.WithTransportCredentials(

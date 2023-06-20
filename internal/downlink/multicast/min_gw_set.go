@@ -150,6 +150,7 @@ func addDeviceEdges(g *simple.WeightedUndirectedGraph, rxInfoSets []storage.Devi
 	}
 }
 
+// deviceGatewayEdge implements graph.WeightedEdge
 type deviceGatewayEdge struct {
 	gatewayID lorawan.EUI64
 	devEUI    lorawan.EUI64
@@ -179,6 +180,15 @@ func (e deviceGatewayEdge) Weight() float64 {
 	}
 
 	return weight
+}
+
+// ReversedEdge returns a new Edge with the end point of the edges in the pair swapped.
+func (e deviceGatewayEdge) ReversedEdge() graph.Edge {
+	return deviceGatewayEdge{
+		gatewayID: e.devEUI,
+		devEUI:    e.gatewayID,
+		graph:     e.graph,
+	}
 }
 
 // spreadFactorToRequiredSNRTable contains the required SNR to demodulate a
