@@ -462,7 +462,9 @@ func (ctx *joinContext) createDeviceSession() error {
 		ds.NwkSEncKey = key
 	}
 
-	if cfList := band.Band().GetCFList(ctx.DeviceProfile.MACVersion); cfList != nil && cfList.CFListType == lorawan.CFListChannel {
+	cfList := band.Band().GetCFList(ctx.DeviceProfile.MACVersion)
+
+	if cfList != nil && cfList.CFListType == lorawan.CFListChannel {
 		channelPL, ok := cfList.Payload.(*lorawan.CFListChannelPayload)
 		if !ok {
 			return fmt.Errorf("expected *lorawan.CFListChannelPayload, got %T", cfList.Payload)
@@ -492,6 +494,23 @@ func (ctx *joinContext) createDeviceSession() error {
 				return errors.Wrap(err, "get uplink channel error")
 			}
 			ds.ExtraUplinkChannels[i] = c
+		}
+	}
+
+	if cfList != nil && cfList.CFListType == lorawan.CFListChannelMask {
+		ds.EnabledUplinkChannels = []int{}
+
+		maskPL, ok := cfList.Payload.(*lorawan.CFListChannelMaskPayload)
+		if !ok {
+			return fmt.Errorf("expected *lorawan.CFListChannelMaskPayload, got %T", cfList.Payload)
+		}
+
+		for blockI, block := range maskPL.ChannelMasks {
+			for channelI, enabled := range block {
+				if enabled {
+					ds.EnabledUplinkChannels = append(ds.EnabledUplinkChannels, channelI+(blockI*16))
+				}
+			}
 		}
 	}
 
