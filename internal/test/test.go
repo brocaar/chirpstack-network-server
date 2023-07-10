@@ -75,6 +75,12 @@ func GetConfig() config.Config {
 	if v := os.Getenv("TEST_RABBITMQ_URL"); v != "" {
 		c.NetworkServer.Gateway.Backend.AMQP.URL = v
 	}
+	if v := os.Getenv("TEST_AZURE_IOT_HUB_EVENTS_CONNECTION_STRING"); v != "" {
+		c.NetworkServer.Gateway.Backend.AzureIoTHub.EventsConnectionString = v
+	}
+	if v := os.Getenv("TEST_AZURE_IOT_HUB_COMMANDS_CONNECTION_STRING"); v != "" {
+		c.NetworkServer.Gateway.Backend.AzureIoTHub.CommandsConnectionString = v
+	}
 
 	return c
 }

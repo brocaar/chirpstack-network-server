@@ -412,12 +412,22 @@ func (b *Backend) publishCommand(fields log.Fields, gatewayID lorawan.EUI64, com
 				return nil
 			}
 
-			if retries > 0 {
+			if retries >= 50 {
+				return errors.Wrap(err, "gateway/azure_iot_hub: maximum retries exceeded")
+			} else if retries > 0 {
 				log.WithError(err).Error("gateway/azure_iot_hub: send cloud to device message error")
 			}
 
 			// try to recover connection
-			if err := b.c2dRecover(); err != nil {
+			if strings.Contains(err.Error(), "exceeded the queue limit") {
+				// IoT Hub has a limit of 50 C2D enqueued messages and returns an error if that is exceeded.
+				// In this case we recreate the sender instead of doing a full reconnection.
+				fmt.Println("gateway/azure_iot_hub: exceeded the queue limit, closing sender and retrying")
+				if err := b.c2dRenewSender(); err != nil {
+					log.WithError(err).Error("gateway/azure_iot_hub: recreate sender error, retry in 2 seconds")
+					time.Sleep(2 * time.Second)
+				}
+			} else if err := b.c2dRecover(); err != nil {
 				log.WithError(err).Error("gateway/azure_iot_hub: recover iot hub connection error, retry in 2 seconds")
 				time.Sleep(2 * time.Second)
 			}
@@ -445,6 +455,12 @@ func (b *Backend) c2dNewSessionAndLink() error {
 		return errors.Wrap(err, "new amqp session error")
 	}
 
+	return b.c2dNewLink()
+}
+
+func (b *Backend) c2dNewLink() error {
+	var err error
+
 	b.c2dSender, err = b.c2dSession.NewSender(
 		amqp.LinkTargetAddress("/messages/devicebound"),
 	)
@@ -469,6 +485,18 @@ func (b *Backend) c2dRecover() error {
 	_ = b.c2dConn.Close()
 
 	return b.c2dNewSessionAndLink()
+}
+
+func (b *Backend) c2dRenewSender() error {
+	// aquire a write-lock to make sure that no Send calls are made during the
+	// sender link recovery
+	b.Lock()
+	defer b.Unlock()
+
+	log.Info("gateway/azure_iot_hub: re-creating sender")
+	_ = b.c2dSender.Close(b.ctx)
+
+	return b.c2dNewLink()
 }
 
 func parseConnectionString(str string) (map[string]string, error) {
