@@ -11,7 +11,6 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/logrus/ctxlogrus"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -38,7 +37,7 @@ func UnaryServerCtxIDInterceptor(ctx context.Context, req interface{}, info *grp
 
 	// set id to context and add as logrus field
 	ctx = context.WithValue(ctx, ContextIDKey, ctxID)
-	ctxlogrus.AddFields(ctx, log.Fields{
+	ctxlogrus.AddFields(ctx, logrus.Fields{
 		"ctx_id": ctxID,
 	})
 
@@ -69,7 +68,7 @@ func UnaryClientCtxIDInterceptor(ctx context.Context, method string, req, reply 
 	logFields := clientLoggerFields(ctx, method, reply, err, code, startTime, header)
 
 	// log api call
-	levelLogf(log.WithFields(logFields), level, "finished client unary call")
+	levelLogf(logrus.WithFields(logFields), level, "finished client unary call")
 
 	return err
 }
