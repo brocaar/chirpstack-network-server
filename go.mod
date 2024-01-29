@@ -2,6 +2,9 @@ module github.com/brocaar/chirpstack-network-server/v3
 
 go 1.17
 
+// TODO: remove before merging
+replace github.com/brocaar/lorawan => github.com/nwest1/lorawan v0.0.0-20240129183920-3a95d67cf5a9
+
 require (
 	cloud.google.com/go/pubsub v1.3.1
 	github.com/Azure/azure-amqp-common-go v1.1.4
@@ -24,6 +27,7 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.14.0
+	github.com/redis/go-redis/v9 v9.0.3
 	github.com/sirupsen/logrus v1.7.0
 	github.com/smartystreets/goconvey v0.0.0-20190330032615-68dc04aab96a
 	github.com/spf13/cobra v0.0.5
@@ -55,7 +59,7 @@ require (
 	github.com/caarlos0/ctrlc v1.0.0 // indirect
 	github.com/campoy/unique v0.0.0-20180121183637-88950e537e7e // indirect
 	github.com/census-instrumentation/opencensus-proto v0.2.1 // indirect
-	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/devigned/tab v0.1.1 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
@@ -118,3 +122,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
+

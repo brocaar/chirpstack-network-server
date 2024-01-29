@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
 )
 
 // AggregationInterval defines the aggregation type.
@@ -107,7 +107,7 @@ func GetMetrics(ctx context.Context, agg AggregationInterval, name string, start
 	}
 
 	pipe := RedisClient().Pipeline()
-	var vals []*redis.StringStringMapCmd
+	var vals []*redis.MapStringStringCmd
 	for _, k := range keys {
 		vals = append(vals, pipe.HGetAll(ctx, k))
 	}

@@ -3,10 +3,10 @@ package framelog
 import (
 	"context"
 
-	"github.com/go-redis/redis/v8"
 	proto "github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
 
 	"github.com/brocaar/chirpstack-api/go/v3/gw"
 	"github.com/brocaar/chirpstack-api/go/v3/ns"
@@ -75,8 +75,9 @@ func LogUplinkFrameForGateways(ctx context.Context, frame ns.UplinkFrameLog) err
 		if conf.Monitoring.GatewayFrameLogMaxHistory > 0 {
 			key := storage.GetRedisKey(globalGatewayFrameStreamKey)
 			if err := storage.RedisClient().XAdd(ctx, &redis.XAddArgs{
-				Stream:       key,
-				MaxLenApprox: conf.Monitoring.GatewayFrameLogMaxHistory,
+				Stream: key,
+				MaxLen: conf.Monitoring.GatewayFrameLogMaxHistory,
+				Approx: true,
 				Values: map[string]interface{}{
 					"up": b,
 				},
@@ -127,8 +128,9 @@ func LogDownlinkFrameForGateway(ctx context.Context, frame ns.DownlinkFrameLog) 
 	if conf.Monitoring.GatewayFrameLogMaxHistory > 0 {
 		key := storage.GetRedisKey(globalGatewayFrameStreamKey)
 		if err := storage.RedisClient().XAdd(ctx, &redis.XAddArgs{
-			Stream:       key,
-			MaxLenApprox: conf.Monitoring.GatewayFrameLogMaxHistory,
+			Stream: key,
+			MaxLen: conf.Monitoring.GatewayFrameLogMaxHistory,
+			Approx: true,
 			Values: map[string]interface{}{
 				"down": b,
 			},
@@ -176,8 +178,9 @@ func LogUplinkFrameForDevEUI(ctx context.Context, devEUI lorawan.EUI64, frame ns
 	if conf.Monitoring.DeviceFrameLogMaxHistory > 0 {
 		key := storage.GetRedisKey(globalDeviceFrameStreamKey)
 		if err := storage.RedisClient().XAdd(ctx, &redis.XAddArgs{
-			Stream:       key,
-			MaxLenApprox: conf.Monitoring.DeviceFrameLogMaxHistory,
+			Stream: key,
+			MaxLen: conf.Monitoring.DeviceFrameLogMaxHistory,
+			Approx: true,
 			Values: map[string]interface{}{
 				"up": b,
 			},
@@ -225,8 +228,9 @@ func LogDownlinkFrameForDevEUI(ctx context.Context, devEUI lorawan.EUI64, frame 
 	if conf.Monitoring.DeviceFrameLogMaxHistory > 0 {
 		key := storage.GetRedisKey(globalDeviceFrameStreamKey)
 		if err := storage.RedisClient().XAdd(ctx, &redis.XAddArgs{
-			Stream:       key,
-			MaxLenApprox: conf.Monitoring.DeviceFrameLogMaxHistory,
+			Stream: key,
+			MaxLen: conf.Monitoring.DeviceFrameLogMaxHistory,
+			Approx: true,
 			Values: map[string]interface{}{
 				"down": b,
 			},

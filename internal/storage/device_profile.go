@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/brocaar/chirpstack-network-server/v3/internal/logging"
-	"github.com/go-redis/redis/v8"
 	"github.com/gofrs/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 )
 
