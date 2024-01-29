@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source/httpfs"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-network-server/v3/internal/config"
@@ -21,6 +21,7 @@ import (
 )
 
 // Migrations
+//
 //go:embed migrations/*
 var migrations embed.FS
 

@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/gofrs/uuid"
 	proto "github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/brocaar/chirpstack-api/go/v3/common"
@@ -299,14 +299,14 @@ func GetRandomDevAddr(netID lorawan.NetID) (lorawan.DevAddr, error) {
 // GetFullFCntUp returns the full 32bit frame-counter, given the fCntUp which
 // has been truncated to the last 16 LSB.
 // Notes:
-// * After a succesful validation of the FCntUp and the MIC, don't forget
-//   to synchronize the device FCntUp with the packet FCnt.
-// * In case of a frame-counter rollover, the returned values will be less
-//   than the given DeviceSession FCntUp. This must be validated outside this
-//   function!
-// * In case of a re-transmission, the returned frame-counter equals
-//   DeviceSession.FCntUp - 1, as the FCntUp value holds the next expected
-//   frame-counter, not the FCntUp which was last seen.
+//   - After a succesful validation of the FCntUp and the MIC, don't forget
+//     to synchronize the device FCntUp with the packet FCnt.
+//   - In case of a frame-counter rollover, the returned values will be less
+//     than the given DeviceSession FCntUp. This must be validated outside this
+//     function!
+//   - In case of a re-transmission, the returned frame-counter equals
+//     DeviceSession.FCntUp - 1, as the FCntUp value holds the next expected
+//     frame-counter, not the FCntUp which was last seen.
 func GetFullFCntUp(nextExpectedFullFCnt, truncatedFCntUp uint32) uint32 {
 	// Handle re-transmission.
 	// Note: the s.FCntUp value holds the next expected uplink frame-counter,

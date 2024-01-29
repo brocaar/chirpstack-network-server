@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/golang/protobuf/proto"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
